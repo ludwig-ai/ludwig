@@ -45,7 +45,7 @@ from ludwig.constants import (
     TRAINING,
     WIDTH,
 )
-from ludwig.features.base_feature import InputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
 from ludwig.utils.image_utils import (
@@ -71,36 +71,43 @@ image_scaling_registry = {
 }
 
 
-class ImageFeatureMixin:
-    type = IMAGE
-    preprocessing_defaults = {
-        "missing_value_strategy": BACKFILL,
-        "in_memory": True,
-        "resize_method": "interpolate",
-        "scaling": "pixel_normalization",
-        "num_processes": 1,
-        "infer_image_num_channels": True,
-        "infer_image_dimensions": True,
-        "infer_image_max_height": 256,
-        "infer_image_max_width": 256,
-        "infer_image_sample_size": 100,
-    }
+class ImageFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return IMAGE
 
-    preprocessing_schema = {
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "in_memory": {"type": "boolean"},
-        "resize_method": {"type": "string", "enum": RESIZE_METHODS},
-        "scaling": {"type": "string", "enum": list(image_scaling_registry.keys())},
-        "num_processes": {"type": "integer", "minimum": 0},
-        "height": {"type": "integer", "minimum": 0},
-        "width": {"type": "integer", "minimum": 0},
-        "num_channels": {"type": "integer", "minimum": 0},
-        "infer_image_num_channels": {"type": "boolean"},
-        "infer_image_dimensions": {"type": "boolean"},
-        "infer_image_max_height": {"type": "integer", "minimum": 0},
-        "infer_image_max_width": {"type": "integer", "minimum": 0},
-        "infer_image_sample_size": {"type": "integer", "minimum": 0},
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "missing_value_strategy": BACKFILL,
+            "in_memory": True,
+            "resize_method": "interpolate",
+            "scaling": "pixel_normalization",
+            "num_processes": 1,
+            "infer_image_num_channels": True,
+            "infer_image_dimensions": True,
+            "infer_image_max_height": 256,
+            "infer_image_max_width": 256,
+            "infer_image_sample_size": 100,
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "in_memory": {"type": "boolean"},
+            "resize_method": {"type": "string", "enum": RESIZE_METHODS},
+            "scaling": {"type": "string", "enum": list(image_scaling_registry.keys())},
+            "num_processes": {"type": "integer", "minimum": 0},
+            "height": {"type": "integer", "minimum": 0},
+            "width": {"type": "integer", "minimum": 0},
+            "num_channels": {"type": "integer", "minimum": 0},
+            "infer_image_num_channels": {"type": "boolean"},
+            "infer_image_dimensions": {"type": "boolean"},
+            "infer_image_max_height": {"type": "integer", "minimum": 0},
+            "infer_image_max_width": {"type": "integer", "minimum": 0},
+            "infer_image_sample_size": {"type": "integer", "minimum": 0},
+        }
 
     @staticmethod
     def cast_column(column, backend):

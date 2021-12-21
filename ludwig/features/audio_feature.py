@@ -32,6 +32,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
+from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import (
     calculate_mean,
@@ -50,38 +51,44 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 logger = logging.getLogger(__name__)
 
 
-class AudioFeatureMixin:
-    type = AUDIO
+class AudioFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return AUDIO
 
-    preprocessing_defaults = {
-        "audio_file_length_limit_in_s": 7.5,
-        "missing_value_strategy": BACKFILL,
-        "in_memory": True,
-        "padding_value": 0,
-        "norm": None,
-        "audio_feature": {
-            TYPE: "raw",
-        },
-    }
-
-    preprocessing_schema = {
-        "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "in_memory": {"type": "boolean"},
-        "padding_value": {"type": "number", "minimum": 0},
-        "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
-        "audio_feature": {
-            "type": "object",
-            "properties": {
-                "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
-                "window_length_in_s": {"type": "number", "minimum": 0},
-                "window_shift_in_s": {"type": "number", "minimum": 0},
-                "num_fft_points": {"type": "number", "minimum": 0},
-                "window_type": {"type": "string"},
-                "num_filter_bands": {"type": "number", "minimum": 0},
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "audio_file_length_limit_in_s": 7.5,
+            "missing_value_strategy": BACKFILL,
+            "in_memory": True,
+            "padding_value": 0,
+            "norm": None,
+            "audio_feature": {
+                TYPE: "raw",
             },
-        },
-    }
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "in_memory": {"type": "boolean"},
+            "padding_value": {"type": "number", "minimum": 0},
+            "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
+            "audio_feature": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
+                    "window_length_in_s": {"type": "number", "minimum": 0},
+                    "window_shift_in_s": {"type": "number", "minimum": 0},
+                    "num_fft_points": {"type": "number", "minimum": 0},
+                    "window_type": {"type": "string"},
+                    "num_filter_bands": {"type": "number", "minimum": 0},
+                },
+            },
+        }
 
     @staticmethod
     def cast_column(column, backend):

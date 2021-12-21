@@ -95,6 +95,7 @@ from ludwig.utils.defaults import default_preprocessing_parameters, default_rand
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers, set_random_seed
 from ludwig.utils.type_utils import Column
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -1043,7 +1044,7 @@ def build_dataset(
             feature_hashes.add(feature[PROC_COLUMN])
 
     logger.debug("cast columns")
-    dataset_cols = cast_columns(dataset_df, proc_features, global_preprocessing_parameters, backend)
+    dataset_cols = cast_columns(dataset_df, proc_features, backend)
 
     for callback in callbacks or []:
         callback.on_build_metadata_start(dataset_df, mode)
@@ -1095,14 +1096,15 @@ def build_dataset(
     return dataset, metadata
 
 
-def cast_columns(dataset_df, features, global_preprocessing_parameters, backend):
-    # todo figure out if global_preprocessing_parameters is needed
+def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
+    """Copies each column of the dataset to a dataframe, with potential type casting."""
     dataset_cols = {}
     for feature in features:
-        cast_column = get_from_registry(feature[TYPE], base_type_registry).cast_column
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        dataset_cols[feature[COLUMN]] = cast_column(dataset_df[feature[COLUMN]], backend)
+        dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
+            dataset_df[feature[COLUMN]], backend
+        )
 
     return dataset_cols
 
@@ -1142,26 +1144,27 @@ def build_metadata(
 
         handle_missing_values(dataset_cols, feature, preprocessing_parameters)
 
-        get_feature_meta = get_from_registry(feature[TYPE], base_type_registry).get_feature_meta
-
         column = dataset_cols[feature[COLUMN]]
         if column.dtype == object:
             column = column.astype(str)
 
-        metadata[feature[NAME]] = get_feature_meta(column, preprocessing_parameters, backend)
+        metadata[feature[NAME]] = get_from_registry(feature[TYPE], base_type_registry).get_feature_meta(
+            column, preprocessing_parameters, backend
+        )
 
         metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
 
-def build_data(input_cols, features, training_set_metadata, backend, skip_save_processed_input):
+def build_data(
+    input_cols, features: List[Dict], training_set_metadata, backend, skip_save_processed_input
+) -> Dict[str, DataFrame]:
     proc_cols = {}
     for feature in features:
         preprocessing_parameters = training_set_metadata[feature[NAME]][PREPROCESSING]
         handle_missing_values(input_cols, feature, preprocessing_parameters)
-        add_feature_data = get_from_registry(feature[TYPE], base_type_registry).add_feature_data
-        proc_cols = add_feature_data(
+        get_from_registry(feature[TYPE], base_type_registry).add_feature_data(
             feature,
             input_cols,
             proc_cols,

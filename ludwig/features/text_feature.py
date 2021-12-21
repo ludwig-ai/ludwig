@@ -41,7 +41,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -58,45 +58,51 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
-class TextFeatureMixin:
-    type = TEXT
+class TextFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return TEXT
 
-    preprocessing_defaults = {
-        "char_tokenizer": "characters",
-        "char_vocab_file": None,
-        "char_sequence_length_limit": 1024,
-        "char_most_common": 70,
-        "word_tokenizer": "space_punct",
-        "pretrained_model_name_or_path": None,
-        "word_vocab_file": None,
-        "word_sequence_length_limit": 256,
-        "word_most_common": 20000,
-        "padding_symbol": PADDING_SYMBOL,
-        "unknown_symbol": UNKNOWN_SYMBOL,
-        "padding": "right",
-        "lowercase": True,
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": UNKNOWN_SYMBOL,
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "char_tokenizer": "characters",
+            "char_vocab_file": None,
+            "char_sequence_length_limit": 1024,
+            "char_most_common": 70,
+            "word_tokenizer": "space_punct",
+            "pretrained_model_name_or_path": None,
+            "word_vocab_file": None,
+            "word_sequence_length_limit": 256,
+            "word_most_common": 20000,
+            "padding_symbol": PADDING_SYMBOL,
+            "unknown_symbol": UNKNOWN_SYMBOL,
+            "padding": "right",
+            "lowercase": True,
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": UNKNOWN_SYMBOL,
+        }
 
-    preprocessing_schema = {
-        "char_tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "char_vocab_file": {"type": ["string", "null"]},
-        "char_sequence_length_limit": {"type": "integer", "minimum": 0},
-        "char_most_common": {"type": "integer", "minimum": 0},
-        "word_tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "pretrained_model_name_or_path": {"type": ["string", "null"]},
-        "word_vocab_file": {"type": ["string", "null"]},
-        "word_sequence_length_limit": {"type": "integer", "minimum": 0},
-        "word_most_common": {"type": "integer", "minimum": 0},
-        "padding_symbol": {"type": "string"},
-        "unknown_symbol": {"type": "string"},
-        "padding": {"type": "string", "enum": ["right", "left"]},
-        "lowercase": {"type": "boolean"},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "char_tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "char_vocab_file": {"type": ["string", "null"]},
+            "char_sequence_length_limit": {"type": "integer", "minimum": 0},
+            "char_most_common": {"type": "integer", "minimum": 0},
+            "word_tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "pretrained_model_name_or_path": {"type": ["string", "null"]},
+            "word_vocab_file": {"type": ["string", "null"]},
+            "word_sequence_length_limit": {"type": "integer", "minimum": 0},
+            "word_most_common": {"type": "integer", "minimum": 0},
+            "padding_symbol": {"type": "string"},
+            "unknown_symbol": {"type": "string"},
+            "padding": {"type": "string", "enum": ["right", "left"]},
+            "lowercase": {"type": "boolean"},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):

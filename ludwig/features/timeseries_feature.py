@@ -27,6 +27,7 @@ from ludwig.constants import (
     TIED,
     TIMESERIES,
 )
+from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
@@ -34,27 +35,33 @@ from ludwig.utils.strings_utils import tokenizer_registry
 logger = logging.getLogger(__name__)
 
 
-class TimeseriesFeatureMixin:
-    type = TIMESERIES
+class TimeseriesFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return TIMESERIES
 
-    preprocessing_defaults = {
-        "timeseries_length_limit": 256,
-        "padding_value": 0,
-        "padding": "right",
-        "tokenizer": "space",
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": "",
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "timeseries_length_limit": 256,
+            "padding_value": 0,
+            "padding": "right",
+            "tokenizer": "space",
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": "",
+        }
 
-    preprocessing_schema = {
-        "timeseries_length_limit": {"type": "integer", "minimum": 0},
-        "padding_value": {"type": "number"},
-        "padding": {"type": "string", "enum": ["right", "left"]},
-        "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "timeseries_length_limit": {"type": "integer", "minimum": 0},
+            "padding_value": {"type": "number"},
+            "padding": {"type": "string", "enum": ["right", "left"]},
+            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):

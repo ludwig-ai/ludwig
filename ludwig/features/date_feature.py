@@ -15,30 +15,39 @@
 # ==============================================================================
 import logging
 from datetime import date, datetime
+from typing import Any, Dict
 
 import numpy as np
 import torch
 from dateutil.parser import parse
 
 from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
-from ludwig.features.base_feature import InputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
 DATE_VECTOR_LENGTH = 9
 
 
-class DateFeatureMixin:
-    type = DATE
-    preprocessing_defaults = {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "", "datetime_format": None}
+class DateFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return DATE
 
-    preprocessing_schema = {
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-        "datetime_format": {"type": ["string", "null"]},
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "", "datetime_format": None}
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+            "datetime_format": {"type": ["string", "null"]},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -88,10 +97,15 @@ class DateFeatureMixin:
             second_of_day,
         ]
 
-    @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
-    ):
+        feature: Dict[str, Any],
+        input_df: DataFrame,
+        proc_df: Dict[str, DataFrame],
+        metadata: Dict[str, Any],
+        preprocessing_parameters: Dict[str, Any],
+        backend,  # Union[Backend, str]
+        skip_save_processed_input: bool,
+    ) -> None:
         datetime_format = preprocessing_parameters["datetime_format"]
         proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
             input_df[feature[COLUMN]],

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import torch
@@ -38,7 +38,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
 from ludwig.utils import output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
@@ -48,33 +48,41 @@ from ludwig.utils.eval_utils import (
     roc_curve,
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
 
-class BinaryFeatureMixin:
-    type = BINARY
-    preprocessing_defaults = {
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": 0,
-    }
+class BinaryFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return BINARY
 
-    fill_value_schema = {
-        "anyOf": [
-            {"type": "integer", "minimum": 0, "maximum": 1},
-            {"type": "string", "enum": strings_utils.all_bool_strs()},
-        ]
-    }
+    @staticmethod
+    def preprocessing_defaults() -> Dict[str, Any]:
+        return {
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": 0,
+        }
 
-    preprocessing_schema = {
-        "missing_value_strategy": {
-            "type": "string",
-            "enum": MISSING_VALUE_STRATEGY_OPTIONS,
-        },
-        "fill_value": fill_value_schema,
-        "computed_fill_value": fill_value_schema,
-        "fallback_true_label": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_schema() -> Dict[str, Any]:
+        fill_value_schema = {
+            "anyOf": [
+                {"type": "integer", "minimum": 0, "maximum": 1},
+                {"type": "string", "enum": strings_utils.all_bool_strs()},
+            ]
+        }
+
+        return {
+            "missing_value_strategy": {
+                "type": "string",
+                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
+            },
+            "fill_value": fill_value_schema,
+            "computed_fill_value": fill_value_schema,
+            "fallback_true_label": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -83,7 +91,7 @@ class BinaryFeatureMixin:
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
         if column.dtype != object:
             return {}
 
@@ -111,14 +119,14 @@ class BinaryFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature,
-        input_df,
-        proc_df,
-        metadata,
-        preprocessing_parameters,
-        backend,
-        skip_save_processed_input,
-    ):
+        feature: Dict[str, Any],
+        input_df: DataFrame,
+        proc_df: Dict[str, DataFrame],
+        metadata: Dict[str, Any],
+        preprocessing_parameters: Dict[str, Any],
+        backend,  # Union[Backend, str]
+        skip_save_processed_input: bool,
+    ) -> None:
         column = input_df[feature[COLUMN]]
 
         if column.dtype == object:

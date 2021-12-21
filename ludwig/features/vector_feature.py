@@ -46,20 +46,26 @@ logger = logging.getLogger(__name__)
 
 
 class VectorFeatureMixin:
-    type = VECTOR
-    preprocessing_defaults = {
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": "",
-    }
+    @staticmethod
+    def type():
+        return VECTOR
 
-    fill_value_schema = {"type": "string", "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"}
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": "",
+        }
 
-    preprocessing_schema = {
-        "vector_size": {"type": "integer", "minimum": 0},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": fill_value_schema,
-        "computed_fill_value": fill_value_schema,
-    }
+    @staticmethod
+    def preprocessing_schema():
+        fill_value_schema = {"type": "string", "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"}
+        return {
+            "vector_size": {"type": "integer", "minimum": 0},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": fill_value_schema,
+            "computed_fill_value": fill_value_schema,
+        }
 
     @staticmethod
     def cast_column(column, backend):

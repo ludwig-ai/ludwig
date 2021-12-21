@@ -40,7 +40,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 
@@ -132,26 +132,33 @@ numeric_transformation_registry = {
 }
 
 
-class NumericalFeatureMixin:
-    type = NUMERICAL
-    preprocessing_defaults = {
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": 0,
-        "normalization": None,
-    }
+class NumericalFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return NUMERICAL
 
-    preprocessing_schema = {
-        "missing_value_strategy": {
-            "type": "string",
-            "enum": MISSING_VALUE_STRATEGY_OPTIONS,
-        },
-        "fill_value": {"type": "number"},
-        "computed_fill_value": {"type": "number"},
-        "normalization": {
-            "type": ["string", "null"],
-            "enum": list(numeric_transformation_registry.keys()),
-        },
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": 0,
+            "normalization": None,
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "missing_value_strategy": {
+                "type": "string",
+                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
+            },
+            "fill_value": {"type": "number"},
+            "computed_fill_value": {"type": "number"},
+            "normalization": {
+                "type": ["string", "null"],
+                "enum": list(numeric_transformation_registry.keys()),
+            },
+        }
 
     @staticmethod
     def cast_column(column, backend):

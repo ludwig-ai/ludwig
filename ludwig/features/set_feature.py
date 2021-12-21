@@ -38,7 +38,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
@@ -47,24 +47,31 @@ from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UN
 logger = logging.getLogger(__name__)
 
 
-class SetFeatureMixin:
-    type = SET
-    preprocessing_defaults = {
-        "tokenizer": "space",
-        "most_common": 10000,
-        "lowercase": False,
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": UNKNOWN_SYMBOL,
-    }
+class SetFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return SET
 
-    preprocessing_schema = {
-        "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "most_common": {"type": "integer", "minimum": 0},
-        "lowercase": {"type": "boolean"},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "tokenizer": "space",
+            "most_common": 10000,
+            "lowercase": False,
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": UNKNOWN_SYMBOL,
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "most_common": {"type": "integer", "minimum": 0},
+            "lowercase": {"type": "boolean"},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):

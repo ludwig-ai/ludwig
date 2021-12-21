@@ -75,6 +75,10 @@ class LudwigMetric(ABC):
     @classmethod
     @abstractmethod
     def get_inputs(cls):
+        """Returns the key of the tensor from the predictions() Dict that should be used for computing this metric.
+
+        For example: PREDICTIONS would be used for accuracy metrics while LOGITS would be used for loss metrics.
+        """
         raise NotImplementedError()
 
 
