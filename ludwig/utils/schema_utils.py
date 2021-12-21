@@ -214,6 +214,7 @@ def IntegerOrStringOptionsField(
     exclusiveMin: Union[None, int] = None,
     exclusiveMax: Union[None, int] = None,
 ):
+    isIntegeric = True
     return NumericOrStringOptionsField(**locals())
 
 
