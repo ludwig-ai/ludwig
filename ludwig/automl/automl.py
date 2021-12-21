@@ -26,6 +26,7 @@ from ludwig.constants import COMBINER, TYPE, HYPEROPT, NUMERICAL
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.misc_utils import merge_dict
 
@@ -72,6 +73,7 @@ def auto_train(
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
     user_config: Dict = None,
+    random_seed: int = default_random_seed,
     **kwargs
 ) -> AutoTrainResults:
     """
@@ -88,16 +90,24 @@ def auto_train(
                         as the stopping parameter
     :param output_directory: (str) directory into which to write results, defaults to
                              current working directory.
+    :param tune_for_memory: (bool) refine hyperopt search space for available
+                            host / GPU memory
+    :param user_config: (dict) override automatic selection of specified config items
+    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
+                        there is a call to a random number generator, including
+                        hyperparameter search sampling, as well as data splitting,
+                        parameter initialization and training set shuffling
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, **kwargs)
+        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, **kwargs)
     return train_with_config(
         dataset,
         config,
         output_directory=output_directory,
+        random_seed=random_seed,
         **kwargs
     )
 
@@ -108,6 +118,7 @@ def create_auto_config(
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
     user_config: Dict = None,
+    random_seed: int = default_random_seed,
 ) -> dict:
     """
     Returns an auto-generated Ludwig config with the intent of training
@@ -119,13 +130,18 @@ def create_auto_config(
     :param target: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                          as the stopping parameter
-    :param tune_for_memroy: (bool) refine hyperopt search space for available
+    :param tune_for_memory: (bool) refine hyperopt search space for available
                             host / GPU memory
+    :param user_config: (dict) override automatic selection of specified config items
+    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
+                        there is a call to a random number generator, including
+                        hyperparameter search sampling, as well as data splitting,
+                        parameter initialization and training set shuffling
 
     # Return
     :return: (dict) selected model configuration
     """
-    default_configs = _create_default_config(dataset, target, time_limit_s)
+    default_configs = _create_default_config(dataset, target, time_limit_s, random_seed)
     model_config = _model_select(
         dataset, default_configs, user_config
     )
@@ -143,6 +159,7 @@ def train_with_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     config: dict,
     output_directory: str = OUTPUT_DIR,
+    random_seed: int = default_random_seed,
     **kwargs,
 ) -> AutoTrainResults:
     """
@@ -155,6 +172,10 @@ def train_with_config(
                    to `create_auto_config`.
     :param output_directory: (str) directory into which to write results, defaults to
         current working directory.
+    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
+                        there is a call to a random number generator, including
+                        hyperparameter search sampling, as well as data splitting,
+                        parameter initialization and training set shuffling
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
@@ -166,6 +187,7 @@ def train_with_config(
         dataset,
         output_directory=output_directory,
         model_name=model_name,
+        random_seed=random_seed,
         **kwargs
     )
     # catch edge case where metric_score is nan
@@ -244,6 +266,7 @@ def _train(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     output_directory: str,
     model_name: str,
+    random_seed: int,
     **kwargs
 ):
     hyperopt_results = hyperopt(
@@ -251,6 +274,7 @@ def _train(
         dataset=dataset,
         output_directory=output_directory,
         model_name=model_name,
+        random_seed=random_seed,
         backend='local',
         **kwargs
     )
@@ -264,6 +288,7 @@ def init_config(
     tune_for_memory: bool,
     hyperopt: bool = False,
     output: str = None,
+    random_seed: int = default_random_seed,
     **kwargs
 ):
     config = create_auto_config(
@@ -271,6 +296,7 @@ def init_config(
         target=target,
         time_limit_s=time_limit_s,
         tune_for_memory=tune_for_memory,
+        random_seed=random_seed,
     )
 
     if HYPEROPT in config and not hyperopt:
@@ -321,6 +347,12 @@ def cli_init_config(sys_argv):
         type=bool,
         help='include automl hyperopt config',
         default=False,
+        required=False,
+    )
+    parser.add_argument(
+        '--random_seed',
+        type=int,
+        help='seed for random number generators used in hyperopt to improve repeatability',
         required=False,
     )
     parser.add_argument(
