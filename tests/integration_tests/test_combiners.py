@@ -383,7 +383,7 @@ def test_tabtransformer_combiner(encoder_outputs):
 
     input_features_def = [
         {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'category'}
+        {'name': 'feature_2', 'type': 'category', 'vocab': ['a', 'b', 'c']}
     ]
 
     # setup combiner to test
