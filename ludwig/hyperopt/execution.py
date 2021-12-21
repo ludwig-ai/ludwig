@@ -1169,74 +1169,80 @@ class RayTuneExecutor(HyperoptExecutor):
             callbacks=tune_callbacks,
         )
 
-        ordered_trials = analysis.results_df.sort_values(
-            "metric_score",
-            ascending=self.goal != MAXIMIZE
-        )
-
-        # Catch nans in edge case where the trial doesn't complete
-        temp_ordered_trials = []
-        for kwargs in ordered_trials.to_dict(orient="records"):
-            for key in ['parameters', 'training_stats', 'eval_stats']:
-                if isinstance(kwargs[key], float):
-                    kwargs[key] = {}
-            temp_ordered_trials.append(kwargs)
-
-        # Trials w/empty eval_stats fields & non-empty training_stats fields ran intermediate
-        # tune.report call(s) but were terminated before reporting eval_stats from post-train
-        # evaluation (e.g., trial stopped due to time budget or relatively poor performance.)
-        # For any such trials, run model evaluation for the best model in that trial & record
-        # results in ordered_trials which is returned & is persisted in hyperopt_statistics.json.
-        for trial in temp_ordered_trials:
-            if trial['eval_stats'] == '{}' and trial['training_stats'] != '{}':
-                # Evaluate the best model on the eval_split, which is validation_set
-                if validation_set is not None and validation_set.size > 0:
-                    trial_path = trial['trial_dir']
-                    self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
-                    best_model_path = analysis.get_best_checkpoint(trial_path.rstrip('/'))
-                    best_model = LudwigModel.load(
-                        os.path.join(best_model_path, 'model'),
-                        backend=backend,
-                        gpus=gpus,
-                        gpu_memory_limit=gpu_memory_limit,
-                        allow_parallel_threads=allow_parallel_threads,
-                    )
-                    if best_model.config[TRAINING]['eval_batch_size']:
-                        batch_size = best_model.config[TRAINING]['eval_batch_size']
-                    else:
-                        batch_size = best_model.config[TRAINING]['batch_size']
-                    try:
-                        eval_stats, _, _ = best_model.evaluate(
-                            dataset=validation_set,
-                            data_format=data_format,
-                            batch_size=batch_size,
-                            output_directory=output_directory,
-                            skip_save_unprocessed_output=skip_save_unprocessed_output,
-                            skip_save_predictions=skip_save_predictions,
-                            skip_save_eval_stats=skip_save_eval_stats,
-                            collect_predictions=False,
-                            collect_overall_stats=True,
-                            return_type='dict',
-                            debug=debug
-                        )
-                        trial['eval_stats'] = json.dumps(eval_stats, cls=NumpyEncoder)
-                    except NotImplementedError:
-                        logger.warning(
-                            "Skipping evaluation as the necessary methods are not "
-                            "supported. Full exception below:\n"
-                            f"{traceback.format_exc()}"
-                        )
-                else:
-                    logger.warning(
-                        "Skipping evaluation as no validation set was provided"
-                    )
-
-        ordered_trials = [
-            TrialResults.from_dict(
-                load_json_values(kwargs)
+        if "metric_score" in analysis.results_df.columns:
+            ordered_trials = analysis.results_df.sort_values(
+                "metric_score",
+                ascending=self.goal != MAXIMIZE
             )
-            for kwargs in temp_ordered_trials
-        ]
+
+            # Catch nans in edge case where the trial doesn't complete
+            temp_ordered_trials = []
+            for kwargs in ordered_trials.to_dict(orient="records"):
+                for key in ['parameters', 'training_stats', 'eval_stats']:
+                    if isinstance(kwargs[key], float):
+                        kwargs[key] = {}
+                temp_ordered_trials.append(kwargs)
+
+            # Trials w/empty eval_stats fields & non-empty training_stats fields ran intermediate
+            # tune.report call(s) but were terminated before reporting eval_stats from post-train
+            # evaluation (e.g., trial stopped due to time budget or relatively poor performance.)
+            # For any such trials, run model evaluation for the best model in that trial & record
+            # results in ordered_trials which is returned & is persisted in hyperopt_statistics.json.
+            for trial in temp_ordered_trials:
+                if trial['eval_stats'] == '{}' and trial['training_stats'] != '{}':
+                    # Evaluate the best model on the eval_split, which is validation_set
+                    if validation_set is not None and validation_set.size > 0:
+                        trial_path = trial['trial_dir']
+                        self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
+                        best_model_path = analysis.get_best_checkpoint(trial_path.rstrip('/'))
+                        best_model = LudwigModel.load(
+                            os.path.join(best_model_path, 'model'),
+                            backend=backend,
+                            gpus=gpus,
+                            gpu_memory_limit=gpu_memory_limit,
+                            allow_parallel_threads=allow_parallel_threads,
+                        )
+                        if best_model.config[TRAINING]['eval_batch_size']:
+                            batch_size = best_model.config[TRAINING]['eval_batch_size']
+                        else:
+                            batch_size = best_model.config[TRAINING]['batch_size']
+                        try:
+                            eval_stats, _, _ = best_model.evaluate(
+                                dataset=validation_set,
+                                data_format=data_format,
+                                batch_size=batch_size,
+                                output_directory=output_directory,
+                                skip_save_unprocessed_output=skip_save_unprocessed_output,
+                                skip_save_predictions=skip_save_predictions,
+                                skip_save_eval_stats=skip_save_eval_stats,
+                                collect_predictions=False,
+                                collect_overall_stats=True,
+                                return_type='dict',
+                                debug=debug
+                            )
+                            trial['eval_stats'] = json.dumps(eval_stats, cls=NumpyEncoder)
+                        except NotImplementedError:
+                            logger.warning(
+                                "Skipping evaluation as the necessary methods are not "
+                                "supported. Full exception below:\n"
+                                f"{traceback.format_exc()}"
+                            )
+                    else:
+                        logger.warning(
+                            "Skipping evaluation as no validation set was provided"
+                        )
+
+            ordered_trials = [
+                TrialResults.from_dict(
+                    load_json_values(kwargs)
+                )
+                for kwargs in temp_ordered_trials
+            ]
+        else:
+            logger.warning(
+                "No trials reported results; check if time budget lower than epoch latency"
+            )
+            ordered_trials = []
 
         return RayTuneResults(
             ordered_trials=ordered_trials,
