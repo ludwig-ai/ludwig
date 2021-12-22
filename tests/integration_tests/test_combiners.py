@@ -20,6 +20,7 @@ from ludwig.combiners.combiners import (
     TransformerCombinerConfig,
     sequence_encoder_registry,
 )
+from ludwig.models.ecd import build_inputs
 from ludwig.utils.schema_utils import load_config
 
 logger = logging.getLogger(__name__)
@@ -382,12 +383,12 @@ def test_tabtransformer_combiner(encoder_outputs):
 
     input_features_def = [
         {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'category'}
+        {'name': 'feature_2', 'type': 'category', 'vocab': ['a', 'b', 'c']}
     ]
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
-        input_features=input_features_def,
+        input_features=build_inputs(input_features_def),
         config=load_config(TabTransformerCombinerConfig)
     )
 
@@ -399,7 +400,7 @@ def test_tabtransformer_combiner(encoder_outputs):
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
-        input_features=input_features_def,
+        input_features=build_inputs(input_features_def),
         config=load_config(
             TabTransformerCombinerConfig,
             embed_input_feature_name=56
@@ -414,7 +415,7 @@ def test_tabtransformer_combiner(encoder_outputs):
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
-        input_features=input_features_def,
+        input_features=build_inputs(input_features_def),
         config=load_config(
             TabTransformerCombinerConfig,
             embed_input_feature_name='add'

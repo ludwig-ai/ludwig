@@ -79,7 +79,7 @@ class ConcatCombinerConfig:
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: Optional[List] = None,
+            input_features: Optional[Dict] = None,
             config: ConcatCombinerConfig = None,
             **kwargs
     ):
@@ -507,7 +507,7 @@ class TransformerCombinerConfig:
 class TransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: Optional[List] = None,
+            input_features: Optional[Dict] = None,
             config: TransformerCombinerConfig = None,
             **kwargs
     ):
@@ -638,7 +638,7 @@ class TabTransformerCombinerConfig:
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: Optional[List] = None,
+            input_features: Optional[Dict] = None,
             config: TabTransformerCombinerConfig = None,
             **kwargs
     ):
@@ -655,8 +655,9 @@ class TabTransformerCombiner(tf.keras.Model):
 
         self.embed_input_feature_name = config.embed_input_feature_name
         if self.embed_input_feature_name:
-            vocab = [i_f for i_f in input_features
-                     if i_f[TYPE] != NUMERICAL or i_f[TYPE] != BINARY]
+            vocab = [i_f
+                     for i_f in input_features
+                     if input_features[i_f].type != NUMERICAL or input_features[i_f].type != BINARY]
             if self.embed_input_feature_name == 'add':
                 self.embed_i_f_name_layer = Embed(vocab, config.hidden_size,
                                                   force_embedding_size=True)
@@ -688,9 +689,9 @@ class TabTransformerCombiner(tf.keras.Model):
 
         logger.debug('  Projectors')
         self.projectors = [Dense(projector_size) for i_f in input_features
-                           if i_f[TYPE] != NUMERICAL and i_f[TYPE] != BINARY]
-        self.skip_features = [i_f[NAME] for i_f in input_features
-                              if i_f[TYPE] == NUMERICAL or i_f[TYPE] == BINARY]
+                           if input_features[i_f].type != NUMERICAL and input_features[i_f].type != BINARY]
+        self.skip_features = [i_f for i_f in input_features
+                              if input_features[i_f].type == NUMERICAL or input_features[i_f].type == BINARY]
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
