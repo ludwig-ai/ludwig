@@ -1,3 +1,4 @@
 bayesmark>=0.0.7
 pySOT
+hyperopt
 ray[tune]
