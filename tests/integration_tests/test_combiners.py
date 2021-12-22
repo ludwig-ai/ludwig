@@ -400,7 +400,7 @@ def test_tabtransformer_combiner(encoder_outputs):
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
-        input_features=input_features_def,
+        input_features=build_inputs(input_features_def),
         config=load_config(
             TabTransformerCombinerConfig,
             embed_input_feature_name=56
@@ -415,7 +415,7 @@ def test_tabtransformer_combiner(encoder_outputs):
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
-        input_features=input_features_def,
+        input_features=build_inputs(input_features_def),
         config=load_config(
             TabTransformerCombinerConfig,
             embed_input_feature_name='add'
