@@ -126,19 +126,12 @@ class BaseFeature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
         self.proc_column = feature[PROC_COLUMN]
 
-        # Removing this causes registries to fail??
-        # self.type = None
-
     def overwrite_defaults(self, feature):
         attributes = set(self.__dict__.keys())
         attributes.update(self.__class__.__dict__.keys())
 
-        print(f"attributes are: {attributes}")
-
         for k in feature.keys():
-            # if k in attributes and k != "type":
             if k in attributes:
-                print(f"Setting: {k} to {feature[k]}")
                 if isinstance(feature[k], dict) and hasattr(self, k) and isinstance(getattr(self, k), dict):
                     setattr(self, k, merge_dict(getattr(self, k), feature[k]))
                 else:
