@@ -1189,7 +1189,7 @@ class RayTuneExecutor(HyperoptExecutor):
                                 dataset=validation_set,
                                 data_format=data_format,
                                 batch_size=batch_size,
-                                output_directory=output_directory,
+                                output_directory=trial_path,
                                 skip_save_unprocessed_output=skip_save_unprocessed_output,
                                 skip_save_predictions=skip_save_predictions,
                                 skip_save_eval_stats=skip_save_eval_stats,
