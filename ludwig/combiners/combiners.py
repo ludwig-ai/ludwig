@@ -721,9 +721,9 @@ class TabTransformerCombiner(Combiner):
         self.embeddable_features = []
         for i_f in input_features:
             if input_features[i_f].type in {NUMERICAL, BINARY}:
-                self.unembeddable_features.append(input_features[i_f].name)
+                self.unembeddable_features.append(i_f)
             else:
-                self.embeddable_features.append(input_features[i_f].name)
+                self.embeddable_features.append(i_f)
 
         self.projectors = ModuleList()
         for i_f in self.embeddable_features:
