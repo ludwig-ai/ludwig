@@ -172,8 +172,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 # class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
 #     def __init__(self, feature):
 #         super().__init__(feature)
-#         self.type = TIMESERIES
-#
 #         self.decoder = 'generator'
 #
 #         self.loss = {

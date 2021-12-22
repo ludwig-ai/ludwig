@@ -126,14 +126,19 @@ class BaseFeature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
         self.proc_column = feature[PROC_COLUMN]
 
-        self.type = None
+        # Removing this causes registries to fail??
+        # self.type = None
 
     def overwrite_defaults(self, feature):
         attributes = set(self.__dict__.keys())
         attributes.update(self.__class__.__dict__.keys())
 
+        print(f"attributes are: {attributes}")
+
         for k in feature.keys():
+            # if k in attributes and k != "type":
             if k in attributes:
+                print(f"Setting: {k} to {feature[k]}")
                 if isinstance(feature[k], dict) and hasattr(self, k) and isinstance(getattr(self, k), dict):
                     setattr(self, k, merge_dict(getattr(self, k), feature[k]))
                 else:
@@ -161,7 +166,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_encoder(self, encoder_parameters):
-        return get_encoder_cls(self.type, self.encoder)(**encoder_parameters)
+        return get_encoder_cls(self.type(), self.encoder)(**encoder_parameters)
 
 
 class OutputFeature(BaseFeature, LudwigModule, ABC):
@@ -254,7 +259,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             decoder = decoder_parameters["decoder"]
         else:
             decoder = self.decoder
-        return get_decoder_cls(self.type, decoder)(**decoder_parameters_copy)
+        return get_decoder_cls(self.type(), decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)
@@ -268,8 +273,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_function = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
@@ -277,7 +282,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             LOSS: self.eval_loss_function,
             **{
                 name: cls(**self.loss_kwargs(), **self.metric_kwargs())
-                for name, cls in get_metric_classes(self.type).items()
+                for name, cls in get_metric_classes(self.type()).items()
                 if cls.can_report(self)
             },
         }
