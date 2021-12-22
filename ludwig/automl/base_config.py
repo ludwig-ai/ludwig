@@ -126,8 +126,7 @@ def _create_default_config(
     base_automl_config["hyperopt"]["executor"]["time_budget_s"] = time_limit_s
     if time_limit_s is not None:
         base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
-    base_automl_config["hyperopt"]["sampler"][
-        "search_alg"]["random_state_seed"] = random_seed
+    base_automl_config["hyperopt"]["sampler"]["search_alg"]["random_state_seed"] = random_seed
     base_automl_config.update(input_and_output_feature_config)
 
     model_configs["base_config"] = base_automl_config

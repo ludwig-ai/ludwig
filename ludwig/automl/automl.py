@@ -94,10 +94,8 @@ def auto_train(
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
-    config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, **kwargs)
-    return train_with_config(
-        dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
+    config = create_auto_config(dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, **kwargs)
+    return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
 
 def create_auto_config(
@@ -163,8 +161,8 @@ def train_with_config(
     _ray_init()
     model_name = get_model_name(config)
     hyperopt_results = _train(
-        config, dataset, output_directory=output_directory, model_name=model_name,
-        random_seed=random_seed, **kwargs)
+        config, dataset, output_directory=output_directory, model_name=model_name, random_seed=random_seed, **kwargs
+    )
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
     # completed
@@ -232,12 +230,21 @@ def _model_select(
 
 
 def _train(
-    config: Dict, dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
-    output_directory: str, model_name: str, random_seed: int, **kwargs
+    config: Dict,
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    output_directory: str,
+    model_name: str,
+    random_seed: int,
+    **kwargs,
 ):
     hyperopt_results = hyperopt(
-        config, dataset=dataset, output_directory=output_directory, model_name=model_name,
-        random_seed=random_seed, backend="local", **kwargs
+        config,
+        dataset=dataset,
+        output_directory=output_directory,
+        model_name=model_name,
+        random_seed=random_seed,
+        backend="local",
+        **kwargs,
     )
     return hyperopt_results
 
