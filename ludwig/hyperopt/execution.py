@@ -104,29 +104,14 @@ class HyperoptExecutor(ABC):
             stats = stats[metric_part]
         return isinstance(stats, float)
 
-    def get_metric_score(self, train_stats, eval_stats) -> float:
-        if self._has_metric(train_stats, TEST):
-            logger.info(
-                "Returning metric score from training (test) statistics")
-            return self.get_metric_score_from_train_stats(train_stats, TEST)
-        elif self._has_eval_metric(eval_stats):
-            logger.info("Returning metric score from eval statistics. "
-                        "If skip_save_model is True, eval statistics "
-                        "are calculated using the model at the last epoch "
-                        "rather than the model at the epoch with "
-                        "best validation performance")
-            return self.get_metric_score_from_eval_stats(eval_stats)
-        elif self._has_metric(train_stats, VALIDATION):
+    def get_metric_score(self, train_stats) -> float:
+        if self._has_metric(train_stats, VALIDATION):
             logger.info(
                 "Returning metric score from training (validation) statistics")
             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
-        elif self._has_metric(train_stats, TRAINING):
-            logger.info("Returning metric score from training split statistics, "
-                        "as no test / validation / eval sets were given")
-            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
             raise RuntimeError(
-                "Unable to obtain metric score from missing training / eval statistics")
+                "Unable to obtain metric score from missing training (validation) statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         stats = eval_stats[self.output_feature]
@@ -148,15 +133,11 @@ class HyperoptExecutor(ABC):
                              f"a numerical value: {stats}")
         return stats
 
-    def get_metric_score_from_train_stats(self, train_stats, select_split=None, returned_split=None) -> float:
+    def get_metric_score_from_train_stats(self, train_stats, select_split=None) -> float:
         select_split = select_split or VALIDATION
-        returned_split = returned_split or self.split
-        if not self._has_metric(train_stats, returned_split):
-            returned_split = select_split
 
         # grab the results of the model with highest validation test performance
         train_valiset_stats = train_stats[select_split]
-        train_evalset_stats = train_stats[returned_split]
 
         validation_field_result = train_valiset_stats[self.output_feature]
         best_function = get_best_function(self.metric)
@@ -166,11 +147,8 @@ class HyperoptExecutor(ABC):
             enumerate(validation_field_result[self.metric]),
             key=lambda pair: pair[1]
         )
-        best_vali_metric_epoch_eval_metric = train_evalset_stats[
-            self.output_feature][self.metric][
-            epoch_best_vali_metric]
 
-        return best_vali_metric_epoch_eval_metric
+        return best_vali_metric
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
@@ -302,7 +280,7 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                metric_score = self.get_metric_score(train_stats, eval_stats)
+                metric_score = self.get_metric_score(train_stats)
                 metric_scores.append(metric_score)
 
                 trial_results.append(TrialResults(
@@ -349,7 +327,7 @@ class ParallelExecutor(HyperoptExecutor):
     def _run_experiment(self, hyperopt_dict: dict) -> TrialResults:
         parameters = hyperopt_dict["parameters"]
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
-        metric_score = self.get_metric_score(train_stats, eval_stats)
+        metric_score = self.get_metric_score(train_stats)
 
         return TrialResults(
             parameters=parameters,
@@ -365,7 +343,7 @@ class ParallelExecutor(HyperoptExecutor):
             hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
             hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
             train_stats, eval_stats = run_experiment(**hyperopt_dict)
-            metric_score = self.get_metric_score(train_stats, eval_stats)
+            metric_score = self.get_metric_score(train_stats)
         finally:
             self.queue.put(gpu_id_meta)
         return TrialResults(
@@ -719,7 +697,7 @@ class FiberExecutor(HyperoptExecutor):
 
             for stats, parameters in zip(stats_batch, sampled_parameters):
                 train_stats, eval_stats = stats
-                metric_score = self.get_metric_score(train_stats, eval_stats)
+                metric_score = self.get_metric_score(train_stats)
                 metric_scores.append(metric_score)
 
                 trial_results.append(TrialResults(
@@ -870,7 +848,7 @@ class RayTuneExecutor(HyperoptExecutor):
             }
 
             metric_score = tune_executor.get_metric_score(
-                train_stats, eval_stats=None)
+                train_stats)
             tune.report(
                 parameters=json.dumps(config, cls=NumpyEncoder),
                 metric_score=metric_score,
@@ -987,7 +965,7 @@ class RayTuneExecutor(HyperoptExecutor):
             raise RuntimeError("Experiment did not complete.")
         train_stats, eval_stats = stats.pop()
 
-        metric_score = self.get_metric_score(train_stats, eval_stats)
+        metric_score = self.get_metric_score(train_stats)
         tune.report(
             parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
