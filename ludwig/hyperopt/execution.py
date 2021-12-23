@@ -10,6 +10,7 @@ import shutil
 import threading
 import time
 import warnings
+import glob
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Optional, Tuple
@@ -103,29 +104,14 @@ class HyperoptExecutor(ABC):
             stats = stats[metric_part]
         return isinstance(stats, float)
 
-    def get_metric_score(self, train_stats, eval_stats) -> float:
-        if self._has_metric(train_stats, TEST):
-            logger.info(
-                "Returning metric score from training (test) statistics")
-            return self.get_metric_score_from_train_stats(train_stats, TEST)
-        elif self._has_eval_metric(eval_stats):
-            logger.info("Returning metric score from eval statistics. "
-                        "If skip_save_model is True, eval statistics "
-                        "are calculated using the model at the last epoch "
-                        "rather than the model at the epoch with "
-                        "best validation performance")
-            return self.get_metric_score_from_eval_stats(eval_stats)
-        elif self._has_metric(train_stats, VALIDATION):
+    def get_metric_score(self, train_stats) -> float:
+        if self._has_metric(train_stats, VALIDATION):
             logger.info(
                 "Returning metric score from training (validation) statistics")
             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
-        elif self._has_metric(train_stats, TRAINING):
-            logger.info("Returning metric score from training split statistics, "
-                        "as no test / validation / eval sets were given")
-            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
             raise RuntimeError(
-                "Unable to obtain metric score from missing training / eval statistics")
+                "Unable to obtain metric score from missing training (validation) statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         stats = eval_stats[self.output_feature]
@@ -147,15 +133,11 @@ class HyperoptExecutor(ABC):
                              f"a numerical value: {stats}")
         return stats
 
-    def get_metric_score_from_train_stats(self, train_stats, select_split=None, returned_split=None) -> float:
+    def get_metric_score_from_train_stats(self, train_stats, select_split=None) -> float:
         select_split = select_split or VALIDATION
-        returned_split = returned_split or self.split
-        if not self._has_metric(train_stats, returned_split):
-            returned_split = select_split
 
         # grab the results of the model with highest validation test performance
         train_valiset_stats = train_stats[select_split]
-        train_evalset_stats = train_stats[returned_split]
 
         validation_field_result = train_valiset_stats[self.output_feature]
         best_function = get_best_function(self.metric)
@@ -165,11 +147,8 @@ class HyperoptExecutor(ABC):
             enumerate(validation_field_result[self.metric]),
             key=lambda pair: pair[1]
         )
-        best_vali_metric_epoch_eval_metric = train_evalset_stats[
-            self.output_feature][self.metric][
-            epoch_best_vali_metric]
 
-        return best_vali_metric_epoch_eval_metric
+        return best_vali_metric
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
@@ -301,7 +280,7 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                metric_score = self.get_metric_score(train_stats, eval_stats)
+                metric_score = self.get_metric_score(train_stats)
                 metric_scores.append(metric_score)
 
                 trial_results.append(TrialResults(
@@ -348,7 +327,7 @@ class ParallelExecutor(HyperoptExecutor):
     def _run_experiment(self, hyperopt_dict: dict) -> TrialResults:
         parameters = hyperopt_dict["parameters"]
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
-        metric_score = self.get_metric_score(train_stats, eval_stats)
+        metric_score = self.get_metric_score(train_stats)
 
         return TrialResults(
             parameters=parameters,
@@ -364,7 +343,7 @@ class ParallelExecutor(HyperoptExecutor):
             hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
             hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
             train_stats, eval_stats = run_experiment(**hyperopt_dict)
-            metric_score = self.get_metric_score(train_stats, eval_stats)
+            metric_score = self.get_metric_score(train_stats)
         finally:
             self.queue.put(gpu_id_meta)
         return TrialResults(
@@ -718,7 +697,7 @@ class FiberExecutor(HyperoptExecutor):
 
             for stats, parameters in zip(stats_batch, sampled_parameters):
                 train_stats, eval_stats = stats
-                metric_score = self.get_metric_score(train_stats, eval_stats)
+                metric_score = self.get_metric_score(train_stats)
                 metric_scores.append(metric_score)
 
                 trial_results.append(TrialResults(
@@ -802,6 +781,24 @@ class RayTuneExecutor(HyperoptExecutor):
             self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir))
         return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
 
+    # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
+    @staticmethod
+    def _remove_partial_checkpoints(trial_path: str):
+        marker_paths = glob.glob(
+            os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
+        for marker_path in marker_paths:
+            chkpt_dir = os.path.dirname(marker_path)
+            metadata_file = glob.glob(
+                os.path.join(glob.escape(chkpt_dir), "*.tune_metadata"))
+            # glob.glob: filenames starting with a dot are special cases
+            # that are not matched by '*' and '?' patterns.
+            metadata_file += glob.glob(
+                os.path.join(glob.escape(chkpt_dir), ".tune_metadata"))
+            metadata_file = list(set(metadata_file))  # avoid duplication
+            if len(metadata_file) < 1:
+                # Remove checkpoint marker on incomplete directory
+                os.remove(marker_path)
+
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
@@ -851,14 +848,13 @@ class RayTuneExecutor(HyperoptExecutor):
             }
 
             metric_score = tune_executor.get_metric_score(
-                train_stats, eval_stats=None)
+                train_stats)
             tune.report(
                 parameters=json.dumps(config, cls=NumpyEncoder),
                 metric_score=metric_score,
                 training_stats=json.dumps(
-                    train_stats[TRAINING], cls=NumpyEncoder),
-                eval_stats=json.dumps(
-                    train_stats[VALIDATION], cls=NumpyEncoder),
+                    train_stats, cls=NumpyEncoder),
+                eval_stats='{}',
                 trial_id=tune.get_trial_id(),
                 trial_dir=tune.get_trial_dir()
             )
@@ -969,7 +965,7 @@ class RayTuneExecutor(HyperoptExecutor):
             raise RuntimeError("Experiment did not complete.")
         train_stats, eval_stats = stats.pop()
 
-        metric_score = self.get_metric_score(train_stats, eval_stats)
+        metric_score = self.get_metric_score(train_stats)
         tune.report(
             parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
@@ -1151,25 +1147,80 @@ class RayTuneExecutor(HyperoptExecutor):
             callbacks=tune_callbacks,
         )
 
-        ordered_trials = analysis.results_df.sort_values(
-            "metric_score",
-            ascending=self.goal != MAXIMIZE
-        )
-
-        # Catch nans in edge case where the trial doesn't complete
-        temp_ordered_trials = []
-        for kwargs in ordered_trials.to_dict(orient="records"):
-            for key in ['parameters', 'training_stats', 'eval_stats']:
-                if isinstance(kwargs[key], float):
-                    kwargs[key] = {}
-            temp_ordered_trials.append(kwargs)
-
-        ordered_trials = [
-            TrialResults.from_dict(
-                load_json_values(kwargs)
+        if "metric_score" in analysis.results_df.columns:
+            ordered_trials = analysis.results_df.sort_values(
+                "metric_score",
+                ascending=self.goal != MAXIMIZE
             )
-            for kwargs in temp_ordered_trials
-        ]
+
+            # Catch nans in edge case where the trial doesn't complete
+            temp_ordered_trials = []
+            for kwargs in ordered_trials.to_dict(orient="records"):
+                for key in ['parameters', 'training_stats', 'eval_stats']:
+                    if isinstance(kwargs[key], float):
+                        kwargs[key] = {}
+                temp_ordered_trials.append(kwargs)
+
+            # Trials w/empty eval_stats fields & non-empty training_stats fields ran intermediate
+            # tune.report call(s) but were terminated before reporting eval_stats from post-train
+            # evaluation (e.g., trial stopped due to time budget or relatively poor performance.)
+            # For any such trials, run model evaluation for the best model in that trial & record
+            # results in ordered_trials which is returned & is persisted in hyperopt_statistics.json.
+            for trial in temp_ordered_trials:
+                if trial['eval_stats'] == '{}' and trial['training_stats'] != '{}':
+                    # Evaluate the best model on the eval_split, which is validation_set
+                    if validation_set is not None and validation_set.size > 0:
+                        trial_path = trial['trial_dir']
+                        self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
+                        best_model_path = analysis.get_best_checkpoint(trial_path.rstrip('/'))
+                        best_model = LudwigModel.load(
+                            os.path.join(best_model_path, 'model'),
+                            backend=backend,
+                            gpus=gpus,
+                            gpu_memory_limit=gpu_memory_limit,
+                            allow_parallel_threads=allow_parallel_threads,
+                        )
+                        if best_model.config[TRAINING]['eval_batch_size']:
+                            batch_size = best_model.config[TRAINING]['eval_batch_size']
+                        else:
+                            batch_size = best_model.config[TRAINING]['batch_size']
+                        try:
+                            eval_stats, _, _ = best_model.evaluate(
+                                dataset=validation_set,
+                                data_format=data_format,
+                                batch_size=batch_size,
+                                output_directory=trial_path,
+                                skip_save_unprocessed_output=skip_save_unprocessed_output,
+                                skip_save_predictions=skip_save_predictions,
+                                skip_save_eval_stats=skip_save_eval_stats,
+                                collect_predictions=False,
+                                collect_overall_stats=True,
+                                return_type='dict',
+                                debug=debug
+                            )
+                            trial['eval_stats'] = json.dumps(eval_stats, cls=NumpyEncoder)
+                        except NotImplementedError:
+                            logger.warning(
+                                "Skipping evaluation as the necessary methods are not "
+                                "supported. Full exception below:\n"
+                                f"{traceback.format_exc()}"
+                            )
+                    else:
+                        logger.warning(
+                            "Skipping evaluation as no validation set was provided"
+                        )
+
+            ordered_trials = [
+                TrialResults.from_dict(
+                    load_json_values(kwargs)
+                )
+                for kwargs in temp_ordered_trials
+            ]
+        else:
+            logger.warning(
+                "No trials reported results; check if time budget lower than epoch latency"
+            )
+            ordered_trials = []
 
         return RayTuneResults(
             ordered_trials=ordered_trials,
