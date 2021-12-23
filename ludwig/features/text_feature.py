@@ -238,13 +238,16 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            input_df[feature[COLUMN]].astype(str), metadata[feature[NAME]], preprocessing_parameters, backend
+            input_df[feature_config[COLUMN]].astype(str),
+            metadata[feature_config[NAME]],
+            preprocessing_parameters,
+            backend,
         )
-        proc_df[f"{feature[PROC_COLUMN]}_char"] = chars_data
-        proc_df[f"{feature[PROC_COLUMN]}_word"] = words_data
+        proc_df[f"{feature_config[PROC_COLUMN]}_char"] = chars_data
+        proc_df[f"{feature_config[PROC_COLUMN]}_word"] = words_data
         return proc_df
 
 

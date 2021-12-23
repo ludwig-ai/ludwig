@@ -175,7 +175,7 @@ class NumericalFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature,
+        feature_config,
         input_df,
         proc_df,
         metadata,
@@ -183,15 +183,15 @@ class NumericalFeatureMixin(BaseFeatureMixin):
         backend,
         skip_save_processed_input,
     ):
-        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(np.float32).values
+        proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]].astype(np.float32).values
 
         # normalize data as required
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get("normalization", None),
             numeric_transformation_registry,
-        )(**metadata[feature[NAME]])
+        )(**metadata[feature_config[NAME]])
 
-        proc_df[feature[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature[PROC_COLUMN]])
+        proc_df[feature_config[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature_config[PROC_COLUMN]])
 
         return proc_df
 

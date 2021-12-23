@@ -322,18 +322,18 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        set_default_value(feature["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
+        set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
 
         if "audio_feature" not in preprocessing_parameters:
             raise ValueError("audio_feature dictionary has to be present in preprocessing " "for audio.")
         if TYPE not in preprocessing_parameters["audio_feature"]:
             raise ValueError("type has to be present in audio_feature dictionary " "for audio.")
 
-        name = feature[NAME]
-        column = feature[COLUMN]
-        proc_column = feature[PROC_COLUMN]
+        name = feature_config[NAME]
+        column = feature_config[COLUMN]
+        proc_column = feature_config[PROC_COLUMN]
 
         src_path = None
         # this is not super nice, but works both and DFs and lists
@@ -345,7 +345,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError("Audio file paths must be absolute")
 
-        num_audio_utterances = len(input_df[feature[COLUMN]])
+        num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
         normalization_type = preprocessing_parameters["norm"]
 
@@ -357,9 +357,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if num_audio_utterances == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        if feature[PREPROCESSING]["in_memory"]:
+        if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
-                input_df[feature[NAME]],
+                input_df[feature_config[NAME]],
                 src_path,
                 audio_feature_dict,
                 feature_dim,
@@ -371,7 +371,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             )
             proc_df[proc_column] = audio_features
         else:
-            backend.check_lazy_load_supported(feature)
+            backend.check_lazy_load_supported(feature_config)
 
         return proc_df
 

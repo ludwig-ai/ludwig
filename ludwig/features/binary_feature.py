@@ -119,7 +119,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature: Dict[str, Any],
+        feature_config: Dict[str, Any],
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
         metadata: Dict[str, Any],
@@ -127,17 +127,17 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
     ) -> None:
-        column = input_df[feature[COLUMN]]
+        column = input_df[feature_config[COLUMN]]
 
         if column.dtype == object:
-            metadata = metadata[feature[NAME]]
+            metadata = metadata[feature_config[NAME]]
             if "str2bool" in metadata:
                 column = column.map(lambda x: metadata["str2bool"][x])
             else:
                 # No predefined mapping from string to bool, so compute it directly
                 column = column.map(strings_utils.str2bool)
 
-        proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
+        proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_).values
         return proc_df
 
 

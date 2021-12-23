@@ -304,25 +304,25 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         in_memory = preprocessing_parameters["in_memory"]
-        if PREPROCESSING in feature and "in_memory" in feature[PREPROCESSING]:
-            in_memory = feature[PREPROCESSING]["in_memory"]
+        if PREPROCESSING in feature_config and "in_memory" in feature_config[PREPROCESSING]:
+            in_memory = feature_config[PREPROCESSING]["in_memory"]
 
         num_processes = preprocessing_parameters["num_processes"]
-        if PREPROCESSING in feature and "num_processes" in feature[PREPROCESSING]:
-            num_processes = feature[PREPROCESSING]["num_processes"]
+        if PREPROCESSING in feature_config and "num_processes" in feature_config[PREPROCESSING]:
+            num_processes = feature_config[PREPROCESSING]["num_processes"]
 
         src_path = None
         if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
-        num_images = len(input_df[feature[COLUMN]])
+        num_images = len(input_df[feature_config[COLUMN]])
         if num_images == 0:
             raise ValueError("There are no images in the dataset provided.")
 
-        first_img_entry = next(iter(input_df[feature[COLUMN]]))
+        first_img_entry = next(iter(input_df[feature_config[COLUMN]]))
         logger.debug(f"Detected image feature type is {type(first_img_entry)}")
 
         if not isinstance(first_img_entry, str) and not isinstance(first_img_entry, torch.Tensor):
@@ -344,12 +344,12 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels,
             first_image,
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_img_entry, src_path, input_df[feature[COLUMN]]
+            preprocessing_parameters, first_img_entry, src_path, input_df[feature_config[COLUMN]]
         )
 
-        metadata[feature[NAME]][PREPROCESSING]["height"] = height
-        metadata[feature[NAME]][PREPROCESSING]["width"] = width
-        metadata[feature[NAME]][PREPROCESSING]["num_channels"] = num_channels
+        metadata[feature_config[NAME]][PREPROCESSING]["height"] = height
+        metadata[feature_config[NAME]][PREPROCESSING]["width"] = width
+        metadata[feature_config[NAME]][PREPROCESSING]["num_channels"] = num_channels
 
         read_image_and_resize = partial(
             ImageFeatureMixin._read_image_and_resize,
@@ -366,12 +366,12 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
-        backend.check_lazy_load_supported(feature)
+        backend.check_lazy_load_supported(feature_config)
 
         if in_memory or skip_save_processed_input:
             # Number of processes to run in parallel for preprocessing
-            metadata[feature[NAME]][PREPROCESSING]["num_processes"] = num_processes
-            metadata[feature[NAME]]["reshape"] = (num_channels, height, width)
+            metadata[feature_config[NAME]][PREPROCESSING]["num_processes"] = num_processes
+            metadata[feature_config[NAME]]["reshape"] = (num_channels, height, width)
 
             # Split the dataset into pools only if we have an explicit request to use
             # multiple processes. In case we have multiple input images use the
@@ -379,13 +379,13 @@ class ImageFeatureMixin(BaseFeatureMixin):
             if backend.supports_multiprocessing and (num_processes > 1 or num_images > 1):
                 all_img_entries = [
                     get_abs_path(src_path, img_entry) if isinstance(img_entry, str) else img_entry
-                    for img_entry in input_df[feature[COLUMN]]
+                    for img_entry in input_df[feature_config[COLUMN]]
                 ]
 
                 with Pool(num_processes) as pool:
                     logger.debug(f"Using {num_processes} processes for preprocessing images")
                     res = pool.map(read_image_and_resize, all_img_entries)
-                    proc_df[feature[PROC_COLUMN]] = [x if x is not None else default_image for x in res]
+                    proc_df[feature_config[PROC_COLUMN]] = [x if x is not None else default_image for x in res]
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -399,28 +399,28 @@ class ImageFeatureMixin(BaseFeatureMixin):
                         res_single = read_image_and_resize(img_store)
                     return res_single if res_single is not None else default_image
 
-                proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                    input_df[feature[COLUMN]], _get_processed_image
+                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
+                    input_df[feature_config[COLUMN]], _get_processed_image
                 )
         else:
 
             all_img_entries = [
                 get_abs_path(src_path, img_entry) if isinstance(img_entry, str) else img_entry
-                for img_entry in input_df[feature[COLUMN]]
+                for img_entry in input_df[feature_config[COLUMN]]
             ]
 
             data_fp = backend.cache.get_cache_path(metadata.get(SRC), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
-                    feature[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
+                    feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
                 )
                 for i, img_entry in enumerate(all_img_entries):
                     res = read_image_and_resize(img_entry)
                     image_dataset[i, :height, :width, :] = res if res is not None else default_image
                 h5_file.flush()
 
-            proc_df[feature[PROC_COLUMN]] = np.arange(num_images)
+            proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
         return proc_df
 
 

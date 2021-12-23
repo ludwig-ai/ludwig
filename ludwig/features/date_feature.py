@@ -98,7 +98,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         ]
 
     def add_feature_data(
-        feature: Dict[str, Any],
+        feature_config: Dict[str, Any],
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
         metadata: Dict[str, Any],
@@ -107,8 +107,8 @@ class DateFeatureMixin(BaseFeatureMixin):
         skip_save_processed_input: bool,
     ) -> None:
         datetime_format = preprocessing_parameters["datetime_format"]
-        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-            input_df[feature[COLUMN]],
+        proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
+            input_df[feature_config[COLUMN]],
             lambda x: np.array(
                 DateFeatureMixin.date_to_list(x, datetime_format, preprocessing_parameters), dtype=np.int16
             ),

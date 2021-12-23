@@ -81,7 +81,7 @@ class BaseFeatureMixin(ABC):
 
     @abstractstaticmethod
     def add_feature_data(
-        feature: Dict[str, Any],
+        feature_config: Dict[str, Any],
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
         metadata: Dict[str, Any],
@@ -92,7 +92,7 @@ class BaseFeatureMixin(ABC):
         """Runs preprocessing on the input_df and stores results in the proc_df and metadata dictionaries.
 
         Args:
-            feature: Feature configuration.
+            feature_config: Feature configuration.
             input_df: Pandas column of values.
             proc_df: Dict of processed columns of data. Feature data is added to this.
             metadata: Metadata returned by get_feature_meta(). Additional information may be added to this.
