@@ -73,7 +73,6 @@ def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
     assert kwargs.get("num_workers") == 1, kwargs
-    assert kwargs.get("resources_per_worker").get("CPU") == 2, kwargs
 
     # Train on Parquet
     model = train_with_backend(RAY_BACKEND_CONFIG, config, dataset=data_parquet, evaluate=False)
