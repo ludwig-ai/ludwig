@@ -6,6 +6,7 @@ import os
 import shutil
 import threading
 import time
+import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
