@@ -48,7 +48,7 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
-from ludwig.modules.optimization_modules import create_optimizer_with_clipper
+from ludwig.modules.optimization_modules import BaseOptimizer, create_optimizer_with_clipper, OptimizerDataclassField
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
@@ -99,7 +99,7 @@ class TrainerConfig:
     """Test thing."""
 
     """Test 2"""
-    optimizer: Dict = schema.OptimizerOptions(default={TYPE: "adam"})
+    optimizer: BaseOptimizer = OptimizerDataclassField(default={"type": "adam"})
     epochs: int = schema.PositiveInteger(default=100)
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
     regularization_type: Optional[str] = schema.StringOptions(
@@ -123,7 +123,7 @@ class TrainerConfig:
     reduce_learning_rate_eval_split: str = TRAINING
     increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
     increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
-    increase_batch_size_on_plateau_rate: float = schema.FloatRange(default=2.0, min=0.0)
+    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(default=2.0)
     increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)
     increase_batch_size_eval_metric: str = LOSS
     increase_batch_size_eval_split: str = TRAINING
@@ -135,7 +135,7 @@ class TrainerConfig:
     # TODO: Need some more logic here for validating against output features
     validation_field: str = COMBINED
     validation_metric: str = LOSS
-    learning_rate_warmup_epochs: float = schema.FloatRange(default=1.0, min=0.0)
+    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
 
     class Meta:
         unknown = INCLUDE
