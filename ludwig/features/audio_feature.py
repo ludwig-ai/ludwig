@@ -32,6 +32,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
+from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import (
     calculate_mean,
@@ -50,38 +51,44 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 logger = logging.getLogger(__name__)
 
 
-class AudioFeatureMixin:
-    type = AUDIO
+class AudioFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return AUDIO
 
-    preprocessing_defaults = {
-        "audio_file_length_limit_in_s": 7.5,
-        "missing_value_strategy": BACKFILL,
-        "in_memory": True,
-        "padding_value": 0,
-        "norm": None,
-        "audio_feature": {
-            TYPE: "raw",
-        },
-    }
-
-    preprocessing_schema = {
-        "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "in_memory": {"type": "boolean"},
-        "padding_value": {"type": "number", "minimum": 0},
-        "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
-        "audio_feature": {
-            "type": "object",
-            "properties": {
-                "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
-                "window_length_in_s": {"type": "number", "minimum": 0},
-                "window_shift_in_s": {"type": "number", "minimum": 0},
-                "num_fft_points": {"type": "number", "minimum": 0},
-                "window_type": {"type": "string"},
-                "num_filter_bands": {"type": "number", "minimum": 0},
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "audio_file_length_limit_in_s": 7.5,
+            "missing_value_strategy": BACKFILL,
+            "in_memory": True,
+            "padding_value": 0,
+            "norm": None,
+            "audio_feature": {
+                TYPE: "raw",
             },
-        },
-    }
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "in_memory": {"type": "boolean"},
+            "padding_value": {"type": "number", "minimum": 0},
+            "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
+            "audio_feature": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
+                    "window_length_in_s": {"type": "number", "minimum": 0},
+                    "window_shift_in_s": {"type": "number", "minimum": 0},
+                    "num_fft_points": {"type": "number", "minimum": 0},
+                    "window_type": {"type": "string"},
+                    "num_filter_bands": {"type": "number", "minimum": 0},
+                },
+            },
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -315,18 +322,18 @@ class AudioFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        set_default_value(feature["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
+        set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
 
         if "audio_feature" not in preprocessing_parameters:
             raise ValueError("audio_feature dictionary has to be present in preprocessing " "for audio.")
         if TYPE not in preprocessing_parameters["audio_feature"]:
             raise ValueError("type has to be present in audio_feature dictionary " "for audio.")
 
-        name = feature[NAME]
-        column = feature[COLUMN]
-        proc_column = feature[PROC_COLUMN]
+        name = feature_config[NAME]
+        column = feature_config[COLUMN]
+        proc_column = feature_config[PROC_COLUMN]
 
         src_path = None
         # this is not super nice, but works both and DFs and lists
@@ -338,7 +345,7 @@ class AudioFeatureMixin:
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError("Audio file paths must be absolute")
 
-        num_audio_utterances = len(input_df[feature[COLUMN]])
+        num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
         normalization_type = preprocessing_parameters["norm"]
 
@@ -350,9 +357,9 @@ class AudioFeatureMixin:
         if num_audio_utterances == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        if feature[PREPROCESSING]["in_memory"]:
+        if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
-                input_df[feature[NAME]],
+                input_df[feature_config[NAME]],
                 src_path,
                 audio_feature_dict,
                 feature_dim,
@@ -364,7 +371,7 @@ class AudioFeatureMixin:
             )
             proc_df[proc_column] = audio_features
         else:
-            backend.check_lazy_load_supported(feature)
+            backend.check_lazy_load_supported(feature_config)
 
         return proc_df
 

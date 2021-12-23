@@ -685,7 +685,7 @@ class TabTransformerCombiner(Combiner):
             vocab = [
                 i_f
                 for i_f in input_features
-                if input_features[i_f].type != NUMERICAL or input_features[i_f].type != BINARY
+                if input_features[i_f].type() != NUMERICAL or input_features[i_f].type() != BINARY
             ]
             if self.embed_input_feature_name == "add":
                 self.embed_i_f_name_layer = Embed(vocab, config.hidden_size, force_embedding_size=True)

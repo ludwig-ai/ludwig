@@ -43,7 +43,7 @@ default_preprocessing_parameters = {
     "stratify": default_preprocessing_stratify,
 }
 default_preprocessing_parameters.update(
-    {name: base_type.preprocessing_defaults for name, base_type in base_type_registry.items()}
+    {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
 )
 
 default_combiner_type = "concat"

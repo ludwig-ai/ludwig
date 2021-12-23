@@ -44,7 +44,7 @@ def test_norm():
     num_feature = numerical_feature()
 
     NumericalFeatureMixin.add_feature_data(
-        feature=num_feature,
+        feature_config=num_feature,
         input_df=data_df,
         proc_df=proc_df,
         metadata={num_feature[NAME]: feature_1_meta},
@@ -57,7 +57,7 @@ def test_norm():
     )
 
     NumericalFeatureMixin.add_feature_data(
-        feature=num_feature,
+        feature_config=num_feature,
         input_df=data_df,
         proc_df=proc_df,
         metadata={num_feature[NAME]: feature_2_meta},

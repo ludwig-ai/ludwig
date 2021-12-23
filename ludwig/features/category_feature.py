@@ -40,7 +40,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -50,22 +50,29 @@ from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 logger = logging.getLogger(__name__)
 
 
-class CategoryFeatureMixin:
-    type = CATEGORY
-    preprocessing_defaults = {
-        "most_common": 10000,
-        "lowercase": False,
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": UNKNOWN_SYMBOL,
-    }
+class CategoryFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return CATEGORY
 
-    preprocessing_schema = {
-        "most_common": {"type": "integer", "minimum": 0},
-        "lowercase": {"type": "boolean"},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "most_common": 10000,
+            "lowercase": False,
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": UNKNOWN_SYMBOL,
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "most_common": {"type": "integer", "minimum": 0},
+            "lowercase": {"type": "boolean"},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -96,11 +103,11 @@ class CategoryFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        proc_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
-            input_df[feature[COLUMN]].astype(str),
-            metadata[feature[NAME]],
+        proc_df[feature_config[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+            input_df[feature_config[COLUMN]].astype(str),
+            metadata[feature_config[NAME]],
         )
 
         return proc_df

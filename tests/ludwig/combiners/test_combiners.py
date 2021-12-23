@@ -42,11 +42,13 @@ NUM_FILTERS = 20
 # emulate Input Feature class.  Need to provide output_shape property to
 # mimic what happens during ECD.forward() processing.
 class PseudoInputFeature:
-    def __init__(self, feature_name, output_shape, type=None):
+    def __init__(self, feature_name, output_shape, feature_type=None):
         self.name = feature_name
         self._output_shape = output_shape
-        if type is not None:
-            self.type = type
+        self.feature_type = feature_type
+
+    def type(self):
+        return self.feature_type
 
     @property
     def output_shape(self):
@@ -82,7 +84,7 @@ def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
         encoder_outputs[feature_name] = {
             "encoder_output": torch.randn(feature_list[i][1], dtype=torch.float32, device=DEVICE)
         }
-        input_features[feature_name] = PseudoInputFeature(feature_name, feature_list[i][1], type=feature_list[i][0])
+        input_features[feature_name] = PseudoInputFeature(feature_name, feature_list[i][1], feature_list[i][0])
 
     return encoder_outputs, input_features
 

@@ -14,7 +14,7 @@
 # ==============================================================================
 import copy
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import Any, Dict, List, Optional
 
 import torch
@@ -35,6 +35,72 @@ from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
+
+
+class BaseFeatureMixin(ABC):
+    """Parent class for feature mixins.
+
+    Feature mixins support preprocessing functionality shared across input and output features.
+    """
+
+    @abstractstaticmethod
+    def type() -> str:
+        """Returns the type of feature this mixin supports."""
+        raise NotImplementedError
+
+    @abstractstaticmethod
+    def preprocessing_defaults() -> Dict[str, Any]:
+        """Returns dict of preprocessing defaults."""
+        raise NotImplementedError
+
+    @abstractstaticmethod
+    def preprocessing_schema() -> Dict[str, Any]:
+        """Returns schema for the preprocessing configuration."""
+        raise NotImplementedError
+
+    @abstractstaticmethod
+    def cast_column(column: DataFrame, backend) -> DataFrame:
+        """Returns a copy of the dataset column for the given feature, potentially after a type cast.
+
+        Args:
+            column: Pandas column of values.
+            backend: (Union[Backend, str]) Backend to use for feature data processing.
+        """
+        raise NotImplementedError
+
+    @abstractstaticmethod
+    def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
+        """Returns a dictionary of feature metadata.
+
+        Args:
+            column: Pandas column of values.
+            preprocessing_parameters: Preprocessing configuration for this feature.
+            backend: (Union[Backend, str]) Backend to use for feature data processing.
+        """
+        raise NotImplementedError
+
+    @abstractstaticmethod
+    def add_feature_data(
+        feature_config: Dict[str, Any],
+        input_df: DataFrame,
+        proc_df: Dict[str, DataFrame],
+        metadata: Dict[str, Any],
+        preprocessing_parameters: Dict[str, Any],
+        backend,  # Union[Backend, str]
+        skip_save_processed_input: bool,
+    ) -> None:
+        """Runs preprocessing on the input_df and stores results in the proc_df and metadata dictionaries.
+
+        Args:
+            feature_config: Feature configuration.
+            input_df: Pandas column of values.
+            proc_df: Dict of processed columns of data. Feature data is added to this.
+            metadata: Metadata returned by get_feature_meta(). Additional information may be added to this.
+            preprocessing_parameters: Preprocessing configuration for this feature.
+            backend: (Union[Backend, str]) Backend to use for feature data processing.
+            skip_save_processed_input: Whether to skip saving the processed input.
+        """
+        raise NotImplementedError
 
 
 class BaseFeature:
@@ -59,8 +125,6 @@ class BaseFeature:
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
         self.proc_column = feature[PROC_COLUMN]
-
-        self.type = None
 
     def overwrite_defaults(self, feature):
         attributes = set(self.__dict__.keys())
@@ -95,7 +159,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_encoder(self, encoder_parameters):
-        return get_encoder_cls(self.type, self.encoder)(**encoder_parameters)
+        return get_encoder_cls(self.type(), self.encoder)(**encoder_parameters)
 
 
 class OutputFeature(BaseFeature, LudwigModule, ABC):
@@ -188,7 +252,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             decoder = decoder_parameters["decoder"]
         else:
             decoder = self.decoder
-        return get_decoder_cls(self.type, decoder)(**decoder_parameters_copy)
+        return get_decoder_cls(self.type(), decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)
@@ -202,8 +266,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_function = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
@@ -211,7 +275,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             LOSS: self.eval_loss_function,
             **{
                 name: cls(**self.loss_kwargs(), **self.metric_kwargs())
-                for name, cls in get_metric_classes(self.type).items()
+                for name, cls in get_metric_classes(self.type()).items()
                 if cls.can_report(self)
             },
         }
@@ -246,13 +310,21 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         raise NotImplementedError("OutputFeature is missing predictions() implementation.")
 
-    def loss_kwargs(self):
+    def loss_kwargs(self) -> Dict[str, Any]:
+        """Returns arguments that are used to instantiate an instance of the loss class."""
         return {}
 
-    def metric_kwargs(self):
+    def metric_kwargs(self) -> Dict[str, Any]:
+        """Returns arguments that are used to instantiate an instance of each metric class."""
         return {}
 
-    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
+    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]) -> None:
+        """Updates metrics with the given targets and predictions.
+
+        Args:
+            targets: Tensor with target values for this output feature.
+            predictions: Dict of tensors returned by predictions().
+        """
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
@@ -341,12 +413,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def postprocess_predictions(
         self,
-        result,
-        metadata,
-        output_directory,
+        result: Dict[str, Tensor],
+        metadata: Dict[str, Any],
+        output_directory: str,
         backend,
     ):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
