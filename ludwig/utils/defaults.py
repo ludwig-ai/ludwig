@@ -207,7 +207,7 @@ def _merge_hyperopt_with_training(config: dict) -> None:
         )
     elif max_t is not None:
         if time_attr == "time_total_s":
-            training["epochs"] = sys.maxsize # essentially continue training until stopped
+            training["epochs"] = sys.maxsize  # essentially continue training until stopped
         else:
             training["epochs"] = max_t
     elif epochs is not None:

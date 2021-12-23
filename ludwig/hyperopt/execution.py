@@ -347,16 +347,13 @@ class RayTuneExecutor(HyperoptExecutor):
     # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
     def _remove_partial_checkpoints(trial_path: str):
-        marker_paths = glob.glob(
-            os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
+        marker_paths = glob.glob(os.path.join(glob.escape(trial_path), "checkpoint_*/.is_checkpoint"))
         for marker_path in marker_paths:
             chkpt_dir = os.path.dirname(marker_path)
-            metadata_file = glob.glob(
-                os.path.join(glob.escape(chkpt_dir), "*.tune_metadata"))
+            metadata_file = glob.glob(os.path.join(glob.escape(chkpt_dir), "*.tune_metadata"))
             # glob.glob: filenames starting with a dot are special cases
             # that are not matched by '*' and '?' patterns.
-            metadata_file += glob.glob(
-                os.path.join(glob.escape(chkpt_dir), ".tune_metadata"))
+            metadata_file += glob.glob(os.path.join(glob.escape(chkpt_dir), ".tune_metadata"))
             metadata_file = list(set(metadata_file))  # avoid duplication
             if len(metadata_file) < 1:
                 # Remove checkpoint marker on incomplete directory
@@ -696,7 +693,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)
-    
+
             # Catch nans in edge case where the trial doesn't complete
             temp_ordered_trials = []
             for kwargs in ordered_trials.to_dict(orient="records"):
@@ -715,7 +712,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
+                        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
                         best_model_path = analysis.get_best_checkpoint(trial_path.rstrip("/"))
                         best_model = LudwigModel.load(
                             os.path.join(best_model_path, "model"),
@@ -740,7 +737,7 @@ class RayTuneExecutor(HyperoptExecutor):
                                 collect_predictions=False,
                                 collect_overall_stats=True,
                                 return_type="dict",
-                                debug=debug
+                                debug=debug,
                             )
                             trial["eval_stats"] = json.dumps(eval_stats, cls=NumpyEncoder)
                         except NotImplementedError:
@@ -750,10 +747,8 @@ class RayTuneExecutor(HyperoptExecutor):
                                 f"{traceback.format_exc()}"
                             )
                     else:
-                        logger.warning(
-                            "Skipping evaluation as no validation set was provided"
-                        )
-    
+                        logger.warning("Skipping evaluation as no validation set was provided")
+
             ordered_trials = [TrialResults.from_dict(load_json_values(kwargs)) for kwargs in temp_ordered_trials]
         else:
             logger.warning("No trials reported results; check if time budget lower than epoch latency")
