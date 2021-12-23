@@ -189,7 +189,7 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
 def test_hyperopt_executor_get_metric_score():
     executor = EXECUTORS[0]
     output_feature = "of_name"
-    split = "test"
+    split = "validation"
 
     train_stats = {
         "training": {
@@ -234,15 +234,10 @@ def test_hyperopt_executor_get_metric_score():
 
     metric = "loss"
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
-    assert score == 1.0876318
+    score = hyperopt_executor.get_metric_score(train_stats)
+    assert score == 0.30233705
 
     metric = "accuracy"
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
-    assert score == 0.7
-
-    metric = "overall_stats.kappa_score"
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
-    assert score == 0.6
+    score = hyperopt_executor.get_metric_score(train_stats)
+    assert score == 1.0
