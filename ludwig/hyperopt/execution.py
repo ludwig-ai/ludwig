@@ -1060,7 +1060,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 )
                 search_alg = None
             else:
-                search_alg_type = self.search_alg_dict.pop(TYPE)
+                search_alg_type = self.search_alg_dict[TYPE]
                 search_alg = tune.create_searcher(
                     search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
         else:
