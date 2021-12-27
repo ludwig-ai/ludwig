@@ -337,10 +337,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_fn in self.metric_functions.items():
-            # try:
-            metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
-            # except Exception as e:
-            # logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
+            try:
+                metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
+            except Exception as e:
+                logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
         return metric_vals
 
     def reset_metrics(self):
