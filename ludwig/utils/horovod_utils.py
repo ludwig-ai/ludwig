@@ -61,7 +61,7 @@ def return_first(fn):
     return wrapped
 
 
-def gather_all_tensors(self, result: torch.Tensor, group: Optional[Any] = None) -> List[torch.Tensor]:
+def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> List[torch.Tensor]:
     """Function to gather all tensors from several processes onto a list that is broadcast to all processes.
 
     Works on tensors that have the same number of dimensions, but where each dimension may differ. In this case
@@ -76,15 +76,30 @@ def gather_all_tensors(self, result: torch.Tensor, group: Optional[Any] = None) 
     if group is not None:
         raise ValueError("Horovod does not support allgather using a subcommunicator at this time. " "Unset `group`.")
 
-    if _HVD is None or not _HVD.is_initialized:
+    if _HVD is None or not _HVD.is_initialized():
         return [result]
 
     if len(result.shape) == 0:
         # Convert scalars to single dimension tensors
         result = result.reshape(1)
 
+    is_bool = False
+    if result.dtype == torch.bool:
+        # need to convert to int due to Horovod limitation
+        result = result.int()
+        is_bool = True
+
     # sync and gather all
     _HVD.join()
     gathered = _HVD.allgather(result)
     gathered_result = list(gathered.split(1, dim=0))
+
+    if is_bool:
+        # convert back if needed
+        gathered_result = [t.bool() for t in gathered_result]
+
     return gathered_result
+
+
+def is_distributed_available() -> bool:
+    return _HVD is not None and _HVD.is_initialized()

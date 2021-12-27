@@ -13,7 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from contextlib import contextmanager
+from typing import Any, Callable, Generator, Optional
 
 import torch
 import torchmetrics.functional as metrics_F
@@ -23,6 +24,7 @@ from torchmetrics import AUROC, IoU, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics import R2Score as _R2Score
+from torchmetrics.metric import jit_distributed_available
 
 from ludwig.constants import (
     ACCURACY,
@@ -57,13 +59,13 @@ from ludwig.modules.loss_modules import (
     SoftmaxCrossEntropyLoss,
 )
 from ludwig.modules.metric_registry import metric_registry, register_metric
-from ludwig.utils.horovod_utils import gather_all_tensors
+from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
 
 
-class LudwigMetric(ABC):
+class LudwigMetric(Metric, ABC):
     @classmethod
     def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return True
@@ -81,6 +83,27 @@ class LudwigMetric(ABC):
         For example: PREDICTIONS would be used for accuracy metrics while LOGITS would be used for loss metrics.
         """
         raise NotImplementedError()
+
+    @contextmanager
+    def sync_context(
+        self,
+        dist_sync_fn: Optional[Callable] = None,
+        process_group: Optional[Any] = None,
+        should_sync: bool = True,
+        should_unsync: bool = True,
+        distributed_available: Optional[Callable] = jit_distributed_available,
+    ) -> Generator:
+        """Override the beahvior of this in the base class to support Horovod."""
+        self.sync(
+            dist_sync_fn=gather_all_tensors,
+            process_group=process_group,
+            should_sync=should_sync,
+            distributed_available=is_distributed_available,
+        )
+
+        yield
+
+        self.unsync(should_unsync=self._is_synced and should_unsync)
 
 
 @register_metric(ROOT_MEAN_SQUARED_ERROR, [NUMERICAL])
@@ -125,12 +148,12 @@ class ROCAUCMetric(AUROC, LudwigMetric):
         return PROBABILITIES
 
 
-class MeanMetric(Metric, LudwigMetric):
+class MeanMetric(LudwigMetric):
     """Abstract class for computing mean of metrics."""
 
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
-        self.avg = _MeanMetric(dist_sync_fn=gather_all_tensors)
+        self.avg = _MeanMetric()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         self.avg.update(self.get_current_value(preds, target))
@@ -182,7 +205,7 @@ class R2Score(_R2Score, LudwigMetric):
 @register_metric(LOSS, [])
 class LossMetric(MeanMetric, ABC):
     def __init__(self):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__()
 
     @abstractmethod
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:

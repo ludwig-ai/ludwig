@@ -83,9 +83,9 @@ def get_trainer_kwargs(use_gpu=None):
     else:
         # Enforce one worker per node by requesting half the CPUs on the node
         # TODO: use placement groups
-        resources = [node["Resources"] for node in ray.state.nodes()]
-        min_cpus = min(r["CPU"] for r in resources)
-        num_workers = len(resources)
+        node_resources = [node["Resources"] for node in ray.state.nodes()]
+        min_cpus = min(r["CPU"] for r in node_resources)
+        num_workers = len(node_resources)
         resources_per_worker = {"CPU": min(min_cpus / 2 + 1, min_cpus)}
 
     return dict(
