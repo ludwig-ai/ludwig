@@ -611,7 +611,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 logger.warning("WARNING: Kindly set type param for search_alg " "to utilize Tune's Search Algorithms.")
                 search_alg = None
             else:
-                search_alg_type = self.search_alg_dict.pop(TYPE)
+                search_alg_type = self.search_alg_dict[TYPE]
                 search_alg = tune.create_searcher(search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
         else:
             search_alg = None
