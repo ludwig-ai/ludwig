@@ -18,7 +18,7 @@ from ludwig.datasets import titanic
 shutil.rmtree('./results', ignore_errors=True)
 
 # Download and prepare the dataset
-training_set, _, _ = titanic.load(split=True)
+training_set, test_set, _ = titanic.load(split=True)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model1_config.yaml',
@@ -39,8 +39,3 @@ model = LudwigModel(config='./model1_config.yaml',
 print("contents of output directory:", output_directory)
 for item in os.listdir(output_directory):
     print("\t", item)
-
-
-
-
-

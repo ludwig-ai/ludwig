@@ -21,8 +21,6 @@ from contextlib import contextmanager
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset import create_dataset_manager
-from ludwig.models.predictor import Predictor
-from ludwig.models.trainer import Trainer
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
@@ -97,9 +95,11 @@ class LocalTrainingMixin:
         initialize_tensorflow(*args, **kwargs)
 
     def create_trainer(self, **kwargs):
+        from ludwig.models.trainer import Trainer
         return Trainer(**kwargs)
 
     def create_predictor(self, **kwargs):
+        from ludwig.models.predictor import Predictor
         return Predictor(**kwargs)
 
     def sync_model(self, model):
