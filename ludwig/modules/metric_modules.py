@@ -57,6 +57,7 @@ from ludwig.modules.loss_modules import (
     SoftmaxCrossEntropyLoss,
 )
 from ludwig.modules.metric_registry import metric_registry, register_metric
+from ludwig.utils.horovod_utils import gather_all_tensors
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
@@ -87,7 +88,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(squared=False, **kwargs)
+        super().__init__(squared=False, dist_sync_fn=gather_all_tensors, **kwargs)
 
     @classmethod
     def get_objective(cls):
@@ -101,7 +102,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
 @register_metric(ROC_AUC, [BINARY])
 class ROCAUCMetric(AUROC, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     """ Metric for area under ROC curve. """
 
@@ -128,8 +129,8 @@ class MeanMetric(Metric, LudwigMetric):
     """Abstract class for computing mean of metrics."""
 
     def __init__(self, **kwargs):
-        super().__init__()
-        self.avg = _MeanMetric()
+        super().__init__(dist_sync_fn=gather_all_tensors)
+        self.avg = _MeanMetric(dist_sync_fn=gather_all_tensors)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         self.avg.update(self.get_current_value(preds, target))
@@ -145,7 +146,7 @@ class MeanMetric(Metric, LudwigMetric):
 @register_metric(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMERICAL])
 class RMSPEMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     """ Root mean squared percentage error metric. """
 
@@ -167,7 +168,7 @@ class R2Score(_R2Score, LudwigMetric):
     """R-squared metric."""
 
     def __init__(self, num_outputs: int = 1, **kwargs):
-        super().__init__(num_outputs=num_outputs)
+        super().__init__(num_outputs=num_outputs, dist_sync_fn=gather_all_tensors)
 
     @classmethod
     def get_objective(cls):
@@ -180,6 +181,9 @@ class R2Score(_R2Score, LudwigMetric):
 
 @register_metric(LOSS, [])
 class LossMetric(MeanMetric, ABC):
+    def __init__(self):
+        super().__init__(dist_sync_fn=gather_all_tensors)
+
     @abstractmethod
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         raise NotImplementedError()
@@ -253,7 +257,7 @@ class SigmoidCrossEntropyMetric(LossMetric):
 @register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT])
 class TokenAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
@@ -275,7 +279,7 @@ class Accuracy(_Accuracy, LudwigMetric):
     """R-squared metric."""
 
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     @classmethod
     def get_objective(cls):
@@ -289,7 +293,7 @@ class Accuracy(_Accuracy, LudwigMetric):
 @register_metric(ACCURACY, [CATEGORY])
 class CategoryAccuracy(_Accuracy, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # make sure y_true is tf.int64
@@ -308,7 +312,7 @@ class CategoryAccuracy(_Accuracy, LudwigMetric):
 @register_metric(HITS_AT_K, [CATEGORY])
 class HitsAtKMetric(_Accuracy, LudwigMetric):
     def __init__(self, top_k: int = 3, **kwargs):
-        super().__init__(top_k=top_k)
+        super().__init__(top_k=top_k, dist_sync_fn=gather_all_tensors)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -329,7 +333,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMERICAL, VECTOR])
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -346,7 +350,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
 @register_metric(MEAN_SQUARED_ERROR, [NUMERICAL, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -363,7 +367,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 @register_metric(JACCARD, [SET])
 class JaccardMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__()
+        super().__init__(dist_sync_fn=gather_all_tensors)
         self.jaccard_metric = IoU(num_classes=2, reduction="sum")
         self.add_state(name="loss", default=[], dist_reduce_fx="mean")
 
