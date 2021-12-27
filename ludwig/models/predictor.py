@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.postprocessing import convert_to_dict
 from ludwig.globals import (
     is_progressbar_disabled,
     PREDICTIONS_PARQUET_FILE_NAME,
@@ -20,7 +21,7 @@ from ludwig.globals import (
     TEST_STATISTICS_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
+from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -283,12 +284,20 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
 
 def save_prediction_outputs(
     postprocessed_output,
+    output_features,
     output_directory,
     backend,
 ):
     postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
     postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME))
     save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
+    if not backend.df_engine.partitioned:
+        # csv can only be written out for unpartitioned df format (i.e., pandas)
+        postprocessed_dict = convert_to_dict(postprocessed_output, output_features)
+        csv_filename = os.path.join(output_directory, "{}_{}.csv")
+        for output_field, outputs in postprocessed_dict.items():
+            for output_type, values in outputs.items():
+                save_csv(csv_filename.format(output_field, output_type), values)
 
 
 def save_evaluation_stats(test_stats, output_directory):

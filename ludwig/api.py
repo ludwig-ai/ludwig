@@ -733,12 +733,14 @@ class LudwigModel:
                 skip_save_unprocessed_output=skip_save_unprocessed_output or not self.backend.is_coordinator(),
             )
             converted_postproc_predictions = convert_predictions(
-                postproc_predictions, self.model.output_features, self.training_set_metadata, return_type=return_type
+                postproc_predictions, self.model.output_features, return_type=return_type
             )
 
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
-                    save_prediction_outputs(postproc_predictions, output_directory, self.backend)
+                    save_prediction_outputs(
+                        postproc_predictions, self.model.output_features, output_directory, self.backend
+                    )
 
                     logger.info(f"Saved to: {output_directory}")
 
@@ -877,7 +879,9 @@ class LudwigModel:
                     collect_predictions and postproc_predictions is not None and not skip_save_predictions
                 )
                 if should_save_predictions:
-                    save_prediction_outputs(postproc_predictions, output_directory, self.backend)
+                    save_prediction_outputs(
+                        postproc_predictions, self.model.output_features, output_directory, self.backend
+                    )
 
                 print_evaluation_stats(eval_stats)
                 if not skip_save_eval_stats:
@@ -890,7 +894,6 @@ class LudwigModel:
                 postproc_predictions = convert_predictions(
                     postproc_predictions,
                     self.model.output_features,
-                    self.training_set_metadata,
                     return_type=return_type,
                 )
 
