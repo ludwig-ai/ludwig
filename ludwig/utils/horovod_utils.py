@@ -90,7 +90,6 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
         is_bool = True
 
     # sync and gather all
-    _HVD.join()
     gathered = _HVD.allgather(result)
     gathered_result = list(gathered.split(1, dim=0))
 
