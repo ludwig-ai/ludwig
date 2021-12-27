@@ -231,7 +231,6 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
     for predictions_path in predictions_paths:
         shapes_fname = replace_file_extension(predictions_path, 'shapes.json')
         column_shapes = load_json(shapes_fname)
-
         pred_df = pd.read_parquet(predictions_path)
         pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
 

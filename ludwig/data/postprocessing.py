@@ -71,7 +71,7 @@ def _save_as_numpy(predictions, output_directory, saved_keys):
             saved_keys.add(k)
 
 
-def convert_predictions(predictions, output_features, training_set_metadata,
+def convert_predictions(predictions, output_features,
                         return_type='dict'):
     convert_fn = get_from_registry(
         return_type,
@@ -80,14 +80,12 @@ def convert_predictions(predictions, output_features, training_set_metadata,
     return convert_fn(
         predictions,
         output_features,
-        training_set_metadata,
     )
 
 
 def convert_to_dict(
         predictions,
         output_features,
-        training_set_metadata,
 ):
     output = {}
     for of_name, output_feature in output_features.items():
@@ -110,7 +108,6 @@ def convert_to_dict(
 def convert_to_df(
         predictions,
         output_features,
-        training_set_metadata,
 ):
     return predictions
 

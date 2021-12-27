@@ -10,9 +10,10 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS, LAST_HIDDEN
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.postprocessing import convert_to_dict
 from ludwig.globals import is_progressbar_disabled
 from ludwig.models.ecd import ECD
-from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
+from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -349,6 +350,7 @@ def calculate_overall_stats(
 
 def save_prediction_outputs(
         postprocessed_output,
+        output_features,
         output_directory,
         backend,
 ):
@@ -362,6 +364,13 @@ def save_prediction_outputs(
         os.path.join(output_directory, 'predictions.shapes.json'),
         column_shapes
     )
+    if not backend.df_engine.partitioned:
+        # csv can only be written out for unpartitioned df format (i.e., pandas)
+        postprocessed_dict = convert_to_dict(postprocessed_output, output_features)
+        csv_filename = os.path.join(output_directory, "{}_{}.csv")
+        for output_field, outputs in postprocessed_dict.items():
+            for output_type, values in outputs.items():
+                save_csv(csv_filename.format(output_field, output_type), values)
 
 
 def save_evaluation_stats(test_stats, output_directory):
