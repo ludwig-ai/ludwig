@@ -23,7 +23,6 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
-from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -198,7 +197,6 @@ class Predictor(BasePredictor):
                 predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
         metrics = self.model.get_metrics()
-        metrics = self.merge_workers_metrics(metrics)
         self.model.reset_metrics()
 
         return metrics, from_numpy_dataset(predictions)
@@ -233,18 +231,6 @@ class Predictor(BasePredictor):
             progress_bar.close()
 
         return collected_tensors
-
-    def merge_workers_metrics(self, metrics):
-        if not self._horovod:
-            return metrics
-
-        # gather outputs from all workers
-        all_workers_output_metrics = self._horovod.allgather_object(metrics)
-
-        # merge them into a single one
-        merged_output_metrics = sum_dicts(all_workers_output_metrics, dict_type=OrderedDict)
-
-        return merged_output_metrics
 
     def is_coordinator(self):
         if not self._horovod:

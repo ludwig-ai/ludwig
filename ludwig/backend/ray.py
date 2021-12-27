@@ -25,6 +25,7 @@ import pandas as pd
 import ray
 import torch
 from horovod.ray import RayExecutor
+from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
@@ -83,9 +84,9 @@ def get_trainer_kwargs(use_gpu=None):
     else:
         # Enforce one worker per node by requesting half the CPUs on the node
         # TODO: use placement groups
-        resources = [node["Resources"] for node in ray.state.nodes()]
-        min_cpus = min(r["CPU"] for r in resources)
-        num_workers = len(resources)
+        node_resources = [node["Resources"] for node in ray.state.nodes()]
+        min_cpus = min(r["CPU"] for r in node_resources)
+        num_workers = len(node_resources)
         resources_per_worker = {"CPU": min(min_cpus / 2 + 1, min_cpus)}
 
     return dict(
@@ -121,7 +122,7 @@ def _get_df_engine(processor):
 
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
-    model: "LudwigModel" = None,  # noqa: F821
+    model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -160,8 +161,14 @@ def train_fn(
             training_set_metadata,
         )
 
+    model = ray.get(model_ref)
     trainer = RemoteTrainer(model=model, **executable_kwargs)
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+
+    if results is not None:
+        # only return the model state dict back to the driver
+        trained_model, *args = results
+        results = (trained_model.state_dict(), *args)
 
     # TODO(shreya): Figure out GPU memory leak
     # TODO(shreya): Check if placing model off GPU explicitly makes a difference
@@ -198,9 +205,14 @@ class RayTrainerV2(BaseTrainer):
 
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
-            config={"executable_kwargs": executable_kwargs, "model": self.model, **kwargs},
+            config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
             dataset=dataset,
         )[0]
+
+        # load state dict back into the model
+        state_dict, *args = results
+        self.model.load_state_dict(state_dict)
+        results = (self.model, *args)
 
         return results
 
@@ -383,9 +395,11 @@ class RayPredictor(BasePredictor):
         *args,
         **kwargs,
     ):
+        model_ref = ray.put(model)
+
         class BatchInferModel:
             def __init__(self):
-                self.model = model
+                self.model = ray.get(model_ref)
                 self.output_columns = output_columns
                 self.features = features
                 self.training_set_metadata = training_set_metadata
