@@ -52,6 +52,7 @@ RAY_BACKEND_CONFIG = {
         "num_workers": 2,
         "resources_per_worker": {
             "CPU": 0.1,
+            "GPU": 0,
         },
     },
 }
