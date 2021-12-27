@@ -226,11 +226,7 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
     for predictions_path in predictions_paths:
         shapes_fname = replace_file_extension(predictions_path, "shapes.json")
         column_shapes = load_json(shapes_fname)
-        file_extension = figure_data_format_dataset(predictions_path)
-        if file_extension == _CSV_SUFFIX:
-            pred_df = pd.read_csv(predictions_path)
-        elif file_extension == _PARQUET_SUFFIX:
-            pred_df = pd.read_parquet(predictions_path)
+        pred_df = pd.read_parquet(predictions_path)
         pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
         for col in cols:
             # Convert categorical features back to numerical indices
