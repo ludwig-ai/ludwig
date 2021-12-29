@@ -137,7 +137,7 @@ def convert_input(form, input_features):
     for k, v in form.multi_items():
         if type(v) == UploadFile:
             # check if audio or image file
-            if input_features[k].type == AUDIO:
+            if input_features[k].type() == AUDIO:
                 new_input[k] = _write_file(v, files)
             else:
                 new_input[k] = _read_image_buffer(v)
@@ -160,7 +160,7 @@ def convert_batch_input(form, input_features):
         for i in range(len(row)):
             if row[i] in file_index:
                 feature_name = data["columns"][i]
-                if input_features[feature_name].type == AUDIO:
+                if input_features[feature_name].type() == AUDIO:
                     row[i] = _write_file(file_index[row[i]], files)
                 else:
                     row[i] = _read_image_buffer(file_index[row[i]])

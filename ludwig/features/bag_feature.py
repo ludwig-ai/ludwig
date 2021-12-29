@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, NAME, PROC_COLUMN, TIED
-from ludwig.features.base_feature import InputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
@@ -28,25 +28,31 @@ from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UN
 logger = logging.getLogger(__name__)
 
 
-class BagFeatureMixin:
-    type = BAG
+class BagFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return BAG
 
-    preprocessing_defaults = {
-        "tokenizer": "space",
-        "most_common": 10000,
-        "lowercase": False,
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": UNKNOWN_SYMBOL,
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "tokenizer": "space",
+            "most_common": 10000,
+            "lowercase": False,
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": UNKNOWN_SYMBOL,
+        }
 
-    preprocessing_schema = {
-        "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "most_common": {"type": "integer", "minimum": 0},
-        "lowercase": {"type": "boolean"},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "most_common": {"type": "integer", "minimum": 0},
+            "lowercase": {"type": "boolean"},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -83,10 +89,13 @@ class BagFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        proc_df[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
-            input_df[feature[COLUMN]].astype(str), metadata[feature[NAME]], preprocessing_parameters, backend
+        proc_df[feature_config[PROC_COLUMN]] = BagFeatureMixin.feature_data(
+            input_df[feature_config[COLUMN]].astype(str),
+            metadata[feature_config[NAME]],
+            preprocessing_parameters,
+            backend,
         )
         return proc_df
 

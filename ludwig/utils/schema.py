@@ -97,7 +97,7 @@ def get_input_preproc_conds(input_feature_types):
         feature_cls = input_type_registry[feature_type]
         preproc_spec = {
             "type": "object",
-            "properties": feature_cls.preprocessing_schema,
+            "properties": feature_cls.preprocessing_schema(),
             "additionalProperties": False,
         }
         preproc_cond = create_cond(
@@ -126,7 +126,7 @@ def get_output_preproc_conds(output_feature_types):
         feature_cls = output_type_registry[feature_type]
         preproc_spec = {
             "type": "object",
-            "properties": feature_cls.preprocessing_schema,
+            "properties": feature_cls.preprocessing_schema(),
             "additionalProperties": False,
         }
         preproc_cond = create_cond(

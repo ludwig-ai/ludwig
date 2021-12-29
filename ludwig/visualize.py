@@ -51,6 +51,8 @@ logger = logging.getLogger(__name__)
 
 _PREDICTIONS_SUFFIX = "_predictions"
 _PROBABILITIES_SUFFIX = "_probabilities"
+_CSV_SUFFIX = "csv"
+_PARQUET_SUFFIX = "parquet"
 
 
 def _vectorize_ground_truth(
@@ -224,10 +226,8 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
     for predictions_path in predictions_paths:
         shapes_fname = replace_file_extension(predictions_path, "shapes.json")
         column_shapes = load_json(shapes_fname)
-
         pred_df = pd.read_parquet(predictions_path)
         pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
-
         for col in cols:
             # Convert categorical features back to numerical indices
             if col.endswith(_PREDICTIONS_SUFFIX):

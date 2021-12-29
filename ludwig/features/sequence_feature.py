@@ -43,7 +43,7 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     TYPE,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
@@ -60,35 +60,41 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
-class SequenceFeatureMixin:
-    type = SEQUENCE
+class SequenceFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return SEQUENCE
 
-    preprocessing_defaults = {
-        "sequence_length_limit": 256,
-        "most_common": 20000,
-        "padding_symbol": PADDING_SYMBOL,
-        "unknown_symbol": UNKNOWN_SYMBOL,
-        "padding": "right",
-        "tokenizer": "space",
-        "lowercase": False,
-        "vocab_file": None,
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": UNKNOWN_SYMBOL,
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "sequence_length_limit": 256,
+            "most_common": 20000,
+            "padding_symbol": PADDING_SYMBOL,
+            "unknown_symbol": UNKNOWN_SYMBOL,
+            "padding": "right",
+            "tokenizer": "space",
+            "lowercase": False,
+            "vocab_file": None,
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": UNKNOWN_SYMBOL,
+        }
 
-    preprocessing_schema = {
-        "sequence_length_limit": {"type": "integer", "minimum": 0},
-        "most_common": {"type": "integer", "minimum": 0},
-        "padding_symbol": {"type": "string"},
-        "unknown_symbol": {"type": "string"},
-        "padding": {"type": "string", "enum": ["right", "left"]},
-        "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "lowercase": {"type": "boolean"},
-        "vocab_file": {"type": ["string", "null"]},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "sequence_length_limit": {"type": "integer", "minimum": 0},
+            "most_common": {"type": "integer", "minimum": 0},
+            "padding_symbol": {"type": "string"},
+            "unknown_symbol": {"type": "string"},
+            "padding": {"type": "string", "enum": ["right", "left"]},
+            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "lowercase": {"type": "boolean"},
+            "vocab_file": {"type": ["string", "null"]},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -134,12 +140,15 @@ class SequenceFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            input_df[feature[COLUMN]].astype(str), metadata[feature[NAME]], preprocessing_parameters, backend
+            input_df[feature_config[COLUMN]].astype(str),
+            metadata[feature_config[NAME]],
+            preprocessing_parameters,
+            backend,
         )
-        proc_df[feature[PROC_COLUMN]] = sequence_data
+        proc_df[feature_config[PROC_COLUMN]] = sequence_data
         return proc_df
 
 

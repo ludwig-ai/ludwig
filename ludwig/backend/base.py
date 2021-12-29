@@ -22,8 +22,6 @@ from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import Predictor
-from ludwig.models.trainer import Trainer
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
@@ -98,9 +96,13 @@ class LocalTrainingMixin:
         initialize_pytorch(*args, **kwargs)
 
     def create_trainer(self, **kwargs):
+        from ludwig.models.trainer import Trainer
+
         return Trainer(**kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
+        from ludwig.models.predictor import Predictor
+
         return Predictor(model, **kwargs)
 
     def sync_model(self, model):

@@ -52,20 +52,12 @@ def test_are_conventional_bools():
     assert not strings_utils.are_conventional_bools(["human", "bot"])
 
 
-def test_create_vocabulary():
+def test_create_vocabulary_chars():
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
-    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults
+    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
 
-    (
-        char_idx2str,
-        char_str2idx,
-        char_str2freq,
-        char_max_len,
-        char_pad_idx,
-        char_pad_symbol,
-        char_unk_symbol,
-    ) = strings_utils.create_vocabulary(
+    vocabulary_output = strings_utils.create_vocabulary(
         column,
         tokenizer_type="characters",
         num_most_frequent=preprocessing_parameters["char_most_common"],
@@ -75,17 +67,19 @@ def test_create_vocabulary():
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
 
-    assert len(char_idx2str) == 24
+    assert len(vocabulary_output[0]) == 24
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.START.value] == strings_utils.START_SYMBOL
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
-    (
-        word_idx2str,
-        word_str2idx,
-        word_str2freq,
-        word_max_len,
-        word_pad_idx,
-        word_pad_symbol,
-        word_unk_symbol,
-    ) = strings_utils.create_vocabulary(
+
+def test_create_vocabulary_word():
+    data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
+    column = data[0]
+    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+
+    vocabulary_output = strings_utils.create_vocabulary(
         column,
         tokenizer_type=preprocessing_parameters["word_tokenizer"],
         num_most_frequent=preprocessing_parameters["word_most_common"],
@@ -96,7 +90,50 @@ def test_create_vocabulary():
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
 
-    assert len(word_idx2str) == 19
+    assert len(vocabulary_output[0]) == 19
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+
+
+def test_create_vocabulary_no_special_symbols():
+    data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
+    column = data[0]
+    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+
+    vocabulary_output = strings_utils.create_vocabulary(
+        column,
+        tokenizer_type=preprocessing_parameters["word_tokenizer"],
+        num_most_frequent=preprocessing_parameters["word_most_common"],
+        lowercase=preprocessing_parameters["lowercase"],
+        vocab_file=preprocessing_parameters["word_vocab_file"],
+        unknown_symbol=preprocessing_parameters["unknown_symbol"],
+        padding_symbol=preprocessing_parameters["padding_symbol"],
+        pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
+        add_special_symbols=False,
+    )
+
+    assert len(vocabulary_output[0]) == 16
+    assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
+
+
+def test_create_vocabulary_from_hf():
+    data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
+    column = data[0]
+    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+
+    vocabulary_output = strings_utils.create_vocabulary(
+        column,
+        tokenizer_type="hf_tokenizer",
+        num_most_frequent=preprocessing_parameters["char_most_common"],
+        lowercase=preprocessing_parameters["lowercase"],
+        unknown_symbol=preprocessing_parameters["unknown_symbol"],
+        padding_symbol=preprocessing_parameters["padding_symbol"],
+        pretrained_model_name_or_path="albert-base-v2",
+    )
+
+    assert len(vocabulary_output[0]) == 30000
 
 
 def test_build_sequence_matrix():
@@ -110,9 +147,8 @@ def test_build_sequence_matrix():
         "c": 6,
     }
     sequences = pd.core.series.Series(["a b c", "c b a"])
-    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults
     sequence_matrix = strings_utils.build_sequence_matrix(
-        sequences, inverse_vocabulary, tokenizer_type=preprocessing_parameters["word_tokenizer"], length_limit=10
+        sequences, inverse_vocabulary, tokenizer_type="space", length_limit=10
     )
     assert not (
         sequence_matrix.tolist() - np.array([[1, 4, 5, 6, 0, 2, 2, 2, 2, 2], [1, 6, 5, 4, 0, 2, 2, 2, 2, 2]])
