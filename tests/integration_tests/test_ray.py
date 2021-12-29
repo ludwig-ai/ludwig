@@ -49,6 +49,7 @@ RAY_BACKEND_CONFIG = {
         "parallelism": 2,
     },
     "trainer": {
+        "use_gpu": False,
         "num_workers": 2,
         "resources_per_worker": {
             "CPU": 0.1,

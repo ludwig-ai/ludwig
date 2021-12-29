@@ -19,7 +19,6 @@ import shutil
 import sys
 
 import horovod.torch as hvd
-import numpy as np
 import torch
 
 import ludwig.utils.horovod_utils
