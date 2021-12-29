@@ -20,6 +20,7 @@ import sys
 
 import horovod.torch as hvd
 import numpy as np
+import torch
 
 import ludwig.utils.horovod_utils
 from ludwig.api import LudwigModel
@@ -60,7 +61,7 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         loaded_state = loaded_model.model.state_dict()
         bcast_state = hvd.broadcast_object(loaded_state)
         for loaded, bcast in zip(loaded_state.values(), bcast_state.values()):
-            assert np.allclose(loaded, bcast)
+            assert torch.allclose(loaded, bcast)
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
