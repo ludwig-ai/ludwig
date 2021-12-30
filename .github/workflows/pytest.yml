@@ -114,6 +114,147 @@ jobs:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
           path: pytest.xml
 
+  start-runner:
+    name: Start self-hosted EC2 runner
+    if: >
+      always() && needs.pytest.result != 'failure' && (
+      github.event_name == 'schedule' && github.repository == 'ludwig-ai/ludwig' ||
+      github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
+      github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork)
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2.2.0
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0759580dedc953d1f
+          ec2-instance-type: g4dn.xlarge
+          subnet-id: subnet-0983be43
+          security-group-id: sg-4cba0d08
+          aws-resource-tags: >
+            [
+              {"Key": "Name", "Value": "ludwig-github-${{ github.head_ref || github.sha }}"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
+              {"Key": "GitHubHeadRef", "Value": "${{ github.head_ref }}"},
+              {"Key": "GitHubSHA", "Value": "${{ github.sha }}"}
+            ]
+
+  pytest-gpu:
+    if: needs.start-runner.result != 'skipped'
+    needs: start-runner # required to start the main job when the runner is ready
+    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.7]
+        test-markers: ["not distributed", "distributed"]
+        include:
+          - python-version: 3.7
+            pytorch-version: 1.10.0
+    env:
+      PYTORCH: ${{ matrix.pytorch-version }}
+      MARKERS: ${{ matrix.test-markers }}
+
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, gpu
+
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 ccache build-essential g++-8 gcc-8
+
+      - name: Install CUDA drivers
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+          sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda-repo-ubuntu2004-11-5-local_11.5.1-495.29.05-1_amd64.deb
+          sudo dpkg -i cuda-repo-ubuntu2004-11-5-local_11.5.1-495.29.05-1_amd64.deb
+          sudo apt-key add /var/cuda-repo-ubuntu2004-11-5-local/7fa2af80.pub
+          sudo apt-get update
+          sudo apt-get -y install cuda
+        shell: bash
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
+
+      - name: Install dependencies
+        env:
+          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_MPI: 1
+          HOROVOD_WITHOUT_TENSORFLOW: 1
+          HOROVOD_WITHOUT_MXNET: 1
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          if [ $PYTORCH == "nightly" ]; then
+            cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
+            cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
+            pip install --pre torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
+            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+          else
+            pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+          fi
+          pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
+          pip install '.[test]'
+          pip list
+        shell: bash
+
+      - name: Reinstall Horovod if necessary
+        env:
+          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_MPI: 1
+          HOROVOD_WITHOUT_TENSORFLOW: 1
+          HOROVOD_WITHOUT_MXNET: 1
+        run: |
+          HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
+          if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
+            pip uninstall -y horovod
+            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+          fi
+          horovodrun --check-build
+        shell: bash
+
+      - name: Check CUDA is available
+        run: |
+          python -c "import torch; assert torch.cuda.is_available()"
+
+      - name: Tests
+        run: |
+          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+          path: pytest.xml
+
   event_file:
     name: "Event File"
     runs-on: ubuntu-latest
@@ -124,3 +265,29 @@ jobs:
         with:
           name: Event File
           path: ${{ github.event_path }}
+
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+
+    # required to stop the runner even if the error happened in the previous job
+    if: always() && needs.start-runner.result != 'skipped'
+    needs:
+      - start-runner # required to get output from the start-runner job
+      - pytest-gpu # required to wait when the main job is done
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2.2.0
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
