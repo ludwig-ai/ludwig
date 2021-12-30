@@ -773,9 +773,12 @@ class TabTransformerCombiner(Combiner):
             fc_residual=config.fc_residual,
         )
 
+        self._empty_hidden = torch.empty([1, 0])
+        self._embeddable_features_indices = torch.arange(0, len(self.embeddable_features))
+
         # Create empty tensor of shape [1, 0] to use as hidden in case there are no category or numeric/binary features.
-        self.register_buffer("empty_hidden", torch.empty([1, 0]))
-        self.register_buffer("embeddable_features_indices", torch.arange(0, len(self.embeddable_features)))
+        self.register_buffer("empty_hidden", self._empty_hidden)
+        self.register_buffer("embeddable_features_indices", self._embeddable_features_indices)
 
     @staticmethod
     def get_flatten_size(output_shape: torch.Size) -> torch.Size:
@@ -810,7 +813,9 @@ class TabTransformerCombiner(Combiner):
             hidden = torch.permute(hidden, (1, 0, 2))  # bs, num_eo, h
 
             if self.embed_input_feature_name:
-                i_f_names_idcs = torch.reshape(torch.arange(0, len(embeddable_encoder_outputs)), [-1, 1])
+                i_f_names_idcs = torch.reshape(
+                    torch.arange(0, len(embeddable_encoder_outputs), device=self.device), [-1, 1]
+                )
                 embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
                 embedded_i_f_names = torch.unsqueeze(embedded_i_f_names, dim=0)
                 embedded_i_f_names = torch.tile(embedded_i_f_names, [batch_size, 1, 1])
@@ -826,7 +831,7 @@ class TabTransformerCombiner(Combiner):
             hidden = self.reduce_sequence(hidden)
         else:
             # create empty tensor because there are no category features
-            hidden = torch.empty([batch_size, 0])
+            hidden = torch.empty([batch_size, 0], device=self.device)
 
         # ================ Concat Skipped ================
         if len(unembeddable_encoder_outputs) > 0:

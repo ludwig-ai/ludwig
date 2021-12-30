@@ -124,6 +124,10 @@ def test_torchscript(csv_filename, should_load_model):
         ##############################
         original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
         original_weights = deepcopy(list(ludwig_model.model.parameters()))
+        original_weights = [t.cpu() for t in original_weights]
+
+        # Move the model to CPU for tracing
+        ludwig_model.model.cpu()
 
         #################
         # save torchscript
@@ -138,6 +142,7 @@ def test_torchscript(csv_filename, should_load_model):
         ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
         loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
         loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
+        loaded_weights = [t.cpu() for t in loaded_weights]
 
         #####################################################
         # restore torchscript, obtain predictions and weights
@@ -171,6 +176,7 @@ def test_torchscript(csv_filename, should_load_model):
         restored_predictions = [training_set_metadata[of_name]["idx2str"][idx] for idx in restored_predictions]
 
         restored_weights = deepcopy(list(restored_model.parameters()))
+        restored_weights = [t.cpu() for t in restored_weights]
 
         #########
         # Cleanup

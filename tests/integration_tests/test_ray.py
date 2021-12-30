@@ -18,6 +18,7 @@ import tempfile
 
 import pytest
 import ray
+import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
@@ -48,9 +49,11 @@ RAY_BACKEND_CONFIG = {
         "parallelism": 2,
     },
     "trainer": {
+        "use_gpu": False,
         "num_workers": 2,
         "resources_per_worker": {
             "CPU": 0.1,
+            "GPU": 0,
         },
     },
 }
@@ -72,8 +75,14 @@ def ray_start(num_cpus=2):
 def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
-    assert kwargs.get("num_workers") == 1, kwargs
-    assert kwargs.get("resources_per_worker").get("CPU") == 2, kwargs
+    if torch.cuda.device_count() > 0:
+        assert kwargs.get("num_workers") == torch.cuda.device_count(), kwargs
+        assert kwargs.get("resources_per_worker") is None, kwargs
+        assert kwargs.get("use_gpu"), kwargs
+    else:
+        assert kwargs.get("num_workers") == 1, kwargs
+        assert kwargs.get("resources_per_worker").get("CPU") == 2, kwargs
+        assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
     model = train_with_backend(RAY_BACKEND_CONFIG, config, dataset=data_parquet, evaluate=False)

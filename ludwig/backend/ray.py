@@ -162,6 +162,9 @@ def train_fn(
         )
 
     model = ray.get(model_ref)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = model.to(device)
+
     trainer = RemoteTrainer(model=model, **executable_kwargs)
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
@@ -181,7 +184,7 @@ def train_fn(
 
 class RayTrainerV2(BaseTrainer):
     def __init__(self, model, trainer_kwargs, executable_kwargs):
-        self.model = model
+        self.model = model.cpu()
         self.executable_kwargs = executable_kwargs
         self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
         self.trainer.start()
@@ -328,8 +331,7 @@ class RayPredictor(BasePredictor):
         self.batch_size = predictor_kwargs.get("batch_size", 128)
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = model.to(self.device)
+        self.model = model.cpu()
 
     def batch_predict(self, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
@@ -399,7 +401,10 @@ class RayPredictor(BasePredictor):
 
         class BatchInferModel:
             def __init__(self):
-                self.model = ray.get(model_ref)
+                model = ray.get(model_ref)
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                self.model = model.to(device)
+
                 self.output_columns = output_columns
                 self.features = features
                 self.training_set_metadata = training_set_metadata
