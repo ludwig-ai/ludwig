@@ -25,7 +25,7 @@ from sklearn.model_selection import train_test_split
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
-         use_tabnet_split=False):
+         use_tabnet_split=True):
     dataset = ForestCover(cache_dir=cache_dir,
                           use_tabnet_split=use_tabnet_split)
     return dataset.load(split=split)
@@ -44,7 +44,7 @@ class ForestCover(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
     processed_dataset_path: str
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
-                 use_tabnet_split=False):
+                 use_tabnet_split=True):
         super().__init__(dataset_name="forest_cover", cache_dir=cache_dir)
         self.use_tabnet_split = use_tabnet_split
 
