@@ -98,7 +98,8 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config, **kwargs)
+        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config, **kwargs
+    )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
 
@@ -340,9 +341,9 @@ def cli_init_config(sys_argv):
         required=False,
     )
     parser.add_argument(
-        '--use_reference_config',
+        "--use_reference_config",
         type=bool,
-        help='refine hyperopt search space by setting first search point from stored reference model config',
+        help="refine hyperopt search space by setting first search point from stored reference model config",
         default=False,
         required=False,
     )

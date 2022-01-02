@@ -104,7 +104,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
                 min_dataset = dataset
 
     if min_dataset is not None:
-        logger.info('Transfer config from dataset {}'.format(min_dataset["name"]))
+        logger.info("Transfer config from dataset {}".format(min_dataset["name"]))
         min_dataset_config = min_dataset[CONFIG]
         hyperopt_params = base_config[HYPEROPT][PARAMETERS]
         point_to_evaluate = {}
@@ -126,17 +126,14 @@ def _get_ratio_numeric_input_features(input_features: Dict) -> float:
 # Update point_to_evaluate w/option value from dataset_config for options in hyperopt_params.
 # Also, add option value to associated categories list if it is not already included.
 def _add_option_to_evaluate(
-    point_to_evaluate: Dict,
-    dataset_config: Dict,
-    hyperopt_params: Dict,
-    option_type: str
+    point_to_evaluate: Dict, dataset_config: Dict, hyperopt_params: Dict, option_type: str
 ) -> Dict:
     options = dataset_config[option_type]
     for option in options.keys():
-        option_param = option_type+"."+option
+        option_param = option_type + "." + option
         if option_param in hyperopt_params.keys():
             option_val = options[option]
             point_to_evaluate[option_param] = option_val
-            if option_val not in hyperopt_params[option_param]['categories']:
-                bisect.insort(hyperopt_params[option_param]['categories'],option_val)
+            if option_val not in hyperopt_params[option_param]["categories"]:
+                bisect.insort(hyperopt_params[option_param]["categories"], option_val)
     return point_to_evaluate
