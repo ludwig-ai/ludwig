@@ -19,9 +19,9 @@ import yaml
 import copy
 
 from ludwig.api import LudwigModel
-from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, infer_type
+from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, _get_reference_configs, infer_type
 from ludwig.automl.auto_tune_config import memory_tune_config
-from ludwig.automl.utils import _ray_init, get_model_name
+from ludwig.automl.utils import _add_transfer_config, _ray_init, get_model_name
 from ludwig.constants import COMBINER, TYPE, HYPEROPT, NUMERICAL
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -74,6 +74,7 @@ def auto_train(
     tune_for_memory: bool = False,
     user_config: Dict = None,
     random_seed: int = default_random_seed,
+    use_reference_config: bool = False,
     **kwargs
 ) -> AutoTrainResults:
     """
@@ -97,12 +98,14 @@ def auto_train(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param use_reference_config: (bool) refine hyperopt search space by setting first
+                                 search point from reference model config, if any
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, **kwargs)
+        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config, **kwargs)
     return train_with_config(
         dataset,
         config,
@@ -119,6 +122,7 @@ def create_auto_config(
     tune_for_memory: bool,
     user_config: Dict = None,
     random_seed: int = default_random_seed,
+    use_reference_config: bool = False,
 ) -> dict:
     """
     Returns an auto-generated Ludwig config with the intent of training
@@ -137,13 +141,15 @@ def create_auto_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param use_reference_config: (bool) refine hyperopt search space by setting first
+                                 search point from reference model config, if any
 
     # Return
     :return: (dict) selected model configuration
     """
     default_configs = _create_default_config(dataset, target, time_limit_s, random_seed)
     model_config = _model_select(
-        dataset, default_configs, user_config
+        dataset, default_configs, user_config, use_reference_config
     )
     if tune_for_memory:
         if ray.is_initialized():
@@ -209,6 +215,7 @@ def _model_select(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     default_configs,
     user_config,
+    use_reference_config: bool,
 ):
     """
     Performs model selection based on dataset or user specified model.
@@ -258,6 +265,12 @@ def _model_select(
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
 
+    # add as initial trial in the automl search the hyperparameter settings from
+    # the best model for a similar dataset and matching model type, if any.
+    if use_reference_config:
+        ref_configs = _get_reference_configs()
+        base_config = _add_transfer_config(base_config, ref_configs)
+
     return base_config
 
 
@@ -289,6 +302,7 @@ def init_config(
     hyperopt: bool = False,
     output: str = None,
     random_seed: int = default_random_seed,
+    use_reference_config: bool = False,
     **kwargs
 ):
     config = create_auto_config(
@@ -297,6 +311,7 @@ def init_config(
         time_limit_s=time_limit_s,
         tune_for_memory=tune_for_memory,
         random_seed=random_seed,
+        use_reference_config=use_reference_config,
     )
 
     if HYPEROPT in config and not hyperopt:
@@ -353,6 +368,13 @@ def cli_init_config(sys_argv):
         '--random_seed',
         type=int,
         help='seed for random number generators used in hyperopt to improve repeatability',
+        required=False,
+    )
+    parser.add_argument(
+        '--use_reference_config',
+        type=bool,
+        help='refine hyperopt search space by setting first search point from stored reference model config',
+        default=False,
         required=False,
     )
     parser.add_argument(
