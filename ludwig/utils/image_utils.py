@@ -75,7 +75,7 @@ def get_image_from_path(
                 return f.read()
             return f
     else:
-        return bytes(img_entry, 'utf-8')
+        return bytes(img_entry, "utf-8")
 
 
 def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
