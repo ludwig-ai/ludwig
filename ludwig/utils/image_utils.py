@@ -69,10 +69,13 @@ def get_image_from_path(
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)
-    with open_file(img_entry, "rb") as f:
-        if ret_bytes:
-            return f.read()
-        return f
+    if os.path.exists(img_entry):
+        with open_file(img_entry, "rb") as f:
+            if ret_bytes:
+                return f.read()
+            return f
+    else:
+        return bytes(img_entry, 'utf-8')
 
 
 def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
