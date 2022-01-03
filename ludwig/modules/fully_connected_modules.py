@@ -78,7 +78,6 @@ class FCLayer(LudwigModule):
 
         # Dict for activation objects in pytorch?
         self.layers.append(activations[activation]())
-        self.activation_index = len(self.layers) - 1
 
         if dropout > 0:
             self.layers.append(Dropout(dropout))
@@ -86,7 +85,7 @@ class FCLayer(LudwigModule):
     def forward(self, inputs, mask=None):
         hidden = inputs
 
-        for i, layer in enumerate(self.layers):
+        for layer in self.layers:
             hidden = layer(hidden)
 
         return hidden
@@ -120,7 +119,7 @@ class FCStack(LudwigModule):
         else:
             self.layers = layers
 
-        if len(self.layers) > 0:
+        if len(self.layers) > 0 and "input_size" not in self.layers[0]:
             self.layers[0]["input_size"] = first_layer_input_size
         for i, layer in enumerate(self.layers):
             if i != 0:
