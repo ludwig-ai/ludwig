@@ -97,7 +97,7 @@ def test_kfold_cv_cli(features_to_use: FeaturesToUse):
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2},
         }
 
@@ -154,7 +154,7 @@ def test_kfold_cv_api_from_file():
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2},
         }
 
@@ -196,7 +196,7 @@ def test_kfold_cv_api_in_memory():
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2},
         }
 
@@ -254,7 +254,7 @@ def test_kfold_cv_dataset_formats(data_format):
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2},
         }
 

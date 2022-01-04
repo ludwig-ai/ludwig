@@ -1,40 +1,32 @@
 input_features:
-    -
-        name: Pclass
-        type: category
-    -
-        name: Sex
-        type: category
-    -
-        name: Age
-        type: numerical
-        preprocessing:
+    - name: Pclass
+      type: category
+    - name: Sex
+      type: category
+    - name: Age
+      type: numerical
+      preprocessing:
           missing_value_strategy: fill_with_mean
           normalization: zscore
-    -
-        name: SibSp
-        type: numerical
-        preprocessing:
-            missing_value_strategy: fill_with_mean
-            normalization: zscore
-    -
-        name: Parch
-        type: numerical
-        preprocessing:
-            missing_value_strategy: fill_with_mean
-            normalization: zscore
-    -
-        name: Fare
-        type: numerical
-        preprocessing:
+    - name: SibSp
+      type: numerical
+      preprocessing:
           missing_value_strategy: fill_with_mean
           normalization: zscore
-    -
-        name: Embarked
-        type: category
+    - name: Parch
+      type: numerical
+      preprocessing:
+          missing_value_strategy: fill_with_mean
+          normalization: zscore
+    - name: Fare
+      type: numerical
+      preprocessing:
+          missing_value_strategy: fill_with_mean
+          normalization: zscore
+    - name: Embarked
+      type: category
 
 output_features:
-    -
-        name: Survived
-        type: binary
-        fc_layers: [{fc_size: 50}]
+    - name: Survived
+      type: binary
+      fc_layers: [{ output_size: 50 }]

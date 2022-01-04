@@ -10,7 +10,6 @@ from ludwig.features.bag_feature import BagInputFeature
 BATCH_SIZE = 2
 SEQ_SIZE = 20
 BAG_W_SIZE = 256
-DEFAULT_FC_SIZE = 256
 EMBEDDING_SIZE = 5
 
 CHARS = ascii_uppercase + ascii_lowercase + digits

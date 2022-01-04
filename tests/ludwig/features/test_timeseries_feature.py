@@ -20,7 +20,7 @@ def timeseries_config():
         "max_len": MAX_LEN,
         "embedding_size": EMBEDDING_SIZE,
         "max_sequence_length": SEQ_SIZE,
-        "fc_size": 8,
+        "output_size": 8,
         "state_size": 8,
         "num_filters": 8,
         "hidden_size": 8,

@@ -25,7 +25,7 @@ def set_config():
         "embeddings_on_cpu": False,
         "fc_layers": None,
         "num_fc_layers": 0,
-        "fc_size": 0,
+        "output_size": 0,
         "use_bias": True,
         "weights_initializer": "uniform",
         "bias_initializer": "zeros",

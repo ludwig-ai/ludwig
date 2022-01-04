@@ -177,7 +177,7 @@ def sequence_feature(**kwargs):
         "max_len": 7,
         "encoder": "embed",
         "embedding_size": 8,
-        "fc_size": 8,
+        "output_size": 8,
         "state_size": 8,
         "num_filters": 8,
         "hidden_size": 8,
@@ -196,7 +196,7 @@ def image_feature(folder, **kwargs):
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         "resnet_size": 8,
         "destination_folder": folder,
-        "fc_size": 8,
+        "output_size": 8,
         "num_filters": 8,
     }
     feature.update(kwargs)
@@ -224,7 +224,7 @@ def audio_feature(folder, **kwargs):
             {"filter_size": 400, "pool_size": 16, "num_filters": 32, "regularize": "false"},
             {"filter_size": 40, "pool_size": 10, "num_filters": 64, "regularize": "false"},
         ],
-        "fc_size": 256,
+        "output_size": 256,
         "destination_folder": folder,
     }
     feature.update(kwargs)
@@ -304,7 +304,7 @@ def run_experiment(
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2},
         }
 
@@ -419,7 +419,7 @@ def run_api_experiment(input_features, output_features, data_csv):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
 

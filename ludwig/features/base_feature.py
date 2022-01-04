@@ -183,7 +183,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         self.fc_layers = None
         self.num_fc_layers = 0
-        self.fc_size = 256
+        self.output_size = 256
         self.use_bias = True
         self.weights_initializer = "xavier_uniform"
         self.bias_initializer = "zeros"
@@ -206,7 +206,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             first_layer_input_size=self.input_size,
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
-            default_fc_size=self.fc_size,
+            default_output_size=self.output_size,
             default_use_bias=self.use_bias,
             default_weights_initializer=self.weights_initializer,
             default_bias_initializer=self.bias_initializer,

@@ -36,7 +36,7 @@ def image_config():
         "pool_strides": None,
         "fc_layers": None,
         "num_fc_layers": 1,
-        "fc_size": 256,
+        "output_size": 256,
         "fc_use_bias": True,
         "fc_weights_initializer": "xavier_uniform",
         "fc_bias_initializer": "zeros",
