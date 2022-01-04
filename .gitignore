@@ -2,6 +2,7 @@
 # ludwig specific #
 ###################
 
+*.lock_preprocessing
 results/
 ludwig/results/
 results_*/

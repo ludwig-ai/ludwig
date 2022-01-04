@@ -18,6 +18,7 @@ import os
 import random
 import shutil
 import sys
+import tempfile
 import traceback
 import unittest
 import uuid
@@ -285,10 +286,10 @@ def vector_feature(**kwargs):
 
 
 def run_experiment(
-    input_features, output_features, skip_save_processed_input=True, config=None, backend=None, **kwargs
+    input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
-    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk after
-    running the experiment.
+    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk related to
+    running an experiment.
 
     :param input_features: list of input feature dictionaries
     :param output_features: list of output feature dictionaries
@@ -296,9 +297,10 @@ def run_experiment(
     arguments
     :return: None
     """
-    if input_features is not None and output_features is not None:
-        # This if is necessary so that the caller can call with
-        # config_file (and not config)
+    if input_features is None and output_features is None and config is None:
+        raise ValueError("Cannot run test experiment without features nor config.")
+
+    if config is None:
         config = {
             "input_features": input_features,
             "output_features": output_features,
@@ -306,25 +308,26 @@ def run_experiment(
             "training": {"epochs": 2},
         }
 
-    args = {
-        "config": config,
-        "backend": backend or LocalTestBackend(),
-        "skip_save_training_description": True,
-        "skip_save_training_statistics": True,
-        "skip_save_processed_input": skip_save_processed_input,
-        "skip_save_progress": True,
-        "skip_save_unprocessed_output": True,
-        "skip_save_model": True,
-        "skip_save_predictions": True,
-        "skip_save_eval_stats": True,
-        "skip_collect_predictions": True,
-        "skip_collect_overall_stats": True,
-        "skip_save_log": True,
-    }
-    args.update(kwargs)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        args = {
+            "config": config,
+            "backend": backend or LocalTestBackend(),
+            "skip_save_training_description": True,
+            "skip_save_training_statistics": True,
+            "skip_save_processed_input": skip_save_processed_input,
+            "skip_save_progress": True,
+            "skip_save_unprocessed_output": True,
+            "skip_save_model": True,
+            "skip_save_predictions": True,
+            "skip_save_eval_stats": True,
+            "skip_collect_predictions": True,
+            "skip_collect_overall_stats": True,
+            "skip_save_log": True,
+            "output_directory": tmpdir,
+        }
+        args.update(kwargs)
 
-    _, _, _, _, exp_dir_name = experiment_cli(**args)
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
+        experiment_cli(**args)
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):

@@ -15,6 +15,7 @@
 import logging
 import os
 import shutil
+import tempfile
 import uuid
 from collections import namedtuple
 
@@ -252,66 +253,64 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
 @pytest.mark.parametrize("image_source", ["file", "tensor"])
 @pytest.mark.parametrize("num_channels", [1, 3])
 def test_basic_image_feature(num_channels, image_source, in_memory, skip_save_processed_input, csv_filename):
-    # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Image Inputs
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    input_features = [
-        image_feature(
-            folder=image_dest_folder,
-            encoder="stacked_cnn",
-            preprocessing={
-                "in_memory": in_memory,
-                "height": 12,
-                "width": 12,
-                "num_channels": num_channels,
-                "num_processes": 5,
-            },
-            fc_size=16,
-            num_filters=8,
-        )
-    ]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder="stacked_cnn",
+                preprocessing={
+                    "in_memory": in_memory,
+                    "height": 12,
+                    "width": 12,
+                    "num_channels": num_channels,
+                    "num_processes": 5,
+                },
+                fc_size=16,
+                num_filters=8,
+            )
+        ]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+        rel_path = generate_data(input_features, output_features, csv_filename)
 
-    if image_source == "file":
-        # use images from file
-        run_experiment(
-            input_features, output_features, dataset=rel_path, skip_save_processed_input=skip_save_processed_input
-        )
-    else:
-        # import image from file and store in dataframe as tensors.
-        df = pd.read_csv(rel_path)
-        image_feature_name = input_features[0]["name"]
-        df[image_feature_name] = df[image_feature_name].apply(lambda x: torchvision.io.read_image(x))
+        if image_source == "file":
+            # use images from file
+            run_experiment(
+                input_features, output_features, dataset=rel_path, skip_save_processed_input=skip_save_processed_input
+            )
+        else:
+            # import image from file and store in dataframe as tensors.
+            df = pd.read_csv(rel_path)
+            image_feature_name = input_features[0]["name"]
+            df[image_feature_name] = df[image_feature_name].apply(lambda x: torchvision.io.read_image(x))
 
-        run_experiment(input_features, output_features, dataset=df, skip_save_processed_input=skip_save_processed_input)
-
-    # Delete the temporary data created
-    shutil.rmtree(image_dest_folder, ignore_errors=True)
+            run_experiment(
+                input_features, output_features, dataset=df, skip_save_processed_input=skip_save_processed_input
+            )
 
 
 def test_experiment_infer_image_metadata(csv_filename: str):
-    # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Image Inputs
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    # Resnet encoder
-    input_features = [
-        image_feature(folder=image_dest_folder, encoder="stacked_cnn", fc_size=16, num_filters=8),
-        text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="zscore"),
-    ]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum"), numerical_feature()]
+        # Resnet encoder
+        input_features = [
+            image_feature(folder=image_dest_folder, encoder="stacked_cnn", fc_size=16, num_filters=8),
+            text_feature(encoder="embed", min_len=1),
+            numerical_feature(normalization="zscore"),
+        ]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum"), numerical_feature()]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+        rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # remove image preprocessing section to force inferring image meta data
-    input_features[0].pop("preprocessing")
+        # remove image preprocessing section to force inferring image meta data
+        input_features[0].pop("preprocessing")
 
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-    # Delete the temporary data created
-    shutil.rmtree(image_dest_folder)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 ImageParams = namedtuple("ImageTestParams", "image_encoder in_memory_flag skip_save_processed_input")
@@ -326,124 +325,116 @@ ImageParams = namedtuple("ImageTestParams", "image_encoder in_memory_flag skip_s
     ],
 )
 def test_experiment_image_inputs(image_params: ImageParams, csv_filename: str):
-    # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Image Inputs
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    # Resnet encoder
-    input_features = [
-        image_feature(
-            folder=image_dest_folder,
-            encoder="resnet",
-            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            fc_size=16,
-            num_filters=8,
-        ),
-        text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="zscore"),
-    ]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum"), numerical_feature()]
+        # Resnet encoder
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder="resnet",
+                preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+                fc_size=16,
+                num_filters=8,
+            ),
+            text_feature(encoder="embed", min_len=1),
+            numerical_feature(normalization="zscore"),
+        ]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum"), numerical_feature()]
 
-    input_features[0]["encoder"] = image_params.image_encoder
-    input_features[0]["preprocessing"]["in_memory"] = image_params.in_memory_flag
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(
-        input_features,
-        output_features,
-        dataset=rel_path,
-        skip_save_processed_input=image_params.skip_save_processed_input,
-    )
+        input_features[0]["encoder"] = image_params.image_encoder
+        input_features[0]["preprocessing"]["in_memory"] = image_params.in_memory_flag
+        rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # Delete the temporary data created
-    shutil.rmtree(image_dest_folder)
-
-
-IMAGE_DATA_FORMATS_TO_TEST = ["csv", "df", "hdf5"]
+        run_experiment(
+            input_features,
+            output_features,
+            dataset=rel_path,
+            skip_save_processed_input=image_params.skip_save_processed_input,
+        )
 
 
+# Primary focus of this test is to determine if exceptions are raised for different data set formats and in_memory
+# setting.
 @pytest.mark.parametrize("test_in_memory", [True, False])
-@pytest.mark.parametrize("test_format", IMAGE_DATA_FORMATS_TO_TEST)
+@pytest.mark.parametrize("test_format", ["csv", "df", "hdf5"])
 @pytest.mark.parametrize("train_in_memory", [True, False])
-@pytest.mark.parametrize("train_format", IMAGE_DATA_FORMATS_TO_TEST)
+@pytest.mark.parametrize("train_format", ["csv", "df", "hdf5"])
 def test_experiment_image_dataset(train_format, train_in_memory, test_format, test_in_memory):
-    # primary focus of this test is to determine if exceptions are
-    # raised for different data set formats and in_memory setting
-    # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Image Inputs
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    input_features = [
-        image_feature(
-            folder=image_dest_folder,
-            encoder="stacked_cnn",
-            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            fc_size=16,
-            num_filters=8,
-        ),
-    ]
-    output_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
-    ]
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder="stacked_cnn",
+                preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+                fc_size=16,
+                num_filters=8,
+            ),
+        ]
+        output_features = [
+            category_feature(vocab_size=2, reduce_input="sum"),
+        ]
 
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
-        "preprocessing": {},
-        "training": {"epochs": 2},
-    }
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
+            "preprocessing": {},
+            "training": {"epochs": 2},
+        }
 
-    # create temporary name for train and test data sets
-    train_csv_filename = "train_" + uuid.uuid4().hex[:10].upper() + ".csv"
-    test_csv_filename = "test_" + uuid.uuid4().hex[:10].upper() + ".csv"
+        # create temporary name for train and test data sets
+        train_csv_filename = os.path.join(tmpdir, "train_" + uuid.uuid4().hex[:10].upper() + ".csv")
+        test_csv_filename = os.path.join(tmpdir, "test_" + uuid.uuid4().hex[:10].upper() + ".csv")
 
-    # setup training data format to test
-    train_data = generate_data(input_features, output_features, train_csv_filename)
-    config["input_features"][0]["preprocessing"]["in_memory"] = train_in_memory
-    training_set_metadata = None
+        # setup training data format to test
+        train_data = generate_data(input_features, output_features, train_csv_filename)
+        config["input_features"][0]["preprocessing"]["in_memory"] = train_in_memory
+        training_set_metadata = None
 
-    backend = LocalTestBackend()
-    if train_format == "hdf5":
-        # hdf5 format
-        train_set, _, _, training_set_metadata = preprocess_for_training(
-            config,
-            dataset=train_data,
+        backend = LocalTestBackend()
+        if train_format == "hdf5":
+            # hdf5 format
+            train_set, _, _, training_set_metadata = preprocess_for_training(
+                config,
+                dataset=train_data,
+                backend=backend,
+            )
+            train_dataset_to_use = train_set.data_hdf5_fp
+        else:
+            train_dataset_to_use = create_data_set_to_use(train_format, train_data)
+
+        # define Ludwig model
+        model = LudwigModel(
+            config=config,
             backend=backend,
         )
-        train_dataset_to_use = train_set.data_hdf5_fp
-    else:
-        train_dataset_to_use = create_data_set_to_use(train_format, train_data)
+        model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
-    # define Ludwig model
-    model = LudwigModel(
-        config=config,
-        backend=backend,
-    )
-    model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
+        model.config["input_features"][0]["preprocessing"]["in_memory"] = test_in_memory
 
-    model.config["input_features"][0]["preprocessing"]["in_memory"] = test_in_memory
+        # setup test data format to test
+        test_data = generate_data(input_features, output_features, test_csv_filename)
 
-    # setup test data format to test
-    test_data = generate_data(input_features, output_features, test_csv_filename)
+        if test_format == "hdf5":
+            # hdf5 format
+            # create hdf5 data set
+            _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
+                model.config,
+                dataset=test_data,
+                backend=backend,
+            )
+            test_dataset_to_use = test_set.data_hdf5_fp
+        else:
+            test_dataset_to_use = create_data_set_to_use(test_format, test_data)
 
-    if test_format == "hdf5":
-        # hdf5 format
-        # create hdf5 data set
-        _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-            model.config,
-            dataset=test_data,
-            backend=backend,
-        )
-        test_dataset_to_use = test_set.data_hdf5_fp
-    else:
-        test_dataset_to_use = create_data_set_to_use(test_format, test_data)
-
-    # run functions with the specified data format
-    model.evaluate(dataset=test_dataset_to_use)
-    model.predict(dataset=test_dataset_to_use)
-
-    # Delete the temporary data created
-    shutil.rmtree(image_dest_folder)
-    delete_temporary_data(train_csv_filename)
-    delete_temporary_data(test_csv_filename)
+        # run functions with the specified data format
+        model.evaluate(dataset=test_dataset_to_use)
+        model.predict(dataset=test_dataset_to_use)
 
 
 DATA_FORMATS_TO_TEST = [
@@ -509,17 +500,16 @@ def test_experiment_dataset_formats(data_format):
 
 
 def test_experiment_audio_inputs(csv_filename):
-    # Audio Inputs
-    audio_dest_folder = os.path.join(os.getcwd(), "generated_audio")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Audio Inputs
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
-    input_features = [audio_feature(folder=audio_dest_folder)]
-    output_features = [binary_feature()]
+        input_features = [audio_feature(folder=audio_dest_folder)]
+        output_features = [binary_feature()]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
+        rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # Delete the temporary data created
-    shutil.rmtree(audio_dest_folder)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_tied_weights(csv_filename):
@@ -603,14 +593,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
     # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence
     # feature should be rank 3.
     with pytest.raises(ValueError):
-        exp_dir_name = experiment_cli(
-            config,
-            skip_save_processed_input=False,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            dataset=rel_path,
-        )
-        shutil.rmtree(exp_dir_name, ignore_errors=True)
+        run_experiment(config=config, dataset=rel_path)
 
 
 @pytest.mark.parametrize("sequence_encoder", ENCODERS[1:])
@@ -638,14 +621,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
     # Generate test data
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
-    exp_dir_name = experiment_cli(
-        config,
-        skip_save_processed_input=False,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True,
-        dataset=rel_path,
-    )
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    run_experiment(config=config, dataset=rel_path)
 
 
 def test_experiment_model_resume(csv_filename):
@@ -656,20 +632,20 @@ def test_experiment_model_resume(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
-        "training": {"epochs": 2},
-    }
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
+            "training": {"epochs": 2},
+        }
 
-    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path)
-    logger.info(f"Experiment Directory: {output_dir}")
+        _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
 
-    experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
+        experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
 
-    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
-    shutil.rmtree(output_dir, ignore_errors=True)
+        predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
+        shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_experiment_various_feature_types(csv_filename):
@@ -685,32 +661,29 @@ def test_experiment_timeseries(csv_filename):
     input_features = [timeseries_feature()]
     output_features = [binary_feature()]
 
-    encoders2 = ["transformer"]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    for encoder in encoders2:
-        input_features[0]["encoder"] = encoder
-        run_experiment(input_features, output_features, dataset=rel_path)
+    input_features[0]["encoder"] = "transformer"
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_visual_question_answering(csv_filename):
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
-    input_features = [
-        image_feature(
-            folder=image_dest_folder,
-            encoder="resnet",
-            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
-            fc_size=8,
-            num_filters=8,
-        ),
-        text_feature(encoder="embed", min_len=1, level="word"),
-    ]
-    output_features = [sequence_feature(decoder="generator", cell_type="lstm")]
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder="resnet",
+                preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
+                fc_size=8,
+                num_filters=8,
+            ),
+            text_feature(encoder="embed", min_len=1, level="word"),
+        ]
+        output_features = [sequence_feature(decoder="generator", cell_type="lstm")]
+        rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # Delete the temporary data created
-    shutil.rmtree(image_dest_folder)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_image_resizing_num_channel_handling(csv_filename):
@@ -720,43 +693,41 @@ def test_image_resizing_num_channel_handling(csv_filename):
     :param csv_filename:
     :return:
     """
-    # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Image Inputs
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    # Resnet encoder
-    input_features = [
-        image_feature(
-            folder=image_dest_folder,
-            encoder="resnet",
-            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
-            fc_size=8,
-            num_filters=8,
-        ),
-        text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="minmax"),
-    ]
-    output_features = [binary_feature(), numerical_feature()]
-    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
+        # Resnet encoder
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder="resnet",
+                preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
+                fc_size=8,
+                num_filters=8,
+            ),
+            text_feature(encoder="embed", min_len=1),
+            numerical_feature(normalization="minmax"),
+        ]
+        output_features = [binary_feature(), numerical_feature()]
+        rel_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
 
-    df1 = read_csv(rel_path)
+        df1 = read_csv(rel_path)
 
-    input_features[0]["preprocessing"]["num_channels"] = 1
-    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
-    df2 = read_csv(rel_path)
+        input_features[0]["preprocessing"]["num_channels"] = 1
+        rel_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
+        df2 = read_csv(rel_path)
 
-    df = concatenate_df(df1, df2, None, LOCAL_BACKEND)
-    df.to_csv(rel_path, index=False)
+        df = concatenate_df(df1, df2, None, LOCAL_BACKEND)
+        df.to_csv(rel_path, index=False)
 
-    # Here the user specifies number of channels. Exception shouldn't be thrown
-    run_experiment(input_features, output_features, dataset=rel_path)
+        # Here the user specifies number of channels. Exception shouldn't be thrown
+        run_experiment(input_features, output_features, dataset=rel_path)
 
-    del input_features[0]["preprocessing"]["num_channels"]
+        del input_features[0]["preprocessing"]["num_channels"]
 
-    # User doesn't specify num channels, but num channels is inferred. Exception shouldn't be thrown
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-    # Delete the temporary data created
-    shutil.rmtree(image_dest_folder)
+        # User doesn't specify num channels, but num channels is inferred. Exception shouldn't be thrown
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize("encoder", ["wave", "embed"])

@@ -67,7 +67,7 @@ def experiment_cli(
     random_seed: int = default_random_seed,
     debug: bool = False,
     logging_level: int = logging.INFO,
-    **kwargs
+    **kwargs,
 ):
     """Trains a model on a dataset's training and validation splits and uses it to predict on the test split. It
     saves the trained model and the statistics of training and testing.
@@ -252,7 +252,7 @@ def kfold_cross_validate_cli(
     output_directory="results",
     random_seed=default_random_seed,
     skip_save_k_fold_split_indices=False,
-    **kwargs
+    **kwargs,
 ):
     """Wrapper function to performs k-fold cross validation.
 

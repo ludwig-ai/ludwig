@@ -178,12 +178,6 @@ def test_torchscript(csv_filename, should_load_model):
         restored_weights = deepcopy(list(restored_model.parameters()))
         restored_weights = [t.cpu() for t in restored_weights]
 
-        #########
-        # Cleanup
-        #########
-        shutil.rmtree(ludwigmodel_path, ignore_errors=True)
-        shutil.rmtree(torchscript_path, ignore_errors=True)
-
         ###############################################
         # Check if weights and predictions are the same
         ###############################################
