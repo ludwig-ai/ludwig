@@ -29,7 +29,7 @@ from torchvision.io import decode_image
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import is_http, open_file, upgrade_http
+from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def get_image_from_path(
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)
-    if os.path.exists(img_entry):
+    if path_exists(img_entry):
         with open_file(img_entry, "rb") as f:
             if ret_bytes:
                 return f.read()
