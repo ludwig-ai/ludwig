@@ -30,6 +30,7 @@ PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
 
 BASE_AUTOML_CONFIG = os.path.join(CONFIG_DIR, "base_automl_config.yaml")
+REFERENCE_CONFIGS = os.path.join(CONFIG_DIR, "reference_configs.yaml")
 
 combiner_defaults = {
     "concat": os.path.join(CONFIG_DIR, "combiner/concat_config.yaml"),
@@ -146,6 +147,12 @@ def _create_default_config(
         model_configs["combiner"][combiner_type] = combiner_config
 
     return model_configs
+
+
+# Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
+def _get_reference_configs() -> dict:
+    reference_configs = load_yaml(REFERENCE_CONFIGS)
+    return reference_configs
 
 
 def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
