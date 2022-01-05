@@ -16,7 +16,6 @@ import json
 import logging
 import os
 import sys
-import tempfile
 
 import numpy as np
 import pytest
@@ -61,11 +60,14 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
         "output_features": output_features,
         "combiner": {"type": "concat", "fc_size": 14},
         "training": {"epochs": 2},
-        "output_dir": output_directory,
     }
     model = LudwigModel(config, backend=LocalTestBackend())
     model.train(
-        dataset=data_csv, skip_save_processed_input=True, skip_save_progress=True, skip_save_unprocessed_output=True
+        dataset=data_csv,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        output_directory=output_directory,
     )
     model.predict(dataset=data_csv, output_directory=output_directory)
     return model
@@ -115,41 +117,104 @@ def convert_to_batch_form(data_df):
 
 
 def test_server_integration_with_images(csv_filename):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Image Inputs
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
+    # Image Inputs
+    tmpdir = os.path.dirname(csv_filename)
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-        # Resnet encoder
-        input_features = [
-            image_feature(
-                folder=image_dest_folder,
-                preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
-                fc_size=16,
-                num_filters=8,
-            ),
-            text_feature(encoder="embed", min_len=1),
-            numerical_feature(normalization="zscore"),
-        ]
-        output_features = [category_feature(vocab_size=4), numerical_feature()]
+    # Resnet encoder
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
+            fc_size=16,
+            num_filters=8,
+        ),
+        text_feature(encoder="embed", min_len=1),
+        numerical_feature(normalization="zscore"),
+    ]
+    output_features = [category_feature(vocab_size=4), numerical_feature()]
 
-        np.random.seed(123)  # reproducible synthetic data
-        rel_path = generate_data(input_features, output_features, csv_filename)
+    np.random.seed(123)  # reproducible synthetic data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-        model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
+    model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
 
-        app = server(model)
-        client = TestClient(app)
-        response = client.get("/")
-        assert response.status_code == 200
+    app = server(model)
+    client = TestClient(app)
+    response = client.get("/")
+    assert response.status_code == 200
 
-        response = client.post("/predict")
-        # expect the HTTP 400 error code for this situation
-        assert response.status_code == 400
-        assert response.json() == ALL_FEATURES_PRESENT_ERROR
+    response = client.post("/predict")
+    # expect the HTTP 400 error code for this situation
+    assert response.status_code == 400
+    assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
-        data_df = read_csv(rel_path)
+    data_df = read_csv(rel_path)
 
-        # One-off prediction
+    # One-off prediction
+    first_entry = data_df.T.to_dict()[0]
+    data, files = convert_to_form(first_entry)
+    server_response = client.post("/predict", data=data, files=files)
+    assert server_response.status_code == 200
+    server_response = server_response.json()
+
+    server_response_keys = sorted(list(server_response.keys()))
+    assert server_response_keys == sorted(output_keys_for(output_features))
+
+    model_output, _ = model.predict(dataset=[first_entry], data_format=dict)
+    model_output = model_output.to_dict("records")[0]
+    assert model_output == server_response
+
+    # Batch prediction
+    assert len(data_df) > 1
+    files = convert_to_batch_form(data_df)
+    server_response = client.post("/batch_predict", files=files)
+    assert server_response.status_code == 200
+    server_response = server_response.json()
+
+    server_response_keys = sorted(server_response["columns"])
+    assert server_response_keys == sorted(output_keys_for(output_features))
+    assert len(data_df) == len(server_response["data"])
+
+    model_output, _ = model.predict(dataset=data_df)
+    model_output = model_output.to_dict("split")
+    assert model_output == server_response
+
+
+@pytest.mark.parametrize("single_record", [False, True])
+def test_server_integration_with_audio(single_record, csv_filename):
+    tmpdir = os.path.dirname(csv_filename)
+    # Audio Inputs
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+
+    # Resnet encoder
+    input_features = [
+        audio_feature(
+            folder=audio_dest_folder,
+        ),
+        text_feature(encoder="embed", min_len=1),
+        numerical_feature(normalization="zscore"),
+    ]
+    output_features = [category_feature(vocab_size=4), numerical_feature()]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_dir=tmpdir)
+
+    app = server(model)
+    client = TestClient(app)
+    response = client.get("/")
+    assert response.status_code == 200
+
+    response = client.post("/predict")
+    # expect the HTTP 400 error code for this situation
+    assert response.status_code == 400
+    assert response.json() == ALL_FEATURES_PRESENT_ERROR
+
+    data_df = read_csv(rel_path)
+
+    if single_record:
+        # Single record prediction
         first_entry = data_df.T.to_dict()[0]
         data, files = convert_to_form(first_entry)
         server_response = client.post("/predict", data=data, files=files)
@@ -162,7 +227,7 @@ def test_server_integration_with_images(csv_filename):
         model_output, _ = model.predict(dataset=[first_entry], data_format=dict)
         model_output = model_output.to_dict("records")[0]
         assert model_output == server_response
-
+    else:
         # Batch prediction
         assert len(data_df) > 1
         files = convert_to_batch_form(data_df)
@@ -177,66 +242,3 @@ def test_server_integration_with_images(csv_filename):
         model_output, _ = model.predict(dataset=data_df)
         model_output = model_output.to_dict("split")
         assert model_output == server_response
-
-
-@pytest.mark.parametrize("single_record", [False, True])
-def test_server_integration_with_audio(single_record, csv_filename):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Audio Inputs
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-
-        # Resnet encoder
-        input_features = [
-            audio_feature(
-                folder=audio_dest_folder,
-            ),
-            text_feature(encoder="embed", min_len=1),
-            numerical_feature(normalization="zscore"),
-        ]
-        output_features = [category_feature(vocab_size=4), numerical_feature()]
-
-        rel_path = generate_data(input_features, output_features, csv_filename)
-
-        model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_dir=tmpdir)
-
-        app = server(model)
-        client = TestClient(app)
-        response = client.get("/")
-        assert response.status_code == 200
-
-        response = client.post("/predict")
-        # expect the HTTP 400 error code for this situation
-        assert response.status_code == 400
-        assert response.json() == ALL_FEATURES_PRESENT_ERROR
-
-        data_df = read_csv(rel_path)
-
-        if single_record:
-            # Single record prediction
-            first_entry = data_df.T.to_dict()[0]
-            data, files = convert_to_form(first_entry)
-            server_response = client.post("/predict", data=data, files=files)
-            assert server_response.status_code == 200
-            server_response = server_response.json()
-
-            server_response_keys = sorted(list(server_response.keys()))
-            assert server_response_keys == sorted(output_keys_for(output_features))
-
-            model_output, _ = model.predict(dataset=[first_entry], data_format=dict)
-            model_output = model_output.to_dict("records")[0]
-            assert model_output == server_response
-        else:
-            # Batch prediction
-            assert len(data_df) > 1
-            files = convert_to_batch_form(data_df)
-            server_response = client.post("/batch_predict", files=files)
-            assert server_response.status_code == 200
-            server_response = server_response.json()
-
-            server_response_keys = sorted(server_response["columns"])
-            assert server_response_keys == sorted(output_keys_for(output_features))
-            assert len(data_df) == len(server_response["data"])
-
-            model_output, _ = model.predict(dataset=data_df)
-            model_output = model_output.to_dict("split")
-            assert model_output == server_response
