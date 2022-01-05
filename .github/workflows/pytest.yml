@@ -221,6 +221,7 @@ jobs:
           else
             pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
           fi
+          pip install dulwich==0.20.26 # workaround for `/usr/bin/ld: cannot find -lpython3.7m`
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
           pip list
