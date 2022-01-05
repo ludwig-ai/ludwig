@@ -199,7 +199,7 @@ def test_server_integration_with_audio(single_record, csv_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_dir=tmpdir)
+    model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
 
     app = server(model)
     client = TestClient(app)
