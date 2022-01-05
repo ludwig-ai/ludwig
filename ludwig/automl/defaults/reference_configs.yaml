@@ -49,7 +49,7 @@ datasets:
        bn_momentum: 0.6  # m_B
        num_steps: 3  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 4096  # B_v 
+       bn_virtual_bs: 4096  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -473,7 +473,7 @@ datasets:
        bn_momentum: 0.98  # m_B
        num_steps: 10  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 4096  # B_v 
+       bn_virtual_bs: 4096  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -769,7 +769,7 @@ datasets:
        bn_momentum: 0.98  # m_B
        num_steps: 3  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 256  # B_v 
+       bn_virtual_bs: 256  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -1667,7 +1667,7 @@ datasets:
        bn_momentum: 0.98  # m_B
        num_steps: 10  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 2048  # B_v 
+       bn_virtual_bs: 2048  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -1691,7 +1691,7 @@ datasets:
    config:
      output_features:
        - name: y
-         type: numerical 
+         type: numerical
      input_features:
        - name: X0
          type: category
@@ -2453,7 +2453,7 @@ datasets:
        bn_momentum: 0.9  # m_B
        num_steps: 9  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 256  # B_v 
+       bn_virtual_bs: 256  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -2673,7 +2673,7 @@ datasets:
        bn_momentum: 0.8  # m_B
        num_steps: 3  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 512  # B_v 
+       bn_virtual_bs: 512  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -2727,7 +2727,7 @@ datasets:
        bn_momentum: 0.98  # m_B
        num_steps: 6  # N_steps
        relaxation_factor: 1.0  # gamma
-       bn_virtual_bs: 512  # B_v 
+       bn_virtual_bs: 512  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -2875,7 +2875,7 @@ datasets:
        bn_momentum: 0.6  # m_B
        num_steps: 5  # N_steps
        relaxation_factor: 1.2  # gamma
-       bn_virtual_bs: 1024  # B_v 
+       bn_virtual_bs: 1024  # B_v
      training:
        batch_size: 1024 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -3647,7 +3647,7 @@ datasets:
        bn_momentum: 0.8  # m_B
        num_steps: 7  # N_steps
        relaxation_factor: 1.2  # gamma
-       bn_virtual_bs: 256  # B_v 
+       bn_virtual_bs: 256  # B_v
      training:
        batch_size: 4096 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -4081,7 +4081,7 @@ datasets:
        bn_momentum: 0.6  # m_B
        num_steps: 3  # N_steps
        relaxation_factor: 2.0  # gamma
-       bn_virtual_bs: 256  # B_v 
+       bn_virtual_bs: 256  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
@@ -4157,12 +4157,12 @@ datasets:
        bn_momentum: 0.98  # m_B
        num_steps: 4  # N_steps
        relaxation_factor: 1.2  # gamma
-       bn_virtual_bs: 4096  # B_v 
+       bn_virtual_bs: 4096  # B_v
      training:
        batch_size: 256 # B
        eval_batch_size: 0 # 65536 131072 262144 524288
        epochs: 300
-       early_stop: 30 
+       early_stop: 30
        learning_rate: 0.005
        optimizer:
          type: adam
@@ -4201,7 +4201,7 @@ datasets:
        bn_momentum: 0.6  # m_B
        num_steps: 4  # N_steps
        relaxation_factor: 1.2  # gamma
-       bn_virtual_bs: 4096  # B_v 
+       bn_virtual_bs: 4096  # B_v
      training:
        batch_size: 8192 # B
        eval_batch_size: 0 # 65536 131072 262144 524288

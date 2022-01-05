@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +21,8 @@ import tensorflow as tf
 
 from ludwig.encoders import sequence_encoders
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.utils.registry import Registry, register
 
 logger = logging.getLogger(__name__)
 
@@ -37,41 +36,39 @@ class TextEncoder(Encoder, ABC):
         ENCODER_REGISTRY[name] = cls
 
 
-@register(name='bert')
+@register(name="bert")
 class BERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'bert-base-uncased',
+        "pretrained_model_name_or_path": "bert-base-uncased",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='bert-base-uncased',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="bert-base-uncased",
+        reduce_output="cls_pooled",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFBertModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFBertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFBertModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -79,47 +76,50 @@ class BERTEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
+        if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='gpt')
+@register(name="gpt")
 class GPTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'openai-gpt',
+        "pretrained_model_name_or_path": "openai-gpt",
     }
 
     def __init__(
-            self,
-            reduce_output='sum',
-            pretrained_model_name_or_path='openai-gpt',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        reduce_output="sum",
+        pretrained_model_name_or_path="openai-gpt",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFOpenAIGPTModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -134,49 +134,50 @@ class GPTEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='gpt2')
+@register(name="gpt2")
 class GPT2Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'gpt2',
+        "pretrained_model_name_or_path": "gpt2",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='gpt2',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="gpt2",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFGPT2Model
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFGPT2Model.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFGPT2Model.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -185,42 +186,45 @@ class GPT2Encoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
 # @register(name='transformer_xl')
 class TransformerXLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'transfo-xl-wt103',
+        "pretrained_model_name_or_path": "transfo-xl-wt103",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='transfo-xl-wt103',
-            reduce_output='sum',
-            trainable=True,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="transfo-xl-wt103",
+        reduce_output="sum",
+        trainable=True,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFTransfoXLModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -239,42 +243,40 @@ class TransformerXLEncoder(TextEncoder):
         hidden = transformer_outputs[0]
 
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='xlnet')
+@register(name="xlnet")
 class XLNetEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'xlnet-base-cased',
+        "pretrained_model_name_or_path": "xlnet-base-cased",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='xlnet-base-cased',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="xlnet-base-cased",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFXLNetModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFXLNetModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFXLNetModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -283,49 +285,50 @@ class XLNetEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='xlm')
+@register(name="xlm")
 class XLMEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'xlm-mlm-en-2048',
+        "pretrained_model_name_or_path": "xlm-mlm-en-2048",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='xlm-mlm-en-2048',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="xlm-mlm-en-2048",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFXLMModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFXLMModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFXLMModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -334,51 +337,52 @@ class XLMEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='roberta')
+@register(name="roberta")
 class RoBERTaEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'roberta-base',
+        "pretrained_model_name_or_path": "roberta-base",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='roberta-base',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="roberta-base",
+        reduce_output="cls_pooled",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFRobertaModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFRobertaModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFRobertaModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -386,46 +390,49 @@ class RoBERTaEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
+        if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='distilbert')
+@register(name="distilbert")
 class DistilBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'distilbert-base-uncased',
+        "pretrained_model_name_or_path": "distilbert-base-uncased",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='distilbert-base-uncased',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="distilbert-base-uncased",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFDistilBertModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -440,48 +447,45 @@ class DistilBERTEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {"input_ids": inputs, "attention_mask": mask}, training=training
+        )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='ctrl')
+@register(name="ctrl")
 class CTRLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'ctrl',
+        "pretrained_model_name_or_path": "ctrl",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='ctrl',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="ctrl",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFCTRLModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFCTRLModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFCTRLModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -490,43 +494,46 @@ class CTRLEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='camembert')
+@register(name="camembert")
 class CamemBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'jplu/tf-camembert-base',
+        "pretrained_model_name_or_path": "jplu/tf-camembert-base",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='jplu/tf-camembert-base',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="jplu/tf-camembert-base",
+        reduce_output="cls_pooled",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFCamembertModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -534,7 +541,7 @@ class CamemBERTEncoder(TextEncoder):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -542,54 +549,55 @@ class CamemBERTEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
+        if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='albert')
+@register(name="albert")
 class ALBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'albert-base-v2',
+        "pretrained_model_name_or_path": "albert-base-v2",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='albert-base-v2',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="albert-base-v2",
+        reduce_output="cls_pooled",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFAlbertModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFAlbertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFAlbertModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -597,52 +605,53 @@ class ALBERTEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
+        if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='t5')
+@register(name="t5")
 class T5Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 't5-small',
+        "pretrained_model_name_or_path": "t5-small",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='t5-small',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="t5-small",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFT5Model
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFT5Model.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFT5Model.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -659,41 +668,40 @@ class T5Encoder(TextEncoder):
         )
         hidden = transformer_outputs[0][:, 0:-1, :]  # [sent] + [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
-@register(name='mt5')
+
+@register(name="mt5")
 class MT5Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'google/mt5-small',
+        "pretrained_model_name_or_path": "google/mt5-small",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='google/mt5-small',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="google/mt5-small",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFMT5Model
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFMT5Model.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFMT5Model.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -710,36 +718,36 @@ class MT5Encoder(TextEncoder):
         )
         hidden = transformer_outputs[0][:, 0:-1, :]  # [sent] + [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='xlmroberta')
+@register(name="xlmroberta")
 class XLMRoBERTaEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'jplu/tf-xlm-roberta-base',
+        "pretrained_model_name_or_path": "jplu/tf-xlm-roberta-base",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='jplu/tf-xlm-roberta-base',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="jplu/tf-xlm-roberta-base",
+        reduce_output="cls_pooled",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFXLMRobertaModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -747,7 +755,7 @@ class XLMRoBERTaEncoder(TextEncoder):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -755,46 +763,49 @@ class XLMRoBERTaEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
+        if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='flaubert')
+@register(name="flaubert")
 class FlauBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'jplu/tf-flaubert-small-cased',
+        "pretrained_model_name_or_path": "jplu/tf-flaubert-small-cased",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='jplu/tf-flaubert-small-cased',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="jplu/tf-flaubert-small-cased",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFFlaubertModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -809,49 +820,50 @@ class FlauBERTEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            'input_ids': inputs,
-            'attention_mask': mask,
-            'token_type_ids': tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='electra')
+@register(name="electra")
 class ELECTRAEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'google/electra-small-discriminator',
+        "pretrained_model_name_or_path": "google/electra-small-discriminator",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='google/electra-small-discriminator',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="google/electra-small-discriminator",
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFElectraModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFElectraModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFElectraModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -860,43 +872,46 @@ class ELECTRAEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='longformer')
+@register(name="longformer")
 class LongformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'allenai/longformer-base-4096',
+        "pretrained_model_name_or_path": "allenai/longformer-base-4096",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path='allenai/longformer-base-4096',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path="allenai/longformer-base-4096",
+        reduce_output="cls_pooled",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFLongformerModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
@@ -904,7 +919,7 @@ class LongformerEncoder(TextEncoder):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -912,50 +927,51 @@ class LongformerEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs),
-        }, training=training)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            training=training,
+        )
+        if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
 
-@register(name='auto_transformer')
+@register(name="auto_transformer")
 class AutoTransformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        'word_tokenizer': 'hf_tokenizer',
-        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
     def __init__(
-            self,
-            pretrained_model_name_or_path,
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
-            **kwargs
+        self,
+        pretrained_model_name_or_path,
+        reduce_output="sum",
+        trainable=True,
+        num_tokens=None,
+        **kwargs
     ):
         super().__init__()
         try:
             from transformers import TFAutoModel
         except ModuleNotFoundError:
             logger.error(
-                ' transformers is not installed. '
-                'In order to install all text feature dependencies run '
-                'pip install ludwig[text]'
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
             )
             sys.exit(-1)
 
-        self.transformer = TFAutoModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        self.transformer = TFAutoModel.from_pretrained(pretrained_model_name_or_path)
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
@@ -963,18 +979,21 @@ class AutoTransformerEncoder(TextEncoder):
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "training": training,
-            "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        }, return_dict=True)
-        if self.reduce_output == 'cls_pooled':
+        transformer_outputs = self.transformer(
+            {
+                "input_ids": inputs,
+                "training": training,
+                "attention_mask": mask,
+                "token_type_ids": tf.zeros_like(inputs),
+            },
+            return_dict=True,
+        )
+        if self.reduce_output == "cls_pooled":
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
             # the BERT base class call() function
-            hidden = transformer_outputs['cls_pooled']
+            hidden = transformer_outputs["cls_pooled"]
         else:
-            hidden = transformer_outputs['last_hidden_state']
+            hidden = transformer_outputs["last_hidden_state"]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}

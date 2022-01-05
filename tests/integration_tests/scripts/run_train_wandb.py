@@ -15,16 +15,14 @@ from unittest.mock import Mock
 from ludwig.contribs.wandb import WandbCallback
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
-PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')
+PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")
 sys.path.insert(0, os.path.abspath(PATH_ROOT))
 
 from tests.integration_tests.test_experiment import run_experiment
-from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import image_feature
+from tests.integration_tests.utils import category_feature, generate_data, image_feature
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--csv-filename', required=True)
+parser.add_argument("--csv-filename", required=True)
 
 
 def run(csv_filename):
@@ -35,10 +33,10 @@ def run(csv_filename):
     callback.on_train_start = Mock(side_effect=callback.on_train_start)
 
     # disable sync to cloud
-    os.environ['WANDB_MODE'] = 'dryrun'
+    os.environ["WANDB_MODE"] = "dryrun"
 
     # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
 
     try:
         # Inputs & Outputs
@@ -48,10 +46,7 @@ def run(csv_filename):
 
         # Run experiment
         run_experiment(
-            input_features,
-            output_features,
-            dataset=rel_path,
-            callbacks=[callback]
+            input_features, output_features, dataset=rel_path, callbacks=[callback]
         )
     finally:
         # Delete the temporary data created

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,14 +19,11 @@ import pytest
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.run import hyperopt
-from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
-from ludwig.hyperopt.run import update_hyperopt_params_with_defaults
-from ludwig.utils.defaults import merge_with_defaults, ACCURACY
+from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
+from ludwig.utils.defaults import ACCURACY, merge_with_defaults
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
-from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import text_feature
+from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -49,25 +45,18 @@ HYPEROPT_CONFIG = {
             "space": "linear",
             "steps": 3,
         },
-       "combiner.fc_layers" : {
-            'type': 'category',
-            'values': [
-                [{'fc_size': 512}, {'fc_size': 256}],
-                [{'fc_size': 512}],
-                [{'fc_size': 256}]
-            ]
-        },
-        
-        "utterance.cell_type": {
+        "combiner.fc_layers": {
             "type": "category",
-            "values": ["rnn", "gru"]
+            "values": [
+                [{"fc_size": 512}, {"fc_size": 256}],
+                [{"fc_size": 512}],
+                [{"fc_size": 256}],
+            ],
         },
-        "utterance.bidirectional": {
-            "type": "category",
-            "values": [True, False]
-        }
+        "utterance.cell_type": {"type": "category", "values": ["rnn", "gru"]},
+        "utterance.bidirectional": {"type": "category", "values": [True, False]},
     },
-    "goal": "minimize"
+    "goal": "minimize",
 }
 
 SAMPLERS = [
@@ -84,18 +73,23 @@ EXECUTORS = [
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize('sampler', SAMPLERS)
-@pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename,
-                           validate_output_feature=False,
-                           validation_metric=None):
-    if executor['type'] == 'fiber' and sampler['type'] == 'grid':
+@pytest.mark.parametrize("sampler", SAMPLERS)
+@pytest.mark.parametrize("executor", EXECUTORS)
+def test_hyperopt_executor(
+    sampler,
+    executor,
+    csv_filename,
+    validate_output_feature=False,
+    validation_metric=None,
+):
+    if executor["type"] == "fiber" and sampler["type"] == "grid":
         # This test is very slow and doesn't give us additional converage
-        pytest.skip('Skipping Fiber grid search')
+        pytest.skip("Skipping Fiber grid search")
 
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum")]
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
@@ -105,7 +99,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001}
+        "training": {"epochs": 2, "learning_rate": 0.001},
     }
 
     config = merge_with_defaults(config)
@@ -113,9 +107,9 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_config = HYPEROPT_CONFIG.copy()
 
     if validate_output_feature:
-        hyperopt_config['output_feature'] = output_features[0]['name']
+        hyperopt_config["output_feature"] = output_features[0]["name"]
     if validation_metric:
-        hyperopt_config['validation_metric'] = validation_metric
+        hyperopt_config["validation_metric"] = validation_metric
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
@@ -125,32 +119,37 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler["type"])(goal, parameters, **sampler)
+    hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(
+        goal, parameters, **sampler
+    )
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, split, **executor)
+        hyperopt_sampler, output_feature, metric, split, **executor
+    )
 
-    hyperopt_executor.execute(config,
-                              dataset=rel_path,
-                              gpus=get_available_gpus_cuda_string())
+    hyperopt_executor.execute(
+        config, dataset=rel_path, gpus=get_available_gpus_cuda_string()
+    )
 
 
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
-    test_hyperopt_executor({"type": "random", "num_samples": 2},
-                           {"type": "serial"},
-                           csv_filename,
-                           validate_output_feature=True,
-                           validation_metric=ACCURACY)
+    test_hyperopt_executor(
+        {"type": "random", "num_samples": 2},
+        {"type": "serial"},
+        csv_filename,
+        validate_output_feature=True,
+        validation_metric=ACCURACY,
+    )
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize('samplers', SAMPLERS)
+@pytest.mark.parametrize("samplers", SAMPLERS)
 def test_hyperopt_run_hyperopt(csv_filename, samplers):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum")]
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
@@ -160,12 +159,11 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001}
+        "training": {"epochs": 2, "learning_rate": 0.001},
     }
 
-    output_feature_name = output_features[0]['name']
+    output_feature_name = output_features[0]["name"]
 
-    
     hyperopt_configs = {
         "parameters": {
             "training.learning_rate": {
@@ -175,129 +173,115 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
                 "space": "log",
                 "steps": 3,
             },
-            output_feature_name + ".fc_layers": {
-                'type': 'category',
-                'values': [
-                    [{'fc_size': 512}, {'fc_size': 256}],
-                    [{'fc_size': 512}],
-                    [{'fc_size': 256}]
-                ]
+            output_feature_name
+            + ".fc_layers": {
+                "type": "category",
+                "values": [
+                    [{"fc_size": 512}, {"fc_size": 256}],
+                    [{"fc_size": 512}],
+                    [{"fc_size": 256}],
+                ],
             },
-            output_feature_name + ".fc_size": {
+            output_feature_name
+            + ".fc_size": {"type": "int", "low": 32, "high": 256, "steps": 5},
+            output_feature_name
+            + ".num_fc_layers": {
                 "type": "int",
-                "low": 32,
-                "high": 256,
-                "steps": 5
+                "low": 1,
+                "high": 5,
+                "space": "linear",
+                "steps": 4,
             },
-            output_feature_name + ".num_fc_layers": {
-                'type': 'int',
-                'low': 1,
-                'high': 5,
-                'space': 'linear',
-                'steps': 4
-            }
         },
         "goal": "minimize",
-        'output_feature': output_feature_name,
-        'validation_metrics': 'loss',
-        'executor': {'type': 'serial'},
-        'sampler': {'type': samplers["type"], 'num_samples': 2}
+        "output_feature": output_feature_name,
+        "validation_metrics": "loss",
+        "executor": {"type": "serial"},
+        "sampler": {"type": samplers["type"], "num_samples": 2},
     }
 
     # add hyperopt parameter space to the config
-    config['hyperopt'] = hyperopt_configs
+    config["hyperopt"] = hyperopt_configs
 
     hyperopt_results = hyperopt(
-        config,
-        dataset=rel_path,
-        output_directory='results_hyperopt'
+        config, dataset=rel_path, output_directory="results_hyperopt"
     )
 
     # check for return results
     assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(
-        os.path.join('results_hyperopt', 'hyperopt_statistics.json')
-    )
+    assert os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
 
-    if os.path.isfile(
-        os.path.join('results_hyperopt', 'hyperopt_statistics.json')
-    ):
-        os.remove( 
-            os.path.join('results_hyperopt', 'hyperopt_statistics.json')
-        )
+    if os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json")):
+        os.remove(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
 
 
 @pytest.mark.distributed
 def test_hyperopt_executor_get_metric_score():
     executor = EXECUTORS[0]
     output_feature = "of_name"
-    split = 'validation'
+    split = "validation"
 
     train_stats = {
-        'training': {
+        "training": {
             output_feature: {
-                'loss': [0.58760345, 1.5066891],
-                'accuracy': [0.6666667, 0.33333334],
-                'hits_at_k': [1.0, 1.0]
+                "loss": [0.58760345, 1.5066891],
+                "accuracy": [0.6666667, 0.33333334],
+                "hits_at_k": [1.0, 1.0],
             },
-            'combined': {
-                'loss': [0.58760345, 1.5066891]
-            }
+            "combined": {"loss": [0.58760345, 1.5066891]},
         },
-        'validation': {
+        "validation": {
             output_feature: {
-                'loss': [0.30233705, 2.6505466],
-                'accuracy': [1.0, 0.0],
-                'hits_at_k': [1.0, 1.0]
+                "loss": [0.30233705, 2.6505466],
+                "accuracy": [1.0, 0.0],
+                "hits_at_k": [1.0, 1.0],
             },
-            'combined': {
-                'loss': [0.30233705, 2.6505466]
-            }
+            "combined": {"loss": [0.30233705, 2.6505466]},
         },
-        'test': {
+        "test": {
             output_feature: {
-                'loss': [1.0876318, 1.4353828],
-                'accuracy': [0.7, 0.5],
-                'hits_at_k': [1.0, 1.0]
+                "loss": [1.0876318, 1.4353828],
+                "accuracy": [0.7, 0.5],
+                "hits_at_k": [1.0, 1.0],
             },
-            'combined': {
-                'loss': [1.0876318, 1.4353828]
-            }
-        }
+            "combined": {"loss": [1.0876318, 1.4353828]},
+        },
     }
 
     eval_stats = {
         output_feature: {
-            'loss': 1.4353828,
-            'accuracy': 0.5,
-            'hits_at_k': 1.0,
-            'overall_stats': {
-                'token_accuracy': 1.0,
-                'avg_precision_macro': 1.0,
-                'avg_recall_macro': 1.0,
-                'avg_f1_score_macro': 1.0,
-                'avg_precision_micro': 1.0,
-                'avg_recall_micro': 1.0,
-                'avg_f1_score_micro': 1.0,
-                'avg_precision_weighted': 1.0,
-                'avg_recall_weighted': 1.0,
-                'avg_f1_score_weighted': 1.0,
-                'kappa_score': 0.6
+            "loss": 1.4353828,
+            "accuracy": 0.5,
+            "hits_at_k": 1.0,
+            "overall_stats": {
+                "token_accuracy": 1.0,
+                "avg_precision_macro": 1.0,
+                "avg_recall_macro": 1.0,
+                "avg_f1_score_macro": 1.0,
+                "avg_precision_micro": 1.0,
+                "avg_recall_micro": 1.0,
+                "avg_f1_score_micro": 1.0,
+                "avg_precision_weighted": 1.0,
+                "avg_recall_weighted": 1.0,
+                "avg_f1_score_weighted": 1.0,
+                "kappa_score": 0.6,
             },
-            'combined': {'loss': 1.4353828}
+            "combined": {"loss": 1.4353828},
         }
     }
 
-    metric = 'loss'
+    metric = "loss"
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        None, output_feature, metric, split, **executor)
+        None, output_feature, metric, split, **executor
+    )
     score = hyperopt_executor.get_metric_score(train_stats)
     assert score == 0.30233705
 
-    metric = 'accuracy'
+    metric = "accuracy"
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        None, output_feature, metric, split, **executor)
+        None, output_feature, metric, split, **executor
+    )
     score = hyperopt_executor.get_metric_score(train_stats)
     assert score == 1.0

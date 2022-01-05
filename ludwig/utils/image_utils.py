@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +25,7 @@ import numpy as np
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
+from ludwig.utils.fs_utils import is_http, open_file, upgrade_http
 
 logger = logging.getLogger(__name__)
 
@@ -42,22 +41,24 @@ def get_average_image(image_lst):
 @functools.lru_cache(maxsize=32)
 def get_image_from_http_bytes(img_entry):
     import requests
+
     data = requests.get(img_entry, stream=True)
     if data.status_code == 404:
         upgraded = upgrade_http(img_entry)
         if upgraded:
-            logger.info(f'reading image url {img_entry} failed. upgrading to https and retrying')
+            logger.info(
+                f"reading image url {img_entry} failed. upgrading to https and retrying"
+            )
             return get_image_from_http_bytes(upgraded)
         else:
-            raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed and cannot be upgraded to https')
+            raise requests.exceptions.HTTPError(
+                f"reading image url {img_entry} failed and cannot be upgraded to https"
+            )
     return BytesIO(data.raw.read())
 
 
 def get_image_from_path(src_path, img_entry, ret_bytes=False):
-    """
-    skimage.io.imread() can read filenames or urls
-    imghdr.what() can read filenames or bytes
-    """
+    """skimage.io.imread() can read filenames or urls imghdr.what() can read filenames or bytes."""
     if not isinstance(img_entry, str):
         return img_entry
     if is_http(img_entry):
@@ -66,7 +67,7 @@ def get_image_from_path(src_path, img_entry, ret_bytes=False):
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)
-    with open_file(img_entry, 'rb') as f:
+    with open_file(img_entry, "rb") as f:
         if ret_bytes:
             return f.read()
         return f
@@ -91,7 +92,9 @@ def is_image(src_path, img_entry):
 def is_image_score(src_path, img_entry):
     if is_image(src_path, img_entry):
         return 1
-    elif isinstance(img_entry, str) and img_entry.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+    elif isinstance(img_entry, str) and img_entry.lower().endswith(
+        (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+    ):
         return 0.5
     return 0
 
@@ -108,9 +111,9 @@ def read_image_from_str(img):
         from skimage.io import imread
     except ImportError:
         logger.error(
-            ' scikit-image is not installed. '
-            'In order to install all image feature dependencies run '
-            'pip install ludwig[image]'
+            " scikit-image is not installed. "
+            "In order to install all image feature dependencies run "
+            "pip install ludwig[image]"
         )
         sys.exit(-1)
 
@@ -119,12 +122,16 @@ def read_image_from_str(img):
     except HTTPError as e:
         upgraded = upgrade_http(img)
         if upgraded:
-            logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
+            logger.info(
+                f"reading image url {img} failed due to {e}. upgrading to https and retrying"
+            )
             return read_image(upgraded)
-        logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
+        logger.info(
+            f"reading image url {img} failed due to {e} and cannot be upgraded to https"
+        )
         return None
     except Exception as e:
-        logger.info(f'reading image url {img} failed', e)
+        logger.info(f"reading image url {img} failed", e)
         return None
 
 
@@ -133,7 +140,7 @@ def pad(img, size, axis):
     pad_size = float(size - old_size) / 2
     pads = [(0, 0), (0, 0), (0, 0)]
     pads[axis] = (floor(pad_size), ceil(pad_size))
-    return np.pad(img, pads, 'edge')
+    return np.pad(img, pads, "edge")
 
 
 def crop(img, size, axis):
@@ -148,7 +155,7 @@ def crop(img, size, axis):
         x_min = int(float(x_max - size) / 2)
         x_max = x_min + size
 
-    return img[y_min: y_max, x_min: x_max, :]
+    return img[y_min:y_max, x_min:x_max, :]
 
 
 def crop_or_pad(img, new_size_tuple):
@@ -167,9 +174,9 @@ def resize_image(img, new_size_typle, resize_method):
         from skimage.transform import resize
     except ImportError:
         logger.error(
-            ' scikit-image is not installed. '
-            'In order to install all image feature dependencies run '
-            'pip install ludwig[image]'
+            " scikit-image is not installed. "
+            "In order to install all image feature dependencies run "
+            "pip install ludwig[image]"
         )
         sys.exit(-1)
 
@@ -178,8 +185,7 @@ def resize_image(img, new_size_typle, resize_method):
             return crop_or_pad(img, new_size_typle)
         elif resize_method == INTERPOLATE:
             return img_as_ubyte(resize(img, new_size_typle))
-        raise ValueError(
-            'Invalid image resize method: {}'.format(resize_method))
+        raise ValueError(f"Invalid image resize method: {resize_method}")
     return img
 
 
@@ -189,9 +195,9 @@ def greyscale(img):
         from skimage.color import rgb2gray
     except ImportError:
         logger.error(
-            ' scikit-image is not installed. '
-            'In order to install all image feature dependencies run '
-            'pip install ludwig[image]'
+            " scikit-image is not installed. "
+            "In order to install all image feature dependencies run "
+            "pip install ludwig[image]"
         )
         sys.exit(-1)
 
@@ -200,7 +206,7 @@ def greyscale(img):
 
 def num_channels_in_image(img):
     if img is None or img.ndim < 2:
-        raise ValueError('Invalid image data')
+        raise ValueError("Invalid image data")
 
     if img.ndim == 2:
         return 1

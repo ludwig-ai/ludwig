@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +21,7 @@ import numpy as np
 
 class DistributedSampler:
     """Adapted from `torch.utils.data.distributed.DistributedSampler`."""
+
     def __init__(self, dataset_size, shuffle=True, seed=0, horovod=None):
         self.dataset_size = dataset_size
         self.num_replicas = horovod.size() if horovod else 1
@@ -35,17 +35,20 @@ class DistributedSampler:
     def __iter__(self):
         if self.shuffle:
             # deterministically shuffle based on epoch and seed
-            indices = np.random.RandomState(seed=self.seed + self.epoch)\
-                .permutation(self.dataset_size).tolist()
+            indices = (
+                np.random.RandomState(seed=self.seed + self.epoch)
+                .permutation(self.dataset_size)
+                .tolist()
+            )
         else:
             indices = list(range(self.dataset_size))
 
         # add extra samples to make it evenly divisible
-        indices += indices[:(self.total_size - len(indices))]
+        indices += indices[: (self.total_size - len(indices))]
         assert len(indices) == self.total_size
 
         # subsample
-        indices = indices[self.rank:self.total_size:self.num_replicas]
+        indices = indices[self.rank : self.total_size : self.num_replicas]
         assert len(indices) == self.num_samples
 
         return iter(indices)

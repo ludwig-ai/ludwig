@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,10 +26,13 @@ class Dataset(ABC):
     # TODO(travis): will not need shuffle_buffer_size after removing Petastorm
     @contextlib.contextmanager
     @abstractmethod
-    def initialize_batcher(self, batch_size=128,
-                           should_shuffle=True,
-                           shuffle_buffer_size=None,
-                           seed=0,
-                           ignore_last=False,
-                           horovod=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        shuffle_buffer_size=None,
+        seed=0,
+        ignore_last=False,
+        horovod=None,
+    ):
         raise NotImplementedError()

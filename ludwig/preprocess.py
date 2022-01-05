@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +16,7 @@
 import argparse
 import logging
 import sys
-from typing import Union, List
+from typing import List, Union
 
 import pandas as pd
 import yaml
@@ -29,26 +28,25 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def preprocess_cli(
-        preprocessing_config: Union[str, dict] = None,
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
-        random_seed: int = default_random_seed,
-        logging_level: int = logging.INFO,
-        callbacks: List[Callback] = None,
-        backend: Union[Backend, str] = None,
-        debug: bool = False,
-        **kwargs
+    preprocessing_config: Union[str, dict] = None,
+    dataset: Union[str, dict, pd.DataFrame] = None,
+    training_set: Union[str, dict, pd.DataFrame] = None,
+    validation_set: Union[str, dict, pd.DataFrame] = None,
+    test_set: Union[str, dict, pd.DataFrame] = None,
+    training_set_metadata: Union[str, dict] = None,
+    data_format: str = None,
+    random_seed: int = default_random_seed,
+    logging_level: int = logging.INFO,
+    callbacks: List[Callback] = None,
+    backend: Union[Backend, str] = None,
+    debug: bool = False,
+    **kwargs
 ) -> None:
     """*train* defines the entire training procedure used by Ludwig's
     internals. Requires most of the parameters that are taken into the model.
@@ -166,42 +164,54 @@ def preprocess_cli(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script preprocess a dataset',
-        prog='ludwig preprocess',
-        usage='%(prog)s [options]'
+        description="This script preprocess a dataset",
+        prog="ludwig preprocess",
+        usage="%(prog)s [options]",
     )
 
     # ---------------
     # Data parameters
     # ---------------
     parser.add_argument(
-        '--dataset',
-        help='input data file path. '
-             'If it has a split column, it will be used for splitting '
-             '(0: train, 1: validation, 2: test), '
-             'otherwise the dataset will be randomly split'
+        "--dataset",
+        help="input data file path. "
+        "If it has a split column, it will be used for splitting "
+        "(0: train, 1: validation, 2: test), "
+        "otherwise the dataset will be randomly split",
     )
-    parser.add_argument('--training_set', help='input train data file path')
-    parser.add_argument(
-        '--validation_set', help='input validation data file path'
-    )
-    parser.add_argument('--test_set', help='input test data file path')
+    parser.add_argument("--training_set", help="input train data file path")
+    parser.add_argument("--validation_set", help="input validation data file path")
+    parser.add_argument("--test_set", help="input test data file path")
 
     parser.add_argument(
-        '--training_set_metadata',
-        help='input metadata JSON file path. An intermediate preprocessed file '
-             'containing the mappings of the input file created '
-             'the first time a file is used, in the same directory '
-             'with the same name and a .json extension'
+        "--training_set_metadata",
+        help="input metadata JSON file path. An intermediate preprocessed file "
+        "containing the mappings of the input file created "
+        "the first time a file is used, in the same directory "
+        "with the same name and a .json extension",
     )
 
     parser.add_argument(
-        '--data_format',
-        help='format of the input data',
-        default='auto',
-        choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
-                 'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
-                 'spss', 'stata', 'tsv']
+        "--data_format",
+        help="format of the input data",
+        default="auto",
+        choices=[
+            "auto",
+            "csv",
+            "excel",
+            "feather",
+            "fwf",
+            "hdf5",
+            "html" "tables",
+            "json",
+            "jsonl",
+            "parquet",
+            "pickle",
+            "sas",
+            "spss",
+            "stata",
+            "tsv",
+        ],
     )
 
     # ----------------
@@ -209,57 +219,58 @@ def cli(sys_argv):
     # ----------------
     preprocessing_def = parser.add_mutually_exclusive_group(required=True)
     preprocessing_def.add_argument(
-        '-pc',
-        '--preprocessing_config',
+        "-pc",
+        "--preprocessing_config",
         type=yaml.safe_load,
-        help='preproceesing config. '
-             'Uses the same format of config, '
-             'but ignores encoder specific parameters, '
-             'decoder specific paramters, combiner and training parameters'
+        help="preproceesing config. "
+        "Uses the same format of config, "
+        "but ignores encoder specific parameters, "
+        "decoder specific paramters, combiner and training parameters",
     )
     preprocessing_def.add_argument(
-        '-pcf',
-        '--preprocessing_config_file',
-        dest='preprocessing_config',
+        "-pcf",
+        "--preprocessing_config_file",
+        dest="preprocessing_config",
         type=load_yaml,
-        help='YAML file describing the preprocessing. '
-             'Ignores --preprocessing_config.'
-             'Uses the same format of config, '
-             'but ignores encoder specific parameters, '
-             'decoder specific paramters, combiner and training parameters'
+        help="YAML file describing the preprocessing. "
+        "Ignores --preprocessing_config."
+        "Uses the same format of config, "
+        "but ignores encoder specific parameters, "
+        "decoder specific paramters, combiner and training parameters",
     )
 
     # ------------------
     # Runtime parameters
     # ------------------
     parser.add_argument(
-        '-rs',
-        '--random_seed',
+        "-rs",
+        "--random_seed",
         type=int,
         default=42,
-        help='a random seed that is going to be used anywhere there is a call '
-             'to a random number generator: data splitting, parameter '
-             'initialization and training set shuffling'
+        help="a random seed that is going to be used anywhere there is a call "
+        "to a random number generator: data splitting, parameter "
+        "initialization and training set shuffling",
     )
     parser.add_argument(
         "-b",
         "--backend",
-        help='specifies backend to use for parallel / distributed execution, '
-             'defaults to local execution or Horovod if called using horovodrun',
+        help="specifies backend to use for parallel / distributed execution, "
+        "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(
-        '-dbg',
-        '--debug',
-        action='store_true',
-        default=False, help='enables debugging mode'
+        "-dbg",
+        "--debug",
+        action="store_true",
+        default=False,
+        help="enables debugging mode",
     )
     parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+        "-l",
+        "--logging_level",
+        default="info",
+        help="the level of logging to use",
+        choices=["critical", "error", "warning", "info", "debug", "notset"],
     )
 
     add_contrib_callback_args(parser)
@@ -267,21 +278,19 @@ def cli(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline('preprocess', *sys_argv)
+        callback.on_cmdline("preprocess", *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
+    logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
-    logger = logging.getLogger('ludwig.preprocess')
+    logger = logging.getLogger("ludwig.preprocess")
 
     args.backend = initialize_backend(args.backend)
     if args.backend.is_coordinator():
-        print_ludwig('Preprocess', LUDWIG_VERSION)
+        print_ludwig("Preprocess", LUDWIG_VERSION)
 
     preprocess_cli(**vars(args))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli(sys.argv[1:])

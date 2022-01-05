@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +18,15 @@ from collections import UserDict
 
 import ludwig.utils
 
-
-DEFAULT_KEYS = ['None', 'none', 'null', None]
+DEFAULT_KEYS = ["None", "none", "null", None]
 
 
 class Registry(UserDict):
     """Registry is like a normal dict, but with an optional parent dict.
 
-    Items are considered to exist in the registry if they are added to either
-    the registry itself, or its parent.
+    Items are considered to exist in the registry if they are added to either the registry itself, or its parent.
     """
+
     def __init__(self, source=None):
         init_data = None
         parent = {}
@@ -64,16 +62,14 @@ class Registry(UserDict):
         return self._merged().items()
 
     def _merged(self):
-        return {
-            **self.parent,
-            **self.data
-        }
+        return {**self.parent, **self.data}
 
 
 def register(name):
     def wrap(cls):
         cls.register(name)
         return cls
+
     return wrap
 
 
@@ -82,4 +78,5 @@ def register_default(name):
         cls.register(name)
         cls.register_default()
         return cls
+
     return wrap

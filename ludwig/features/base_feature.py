@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +16,15 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict
 
-from ludwig.utils.types import DataFrame
-
 import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils.misc_utils import merge_dict, get_from_registry
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +32,16 @@ logger = logging.getLogger(__name__)
 class BaseFeature:
     """Base class for all features.
 
-    Note that this class is not-cooperative (does not forward kwargs), so when constructing
-    feature class hierarchies, there should be only one parent class that derives from base
-    feature.  Other functionality should be put into mixin classes to avoid the diamond
-    pattern.
+    Note that this class is not-cooperative (does not forward kwargs), so when constructing feature class hierarchies,
+    there should be only one parent class that derives from base feature.  Other functionality should be put into mixin
+    classes to avoid the diamond pattern.
     """
 
     def __init__(self, feature, *args, **kwargs):
         super().__init__()
 
         if NAME not in feature:
-            raise ValueError('Missing feature name')
+            raise ValueError("Missing feature name")
         self.feature_name = feature[NAME]
 
         if COLUMN not in feature:
@@ -63,10 +60,12 @@ class BaseFeature:
 
         for k in feature.keys():
             if k in attributes:
-                if (isinstance(feature[k], dict) and hasattr(self, k)
-                        and isinstance(getattr(self, k), dict)):
-                    setattr(self, k, merge_dict(getattr(self, k),
-                                                feature[k]))
+                if (
+                    isinstance(feature[k], dict)
+                    and hasattr(self, k)
+                    and isinstance(getattr(self, k), dict)
+                ):
+                    setattr(self, k, merge_dict(getattr(self, k), feature[k]))
                 else:
                     setattr(self, k, feature[k])
 
@@ -78,9 +77,11 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_input_shape(),
-                              dtype=self.get_input_dtype(),
-                              name=self.name + '_input')
+        return tf.keras.Input(
+            shape=self.get_input_shape(),
+            dtype=self.get_input_dtype(),
+            name=self.name + "_input",
+        )
 
     @classmethod
     @abstractmethod
@@ -95,12 +96,7 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(
-            input_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -136,8 +132,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         self.num_fc_layers = 0
         self.fc_size = 256
         self.use_bias = True
-        self.weights_initializer = 'glorot_uniform'
-        self.bias_initializer = 'zeros'
+        self.weights_initializer = "glorot_uniform"
+        self.bias_initializer = "zeros"
         self.weights_regularizer = None
         self.bias_regularizer = None
         self.activity_regularizer = None
@@ -145,13 +141,13 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # self.bias_constraint=None
         self.norm = None
         self.norm_params = None
-        self.activation = 'relu'
+        self.activation = "relu"
         self.dropout = 0
 
         self.overwrite_defaults(feature)
 
-        logger.debug(' output feature fully connected layers')
-        logger.debug('  FCStack')
+        logger.debug(" output feature fully connected layers")
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
@@ -171,9 +167,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         )
 
         # set up two sequence reducers, one for inputs and other for dependencies
-        self.reduce_sequence_input = SequenceReducer(
-            reduce_mode=self.reduce_input
-        )
+        self.reduce_sequence_input = SequenceReducer(reduce_mode=self.reduce_input)
         if self.dependencies:
             self.dependency_reducers = {}
             for dependency in self.dependencies:
@@ -182,9 +176,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 )
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_output_shape(),
-                              dtype=self.get_output_dtype(),
-                              name=self.name + '_input')
+        return tf.keras.Input(
+            shape=self.get_output_shape(),
+            dtype=self.get_output_dtype(),
+            name=self.name + "_input",
+        )
 
     @abstractmethod
     def get_prediction_set(self):
@@ -242,11 +238,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 metric_fn.reset_states()
 
     def call(
-            self,
-            inputs,
-            # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
-            training=None,
-            mask=None
+        self,
+        inputs,
+        # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
+        training=None,
+        mask=None,
     ):
         # account for output feature target
         if isinstance(inputs[0], tuple):
@@ -258,26 +254,21 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         combiner_outputs, other_output_hidden = local_inputs
 
         # extract the combined hidden layer
-        combiner_output = combiner_outputs['combiner_output']
+        combiner_output = combiner_outputs["combiner_output"]
         hidden = self.prepare_decoder_inputs(
-            combiner_output,
-            other_output_hidden,
-            training=training,
-            mask=mask
+            combiner_output, other_output_hidden, training=training, mask=mask
         )
 
         # ================ Predictions ================
-        logits_input = {
-            HIDDEN: hidden
-        }
+        logits_input = {HIDDEN: hidden}
         # pass supplemental data from encoders to decoder
-        if 'encoder_output_state' in combiner_outputs:
-            logits_input['encoder_output_state'] = \
-                combiner_outputs['encoder_output_state']
+        if "encoder_output_state" in combiner_outputs:
+            logits_input["encoder_output_state"] = combiner_outputs[
+                "encoder_output_state"
+            ]
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
-        logits = self.logits(logits_input, target=target,
-                             training=training)
+        logits = self.logits(logits_input, target=target, training=training)
 
         # most of the cases the output of self.logits() is a tensor
         # there are three special cases:
@@ -290,12 +281,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         #
 
         if isinstance(logits, tf.Tensor):
-            logits = {'logits': logits}
+            logits = {"logits": logits}
 
         return {
             # last_hidden used for dependencies processing
-            'last_hidden': hidden,
-            **logits
+            "last_hidden": hidden,
+            **logits,
         }
 
     def overall_statistics_metadata(self):
@@ -312,31 +303,22 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
     @abstractmethod
     def postprocess_predictions(
-            self,
-            result,
-            metadata,
-            output_directory,
-            backend,
+        self,
+        result,
+        metadata,
+        output_directory,
+        backend,
     ):
         pass
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(
-            output_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
+    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
     @abstractmethod
-    def calculate_overall_stats(
-            predictions,
-            targets,
-            train_set_metadata
-    ):
+    def calculate_overall_stats(predictions, targets, train_set_metadata):
         pass
 
     @staticmethod
@@ -355,30 +337,22 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 if len(hidden.shape) > 2:
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
-                        assert hidden.shape[1] == \
-                               dependency_final_hidden.shape[1]
+                        assert hidden.shape[1] == dependency_final_hidden.shape[1]
                         dependencies_hidden.append(dependency_final_hidden)
                     else:
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
-                        multipliers = tf.concat(
-                            [[1], [sequence_max_length], [1]],
-                            0
-                        )
+                        multipliers = tf.concat([[1], [sequence_max_length], [1]], 0)
                         tiled_representation = tf.tile(
-                            tf.expand_dims(dependency_final_hidden, 1),
-                            multipliers
+                            tf.expand_dims(dependency_final_hidden, 1), multipliers
                         )
 
                         # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
-                        mask = tf.sequence_mask(
-                            sequence_length,
-                            sequence_max_length
-                        )
+                        mask = tf.sequence_mask(sequence_length, sequence_max_length)
                         tiled_representation = tf.multiply(
                             tiled_representation,
-                            tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32)
+                            tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32),
                         )
 
                         dependencies_hidden.append(tiled_representation)
@@ -387,9 +361,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                     if len(dependency_final_hidden.shape) > 2:
                         # vector matrix -> reduce concat
                         reducer = self.dependency_reducers[dependency]
-                        dependencies_hidden.append(
-                            reducer(dependency_final_hidden)
-                        )
+                        dependencies_hidden.append(reducer(dependency_final_hidden))
                     else:
                         # vector vector -> concat
                         dependencies_hidden.append(dependency_final_hidden)
@@ -398,70 +370,51 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 hidden = tf.concat([hidden] + dependencies_hidden, -1)
             except:
                 raise ValueError(
-                    'Shape mismatch while concatenating dependent features of '
-                    '{}: {}. Concatenating the feature activations tensor {} '
-                    'with activation tensors of dependencies: {}. The error is '
-                    'likely due to a mismatch of the second dimension (sequence'
-                    ' length) or a difference in ranks. Likely solutions are '
-                    'setting the maximum_sequence_length of all sequential '
-                    'features to be the same,  or reduce the output of some '
-                    'features, or disabling the bucketing setting '
-                    'bucketing_field to None / null, as activating it will '
-                    'reduce the length of the field the bucketing is performed '
-                    'on.'.format(
-                        self.column,
-                        self.dependencies,
-                        hidden,
-                        dependencies_hidden
+                    "Shape mismatch while concatenating dependent features of "
+                    "{}: {}. Concatenating the feature activations tensor {} "
+                    "with activation tensors of dependencies: {}. The error is "
+                    "likely due to a mismatch of the second dimension (sequence"
+                    " length) or a difference in ranks. Likely solutions are "
+                    "setting the maximum_sequence_length of all sequential "
+                    "features to be the same,  or reduce the output of some "
+                    "features, or disabling the bucketing setting "
+                    "bucketing_field to None / null, as activating it will "
+                    "reduce the length of the field the bucketing is performed "
+                    "on.".format(
+                        self.column, self.dependencies, hidden, dependencies_hidden
                     )
                 )
 
         return hidden
 
     def output_specific_fully_connected(
-            self,
-            inputs,  # feature_hidden
-            training=None,
-            mask=None
+        self, inputs, training=None, mask=None  # feature_hidden
     ):
         feature_hidden = inputs
         original_feature_hidden = inputs
 
         # flatten inputs
         if len(original_feature_hidden.shape) > 2:
-            feature_hidden = tf.reshape(
-                feature_hidden,
-                [-1, feature_hidden.shape[-1]]
-            )
+            feature_hidden = tf.reshape(feature_hidden, [-1, feature_hidden.shape[-1]])
 
         # pass it through fc_stack
-        feature_hidden = self.fc_stack(
-            feature_hidden,
-            training=training,
-            mask=mask
-        )
+        feature_hidden = self.fc_stack(feature_hidden, training=training, mask=mask)
         feature_hidden_size = feature_hidden.shape[-1]
 
         # reshape back to original first and second dimension
         if len(original_feature_hidden.shape) > 2:
             sequence_length = original_feature_hidden.shape[1]
             feature_hidden = tf.reshape(
-                feature_hidden,
-                [-1, sequence_length, feature_hidden_size]
+                feature_hidden, [-1, sequence_length, feature_hidden_size]
             )
 
         return feature_hidden
 
     def prepare_decoder_inputs(
-            self,
-            combiner_output,
-            other_output_features,
-            training=None,
-            mask=None
+        self, combiner_output, other_output_features, training=None, mask=None
     ):
-        """
-        Takes the combiner output and the outputs of other outputs features
-        computed so far and performs:
+        """Takes the combiner output and the outputs of other outputs features computed so far and performs:
+
         - reduction of combiner outputs (if needed)
         - concatenating the outputs of dependent features (if needed)
         - output_specific fully connected layers (if needed)
@@ -474,30 +427,22 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
         # ================ Reduce Inputs ================
         if self.reduce_input is not None and len(feature_hidden.shape) > 2:
-            feature_hidden = self.reduce_sequence_input(
-                feature_hidden
-            )
+            feature_hidden = self.reduce_sequence_input(feature_hidden)
 
         # ================ Concat Dependencies ================
-        feature_hidden = self.concat_dependencies(
-            feature_hidden,
-            other_output_features
-        )
+        feature_hidden = self.concat_dependencies(feature_hidden, other_output_features)
 
         # ================ Output-wise Fully Connected ================
         feature_hidden = self.output_specific_fully_connected(
-            feature_hidden,
-            training=training,
-            mask=mask
+            feature_hidden, training=training, mask=mask
         )
 
         return feature_hidden
 
     def flatten(self, df: DataFrame) -> DataFrame:
-        """ Converts the output of batch_predict to a 1D array. """
+        """Converts the output of batch_predict to a 1D array."""
         return df
 
     def unflatten(self, df: DataFrame) -> DataFrame:
-        """ Reshapes a flattened 1D array into its original shape. """
+        """Reshapes a flattened 1D array into its original shape."""
         return df
-

@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2021 Linuf Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
-    Conv2D, GlobalAveragePooling1D
+from tensorflow.keras.layers import (
+    Conv2D,
+    Dense,
+    Dropout,
+    GlobalAveragePooling1D,
+    Layer,
+    LayerNormalization,
+)
 
 from ludwig.modules.activation_modules import gelu
 
@@ -58,28 +63,26 @@ class MixerBlock(Layer):
 
 
 class MLPMixer(Layer):
-    """MLPMixer
+    """MLPMixer.
 
-    Implements
-    An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale
+    Implements An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale
     https://arxiv.org/abs/2010.11929
     """
 
     def __init__(
-            self,
-            patch_size=16,
-            embed_size=512,
-            token_size=2048,
-            channel_dim=256,
-            num_layers=8,
-            dropout=0.0,
-            avg_pool=True,
+        self,
+        patch_size=16,
+        embed_size=512,
+        token_size=2048,
+        channel_dim=256,
+        num_layers=8,
+        dropout=0.0,
+        avg_pool=True,
     ):
         super().__init__()
         self.patch_conv = Conv2D(embed_size, patch_size, patch_size)
         self.mixer_blocks = [
-            MixerBlock(token_size, channel_dim, dropout)
-            for _ in range(num_layers)
+            MixerBlock(token_size, channel_dim, dropout) for _ in range(num_layers)
         ]
         self.layer_norm = LayerNormalization()
 

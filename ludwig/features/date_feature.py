@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 
 import numpy as np
 import tensorflow as tf
@@ -35,16 +33,19 @@ DATE_VECTOR_LENGTH = 9
 class DateFeatureMixin:
     type = DATE
     preprocessing_defaults = {
-        'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': '',
-        'datetime_format': None
+        "missing_value_strategy": FILL_WITH_CONST,
+        "fill_value": "",
+        "datetime_format": None,
     }
 
     preprocessing_schema = {
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
-        'fill_value': {'type': 'string'},
-        'computed_fill_value': {'type': 'string'},
-        'datetime_format': {'type': ['string', 'null']},
+        "missing_value_strategy": {
+            "type": "string",
+            "enum": MISSING_VALUE_STRATEGY_OPTIONS,
+        },
+        "fill_value": {"type": "string"},
+        "computed_fill_value": {"type": "string"},
+        "datetime_format": {"type": ["string", "null"]},
     }
 
     @staticmethod
@@ -53,9 +54,7 @@ class DateFeatureMixin:
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        return {
-            'preprocessing': preprocessing_parameters
-        }
+        return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
     def date_to_list(date_str, datetime_format, preprocessing_parameters):
@@ -66,29 +65,27 @@ class DateFeatureMixin:
                 datetime_obj = parse(date_str)
         except:
             logging.error(
-                'Error parsing date: {}. '
-                'Please provide a datetime format that parses it '
-                'in the preprocessing section of the date feature '
-                'in the config. '
-                'The preprocessing fill in value will be used.'
-                'For more details: '
-                'https://ludwig.ai/user_guide/#date-features-preprocessing'
-                    .format(date_str)
+                "Error parsing date: {}. "
+                "Please provide a datetime format that parses it "
+                "in the preprocessing section of the date feature "
+                "in the config. "
+                "The preprocessing fill in value will be used."
+                "For more details: "
+                "https://ludwig.ai/user_guide/#date-features-preprocessing".format(
+                    date_str
+                )
             )
-            fill_value = preprocessing_parameters['fill_value']
-            if fill_value != '':
+            fill_value = preprocessing_parameters["fill_value"]
+            if fill_value != "":
                 datetime_obj = parse(fill_value)
             else:
                 datetime_obj = datetime.now()
 
         yearday = (
-                datetime_obj.toordinal() -
-                date(datetime_obj.year, 1, 1).toordinal() + 1
+            datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
         )
 
-        midnight = datetime_obj.replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        midnight = datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
         second_of_day = (datetime_obj - midnight).seconds
 
         return [
@@ -100,31 +97,34 @@ class DateFeatureMixin:
             datetime_obj.hour,
             datetime_obj.minute,
             datetime_obj.second,
-            second_of_day
+            second_of_day,
         ]
 
     @staticmethod
     def add_feature_data(
-            feature,
-            input_df,
-            proc_df,
-            metadata,
-            preprocessing_parameters,
-            backend,
-            skip_save_processed_input
+        feature,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters,
+        backend,
+        skip_save_processed_input,
     ):
-        datetime_format = preprocessing_parameters['datetime_format']
+        datetime_format = preprocessing_parameters["datetime_format"]
         proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
             input_df[feature[COLUMN]],
-            lambda x: np.array(DateFeatureMixin.date_to_list(
-                x, datetime_format, preprocessing_parameters
-            ), dtype=np.int16)
+            lambda x: np.array(
+                DateFeatureMixin.date_to_list(
+                    x, datetime_format, preprocessing_parameters
+                ),
+                dtype=np.int16,
+            ),
         )
         return proc_df
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):
-    encoder = 'embed'
+    encoder = "embed"
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -138,9 +138,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype in [tf.int16, tf.int64]
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs, training=training, mask=mask)
 
         return inputs_encoded
 
@@ -149,15 +147,10 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         return tf.int16
 
     def get_input_shape(self):
-        return DATE_VECTOR_LENGTH,
+        return (DATE_VECTOR_LENGTH,)
 
     @staticmethod
-    def update_config_with_metadata(
-            input_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod

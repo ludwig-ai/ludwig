@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,28 +23,27 @@ else:
 
 from ludwig.hyperopt.sampling import RayTuneSampler
 
-
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
             "training.learning_rate": {
                 "space": "uniform",
                 "lower": 0.001,
-                "upper": 0.1
+                "upper": 0.1,
             },
             "combiner.num_fc_layers": {
                 "space": "qrandint",
                 "lower": 3,
                 "upper": 6,
-                "q": 3
+                "q": 3,
             },
             "utterance.cell_type": {
                 "space": "grid_search",
-                "values": ["rnn", "gru", "lstm"]
-            }
+                "values": ["rnn", "gru", "lstm"],
+            },
         },
         "goal": "minimize",
-        "num_samples": 3
+        "num_samples": 3,
     },
     "test_2": {
         "parameters": {
@@ -55,19 +53,15 @@ HYPEROPT_PARAMS = {
                 "upper": 0.1,
                 "base": 10,
             },
-            "combiner.num_fc_layers": {
-                "space": "randint",
-                "lower": 2,
-                "upper": 6
-            },
+            "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
             "utterance.cell_type": {
                 "space": "choice",
-                "categories": ["rnn", "gru", "lstm"]
-            }
+                "categories": ["rnn", "gru", "lstm"],
+            },
         },
         "goal": "maximize",
-        "num_samples": 4
-    }
+        "num_samples": 4,
+    },
 }
 
 if RAY_AVAILABLE:
@@ -75,18 +69,17 @@ if RAY_AVAILABLE:
         "test_1": {
             "training.learning_rate": tune.uniform(0.001, 0.1),
             "combiner.num_fc_layers": tune.qrandint(3, 6, 3),
-            "utterance.cell_type": tune.grid_search(["rnn", "gru", "lstm"])
+            "utterance.cell_type": tune.grid_search(["rnn", "gru", "lstm"]),
         },
         "test_2": {
             "training.learning_rate": tune.loguniform(0.001, 0.1),
             "combiner.num_fc_layers": tune.randint(2, 6),
-            "utterance.cell_type": tune.choice(["rnn", "gru", "lstm"])
-        }
+            "utterance.cell_type": tune.choice(["rnn", "gru", "lstm"]),
+        },
     }
 
 
-@pytest.mark.skipif(not RAY_AVAILABLE,
-                    reason="Ray is not installed for testing")
+@pytest.mark.skipif(not RAY_AVAILABLE, reason="Ray is not installed for testing")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
 
@@ -97,8 +90,9 @@ def test_grid_strategy(key):
     num_samples = hyperopt_test_params["num_samples"]
     tune_sampler_params = hyperopt_test_params["parameters"]
 
-    tune_sampler = RayTuneSampler(goal=goal, parameters=tune_sampler_params,
-                                  num_samples=num_samples)
+    tune_sampler = RayTuneSampler(
+        goal=goal, parameters=tune_sampler_params, num_samples=num_samples
+    )
     search_space = tune_sampler.search_space
 
     actual_params_keys = search_space.keys()

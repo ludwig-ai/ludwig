@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,29 +17,33 @@
 
 def get_pandas_dataset_manager(**kwargs):
     from ludwig.data.dataset.pandas import PandasDatasetManager
+
     return PandasDatasetManager(**kwargs)
 
 
 def get_parquet_dataset_manager(**kwargs):
     from ludwig.data.dataset.parquet import ParquetDatasetManager
+
     return ParquetDatasetManager(**kwargs)
 
 
 def get_tfrecord_dataset_manager(**kwargs):
     from ludwig.data.dataset.tfrecord import TFRecordDatasetManager
+
     return TFRecordDatasetManager(**kwargs)
 
 
 def get_ray_dataset_manager(**kwargs):
     from ludwig.data.dataset.ray import RayDatasetManager
+
     return RayDatasetManager(**kwargs)
 
 
 dataset_registry = {
-    'parquet': get_parquet_dataset_manager,
-    'hdf5': get_pandas_dataset_manager,
-    'tfrecord': get_tfrecord_dataset_manager,
-    'ray': get_ray_dataset_manager,
+    "parquet": get_parquet_dataset_manager,
+    "hdf5": get_pandas_dataset_manager,
+    "tfrecord": get_tfrecord_dataset_manager,
+    "ray": get_ray_dataset_manager,
     None: get_pandas_dataset_manager,
 }
 

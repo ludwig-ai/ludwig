@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,8 +32,9 @@ def _split(data_df, split):
             test_set = data_df[data_df[SPLIT] == 2].drop(columns=[SPLIT])
             return training_set, test_set, val_set
         else:
-            raise ValueError("The dataset does not have splits, "
-                             "load with `split=False`")
+            raise ValueError(
+                "The dataset does not have splits, " "load with `split=False`"
+            )
     return data_df
 
 
@@ -44,10 +44,9 @@ class CSVLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self, split) -> Union[pd.DataFrame,
-                                                     Tuple[pd.DataFrame,
-                                                           pd.DataFrame,
-                                                           pd.DataFrame]]:
+    def load_processed_dataset(
+        self, split
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed CSV into a dataframe.
 
         :param split: Splits along 'split' column if present
@@ -71,17 +70,15 @@ class ParquetLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self, split) -> Union[pd.DataFrame,
-                                                     Tuple[pd.DataFrame,
-                                                           pd.DataFrame,
-                                                           pd.DataFrame]]:
+    def load_processed_dataset(
+        self, split
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed Parquet into a dataframe.
 
         :param split: Splits along 'split' column if present
         :returns: A pandas dataframe
         """
-        dataset_path = os.path.join(self.processed_dataset_path,
-                                    self.parquet_filename)
+        dataset_path = os.path.join(self.processed_dataset_path, self.parquet_filename)
         data_df = pd.read_parquet(dataset_path)
         return _split(data_df, split)
 

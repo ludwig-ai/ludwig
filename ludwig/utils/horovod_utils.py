@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,17 +25,19 @@ except (ModuleNotFoundError, ImportError):
 
 def initialize_horovod():
     if not _HVD:
-        raise ValueError("Horovod backend specified, "
-                         "but cannot import `horovod.tensorflow`. "
-                         "Install Horovod following the instructions at: "
-                         "https://github.com/horovod/horovod")
+        raise ValueError(
+            "Horovod backend specified, "
+            "but cannot import `horovod.tensorflow`. "
+            "Install Horovod following the instructions at: "
+            "https://github.com/horovod/horovod"
+        )
     _HVD.init()
     return _HVD
 
 
 def has_horovodrun():
     """Returns True if running with `horovodrun` using Gloo or OpenMPI."""
-    return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ
+    return "OMPI_COMM_WORLD_RANK" in os.environ or "HOROVOD_RANK" in os.environ
 
 
 def return_first(fn):
@@ -44,7 +45,9 @@ def return_first(fn):
 
     The purpose of this function is to reduce network overhead.
     """
+
     def wrapped(*args, **kwargs):
         res = fn(*args, **kwargs)
         return res if _HVD.rank() == 0 else None
+
     return wrapped

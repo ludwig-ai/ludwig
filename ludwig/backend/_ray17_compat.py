@@ -8,7 +8,7 @@ from horovod.ray.utils import detect_nics, nics_to_env_var
 from horovod.runner.common.util import secret, timeout
 from ray.util.sgd.v2.backends.backend import Backend, BackendConfig
 from ray.util.sgd.v2.utils import update_env_vars
-from ray.util.sgd.v2.worker_group import WorkerGroup, Worker
+from ray.util.sgd.v2.worker_group import Worker, WorkerGroup
 
 T = TypeVar("T")
 
@@ -16,12 +16,14 @@ T = TypeVar("T")
 @dataclass
 class HorovodConfig(BackendConfig):
     """Configurations for Horovod setup.
+
     See https://github.com/horovod/horovod/blob/master/horovod/runner/common/util/settings.py # noqa: E501
     Args:
         nics (Optional[Set[str]): Network interfaces that can be used for
             communication.
         verbose (int): Horovod logging verbosity.
     """
+
     nics: Optional[Set[str]] = None
     verbose: int = 1
     key: Optional[str] = None
@@ -36,15 +38,17 @@ class HorovodConfig(BackendConfig):
         return timeout.Timeout(
             self.timeout_s,
             message="Timed out waiting for {activity}. Please "
-                    "check connectivity between servers. You "
-                    "may need to increase the --start-timeout "
-                    "parameter if you have too many servers.")
+            "check connectivity between servers. You "
+            "may need to increase the --start-timeout "
+            "parameter if you have too many servers.",
+        )
 
     def __post_init__(self):
         if Coordinator is None:
             raise ValueError(
                 "`horovod[ray]` is not installed. "
-                "Please install 'horovod[ray]' to use this backend.")
+                "Please install 'horovod[ray]' to use this backend."
+            )
 
         if self.ssh_str and not os.path.exists(self.ssh_identity_file):
             with open(self.ssh_identity_file, "w") as f:
@@ -77,7 +81,9 @@ class HorovodWorkerWrapper:
         class ExecuteHandle:
             def remote(self, func, *args, **kwargs):
                 _ = None
-                return w.actor._BaseWorkerMixin__execute.remote(func, _, *args, **kwargs)
+                return w.actor._BaseWorkerMixin__execute.remote(
+                    func, _, *args, **kwargs
+                )
 
         return ExecuteHandle()
 
@@ -85,8 +91,7 @@ class HorovodWorkerWrapper:
 class HorovodBackend(Backend):
     share_cuda_visible_devices: bool = True
 
-    def on_start(self, worker_group: WorkerGroup,
-                 backend_config: HorovodConfig):
+    def on_start(self, worker_group: WorkerGroup, backend_config: HorovodConfig):
 
         # TODO(matt): Implement placement group strategies in BackendExecutor.
 
@@ -95,9 +100,10 @@ class HorovodBackend(Backend):
         for rank in range(len(worker_group)):
             worker_node_id = worker_group.workers[rank].metadata.node_id
             setup_futures.append(
-                worker_group.execute_single_async(rank, init_env_vars, rank,
-                                                  len(worker_group),
-                                                  worker_node_id))
+                worker_group.execute_single_async(
+                    rank, init_env_vars, rank, len(worker_group), worker_node_id
+                )
+            )
         ray.get(setup_futures)
 
         # Use Horovod Ray Coordinator
@@ -116,8 +122,10 @@ class HorovodBackend(Backend):
         setup_futures = []
         for rank, local_cross_env_var in all_info.items():
             setup_futures.append(
-                worker_group.execute_single_async(rank, update_env_vars,
-                                                  local_cross_env_var))
+                worker_group.execute_single_async(
+                    rank, update_env_vars, local_cross_env_var
+                )
+            )
         ray.get(setup_futures)
 
         coordinator_envs = self.coordinator.establish_rendezvous()
@@ -126,7 +134,8 @@ class HorovodBackend(Backend):
         nics = detect_nics(
             backend_config,
             all_host_names=list(self.coordinator.hostnames),
-            node_workers=node_workers)
+            node_workers=node_workers,
+        )
         coordinator_envs.update(nics_to_env_var(nics))
 
         worker_group.execute(update_env_vars, coordinator_envs)

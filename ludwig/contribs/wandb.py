@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +18,7 @@ import os
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
 
-wandb = LazyLoader('wandb', globals(), 'wandb')
+wandb = LazyLoader("wandb", globals(), "wandb")
 
 logger = logging.getLogger(__name__)
 
@@ -28,18 +27,21 @@ class WandbCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 
     def on_train_init(
-            self,
-            base_config,
-            experiment_directory,
-            experiment_name,
-            model_name,
-            output_directory,
-            resume,
+        self,
+        base_config,
+        experiment_directory,
+        experiment_name,
+        model_name,
+        output_directory,
+        resume,
     ):
         logger.info("wandb.on_train_init() called...")
-        wandb.init(project=os.getenv("WANDB_PROJECT", experiment_name),
-                   name=model_name, sync_tensorboard=True,
-                   dir=output_directory)
+        wandb.init(
+            project=os.getenv("WANDB_PROJECT", experiment_name),
+            name=model_name,
+            sync_tensorboard=True,
+            dir=output_directory,
+        )
         wandb.save(os.path.join(experiment_directory, "*"))
 
     def on_train_start(self, model, config, *args, **kwargs):

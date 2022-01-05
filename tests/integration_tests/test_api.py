@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,29 +22,28 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import ENCODERS, run_api_experiment
-from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import (
+    ENCODERS,
+    category_feature,
+    generate_data,
+    run_api_experiment,
+    sequence_feature,
+)
 
 
-def run_api_experiment_separated_datasets(
-        input_features,
-        output_features,
-        data_csv
-):
-    """
-    Helper method to avoid code repetition in running an experiment
+def run_api_experiment_separated_datasets(input_features, output_features, data_csv):
+    """Helper method to avoid code repetition in running an experiment.
+
     :param input_features: input schema
     :param output_features: output schema
     :param data_csv: path to data
     :return: None
     """
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2}
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+        "training": {"epochs": 2},
     }
 
     model = LudwigModel(config)
@@ -57,9 +55,9 @@ def run_api_experiment_separated_datasets(
     validation_df = data_df.drop(train_df.index).drop(test_df.index)
 
     basename, ext = os.path.splitext(data_csv)
-    train_fname = basename + '.train' + ext
-    val_fname = basename + '.validation' + ext
-    test_fname = basename + '.test' + ext
+    train_fname = basename + ".train" + ext
+    val_fname = basename + ".validation" + ext
+    test_fname = basename + ".test" + ext
     output_dirs = []
 
     try:
@@ -72,7 +70,7 @@ def run_api_experiment_separated_datasets(
             training_set=train_fname,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
         )
         output_dirs.append(output_dir)
 
@@ -81,7 +79,7 @@ def run_api_experiment_separated_datasets(
             validation_set=val_fname,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
         )
         output_dirs.append(output_dir)
 
@@ -91,7 +89,7 @@ def run_api_experiment_separated_datasets(
             test_set=test_fname,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
         )
         output_dirs.append(output_dir)
 
@@ -112,7 +110,7 @@ def run_api_experiment_separated_datasets(
             training_set=train_df,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
         )
         output_dirs.append(output_dir)
 
@@ -121,7 +119,7 @@ def run_api_experiment_separated_datasets(
             validation_set=validation_df,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
         )
         output_dirs.append(output_dir)
 
@@ -131,7 +129,7 @@ def run_api_experiment_separated_datasets(
             test_set=test_df,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
         )
         output_dirs.append(output_dir)
 
@@ -145,39 +143,39 @@ def run_api_experiment_separated_datasets(
 
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        input_features[0]['encoder'] = encoder
+        input_features[0]["encoder"] = encoder
         run_api_experiment(input_features, output_features, data_csv=rel_path)
 
 
 def test_api_intent_classification_separated(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        input_features[0]['encoder'] = encoder
+        input_features[0]["encoder"] = encoder
         run_api_experiment_separated_datasets(
             input_features, output_features, data_csv=rel_path
         )
 
 
 def test_api_train_online(csv_filename):
-    input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
     data_csv = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
     }
     model = LudwigModel(config)
 
@@ -188,42 +186,37 @@ def test_api_train_online(csv_filename):
 
 def test_api_training_set(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
-        input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        input_features = [sequence_feature(reduce_output="sum")]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv,
-                                  os.path.join(tmpdir, 'validation.csv'))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'test.csv'))
+        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
         config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {'type': 'concat', 'fc_size': 14},
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
         }
         model = LudwigModel(config)
-        model.train(training_set=data_csv,
-                    validation_set=val_csv,
-                    test_set=test_csv)
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
         model.predict(dataset=test_csv)
 
         # Train again, this time the HDF5 cache will be used
-        model.train(training_set=data_csv,
-                    validation_set=val_csv,
-                    test_set=test_csv)
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
 
 def test_api_training_determinism(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
-        input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        input_features = [sequence_feature(reduce_output="sum")]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
 
         config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {'type': 'concat', 'fc_size': 14},
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
         }
 
         # Train the model 3 times:
@@ -238,16 +231,13 @@ def test_api_training_determinism(csv_filename):
         rand_y = 24
 
         model_1 = LudwigModel(config)
-        model_1.train(dataset=data_csv, output_directory=tmpdir,
-                      random_seed=rand_x)
+        model_1.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
         model_2 = LudwigModel(config)
-        model_2.train(dataset=data_csv, output_directory=tmpdir,
-                      random_seed=rand_y)
+        model_2.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_y)
 
         model_3 = LudwigModel(config)
-        model_3.train(dataset=data_csv, output_directory=tmpdir,
-                      random_seed=rand_x)
+        model_3.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
         model_weights_1 = model_1.model.get_weights()
         model_weights_2 = model_2.model.get_weights()
@@ -258,41 +248,43 @@ def test_api_training_determinism(csv_filename):
             if not np.allclose(weight_1, weight_2):
                 divergence = True
                 break
-        assert divergence, 'model_1 and model_2 have identical weights with different seeds!'
+        assert (
+            divergence
+        ), "model_1 and model_2 have identical weights with different seeds!"
 
         for weight_1, weight_3 in zip(model_weights_1, model_weights_3):
             assert np.allclose(weight_1, weight_3)
 
 
 def run_api_commands(
-        input_features,
-        output_features,
-        data_csv,
-        output_dir,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        skip_collect_predictions=False,
-        skip_collect_overall_stats=False,
+    input_features,
+    output_features,
+    data_csv,
+    output_dir,
+    skip_save_training_description=False,
+    skip_save_training_statistics=False,
+    skip_save_model=False,
+    skip_save_progress=False,
+    skip_save_log=False,
+    skip_save_processed_input=False,
+    skip_save_unprocessed_output=False,
+    skip_save_predictions=False,
+    skip_save_eval_stats=False,
+    skip_collect_predictions=False,
+    skip_collect_overall_stats=False,
 ):
-    """
-    Helper method to avoid code repetition in running an experiment
+    """Helper method to avoid code repetition in running an experiment.
+
     :param input_features: input schema
     :param output_features: output schema
     :param data_csv: path to data
     :return: None
     """
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2}
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+        "training": {"epochs": 2},
     }
 
     model = LudwigModel(config)
@@ -306,13 +298,13 @@ def run_api_commands(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
-        output_directory=output_dir
+        output_directory=output_dir,
     )
     model.predict(
         dataset=data_csv,
         skip_save_unprocessed_output=skip_save_unprocessed_output,
         skip_save_predictions=skip_save_predictions,
-        output_directory=output_dir
+        output_directory=output_dir,
     )
     model.evaluate(
         dataset=data_csv,
@@ -321,7 +313,7 @@ def run_api_commands(
         skip_save_eval_stats=skip_save_eval_stats,
         collect_predictions=not skip_collect_predictions,
         collect_overall_stats=not skip_collect_overall_stats,
-        output_directory=output_dir
+        output_directory=output_dir,
     )
     model.experiment(
         dataset=data_csv,
@@ -336,24 +328,24 @@ def run_api_commands(
         skip_save_eval_stats=skip_save_eval_stats,
         skip_collect_predictions=skip_collect_predictions,
         skip_collect_overall_stats=skip_collect_overall_stats,
-        output_directory=output_dir
+        output_directory=output_dir,
     )
 
 
-@pytest.mark.parametrize('skip_save_training_description', [False, True])
-@pytest.mark.parametrize('skip_save_training_statistics', [False, True])
-@pytest.mark.parametrize('skip_save_model', [False, True])
-@pytest.mark.parametrize('skip_save_progress', [False, True])
-@pytest.mark.parametrize('skip_save_log', [False, True])
-@pytest.mark.parametrize('skip_save_processed_input', [False, True])
+@pytest.mark.parametrize("skip_save_training_description", [False, True])
+@pytest.mark.parametrize("skip_save_training_statistics", [False, True])
+@pytest.mark.parametrize("skip_save_model", [False, True])
+@pytest.mark.parametrize("skip_save_progress", [False, True])
+@pytest.mark.parametrize("skip_save_log", [False, True])
+@pytest.mark.parametrize("skip_save_processed_input", [False, True])
 def test_api_skip_parameters_train(
-        csv_filename,
-        skip_save_training_description,
-        skip_save_training_statistics,
-        skip_save_model,
-        skip_save_progress,
-        skip_save_log,
-        skip_save_processed_input,
+    csv_filename,
+    skip_save_training_description,
+    skip_save_training_statistics,
+    skip_save_model,
+    skip_save_progress,
+    skip_save_log,
+    skip_save_processed_input,
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=2)]
@@ -361,8 +353,9 @@ def test_api_skip_parameters_train(
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
-        rel_path = generate_data(input_features, output_features,
-                                 os.path.join(output_dir, csv_filename))
+        rel_path = generate_data(
+            input_features, output_features, os.path.join(output_dir, csv_filename)
+        )
         run_api_commands(
             input_features,
             output_features,
@@ -377,12 +370,12 @@ def test_api_skip_parameters_train(
         )
 
 
-@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
-@pytest.mark.parametrize('skip_save_predictions', [False, True])
+@pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
+@pytest.mark.parametrize("skip_save_predictions", [False, True])
 def test_api_skip_parameters_predict(
-        csv_filename,
-        skip_save_unprocessed_output,
-        skip_save_predictions,
+    csv_filename,
+    skip_save_unprocessed_output,
+    skip_save_predictions,
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=2)]
@@ -390,8 +383,9 @@ def test_api_skip_parameters_predict(
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
-        rel_path = generate_data(input_features, output_features,
-                                 os.path.join(output_dir, csv_filename))
+        rel_path = generate_data(
+            input_features, output_features, os.path.join(output_dir, csv_filename)
+        )
         run_api_commands(
             input_features,
             output_features,
@@ -402,18 +396,18 @@ def test_api_skip_parameters_predict(
         )
 
 
-@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
-@pytest.mark.parametrize('skip_save_predictions', [False, True])
-@pytest.mark.parametrize('skip_save_eval_stats', [False, True])
-@pytest.mark.parametrize('skip_collect_predictions', [False, True])
-@pytest.mark.parametrize('skip_collect_overall_stats', [False, True])
+@pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
+@pytest.mark.parametrize("skip_save_predictions", [False, True])
+@pytest.mark.parametrize("skip_save_eval_stats", [False, True])
+@pytest.mark.parametrize("skip_collect_predictions", [False, True])
+@pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
 def test_api_skip_parameters_evaluate(
-        csv_filename,
-        skip_save_unprocessed_output,
-        skip_save_predictions,
-        skip_save_eval_stats,
-        skip_collect_predictions,
-        skip_collect_overall_stats,
+    csv_filename,
+    skip_save_unprocessed_output,
+    skip_save_predictions,
+    skip_save_eval_stats,
+    skip_collect_predictions,
+    skip_collect_overall_stats,
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=2)]
@@ -421,8 +415,9 @@ def test_api_skip_parameters_evaluate(
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
-        rel_path = generate_data(input_features, output_features,
-                                 os.path.join(output_dir, csv_filename))
+        rel_path = generate_data(
+            input_features, output_features, os.path.join(output_dir, csv_filename)
+        )
         run_api_commands(
             input_features,
             output_features,
@@ -444,27 +439,27 @@ def test_api_callbacks(csv_filename):
     num_examples = 32
 
     with tempfile.TemporaryDirectory() as output_dir:
-        input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        input_features = [sequence_feature(reduce_output="sum")]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
         config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {'type': 'concat', 'fc_size': 14},
-            'training': {'epochs': epochs, 'batch_size': batch_size},
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
+            "training": {"epochs": epochs, "batch_size": batch_size},
         }
         model = LudwigModel(config, callbacks=[mock_callback])
 
-        data_csv = generate_data(input_features, output_features,
-                                 os.path.join(output_dir, csv_filename),
-                                 num_examples=num_examples)
-        val_csv = shutil.copyfile(data_csv,
-                                  os.path.join(output_dir, 'validation.csv'))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, 'test.csv'))
+        data_csv = generate_data(
+            input_features,
+            output_features,
+            os.path.join(output_dir, csv_filename),
+            num_examples=num_examples,
+        )
+        val_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "validation.csv"))
+        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "test.csv"))
 
-        model.train(training_set=data_csv,
-                    validation_set=val_csv,
-                    test_set=test_csv)
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
     assert mock_callback.on_epoch_start.call_count == epochs
     assert mock_callback.on_epoch_end.call_count == epochs
@@ -475,5 +470,7 @@ def test_api_callbacks(csv_filename):
     assert mock_callback.on_test_start.call_count == epochs
     assert mock_callback.on_test_end.call_count == epochs
 
-    assert mock_callback.on_batch_start.call_count == epochs * (num_examples / batch_size)
+    assert mock_callback.on_batch_start.call_count == epochs * (
+        num_examples / batch_size
+    )
     assert mock_callback.on_batch_end.call_count == epochs * (num_examples / batch_size)

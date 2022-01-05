@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +17,9 @@ import logging
 from abc import ABC
 
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
 from ludwig.modules.embedding_modules import EmbedSparse
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.utils.registry import Registry, register_default
 
 logger = logging.getLogger(__name__)
 
@@ -34,39 +33,38 @@ class SetEncoder(Encoder, ABC):
         ENCODER_REGISTRY[name] = cls
 
 
-@register_default(name='embed')
+@register_default(name="embed")
 class SetSparseEncoder(SetEncoder):
-
     def __init__(
-            self,
-            vocab,
-            representation='dense',
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0.0,
-            reduce_output='sum',
-            **kwargs
+        self,
+        vocab,
+        representation="dense",
+        embedding_size=50,
+        embeddings_trainable=True,
+        pretrained_embeddings=None,
+        embeddings_on_cpu=False,
+        fc_layers=None,
+        num_fc_layers=0,
+        fc_size=10,
+        use_bias=True,
+        weights_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        weights_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        # weights_constraint=None,
+        # bias_constraint=None,
+        norm=None,
+        norm_params=None,
+        activation="relu",
+        dropout=0.0,
+        reduce_output="sum",
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  EmbedSparse')
+        logger.debug("  EmbedSparse")
         self.embed_sparse = EmbedSparse(
             vocab,
             embedding_size,
@@ -80,7 +78,7 @@ class SetSparseEncoder(SetEncoder):
             reduce_output=reduce_output,
         )
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -101,10 +99,10 @@ class SetSparseEncoder(SetEncoder):
 
     def call(self, inputs, training=None, mask=None):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type tf.int32
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+        :param return: embeddings of shape [batch x embed size], type tf.float32
         """
         hidden = self.embed_sparse(inputs, training=training, mask=mask)
         hidden = self.fc_stack(hidden, training=training, mask=mask)

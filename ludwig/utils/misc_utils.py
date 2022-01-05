@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,24 +31,23 @@ from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
 def set_random_seed(random_seed):
-    os.environ['PYTHONHASHSEED'] = str(random_seed)
+    os.environ["PYTHONHASHSEED"] = str(random_seed)
     random.seed(random_seed)
     numpy.random.seed(random_seed)
 
 
 def merge_dict(dct, merge_dct):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
+    """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of updating only top-level keys,
+    dict_merge recurses down into dicts nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged
+    into ``dct``.
+
     :param dct: dict onto which the merge is executed
     :param merge_dct: dct merged into dct
     :return: None
     """
     dct = copy.deepcopy(dct)
     for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], Mapping)):
+        if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping):
             dct[k] = merge_dict(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -63,8 +61,9 @@ def sum_dicts(dicts, dict_type=dict):
             if key in summed_dict:
                 prev_value = summed_dict[key]
                 if isinstance(value, (dict, OrderedDict)):
-                    summed_dict[key] = sum_dicts([prev_value, value],
-                                                 dict_type=type(value))
+                    summed_dict[key] = sum_dicts(
+                        [prev_value, value], dict_type=type(value)
+                    )
                 elif isinstance(value, numpy.ndarray):
                     summed_dict[key] = numpy.concatenate((prev_value, value))
                 else:
@@ -79,7 +78,7 @@ def resolve_pointers(dict1, dict2, dict2_name):
     for key in dict1:
         value = dict1[key]
         if value.startswith(dict2_name):
-            key_in_dict2 = value[len(dict2_name):]
+            key_in_dict2 = value[len(dict2_name) :]
             if key_in_dict2 in dict2.keys():
                 value = dict2[key_in_dict2]
                 resolved_dict[key] = value
@@ -87,15 +86,13 @@ def resolve_pointers(dict1, dict2, dict2_name):
 
 
 def get_from_registry(key, registry):
-    if hasattr(key, 'lower'):
+    if hasattr(key, "lower"):
         key = key.lower()
     if key in registry:
         return registry[key]
     else:
         raise ValueError(
-            'Key {} not supported, available options: {}'.format(
-                key, registry.keys()
-            )
+            "Key {} not supported, available options: {}".format(key, registry.keys())
         )
 
 
@@ -111,45 +108,34 @@ def set_default_values(dictionary, default_value_dictionary):
 
 
 def get_class_attributes(c):
-    return set(
-        i for i in dir(c)
-        if not callable(getattr(c, i)) and not i.startswith("_")
-    )
+    return {i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_")}
 
 
 def get_available_gpu_memory():
-    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+    _output_to_list = lambda x: x.decode("ascii").split("\n")[:-1]
 
     COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
     try:
-        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[
-                           1:]
-        memory_free_values = [int(x.split()[0])
-                              for i, x in enumerate(memory_free_info)]
+        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+        memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
     except Exception as e:
         print('"nvidia-smi" is probably not installed.', e)
 
     return memory_free_values
 
 
-def get_output_directory(
-        output_directory,
-        experiment_name,
-        model_name='run'
-):
+def get_output_directory(output_directory, experiment_name, model_name="run"):
     base_dir_name = os.path.join(
-        output_directory,
-        experiment_name + ('_' if model_name else '') + model_name
+        output_directory, experiment_name + ("_" if model_name else "") + model_name
     )
     return find_non_existing_dir_by_adding_suffix(base_dir_name)
 
 
 def get_file_names(output_directory):
-    description_fn = os.path.join(output_directory, 'description.json')
-    training_stats_fn = os.path.join(
-        output_directory, 'training_statistics.json')
+    description_fn = os.path.join(output_directory, "description.json")
+    training_stats_fn = os.path.join(output_directory, "training_statistics.json")
 
-    model_dir = os.path.join(output_directory, 'model')
+    model_dir = os.path.join(output_directory, "model")
 
     return description_fn, training_stats_fn, model_dir
 
@@ -158,16 +144,18 @@ def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
     d = h.digest()
-    b = base64.b64encode(d, altchars=b'__')
+    b = base64.b64encode(d, altchars=b"__")
     return b[:max_length]
 
 
 def get_combined_features(config):
-    return config['input_features'] + config['output_features']
+    return config["input_features"] + config["output_features"]
 
 
 def get_proc_features(config):
-    return get_proc_features_from_lists(config['input_features'], config['output_features'])
+    return get_proc_features_from_lists(
+        config["input_features"], config["output_features"]
+    )
 
 
 def get_proc_features_from_lists(*args):

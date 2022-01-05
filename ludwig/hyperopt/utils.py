@@ -11,19 +11,18 @@ logger = logging.getLogger(__name__)
 
 
 def print_hyperopt_results(hyperopt_results: HyperoptResults):
-    print_boxed('HYPEROPT RESULTS', print_fun=logger.info)
+    print_boxed("HYPEROPT RESULTS", print_fun=logger.info)
     for trial_results in hyperopt_results.ordered_trials:
-        logger.info('score: {:.6f} | parameters: {}'.format(
-            trial_results.metric_score, trial_results.parameters
-        ))
+        logger.info(
+            "score: {:.6f} | parameters: {}".format(
+                trial_results.metric_score, trial_results.parameters
+            )
+        )
     logger.info("")
 
 
 def save_hyperopt_stats(hyperopt_stats, hyperopt_dir_name):
-    hyperopt_stats_fn = os.path.join(
-        hyperopt_dir_name,
-        'hyperopt_statistics.json'
-    )
+    hyperopt_stats_fn = os.path.join(hyperopt_dir_name, "hyperopt_statistics.json")
     save_json(hyperopt_stats_fn, hyperopt_stats)
 
 
@@ -35,10 +34,7 @@ def load_json_value(v):
 
 
 def load_json_values(d):
-    return {
-        k: load_json_value(v)
-        for k, v in d.items()
-    }
+    return {k: load_json_value(v) for k, v in d.items()}
 
 
 def should_tune_preprocessing(config):

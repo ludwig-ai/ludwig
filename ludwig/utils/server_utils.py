@@ -1,11 +1,10 @@
-import os
 import json
+import os
 import tempfile
 from typing import Union
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from starlette.datastructures import UploadFile
 
 
@@ -40,40 +39,36 @@ def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
 
     """
     payload_dict = {}
-    payload_dict['ndarray_dtype'] = {}
+    payload_dict["ndarray_dtype"] = {}
     payload_files = {}
     if isinstance(data_source, pd.DataFrame):
-        payload_dict['raw_data'] = data_source.to_json(orient='columns')
-        payload_dict['source_type'] = 'dataframe'
+        payload_dict["raw_data"] = data_source.to_json(orient="columns")
+        payload_dict["source_type"] = "dataframe"
         for col in data_source.columns:
             if isinstance(data_source[col].iloc[0], np.ndarray):
                 # if we have any ndarray columns, record dtype
-                payload_dict['ndarray_dtype'][col] = str(
-                    data_source[col].iloc[0].dtype)
-            elif isinstance(data_source[col].iloc[0], str) \
-                    and os.path.exists(data_source[col].iloc[0]):
+                payload_dict["ndarray_dtype"][col] = str(data_source[col].iloc[0].dtype)
+            elif isinstance(data_source[col].iloc[0], str) and os.path.exists(
+                data_source[col].iloc[0]
+            ):
                 # if we have file path feature, prepare file for transport
                 for v in data_source[col]:
-                    payload_files[v] = \
-                        (v, open(v, 'rb'), 'application/octet-stream')
+                    payload_files[v] = (v, open(v, "rb"), "application/octet-stream")
     elif isinstance(data_source, pd.Series):
-        payload_dict['raw_data'] = data_source.to_json(orient='index')
-        payload_dict['source_type'] = 'series'
+        payload_dict["raw_data"] = data_source.to_json(orient="index")
+        payload_dict["source_type"] = "series"
         for col in data_source.index:
             if isinstance(data_source[col], np.ndarray):
                 # for ndarrays record dtype for reconstruction
-                payload_dict['ndarray_dtype'][col] = str(
-                    data_source[col].dtype)
-            elif isinstance(data_source[col], str) \
-                    and os.path.exists(data_source[col]):
+                payload_dict["ndarray_dtype"][col] = str(data_source[col].dtype)
+            elif isinstance(data_source[col], str) and os.path.exists(data_source[col]):
                 # if we have file path feature, prepare file for transport
                 v = data_source[col]
-                payload_files[v] = \
-                    (v, open(v, 'rb'), 'application/octet-stream')
+                payload_files[v] = (v, open(v, "rb"), "application/octet-stream")
     else:
         ValueError(
             '"data_source" must be either a pandas DataFrame or Series, '
-            'format found to be {}'.format(type(data_source))
+            "format found to be {}".format(type(data_source))
         )
 
     return payload_dict, payload_files
@@ -82,8 +77,7 @@ def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
 def _write_file(v, files):
     # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
     suffix = os.path.splitext(v.filename)[1]
-    named_file = tempfile.NamedTemporaryFile(
-        delete=False, suffix=suffix)
+    named_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     files.append(named_file)
     named_file.write(v.file.read())
     named_file.close()
@@ -91,55 +85,50 @@ def _write_file(v, files):
 
 
 def deserialize_payload(json_string: str) -> pd.DataFrame:
-    """
-    This function performs the inverse of the serialize_payload function and
-    rebuilds the object represented in json_string to a pandas DataFrame.
+    """This function performs the inverse of the serialize_payload function and rebuilds the object represented in
+    json_string to a pandas DataFrame.
 
     Args:
         json_string: representing object to be rebuilt.
 
     Returns: pandas.DataFrame
-
     """
     payload_dict = json.loads(json_string)
 
     # extract raw data from json string
-    raw_data_dict = json.loads(payload_dict['raw_data'])
+    raw_data_dict = json.loads(payload_dict["raw_data"])
     # rebuild based on original data source
-    if payload_dict['source_type'] == 'dataframe':
+    if payload_dict["source_type"] == "dataframe":
         # reconstitute the pandas dataframe
-        df = pd.DataFrame.from_dict(raw_data_dict, orient='columns')
-    elif payload_dict['source_type'] == 'series':
+        df = pd.DataFrame.from_dict(raw_data_dict, orient="columns")
+    elif payload_dict["source_type"] == "series":
         # reconstitute series into single row dataframe
         df = pd.DataFrame(pd.Series(raw_data_dict)).T
     else:
         ValueError(
             'Unknown "source_type" found.  Valid values are "dataframe" or '
-            '"series".  Instead found {}'.format(payload_dict['source_type'])
+            '"series".  Instead found {}'.format(payload_dict["source_type"])
         )
 
     # if source has ndarrays, rebuild those from list and set
     # original dtype.
-    if payload_dict['ndarray_dtype']:
+    if payload_dict["ndarray_dtype"]:
         # yes, now covert list representation to ndarray representation
-        for col in payload_dict['ndarray_dtype']:
-            dtype = payload_dict['ndarray_dtype'][col]
+        for col in payload_dict["ndarray_dtype"]:
+            dtype = payload_dict["ndarray_dtype"][col]
             df[col] = df[col].apply(lambda x: np.array(x).astype(dtype))
 
     return df
 
 
-def deserialize_request(form: 'multi-part form') -> tuple:
-    """
-    This function will desearlize the REST API request packet to create a
-    pandas dataframe that is input to the Ludwig predict method and a
-    list of files that will be cleaned up at the end of processing.
+def deserialize_request(form: "multi-part form") -> tuple:
+    """This function will desearlize the REST API request packet to create a pandas dataframe that is input to the
+    Ludwig predict method and a list of files that will be cleaned up at the end of processing.
 
     Args:
         form: REST API provide form data
 
     Returns: tuple(pandas.DataFrame, list of temporary files to clean up)
-
     """
     files = []
     file_index = {}
@@ -148,7 +137,7 @@ def deserialize_request(form: 'multi-part form') -> tuple:
             file_index[v.filename] = _write_file(v, files)
 
     # reconstruct the dataframe
-    df = deserialize_payload(form['payload'])
+    df = deserialize_payload(form["payload"])
 
     # insert files paths of the temporary files in place of the original
     # file paths specifed by the user.
@@ -161,7 +150,10 @@ def deserialize_request(form: 'multi-part form') -> tuple:
     #
     # IMPORTANT: There is a one-to-one coorespondence of the to_replace list
     # and the value list. Each list must be the same size.
-    df.replace(to_replace=list(file_index.keys()),
-               value=list(file_index.values()), inplace=True)
+    df.replace(
+        to_replace=list(file_index.keys()),
+        value=list(file_index.values()),
+        inplace=True,
+    )
 
     return df, files

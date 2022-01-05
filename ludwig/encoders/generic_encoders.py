@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,47 +23,42 @@ logger = logging.getLogger(__name__)
 
 
 class PassthroughEncoder(Layer):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
+    def __init__(self, **kwargs):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
     def call(self, inputs, training=None, mask=None):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type tf.float32
         """
-        return {'encoder_output': inputs}
+        return {"encoder_output": inputs}
 
 
 class DenseEncoder(Layer):
-
     def __init__(
-            self,
-            layers=None,
-            num_layers=1,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            **kwargs
+        self,
+        layers=None,
+        num_layers=1,
+        fc_size=256,
+        use_bias=True,
+        weights_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        weights_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        # weights_constraint=None,
+        # bias_constraint=None,
+        norm=None,
+        norm_params=None,
+        activation="relu",
+        dropout=0,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             layers=layers,
             num_layers=num_layers,
@@ -85,7 +79,7 @@ class DenseEncoder(Layer):
 
     def call(self, inputs, training=None, mask=None):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type tf.float32
         """
-        return {'encoder_output': self.fc_stack(inputs)}
+        return {"encoder_output": self.fc_stack(inputs)}

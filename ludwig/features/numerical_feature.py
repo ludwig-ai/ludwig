@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,31 +18,28 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.metrics import (
-    MeanAbsoluteError as MeanAbsoluteErrorMetric,
-)
-from tensorflow.keras.metrics import (
-    MeanSquaredError as MeanSquaredErrorMetric,
-    RootMeanSquaredError as RootMeanSquaredErrorMetric,
-)
+from tensorflow.keras.metrics import MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
+from tensorflow.keras.metrics import RootMeanSquaredError
+from tensorflow.keras.metrics import RootMeanSquaredError as RootMeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
+from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
+from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.modules.loss_modules import MAELoss, MSELoss, RMSELoss, RMSPELoss
 from ludwig.modules.metric_modules import (
     MAEMetric,
     MSEMetric,
+    R2Score,
     RMSEMetric,
     RMSPEMetric,
-    R2Score,
 )
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.misc_utils import set_default_values
-from ludwig.utils.misc_utils import get_from_registry
-from tensorflow.keras.metrics import RootMeanSquaredError
+from ludwig.utils.misc_utils import (
+    get_from_registry,
+    set_default_value,
+    set_default_values,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -160,9 +156,9 @@ class NumericalFeatureMixin:
 
     @staticmethod
     def cast_column(column, backend):
-        return backend.df_engine.df_lib.to_numeric(
-            column, errors="coerce"
-        ).astype(np.float32)
+        return backend.df_engine.df_lib.to_numeric(column, errors="coerce").astype(
+            np.float32
+        )
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -175,13 +171,13 @@ class NumericalFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-            feature,
-            input_df,
-            proc_df,
-            metadata,
-            preprocessing_parameters,
-            backend,
-            skip_save_processed_input,
+        feature,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature[PROC_COLUMN]] = (
             input_df[feature[COLUMN]].astype(np.float32).values
@@ -217,9 +213,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         assert len(inputs.shape) == 1
 
         inputs_exp = inputs[:, tf.newaxis]
-        inputs_encoded = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs_exp, training=training, mask=mask)
 
         return inputs_encoded
 
@@ -231,9 +225,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         return ()
 
     @staticmethod
-    def update_config_with_metadata(
-            input_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -281,10 +273,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
-                predictions = tf.clip_by_value(
-                    predictions, self.clip[0], self.clip[1]
-                )
-                logger.debug("  clipped_predictions: {0}".format(predictions))
+                predictions = tf.clip_by_value(predictions, self.clip[0], self.clip[1])
+                logger.debug(f"  clipped_predictions: {predictions}")
             else:
                 raise ValueError(
                     "The clip parameter of {} is {}. "
@@ -305,9 +295,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         elif self.loss[TYPE] == "root_mean_squared_percentage_error":
             self.train_loss_function = RMSPELoss()
         else:
-            raise ValueError(
-                "Unsupported loss type {}".format(self.loss[TYPE])
-            )
+            raise ValueError(f"Unsupported loss type {self.loss[TYPE]}")
 
         self.eval_loss_function = self.train_loss_function
 
@@ -328,12 +316,12 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
             name="metric_mae"
         )
-        self.metric_functions[
-            ROOT_MEAN_SQUARED_ERROR
-        ] = RootMeanSquaredErrorMetric(name="metric_rmse")
-        self.metric_functions[
-            ROOT_MEAN_SQUARED_PERCENTAGE_ERROR
-        ] = RMSPEMetric(name="metric_rmspe")
+        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RootMeanSquaredErrorMetric(
+            name="metric_rmse"
+        )
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric(
+            name="metric_rmspe"
+        )
         self.metric_functions[R2] = R2Score(name="metric_r2")
 
     def get_prediction_set(self):
@@ -347,9 +335,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return ()
 
     @staticmethod
-    def update_config_with_metadata(
-            output_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -358,11 +344,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return {}
 
     def postprocess_predictions(
-            self,
-            predictions,
-            metadata,
-            output_directory,
-            backend,
+        self,
+        predictions,
+        metadata,
+        output_directory,
+        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:

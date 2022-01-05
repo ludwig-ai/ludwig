@@ -1,21 +1,30 @@
 import bisect
 import logging
-
-from typing import Dict, List
 from dataclasses import dataclass, field
+from typing import Dict, List
+
 from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
 
-from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NUMERICAL, PARAMETERS, SAMPLER, TRAINING, TYPE
+from ludwig.constants import (
+    COMBINER,
+    CONFIG,
+    HYPEROPT,
+    NUMERICAL,
+    PARAMETERS,
+    SAMPLER,
+    TRAINING,
+    TYPE,
+)
 from ludwig.utils.defaults import default_combiner_type
 
 try:
     import ray
 except ImportError:
     raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
+        " ray is not installed. "
+        "In order to use auto_train please run "
+        "pip install ludwig[ray]"
     )
 
 
@@ -65,12 +74,9 @@ def avg_num_tokens(field: Series) -> int:
 def get_available_resources() -> dict:
     # returns total number of gpus and cpus
     resources = ray.cluster_resources()
-    gpus = resources.get('GPU', 0)
-    cpus = resources.get('CPU', 0)
-    resources = {
-        'gpu': gpus,
-        'cpu': cpus
-    }
+    gpus = resources.get("GPU", 0)
+    cpus = resources.get("CPU", 0)
+    resources = {"gpu": gpus, "cpu": cpus}
     return resources
 
 
@@ -85,9 +91,9 @@ def _ray_init():
         return
 
     try:
-        ray.init('auto', ignore_reinit_error=True)
+        ray.init("auto", ignore_reinit_error=True)
     except ConnectionError:
-        logger.info('Initializing new Ray cluster...')
+        logger.info("Initializing new Ray cluster...")
         ray.init()
 
 
@@ -97,27 +103,37 @@ def _ray_init():
 # input numerical columns ratio.  This model config "transfer learning" can improve the automl search.
 def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
     base_model_type = base_config[COMBINER][TYPE]
-    base_model_numeric_ratio = _get_ratio_numeric_input_features(base_config["input_features"])
+    base_model_numeric_ratio = _get_ratio_numeric_input_features(
+        base_config["input_features"]
+    )
     min_numeric_ratio_distance = 1.0
     min_dataset = None
 
     for dataset in ref_configs["datasets"]:
         dataset_config = dataset[CONFIG]
         if base_model_type == dataset_config[COMBINER][TYPE]:
-            dataset_numeric_ratio = _get_ratio_numeric_input_features(dataset_config["input_features"])
+            dataset_numeric_ratio = _get_ratio_numeric_input_features(
+                dataset_config["input_features"]
+            )
             ratio_distance = abs(base_model_numeric_ratio - dataset_numeric_ratio)
             if ratio_distance <= min_numeric_ratio_distance:
                 min_numeric_ratio_distance = ratio_distance
                 min_dataset = dataset
 
     if min_dataset is not None:
-        logger.info('Transfer config from dataset {}'.format(min_dataset["name"]))
+        logger.info("Transfer config from dataset {}".format(min_dataset["name"]))
         min_dataset_config = min_dataset[CONFIG]
         hyperopt_params = base_config[HYPEROPT][PARAMETERS]
         point_to_evaluate = {}
-        _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, COMBINER)
-        _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, TRAINING)
-        base_config[HYPEROPT][SAMPLER]["search_alg"]["points_to_evaluate"] = [point_to_evaluate]
+        _add_option_to_evaluate(
+            point_to_evaluate, min_dataset_config, hyperopt_params, COMBINER
+        )
+        _add_option_to_evaluate(
+            point_to_evaluate, min_dataset_config, hyperopt_params, TRAINING
+        )
+        base_config[HYPEROPT][SAMPLER]["search_alg"]["points_to_evaluate"] = [
+            point_to_evaluate
+        ]
     return base_config
 
 
@@ -136,14 +152,14 @@ def _add_option_to_evaluate(
     point_to_evaluate: Dict,
     dataset_config: Dict,
     hyperopt_params: Dict,
-    option_type: str
+    option_type: str,
 ) -> Dict:
     options = dataset_config[option_type]
     for option in options.keys():
-        option_param = option_type+"."+option
+        option_param = option_type + "." + option
         if option_param in hyperopt_params.keys():
             option_val = options[option]
             point_to_evaluate[option_param] = option_val
-            if option_val not in hyperopt_params[option_param]['categories']:
-                bisect.insort(hyperopt_params[option_param]['categories'],option_val)
+            if option_val not in hyperopt_params[option_param]["categories"]:
+                bisect.insort(hyperopt_params[option_param]["categories"], option_val)
     return point_to_evaluate

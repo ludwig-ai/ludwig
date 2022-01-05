@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class FeedForwardAttentionReducer(Layer):
-    def __init__(self, hidden_size=256, activation='tanh'):
+    def __init__(self, hidden_size=256, activation="tanh"):
         super().__init__()
         self.layer1 = Dense(hidden_size, activation=activation)
-        self.layer2 = Dense(1, activation='linear', use_bias=False)
+        self.layer2 = Dense(1, activation="linear", use_bias=False)
 
     def call(self, inputs, training=None, mask=None):
         # current_inputs shape [b, s, h]
@@ -120,13 +119,13 @@ class TransformerBlock(Layer):
 
 class TransformerStack(Layer):
     def __init__(
-            self,
-            hidden_size=256,
-            num_heads=8,
-            fc_size=256,
-            num_layers=1,
-            dropout=0.1,
-            **kwargs
+        self,
+        hidden_size=256,
+        num_heads=8,
+        fc_size=256,
+        num_layers=1,
+        dropout=0.1,
+        **kwargs,
     ):
         super().__init__()
         self.supports_masking = True
@@ -137,18 +136,19 @@ class TransformerStack(Layer):
                 hidden_size=hidden_size,
                 num_heads=num_heads,
                 fc_size=fc_size,
-                dropout=dropout
+                dropout=dropout,
             )
             self.layers.append(layer)
 
         for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
+            logger.debug(f"   {layer.name}")
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
         for layer in self.layers:
             hidden = layer(hidden, training=training, mask=mask)
         return hidden
+
 
 # todo future: maybe reintroduce these attention function
 # def feed_forward_attention(current_inputs, feature_hidden_size,

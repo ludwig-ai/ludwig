@@ -24,6 +24,7 @@ Ludwig은 사용자들이 딥러닝 모델을 빠르게 학습하고 테스트�
 Ludwig는 특정 use case의 end-to-end 모델을 작성하기 위해 조합할 수 있는 일련의 모델 아키텍처를 제공합니다. 도시를 설계하는 것을 예로 들어, 딥러닝 라이브러리가 도시 내부 건물의 구성요소(기둥, 바닥, 등)를 제공하고 있다면, Ludwig는 도시를 구성하는 건물을 제공하고 있습니다. 그러면 사용자는 도시 내부의 만들어진 건물 중 하나를 선택해 사용하거나, 새로운 건물을 추가할 수 있습니다.
 
 Toolbox에 반영된 핵심 설계 원리는 아래와 같습니다:
+
 - No coding required: 모델을 학습시키고 예측된 데이터를 얻는 데에 코딩 스킬이 필요하지 않습니다.
 - Generality: 딥러닝 모델 설계에 대한 새로운 데이터 유형 기반 접근 방식은 다양한 use case들에 적용할 수 있는 tool을 만들어줍니다.
 - Flexibility: 숙련된 사용자들은 모델 제작과 훈련을 광범위하게 제어하는 반면, 초보자들은 그것을 쉽게 사용할 수 있습니다.
@@ -31,9 +32,7 @@ Toolbox에 반영된 핵심 설계 원리는 아래와 같습니다:
 - Understandability: 종종 딥러닝 모델 내부는 진행 상황을 확인할 수 없는 것처럼 여겨지지만, Ludwig는 성능을 이해하고 예측된 데이터들을 비교하기 위한 표준 시각화 기능을 제공합니다.
 - Open Source: Apache License 2.0
 
-
-Installation
-============
+# Installation
 
 Ludwig는 Python 3.6이상 버전을 요구합니다. 만약 Python 3가 설치되어 있지 않으면 다음 명령어를 이용해서 설치하세요.
 
@@ -55,14 +54,15 @@ pip install ludwig
 ```
 
 위의 명령어는 Ludwig을 실행하기 위해 필요한 파일만 설치하게 되며, 더 많은 기능이 필요하다면 아래와 같은 파일들을 설치하면 됩니다.
- - `ludwig[text]` for text dependencies.
- - `ludwig[audio]` for audio and speech dependencies.
- - `ludwig[image]` for image dependencies.
- - `ludwig[hyperopt]` for hyperparameter optimization dependencies.
- - `ludwig[horovod]` for distributed training dependencies.
- - `ludwig[serve]` for serving dependencies.
- - `ludwig[viz]` for visualization dependencies.
- - `ludwig[test]` for dependencies needed for testing.
+
+- `ludwig[text]` for text dependencies.
+- `ludwig[audio]` for audio and speech dependencies.
+- `ludwig[image]` for image dependencies.
+- `ludwig[hyperopt]` for hyperparameter optimization dependencies.
+- `ludwig[horovod]` for distributed training dependencies.
+- `ludwig[serve]` for serving dependencies.
+- `ludwig[viz]` for visualization dependencies.
+- `ludwig[test]` for dependencies needed for testing.
 
 [Horovod](https://github.com/horovod/horovod)를 통해 분산 학습이 지원되며, `pip install ludwig[horovod]` 또는 `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]` 와 같이 GPU 환경에서 설치가 가능합니다.
 설치 가능한 옵션들을 더 확인하고 싶으시다면 Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) 를 참고하시기 바랍니다.
@@ -81,9 +81,7 @@ pip install -e '.[test]'
 
 **Note:** 만약 GPU 없이 실행 중이라면, 가벼운 용량의 CPU로 만 사용할 수 있는 TensorFlow를 사용하고 싶으실 겁니다. CPU로 만 사용할 수 있는 TensorFlow 버전을 사용하고 싶다면 `tensorflow`를 삭제하고 `ludwig`를 설치한 후 `tensorflow-cpu`로 대체하면 됩니다. `requirements.txt`에 명시되어 있는 대로 호환 가능한 범위 내의 버전을 설치해야만 합니다.
 
-
-Basic Principles
-----------------
+## Basic Principles
 
 Ludwig는 모델학습, 학습된 모델을 이용한 예측, 평가의 3가지 주요 기능을 제공합니다. 이것은 데이터 유형 추상화에 기반합니다. 그래서 같은 데이터를 이용해 사전, 사후 처리 과정을 데이터 유형을 공유하는 서로 다른 dataset으로 실행되고, 개발된 encoding 및 decoding 모델을 다른 여러 작업에서 재사용이 가능합니다.
 
@@ -122,18 +120,16 @@ config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야
 
 Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이터를 사전 처리하는 방법, 최적화할 아키텍처 및 학습 매개변수, 하이퍼 파라미터 등의 추가 정보를 저장합니다. 이를 통해 초보자는 쉽게 사용할 수 있고, 전문가도 유연하게 사용할 수 있습니다.
 
-
-Training
---------
+## Training
 
 예를 들어, 아래와 같이 분류된 dataset형식의 파일을 보면:
 
-| doc_text                              | class    |
-|---------------------------------------|----------|
-| Former president Barack Obama ...     | politics |
-| Juventus hired Cristiano Ronaldo ...  | sport    |
-| LeBron James joins the Lakers ...     | sport    |
-| ...                                   | ...      |
+| doc_text                             | class    |
+| ------------------------------------ | -------- |
+| Former president Barack Obama ...    | politics |
+| Juventus hired Cristiano Ronaldo ... | sport    |
+| LeBron James joins the Lakers ...    | sport    |
+| ...                                  | ...      |
 
 `doc_text`열의 내용을 입력으로 사용하여 `class`열의 값을 예측하는 모델을 학습시키려고 할 때 다음과 같은 config파일 구성을 사용할 수 있습니다:
 
@@ -152,9 +148,9 @@ ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_t
 Ludwig은 다음과 같은 동작을 합니다:
 
 1. data의 무작위 분할을 실시합니다
-2. dataset을 사전 처리합니다.
-3. Softmax classifier를 통해 결과를 해석하는 ParallelCNN모델(text 기능의 기본값)을 구축합니다.
-4. 검증 세트의 성능이 더 이상 개선되지 않을 때까지 학습을 반복합니다.
+1. dataset을 사전 처리합니다.
+1. Softmax classifier를 통해 결과를 해석하는 ParallelCNN모델(text 기능의 기본값)을 구축합니다.
+1. 검증 세트의 성능이 더 이상 개선되지 않을 때까지 학습을 반복합니다.
 
 학습 과정이 콘솔창에서 보일 것이고 TensorBoard 또한 사용될 수 있습니다.
 
@@ -179,15 +175,11 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 시각화하는 더 다양한 방법을 알고 싶으시다면 [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations)에서 확인해 주시기 바랍니다.
 
+## Distributed Training
 
-Distributed Training
---------------------
+사용자는 [Horovod](https://github.com/horovod/horovod)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training)를 확인해 주시기 바랍니다.
 
-사용자는 [Horovod](https://github.com/horovod/horovod)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training)를 확인해 주시기 바랍니다. 
-
-
-Prediction and Evaluation
--------------------------
+## Prediction and Evaluation
 
 이전에 학습시킨 모델로 새로운 data의 출력값을 예측하고 싶다면 콘솔 창에서 다음의 명령어를 입력하면 됩니다:
 
@@ -215,9 +207,7 @@ ludwig visualize --visualization compare_performance --test_statistics path/to/t
 
 학습과 예측을 교대로 수행하는 간단한 `ludwig experiment`명령어 또한 사용 가능합니다.
 
-
-Programmatic API
-----------------
+## Programmatic API
 
 Ludwig는 사용자가 모델을 학습시키거나 불러오게 해주고 새로운 데이터에 대한 예측 값을 얻는 데에 사용하는 간단한 프로그램 API를 제공합니다:
 
@@ -238,25 +228,19 @@ predictions = model.predict(test_data)
 
 YAML 파일에 대한 같은 정보를 포함하고 있는 `config`는 CLI(Command Line Interface)에 제공됩니다. 더 자세한 정보는 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/)과 [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/)에서 제공됩니다.
 
+## Extensibility
 
-Extensibility
--------------
-
-Ludwig는 처음부터 확장성을 염두에 두고 제작되었습니다. 
+Ludwig는 처음부터 확장성을 염두에 두고 제작되었습니다.
 데이터를 사전 처리, 부호화 및 복호화 기능을 포함한 추상 클래스의 데이터 유형별 구현을 추가하면 현재 지원되지 않는 데이터형을 쉽게 추가할 수 있습니다.
 
 나아가 자체적인 특정 hyperparameters가 있는 새로운 모델들은 (데이터 타입에 따라, 특정 등급의) tensor들을 입력으로 받아들이고 tensor들을 출력으로 제공하는 클래스를 구현함으로써 쉽게 추가할 수 있습니다.
 이것은 모델의 재사용과 커뮤니티와의 공유를 장려합니다.
 자세한 내용은 [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/)를 참조하십시오.
 
-
-Full documentation
-------------------
+## Full documentation
 
 전체 문서는 [여기](https://ludwig-ai.github.io/ludwig-docs)에서 확인할 수 있습니다.
 
-
-License
--------
+## License
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_large)

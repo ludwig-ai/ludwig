@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,16 +19,13 @@ from abc import ABC
 import tensorflow as tf
 
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
 from ludwig.encoders.generic_encoders import DenseEncoder
-
+from ludwig.utils.registry import Registry, register_default
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry({
-    'dense': DenseEncoder
-})
+ENCODER_REGISTRY = Registry({"dense": DenseEncoder})
 
 
 class BinaryEncoder(Encoder, ABC):
@@ -38,19 +34,15 @@ class BinaryEncoder(Encoder, ABC):
         ENCODER_REGISTRY[name] = cls
 
 
-@register_default(name='passthrough')
+@register_default(name="passthrough")
 class BinaryPassthroughEncoder(BinaryEncoder):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
+    def __init__(self, **kwargs):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
     def call(self, inputs, training=None, mask=None):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type tf.float32
         """
-        return {'encoder_output': tf.cast(inputs, dtype=tf.float32)}
+        return {"encoder_output": tf.cast(inputs, dtype=tf.float32)}

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,29 +30,29 @@ def concatenate_csv(train_csv, vali_csv, test_csv, output_csv):
         train_csv, vali_csv, test_csv, read_csv, LOCAL_BACKEND
     )
 
-    logger.info('Saving concatenated dataset as csv..')
-    concatenated_df.to_csv(output_csv, encoding='utf-8', index=False)
-    logger.info('done')
+    logger.info("Saving concatenated dataset as csv..")
+    concatenated_df.to_csv(output_csv, encoding="utf-8", index=False)
+    logger.info("done")
 
 
 def concatenate_files(train_fname, vali_fname, test_fname, read_fn, backend):
     df_lib = backend.df_engine.df_lib
 
-    logger.info('Loading training file...')
+    logger.info("Loading training file...")
     train_df = read_fn(train_fname, df_lib)
-    logger.info('done')
+    logger.info("done")
 
-    logger.info('Loading validation file..')
+    logger.info("Loading validation file..")
     vali_df = read_fn(vali_fname, df_lib) if vali_fname is not None else None
-    logger.info('done')
+    logger.info("done")
 
-    logger.info('Loading test file..')
+    logger.info("Loading test file..")
     test_df = read_fn(test_fname, df_lib) if test_fname is not None else None
-    logger.info('done')
+    logger.info("done")
 
-    logger.info('Concatenating files..')
+    logger.info("Concatenating files..")
     concatenated_df = concatenate_df(train_df, vali_df, test_df, backend)
-    logger.info('done')
+    logger.info("done")
 
     return concatenated_df
 
@@ -63,8 +62,7 @@ def concatenate_df(train_df, vali_df, test_df, backend):
     vali_size = len(vali_df) if vali_df is not None else 0
 
     concatenated_df = backend.df_engine.df_lib.concat(
-        [df for df in [train_df, vali_df, test_df] if df is not None],
-        ignore_index=True
+        [df for df in [train_df, vali_df, test_df] if df is not None], ignore_index=True
     )
 
     def get_split(idx):
@@ -74,35 +72,23 @@ def concatenate_df(train_df, vali_df, test_df, backend):
             return 1
         return 2
 
-    concatenated_df[SPLIT] = concatenated_df.index.to_series().map(
-        get_split
-    ).astype(np.int8)
+    concatenated_df[SPLIT] = (
+        concatenated_df.index.to_series().map(get_split).astype(np.int8)
+    )
 
     return concatenated_df
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Concatenate train validation and test set'
+        description="Concatenate train validation and test set"
     )
 
-    parser.add_argument(
-        '-train',
-        '--train_csv',
-        help='CSV containing the training set'
-    )
-    parser.add_argument(
-        '-vali',
-        '--vali_csv',
-        help='CSV containing the validation set'
-    )
-    parser.add_argument(
-        '-test',
-        '--test_csv',
-        help='CSV containing the test set'
-    )
+    parser.add_argument("-train", "--train_csv", help="CSV containing the training set")
+    parser.add_argument("-vali", "--vali_csv", help="CSV containing the validation set")
+    parser.add_argument("-test", "--test_csv", help="CSV containing the test set")
 
-    parser.add_argument('-o', '--output_csv', help='output csv')
+    parser.add_argument("-o", "--output_csv", help="output csv")
     args = parser.parse_args()
 
     concatenate_csv(args.train_csv, args.vali_csv, args.test_csv, args.output_csv)

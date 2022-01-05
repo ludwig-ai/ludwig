@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
@@ -13,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import collections
 import inspect
 import logging
-import collections
 
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -26,36 +25,36 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    'rnn': SimpleRNN,
-    'gru': GRU,
-    'lstm': LSTM,
+    "rnn": SimpleRNN,
+    "gru": GRU,
+    "lstm": LSTM,
 }
 
 
 class RecurrentStack(Layer):
     def __init__(
-            self,
-            state_size=256,
-            cell_type='rnn',
-            num_layers=1,
-            bidirectional=False,
-            activation='tanh',
-            recurrent_activation='sigmoid',
-            use_bias=True,
-            unit_forget_bias=True,
-            weights_initializer='glorot_uniform',
-            recurrent_initializer='orthogonal',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            recurrent_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # kernel_constraint=kernel_constraint,
-            # recurrent_constraint=recurrent_constraint,
-            # bias_constraint=bias_constraint,
-            dropout=0.0,
-            recurrent_dropout=0.0,
-            **kwargs
+        self,
+        state_size=256,
+        cell_type="rnn",
+        num_layers=1,
+        bidirectional=False,
+        activation="tanh",
+        recurrent_activation="sigmoid",
+        use_bias=True,
+        unit_forget_bias=True,
+        weights_initializer="glorot_uniform",
+        recurrent_initializer="orthogonal",
+        bias_initializer="zeros",
+        weights_regularizer=None,
+        recurrent_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        # kernel_constraint=kernel_constraint,
+        # recurrent_constraint=recurrent_constraint,
+        # bias_constraint=bias_constraint,
+        dropout=0.0,
+        recurrent_dropout=0.0,
+        **kwargs,
     ):
         super().__init__()
         self.supports_masking = True
@@ -64,25 +63,25 @@ class RecurrentStack(Layer):
         self.layers = []
 
         rnn_params = {
-            'units': state_size,
-            'activation': activation,
-            'recurrent_activation': recurrent_activation,
-            'use_bias': use_bias,
-            'kernel_initializer': weights_initializer,
-            'recurrent_initializer': recurrent_initializer,
-            'bias_initializer': bias_initializer,
-            'unit_forget_bias': unit_forget_bias,
-            'kernel_regularizer': weights_regularizer,
-            'recurrent_regularizer': recurrent_regularizer,
-            'bias_regularizer': bias_regularizer,
-            'activity_regularizer': activity_regularizer,
+            "units": state_size,
+            "activation": activation,
+            "recurrent_activation": recurrent_activation,
+            "use_bias": use_bias,
+            "kernel_initializer": weights_initializer,
+            "recurrent_initializer": recurrent_initializer,
+            "bias_initializer": bias_initializer,
+            "unit_forget_bias": unit_forget_bias,
+            "kernel_regularizer": weights_regularizer,
+            "recurrent_regularizer": recurrent_regularizer,
+            "bias_regularizer": bias_regularizer,
+            "activity_regularizer": activity_regularizer,
             # 'kernel_constraint': weights_constraint,
             # 'recurrent_constraint': recurrent_constraint,
             # 'bias_constraint': bias_constraint,
-            'dropout': dropout,
-            'recurrent_dropout': recurrent_dropout,
-            'return_sequences': True,
-            'return_state': True,
+            "dropout": dropout,
+            "recurrent_dropout": recurrent_dropout,
+            "return_sequences": True,
+            "return_state": True,
         }
         signature = inspect.signature(rnn_layer_class.__init__)
         valid_args = set(signature.parameters.keys())
@@ -97,7 +96,7 @@ class RecurrentStack(Layer):
             self.layers.append(layer)
 
         for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
+            logger.debug(f"   {layer.name}")
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -116,8 +115,10 @@ class RecurrentStack(Layer):
 # to support use of sampled softmax loss function
 #
 class BasicDecoderOutput(
-    collections.namedtuple('BasicDecoderOutput',
-                           ('rnn_output', 'sample_id', 'projection_input'))):
+    collections.namedtuple(
+        "BasicDecoderOutput", ("rnn_output", "sample_id", "projection_input")
+    )
+):
     pass
 
 
@@ -130,7 +131,8 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
         return BasicDecoderOutput(
             rnn_output=self._rnn_output_size(),
             sample_id=self.sampler.sample_ids_shape,
-            projection_input=self._projection_input_size())
+            projection_input=self._projection_input_size(),
+        )
 
     @property
     def output_dtype(self):
@@ -138,15 +140,13 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
         return BasicDecoderOutput(
             tf.nest.map_structure(lambda _: dtype, self._rnn_output_size()),
             self.sampler.sample_ids_dtype,
-            tf.nest.map_structure(lambda _: dtype,
-                                  self._projection_input_size())
+            tf.nest.map_structure(lambda _: dtype, self._projection_input_size()),
         )
 
     # Ludwig specific implementation of BasicDecoder.step() method
     def step(self, time, inputs, state, training=None, name=None):
         cell_outputs, cell_state = self.cell(inputs, state, training=training)
-        cell_state = tf.nest.pack_sequence_as(state,
-                                              tf.nest.flatten(cell_state))
+        cell_state = tf.nest.pack_sequence_as(state, tf.nest.flatten(cell_state))
 
         # get projection_inputs to compute sampled_softmax_cross_entropy_loss
         projection_inputs = cell_outputs
@@ -154,13 +154,11 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
         if self.output_layer is not None:
             cell_outputs = self.output_layer(cell_outputs)
         sample_ids = self.sampler.sample(
-            time=time, outputs=cell_outputs, state=cell_state)
+            time=time, outputs=cell_outputs, state=cell_state
+        )
         (finished, next_inputs, next_state) = self.sampler.next_inputs(
-            time=time,
-            outputs=cell_outputs,
-            state=cell_state,
-            sample_ids=sample_ids)
-        outputs = BasicDecoderOutput(cell_outputs, sample_ids,
-                                     projection_inputs)
+            time=time, outputs=cell_outputs, state=cell_state, sample_ids=sample_ids
+        )
+        outputs = BasicDecoderOutput(cell_outputs, sample_ids, projection_inputs)
 
         return (outputs, next_state, next_inputs, finished)

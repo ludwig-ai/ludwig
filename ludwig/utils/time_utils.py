@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class WithTimer:
-    def __init__(self, title='', quiet=False):
+    def __init__(self, title="", quiet=False):
         self.title = title
         self.quiet = quiet
 
@@ -30,7 +29,7 @@ class WithTimer:
         return time.time() - self.wall, time.clock() - self.proc
 
     def enter(self):
-        """Manually trigger enter"""
+        """Manually trigger enter."""
         self.__enter__()
 
     def __enter__(self):
@@ -42,9 +41,10 @@ class WithTimer:
         if not self.quiet:
             elapsed_wp = self.elapsed()
             logger.info(
-                'Elapsed {}: wall {:.06f}, sys {:.06f}'.format(self.title,
-                                                               elapsed_wp[0],
-                                                               elapsed_wp[1]))
+                "Elapsed {}: wall {:.06f}, sys {:.06f}".format(
+                    self.title, elapsed_wp[0], elapsed_wp[1]
+                )
+            )
 
 
 class Timer:
@@ -68,35 +68,35 @@ class Timer:
         return time.clock() - self._proc
 
     def tic(self):
-        """Like Matlab tic/toc for wall time and processor time"""
+        """Like Matlab tic/toc for wall time and processor time."""
         self.reset()
 
     def toc(self):
-        """Like Matlab tic/toc for wall time"""
+        """Like Matlab tic/toc for wall time."""
         return self.wall()
 
     def tocproc(self):
-        """Like Matlab tic/toc, but for processor time"""
+        """Like Matlab tic/toc, but for processor time."""
         return self.proc()
 
 
 def timestamp():
-    return '{:%Y_%m_%d_%H_%M_%S}'.format(datetime.now())
+    return f"{datetime.now():%Y_%m_%d_%H_%M_%S}"
 
 
 def strdelta(tdelta):
     if isinstance(tdelta, (int, float)):
         tdelta = timedelta(milliseconds=tdelta)
-    d = {'D': tdelta.days}
-    d['H'], rem = divmod(tdelta.seconds, 3600)
-    d['M'], d['S'] = divmod(rem, 60)
-    d['f'] = str(tdelta.microseconds)[0:4]
-    if d['D'] > 0:
-        t = '{D}d {H}h {M}m {S}.{f}s'
-    elif d['H'] > 0:
-        t = '{H}h {M}m {S}.{f}s'
-    elif d['M'] > 0:
-        t = '{M}m {S}.{f}s'
+    d = {"D": tdelta.days}
+    d["H"], rem = divmod(tdelta.seconds, 3600)
+    d["M"], d["S"] = divmod(rem, 60)
+    d["f"] = str(tdelta.microseconds)[0:4]
+    if d["D"] > 0:
+        t = "{D}d {H}h {M}m {S}.{f}s"
+    elif d["H"] > 0:
+        t = "{H}h {M}m {S}.{f}s"
+    elif d["M"] > 0:
+        t = "{M}m {S}.{f}s"
     else:
-        t = '{S}.{f}s'
+        t = "{S}.{f}s"
     return t.format(**d)

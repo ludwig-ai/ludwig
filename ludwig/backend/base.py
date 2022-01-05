@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,10 +95,12 @@ class LocalTrainingMixin:
 
     def create_trainer(self, **kwargs):
         from ludwig.models.trainer import Trainer
+
         return Trainer(**kwargs)
 
     def create_predictor(self, **kwargs):
         from ludwig.models.predictor import Predictor
+
         return Predictor(**kwargs)
 
     def sync_model(self, model):

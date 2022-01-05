@@ -8,20 +8,20 @@ from ludwig.modules.normalization_modules import GhostBatchNormalization
 
 class TabNet(tf.keras.Model):
     def __init__(
-            self,
-            size: int,
-            output_size: int,
-            num_steps: int = 1,
-            num_total_blocks: int = 4,
-            num_shared_blocks: int = 2,
-            relaxation_factor: float = 1.5,
-            bn_momentum: float = 0.7,
-            bn_epsilon: float = 1e-3,
-            bn_virtual_bs: int = None,
-            sparsity: float = 1e-5,
+        self,
+        size: int,
+        output_size: int,
+        num_steps: int = 1,
+        num_total_blocks: int = 4,
+        num_shared_blocks: int = 2,
+        relaxation_factor: float = 1.5,
+        bn_momentum: float = 0.7,
+        bn_epsilon: float = 1e-3,
+        bn_virtual_bs: int = None,
+        sparsity: float = 1e-5,
     ):
-        """TabNet
-        Will output a vector of size output_dim.
+        """TabNet Will output a vector of size output_dim.
+
         Args:
             size (int): Embedding feature dimension to use.
             output_size (int): Output dimension.
@@ -64,13 +64,14 @@ class TabNet(tf.keras.Model):
         self.feature_transforms: List[FeatureTransformer] = [
             FeatureTransformer(**kargs)
         ]
-        self.attentive_transforms: List[AttentiveTransformer] = [None, ]
+        self.attentive_transforms: List[AttentiveTransformer] = [
+            None,
+        ]
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
                     **kargs,
-                    shared_fc_layers=self.feature_transforms[
-                        0].shared_fc_layers
+                    shared_fc_layers=self.feature_transforms[0].shared_fc_layers,
                 )
             )
             # attentive transformers are initialized in build
@@ -87,15 +88,13 @@ class TabNet(tf.keras.Model):
         num_features = input_shape[-1]
         for i in range(self.num_steps):
             self.attentive_transforms.append(
-                AttentiveTransformer(num_features, self.bn_momentum,
-                                     self.bn_epsilon, self.bn_virtual_bs)
+                AttentiveTransformer(
+                    num_features, self.bn_momentum, self.bn_epsilon, self.bn_virtual_bs
+                )
             )
 
     def call(
-            self,
-            features: tf.Tensor,
-            training: bool = None,
-            **kwargs
+        self, features: tf.Tensor, training: bool = None, **kwargs
     ) -> Tuple[tf.Tensor, tf.Tensor, List[tf.Tensor]]:
         tf.assert_rank(features, 2)
 
@@ -117,7 +116,7 @@ class TabNet(tf.keras.Model):
             # Attentive Transformer #
             #########################
             mask_values = self.attentive_transforms[step_i](
-                x[:, self.output_size:], prior_scales, training=training
+                x[:, self.output_size :], prior_scales, training=training
             )
 
             # relaxation factor 1 forces the feature to be only used once
@@ -125,11 +124,14 @@ class TabNet(tf.keras.Model):
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
-            total_entropy += tf.reduce_mean(
-                tf.reduce_sum(
-                    -mask_values * tf.math.log(mask_values + 0.00001),
-                    axis=1)
-            ) / self.num_steps
+            total_entropy += (
+                tf.reduce_mean(
+                    tf.reduce_sum(
+                        -mask_values * tf.math.log(mask_values + 0.00001), axis=1
+                    )
+                )
+                / self.num_steps
+            )
 
             masks.append(tf.expand_dims(tf.expand_dims(mask_values, 0), 3))
 
@@ -138,11 +140,9 @@ class TabNet(tf.keras.Model):
             #######################
             masked_features = tf.multiply(mask_values, features)
 
-            x = self.feature_transforms[step_i](
-                masked_features, training=training
-            )
+            x = self.feature_transforms[step_i](masked_features, training=training)
 
-            out = tf.keras.activations.relu(x[:, :self.output_size])
+            out = tf.keras.activations.relu(x[:, : self.output_size])
             out_accumulator += out
 
             # Aggregated masks are used for visualization of the
@@ -161,13 +161,13 @@ class TabNet(tf.keras.Model):
 
 class FeatureBlock(tf.keras.Model):
     def __init__(
-            self,
-            size: int,
-            apply_glu: bool = True,
-            bn_momentum: float = 0.9,
-            bn_epsilon: float = 1e-3,
-            bn_virtual_bs: int = None,
-            shared_fc_layer: tf.keras.layers.Layer = None,
+        self,
+        size: int,
+        apply_glu: bool = True,
+        bn_momentum: float = 0.9,
+        bn_epsilon: float = 1e-3,
+        bn_virtual_bs: int = None,
+        shared_fc_layer: tf.keras.layers.Layer = None,
     ):
         super().__init__()
         self.apply_glu = apply_glu
@@ -180,9 +180,7 @@ class FeatureBlock(tf.keras.Model):
             self.fc_layer = tf.keras.layers.Dense(units, use_bias=False)
 
         self.batch_norm = GhostBatchNormalization(
-            virtual_batch_size=bn_virtual_bs,
-            momentum=bn_momentum,
-            epsilon=bn_epsilon
+            virtual_batch_size=bn_virtual_bs, momentum=bn_momentum, epsilon=bn_epsilon
         )
 
     def call(self, inputs, training: bool = None, **kwargs):
@@ -195,11 +193,11 @@ class FeatureBlock(tf.keras.Model):
 
 class AttentiveTransformer(tf.keras.Model):
     def __init__(
-            self,
-            size: int,
-            bn_momentum: float = 0.9,
-            bn_epsilon: float = 1e-3,
-            bn_virtual_bs: int = None,
+        self,
+        size: int,
+        bn_momentum: float = 0.9,
+        bn_epsilon: float = 1e-3,
+        bn_virtual_bs: int = None,
     ):
         super().__init__()
         self.feature_block = FeatureBlock(
@@ -227,23 +225,21 @@ class AttentiveTransformer(tf.keras.Model):
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
         # added to avoid NaNs in the sparsemax
-        hidden = tf.clip_by_value(hidden,
-                                  clip_value_min=-1.0e+6,
-                                  clip_value_max=1.0e+6)
+        hidden = tf.clip_by_value(hidden, clip_value_min=-1.0e6, clip_value_max=1.0e6)
         return self.sparsemax(hidden)
 
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class FeatureTransformer(tf.keras.Model):
     def __init__(
-            self,
-            size: int,
-            shared_fc_layers: List[tf.keras.layers.Layer] = [],
-            num_total_blocks: int = 4,
-            num_shared_blocks: int = 2,
-            bn_momentum: float = 0.9,
-            bn_epsilon: float = 1e-3,
-            bn_virtual_bs: int = None,
+        self,
+        size: int,
+        shared_fc_layers: List[tf.keras.layers.Layer] = [],
+        num_total_blocks: int = 4,
+        num_shared_blocks: int = 2,
+        bn_momentum: float = 0.9,
+        bn_epsilon: float = 1e-3,
+        bn_virtual_bs: int = None,
     ):
         super().__init__()
         self.num_total_blocks = num_total_blocks
@@ -262,21 +258,16 @@ class FeatureTransformer(tf.keras.Model):
             if shared_fc_layers and n < len(shared_fc_layers):
                 # add shared blocks
                 self.blocks.append(
-                    FeatureBlock(**kargs, shared_fc_layer=shared_fc_layers[n]))
+                    FeatureBlock(**kargs, shared_fc_layer=shared_fc_layers[n])
+                )
             else:
                 # build new blocks
                 self.blocks.append(FeatureBlock(**kargs))
 
-    def call(
-            self,
-            inputs: tf.Tensor,
-            training: bool = None,
-            **kwargs
-    ) -> tf.Tensor:
+    def call(self, inputs: tf.Tensor, training: bool = None, **kwargs) -> tf.Tensor:
         hidden = self.blocks[0](inputs, training=training)
         for n in range(1, self.num_total_blocks):
-            hidden = (self.blocks[n](hidden, training=training) +
-                      hidden) * tf.sqrt(0.5)
+            hidden = (self.blocks[n](hidden, training=training) + hidden) * tf.sqrt(0.5)
         return hidden
 
     @property
@@ -361,13 +352,11 @@ def sparsemax(logits, axis: int = -1) -> tf.Tensor:
     # Swap logits' dimension of dim and its last dimension.
     rank_op = tf.rank(logits)
     axis_norm = axis % rank
-    logits = _swap_axis(logits, axis_norm,
-                        tf.math.subtract(rank_op, 1))
+    logits = _swap_axis(logits, axis_norm, tf.math.subtract(rank_op, 1))
 
     # Do the actual softmax on its last dimension.
     output = _compute_2d_sparsemax(logits)
-    output = _swap_axis(output, axis_norm,
-                        tf.math.subtract(rank_op, 1))
+    output = _swap_axis(output, axis_norm, tf.math.subtract(rank_op, 1))
 
     # Make shape inference work since transpose may erase its static shape.
     output.set_shape(shape)
@@ -425,19 +414,16 @@ def _compute_2d_sparsemax(logits):
     # fixed later (see p_safe) by returning p = nan. This results in the same
     # behavior as softmax.
     k_z_safe = tf.math.maximum(k_z, 1)
-    indices = tf.stack([tf.range(0, obs), tf.reshape(k_z_safe, [-1]) - 1],
-                       axis=1)
+    indices = tf.stack([tf.range(0, obs), tf.reshape(k_z_safe, [-1]) - 1], axis=1)
     tau_sum = tf.gather_nd(z_cumsum, indices)
     tau_z = (tau_sum - 1) / tf.cast(k_z_safe, logits.dtype)
 
     # calculate p
-    p = tf.math.maximum(tf.cast(0, logits.dtype),
-                        z - tf.expand_dims(tau_z, -1))
+    p = tf.math.maximum(tf.cast(0, logits.dtype), z - tf.expand_dims(tau_z, -1))
     # If k_z = 0 or if z = nan, then the input is invalid
     p_safe = tf.where(
         tf.expand_dims(
-            tf.math.logical_or(tf.math.equal(k_z, 0),
-                               tf.math.is_nan(z_cumsum[:, -1])),
+            tf.math.logical_or(tf.math.equal(k_z, 0), tf.math.is_nan(z_cumsum[:, -1])),
             axis=-1,
         ),
         # tf.fill([obs, dims], tf.cast(float("nan"), logits.dtype)),

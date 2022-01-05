@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,5 +32,5 @@ def test_num_channels_in_image():
 
 
 def test_get_abs_path():
-    assert get_abs_path('a', 'b.jpg') == 'a/b.jpg'
-    assert get_abs_path(None, 'b.jpg') == 'b.jpg'
+    assert get_abs_path("a", "b.jpg") == "a/b.jpg"
+    assert get_abs_path(None, "b.jpg") == "b.jpg"

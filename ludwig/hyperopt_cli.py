@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +23,7 @@ from ludwig.callbacks import Callback
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.data_utils import load_yaml, load_config_from_str
+from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -32,39 +31,38 @@ logger = logging.getLogger(__name__)
 
 
 def hyperopt_cli(
-        config: Union[str, dict],
-        dataset: str = None,
-        training_set: str = None,
-        validation_set: str = None,
-        test_set: str = None,
-        training_set_metadata: str = None,
-        data_format: str = None,
-        experiment_name: str = 'experiment',
-        model_name: str = 'run',
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description: bool = False,
-        skip_save_training_statistics: bool = False,
-        skip_save_model: bool = False,
-        skip_save_progress: bool = False,
-        skip_save_log: bool = False,
-        skip_save_processed_input: bool = False,
-        skip_save_unprocessed_output: bool = False,
-        skip_save_predictions: bool = False,
-        skip_save_eval_stats: bool = False,
-        skip_save_hyperopt_statistics: bool = False,
-        output_directory: str = 'results',
-        gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
-        allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
-        backend: Union[Backend, str] = None,
-        random_seed: int = default_random_seed,
-        debug: bool = False,
-        **kwargs,
+    config: Union[str, dict],
+    dataset: str = None,
+    training_set: str = None,
+    validation_set: str = None,
+    test_set: str = None,
+    training_set_metadata: str = None,
+    data_format: str = None,
+    experiment_name: str = "experiment",
+    model_name: str = "run",
+    # model_load_path=None,
+    # model_resume_path=None,
+    skip_save_training_description: bool = False,
+    skip_save_training_statistics: bool = False,
+    skip_save_model: bool = False,
+    skip_save_progress: bool = False,
+    skip_save_log: bool = False,
+    skip_save_processed_input: bool = False,
+    skip_save_unprocessed_output: bool = False,
+    skip_save_predictions: bool = False,
+    skip_save_eval_stats: bool = False,
+    skip_save_hyperopt_statistics: bool = False,
+    output_directory: str = "results",
+    gpus: Union[str, int, List[int]] = None,
+    gpu_memory_limit: int = None,
+    allow_parallel_threads: bool = True,
+    callbacks: List[Callback] = None,
+    backend: Union[Backend, str] = None,
+    random_seed: int = default_random_seed,
+    debug: bool = False,
+    **kwargs,
 ):
-    """
-    Searches for optimal hyperparameters.
+    """Searches for optimal hyperparameters.
 
     # Inputs
 
@@ -222,8 +220,7 @@ def cli(sys_argv):
         help="directory that contains the results",
     )
     parser.add_argument(
-        "--experiment_name", type=str, default="hyperopt",
-        help="experiment name"
+        "--experiment_name", type=str, default="hyperopt", help="experiment name"
     )
     parser.add_argument(
         "--model_name", type=str, default="run", help="name for the model"
@@ -233,33 +230,45 @@ def cli(sys_argv):
     # Data parameters
     # ---------------
     parser.add_argument(
-        '--dataset',
-        help='input data file path. '
-             'If it has a split column, it will be used for splitting '
-             '(0: train, 1: validation, 2: test), '
-             'otherwise the dataset will be randomly split'
+        "--dataset",
+        help="input data file path. "
+        "If it has a split column, it will be used for splitting "
+        "(0: train, 1: validation, 2: test), "
+        "otherwise the dataset will be randomly split",
     )
-    parser.add_argument('--training_set', help='input train data file path')
-    parser.add_argument(
-        '--validation_set', help='input validation data file path'
-    )
-    parser.add_argument('--test_set', help='input test data file path')
+    parser.add_argument("--training_set", help="input train data file path")
+    parser.add_argument("--validation_set", help="input validation data file path")
+    parser.add_argument("--test_set", help="input test data file path")
 
     parser.add_argument(
-        '--training_set_metadata',
-        help='input metadata JSON file path. An intermediate preprocessed file '
-             'containing the mappings of the input file created '
-             'the first time a file is used, in the same directory '
-             'with the same name and a .json extension'
+        "--training_set_metadata",
+        help="input metadata JSON file path. An intermediate preprocessed file "
+        "containing the mappings of the input file created "
+        "the first time a file is used, in the same directory "
+        "with the same name and a .json extension",
     )
 
     parser.add_argument(
-        '--data_format',
-        help='format of the input data',
-        default='auto',
-        choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
-                 'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
-                 'spss', 'stata', 'tsv']
+        "--data_format",
+        help="format of the input data",
+        default="auto",
+        choices=[
+            "auto",
+            "csv",
+            "excel",
+            "feather",
+            "fwf",
+            "hdf5",
+            "html" "tables",
+            "json",
+            "jsonl",
+            "parquet",
+            "pickle",
+            "sas",
+            "spss",
+            "stata",
+            "tsv",
+        ],
     )
 
     parser.add_argument(
@@ -275,17 +284,17 @@ def cli(sys_argv):
     # ----------------
     config = parser.add_mutually_exclusive_group(required=True)
     config.add_argument(
-        '-c',
-        '--config',
+        "-c",
+        "--config",
         type=load_config_from_str,
-        help='JSON or YAML serialized string of the model configuration'
+        help="JSON or YAML serialized string of the model configuration",
     )
     config.add_argument(
-        '-cf',
-        '--config_file',
-        dest='config',
+        "-cf",
+        "--config_file",
+        dest="config",
         type=load_yaml,
-        help='Path to the YAML file containing the model configuration'
+        help="Path to the YAML file containing the model configuration",
     )
 
     parser.add_argument(
@@ -318,11 +327,11 @@ def cli(sys_argv):
         action="store_true",
         default=False,
         help="disables saving weights each time the model improves. "
-             "By default Ludwig saves  weights after each epoch "
-             "the validation metric (improves, but  if the model is really big "
-             "that can be time consuming. If you do not want to keep "
-             "the weights and just find out what performance a model can get "
-             "with a set of hyperparameters, use this parameter to skip it",
+        "By default Ludwig saves  weights after each epoch "
+        "the validation metric (improves, but  if the model is really big "
+        "that can be time consuming. If you do not want to keep "
+        "the weights and just find out what performance a model can get "
+        "with a set of hyperparameters, use this parameter to skip it",
     )
     parser.add_argument(
         "-ssp",
@@ -330,9 +339,9 @@ def cli(sys_argv):
         action="store_true",
         default=False,
         help="disables saving weights after each epoch. By default ludwig saves "
-             "weights after each epoch for enabling resuming of training, but "
-             "if the model is really big that can be time consuming and will "
-             "save twice as much space, use this parameter to skip it",
+        "weights after each epoch for enabling resuming of training, but "
+        "if the model is really big that can be time consuming and will "
+        "save twice as much space, use this parameter to skip it",
     )
     parser.add_argument(
         "-ssl",
@@ -340,8 +349,8 @@ def cli(sys_argv):
         action="store_true",
         default=False,
         help="disables saving TensorBoard logs. By default Ludwig saves "
-             "logs for the TensorBoard, but if it is not needed turning it off "
-             "can slightly increase the overall speed",
+        "logs for the TensorBoard, but if it is not needed turning it off "
+        "can slightly increase the overall speed",
     )
 
     # ------------------
@@ -353,25 +362,24 @@ def cli(sys_argv):
         type=int,
         default=42,
         help="a random seed that is going to be used anywhere there is a call "
-             "to a random number generator: data splitting, parameter "
-             "initialization and training set shuffling",
+        "to a random number generator: data splitting, parameter "
+        "initialization and training set shuffling",
     )
     parser.add_argument(
-        "-g", "--gpus", nargs="+", type=int, default=None,
-        help="list of gpus to use"
+        "-g", "--gpus", nargs="+", type=int, default=None, help="list of gpus to use"
     )
     parser.add_argument(
-        '-gml',
-        '--gpu_memory_limit',
+        "-gml",
+        "--gpu_memory_limit",
         type=int,
         default=None,
-        help='maximum memory in MB to allocate per GPU device'
+        help="maximum memory in MB to allocate per GPU device",
     )
     parser.add_argument(
         "-b",
         "--backend",
-        help='specifies backend to use for parallel / distributed execution, '
-             'defaults to local execution or Horovod if called using horovodrun',
+        help="specifies backend to use for parallel / distributed execution, "
+        "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(
@@ -394,16 +402,14 @@ def cli(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline('hyperopt', *sys_argv)
+        callback.on_cmdline("hyperopt", *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
+    logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
-    logger = logging.getLogger('ludwig.hyperopt')
+    logger = logging.getLogger("ludwig.hyperopt")
 
-    args.backend = initialize_backend(args.backend or args.config.get('backend'))
+    args.backend = initialize_backend(args.backend or args.config.get("backend"))
     if args.backend.is_coordinator():
         print_ludwig("Hyperopt", LUDWIG_VERSION)
 

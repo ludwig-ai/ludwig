@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +22,7 @@ import tensorflow as tf
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.tfrecord import get_compression_ext, get_part_filename
 from ludwig.utils.data_utils import save_json
-from ludwig.utils.fs_utils import upload_output_file, makedirs
+from ludwig.utils.fs_utils import makedirs, upload_output_file
 
 
 class PandasEngine(DataFrameEngine):
@@ -56,7 +55,7 @@ class PandasEngine(DataFrameEngine):
         return reduce_fn(series)
 
     def to_parquet(self, df, path):
-        df.to_parquet(path, engine='pyarrow')
+        df.to_parquet(path, engine="pyarrow")
 
     def to_tfrecord(self, df, path):
         compression_type = "GZIP"
@@ -67,10 +66,8 @@ class PandasEngine(DataFrameEngine):
 
         filename = os.path.join(path, get_part_filename(0, compression_ext))
         pandas_df_to_tfrecords(
-            df,
-            filename,
-            compression_type=compression_type,
-            compression_level=9)
+            df, filename, compression_type=compression_type, compression_level=9
+        )
 
     @property
     def array_lib(self):
@@ -94,16 +91,17 @@ PANDAS = PandasEngine()
 # Pandas to TFRecord adapter.
 # The code below is modified based on:
 # https://github.com/schipiga/pandas-tfrecords/blob/master/pandas_tfrecords/to_tfrecords.py
-def pandas_df_to_tfrecords(df,
-                           path,
-                           compression_type='GZIP',
-                           compression_level=9,
-                           columns=None):
+def pandas_df_to_tfrecords(
+    df, path, compression_type="GZIP", compression_level=9, columns=None
+):
     schema = get_schema(df, columns)
     tfr_iters = get_tfrecords(df, schema)
-    write_tfrecords(tfr_iters, path,
-                    compression_type=compression_type,
-                    compression_level=compression_level)
+    write_tfrecords(
+        tfr_iters,
+        path,
+        compression_type=compression_type,
+        compression_level=compression_level,
+    )
 
 
 def get_schema(df, columns=None):
@@ -116,25 +114,23 @@ def get_schema(df, columns=None):
             continue
 
         if isinstance(val, (list, np.ndarray)):
-            schema[col] = (lambda f: lambda x:
-                tf.train.FeatureList(feature=[f(i) for i in x]))(_get_feature_func(val[0]))
+            schema[col] = (
+                lambda f: lambda x: tf.train.FeatureList(feature=[f(i) for i in x])
+            )(_get_feature_func(val[0]))
         else:
             schema[col] = (lambda f: lambda x: f(x))(_get_feature_func(val))
     return schema
 
 
 def write_meta(df, path, compression_type):
-    meta = {
-        'size': len(df.index),
-        'compression_type': compression_type or ''
-    }
+    meta = {"size": len(df.index), "compression_type": compression_type or ""}
     save_json(os.path.join(path, "meta.json"), meta)
 
 
 def write_tfrecords(tfrecords, path, compression_type=None, compression_level=9):
     opts = {}
     if compression_type:
-        opts['options'] = tf.io.TFRecordOptions(
+        opts["options"] = tf.io.TFRecordOptions(
             compression_type=compression_type,
             compression_level=compression_level,
         )
@@ -162,7 +158,8 @@ def get_tfrecords(df, schema):
         if feature_lists:
             ex = tf.train.SequenceExample(
                 context=context,
-                feature_lists=tf.train.FeatureLists(feature_list=feature_lists))
+                feature_lists=tf.train.FeatureLists(feature_list=feature_lists),
+            )
         else:
             ex = tf.train.Example(features=context)
         yield ex
@@ -177,7 +174,7 @@ def _get_feature_func(val):
 
     if isinstance(val, (float, np.floating)):
         return _float_feature
-    raise Exception(f'Unsupported type {type(val)!r}')
+    raise Exception(f"Unsupported type {type(val)!r}")
 
 
 def _bytes_feature(value):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,16 +24,27 @@ import tensorflow as tf
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from tests.integration_tests.utils import category_feature, binary_feature, \
-    numerical_feature, text_feature, vector_feature, image_feature, \
-    audio_feature, timeseries_feature, date_feature, h3_feature, set_feature, \
-    bag_feature, LocalTestBackend
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import (
+    LocalTestBackend,
+    audio_feature,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    date_feature,
+    generate_data,
+    h3_feature,
+    image_feature,
+    numerical_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
+)
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize('should_load_model', [True, False])
+@pytest.mark.parametrize("should_load_model", [True, False])
 def test_savedmodel(csv_filename, should_load_model):
     #######
     # Setup
@@ -42,8 +52,8 @@ def test_savedmodel(csv_filename, should_load_model):
     with tempfile.TemporaryDirectory() as tmpdir:
         dir_path = tmpdir
         data_csv_path = os.path.join(tmpdir, csv_filename)
-        image_dest_folder = os.path.join(tmpdir, 'generated_images')
-        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
         # Single sequence input, single category output
         input_features = [
@@ -69,24 +79,22 @@ def test_savedmodel(csv_filename, should_load_model):
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
             set_feature(vocab_size=3),
-            vector_feature()
+            vector_feature(),
         ]
 
-        predictions_column_name = '{}_predictions'.format(
-            output_features[0]['name'])
+        predictions_column_name = "{}_predictions".format(output_features[0]["name"])
 
         # Generate test data
-        data_csv_path = generate_data(input_features, output_features,
-                                      data_csv_path)
+        data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
         #############
         # Train model
         #############
         backend = LocalTestBackend()
         config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'training': {'epochs': 2}
+            "input_features": input_features,
+            "output_features": output_features,
+            "training": {"epochs": 2},
         }
         ludwig_model = LudwigModel(config, backend=backend)
         ludwig_model.train(
@@ -102,7 +110,7 @@ def test_savedmodel(csv_filename, should_load_model):
         ###################
         # save Ludwig model
         ###################
-        ludwigmodel_path = os.path.join(dir_path, 'ludwigmodel')
+        ludwigmodel_path = os.path.join(dir_path, "ludwigmodel")
         shutil.rmtree(ludwigmodel_path, ignore_errors=True)
         ludwig_model.save(ludwigmodel_path)
 
@@ -115,14 +123,13 @@ def test_savedmodel(csv_filename, should_load_model):
         ##############################
         # collect weight tensors names
         ##############################
-        original_predictions_df, _ = ludwig_model.predict(
-            dataset=data_csv_path)
+        original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
         original_weights = deepcopy(ludwig_model.model.trainable_variables)
 
         #################
         # save savedmodel
         #################
-        savedmodel_path = os.path.join(dir_path, 'savedmodel')
+        savedmodel_path = os.path.join(dir_path, "savedmodel")
         shutil.rmtree(savedmodel_path, ignore_errors=True)
         ludwig_model.model.save_savedmodel(savedmodel_path)
 
@@ -137,8 +144,7 @@ def test_savedmodel(csv_filename, should_load_model):
         # restore savedmodel, obtain predictions and weights
         #################################################
         training_set_metadata_json_fp = os.path.join(
-            ludwigmodel_path,
-            TRAIN_SET_METADATA_FILE_NAME
+            ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME
         )
 
         dataset, training_set_metadata = preprocess_for_prediction(
@@ -156,8 +162,7 @@ def test_savedmodel(csv_filename, should_load_model):
 
         data_to_predict = {
             name: tf.convert_to_tensor(
-                dataset.dataset[feature.proc_column],
-                dtype=feature.get_input_dtype()
+                dataset.dataset[feature.proc_column], dtype=feature.get_input_dtype()
             )
             for name, feature in ludwig_model.model.input_features.items()
         }
@@ -165,14 +170,12 @@ def test_savedmodel(csv_filename, should_load_model):
         logits = restored_model(data_to_predict, False, None)
 
         restored_predictions = tf.argmax(
-            logits[of_name]['logits'],
-            -1,
-            name='predictions_{}'.format(of_name)
+            logits[of_name]["logits"], -1, name=f"predictions_{of_name}"
         )
         restored_predictions = tf.map_fn(
-            lambda idx: training_set_metadata[of_name]['idx2str'][idx],
+            lambda idx: training_set_metadata[of_name]["idx2str"][idx],
             restored_predictions,
-            dtype=tf.string
+            dtype=tf.string,
         )
 
         restored_weights = deepcopy(restored_model.trainable_variables)
@@ -193,31 +196,37 @@ def test_savedmodel(csv_filename, should_load_model):
 
         # check to ensure weight valuess match the original model
         loaded_weights_match = np.all(
-            [np.all(np.isclose(original_weights[i].numpy(),
-                               loaded_weights[i].numpy())) for i in
-             range(len(original_weights))]
+            [
+                np.all(
+                    np.isclose(original_weights[i].numpy(), loaded_weights[i].numpy())
+                )
+                for i in range(len(original_weights))
+            ]
         )
 
         original_weights = sorted(original_weights, key=lambda w: w.name)
         restored_weights = sorted(restored_weights, key=lambda w: w.name)
 
         restored_weights_match = np.all(
-            [np.all(np.isclose(original_weights[i].numpy(),
-                               restored_weights[i].numpy())) for i in
-             range(len(original_weights))]
+            [
+                np.all(
+                    np.isclose(original_weights[i].numpy(), restored_weights[i].numpy())
+                )
+                for i in range(len(original_weights))
+            ]
         )
 
         assert loaded_weights_match and restored_weights_match
 
         #  Are predictions identical to original ones?
         loaded_predictions_match = np.all(
-            original_predictions_df[predictions_column_name] ==
-            loaded_prediction_df[predictions_column_name]
+            original_predictions_df[predictions_column_name]
+            == loaded_prediction_df[predictions_column_name]
         )
 
         restored_predictions_match = np.all(
-            original_predictions_df[predictions_column_name] ==
-            restored_predictions.numpy().astype('str')
+            original_predictions_df[predictions_column_name]
+            == restored_predictions.numpy().astype("str")
         )
 
         assert loaded_predictions_match and restored_predictions_match

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-
 from typing import List
 
 from ludwig.automl.utils import avg_num_tokens
@@ -57,13 +56,15 @@ class DataframeSource(DataSource):
         return len(self.df[column].notnull())
 
     def get_image_values(self, column, sample_size=10) -> int:
-        return int(sum(is_image_score(None, x) for x in self.df[column].head(sample_size)))
+        return int(
+            sum(is_image_score(None, x) for x in self.df[column].head(sample_size))
+        )
 
     def get_avg_num_tokens(self, column) -> int:
         return avg_num_tokens(self.df[column])
 
     def is_string_type(self, dtype) -> bool:
-        return dtype in ['str', 'string', 'object']
+        return dtype in ["str", "string", "object"]
 
     def __len__(self) -> int:
         return len(self.df)

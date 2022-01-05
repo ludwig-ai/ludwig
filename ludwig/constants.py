@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,12 +137,12 @@ PARQUET = "parquet"
 TFRECORD = "tfrecord"
 RAY = "ray"
 
-SRC = 'dataset_src'
+SRC = "dataset_src"
 
-BATCH_SIZE = 'batch_size'
-EVAL_BATCH_SIZE = 'eval_batch_size'
-LEARNING_RATE = 'learning_rate'
-AUTO = 'auto'
-CONFIG = 'config'
+BATCH_SIZE = "batch_size"
+EVAL_BATCH_SIZE = "eval_batch_size"
+LEARNING_RATE = "learning_rate"
+AUTO = "auto"
+CONFIG = "config"
 
 COMBINER = "combiner"

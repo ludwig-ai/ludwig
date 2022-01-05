@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,16 +17,15 @@ import contextlib
 import math
 
 import tensorflow as tf
-from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.ray import RayDataset
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
-
 from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.data.dataset.ray import RayDataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
@@ -39,12 +37,16 @@ class ParquetDataset(Dataset):
         self.training_set_metadata = training_set_metadata
 
         with make_batch_reader(self.url) as reader:
-            self.size = sum(piece.get_metadata().num_rows for piece in reader.dataset.pieces)
+            self.size = sum(
+                piece.get_metadata().num_rows for piece in reader.dataset.pieces
+            )
 
         self.reshape_features = {
-            feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]['reshape']))
+            feature[PROC_COLUMN]: list(
+                (-1, *training_set_metadata[feature[NAME]]["reshape"])
+            )
             for feature in features
-            if 'reshape' in training_set_metadata[feature[NAME]]
+            if "reshape" in training_set_metadata[feature[NAME]]
         }
 
     def get(self, feature_name, sample):
@@ -60,65 +62,65 @@ class ParquetDataset(Dataset):
         return self.size
 
     @contextlib.contextmanager
-    def initialize_batcher(self,
-                           batch_size=128,
-                           should_shuffle=True,
-                           shuffle_buffer_size=None,
-                           seed=0,
-                           ignore_last=False,
-                           horovod=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        shuffle_buffer_size=None,
+        seed=0,
+        ignore_last=False,
+        horovod=None,
+    ):
         cur_shard, shard_count = None, None
         if horovod:
             cur_shard, shard_count = horovod.rank(), horovod.size()
 
-        with make_batch_reader(self.url,
-                               cur_shard=cur_shard,
-                               shard_count=shard_count,
-                               num_epochs=None) as reader:
+        with make_batch_reader(
+            self.url, cur_shard=cur_shard, shard_count=shard_count, num_epochs=None
+        ) as reader:
             total_samples = self.size
-            local_samples = int(total_samples / shard_count) if shard_count else total_samples
+            local_samples = (
+                int(total_samples / shard_count) if shard_count else total_samples
+            )
 
             dataset = make_petastorm_dataset(reader)
             dataset = dataset.unbatch()
             if should_shuffle:
-                rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
+                rows_per_piece = max(
+                    piece.get_metadata().num_rows for piece in reader.dataset.pieces
+                )
                 buffer_size = shuffle_buffer_size or min(rows_per_piece, local_samples)
                 dataset = dataset.shuffle(buffer_size)
             dataset = dataset.batch(batch_size)
 
             steps_per_epoch = math.ceil(local_samples / batch_size)
 
-            batcher = IterableBatcher(self,
-                                      dataset,
-                                      steps_per_epoch,
-                                      ignore_last=ignore_last)
+            batcher = IterableBatcher(
+                self, dataset, steps_per_epoch, ignore_last=ignore_last
+            )
             yield batcher
 
 
-class ParquetDatasetManager(object):
+class ParquetDatasetManager:
     def __init__(self, backend):
         self.backend = backend
 
     def create(self, dataset, config, training_set_metadata):
         features = get_combined_features(config)
-        return ParquetDataset(
-            dataset,
-            features,
-            training_set_metadata
-        )
+        return ParquetDataset(dataset, features, training_set_metadata)
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
         if self.backend.df_engine.partitioned:
             return RayDataset(
                 df=dataset,
                 features=get_proc_features(config),
-                data_hdf5_fp=training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+                data_hdf5_fp=training_set_metadata.get(DATA_TRAIN_HDF5_FP),
             )
         else:
             return PandasDataset(
                 dataset,
                 get_proc_features(config),
-                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+                training_set_metadata.get(DATA_TRAIN_HDF5_FP),
             )
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
@@ -132,11 +134,10 @@ class ParquetDatasetManager(object):
         for feature in features:
             name = feature[NAME]
             proc_column = feature[PROC_COLUMN]
-            reshape = training_set_metadata[name].get('reshape')
+            reshape = training_set_metadata[name].get("reshape")
             if reshape is not None:
                 dataset[proc_column] = self.backend.df_engine.map_objects(
-                    dataset[proc_column],
-                    lambda x: x.reshape(-1)
+                    dataset[proc_column], lambda x: x.reshape(-1)
                 )
 
         self.backend.df_engine.to_parquet(dataset, dataset_parquet_fp)
@@ -147,4 +148,4 @@ class ParquetDatasetManager(object):
 
     @property
     def data_format(self):
-        return 'parquet'
+        return "parquet"

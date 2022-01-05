@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""
-Module for handling contributed support.
-"""
+"""Module for handling contributed support."""
 
 from .contribs import contrib_registry
 
@@ -24,16 +21,16 @@ from .contribs import contrib_registry
 def add_contrib_callback_args(parser):
     for contrib_name, contrib_cls in contrib_registry.items():
         parser.add_argument(
-            f'--{contrib_name}',
-            dest='callbacks',
-            action='append_const',
+            f"--{contrib_name}",
+            dest="callbacks",
+            action="append_const",
             const=contrib_cls(),
         )
 
 
 def preload(argv):
     for arg in argv:
-        if arg.startswith('--'):
+        if arg.startswith("--"):
             arg = arg[2:]
 
         if arg in contrib_registry:

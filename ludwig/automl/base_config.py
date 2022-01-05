@@ -1,5 +1,4 @@
-"""
-config.py
+"""config.py.
 
 Builds base configuration file:
 
@@ -17,17 +16,22 @@ Builds base configuration file:
 import os
 from collections import defaultdict
 from dataclasses import dataclass
-from dataclasses_json import LetterCase, dataclass_json
-from typing import List, Union, Set
+from typing import List, Set, Union
 
 import pandas as pd
+from dataclasses_json import LetterCase, dataclass_json
 
-from ludwig.automl.data_source import DataSource, DataframeSource
+from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import (
-    FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
+    FieldConfig,
+    FieldInfo,
+    FieldMetadata,
+    _ray_init,
+    get_available_resources,
+)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
-from ludwig.utils.data_utils import load_yaml, load_dataset
 from ludwig.utils import strings_utils
+from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
 
 try:
@@ -35,13 +39,13 @@ try:
     import ray
 except ImportError:
     raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
+        " ray is not installed. "
+        "In order to use auto_train please run "
+        "pip install ludwig[ray]"
     )
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
-CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')
+CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
 
 BASE_AUTOML_CONFIG = os.path.join(CONFIG_DIR, "base_automl_config.yaml")
 REFERENCE_CONFIGS = os.path.join(CONFIG_DIR, "reference_configs.yaml")
@@ -72,8 +76,7 @@ class DatasetInfo:
 
 
 def allocate_experiment_resources(resources: dict) -> dict:
-    """
-    Allocates ray trial resources based on available resources
+    """Allocates ray trial resources based on available resources.
 
     # Inputs
     :param resources (dict) specifies all available GPUs, CPUs and associated
@@ -86,17 +89,13 @@ def allocate_experiment_resources(resources: dict) -> dict:
     # (1) expand logic to support multiple GPUs per trial (multi-gpu training)
     # (2) add support for kubernetes namespace (if applicable)
     # (3) add support for smarter allocation based on size of GPU memory
-    experiment_resources = {
-        'cpu_resources_per_trial': 1
-    }
-    gpu_count, cpu_count = resources['gpu'], resources['cpu']
+    experiment_resources = {"cpu_resources_per_trial": 1}
+    gpu_count, cpu_count = resources["gpu"], resources["cpu"]
     if gpu_count > 0:
-        experiment_resources.update({
-            'gpu_resources_per_trial': 1
-        })
+        experiment_resources.update({"gpu_resources_per_trial": 1})
         if cpu_count > 1:
             cpus_per_trial = max(int(cpu_count / gpu_count), 1)
-            experiment_resources['cpu_resources_per_trial'] = cpus_per_trial
+            experiment_resources["cpu_resources_per_trial"] = cpus_per_trial
 
     return experiment_resources
 
@@ -107,9 +106,7 @@ def _create_default_config(
     time_limit_s: Union[int, float] = None,
     random_seed: int = default_random_seed,
 ) -> dict:
-    """
-    Returns auto_train configs for three available combiner models.
-    Coordinates the following tasks:
+    """Returns auto_train configs for three available combiner models. Coordinates the following tasks:
 
     - extracts fields and generates list of FieldInfo objects
     - gets field metadata (i.e avg. words, total non-null entries)
@@ -131,7 +128,6 @@ def _create_default_config(
     # Return
     :return: (dict) dictionaries contain auto train config files for all available
     combiner types
-
     """
     _ray_init()
     resources = get_available_resources()
@@ -142,30 +138,26 @@ def _create_default_config(
         dataset_info = get_dataset_info(dataset)
 
     input_and_output_feature_config = get_features_config(
-        dataset_info.fields,
-        dataset_info.row_count,
-        resources,
-        target_name
+        dataset_info.fields, dataset_info.row_count, resources, target_name
     )
     # create set of all feature types appearing in the dataset
-    feature_types = [[feat["type"] for feat in features] 
-                     for features in input_and_output_feature_config.values()]
+    feature_types = [
+        [feat["type"] for feat in features]
+        for features in input_and_output_feature_config.values()
+    ]
     feature_types = set(sum(feature_types, []))
 
     model_configs = defaultdict(dict)
 
     # read in base config and update with experiment resources
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-    base_automl_config["hyperopt"]["executor"].update(
-        experiment_resources
-    )
-    base_automl_config["hyperopt"]["executor"][
-        "time_budget_s"
-    ] = time_limit_s
+    base_automl_config["hyperopt"]["executor"].update(experiment_resources)
+    base_automl_config["hyperopt"]["executor"]["time_budget_s"] = time_limit_s
     if time_limit_s is not None:
         base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
-    base_automl_config["hyperopt"]["sampler"][
-        "search_alg"]["random_state_seed"] = random_seed
+    base_automl_config["hyperopt"]["sampler"]["search_alg"][
+        "random_state_seed"
+    ] = random_seed
     base_automl_config.update(input_and_output_feature_config)
 
     model_configs["base_config"] = base_automl_config
@@ -174,8 +166,7 @@ def _create_default_config(
     for feat_type, default_configs in encoder_defaults.items():
         if feat_type in feature_types:
             for encoder_name, encoder_config_path in default_configs.items():
-                model_configs[feat_type][encoder_name] = load_yaml(
-                    encoder_config_path)
+                model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
 
     # read in all combiner configs
     for combiner_type, default_config in combiner_defaults.items():
@@ -194,16 +185,14 @@ def _get_reference_configs() -> dict:
 def get_dataset_info(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame]
 ) -> DatasetInfo:
-    """
-    Constructs FieldInfo objects for each feature in dataset. These objects
-    are used for downstream type inference
+    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
+    inference.
 
     # Inputs
     :param dataset: (str) filepath to dataset.
 
     # Return
     :return: (List[FieldInfo]) list of FieldInfo objects
-
     """
     dataframe = load_dataset(dataset)
     source = DataframeSource(dataframe)
@@ -216,7 +205,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     for field in source.columns:
         dtype = source.get_dtype(field)
         num_distinct_values, distinct_values = source.get_distinct_values(
-            field, MAX_DISTINCT_VALUES_TO_RETURN)
+            field, MAX_DISTINCT_VALUES_TO_RETURN
+        )
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         avg_words = None
@@ -230,7 +220,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 num_distinct_values=num_distinct_values,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
-                avg_words=avg_words
+                avg_words=avg_words,
             )
         )
     return DatasetInfo(fields=fields, row_count=row_count)
@@ -242,9 +232,8 @@ def get_features_config(
     resources: dict,
     target_name: Union[str, List[str]] = None,
 ) -> dict:
-    """
-    Constructs FieldInfo objects for each feature in dataset. These objects
-    are used for downstream type inference
+    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
+    inference.
 
     # Inputs
     :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
@@ -265,10 +254,10 @@ def get_features_config(
     return get_config_from_metadata(metadata, targets)
 
 
-def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
-    """
-    Builds input/output feature sections of auto-train config using field
-    metadata
+def get_config_from_metadata(
+    metadata: List[FieldMetadata], targets: Set[str] = None
+) -> dict:
+    """Builds input/output feature sections of auto-train config using field metadata.
 
     # Inputs
     :param metadata: (List[FieldMetadata]) field descriptions
@@ -294,8 +283,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
 def get_field_metadata(
     fields: List[FieldInfo], row_count: int, resources: dict, targets: Set[str] = None
 ) -> List[FieldMetadata]:
-    """
-    Computes metadata for each field in dataset
+    """Computes metadata for each field in dataset.
 
     # Inputs
     :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
@@ -318,8 +306,7 @@ def get_field_metadata(
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(
-                    idx, field, dtype, row_count, targets),
+                excluded=should_exclude(idx, field, dtype, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
             )
@@ -328,16 +315,14 @@ def get_field_metadata(
     # Count of number of initial non-text input features in the config, -1 for output
     input_count = (
         sum(
-            not meta.excluded
-            and meta.mode == "input"
-            and meta.config.type != TEXT
+            not meta.excluded and meta.mode == "input" and meta.config.type != TEXT
             for meta in metadata
         )
         - 1
     )
 
     # Exclude text fields if no GPUs are available
-    if resources['gpu'] == 0:
+    if resources["gpu"] == 0:
         for meta in metadata:
             if input_count > 2 and meta.config.type == TEXT:
                 # By default, exclude text inputs when there are other candidate inputs
@@ -350,8 +335,7 @@ def infer_type(
     field: FieldInfo,
     missing_value_percent: float,
 ) -> str:
-    """
-    Perform type inference on field
+    """Perform type inference on field.
 
     # Inputs
     :param field: (FieldInfo) object describing field
@@ -374,9 +358,10 @@ def infer_type(
 
     # If small number of distinct values, use CATEGORY if either not all are numerical or
     # they form a sequential list of integers suggesting the values represent categories
-    if (num_distinct_values < SMALL_DISTINCT_COUNT and
-        ((not strings_utils.are_all_numericals(distinct_values)) or
-         strings_utils.are_sequential_integers(distinct_values))):
+    if num_distinct_values < SMALL_DISTINCT_COUNT and (
+        (not strings_utils.are_all_numericals(distinct_values))
+        or strings_utils.are_sequential_integers(distinct_values)
+    ):
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
         # NOTE (ASN): edge case -- there are less than SMALL_DISTINCT_COUNT samples in dataset
         return CATEGORY
@@ -389,15 +374,18 @@ def infer_type(
 
     # If either of 2 examples is not numerical, use CATEGORY type.  We examine 2 since missing
     # values can be coded as NaN, which is numerical, even for fields that are otherwise strings.
-    if (num_distinct_values > 1 and
-        ((not strings_utils.is_numerical(distinct_values[0])) or
-         (not strings_utils.is_numerical(distinct_values[1])))):
+    if num_distinct_values > 1 and (
+        (not strings_utils.is_numerical(distinct_values[0]))
+        or (not strings_utils.is_numerical(distinct_values[1]))
+    ):
         return CATEGORY
 
     return NUMERICAL
 
 
-def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targets: Set[str]) -> bool:
+def should_exclude(
+    idx: int, field: FieldInfo, dtype: str, row_count: int, targets: Set[str]
+) -> bool:
     if field.key == "PRI":
         return True
 
@@ -410,7 +398,11 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID") or upper_name.startswith("ID"):
+        if (
+            (idx == 0 and dtype == NUMERICAL)
+            or upper_name.endswith("ID")
+            or upper_name.startswith("ID")
+        ):
             return True
 
     return False

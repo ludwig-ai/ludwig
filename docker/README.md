@@ -4,44 +4,44 @@ These images provide Ludwig, a toolbox that allows to train and evaluate deep
 learning models without the need to write code. Ludwig Docker image with full
 set of pre-requiste packages to support these capabilities
 
-* text features
-* image features
-* audio features
-* visualizations
-* hyperparameter optimization
-* distributed training
-* model serving
+- text features
+- image features
+- audio features
+- visualizations
+- hyperparameter optimization
+- distributed training
+- model serving
 
 ## Repositories
 
 These three repositories contain a version of Ludwig with full features built
 from the project's `master` branch.
 
-* `ludwigai/ludwig` Ludwig packaged with TF 2.x
-* `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of TF 2.x
-* `ludwigai/ludwig-ray` Ludwig packaged with TF2.x
+- `ludwigai/ludwig` Ludwig packaged with TF 2.x
+- `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of TF 2.x
+- `ludwigai/ludwig-ray` Ludwig packaged with TF2.x
   and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
-* `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of TF2.x
+- `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of TF2.x
   and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
 
 ## Image Tags
 
-* `master` - built from Ludwig's `master` branch
-* `nightly` - nightly build of Ludwig's software.
-* `sha-<commit point>` - version of Ludwig software at designated git sha1
+- `master` - built from Ludwig's `master` branch
+- `nightly` - nightly build of Ludwig's software.
+- `sha-<commit point>` - version of Ludwig software at designated git sha1
   7-character commit point.
 
 ## Running Containers
 
 Examples of using the `ludwigai/ludwig:master` image to:
 
-* run the `ludwig cli` command or
-* run Python program containing Ludwig api or
-* view Ludwig results with Tensorboard
+- run the `ludwig cli` command or
+- run Python program containing Ludwig api or
+- view Ludwig results with Tensorboard
 
 For purposes of the examples assume this host directory structure
 
-``` 
+```
 /top/level/directory/path/
     data/
         train.csv
@@ -52,7 +52,7 @@ For purposes of the examples assume this host directory structure
 
 ### Run Ludwig CLI
 
-``` 
+```
 # set shell variable to parent directory
 parent_path=/top/level/directory/path
 
@@ -97,7 +97,7 @@ directory `/top/level/directory/path/src/results`
 # set shell variable to parent directory
 parent_path=/top/level/directory/path
 
-# invoke docker run command to execute Tensorboard 
+# invoke docker run command to execute Tensorboard
 # map host directory ${parent_path}/src to container /src directory
 # set up mapping from localhost port 6006 to container port 6006
 # change default entrypoint from ludwig to tensorboard

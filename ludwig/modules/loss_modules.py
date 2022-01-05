@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import collections
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -32,8 +32,7 @@ class MSELoss(MeanSquaredError):
         super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = super().__call__(
-            y_true, y_pred[LOGITS], sample_weight=sample_weight)
+        loss = super().__call__(y_true, y_pred[LOGITS], sample_weight=sample_weight)
         return loss
 
 
@@ -42,8 +41,7 @@ class MAELoss(MeanAbsoluteError):
         super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = super().__call__(
-            y_true, y_pred[LOGITS], sample_weight=sample_weight)
+        loss = super().__call__(y_true, y_pred[LOGITS], sample_weight=sample_weight)
         return loss
 
 
@@ -54,11 +52,7 @@ class RMSELoss(tf.keras.losses.Loss):
     def __call__(self, y_true, y_pred, sample_weight=None):
         preds = y_pred[LOGITS]
         loss = tf.math.sqrt(
-            tf.math.reduce_mean(
-                tf.math.square(
-                    tf.math.subtract(preds, y_true)
-                )
-            )
+            tf.math.reduce_mean(tf.math.square(tf.math.subtract(preds, y_true)))
         )
         return loss
 
@@ -74,9 +68,7 @@ class RMSPELoss(tf.keras.losses.Loss):
 
 
 class BWCEWLoss(tf.keras.losses.Loss):
-    def __init__(
-        self, positive_class_weight=1, robust_lambda=0, confidence_penalty=0
-    ):
+    def __init__(self, positive_class_weight=1, robust_lambda=0, confidence_penalty=0):
         super().__init__()
 
         self.positive_class_weight = positive_class_weight
@@ -95,9 +87,7 @@ class BWCEWLoss(tf.keras.losses.Loss):
 
         # robust lambda
         if self.robust_lambda > 0:
-            train_loss = (
-                1 - self.robust_lambda
-            ) * train_loss + self.robust_lambda / 2
+            train_loss = (1 - self.robust_lambda) * train_loss + self.robust_lambda / 2
 
         train_mean_loss = tf.reduce_mean(train_loss)
 
@@ -117,9 +107,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         self.feature_loss = feature_loss
 
     def call(self, y, y_pred):
-        vector_labels = tf.one_hot(
-            tf.cast(y, dtype=tf.int64), self.num_classes
-        )
+        vector_labels = tf.one_hot(tf.cast(y, dtype=tf.int64), self.num_classes)
 
         loss = weighted_softmax_cross_entropy(
             y_pred[LOGITS], vector_labels, **self.feature_loss
@@ -130,9 +118,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
 # For Categorical Output Features
 class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
-    def __init__(
-        self, decoder_obj=None, num_classes=0, feature_loss=None, name=None
-    ):
+    def __init__(self, decoder_obj=None, num_classes=0, feature_loss=None, name=None):
         super().__init__(name=name)
 
         self.decoder_obj = decoder_obj
@@ -149,7 +135,7 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             num_classes=self.num_classes,
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
-            **self.feature_loss
+            **self.feature_loss,
         )
 
         return loss
@@ -165,7 +151,7 @@ class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         feature_loss=None,
         name=None,
     ):
-        super(SequenceSampledSoftmaxCrossEntropyLoss, self).__init__(name=name)
+        super().__init__(name=name)
 
         self.num_classes = num_classes
         self.feature_loss = feature_loss
@@ -179,7 +165,7 @@ class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             decoder_weights=self.dec_dense_layer.weights[0],
             decoder_biases=self.dec_dense_layer.weights[1],
             num_classes=self.num_classes,
-            **self.feature_loss
+            **self.feature_loss,
         )
 
         return loss
@@ -222,9 +208,7 @@ class SequenceSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         y_pred_pad_len = tf.maximum(0, y_true_tensor_len - y_pred_tensor_len)
         y_true_pad_len = tf.maximum(0, y_pred_tensor_len - y_true_tensor_len)
 
-        y_pred_tensor = tf.pad(
-            y_pred_tensor, [[0, 0], [0, y_pred_pad_len], [0, 0]]
-        )
+        y_pred_tensor = tf.pad(y_pred_tensor, [[0, 0], [0, y_pred_pad_len], [0, 0]])
         y_true_tensor = tf.pad(y_true_tensor, [[0, 0], [0, y_true_pad_len]])
 
         y_true_seq_len = sequence_length_2D(y_true_tensor)
@@ -254,9 +238,7 @@ def softmax_cross_entropy_with_class_weighting(
     class_weights_const = tf.expand_dims(
         tf.constant(class_weights, dtype=tf.float32), 0
     )
-    sample_weights = tf.reduce_sum(
-        tf.multiply(one_hot_labels, class_weights_const), 1
-    )
+    sample_weights = tf.reduce_sum(tf.multiply(one_hot_labels, class_weights_const), 1)
     return tf.compat.v1.losses.softmax_cross_entropy(
         onehot_labels=one_hot_labels,
         logits=logits,
@@ -286,8 +268,7 @@ def mean_confidence_penalty(probabilities, num_classes):
     max_entropy = tf.constant(np.log(num_classes), dtype=tf.float32)
     # clipping needed for avoiding log(0) = -inf
     entropy_per_class = tf.maximum(
-        -probabilities
-        * tf.math.log(tf.clip_by_value(probabilities, 1e-10, 1)),
+        -probabilities * tf.math.log(tf.clip_by_value(probabilities, 1e-10, 1)),
         0,
     )
     entropy = tf.reduce_sum(entropy_per_class, -1)
@@ -307,7 +288,7 @@ def sampled_softmax_cross_entropy(
     class_counts=0,
     distortion=1,
     unique=False,
-    **kwargs
+    **kwargs,
 ):
     labels = tf.cast(tf.expand_dims(labels, -1), tf.int64)
 
@@ -359,13 +340,11 @@ def sequence_sampled_softmax_cross_entropy(
 
     logits_pad_len = tf.maximum(
         0,
-        batch_max_targets_sequence_length
-        - batch_max_train_logits_sequence_length,
+        batch_max_targets_sequence_length - batch_max_train_logits_sequence_length,
     )
     targets_pad_len = tf.maximum(
         0,
-        batch_max_train_logits_sequence_length
-        - batch_max_targets_sequence_length,
+        batch_max_train_logits_sequence_length - batch_max_targets_sequence_length,
     )
 
     padded_logits = tf.pad(train_logits, [[0, 0], [0, logits_pad_len], [0, 0]])
@@ -471,7 +450,7 @@ def sample_values_from_classes(
     class_counts,
     distortion,
 ):
-    """returns sampled_values using the chosen sampler"""
+    """returns sampled_values using the chosen sampler."""
     if sampler == "fixed_unigram":
         sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=labels,
@@ -507,15 +486,16 @@ def sample_values_from_classes(
             range_max=num_classes,
         )
     else:
-        raise ValueError("Unsupported sampler {}".format(sampler))
+        raise ValueError(f"Unsupported sampler {sampler}")
     return sampled_values
 
 
 def rmspe_loss(targets, predictions):
     loss = tf.math.sqrt(
         tf.math.reduce_mean(
-            tf.math.square(tf.math.divide(
-                tf.math.subtract(targets, predictions), targets))
+            tf.math.square(
+                tf.math.divide(tf.math.subtract(targets, predictions), targets)
+            )
         )
     )
     return loss

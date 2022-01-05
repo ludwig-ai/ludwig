@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,37 +22,35 @@ from typing import List, Union
 import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS,  Backend
+from ludwig.backend import ALL_BACKENDS, Backend
 from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import (logging_level_registry, print_boxed,
-                                      print_ludwig)
+from ludwig.utils.print_utils import logging_level_registry, print_boxed, print_ludwig
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
 
 
 def collect_activations(
-        model_path: str,
-        layers: List[str],
-        dataset: str,
-        data_format: str = None,
-        split: str = FULL,
-        batch_size: int = 128,
-        output_directory: str = 'results',
-        gpus: List[str] = None,
-        gpu_memory_limit: int =None,
-        allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
-        backend: Union[Backend, str] = None,
-        debug: bool = False,
-        **kwargs
+    model_path: str,
+    layers: List[str],
+    dataset: str,
+    data_format: str = None,
+    split: str = FULL,
+    batch_size: int = 128,
+    output_directory: str = "results",
+    gpus: List[str] = None,
+    gpu_memory_limit: int = None,
+    allow_parallel_threads: bool = True,
+    callbacks: List[Callback] = None,
+    backend: Union[Backend, str] = None,
+    debug: bool = False,
+    **kwargs,
 ) -> List[str]:
-    """
-    Uses the pretrained model to collect the tensors corresponding to a
-    datapoint in the dataset. Saves the tensors to the experiment directory
+    """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset. Saves the
+    tensors to the experiment directory.
 
     # Inputs
 
@@ -96,11 +93,10 @@ def collect_activations(
     :return: (List[str]) list of filepath to `*.npy` files containing
         the activations.
     """
-    logger.info('Dataset path: {}'.format(dataset)
-                )
-    logger.info('Model path: {}'.format(model_path))
-    logger.info('Output path: {}'.format(output_directory))
-    logger.info('\n')
+    logger.info(f"Dataset path: {dataset}")
+    logger.info(f"Model path: {model_path}")
+    logger.info(f"Output path: {output_directory}")
+    logger.info("\n")
 
     model = LudwigModel.load(
         model_path,
@@ -108,37 +104,36 @@ def collect_activations(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
-        backend=backend
+        backend=backend,
     )
 
     # collect activations
-    print_boxed('COLLECT ACTIVATIONS')
+    print_boxed("COLLECT ACTIVATIONS")
     collected_tensors = model.collect_activations(
         layers,
         dataset,
         data_format=data_format,
         split=split,
         batch_size=batch_size,
-        debug=debug
+        debug=debug,
     )
 
     # saving
     os.makedirs(output_directory, exist_ok=True)
     saved_filenames = save_tensors(collected_tensors, output_directory)
 
-    logger.info('Saved to: {0}'.format(output_directory))
+    logger.info(f"Saved to: {output_directory}")
     return saved_filenames
 
 
 def collect_weights(
-        model_path: str,
-        tensors: List[str],
-        output_directory: str = 'results',
-        debug: bool = False,
-        **kwargs
+    model_path: str,
+    tensors: List[str],
+    output_directory: str = "results",
+    debug: bool = False,
+    **kwargs,
 ) -> List[str]:
-    """
-    Loads a pretrained model and collects weights.
+    """Loads a pretrained model and collects weights.
 
     # Inputs
     :param model_path: (str) filepath to pre-trained model.
@@ -154,21 +149,21 @@ def collect_weights(
     :return: (List[str]) list of filepath to `*.npy` files containing
         the weights.
     """
-    logger.info('Model path: {}'.format(model_path))
-    logger.info('Output path: {}'.format(output_directory))
-    logger.info('\n')
+    logger.info(f"Model path: {model_path}")
+    logger.info(f"Output path: {output_directory}")
+    logger.info("\n")
 
     model = LudwigModel.load(model_path)
 
     # collect weights
-    print_boxed('COLLECT WEIGHTS')
+    print_boxed("COLLECT WEIGHTS")
     collected_tensors = model.collect_weights(tensors)
 
     # saving
     os.makedirs(output_directory, exist_ok=True)
     saved_filenames = save_tensors(collected_tensors, output_directory)
 
-    logger.info('Saved to: {0}'.format(output_directory))
+    logger.info(f"Saved to: {output_directory}")
     return saved_filenames
 
 
@@ -176,20 +171,15 @@ def save_tensors(collected_tensors, output_directory):
     filenames = []
     for tensor_name, tensor_value in collected_tensors:
         np_filename = os.path.join(
-            output_directory,
-            make_safe_filename(tensor_name) + '.npy'
+            output_directory, make_safe_filename(tensor_name) + ".npy"
         )
         np.save(np_filename, tensor_value.numpy())
         filenames.append(np_filename)
     return filenames
 
 
-def print_model_summary(
-        model_path: str,
-        **kwargs
-) -> None:
-    """
-    Loads a pretrained model and prints names of weights and layers activations.
+def print_model_summary(model_path: str, **kwargs) -> None:
+    """Loads a pretrained model and prints names of weights and layers activations.
 
     # Inputs
     :param model_path: (str) filepath to pre-trained model.
@@ -204,18 +194,18 @@ def print_model_summary(
     keras_model = model.model.get_connected_model(training=False)
     keras_model.summary()
 
-    print('\nLayers:\n')
+    print("\nLayers:\n")
     for layer in keras_model.layers:
         print(layer.name)
 
-    print('\nWeights:\n')
+    print("\nWeights:\n")
     for name in names:
         print(name)
 
 
 def cli_collect_activations(sys_argv):
-    """Command Line Interface to communicate with the collection of tensors and
-    there are several options that can specified when calling this function:
+    """Command Line Interface to communicate with the collection of tensors and there are several options that can
+    specified when calling this function:
 
     --data_csv: Filepath for the input csv
     --data_hdf5: Filepath for the input hdf5 file, if there is a csv file, this
@@ -235,120 +225,110 @@ def cli_collect_activations(sys_argv):
     --v: Verbose: Defines the logging level that the user will be exposed to
     """
     parser = argparse.ArgumentParser(
-        description='This script loads a pretrained model and uses it collect '
-                    'tensors for each datapoint in the dataset.',
-        prog='ludwig collect_activations',
-        usage='%(prog)s [options]')
+        description="This script loads a pretrained model and uses it collect "
+        "tensors for each datapoint in the dataset.",
+        prog="ludwig collect_activations",
+        usage="%(prog)s [options]",
+    )
 
     # ---------------
     # Data parameters
     # ---------------
+    parser.add_argument("--dataset", help="input data file path", required=True)
     parser.add_argument(
-        '--dataset',
-        help='input data file path',
-        required=True
+        "--data_format",
+        help="format of the input data",
+        default="auto",
+        choices=[
+            "auto",
+            "csv",
+            "excel",
+            "feather",
+            "fwf",
+            "hdf5",
+            "html" "tables",
+            "json",
+            "jsonl",
+            "parquet",
+            "pickle",
+            "sas",
+            "spss",
+            "stata",
+            "tsv",
+        ],
     )
     parser.add_argument(
-        '--data_format',
-        help='format of the input data',
-        default='auto',
-        choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
-                 'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
-                 'spss', 'stata', 'tsv']
-    )
-    parser.add_argument(
-        '-s',
-        '--split',
+        "-s",
+        "--split",
         default=FULL,
         choices=[TRAINING, VALIDATION, TEST, FULL],
-        help='the split to obtain the model activations from'
+        help="the split to obtain the model activations from",
     )
 
     # ----------------
     # Model parameters
     # ----------------
+    parser.add_argument("-m", "--model_path", help="model to load", required=True)
     parser.add_argument(
-        '-m',
-        '--model_path',
-        help='model to load',
-        required=True
+        "-lyr", "--layers", help="tensors to collect", nargs="+", required=True
     )
-    parser.add_argument(
-        '-lyr',
-        '--layers',
-        help='tensors to collect',
-        nargs='+',
-        required=True
-    )
-
-
 
     # -------------------------
     # Output results parameters
     # -------------------------
     parser.add_argument(
-        '-od',
-        '--output_directory',
+        "-od",
+        "--output_directory",
         type=str,
-        default='results',
-        help='directory that contains the results'
+        default="results",
+        help="directory that contains the results",
     )
 
     # ------------------
     # Generic parameters
     # ------------------
     parser.add_argument(
-        '-bs',
-        '--batch_size',
-        type=int,
-        default=128,
-        help='size of batches'
+        "-bs", "--batch_size", type=int, default=128, help="size of batches"
     )
 
     # ------------------
     # Runtime parameters
     # ------------------
+    parser.add_argument("-g", "--gpus", type=int, default=0, help="list of gpu to use")
     parser.add_argument(
-        '-g',
-        '--gpus',
-        type=int,
-        default=0,
-        help='list of gpu to use'
-    )
-    parser.add_argument(
-        '-gml',
-        '--gpu_memory_limit',
+        "-gml",
+        "--gpu_memory_limit",
         type=int,
         default=None,
-        help='maximum memory in MB to allocate per GPU device'
+        help="maximum memory in MB to allocate per GPU device",
     )
     parser.add_argument(
-        '-dpt',
-        '--disable_parallel_threads',
-        action='store_false',
-        dest='allow_parallel_threads',
-        help='disable TensorFlow from using multithreading for reproducibility'
+        "-dpt",
+        "--disable_parallel_threads",
+        action="store_false",
+        dest="allow_parallel_threads",
+        help="disable TensorFlow from using multithreading for reproducibility",
     )
     parser.add_argument(
         "-b",
         "--backend",
-        help='specifies backend to use for parallel / distributed execution, '
-             'defaults to local execution or Horovod if called using horovodrun',
+        help="specifies backend to use for parallel / distributed execution, "
+        "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(
-        '-dbg',
-        '--debug',
-        action='store_true',
+        "-dbg",
+        "--debug",
+        action="store_true",
         default=False,
-        help='enables debugging mode'
+        help="enables debugging mode",
     )
     parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+        "-l",
+        "--logging_level",
+        default="info",
+        help="the level of logging to use",
+        choices=["critical", "error", "warning", "info", "debug", "notset"],
     )
 
     add_contrib_callback_args(parser)
@@ -356,22 +336,21 @@ def cli_collect_activations(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline('collect_activations', *sys_argv)
+        callback.on_cmdline("collect_activations", *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
+    logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
-    logger = logging.getLogger('ludwig.collect')
+    logger = logging.getLogger("ludwig.collect")
 
-    print_ludwig('Collect Activations', LUDWIG_VERSION)
+    print_ludwig("Collect Activations", LUDWIG_VERSION)
 
     collect_activations(**vars(args))
 
 
 def cli_collect_weights(sys_argv):
-    """Command Line Interface to collecting the weights for the model
+    """Command Line Interface to collecting the weights for the model.
+
     --m: Input model that is necessary to collect to the tensors, this is a
          required *option*
     --t: Tensors to collect
@@ -380,56 +359,47 @@ def cli_collect_weights(sys_argv):
     --v: Verbose: Defines the logging level that the user will be exposed to
     """
     parser = argparse.ArgumentParser(
-        description='This script loads a pretrained model '
-                    'and uses it collect weights.',
-        prog='ludwig collect_weights',
-        usage='%(prog)s [options]'
+        description="This script loads a pretrained model "
+        "and uses it collect weights.",
+        prog="ludwig collect_weights",
+        usage="%(prog)s [options]",
     )
 
     # ----------------
     # Model parameters
     # ----------------
+    parser.add_argument("-m", "--model_path", help="model to load", required=True)
     parser.add_argument(
-        '-m',
-        '--model_path',
-        help='model to load',
-        required=True
-    )
-    parser.add_argument(
-        '-t',
-        '--tensors',
-        help='tensors to collect',
-        nargs='+',
-        required=True
+        "-t", "--tensors", help="tensors to collect", nargs="+", required=True
     )
 
     # -------------------------
     # Output results parameters
     # -------------------------
     parser.add_argument(
-        '-od',
-        '--output_directory',
+        "-od",
+        "--output_directory",
         type=str,
-        default='results',
-        help='directory that contains the results'
+        default="results",
+        help="directory that contains the results",
     )
 
     # ------------------
     # Runtime parameters
     # ------------------
     parser.add_argument(
-        '-dbg',
-        '--debug',
-        action='store_true',
+        "-dbg",
+        "--debug",
+        action="store_true",
         default=False,
-        help='enables debugging mode'
+        help="enables debugging mode",
     )
     parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+        "-l",
+        "--logging_level",
+        default="info",
+        help="the level of logging to use",
+        choices=["critical", "error", "warning", "info", "debug", "notset"],
     )
 
     add_contrib_callback_args(parser)
@@ -437,53 +407,47 @@ def cli_collect_weights(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline('collect_weights', *sys_argv)
+        callback.on_cmdline("collect_weights", *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
+    logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
-    logger = logging.getLogger('ludwig.collect')
+    logger = logging.getLogger("ludwig.collect")
 
-    print_ludwig('Collect Weights', LUDWIG_VERSION)
+    print_ludwig("Collect Weights", LUDWIG_VERSION)
 
     collect_weights(**vars(args))
 
 
 def cli_collect_summary(sys_argv):
     """Command Line Interface to collecting a summary of the model layers and weights.
+
     --m: Input model that is necessary to collect to the tensors, this is a
          required *option*
     --v: Verbose: Defines the logging level that the user will be exposed to
     """
     parser = argparse.ArgumentParser(
-        description='This script loads a pretrained model '
-                    'and prints names of weights and layers activations '
-                    'to use with other collect commands',
-        prog='ludwig collect_summary',
-        usage='%(prog)s [options]'
+        description="This script loads a pretrained model "
+        "and prints names of weights and layers activations "
+        "to use with other collect commands",
+        prog="ludwig collect_summary",
+        usage="%(prog)s [options]",
     )
 
     # ----------------
     # Model parameters
     # ----------------
-    parser.add_argument(
-        '-m',
-        '--model_path',
-        help='model to load',
-        required=True
-    )
+    parser.add_argument("-m", "--model_path", help="model to load", required=True)
 
     # ------------------
     # Runtime parameters
     # ------------------
     parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+        "-l",
+        "--logging_level",
+        default="info",
+        help="the level of logging to use",
+        choices=["critical", "error", "warning", "info", "debug", "notset"],
     )
 
     add_contrib_callback_args(parser)
@@ -491,29 +455,27 @@ def cli_collect_summary(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline('collect_summary', *sys_argv)
+        callback.on_cmdline("collect_summary", *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
+    logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
-    logger = logging.getLogger('ludwig.collect')
+    logger = logging.getLogger("ludwig.collect")
 
-    print_ludwig('Collect Summary', LUDWIG_VERSION)
+    print_ludwig("Collect Summary", LUDWIG_VERSION)
 
     print_model_summary(**vars(args))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) > 1:
-        if sys.argv[1] == 'activations':
+        if sys.argv[1] == "activations":
             cli_collect_activations(sys.argv[2:])
-        elif sys.argv[1] == 'weights':
+        elif sys.argv[1] == "weights":
             cli_collect_weights(sys.argv[2:])
-        elif sys.argv[1] == 'names':
+        elif sys.argv[1] == "names":
             cli_collect_summary(sys.argv[2:])
         else:
-            print('Unrecognized command')
+            print("Unrecognized command")
     else:
-        print('Unrecognized command')
+        print("Unrecognized command")

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,44 +14,48 @@
 # limitations under the License.
 # ==============================================================================
 import copy
-from inspect import signature
 import itertools
 import json
 import logging
 from abc import ABC, abstractmethod
+from inspect import signature
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
-
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
-from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
-                              TYPE)
+
+from ludwig.constants import CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE, TYPE
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
 
 try:
     from ray import tune
     from ray.tune.schedulers.resource_changing_scheduler import (
-        ResourceChangingScheduler, evenly_distribute_cpus_gpus, PlacementGroupFactory)
+        PlacementGroupFactory,
+        ResourceChangingScheduler,
+        evenly_distribute_cpus_gpus,
+    )
+
     _HAS_RAY_TUNE = True
 except ImportError:
     evenly_distribute_cpus_gpus = None
     _HAS_RAY_TUNE = False
 
 
-def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", trial: "Trial",
-                                     result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
-                                     ):
-    """Determine resources to allocate to running trials"""
-    pgf = evenly_distribute_cpus_gpus(
-        trial_runner, trial, result, scheduler)
+def ray_resource_allocation_function(
+    trial_runner: "trial_runner.TrialRunner",
+    trial: "Trial",
+    result: Dict[str, Any],
+    scheduler: "ResourceChangingScheduler",
+):
+    """Determine resources to allocate to running trials."""
+    pgf = evenly_distribute_cpus_gpus(trial_runner, trial, result, scheduler)
     # restore original base trial resources
 
     # create bundles
     if scheduler.base_trial_resources.required_resources.get("GPU", 0):
-        bundles = [{"CPU": 1, "GPU": 1}] * \
-            int(pgf.required_resources["GPU"])
+        bundles = [{"CPU": 1, "GPU": 1}] * int(pgf.required_resources["GPU"])
     else:
         bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"] - 0.001))
     # we can't set Trial actor's CPUs to 0 so we just go very low
@@ -71,13 +74,14 @@ def int_grid_function(low: int, high: int, steps=None, **kwargs):
     return samples.tolist()
 
 
-def float_grid_function(low: float, high: float, steps=None, space='linear',
-                        base=None, **kwargs):
+def float_grid_function(
+    low: float, high: float, steps=None, space="linear", base=None, **kwargs
+):
     if steps is None:
         steps = int(high - low + 1)
-    if space == 'linear':
+    if space == "linear":
         samples = np.linspace(low, high, num=steps)
-    elif space == 'log':
+    elif space == "log":
         if base:
             samples = np.logspace(low, high, num=steps, base=base)
         else:
@@ -99,15 +103,16 @@ def identity(x):
 
 
 grid_functions_registry = {
-    'int': int_grid_function,
-    'float': float_grid_function,
-    'category': category_grid_function,
+    "int": int_grid_function,
+    "float": float_grid_function,
+    "category": category_grid_function,
 }
 
 
 class HyperoptSampler(ABC):
-    def __init__(self, goal: str, parameters: Dict[str, Any],
-                 batch_size: int = 1) -> None:
+    def __init__(
+        self, goal: str, parameters: Dict[str, Any], batch_size: int = 1
+    ) -> None:
         assert goal in [MINIMIZE, MAXIMIZE]
         self.goal = goal  # useful for Bayesian strategy
         self.parameters = parameters
@@ -144,8 +149,9 @@ class HyperoptSampler(ABC):
         # and random, but will be needed by Bayesian)
         pass
 
-    def update_batch(self, parameters_metric_tuples: Iterable[
-            Tuple[Dict[str, Any], float]]):
+    def update_batch(
+        self, parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]
+    ):
         for (sampled_parameters, metric_score) in parameters_metric_tuples:
             self.update(sampled_parameters, metric_score)
 
@@ -158,41 +164,40 @@ class HyperoptSampler(ABC):
 class RandomSampler(HyperoptSampler):
     num_samples = 10
 
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
-                 **kwargs) -> None:
+    def __init__(
+        self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs
+    ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
 
         cat_params_values_types = {}
         for param_name, param_values in params_for_join_space.items():
             if param_values[TYPE] == CATEGORY:
-                param_values[TYPE] = 'cat'
+                param_values[TYPE] = "cat"
                 values_str = []
                 values_types = {}
-                for value in param_values['values']:
+                for value in param_values["values"]:
                     value_type = type(value)
                     if value_type == bool:
                         value_str = str(value)
                         value_type = str2bool
-                    elif value_type == str or value_type == int or \
-                            value_type == float:
+                    elif value_type == str or value_type == int or value_type == float:
                         value_str = str(value)
                     else:
                         value_str = json.dumps(value)
                         value_type = json.loads
                     values_str.append(value_str)
                     values_types[value_str] = value_type
-                param_values['values'] = values_str
+                param_values["values"] = values_str
                 cat_params_values_types[param_name] = values_types
             if param_values[TYPE] == FLOAT:
-                param_values[TYPE] = 'real'
-            if param_values[TYPE] == INT or param_values[TYPE] == 'real':
+                param_values[TYPE] = "real"
+            if param_values[TYPE] == INT or param_values[TYPE] == "real":
                 if SPACE not in param_values:
-                    param_values[SPACE] = 'linear'
-                param_values['range'] = (param_values['low'],
-                                         param_values['high'])
-                del param_values['low']
-                del param_values['high']
+                    param_values[SPACE] = "linear"
+                param_values["range"] = (param_values["low"], param_values["high"])
+                del param_values["low"]
+                del param_values["high"]
 
         self.cat_params_values_types = cat_params_values_types
         self.space = JointSpace(params_for_join_space)
@@ -205,8 +210,9 @@ class RandomSampler(HyperoptSampler):
         samples = []
         for _ in range(self.num_samples):
             bnds = self.space.get_bounds()
-            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(1, len(
-                self.space.get_bounds()))
+            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(
+                1, len(self.space.get_bounds())
+            )
             sample = self.space.unwarp(x)[0]
             samples.append(sample)
         return samples
@@ -230,8 +236,7 @@ class RandomSampler(HyperoptSampler):
 
 
 class GridSampler(HyperoptSampler):
-    def __init__(self, goal: str, parameters: Dict[str, Any],
-                 **kwargs) -> None:
+    def __init__(self, goal: str, parameters: Dict[str, Any], **kwargs) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         self.search_space = self._create_search_space()
         self.samples = self._get_grids()
@@ -241,16 +246,18 @@ class GridSampler(HyperoptSampler):
     def _create_search_space(self):
         search_space = {}
         for hp_name, hp_params in self.parameters.items():
-            grid_function = get_from_registry(
-                hp_params[TYPE], grid_functions_registry
-            )
+            grid_function = get_from_registry(hp_params[TYPE], grid_functions_registry)
             search_space[hp_name] = grid_function(**hp_params)
         return search_space
 
     def _get_grids(self):
         hp_params = sorted(self.search_space)
-        grids = [dict(zip(hp_params, prod)) for prod in itertools.product(
-            *(self.search_space[hp_name] for hp_name in hp_params))]
+        grids = [
+            dict(zip(hp_params, prod))
+            for prod in itertools.product(
+                *(self.search_space[hp_name] for hp_name in hp_params)
+            )
+        ]
 
         return grids
 
@@ -261,11 +268,7 @@ class GridSampler(HyperoptSampler):
         self.sampled_so_far += 1
         return sample
 
-    def update(
-            self,
-            sampled_parameters: Dict[str, Any],
-            statistics: Dict[str, Any]
-    ):
+    def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
         # actual implementation ...
         pass
 
@@ -280,41 +283,40 @@ class PySOTSampler(HyperoptSampler):
         pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
     """
 
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
-                 **kwargs) -> None:
+    def __init__(
+        self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs
+    ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
 
         cat_params_values_types = {}
         for param_name, param_values in params_for_join_space.items():
             if param_values[TYPE] == CATEGORY:
-                param_values[TYPE] = 'cat'
+                param_values[TYPE] = "cat"
                 values_str = []
                 values_types = {}
-                for value in param_values['values']:
+                for value in param_values["values"]:
                     value_type = type(value)
                     if value_type == bool:
                         value_str = str(value)
                         value_type = str2bool
-                    elif value_type == str or value_type == int or \
-                            value_type == float:
+                    elif value_type == str or value_type == int or value_type == float:
                         value_str = str(value)
                     else:
                         value_str = json.dumps(value)
                         value_type = json.loads
                     values_str.append(value_str)
                     values_types[value_str] = value_type
-                param_values['values'] = values_str
+                param_values["values"] = values_str
                 cat_params_values_types[param_name] = values_types
             if param_values[TYPE] == FLOAT:
-                param_values[TYPE] = 'real'
-            if param_values[TYPE] == INT or param_values[TYPE] == 'real':
+                param_values[TYPE] = "real"
+            if param_values[TYPE] == INT or param_values[TYPE] == "real":
                 if SPACE not in param_values:
-                    param_values[SPACE] = 'linear'
-                param_values['range'] = (param_values['low'],
-                                         param_values['high'])
-                del param_values['low']
-                del param_values['high']
+                    param_values[SPACE] = "linear"
+                param_values["range"] = (param_values["low"], param_values["high"])
+                del param_values["low"]
+                del param_values["high"]
 
         self.cat_params_values_types = cat_params_values_types
         self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
@@ -337,8 +339,7 @@ class PySOTSampler(HyperoptSampler):
         for key in sampled_parameters:
             if key in self.cat_params_values_types:
                 if type(sampled_parameters[key]) not in {bool, int, float, str}:
-                    sampled_parameters[key] = json.dumps(sampled_parameters[
-                        key])
+                    sampled_parameters[key] = json.dumps(sampled_parameters[key])
                 else:
                     sampled_parameters[key] = str(sampled_parameters[key])
         self.pysot_optimizer.observe([sampled_parameters], [metric_score])
@@ -349,13 +350,13 @@ class PySOTSampler(HyperoptSampler):
 
 class RayTuneSampler(HyperoptSampler):
     def __init__(
-            self,
-            goal: str,
-            parameters: Dict[str, Any],
-            search_alg: dict = None,
-            scheduler: dict = None,
-            num_samples=1,
-            **kwargs
+        self,
+        goal: str,
+        parameters: Dict[str, Any],
+        search_alg: dict = None,
+        scheduler: dict = None,
+        num_samples=1,
+        **kwargs,
     ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         self._check_ray_tune()
@@ -376,20 +377,20 @@ class RayTuneSampler(HyperoptSampler):
             return None
 
         dynamic_resource_allocation = scheduler_config.pop(
-            "dynamic_resource_allocation", False)
+            "dynamic_resource_allocation", False
+        )
 
         if scheduler_config.get("type") == "pbt":
-            scheduler_config.update(
-                {"hyperparam_mutations": self.search_space})
+            scheduler_config.update({"hyperparam_mutations": self.search_space})
 
         scheduler = tune.create_scheduler(
-            scheduler_config.get("type"),
-            **scheduler_config
+            scheduler_config.get("type"), **scheduler_config
         )
 
         if dynamic_resource_allocation:
             scheduler = ResourceChangingScheduler(
-                scheduler, ray_resource_allocation_function)
+                scheduler, ray_resource_allocation_function
+            )
         return scheduler
 
     def _get_search_space(self, parameters):
@@ -405,7 +406,8 @@ class RayTuneSampler(HyperoptSampler):
                 param_search_space = getattr(tune, param_search_type)
             else:
                 raise ValueError(
-                    f"'{param_search_type}' is not a supported Ray Tune search space")
+                    f"'{param_search_type}' is not a supported Ray Tune search space"
+                )
 
             param_search_input_args = {}
             param_search_space_sig = signature(param_search_space)
@@ -414,19 +416,14 @@ class RayTuneSampler(HyperoptSampler):
                     param_search_input_args[arg.name] = values[arg.name]
                 else:
                     if arg.default is arg.empty:
-                        raise ValueError(
-                            "Parameter '{}' not defined for {}".format(arg, param))
+                        raise ValueError(f"Parameter '{arg}' not defined for {param}")
             config[param] = param_search_space(**param_search_input_args)
         return config, ctx
 
     def sample(self) -> Dict[str, Any]:
         pass
 
-    def update(
-            self,
-            sampled_parameters: Dict[str, Any],
-            statistics: Dict[str, Any]
-    ):
+    def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
         pass
 
     def finished(self) -> bool:
@@ -453,10 +450,7 @@ class RayTuneSampler(HyperoptSampler):
 
         Uses the identity function if no encoding is needed.
         """
-        return {
-            key: ctx.get(key, identity)(value)
-            for key, value in config.items()
-        }
+        return {key: ctx.get(key, identity)(value) for key, value in config.items()}
 
 
 def get_build_hyperopt_sampler(strategy_type):
@@ -467,5 +461,5 @@ sampler_registry = {
     "grid": GridSampler,
     "random": RandomSampler,
     "pysot": PySOTSampler,
-    "ray": RayTuneSampler
+    "ray": RayTuneSampler,
 }

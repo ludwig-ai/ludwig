@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,52 +26,53 @@ INPUT_FEATURE_TYPES = sorted(list(input_type_registry.keys()))
 OUTPUT_FEATURE_TYPES = sorted(list(output_type_registry.keys()))
 COMBINER_TYPES = sorted(list(combiner_registry.keys()))
 
+
 def get_schema():
     schema = {
-        'type': 'object',
-        'properties': {
-            'input_features': {
-                'type': 'array',
-                'items': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {'type': 'string'},
-                        'type': {'type': 'string', 'enum': INPUT_FEATURE_TYPES},
-                        'column': {'type': 'string'},
-                        'encoder': {'type': 'string'}
+        "type": "object",
+        "properties": {
+            "input_features": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "type": {"type": "string", "enum": INPUT_FEATURE_TYPES},
+                        "column": {"type": "string"},
+                        "encoder": {"type": "string"},
                     },
-                    'allOf': get_input_encoder_conds() + get_input_preproc_conds(),
-                    'required': ['name', 'type'],
-                }
-            },
-            'output_features': {
-                'type': 'array',
-                'items': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {'type': 'string'},
-                        'type': {'type': 'string', 'enum': OUTPUT_FEATURE_TYPES},
-                        'column': {'type': 'string'},
-                        'decoder': {'type': 'string'}
-                    },
-                    'allOf': get_output_decoder_conds() + get_output_preproc_conds(),
-                    'required': ['name', 'type'],
-                }
-            },
-            'combiner': {
-                'type': 'object',
-                'properties': {
-                    'type': {'type': 'string', 'enum': COMBINER_TYPES},
+                    "allOf": get_input_encoder_conds() + get_input_preproc_conds(),
+                    "required": ["name", "type"],
                 },
-                'allOf': get_combiner_conds(),
-                'required': ['type'],
             },
-            'training': {},
-            'preprocessing': {},
-            'hyperopt': {},
+            "output_features": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "type": {"type": "string", "enum": OUTPUT_FEATURE_TYPES},
+                        "column": {"type": "string"},
+                        "decoder": {"type": "string"},
+                    },
+                    "allOf": get_output_decoder_conds() + get_output_preproc_conds(),
+                    "required": ["name", "type"],
+                },
+            },
+            "combiner": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": COMBINER_TYPES},
+                },
+                "allOf": get_combiner_conds(),
+                "required": ["type"],
+            },
+            "training": {},
+            "preprocessing": {},
+            "hyperopt": {},
         },
-        'definitions': get_custom_definitions(),
-        'required': ['input_features', 'output_features']
+        "definitions": get_custom_definitions(),
+        "required": ["input_features", "output_features"],
     }
     return schema
 
@@ -83,8 +83,8 @@ def get_input_encoder_conds():
         feature_cls = input_type_registry[feature_type]
         encoder_names = list(feature_cls.encoder_registry.keys())
         encoder_cond = create_cond(
-            {'type': feature_type},
-            {'encoder': {'enum': encoder_names}},
+            {"type": feature_type},
+            {"encoder": {"enum": encoder_names}},
         )
         conds.append(encoder_cond)
     return conds
@@ -95,13 +95,13 @@ def get_input_preproc_conds():
     for feature_type in INPUT_FEATURE_TYPES:
         feature_cls = input_type_registry[feature_type]
         preproc_spec = {
-            'type': 'object',
-            'properties': feature_cls.preprocessing_schema,
-            'additionalProperties': False,
+            "type": "object",
+            "properties": feature_cls.preprocessing_schema,
+            "additionalProperties": False,
         }
         preproc_cond = create_cond(
-            {'type': feature_type},
-            {'preprocessing': preproc_spec},
+            {"type": feature_type},
+            {"preprocessing": preproc_spec},
         )
         conds.append(preproc_cond)
     return conds
@@ -113,8 +113,8 @@ def get_output_decoder_conds():
         feature_cls = output_type_registry[feature_type]
         decoder_names = list(feature_cls.decoder_registry.keys())
         decoder_cond = create_cond(
-            {'type': feature_type},
-            {'decoder': {'enum': decoder_names}},
+            {"type": feature_type},
+            {"decoder": {"enum": decoder_names}},
         )
         conds.append(decoder_cond)
     return conds
@@ -125,13 +125,13 @@ def get_output_preproc_conds():
     for feature_type in OUTPUT_FEATURE_TYPES:
         feature_cls = output_type_registry[feature_type]
         preproc_spec = {
-            'type': 'object',
-            'properties': feature_cls.preprocessing_schema,
-            'additionalProperties': False,
+            "type": "object",
+            "properties": feature_cls.preprocessing_schema,
+            "additionalProperties": False,
         }
         preproc_cond = create_cond(
-            {'type': feature_type},
-            {'preprocessing': preproc_spec},
+            {"type": feature_type},
+            {"preprocessing": preproc_spec},
         )
         conds.append(preproc_cond)
     return conds
@@ -144,27 +144,22 @@ def get_combiner_conds():
         schema_cls = combiner_cls.get_schema_cls()
         schema = marshmallow_dataclass.class_schema(schema_cls)()
         schema_json = JSONSchema().dump(schema)
-        combiner_json = schema_json['definitions'][schema_cls.__name__]['properties']
+        combiner_json = schema_json["definitions"][schema_cls.__name__]["properties"]
 
         # TODO: add type to schema: https://github.com/lovasoa/marshmallow_dataclass/issues/62
-        combiner_cond = create_cond(
-            {'type': combiner_type},
-            combiner_json
-        )
+        combiner_cond = create_cond({"type": combiner_type}, combiner_json)
         conds.append(combiner_cond)
     return conds
+
 
 def get_custom_definitions():
     return {}
 
+
 def create_cond(if_pred, then_pred):
     return {
-        'if': {
-            'properties': {k: {'const': v} for k, v in if_pred.items()}
-        },
-        'then': {
-            'properties': {k: v for k, v in then_pred.items()}
-        }
+        "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
+        "then": {"properties": {k: v for k, v in then_pred.items()}},
     }
 
 

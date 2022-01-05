@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import IdentityProcessMixin
@@ -25,11 +24,13 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class Yosemite(UncompressedFileDownloadMixin, IdentityProcessMixin,
-               CSVLoadMixin, BaseDataset):
+class Yosemite(
+    UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset
+):
     """Yosemite temperatures dataset.
 
     As found in https://github.com/ourownstory/neural_prophet.
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="yosemite", cache_dir=cache_dir)

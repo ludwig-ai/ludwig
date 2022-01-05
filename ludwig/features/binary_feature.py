@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,18 +22,18 @@ from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric, ROCAUCMetric
-from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.metrics_utils import average_precision_score
-from ludwig.utils.metrics_utils import precision_recall_curve
-from ludwig.utils.metrics_utils import roc_auc_score
-from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils import strings_utils
+from ludwig.utils.metrics_utils import (
+    ConfusionMatrix,
+    average_precision_score,
+    precision_recall_curve,
+    roc_auc_score,
+    roc_curve,
+)
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +59,7 @@ class BinaryFeatureMixin:
         },
         "fill_value": fill_value_schema,
         "computed_fill_value": fill_value_schema,
-        "fallback_true_label": {'type': 'string'},
+        "fallback_true_label": {"type": "string"},
     }
 
     @staticmethod
@@ -81,25 +80,26 @@ class BinaryFeatureMixin:
                 f"found: {distinct_values.values.tolist()}"
             )
 
-        if 'fallback_true_label' in preprocessing_parameters:
-            fallback_true_label = preprocessing_parameters['fallback_true_label']
+        if "fallback_true_label" in preprocessing_parameters:
+            fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
             fallback_true_label = sorted(distinct_values)[0]
             logger.warning(
                 f"In case binary feature {column.name} doesn't have conventional boolean values, "
                 f"we will interpret {fallback_true_label} as 1 and the other values as 0. "
                 f"If this is incorrect, please use the category feature type or "
-                f"manually specify the true value with `preprocessing.fallback_true_label`.")
+                f"manually specify the true value with `preprocessing.fallback_true_label`."
+            )
 
-        str2bool = {v: strings_utils.str2bool(
-            v, fallback_true_label) for v in distinct_values}
-        bool2str = [k for k, v in sorted(
-            str2bool.items(), key=lambda item: item[1])]
+        str2bool = {
+            v: strings_utils.str2bool(v, fallback_true_label) for v in distinct_values
+        }
+        bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
 
         return {
             "str2bool": str2bool,
             "bool2str": bool2str,
-            "fallback_true_label": fallback_true_label
+            "fallback_true_label": fallback_true_label,
         }
 
     @staticmethod
@@ -146,9 +146,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         inputs = tf.cast(inputs, dtype=tf.float32)
         inputs_exp = inputs[:, tf.newaxis]
-        encoder_outputs = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        encoder_outputs = self.encoder_obj(inputs_exp, training=training, mask=mask)
 
         return encoder_outputs
 
@@ -160,9 +158,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return ()
 
     @staticmethod
-    def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -193,13 +189,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def predictions(self, inputs, **kwargs):  # hidden
         logits = inputs[LOGITS]
 
-        probabilities = tf.nn.sigmoid(
-            logits, name="probabilities_{}".format(self.name)
-        )
+        probabilities = tf.nn.sigmoid(logits, name=f"probabilities_{self.name}")
         predictions = tf.greater_equal(
             probabilities,
             self.threshold,
-            name="predictions_{}".format(self.name),
+            name=f"predictions_{self.name}",
         )
 
         return {
@@ -224,9 +218,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
             name="eval_loss",
         )
-        self.metric_functions[ACCURACY] = BinaryAccuracy(
-            name="metric_accuracy"
-        )
+        self.metric_functions[ACCURACY] = BinaryAccuracy(name="metric_accuracy")
         self.metric_functions[ROC_AUC] = ROCAUCMetric(name="metric_auc")
 
     def get_prediction_set(self):
@@ -247,9 +239,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return ()
 
     @staticmethod
-    def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -272,9 +262,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         overall_stats["roc_auc_micro"] = roc_auc_score(
             targets, predictions[PROBABILITIES], average="micro"
         )
-        ps, rs, thresholds = precision_recall_curve(
-            targets, predictions[PROBABILITIES]
-        )
+        ps, rs, thresholds = precision_recall_curve(targets, predictions[PROBABILITIES])
         overall_stats["precision_recall_curve"] = {
             "precisions": ps.tolist(),
             "recalls": rs.tolist(),

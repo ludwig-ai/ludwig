@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Linux Foundation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,9 +21,9 @@ import tempfile
 
 import fsspec
 import h5py
+from filelock import FileLock
 from fsspec.core import split_protocol
 
-from filelock import FileLock
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
@@ -54,7 +53,7 @@ def find_non_existing_dir_by_adding_suffix(directory_name):
     suffix = 0
     curr_directory_name = directory_name
     while fs.exists(curr_directory_name):
-        curr_directory_name = directory_name + '_' + str(suffix)
+        curr_directory_name = directory_name + "_" + str(suffix)
         suffix += 1
     return curr_directory_name
 
@@ -111,7 +110,7 @@ def upload_output_directory(url):
         with tempfile.TemporaryDirectory() as tmpdir:
             fs, remote_path = get_fs_and_path(url)
             if path_exists(url):
-                fs.get(url, tmpdir + '/', recursive=True)
+                fs.get(url, tmpdir + "/", recursive=True)
 
             def put_fn():
                 fs.put(tmpdir, remote_path, recursive=True)
@@ -137,16 +136,16 @@ def open_file(url, *args, **kwargs):
 @contextlib.contextmanager
 def download_h5(url):
     local_path = fsspec.open_local(url)
-    with h5py.File(local_path, 'r') as f:
+    with h5py.File(local_path, "r") as f:
         yield f
 
 
 @contextlib.contextmanager
 def upload_h5(url):
     with upload_output_file(url) as local_fname:
-        mode = 'w'
+        mode = "w"
         if url == local_fname and path_exists(url):
-            mode = 'r+'
+            mode = "r+"
 
         with h5py.File(local_fname, mode) as f:
             yield f
@@ -159,7 +158,7 @@ def upload_output_file(url):
     if protocol is not None:
         fs = fsspec.filesystem(protocol)
         with tempfile.TemporaryDirectory() as tmpdir:
-            local_fname = os.path.join(tmpdir, 'tmpfile')
+            local_fname = os.path.join(tmpdir, "tmpfile")
             yield local_fname
             fs.put(local_fname, url, recursive=True)
     else:
@@ -168,16 +167,18 @@ def upload_output_file(url):
 
 class file_lock(contextlib.AbstractContextManager):
     """File lock based on filelock package."""
+
     def __init__(
-        self,
-        path: str,
-        ignore_remote_protocol: bool = True,
-        lock_file: str = '.lock'
+        self, path: str, ignore_remote_protocol: bool = True, lock_file: str = ".lock"
     ) -> None:
         if not isinstance(path, (str, os.PathLike, pathlib.Path)):
             self.lock = None
         else:
-            path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
+            path = (
+                os.path.join(path, lock_file)
+                if os.path.isdir(path)
+                else f"{path}./{lock_file}"
+            )
             if ignore_remote_protocol and has_remote_protocol(path):
                 self.lock = None
             else:

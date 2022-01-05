@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,34 +23,37 @@ import tensorflow as tf
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.ray import RayBackend, get_trainer_kwargs
 from ludwig.utils.data_utils import read_parquet
-
-from tests.integration_tests.utils import create_data_set_to_use, spawn, audio_feature, image_feature, \
-    timeseries_feature
-from tests.integration_tests.utils import bag_feature
-from tests.integration_tests.utils import binary_feature
-from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import date_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import h3_feature
-from tests.integration_tests.utils import numerical_feature
-from tests.integration_tests.utils import sequence_feature
-from tests.integration_tests.utils import set_feature
-from tests.integration_tests.utils import text_feature
-from tests.integration_tests.utils import train_with_backend
-from tests.integration_tests.utils import vector_feature
-
+from tests.integration_tests.utils import (
+    audio_feature,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    create_data_set_to_use,
+    date_feature,
+    generate_data,
+    h3_feature,
+    image_feature,
+    numerical_feature,
+    sequence_feature,
+    set_feature,
+    spawn,
+    text_feature,
+    timeseries_feature,
+    train_with_backend,
+    vector_feature,
+)
 
 RAY_BACKEND_CONFIG = {
-    'type': 'ray',
-    'processor': {
-        'parallelism': 2,
+    "type": "ray",
+    "processor": {
+        "parallelism": 2,
     },
-    'trainer': {
-        'num_workers': 2,
-        'resources_per_worker': {
-            'CPU': 0.1,
-        }
-    }
+    "trainer": {
+        "num_workers": 2,
+        "resources_per_worker": {
+            "CPU": 0.1,
+        },
+    },
 }
 
 
@@ -71,8 +73,8 @@ def ray_start(num_cpus=2):
 def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
-    assert kwargs.get('num_workers') == 1
-    assert kwargs.get('resources_per_worker').get('CPU') == 2
+    assert kwargs.get("num_workers") == 1
+    assert kwargs.get("resources_per_worker").get("CPU") == 2
 
     # Train on Parquet
     model = train_with_backend(
@@ -80,36 +82,44 @@ def run_api_experiment(config, data_parquet):
     )
 
     assert isinstance(model.backend, RayBackend)
-    assert model.backend.df_engine.parallelism == \
-           RAY_BACKEND_CONFIG['processor']['parallelism']
+    assert (
+        model.backend.df_engine.parallelism
+        == RAY_BACKEND_CONFIG["processor"]["parallelism"]
+    )
 
 
 def run_split_api_experiment(config, data_parquet):
     train_fname, val_fname, test_fname = split(data_parquet)
 
     # Train
-    train_with_backend(RAY_BACKEND_CONFIG,
-                       config,
-                       training_set=train_fname,
-                       evaluate=False,
-                       predict=False)
+    train_with_backend(
+        RAY_BACKEND_CONFIG,
+        config,
+        training_set=train_fname,
+        evaluate=False,
+        predict=False,
+    )
 
     # Train + Validation
-    train_with_backend(RAY_BACKEND_CONFIG,
-                       config,
-                       training_set=train_fname,
-                       validation_set=val_fname,
-                       evaluate=False,
-                       predict=False)
+    train_with_backend(
+        RAY_BACKEND_CONFIG,
+        config,
+        training_set=train_fname,
+        validation_set=val_fname,
+        evaluate=False,
+        predict=False,
+    )
 
     # Train + Validation + Test
-    train_with_backend(RAY_BACKEND_CONFIG,
-                       config,
-                       training_set=train_fname,
-                       validation_set=val_fname,
-                       test_set=test_fname,
-                       evaluate=False,
-                       predict=False)
+    train_with_backend(
+        RAY_BACKEND_CONFIG,
+        config,
+        training_set=train_fname,
+        validation_set=val_fname,
+        test_set=test_fname,
+        evaluate=False,
+        predict=False,
+    )
 
 
 def split(data_parquet):
@@ -119,9 +129,9 @@ def split(data_parquet):
     validation_df = data_df.drop(train_df.index).drop(test_df.index)
 
     basename, ext = os.path.splitext(data_parquet)
-    train_fname = basename + '.train' + ext
-    val_fname = basename + '.validation' + ext
-    test_fname = basename + '.test' + ext
+    train_fname = basename + ".train" + ext
+    val_fname = basename + ".validation" + ext
+    test_fname = basename + ".test" + ext
 
     train_df.to_parquet(train_fname)
     validation_df.to_parquet(val_fname)
@@ -141,16 +151,18 @@ def run_test_parquet(
     tf.config.experimental_run_functions_eagerly(True)
     with ray_start(num_cpus=num_cpus):
         config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {'type': 'concat', 'fc_size': 14},
-            'training': {'epochs': 2, 'batch_size': 8}
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
+            "training": {"epochs": 2, "batch_size": 8},
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            csv_filename = os.path.join(tmpdir, 'dataset.csv')
-            dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-            dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            dataset_csv = generate_data(
+                input_features, output_features, csv_filename, num_examples=num_examples
+            )
+            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
 
             if expect_error:
                 with pytest.raises(ValueError):
@@ -162,8 +174,8 @@ def run_test_parquet(
 @pytest.mark.distributed
 def test_ray_tabular():
     input_features = [
-        sequence_feature(reduce_output='sum'),
-        numerical_feature(normalization='zscore'),
+        sequence_feature(reduce_output="sum"),
+        numerical_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
         bag_feature(),
@@ -172,10 +184,10 @@ def test_ray_tabular():
         date_feature(),
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input="sum"),
         binary_feature(),
         set_feature(max_len=3, vocab_size=5),
-        numerical_feature(normalization='zscore'),
+        numerical_feature(normalization="zscore"),
         vector_feature(),
     ]
     run_test_parquet(input_features, output_features)
@@ -187,7 +199,7 @@ def test_ray_text():
         text_feature(),
     ]
     output_features = [
-        text_feature(reduce_input=None, decoder='tagger'),
+        text_feature(reduce_input=None, decoder="tagger"),
     ]
     run_test_parquet(input_features, output_features)
 
@@ -196,18 +208,12 @@ def test_ray_text():
 def test_ray_sequence():
     input_features = [
         sequence_feature(
-            max_len=10,
-            encoder='rnn',
-            cell_type='lstm',
-            reduce_output=None
+            max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None
         )
     ]
     output_features = [
         sequence_feature(
-            max_len=10,
-            decoder='tagger',
-            attention=False,
-            reduce_input=None
+            max_len=10, decoder="tagger", attention=False, reduce_input=None
         )
     ]
     run_test_parquet(input_features, output_features)
@@ -216,7 +222,7 @@ def test_ray_sequence():
 @pytest.mark.distributed
 def test_ray_audio():
     with tempfile.TemporaryDirectory() as tmpdir:
-        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder)]
         output_features = [binary_feature()]
         run_test_parquet(input_features, output_features)
@@ -225,20 +231,20 @@ def test_ray_audio():
 @pytest.mark.distributed
 def test_ray_image():
     with tempfile.TemporaryDirectory() as tmpdir:
-        image_dest_folder = os.path.join(tmpdir, 'generated_images')
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
         input_features = [
             image_feature(
                 folder=image_dest_folder,
-                encoder='resnet',
+                encoder="resnet",
                 preprocessing={
-                    'in_memory': True,
-                    'height': 12,
-                    'width': 12,
-                    'num_channels': 3,
-                    'num_processes': 5
+                    "in_memory": True,
+                    "height": 12,
+                    "width": 12,
+                    "num_channels": 3,
+                    "num_processes": 5,
                 },
                 fc_size=16,
-                num_filters=8
+                num_filters=8,
             ),
         ]
         output_features = [binary_feature()]
@@ -249,11 +255,11 @@ def test_ray_image():
 @pytest.mark.distributed
 def test_ray_split():
     input_features = [
-        numerical_feature(normalization='zscore'),
+        numerical_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
     ]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
     run_test_parquet(
         input_features,
         output_features,
@@ -272,13 +278,13 @@ def test_ray_timeseries():
 @pytest.mark.distributed
 def test_ray_lazy_load_audio_error():
     with tempfile.TemporaryDirectory() as tmpdir:
-        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [
             audio_feature(
                 folder=audio_dest_folder,
                 preprocessing={
-                    'in_memory': False,
-                }
+                    "in_memory": False,
+                },
             )
         ]
         output_features = [binary_feature()]
@@ -288,20 +294,20 @@ def test_ray_lazy_load_audio_error():
 @pytest.mark.distributed
 def test_ray_lazy_load_image_error():
     with tempfile.TemporaryDirectory() as tmpdir:
-        image_dest_folder = os.path.join(tmpdir, 'generated_images')
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
         input_features = [
             image_feature(
                 folder=image_dest_folder,
-                encoder='resnet',
+                encoder="resnet",
                 preprocessing={
-                    'in_memory': False,
-                    'height': 12,
-                    'width': 12,
-                    'num_channels': 3,
-                    'num_processes': 5
+                    "in_memory": False,
+                    "height": 12,
+                    "width": 12,
+                    "num_channels": 3,
+                    "num_processes": 5,
                 },
                 fc_size=16,
-                num_filters=8
+                num_filters=8,
             ),
         ]
         output_features = [binary_feature()]

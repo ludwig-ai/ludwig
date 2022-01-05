@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +29,7 @@ from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
+from ludwig.constants import NAME, PARQUET, PREPROCESSING, PROC_COLUMN, RAY, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
@@ -38,11 +37,16 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
+from ludwig.utils.tf_utils import (
+    initialize_tensorflow,
+    load_weights_from_buffer,
+    save_weights_to_buffer,
+)
 
 _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
 import ray.train as rt
 from ray.train.trainer import Trainer, TrainWorkerGroup
+
 if _ray19:
     from ray.train.horovod import HorovodConfig
 else:
@@ -58,9 +62,9 @@ def get_horovod_kwargs(use_gpu=None):
     # The priority is GPUs, but can fall back to CPUs if there are no
     # GPUs available.
     if use_gpu is None:
-        use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
+        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
 
-    resource = 'GPU' if use_gpu else 'CPU'
+    resource = "GPU" if use_gpu else "CPU"
     num_workers = int(ray.cluster_resources().get(resource, 0))
 
     return dict(
@@ -74,20 +78,18 @@ def get_trainer_kwargs(use_gpu=None):
     # The priority is GPUs, but can fall back to CPUs if there are no
     # GPUs available.
     if use_gpu is None:
-        use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
+        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
 
     if use_gpu:
-        num_workers = int(ray.cluster_resources().get('GPU', 0))
+        num_workers = int(ray.cluster_resources().get("GPU", 0))
         resources_per_worker = None
     else:
         # Enforce one worker per node by requesting half the CPUs on the node
         # TODO: use placement groups
-        resources = [node['Resources'] for node in ray.state.nodes()]
-        min_cpus = min(r['CPU'] for r in resources)
+        resources = [node["Resources"] for node in ray.state.nodes()]
+        min_cpus = min(r["CPU"] for r in resources)
         num_workers = len(resources)
-        resources_per_worker = {
-            'CPU': min(min_cpus / 2 + 1, min_cpus)
-        }
+        resources_per_worker = {"CPU": min(min_cpus / 2 + 1, min_cpus)}
 
     return dict(
         # TODO travis: replace backend here once ray 1.8 released
@@ -100,8 +102,8 @@ def get_trainer_kwargs(use_gpu=None):
 
 
 _engine_registry = {
-    'dask': DaskEngine,
-    'pandas': PandasEngine,
+    "dask": DaskEngine,
+    "pandas": PandasEngine,
 }
 
 
@@ -114,7 +116,7 @@ def _get_df_engine(processor):
 
     processor_kwargs = processor.copy()
 
-    dtype = processor_kwargs.pop('type', 'dask')
+    dtype = processor_kwargs.pop("type", "dask")
     engine_cls = _engine_registry.get(dtype)
 
     return engine_cls(**processor_kwargs)
@@ -153,11 +155,11 @@ class RayRemoteTrainer(RemoteTrainer):
 
 
 def train_fn(
-        executable_kwargs: Dict[str, Any] = None,
-        remote_model: RayRemoteModel = None,
-        training_set_metadata: Dict[str, Any] = None,
-        features: Dict[str, Dict] = None,
-        **kwargs
+    executable_kwargs: Dict[str, Any] = None,
+    remote_model: RayRemoteModel = None,
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
@@ -196,13 +198,7 @@ def train_fn(
         )
 
     trainer = RayRemoteTrainer(**executable_kwargs)
-    results = trainer.train(
-        model,
-        train_shard,
-        val_shard,
-        test_shard,
-        **kwargs
-    )
+    results = trainer.train(model, train_shard, val_shard, test_shard, **kwargs)
     return results, trainer.validation_field, trainer.validation_metric
 
 
@@ -219,9 +215,9 @@ class RayTrainerV2(BaseTrainer):
         remote_model = RayRemoteModel(model)
 
         kwargs = {
-            'training_set_metadata': training_set.training_set_metadata,
-            'features': training_set.features,
-            **kwargs
+            "training_set_metadata": training_set.training_set_metadata,
+            "features": training_set.features,
+            **kwargs,
         }
 
         dataset = {"train": training_set.pipeline()}
@@ -233,9 +229,9 @@ class RayTrainerV2(BaseTrainer):
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
             config={
-                'executable_kwargs': executable_kwargs,
-                'remote_model': remote_model,
-                **kwargs
+                "executable_kwargs": executable_kwargs,
+                "remote_model": remote_model,
+                **kwargs,
             },
             dataset=dataset,
         )[0]
@@ -260,14 +256,14 @@ class RayTrainerV2(BaseTrainer):
 
 
 def legacy_train_fn(
-        trainer: RayRemoteTrainer = None,
-        remote_model: RayRemoteModel = None,
-        training_set_metadata: Dict[str, Any] = None,
-        features: Dict[str, Dict] = None,
-        train_shards: List[DatasetPipeline] = None,
-        val_shards: List[DatasetPipeline] = None,
-        test_shards: List[DatasetPipeline] = None,
-        **kwargs
+    trainer: RayRemoteTrainer = None,
+    remote_model: RayRemoteModel = None,
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    train_shards: List[DatasetPipeline] = None,
+    val_shards: List[DatasetPipeline] = None,
+    test_shards: List[DatasetPipeline] = None,
+    **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
@@ -297,13 +293,7 @@ def legacy_train_fn(
             training_set_metadata,
         )
 
-    results = trainer.train(
-        model,
-        train_shard,
-        val_shard,
-        test_shard,
-        **kwargs
-    )
+    results = trainer.train(model, train_shard, val_shard, test_shard, **kwargs)
     return results
 
 
@@ -313,9 +303,11 @@ class RayLegacyTrainer(BaseTrainer):
         setting = RayExecutor.create_settings(timeout_s=30)
 
         self.executor = RayExecutor(
-            setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RayRemoteTrainer,
-                            executable_kwargs=executable_kwargs)
+            setting, **{**get_horovod_kwargs(), **horovod_kwargs}
+        )
+        self.executor.start(
+            executable_cls=RayRemoteTrainer, executable_kwargs=executable_kwargs
+        )
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         remote_model = RayRemoteModel(model)
@@ -346,11 +338,8 @@ class RayLegacyTrainer(BaseTrainer):
 
         results = self.executor.execute(
             lambda trainer: trainer.train(
-                remote_model.load(),
-                training_set,
-                validation_set,
-                test_set,
-                **kwargs)
+                remote_model.load(), training_set, validation_set, test_set, **kwargs
+            )
         )
 
         weights, *stats = results[0]
@@ -360,8 +349,7 @@ class RayLegacyTrainer(BaseTrainer):
     def train_online(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train_online(
-                remote_model.load(), *args, **kwargs)
+            lambda trainer: trainer.train_online(remote_model.load(), *args, **kwargs)
         )
 
         weights = results[0]
@@ -382,7 +370,7 @@ class RayLegacyTrainer(BaseTrainer):
 
 class RayPredictor(BasePredictor):
     def __init__(self, **predictor_kwargs):
-        self.batch_size = predictor_kwargs.get('batch_size', 128)
+        self.batch_size = predictor_kwargs.get("batch_size", 128)
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
 
@@ -399,28 +387,28 @@ class RayPredictor(BasePredictor):
             dataset.features,
             dataset.training_set_metadata,
             *args,
-            **kwargs
+            **kwargs,
         )
 
-        columns = [
-           f.proc_column for f in model.input_features.values()
-        ]
+        columns = [f.proc_column for f in model.input_features.values()]
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
                 df[c] = df[c].astype(TensorDtype())
             return df
 
-        num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
-        dask_dataset = dataset.ds.map_batches(
-            to_tensors, batch_format='pandas'
-        ).map_batches(
-            batch_predictor,
-            batch_size=self.batch_size,
-            compute='actors',
-            batch_format='pandas',
-            num_gpus=num_gpus
-        ).to_dask()
+        num_gpus = int(ray.cluster_resources().get("GPU", 0) > 0)
+        dask_dataset = (
+            dataset.ds.map_batches(to_tensors, batch_format="pandas")
+            .map_batches(
+                batch_predictor,
+                batch_size=self.batch_size,
+                compute="actors",
+                batch_format="pandas",
+                num_gpus=num_gpus,
+            )
+            .to_dask()
+        )
 
         for of_feature in model.output_features.values():
             dask_dataset = of_feature.unflatten(dask_dataset)
@@ -434,19 +422,19 @@ class RayPredictor(BasePredictor):
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
-            'Ray backend does not support batch evaluation at this time.'
+            "Ray backend does not support batch evaluation at this time."
         )
 
     def batch_collect_activations(self, model, *args, **kwargs):
         raise NotImplementedError(
-            'Ray backend does not support collecting activations at this time.'
+            "Ray backend does not support collecting activations at this time."
         )
 
     def _check_dataset(self, dataset):
         if not isinstance(dataset, RayDataset):
             raise RuntimeError(
-                f'Ray backend requires RayDataset for inference, '
-                f'found: {type(dataset)}'
+                f"Ray backend requires RayDataset for inference, "
+                f"found: {type(dataset)}"
             )
 
     def shutdown(self):
@@ -455,13 +443,14 @@ class RayPredictor(BasePredictor):
         self.actor_handles.clear()
 
     def get_batch_infer_model(
-            self,
-            remote_model: RayRemoteModel,
-            predictor_kwargs: Dict[str, Any],
-            output_columns: List[str],
-            features: Dict[str, Dict],
-            training_set_metadata: Dict[str, Any],
-            *args, **kwargs
+        self,
+        remote_model: RayRemoteModel,
+        predictor_kwargs: Dict[str, Any],
+        output_columns: List[str],
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
+        *args,
+        **kwargs,
     ):
         class BatchInferModel:
             def __init__(self):
@@ -470,7 +459,7 @@ class RayPredictor(BasePredictor):
                 self.features = features
                 self.training_set_metadata = training_set_metadata
                 self.reshape_map = {
-                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get('reshape')
+                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape")
                     for f in features.values()
                 }
                 predictor = Predictor(**predictor_kwargs)
@@ -486,9 +475,7 @@ class RayPredictor(BasePredictor):
                 return ordered_predictions
 
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
-                res = {
-                    c: batch[c].to_numpy() for c in self.features.keys()
-                }
+                res = {c: batch[c].to_numpy() for c in self.features.keys()}
 
                 for c in self.features.keys():
                     reshape = self.reshape_map.get(c)
@@ -509,16 +496,16 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._cache_format = cache_format
         if cache_format not in [RAY, PARQUET, TFRECORD]:
             raise ValueError(
-                f'Data format {cache_format} is not supported when using the Ray backend. '
-                f'Try setting to `parquet`.'
+                f"Data format {cache_format} is not supported when using the Ray backend. "
+                f"Try setting to `parquet`."
             )
 
     def initialize(self):
         if not ray.is_initialized():
             try:
-                ray.init('auto', ignore_reinit_error=True)
+                ray.init("auto", ignore_reinit_error=True)
             except ConnectionError:
-                logger.info('Initializing new Ray cluster...')
+                logger.info("Initializing new Ray cluster...")
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
@@ -552,6 +539,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return False
 
     def check_lazy_load_supported(self, feature):
-        if not feature[PREPROCESSING]['in_memory']:
-            raise ValueError(f'RayBackend does not support lazy loading of data files at train time. '
-                             f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+        if not feature[PREPROCESSING]["in_memory"]:
+            raise ValueError(
+                f"RayBackend does not support lazy loading of data files at train time. "
+                f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
+            )

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +17,7 @@ import logging
 from functools import partial
 
 import tensorflow as tf
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Activation, Dense, Layer
 
 from ludwig.constants import LOSS, TYPE
 
@@ -28,22 +25,21 @@ logger = logging.getLogger(__name__)
 
 
 class Regressor(Layer):
-
     def __init__(
-            self,
-            use_bias=True,
-            kernel_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            kernel_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            activation=None,
-            **kwargs
+        self,
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        activation=None,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  Dense')
+        logger.debug("  Dense")
         self.dense = Dense(
             1,
             use_bias=use_bias,
@@ -52,7 +48,7 @@ class Regressor(Layer):
             kernel_regularizer=kernel_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            activation=activation
+            activation=activation,
         )
 
     def call(self, inputs, **kwargs):
@@ -60,24 +56,23 @@ class Regressor(Layer):
 
 
 class Projector(Layer):
-
     def __init__(
-            self,
-            vector_size,
-            use_bias=True,
-            kernel_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            kernel_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            activation=None,
-            clip=None,
-            **kwargs
+        self,
+        vector_size,
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        activation=None,
+        clip=None,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  Dense')
+        logger.debug("  Dense")
         self.dense = Dense(
             vector_size,
             use_bias=use_bias,
@@ -85,7 +80,7 @@ class Projector(Layer):
             bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer,
             bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            activity_regularizer=activity_regularizer,
         )
 
         self.activation = Activation(activation)
@@ -93,16 +88,13 @@ class Projector(Layer):
         if clip is not None:
             if isinstance(clip, (list, tuple)) and len(clip) == 2:
                 self.clip = partial(
-                    tf.clip_by_value,
-                    clip_value_min=clip[0],
-                    clip_value_max=clip[1]
+                    tf.clip_by_value, clip_value_min=clip[0], clip_value_max=clip[1]
                 )
             else:
                 raise ValueError(
-                    'The clip parameter of {} is {}. '
-                    'It must be a list or a tuple of length 2.'.format(
-                        self.feature_name,
-                        self.clip
+                    "The clip parameter of {} is {}. "
+                    "It must be a list or a tuple of length 2.".format(
+                        self.feature_name, self.clip
                     )
                 )
         else:
@@ -116,22 +108,21 @@ class Projector(Layer):
 
 
 class Classifier(Layer):
-
     def __init__(
-            self,
-            num_classes,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            **kwargs
+        self,
+        num_classes,
+        use_bias=True,
+        weights_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        weights_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  Dense')
+        logger.debug("  Dense")
         self.dense = Dense(
             num_classes,
             use_bias=use_bias,
@@ -139,12 +130,12 @@ class Classifier(Layer):
             bias_initializer=bias_initializer,
             kernel_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            activity_regularizer=activity_regularizer,
         )
 
         self.sampled_loss = False
         if LOSS in kwargs and TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
-            self.sampled_loss = kwargs[LOSS][TYPE].startswith('sampled')
+            self.sampled_loss = kwargs[LOSS][TYPE].startswith("sampled")
 
         # this is needed because TF2 initialzies the weights at the first call
         # so the first time we need to compute the full dense,

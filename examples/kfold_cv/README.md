@@ -2,15 +2,16 @@
 
 This directory contains two examples of performing a k-fold cross validation analysis with Ludwig.
 
-
 ## Classification Example
 
 This example illustrates running the k-fold cv with the `ludwig experiment` cli.
 
 To run this example execute this bash script:
-``` 
+
+```
 ./k-fold_cv_classification.sh
 ```
+
 This bash script performs these steps:
 
 - Download and prepare data for training and create a Ludwig config file
@@ -18,7 +19,8 @@ This bash script performs these steps:
 - Display results from the 5-fold cross validation analysis
 
 Sample output:
-``` 
+
+```
 Cleaning out old results
 Downloading data set
 Preparing data for training
@@ -59,7 +61,6 @@ retrieving results from  results
                'roc_auc_micro_mean': 0.9973999160508542,
                'roc_auc_micro_std': 0.0011259319854886507}}
 ```
-
 
 ## Regression Example
 

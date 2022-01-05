@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,32 +19,35 @@ import queue
 import threading
 from distutils.version import LooseVersion
 from functools import lru_cache
-from typing import Dict, Any, Iterator
+from typing import Any, Dict, Iterator
 
 import numpy as np
 import pandas as pd
-
 import ray
 from ray.data import from_dask, read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
-from ludwig.constants import NAME, TYPE, BINARY, CATEGORY, NUMERICAL
+from ludwig.constants import BINARY, CATEGORY, NAME, NUMERICAL, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
-
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMERICAL}
 
 
 class RayDataset(Dataset):
-    """ Wrapper around ray.data.Dataset. """
+    """Wrapper around ray.data.Dataset."""
 
-    def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
+    def __init__(
+        self,
+        df: DataFrame,
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
+    ):
         # TODO(travis): move read_parquet to cache layer after removing petastorm
         self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
@@ -69,12 +71,15 @@ class RayDataset(Dataset):
         return pipe
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128,
-                           should_shuffle=True,
-                           shuffle_buffer_size=None,
-                           seed=0,
-                           ignore_last=False,
-                           horovod=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        shuffle_buffer_size=None,
+        seed=0,
+        ignore_last=False,
+        horovod=None,
+    ):
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
             self.features,
@@ -91,34 +96,35 @@ class RayDataset(Dataset):
         return len(self)
 
 
-class RayDatasetManager(object):
+class RayDatasetManager:
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: DataFrame, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
-        return RayDataset(
-            dataset,
-            get_proc_features(config),
-            training_set_metadata
-        )
+    def create(
+        self,
+        dataset: DataFrame,
+        config: Dict[str, Any],
+        training_set_metadata: Dict[str, Any],
+    ):
+        return RayDataset(dataset, get_proc_features(config), training_set_metadata)
 
     # TODO(travis): consider combining this with `create` when Petastorm is dropped
     def create_inference_dataset(
-            self,
-            dataset: DataFrame,
-            tag: str,
-            config: Dict[str, Any],
-            training_set_metadata: Dict[str, Any]
+        self,
+        dataset: DataFrame,
+        tag: str,
+        config: Dict[str, Any],
+        training_set_metadata: Dict[str, Any],
     ):
         return self.create(dataset, config, training_set_metadata)
 
     def save(
-            self,
-            cache_path: str,
-            dataset: DataFrame,
-            config: Dict[str, Any],
-            training_set_metadata: Dict[str, Any],
-            tag: str
+        self,
+        cache_path: str,
+        dataset: DataFrame,
+        config: Dict[str, Any],
+        training_set_metadata: Dict[str, Any],
+        tag: str,
     ):
         self.backend.df_engine.to_parquet(dataset, cache_path)
         return cache_path
@@ -128,15 +134,15 @@ class RayDatasetManager(object):
 
     @property
     def data_format(self):
-        return 'parquet'
+        return "parquet"
 
 
 class RayDatasetShard(Dataset):
     def __init__(
-            self,
-            dataset_shard: DatasetPipeline,
-            features: Dict[str, Dict],
-            training_set_metadata: Dict[str, Any],
+        self,
+        dataset_shard: DatasetPipeline,
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.features = features
@@ -144,12 +150,15 @@ class RayDatasetShard(Dataset):
         self.dataset_iter = dataset_shard.iter_datasets()
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128,
-                           should_shuffle=True,
-                           shuffle_buffer_size=None,
-                           seed=0,
-                           ignore_last=False,
-                           horovod=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        shuffle_buffer_size=None,
+        seed=0,
+        ignore_last=False,
+        horovod=None,
+    ):
         yield RayDatasetBatcher(
             self.dataset_iter,
             self.features,
@@ -170,12 +179,12 @@ class RayDatasetShard(Dataset):
 
 class RayDatasetBatcher(Batcher):
     def __init__(
-            self,
-            dataset_epoch_iterator: Iterator[ray.data.Dataset],
-            features: Dict[str, Dict],
-            training_set_metadata: Dict[str, Any],
-            batch_size: int,
-            samples_per_epoch: int,
+        self,
+        dataset_epoch_iterator: Iterator[ray.data.Dataset],
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
+        batch_size: int,
+        samples_per_epoch: int,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
@@ -185,7 +194,7 @@ class RayDatasetBatcher(Batcher):
         self.features = features
         self.columns = list(features.keys())
         self.reshape_map = {
-            proc_column: training_set_metadata[feature[NAME]].get('reshape')
+            proc_column: training_set_metadata[feature[NAME]].get("reshape")
             for proc_column, feature in features.items()
         }
 
@@ -229,7 +238,9 @@ class RayDatasetBatcher(Batcher):
         if read_parallelism == 1:
             self.dataset_batch_iter = self._create_async_reader(dataset)
         elif read_parallelism > 1:
-            self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
+            self.dataset_batch_iter = self._create_async_parallel_reader(
+                dataset, read_parallelism
+            )
         else:
             # TODO: consider removing this. doesn't work currently and read performance seems generally
             #  very good with 1 parallelism
@@ -259,12 +270,11 @@ class RayDatasetBatcher(Batcher):
                 if features[c][TYPE] not in _SCALAR_TYPES:
                     df[c] = df[c].astype(TensorDtype())
             return df
+
         return to_tensors
 
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
-        res = {
-            c: batch[c].to_numpy() for c in self.columns
-        }
+        res = {c: batch[c].to_numpy() for c in self.columns}
 
         for c in self.columns:
             reshape = self.reshape_map.get(c)
@@ -280,9 +290,7 @@ class RayDatasetBatcher(Batcher):
             for batch in dataset.map_batches(
                 to_tensors, batch_format="pandas"
             ).iter_batches(
-                prefetch_blocks=0,
-                batch_size=self.batch_size,
-                batch_format="pandas"
+                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
             ):
                 yield self._prepare_batch(batch)
 
@@ -297,12 +305,9 @@ class RayDatasetBatcher(Batcher):
 
         def producer():
             for batch in dataset.map_batches(
-                    to_tensors,
-                    batch_format="pandas"
+                to_tensors, batch_format="pandas"
             ).iter_batches(
-                prefetch_blocks=0,
-                batch_size=batch_size,
-                batch_format="pandas"
+                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
@@ -320,7 +325,9 @@ class RayDatasetBatcher(Batcher):
 
         return async_read()
 
-    def _create_async_parallel_reader(self, dataset: ray.data.Dataset, num_threads: int):
+    def _create_async_parallel_reader(
+        self, dataset: ray.data.Dataset, num_threads: int
+    ):
         q = queue.Queue(maxsize=100)
 
         batch_size = self.batch_size
@@ -329,20 +336,21 @@ class RayDatasetBatcher(Batcher):
         splits = dataset.split(n=num_threads)
 
         def producer(i):
-            for batch in splits[i].map_batches(
-                    to_tensors,
-                    batch_format="pandas"
-            ).iter_batches(
-                prefetch_blocks=0,
-                batch_size=batch_size,
-                batch_format="pandas"
+            for batch in (
+                splits[i]
+                .map_batches(to_tensors, batch_format="pandas")
+                .iter_batches(
+                    prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
+                )
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
 
         def async_parallel_read():
-            threads = [threading.Thread(target=producer, args=(i,)) for i in range(num_threads)]
+            threads = [
+                threading.Thread(target=producer, args=(i,)) for i in range(num_threads)
+            ]
             for t in threads:
                 t.start()
 
