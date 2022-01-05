@@ -45,7 +45,12 @@ class ECD(LudwigModule):
 
         # ================ Inputs ================
         self.input_features = torch.nn.ModuleDict()
-        self.input_features.update(build_inputs(input_features_def))
+        try:
+            self.input_features.update(build_inputs(input_features_def))
+        except KeyError as e:
+            raise KeyError(
+                f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
+            )
 
         # ================ Combiner ================
         logger.debug(f"Combiner {combiner_def[TYPE]}")
