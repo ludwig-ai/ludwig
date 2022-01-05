@@ -24,7 +24,7 @@ from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
-from ludwig.utils.schema_utils import FloatRange, NonNegativeFloat
+from ludwig.utils.schema_utils import FloatRange, NonNegativeFloat, StringOptions
 
 optimizer_registry = Registry()
 
@@ -55,9 +55,12 @@ class Clipper:
 def create_optimizer_with_clipper(
     model, type="sgd", clipglobalnorm=5.0, clipnorm=None, clipvalue=None, horovod=None, **kwargs
 ):
-    optimizer_cls = get_from_registry(type.lower(), {k: v[0] for k, v in optimizer_registry})
+    optimizer_cls = get_from_registry(type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
+    clipper = kwargs["clipper"]
+    if clipper is None:
+        clipper = Clipper(clipglobalnorm=clipglobalnorm, clipnorm=clipnorm, clipvalue=clipvalue)
+    kwargs.pop("clipper", None)
     optimizer = create_optimizer(optimizer_cls, model, horovod, **kwargs)
-    clipper = Clipper(clipglobalnorm=clipglobalnorm, clipnorm=clipnorm, clipvalue=clipvalue)
     return optimizer, clipper
 
 
@@ -117,7 +120,9 @@ class BaseOptimizer:
 @dataclass
 class SGDOptimizer(BaseOptimizer):
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
-    type: str = "sgd"
+    type: str = StringOptions(
+        ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"], default="sgd", nullable=False
+    )
     lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
 
 
@@ -202,7 +207,8 @@ class OptimizerMarshmallowField(fields.Field):
                 opt = optimizer_registry[value["type"].lower()][1]
                 try:
                     return opt.Schema().load(value)
-                except (TypeError, ValidationError):
+                except (TypeError, ValidationError) as e:
+                    print(e)
                     raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition.")
             raise ValidationError(
                 f"Invalid params for optimizer: {value}, expect dict with at least a `type` attribute."
@@ -244,7 +250,7 @@ def OptimizerDataclassField(default={"type": "adam"}):
 #     }
 
 
-def get_optimizers_schemas_json() -> List[str]:
+def get_all_optimizer_json_schemas() -> List[str]:
     optimizer_schemas_json = {}
     for opt in optimizer_registry:
         schema_cls = optimizer_registry[opt][1]

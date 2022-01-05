@@ -36,7 +36,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 import ludwig.utils.schema_utils as schema
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -48,7 +48,12 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
-from ludwig.modules.optimization_modules import BaseOptimizer, create_optimizer_with_clipper, OptimizerDataclassField
+from ludwig.modules.optimization_modules import (
+    AdamOptimizer,
+    BaseOptimizer,
+    create_optimizer_with_clipper,
+    OptimizerDataclassField,
+)
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
@@ -304,7 +309,7 @@ class Trainer(BaseTrainer):
         self.batch_size = config.batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
-        self.bucketing_field = config.bucketing_field
+        # self.bucketing_field = config.bucketing_field
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.early_stop = config.early_stop
@@ -342,8 +347,8 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         optimizer = config.optimizer
         if optimizer is None:
-            optimizer = {TYPE: "Adam"}
-        self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
+            optimizer = AdamOptimizer.Schema().load({})
+        self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer.__dict__)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
