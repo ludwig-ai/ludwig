@@ -15,6 +15,7 @@ Builds base configuration file:
 """
 
 import os
+from collections import defaultdict
 from dataclasses import dataclass
 from dataclasses_json import LetterCase, dataclass_json
 from typing import List, Union, Set
@@ -151,7 +152,7 @@ def _create_default_config(
                      for features in input_and_output_feature_config.values()]
     feature_types = set(sum(feature_types, []))
 
-    model_configs = {}
+    model_configs = defaultdict(dict)
 
     # read in base config and update with experiment resources
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
@@ -172,19 +173,16 @@ def _create_default_config(
     # read in all encoder configs
     for feat_type, default_configs in encoder_defaults.items():
         if feat_type in feature_types:
-            if feat_type not in model_configs.keys():
-                model_configs[feat_type] = {}
             for encoder_name, encoder_config_path in default_configs.items():
                 model_configs[feat_type][encoder_name] = load_yaml(
                     encoder_config_path)
 
     # read in all combiner configs
-    model_configs["combiner"] = {}
     for combiner_type, default_config in combiner_defaults.items():
         combiner_config = load_yaml(default_config)
         model_configs["combiner"][combiner_type] = combiner_config
 
-    return model_configs
+    return dict(model_configs)
 
 
 # Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
