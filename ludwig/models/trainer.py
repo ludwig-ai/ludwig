@@ -99,7 +99,7 @@ class TrainerConfig:
     """Test thing."""
 
     """Test 2"""
-    optimizer: BaseOptimizer = OptimizerDataclassField(default={"type": "adam"})
+    optimizer: Optional[BaseOptimizer] = OptimizerDataclassField(default={"type": "adam"})
     epochs: int = schema.PositiveInteger(default=100)
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
     regularization_type: Optional[str] = schema.StringOptions(
