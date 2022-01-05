@@ -1171,6 +1171,11 @@ class RayTuneExecutor(HyperoptExecutor):
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial['trial_dir']
+                        sync_info = self._get_sync_client_and_remote_checkpoint_dir(Path(trial_path))
+                        if sync_info is not None:
+                            sync_client, remote_checkpoint_dir = sync_info
+                            sync_client.sync_down(remote_checkpoint_dir, trial_path)
+                            sync_client.wait()
                         self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
                         best_model_path = analysis.get_best_checkpoint(trial_path.rstrip('/'))
                         best_model = LudwigModel.load(
