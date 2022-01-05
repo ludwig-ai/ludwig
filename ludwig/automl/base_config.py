@@ -118,6 +118,9 @@ def _create_default_config(
     input_and_output_feature_config = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
+    # create set of all feature types appearing in the dataset
+    feature_types = [[feat["type"] for feat in features] for features in input_and_output_feature_config.values()]
+    feature_types = set(sum(feature_types, []))
 
     model_configs = {}
 
@@ -134,9 +137,9 @@ def _create_default_config(
 
     # read in all encoder configs
     for feat_type, default_configs in encoder_defaults.items():
-        if feat_type not in model_configs.keys():
-            model_configs[feat_type] = {}
-        else:
+        if feat_type in feature_types:
+            if feat_type not in model_configs.keys():
+                model_configs[feat_type] = {}
             for encoder_name, encoder_config_path in default_configs.items():
                 model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
 
