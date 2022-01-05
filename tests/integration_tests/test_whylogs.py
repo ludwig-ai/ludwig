@@ -89,9 +89,11 @@ def run_dask(input_features, output_features, data_csv, val_csv, test_csv):
             "parallelism": 2,
         },
         "trainer": {
+            "use_gpu": False,
             "num_workers": 2,
             "resources_per_worker": {
                 "CPU": 1,
+                "GPU": 0,
             },
         },
     }

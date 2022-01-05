@@ -100,6 +100,7 @@ PREDICTION = "prediction"
 LOGITS = "logits"
 HIDDEN = "hidden"
 LAST_HIDDEN = "last_hidden"
+ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
 
 SUM = "sum"

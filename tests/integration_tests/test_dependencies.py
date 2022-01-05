@@ -3,7 +3,8 @@ import logging
 import pytest
 import torch
 
-from ludwig.features.numerical_feature import NumericalOutputFeature
+from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.utils import output_feature_utils
 from tests.integration_tests.utils import numerical_feature
 
 logger = logging.getLogger(__name__)
@@ -75,15 +76,19 @@ def test_multiple_dependencies(reduce_dependencies, hidden_shape, dependent_hidd
         else:
             expected_hidden_size += dependent_hidden_shape2[-1]
 
+    # Set up dependency reducers.
+    dependency_reducers = torch.nn.ModuleDict()
+    for feature_name in other_dependencies.keys():
+        dependency_reducers[feature_name] = SequenceReducer(reduce_mode=reduce_dependencies)
+
     # test dependency concatenation
     num_feature_defn["input_size"] = expected_hidden_size
-    out_feature = NumericalOutputFeature(num_feature_defn)
-    results = out_feature.concat_dependencies(hidden_layer, other_dependencies)
+    results = output_feature_utils.concat_dependencies(
+        "num_feature", num_feature_defn["dependencies"], dependency_reducers, hidden_layer, other_dependencies
+    )
 
-    # confirm size of resutling concat_dependencies() call
+    # confirm size of resulting concat_dependencies() call
     if len(hidden_shape) > 2:
         assert results.shape == (BATCH_SIZE, SEQ_SIZE, expected_hidden_size)
     else:
         assert results.shape == (BATCH_SIZE, expected_hidden_size)
-
-    del out_feature

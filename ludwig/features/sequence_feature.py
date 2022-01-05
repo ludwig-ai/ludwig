@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from typing import Any, Dict
 
 import numpy as np
 import torch
@@ -26,6 +27,7 @@ from ludwig.constants import (
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
+    LOGITS,
     LOSS,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
@@ -36,20 +38,20 @@ from ludwig.constants import (
     PROC_COLUMN,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    SOFTMAX_CROSS_ENTROPY,
     SUM,
     TIED,
     TOKEN_ACCURACY,
     TYPE,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.utils.eval_utils import ConfusionMatrix
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
+    SpecialSymbol,
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
@@ -58,35 +60,41 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
-class SequenceFeatureMixin:
-    type = SEQUENCE
+class SequenceFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return SEQUENCE
 
-    preprocessing_defaults = {
-        "sequence_length_limit": 256,
-        "most_common": 20000,
-        "padding_symbol": PADDING_SYMBOL,
-        "unknown_symbol": UNKNOWN_SYMBOL,
-        "padding": "right",
-        "tokenizer": "space",
-        "lowercase": False,
-        "vocab_file": None,
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": UNKNOWN_SYMBOL,
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "sequence_length_limit": 256,
+            "most_common": 20000,
+            "padding_symbol": PADDING_SYMBOL,
+            "unknown_symbol": UNKNOWN_SYMBOL,
+            "padding": "right",
+            "tokenizer": "space",
+            "lowercase": False,
+            "vocab_file": None,
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": UNKNOWN_SYMBOL,
+        }
 
-    preprocessing_schema = {
-        "sequence_length_limit": {"type": "integer", "minimum": 0},
-        "most_common": {"type": "integer", "minimum": 0},
-        "padding_symbol": {"type": "string"},
-        "unknown_symbol": {"type": "string"},
-        "padding": {"type": "string", "enum": ["right", "left"]},
-        "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-        "lowercase": {"type": "boolean"},
-        "vocab_file": {"type": ["string", "null"]},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "string"},
-        "computed_fill_value": {"type": "string"},
-    }
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "sequence_length_limit": {"type": "integer", "minimum": 0},
+            "most_common": {"type": "integer", "minimum": 0},
+            "padding_symbol": {"type": "string"},
+            "unknown_symbol": {"type": "string"},
+            "padding": {"type": "string", "enum": ["right", "left"]},
+            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "lowercase": {"type": "boolean"},
+            "vocab_file": {"type": ["string", "null"]},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -111,7 +119,7 @@ class SequenceFeatureMixin:
             "str2idx": str2idx,
             "str2freq": str2freq,
             "vocab_size": len(idx2str),
-            "max_sequence_length": max_length,
+            "max_sequence_length": max_length + 2,  # For start and end symbol.
         }
 
     @staticmethod
@@ -132,12 +140,15 @@ class SequenceFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            input_df[feature[COLUMN]].astype(str), metadata[feature[NAME]], preprocessing_parameters, backend
+            input_df[feature_config[COLUMN]].astype(str),
+            metadata[feature_config[NAME]],
+            preprocessing_parameters,
+            backend,
         )
-        proc_df[feature[PROC_COLUMN]] = sequence_data
+        proc_df[feature_config[PROC_COLUMN]] = sequence_data
         return proc_df
 
 
@@ -160,9 +171,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16, torch.int32, torch.int64]
         assert len(inputs.shape) == 2
-
         inputs_exp = inputs.type(torch.int32)
-        inputs_mask = torch.not_equal(inputs, 0)
+        inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
         encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
         encoder_output[LENGTHS] = lengths
@@ -193,7 +203,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -206,41 +216,25 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     max_sequence_length = 0
     num_classes = 0
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
-    def _setup_loss(self):
-        pass
+    def logits(self, inputs: Dict[str, torch.Tensor], target=None):
+        return self.decoder_obj(inputs, target=target)
 
-    def _setup_metrics(self):
-        pass
+    def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
+        logits = output_feature_utils.get_output_feature_tensor(all_decoder_outputs, feature_name, LOGITS)
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
 
-    # overrides super class OutputFeature.update_metrics() method
-    def update_metrics(self, targets, predictions):
-        for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS or metric == PERPLEXITY:
-                metric_fn.update_state(targets, predictions)
-            elif metric == LAST_ACCURACY:
-                metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])
-            else:
-                metric_fn.update_state(targets, predictions[PREDICTIONS])
-
-    def logits(self, inputs, target=None, training=None):
-        if training and target is not None:
-            return self.decoder_obj._logits_training(
-                inputs,
-                target=target.type(torch.int32),
-            )
-        else:
-            return inputs
-
-    def predictions(self, inputs, training=None):
-        # Generator Decoder
-        return self.decoder_obj._predictions_eval(inputs)
+        # predictions: [batch_size, sequence_length]
+        # probabilities: [batch_size, sequence_length, vocab_size]
+        # logits: [batch_size, sequence_length, vocab_size]
+        return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
 
     def get_prediction_set(self):
         return self.decoder_obj.get_prediction_set()
@@ -249,8 +243,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.int32
 
-    def get_input_shape(self):
-        return ()
+    @property
+    def input_shape(self) -> torch.Size:
+        # Dummy implementation.
+        return torch.Size([1])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -258,10 +254,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["vocab_size"]
+        output_feature["vocab_size"] = feature_metadata["vocab_size"]
         output_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -269,7 +265,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature["num_classes"],
+                        output_feature["vocab_size"],
                         output_feature[COLUMN],
                     )
                 )
@@ -311,14 +307,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         )
                     )
 
-                if all_rows_length != output_feature["num_classes"]:
+                if all_rows_length != output_feature["vocab_size"]:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> and <PAD> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature["num_classes"]
+                            output_feature[COLUMN], all_rows_length, output_feature["vocab_size"]
                         )
                     )
 
@@ -340,17 +336,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
-        overall_stats = {}
-        sequences = targets
-        last_elem_sequence = sequences[np.arange(sequences.shape[0]), (sequences != 0).cumsum(1).argmax(1)]
-        confusion_matrix = ConfusionMatrix(
-            last_elem_sequence, predictions[LAST_PREDICTIONS], labels=train_set_metadata["idx2str"]
-        )
-        overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
-        overall_stats["overall_stats"] = confusion_matrix.stats()
-        overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
-
-        return overall_stats
+        # TODO(Justin): Add a confusion matrix, see
+        # https://github.com/ludwig-ai/ludwig/blob/tf-legacy/ludwig/features/sequence_feature.py#L411
+        return {}
 
     def postprocess_predictions(
         self,
@@ -366,7 +354,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
                 def idx2str(row):
                     pred = row[predictions_col]
-                    length = row[lengths_col]
+                    length = metadata["max_sequence_length"]
                     return [
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
                         for token in [pred[i] for i in range(length)]
@@ -405,7 +393,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 # sum log probability for tokens up to sequence length
                 # create mask only tokens for sequence length
                 seq_prob = row[probs_col]
-                length = row[lengths_col]
+                length = metadata["max_sequence_length"]
                 mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
                 return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
@@ -426,7 +414,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             output_feature,
             LOSS,
             {
-                TYPE: "softmax_cross_entropy",
+                TYPE: "sequence_softmax_cross_entropy",
                 "sampler": None,
                 "negative_samples": 0,
                 "distortion": 1,
@@ -438,13 +426,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "weight": 1,
             },
         )
-        set_default_value(output_feature[LOSS], TYPE, "softmax_cross_entropy")
-        set_default_value(output_feature[LOSS], "labels_smoothing", 0)
-        set_default_value(output_feature[LOSS], "class_weights", 1)
-        set_default_value(output_feature[LOSS], "robust_lambda", 0)
-        set_default_value(output_feature[LOSS], "confidence_penalty", 0)
-        set_default_value(output_feature[LOSS], "class_similarities_temperature", 0)
-        set_default_value(output_feature[LOSS], "weight", 1)
 
         if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
             set_default_value(output_feature[LOSS], "sampler", "log_uniform")

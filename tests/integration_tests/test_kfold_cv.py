@@ -16,6 +16,8 @@ from tests.integration_tests.utils import (
     create_data_set_to_use,
     generate_data,
     numerical_feature,
+    sequence_feature,
+    text_feature,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,64 +45,29 @@ FEATURES_TO_TEST = [
         # output feature
         [category_feature(vocab_size=4, reduce_input="sum")],
     ),
-    # TODO(#1333): re-enable this test case after output sequence feature ported
-    # FeaturesToUse(
-    #     # input feature
-    #     [
-    #         sequence_feature(
-    #             min_len=5,
-    #             max_len=10,
-    #             encoder='rnn',
-    #             cell_type='lstm',
-    #             reduce_output=None
-    #         )
-    #     ],
-    #     # output feature
-    #     [
-    #         sequence_feature(
-    #             min_len=5,
-    #             max_len=10,
-    #             decoder='generator',
-    #             cell_type='lstm',
-    #             attention='bahdanau',
-    #             reduce_input=None
-    #         )
-    #     ]
-    # ),
-    # todo: re-enable this test case after output sequence feature ported
-    # FeaturesToUse(
-    #     # input feature
-    #     [
-    #         sequence_feature(
-    #             min_len=5,
-    #             max_len=10,
-    #             encoder='rnn',
-    #             cell_type='lstm',
-    #             reduce_output=None
-    #         )
-    #
-    #     ],
-    #     # output feature
-    #     [
-    #         sequence_feature(
-    #             max_len=10,
-    #             decoder='tagger',
-    #             reduce_input=None
-    #         )
-    #     ]
-    # ),
-    # todo: re-enable this test case after output text feature ported
-    # FeaturesToUse(
-    #     # input feature
-    #     [
-    #         numerical_feature(normalization='zscore'),
-    #         numerical_feature(normalization='zscore')
-    #     ],
-    #     # output feature
-    #     [
-    #         text_feature()
-    #     ]
-    # ),
+    FeaturesToUse(
+        # input feature
+        # [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)],
+        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        # output feature
+        [
+            sequence_feature(
+                min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
+            )
+        ],
+    ),
+    FeaturesToUse(
+        # input feature
+        [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)],
+        # output feature
+        [sequence_feature(max_len=10, decoder="tagger", reduce_input=None)],
+    ),
+    FeaturesToUse(
+        # input feature
+        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        # output feature
+        [text_feature()],
+    ),
 ]
 
 

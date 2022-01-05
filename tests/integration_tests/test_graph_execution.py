@@ -26,7 +26,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.skip(reason="Issue #1333: Sequence output features.")
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "output_features",
@@ -50,9 +49,9 @@ from tests.integration_tests.utils import (
             numerical_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
-        generate_output_features_with_dependencies("feat3", ["feat1"]),
+        generate_output_features_with_dependencies("numerical_feature", ["category_feature"]),
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies("feat3", ["feat1", "feat2"]),
+        generate_output_features_with_dependencies("numerical_feature", ["category_feature", "sequence_feature"]),
     ],
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
@@ -66,36 +65,4 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     output_features = output_features
 
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-
-@pytest.mark.skip(reason="Issue #1333: Sequence output features.")
-@pytest.mark.distributed
-@pytest.mark.parametrize("dec_beam_width", [3])
-@pytest.mark.parametrize("dec_attention", ["bahdanau"])
-@pytest.mark.parametrize("dec_cell_type", ["lstm"])
-@pytest.mark.parametrize("enc_cell_type", ["lstm"])
-@pytest.mark.parametrize("enc_encoder", ["embed"])
-def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, dec_attention, dec_beam_width, csv_filename):
-    # Define input and output features
-    input_features = [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
-    output_features = [
-        sequence_feature(
-            min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
-        )
-    ]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    # setup encoder specification
-    input_features[0]["encoder"] = enc_encoder
-    input_features[0]["cell_type"] = enc_cell_type
-
-    # setup decoder specification
-    output_features[0]["cell_type"] = dec_cell_type
-    output_features[0]["attention"] = dec_attention
-    output_features[0]["beam_width"] = dec_beam_width
-
-    # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)

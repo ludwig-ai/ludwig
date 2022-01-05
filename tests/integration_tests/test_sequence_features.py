@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.constants import LOGITS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
@@ -20,7 +21,7 @@ from tests.integration_tests.utils import generate_data, run_experiment, sequenc
 
 TEST_VOCAB_SIZE = 132
 TEST_HIDDEN_SIZE = 32
-TEST_STATE_SIZE = 16
+TEST_STATE_SIZE = 8
 TEST_EMBEDDING_SIZE = 64
 TEST_NUM_FILTERS = 24
 
@@ -39,14 +40,11 @@ def generate_sequence_training_data():
             max_len=10,
             encoder="rnn",
             cell_type="lstm",
-            reduce_output=None,
         )
     ]
 
     output_features = [
-        sequence_feature(
-            min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
-        )
+        sequence_feature(min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau")
     ]
 
     # generate synthetic data set testing
@@ -79,34 +77,31 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
         yield model, batcher
 
 
-# TODO(#1333): refactor test once torch sequence generator work is complete
+# TODO(#1333): Refactor this test once torch sequence generator work is complete.
+# - Tests may be covered by other smaller scoped unit tests.
 #
 # tests output feature sequence with `Generator` decoder
 # pytest parameters
 #   dec_cell_type: decoder cell type
-#   dec_attention: decoder's attention mechanism
-#   dec_beam_width: decoder's beam search width
 #   combiner_output_shapes: is a 2-tuple specifies the possible types of
 #     tensors that the combiner may generate for sequences.
 #     combiner_output_shapes[0]: specifies shape for hidden key
 #     combiner_output_shapes[1]: is either None or 1 or 2-tuple representing
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
-#
-@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
-@pytest.mark.parametrize("dec_num_layers", [1, 2])
-@pytest.mark.parametrize("dec_beam_width", [1, 2])
-@pytest.mark.parametrize("dec_attention", ["bahdanau", "luong", None])
+# TODO(Justin): Move these to test_sequence_generator unit tests, and reintroduce decoder attention, beam_width, and
+# num_layers when these are reimplemented.
 @pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize(
     "combiner_output_shapes",
-    [((128, 10, 8), None), ((128, 10, 32), None), ((128, 10, 8), ((128, 8), (128, 8))), ((128, 10, 8), ((128, 8),))],
+    [
+        ((128, 10, TEST_STATE_SIZE), None),
+        ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE), (128, TEST_STATE_SIZE))),
+        ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE),)),
+    ],
 )
 def test_sequence_decoders(
     dec_cell_type,
-    dec_attention,
-    dec_beam_width,
-    dec_num_layers,
     combiner_output_shapes,
     generate_sequence_training_data,
 ):
@@ -116,9 +111,6 @@ def test_sequence_decoders(
     output_features = generate_sequence_training_data[2]
     output_feature_name = output_features[0]["name"]
     output_features[0]["cell_type"] = dec_cell_type
-    output_features[0]["attention"] = dec_attention
-    output_features[0]["beam_width"] = dec_beam_width
-    output_features[0]["num_layers"] = dec_num_layers
 
     with setup_model_scaffolding(raw_df, input_features, output_features) as (model, _):
 
@@ -129,10 +121,10 @@ def test_sequence_decoders(
 
         if combiner_output_shapes[1] is not None:
             if len(combiner_output_shapes[1]) > 1:
-                encoder_output_state = [
+                encoder_output_state = (
                     torch.randn(combiner_output_shapes[1][0]),
                     torch.randn(combiner_output_shapes[1][1]),
-                ]
+                )
             else:
                 encoder_output_state = torch.randn(combiner_output_shapes[1][0])
 
@@ -143,67 +135,24 @@ def test_sequence_decoders(
 
         # gather expected components of the shape
         batch_size = combiner_outputs["hidden"].shape[0]
-        seq_size = output_features[0]["max_len"]
-        num_classes = model.config["output_features"][0]["num_classes"]
-
-        # confirm output is what is expected
-        assert len(decoder_out) == 5
-        logits, lengths, preds, last_preds, probs = decoder_out
+        seq_size = output_features[0]["max_len"] + 2  # For start and stop symbols.
+        vocab_size = model.config["output_features"][0]["vocab_size"]
 
         # confirm shape and format of decoder output
-        if dec_beam_width > 1:
-            assert logits is None
-        else:
-            assert isinstance(logits, torch.Tensor)
-            assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
-
-        assert isinstance(lengths, torch.Tensor)
-        assert lengths.shape.as_list() == [batch_size]
-
-        assert isinstance(preds, torch.Tensor)
-        assert preds.shape.as_list() == [batch_size, seq_size]
-
-        assert isinstance(last_preds, torch.Tensor)
-        assert last_preds.shape.as_list() == [batch_size]
-
-        assert isinstance(probs, torch.Tensor)
-        assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
+        assert list(decoder_out[LOGITS].size()) == [batch_size, seq_size, vocab_size]
 
 
-# todo: refactor test once torch sequence generator work is complete
-#
 # final sanity test.  Checks a subset of sequence parameters
-#
-@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
-@pytest.mark.parametrize("dec_num_layers", [1, 2])
-@pytest.mark.parametrize("dec_beam_width", [1, 2])
-@pytest.mark.parametrize("dec_attention", ["bahdanau", "luong", None])
 @pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize("enc_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize("enc_encoder", ["embed", "rnn"])
-def test_sequence_generator(
-    enc_encoder, enc_cell_type, dec_cell_type, dec_attention, dec_beam_width, dec_num_layers, csv_filename
-):
+def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
     # Define input and output features
-    input_features = [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
-    output_features = [
-        sequence_feature(
-            min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
-        )
-    ]
+    input_features = [sequence_feature(min_len=5, max_len=10, encoder=enc_encoder, cell_type=enc_cell_type)]
+    output_features = [sequence_feature(min_len=5, max_len=10, decoder="generator", cell_type=dec_cell_type)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-
-    # setup encoder specification
-    input_features[0]["encoder"] = enc_encoder
-    input_features[0]["cell_type"] = enc_cell_type
-
-    # setup decoder specification
-    output_features[0]["cell_type"] = dec_cell_type
-    output_features[0]["attention"] = dec_attention
-    output_features[0]["beam_width"] = dec_beam_width
-    output_features[0]["num_layers"] = dec_num_layers
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)

@@ -39,7 +39,6 @@ from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)
 
-
 sequence_encoder_registry = {
     "stacked_cnn": StackedCNN,
     "parallel_cnn": ParallelCNN,
@@ -49,7 +48,6 @@ sequence_encoder_registry = {
     # todo: add transformer
     # 'transformer': StackedTransformer,
 }
-
 
 combiner_registry = Registry()
 
@@ -174,6 +172,10 @@ class ConcatCombiner(Combiner):
         return_data = {"combiner_output": hidden}
 
         if len(inputs) == 1:
+            # Workaround for including additional tensors from output of input encoders for
+            # potential use in decoders, e.g. LSTM state for seq2seq.
+            # TODO(Justin): Think about how to make this communication work for multi-sequence
+            # features. Other combiners.
             for key, value in [d for d in inputs.values()][0].items():
                 if key != "encoder_output":
                     return_data[key] = value
@@ -683,7 +685,7 @@ class TabTransformerCombiner(Combiner):
             vocab = [
                 i_f
                 for i_f in input_features
-                if input_features[i_f].type != NUMERICAL or input_features[i_f].type != BINARY
+                if input_features[i_f].type() != NUMERICAL or input_features[i_f].type() != BINARY
             ]
             if self.embed_input_feature_name == "add":
                 self.embed_i_f_name_layer = Embed(vocab, config.hidden_size, force_embedding_size=True)
@@ -719,9 +721,9 @@ class TabTransformerCombiner(Combiner):
         self.embeddable_features = []
         for i_f in input_features:
             if input_features[i_f].type in {NUMERICAL, BINARY}:
-                self.unembeddable_features.append(input_features[i_f].name)
+                self.unembeddable_features.append(i_f)
             else:
-                self.embeddable_features.append(input_features[i_f].name)
+                self.embeddable_features.append(i_f)
 
         self.projectors = ModuleList()
         for i_f in self.embeddable_features:
@@ -771,9 +773,12 @@ class TabTransformerCombiner(Combiner):
             fc_residual=config.fc_residual,
         )
 
+        self._empty_hidden = torch.empty([1, 0])
+        self._embeddable_features_indices = torch.arange(0, len(self.embeddable_features))
+
         # Create empty tensor of shape [1, 0] to use as hidden in case there are no category or numeric/binary features.
-        self.register_buffer("empty_hidden", torch.empty([1, 0]))
-        self.register_buffer("embeddable_features_indices", torch.arange(0, len(self.embeddable_features)))
+        self.register_buffer("empty_hidden", self._empty_hidden)
+        self.register_buffer("embeddable_features_indices", self._embeddable_features_indices)
 
     @staticmethod
     def get_flatten_size(output_shape: torch.Size) -> torch.Size:
@@ -808,7 +813,9 @@ class TabTransformerCombiner(Combiner):
             hidden = torch.permute(hidden, (1, 0, 2))  # bs, num_eo, h
 
             if self.embed_input_feature_name:
-                i_f_names_idcs = torch.reshape(torch.arange(0, len(embeddable_encoder_outputs)), [-1, 1])
+                i_f_names_idcs = torch.reshape(
+                    torch.arange(0, len(embeddable_encoder_outputs), device=self.device), [-1, 1]
+                )
                 embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
                 embedded_i_f_names = torch.unsqueeze(embedded_i_f_names, dim=0)
                 embedded_i_f_names = torch.tile(embedded_i_f_names, [batch_size, 1, 1])
@@ -824,7 +831,7 @@ class TabTransformerCombiner(Combiner):
             hidden = self.reduce_sequence(hidden)
         else:
             # create empty tensor because there are no category features
-            hidden = torch.empty([batch_size, 0])
+            hidden = torch.empty([batch_size, 0], device=self.device)
 
         # ================ Concat Skipped ================
         if len(unembeddable_encoder_outputs) > 0:

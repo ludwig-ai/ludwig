@@ -46,20 +46,26 @@ logger = logging.getLogger(__name__)
 
 
 class VectorFeatureMixin:
-    type = VECTOR
-    preprocessing_defaults = {
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": "",
-    }
+    @staticmethod
+    def type():
+        return VECTOR
 
-    fill_value_schema = {"type": "string", "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"}
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": "",
+        }
 
-    preprocessing_schema = {
-        "vector_size": {"type": "integer", "minimum": 0},
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": fill_value_schema,
-        "computed_fill_value": fill_value_schema,
-    }
+    @staticmethod
+    def preprocessing_schema():
+        fill_value_schema = {"type": "string", "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"}
+        return {
+            "vector_size": {"type": "integer", "minimum": 0},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": fill_value_schema,
+            "computed_fill_value": fill_value_schema,
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -71,19 +77,19 @@ class VectorFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         """Expects all the vectors to be of the same size.
 
         The vectors need to be whitespace delimited strings. Missing values are not handled.
         """
-        if len(input_df[feature[COLUMN]]) == 0:
+        if len(input_df[feature_config[COLUMN]]) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
         # Convert the string of features into a numpy array
         try:
-            proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                input_df[feature[COLUMN]], lambda x: np.array(x.split(), dtype=np.float32)
+            proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
+                input_df[feature_config[COLUMN]], lambda x: np.array(x.split(), dtype=np.float32)
             )
         except ValueError:
             logger.error(
@@ -93,7 +99,7 @@ class VectorFeatureMixin:
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(proc_df[feature[PROC_COLUMN]].map(len).max())
+        vector_size = backend.df_engine.compute(proc_df[feature_config[PROC_COLUMN]].map(len).max())
         if "vector_size" in preprocessing_parameters:
             if vector_size != preprocessing_parameters["vector_size"]:
                 raise ValueError(
@@ -103,7 +109,7 @@ class VectorFeatureMixin:
         else:
             logger.debug(f"Observed vector size: {vector_size}")
 
-        metadata[feature[NAME]]["vector_size"] = vector_size
+        metadata[feature_config[NAME]]["vector_size"] = vector_size
         return proc_df
 
 
@@ -155,8 +161,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     default_validation_metric = MEAN_SQUARED_ERROR
     vector_size = 0
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self._input_shape = feature["input_size"]
         feature["output_size"] = feature["vector_size"]

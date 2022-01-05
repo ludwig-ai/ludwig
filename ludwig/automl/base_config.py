@@ -24,11 +24,13 @@ from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata
 from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMERICAL, TEXT
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
+from ludwig.utils.defaults import default_random_seed
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
 
 BASE_AUTOML_CONFIG = os.path.join(CONFIG_DIR, "base_automl_config.yaml")
+REFERENCE_CONFIGS = os.path.join(CONFIG_DIR, "reference_configs.yaml")
 
 combiner_defaults = {
     "concat": os.path.join(CONFIG_DIR, "combiner/concat_config.yaml"),
@@ -80,6 +82,7 @@ def _create_default_config(
     dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
     target_name: Union[str, List[str]] = None,
     time_limit_s: Union[int, float] = None,
+    random_seed: int = default_random_seed,
 ) -> dict:
     """Returns auto_train configs for three available combiner models. Coordinates the following tasks:
 
@@ -95,6 +98,10 @@ def _create_default_config(
     :param target_name: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                                     as the stopping parameter
+    :param random_seed: (int, default: `42`) a random seed that will be used anywhere
+                        there is a call to a random number generator, including
+                        hyperparameter search sampling, as well as data splitting,
+                        parameter initialization and training set shuffling
 
     # Return
     :return: (dict) dictionaries contain auto train config files for all available
@@ -111,6 +118,9 @@ def _create_default_config(
     input_and_output_feature_config = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
+    # create set of all feature types appearing in the dataset
+    feature_types = [[feat["type"] for feat in features] for features in input_and_output_feature_config.values()]
+    feature_types = set(sum(feature_types, []))
 
     model_configs = {}
 
@@ -120,15 +130,16 @@ def _create_default_config(
     base_automl_config["hyperopt"]["executor"]["time_budget_s"] = time_limit_s
     if time_limit_s is not None:
         base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
+    base_automl_config["hyperopt"]["sampler"]["search_alg"]["random_state_seed"] = random_seed
     base_automl_config.update(input_and_output_feature_config)
 
     model_configs["base_config"] = base_automl_config
 
     # read in all encoder configs
     for feat_type, default_configs in encoder_defaults.items():
-        if feat_type not in model_configs.keys():
-            model_configs[feat_type] = {}
-        else:
+        if feat_type in feature_types:
+            if feat_type not in model_configs.keys():
+                model_configs[feat_type] = {}
             for encoder_name, encoder_config_path in default_configs.items():
                 model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
 
@@ -139,6 +150,12 @@ def _create_default_config(
         model_configs["combiner"][combiner_type] = combiner_config
 
     return model_configs
+
+
+# Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
+def _get_reference_configs() -> dict:
+    reference_configs = load_yaml(REFERENCE_CONFIGS)
+    return reference_configs
 
 
 def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:

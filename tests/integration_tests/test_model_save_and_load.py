@@ -58,9 +58,8 @@ def test_model_save_reload_api(csv_filename, tmp_path):
         binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
-        # TODO(#1333): Reintroduce sequence and text after sequence output feature.
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        text_feature(vocab_size=3),
         set_feature(vocab_size=3),
         vector_feature(),
     ]

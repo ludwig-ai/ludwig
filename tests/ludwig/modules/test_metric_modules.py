@@ -71,13 +71,30 @@ def test_sigmoid_cross_entropy_metric(preds: torch.Tensor, target: torch.Tensor,
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
 
-@pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
-@pytest.mark.parametrize("target", [torch.tensor([[0, 1], [2, 1], [4, 5]]).float()])
-@pytest.mark.parametrize("output", [torch.tensor(0.8).float()])
+@pytest.mark.parametrize(
+    "preds,target,output",
+    [
+        (
+            torch.tensor([[0, 1], [3, 2], [4, 5]]),
+            torch.tensor([[0, 1], [1, 2], [4, 5]]),
+            torch.tensor(0.8),
+        ),
+        (
+            torch.tensor([[0, 1, 2], [1, 3, 4], [3, 4, 5]]),
+            torch.tensor([[0, 1, 2], [1, 1, 4], [3, 4, 5]]),
+            torch.tensor(0.8750),
+        ),
+        (
+            torch.tensor([[1, 5, 1, 5, 1, 5, 12, 12, 12], [10, 1, 5, 1, 5, 12, 12, 12, 12]]),
+            torch.tensor([[1, 9, 5, 7, 5, 9, 13, 6, 0], [1, 9, 7, 13, 4, 7, 7, 7, 0]]),
+            torch.tensor(0.05555555),
+        ),
+    ],
+)
 def test_token_accuracy_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     metric = metric_modules.TokenAccuracyMetric()
     metric.update(preds, target)
-    assert metric.compute() == output
+    assert torch.allclose(metric.compute(), output)
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2)])

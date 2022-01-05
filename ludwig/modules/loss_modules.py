@@ -34,11 +34,11 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
+from ludwig.utils import strings_utils
 from ludwig.utils.registry import Registry
 
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
-
 
 loss_registry = Registry()
 
@@ -117,7 +117,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         positive_class_weight: Optional[Tensor] = None,
         robust_lambda: int = 0,
         confidence_penalty: int = 0,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
@@ -141,7 +141,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         return train_mean_loss
 
 
-@register_loss("softmax_cross_entropy", [CATEGORY, SEQUENCE, TEXT, VECTOR])
+@register_loss("softmax_cross_entropy", [CATEGORY, VECTOR])
 class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
@@ -163,6 +163,26 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         """
         target = target.long()
         return self.loss_fn(preds, target)
+
+
+@register_loss("sequence_softmax_cross_entropy", [SEQUENCE, TEXT])
+class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
+    def __init__(self, **kwargs):
+        """
+        Params:
+            class_weights: List or 1D tensor of length equal to number of classes.
+        """
+        super().__init__()
+        self.loss_fn = nn.CrossEntropyLoss(ignore_index=strings_utils.SpecialSymbol.PADDING.value)
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        """
+        Params:
+            preds: Tensor of shape [batch x sequence_length x vocab_size]
+            target: Tensor of shape [batch x sequence_length], where each element is integral between 0 and vocab_size.
+        """
+        target = target.long()
+        return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
 
 
 @register_loss("sigmoid_cross_entropy", [SET])

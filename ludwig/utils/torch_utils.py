@@ -10,19 +10,21 @@ from torch import nn
 from torch.autograd import Function
 from torch.nn import Module, ModuleDict
 
+from ludwig.utils.strings_utils import SpecialSymbol
+
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
-    """Returns the number of non-zero elements per sequence in batch.
+    """Returns the number of non-padding elements per sequence in batch.
 
     :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].
 
     # Return
     :returns: (torch.Tensor) The count on non-zero elements per sequence.
     """
-    used = (sequence != 0).type(torch.int32)
+    used = (sequence != SpecialSymbol.PADDING.value).type(torch.int32)
     length = torch.sum(used, 1)
     return length
 
@@ -143,7 +145,8 @@ class LudwigModule(Module):
                 collected_losses.extend(child.losses())
             elif isinstance(child, ModuleDict):
                 for c in child.values():
-                    collected_losses.extend(c.losses())
+                    if hasattr(c, "losses"):  # Some modules, i.e. SequenceReducers, don't have losses.
+                        collected_losses.extend(c.losses())
             elif isinstance(child, Module):
                 pass
             else:
@@ -197,8 +200,9 @@ class Dense(LudwigModule):
         weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(self.dense.weight)
 
-        bias_initializer = initializer_registry[bias_initializer]
-        bias_initializer(self.dense.bias)
+        if use_bias:
+            bias_initializer = initializer_registry[bias_initializer]
+            bias_initializer(self.dense.bias)
 
     @property
     def input_shape(self) -> torch.Size:
@@ -305,7 +309,7 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    horovod: Optional["horovod.torch"] = None,  # noqa: F821
+    horovod=None,  # Optional["horovod.torch"]
 ):
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)

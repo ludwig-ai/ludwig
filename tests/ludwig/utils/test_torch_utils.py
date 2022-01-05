@@ -16,7 +16,7 @@ from ludwig.utils.torch_utils import (
 
 
 @pytest.mark.parametrize("input_sequence", [[[0, 1, 1], [2, 0, 0], [3, 3, 3]]])
-@pytest.mark.parametrize("expected_output", [[2, 1, 3]])
+@pytest.mark.parametrize("expected_output", [[3, 2, 3]])
 def test_sequence_length_2D(input_sequence: List[List[int]], expected_output: List[int]):
     output_seq_length = sequence_length_2D(torch.tensor(input_sequence))
     assert torch.equal(torch.tensor(expected_output), output_seq_length)

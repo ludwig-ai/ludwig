@@ -1530,7 +1530,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 7 == len(figure_cnt)
+        assert 5 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
     shutil.rmtree("results", ignore_errors=True)

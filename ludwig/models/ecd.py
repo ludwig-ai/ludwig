@@ -7,10 +7,9 @@ import numpy as np
 import torch
 import torchmetrics
 
-import ludwig.constants as constants
-from ludwig.combiners.combiners import get_combiner_class
-from ludwig.constants import COMBINED, LOSS, NAME, TYPE
-from ludwig.features.base_feature import InputFeature
+from ludwig.combiners.combiners import Combiner, get_combiner_class
+from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -133,24 +132,22 @@ class ECD(LudwigModule):
 
         combiner_outputs = self.combiner(encoder_outputs)
 
+        # Invoke output features.
         output_logits = {}
         output_last_hidden = {}
-        for output_feature_name, decoder in self.output_features.items():
-            # use presence or absence of targets
-            # to signal training or prediction
-            decoder_inputs = (combiner_outputs, copy.copy(output_last_hidden))
-            if targets is not None:
-                # targets are only used during training,
-                # during prediction they are omitted
-                decoder_inputs = (decoder_inputs, targets[output_feature_name])
-
-            decoder_outputs = decoder(decoder_inputs, mask=mask)
+        for output_feature_name, output_feature in self.output_features.items():
+            # Use the presence or absence of targets to signal training or prediction.
+            target = targets[output_feature_name] if targets is not None else None
+            decoder_outputs = output_feature(combiner_outputs, output_last_hidden, mask=mask, target=target)
 
             # Add decoder outputs to overall output dictionary.
             for decoder_output_name, tensor in decoder_outputs.items():
                 output_feature_utils.set_output_feature_tensor(
                     output_logits, output_feature_name, decoder_output_name, tensor
                 )
+
+            # Save the hidden state of the output feature (for feature dependencies).
+            output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
         return output_logits
 
     def predictions(self, inputs, output_features=None):
@@ -276,22 +273,24 @@ class ECD(LudwigModule):
         return (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)
 
 
-def build_inputs(input_features_def: List[Dict[str, Any]], **kwargs) -> Dict[str, InputFeature]:
+def build_inputs(input_features_def: List[Dict[str, Any]]) -> Dict[str, InputFeature]:
+    """Builds and returns input features in topological order."""
     input_features = OrderedDict()
     input_features_def = topological_sort_feature_dependencies(input_features_def)
     for input_feature_def in input_features_def:
-        input_features[input_feature_def[NAME]] = build_single_input(input_feature_def, input_features, **kwargs)
+        input_features[input_feature_def[NAME]] = build_single_input(input_feature_def, input_features)
     return input_features
 
 
 def build_single_input(
-    input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature], **kwargs
+    input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature]
 ) -> InputFeature:
+    """Builds a single input feature from the input feature definition."""
     logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
 
     encoder_obj = None
-    if input_feature_def.get(constants.TIED, None) is not None:
-        tied_input_feature_name = input_feature_def[constants.TIED]
+    if input_feature_def.get(TIED, None) is not None:
+        tied_input_feature_name = input_feature_def[TIED]
         if tied_input_feature_name in other_input_features:
             encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
@@ -301,22 +300,26 @@ def build_single_input(
     return input_feature_obj
 
 
-def build_outputs(output_features_def, combiner, **kwargs):
+def build_outputs(output_features_def: List[Dict[str, Any]], combiner: Combiner) -> Dict[str, OutputFeature]:
+    """Builds and returns output features in topological order."""
     output_features_def = topological_sort_feature_dependencies(output_features_def)
     output_features = {}
 
     for output_feature_def in output_features_def:
+        # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns for
+        # seq2seq.
         output_feature_def["input_size"] = combiner.output_shape[-1]
-        output_feature = build_single_output(output_feature_def, combiner, output_features, **kwargs)
+        output_feature = build_single_output(output_feature_def, output_features)
         output_features[output_feature_def[NAME]] = output_feature
 
     return output_features
 
 
-def build_single_output(output_feature_def, feature_hidden, other_output_features, **kwargs):
+def build_single_output(output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]) -> OutputFeature:
+    """Builds a single output feature from the output feature definition."""
     logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
 
     output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-    output_feature_obj = output_feature_class(output_feature_def)
+    output_feature_obj = output_feature_class(output_feature_def, output_features)
 
     return output_feature_obj

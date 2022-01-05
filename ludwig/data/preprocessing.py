@@ -95,6 +95,7 @@ from ludwig.utils.defaults import default_preprocessing_parameters, default_rand
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers, set_random_seed
 from ludwig.utils.type_utils import Column
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -1033,23 +1034,23 @@ def build_dataset(
     global_preprocessing_parameters = merge_dict(default_preprocessing_parameters, global_preprocessing_parameters)
 
     # Get all the unique preprocessing features to compute
-    proc_features = []
+    feature_configs = []
     feature_hashes = set()
     for feature in features:
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
         if feature[PROC_COLUMN] not in feature_hashes:
-            proc_features.append(feature)
+            feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
     logger.debug("cast columns")
-    dataset_cols = cast_columns(dataset_df, proc_features, global_preprocessing_parameters, backend)
+    dataset_cols = cast_columns(dataset_df, feature_configs, backend)
 
     for callback in callbacks or []:
         callback.on_build_metadata_start(dataset_df, mode)
 
     logger.debug("build metadata")
-    metadata = build_metadata(metadata, dataset_cols, proc_features, global_preprocessing_parameters, backend)
+    metadata = build_metadata(metadata, dataset_cols, feature_configs, global_preprocessing_parameters, backend)
 
     for callback in callbacks or []:
         callback.on_build_metadata_end(dataset_df, mode)
@@ -1058,7 +1059,7 @@ def build_dataset(
         callback.on_build_data_start(dataset_df, mode)
 
     logger.debug("build data")
-    proc_cols = build_data(dataset_cols, proc_features, metadata, backend, skip_save_processed_input)
+    proc_cols = build_data(dataset_cols, feature_configs, metadata, backend, skip_save_processed_input)
 
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
@@ -1095,14 +1096,15 @@ def build_dataset(
     return dataset, metadata
 
 
-def cast_columns(dataset_df, features, global_preprocessing_parameters, backend):
-    # todo figure out if global_preprocessing_parameters is needed
+def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
+    """Copies each column of the dataset to a dataframe, with potential type casting."""
     dataset_cols = {}
     for feature in features:
-        cast_column = get_from_registry(feature[TYPE], base_type_registry).cast_column
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        dataset_cols[feature[COLUMN]] = cast_column(dataset_df[feature[COLUMN]], backend)
+        dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
+            dataset_df[feature[COLUMN]], backend
+        )
 
     return dataset_cols
 
@@ -1110,59 +1112,77 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters, backend)
 def build_metadata(
     metadata: Dict[str, Any],
     dataset_cols: Dict[str, Column],
-    features: List[Dict[str, Any]],
+    feature_configs: List[Dict[str, Any]],
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
 ):
-    for feature in features:
-        if feature[NAME] in metadata:
+    for feature_config in feature_configs:
+        if feature_config[NAME] in metadata:
             continue
 
-        if PREPROCESSING in feature:
+        if PREPROCESSING in feature_config:
             preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]], feature[PREPROCESSING]
+                global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING]
             )
         else:
-            preprocessing_parameters = global_preprocessing_parameters[feature[TYPE]]
+            preprocessing_parameters = global_preprocessing_parameters[feature_config[TYPE]]
 
         # deal with encoders that have fixed preprocessing
-        if "encoder" in feature:
-            encoder_class = get_encoder_cls(feature[TYPE], feature["encoder"])
+        if "encoder" in feature_config:
+            encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"])
             if hasattr(encoder_class, "fixed_preprocessing_parameters"):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
                 preprocessing_parameters = merge_dict(
-                    preprocessing_parameters, resolve_pointers(encoder_fpp, feature, "feature.")
+                    preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
                 )
 
-        fill_value = precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend)
+        fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
         if fill_value is not None:
             preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
 
-        handle_missing_values(dataset_cols, feature, preprocessing_parameters)
+        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
 
-        get_feature_meta = get_from_registry(feature[TYPE], base_type_registry).get_feature_meta
-
-        column = dataset_cols[feature[COLUMN]]
+        column = dataset_cols[feature_config[COLUMN]]
         if column.dtype == object:
             column = column.astype(str)
 
-        metadata[feature[NAME]] = get_feature_meta(column, preprocessing_parameters, backend)
+        metadata[feature_config[NAME]] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
+            column, preprocessing_parameters, backend
+        )
 
-        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+        metadata[feature_config[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
 
-def build_data(input_cols, features, training_set_metadata, backend, skip_save_processed_input):
+def build_data(
+    input_cols: DataFrame,
+    feature_configs: List[Dict],
+    training_set_metadata: Dict,
+    backend: Backend,
+    skip_save_processed_input: bool,
+) -> Dict[str, DataFrame]:
+    """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
+    training_set_metadata.
+
+    Args:
+        input_cols: Input dataframe to be processed.
+        feature_configs: List of feature configs.
+        training_set_metadata: Training set metadata. Additional fields may be added.
+        backend: Backend for data processing.
+        skip_save_processed_input: (bool) Whether to skip saving the processed input.
+
+    Returns:
+        Dictionary of (feature name) -> (processed data).
+    """
     proc_cols = {}
-    for feature in features:
-        preprocessing_parameters = training_set_metadata[feature[NAME]][PREPROCESSING]
-        handle_missing_values(input_cols, feature, preprocessing_parameters)
-        add_feature_data = get_from_registry(feature[TYPE], base_type_registry).add_feature_data
-        proc_cols = add_feature_data(
-            feature,
+    for feature_config in feature_configs:
+        preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
+        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+        get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
+            feature_config,
             input_cols,
             proc_cols,
             training_set_metadata,

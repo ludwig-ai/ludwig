@@ -19,7 +19,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
-from ludwig.features.base_feature import InputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
 
@@ -30,19 +30,26 @@ H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
 
 
-class H3FeatureMixin:
-    type = H3
-    preprocessing_defaults = {
-        "missing_value_strategy": FILL_WITH_CONST,
-        "fill_value": 576495936675512319
-        # mode 1 edge 0 resolution 0 base_cell 0
-    }
+class H3FeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return H3
 
-    preprocessing_schema = {
-        "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-        "fill_value": {"type": "integer"},
-        "computed_fill_value": {"type": "integer"},
-    }
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": 576495936675512319
+            # mode 1 edge 0 resolution 0 base_cell 0
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "integer"},
+            "computed_fill_value": {"type": "integer"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -62,14 +69,16 @@ class H3FeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        column = input_df[feature[COLUMN]]
+        column = input_df[feature_config[COLUMN]]
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
 
-        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(column, lambda x: np.array(x, dtype=np.uint8))
+        proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
+            column, lambda x: np.array(x, dtype=np.uint8)
+        )
         return proc_df
 
 
