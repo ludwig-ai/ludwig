@@ -76,10 +76,10 @@ default_training_params = {
 }
 
 default_optimizer_params_registry = {
-    "sgd": {"lr": 0.001},
-    "stochastic_gradient_descent": {"lr": 0.001},
-    "gd": {"lr": 0.001},
-    "gradient_descent": {"lr": 0.001},
+    "sgd": {},
+    "stochastic_gradient_descent": {},
+    "gd": {},
+    "gradient_descent": {},
     "adam": {
         "betas": (0.9, 0.999),
         # 'beta_1': 0.9,
@@ -247,6 +247,7 @@ def merge_with_defaults(config):
 
     # ===== Training Optimizer =====
     optimizer = config[TRAINING]["optimizer"]
+    set_default_value(optimizer, "lr", config[TRAINING]["learning_rate"])
     default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])
