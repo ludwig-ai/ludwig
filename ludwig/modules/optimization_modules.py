@@ -208,8 +208,7 @@ class OptimizerMarshmallowField(fields.Field):
                 try:
                     return opt.Schema().load(value)
                 except (TypeError, ValidationError) as e:
-                    print(e)
-                    raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition.")
+                    raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition. Error: {e}")
             raise ValidationError(
                 f"Invalid params for optimizer: {value}, expect dict with at least a `type` attribute."
             )

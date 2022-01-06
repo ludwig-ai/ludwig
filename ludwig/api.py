@@ -380,6 +380,7 @@ class LudwigModel:
                     makedirs(output_directory, exist_ok=True)
                 description_fn, training_stats_fn, model_dir = get_file_names(output_directory)
 
+            print(f"api/383 is coordinator: {self.backend.is_coordinator()}, {model_dir}")
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
                 preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
             else:
@@ -439,6 +440,7 @@ class LudwigModel:
 
             self.training_set_metadata = training_set_metadata
 
+            print(f"api/443 is coordinator: {self.backend.is_coordinator()}, {model_dir}")
             if self.backend.is_coordinator():
                 logger.info(f"Training set: {len(training_set)}")
                 if validation_set is not None:
@@ -469,6 +471,9 @@ class LudwigModel:
                 update_config_with_metadata(self.config, training_set_metadata)
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
+            print("api/474 before create_trainer")
+            print(self.config[TRAINING])
+            print(train_callbacks)
             # init trainer
             with self.backend.create_trainer(
                 model=self.model,
@@ -516,6 +521,7 @@ class LudwigModel:
                         self.save_config(model_dir)
 
                 try:
+                    print(f"api/521 try ping {self.backend.is_coordinator()}, {model_dir}")
                     train_stats = trainer.train(
                         training_set,
                         validation_set=validation_set,
