@@ -799,23 +799,3 @@ def test_experiment_vector_feature_2(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
-
-
-@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
-def test_experiment_sampled_softmax(csv_filename):
-    # Multiple inputs, Single category output
-    input_features = [text_feature(vocab_size=10, min_len=1)]
-    output_features = [category_feature(vocab_size=500, loss={"type": "sampled_softmax_cross_entropy"})]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename, num_examples=10000)
-
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-
-if __name__ == "__main__":
-    """To run tests individually, run:
-
-    ```python -m pytest tests/integration_tests/test_experiment.py::test_name```
-    """
-    pass

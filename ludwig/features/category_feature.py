@@ -315,11 +315,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     "for feature {}".format(output_feature[COLUMN])
                 )
 
-        if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
-            output_feature[LOSS]["class_counts"] = [
-                feature_metadata["str2freq"][cls] for cls in feature_metadata["idx2str"]
-            ]
-
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
         overall_stats = {}
@@ -389,12 +384,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "weight": 1,
             },
         )
-
-        if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
-            set_default_values(
-                output_feature[LOSS],
-                {"sampler": "log_uniform", "unique": False, "negative_samples": 25, "distortion": 0.75},
-            )
 
         set_default_values(
             output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
