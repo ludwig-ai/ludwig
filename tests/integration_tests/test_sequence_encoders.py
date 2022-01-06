@@ -61,7 +61,6 @@ def input_sequence() -> torch.Tensor:
     return input_tensor
 
 
-@pytest.mark.parametrize("enc_should_embed", [True, False])
 @pytest.mark.parametrize("enc_reduce_output", [None, "sum"])
 @pytest.mark.parametrize("enc_norm", [None, "batch", "layer"])
 @pytest.mark.parametrize("enc_num_layers", [1, 2])
@@ -75,7 +74,6 @@ def test_sequence_encoders(
     enc_num_layers: int,
     enc_norm: Union[None, str],
     enc_reduce_output: Union[None, str],
-    enc_should_embed: bool,
     input_sequence: torch.Tensor,
 ):
     # update encoder parameters for specific unit test case
@@ -189,14 +187,8 @@ def test_passthrough_encoder(enc_reduce_output, input_sequence):
 def test_sequence_embed_encoder(enc_embedding_size: int, input_sequence: torch.Tensor) -> None:
     encoder_parameters["embedding_size"] = enc_embedding_size
 
-    # retrieve encoder to test
     encoder_obj = get_encoder_cls(SEQUENCE, "embed")(**encoder_parameters)
 
-    # encoder_out = encoder_obj(input_sequence)
+    encoder_out = encoder_obj(input_sequence)
 
-    # check to make sure shape is correct depending on relationship
-    # of vocab_size and embedding_size
-    if enc_embedding_size > TEST_VOCAB_SIZE:
-        assert (BATCH_SIZE, *encoder_obj.output_shape) == (BATCH_SIZE, TEST_VOCAB_SIZE)
-    else:
-        assert (BATCH_SIZE, *encoder_obj.output_shape) == (BATCH_SIZE, enc_embedding_size)
+    assert encoder_out["encoder_output"].size()[1:] == encoder_obj.output_shape

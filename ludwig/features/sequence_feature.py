@@ -329,11 +329,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     "for feature {}".format(output_feature[COLUMN])
                 )
 
-        if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
-            output_feature[LOSS]["class_counts"] = [
-                feature_metadata["str2freq"][cls] for cls in feature_metadata["idx2str"]
-            ]
-
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
         # TODO(Justin): Add a confusion matrix, see
@@ -427,14 +422,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             },
         )
 
-        if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
-            set_default_value(output_feature[LOSS], "sampler", "log_uniform")
-            set_default_value(output_feature[LOSS], "negative_samples", 25)
-            set_default_value(output_feature[LOSS], "distortion", 0.75)
-        else:
-            set_default_value(output_feature[LOSS], "sampler", None)
-            set_default_value(output_feature[LOSS], "negative_samples", 0)
-            set_default_value(output_feature[LOSS], "distortion", 1)
+        set_default_value(output_feature[LOSS], "sampler", None)
+        set_default_value(output_feature[LOSS], "negative_samples", 0)
+        set_default_value(output_feature[LOSS], "distortion", 1)
 
         set_default_value(output_feature[LOSS], "unique", False)
 
