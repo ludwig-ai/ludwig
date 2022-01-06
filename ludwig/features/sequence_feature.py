@@ -410,9 +410,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             LOSS,
             {
                 TYPE: "sequence_softmax_cross_entropy",
-                "sampler": None,
-                "negative_samples": 0,
-                "distortion": 1,
                 "labels_smoothing": 0,
                 "class_weights": 1,
                 "robust_lambda": 0,
@@ -422,12 +419,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             },
         )
 
-        set_default_value(output_feature[LOSS], "sampler", None)
-        set_default_value(output_feature[LOSS], "negative_samples", 0)
-        set_default_value(output_feature[LOSS], "distortion", 1)
-
         set_default_value(output_feature[LOSS], "unique", False)
-
         set_default_value(output_feature, "decoder", "generator")
 
         if output_feature["decoder"] == "tagger":
