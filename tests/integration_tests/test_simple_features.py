@@ -25,11 +25,11 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     numerical_feature,
+    run_experiment,
     sequence_feature,
     set_feature,
     text_feature,
     vector_feature,
-    run_experiment,
 )
 
 logger = logging.getLogger(__name__)
