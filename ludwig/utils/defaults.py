@@ -247,6 +247,7 @@ def merge_with_defaults(config):
 
     # ===== Training Optimizer =====
     optimizer = config[TRAINING]["optimizer"]
+    set_default_value(optimizer, 'lr', config[TRAINING]["learning_rate"])
     default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])
