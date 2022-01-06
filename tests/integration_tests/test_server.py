@@ -116,9 +116,8 @@ def convert_to_batch_form(data_df):
     return files
 
 
-def test_server_integration_with_images(csv_filename):
+def test_server_integration_with_images(tmpdir):
     # Image Inputs
-    tmpdir = os.path.dirname(csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     # Resnet encoder
@@ -135,7 +134,7 @@ def test_server_integration_with_images(csv_filename):
     output_features = [category_feature(vocab_size=4), numerical_feature()]
 
     np.random.seed(123)  # reproducible synthetic data
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
     model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
 
@@ -182,8 +181,7 @@ def test_server_integration_with_images(csv_filename):
 
 
 @pytest.mark.parametrize("single_record", [False, True])
-def test_server_integration_with_audio(single_record, csv_filename):
-    tmpdir = os.path.dirname(csv_filename)
+def test_server_integration_with_audio(single_record, tmpdir):
     # Audio Inputs
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
@@ -197,7 +195,7 @@ def test_server_integration_with_audio(single_record, csv_filename):
     ]
     output_features = [category_feature(vocab_size=4), numerical_feature()]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
     model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
 

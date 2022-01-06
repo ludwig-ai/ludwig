@@ -19,70 +19,30 @@ import uuid
 import pytest
 
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.data_utils import replace_file_extension
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
-
-
-@pytest.fixture(scope="session", autouse=True)
-def init_tensorflow_cpu(request):
-    """Initialize tensorflow at the start of testing to only use CPUs.
-
-    This fixture runs once before any tests, and ensures that the main process
-    running pytest does not claim any GPU resources.
-
-    This is critical to avoid OOM errors when running subprocesses that need GPUs (e.g., hyperopt),
-    as otherwise the main process will consume all the memory and cause the subprocesses to crash.
-
-    Run most tests eagerly as the cost of graph construction can easily increase runtime by
-    and order of magnitude for small tests. Tests that execute in subprocesses, and tests
-    in `test_graph_execution.py` still run in graph mode.
-    """
-    # tf.config.experimental_run_functions_eagerly(True)
-    # initialize_tensorflow(gpus=-1)
-    pass
 
 
 @pytest.fixture()
 def csv_filename():
-    """This methods returns a random filename for the tests to use for generating temporary data.
-
-    After the data is used, all the temporary data is deleted.
-    :return: None
-    """
+    """Yields a csv filename for holding temporary data."""
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, uuid.uuid4().hex[:10].upper() + ".csv")
         yield csv_filename
 
 
 @pytest.fixture()
-def yaml_filename():
-    """This methods returns a random filename for the tests to use for generating a config file.
+def tmpdir():
+    """Yields a temporary directory for holding temporary data."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
 
-    After the test runs, this file will be deleted
-    :return: None
-    """
+
+@pytest.fixture()
+def yaml_filename():
+    """Yields a yaml filename for holding a temporary config."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yaml_filename = os.path.join(tmpdir, "model_def_" + uuid.uuid4().hex[:10].upper() + ".yaml")
         yield yaml_filename
-
-
-def delete_temporary_data(csv_path):
-    """Helper method to delete temporary data created for running tests. Deletes the csv and hdf5/json data (if
-    any)
-
-    :param csv_path: path to the csv data file
-    :return: None
-    """
-    if os.path.isfile(csv_path):
-        os.remove(csv_path)
-
-    json_path = replace_file_extension(csv_path, "meta.json")
-    if os.path.isfile(json_path):
-        os.remove(json_path)
-
-    hdf5_path = replace_file_extension(csv_path, "hdf5")
-    if os.path.isfile(hdf5_path):
-        os.remove(hdf5_path)
 
 
 @pytest.fixture(scope="module")

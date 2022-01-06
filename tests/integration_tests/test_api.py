@@ -183,74 +183,72 @@ def test_api_train_online(csv_filename):
     model.predict(dataset=data_csv)
 
 
-def test_api_training_set(csv_filename):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+def test_api_training_set(tmpdir):
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-        data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
-        }
-        model = LudwigModel(config)
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
-        model.predict(dataset=test_csv)
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+    }
+    model = LudwigModel(config)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+    model.predict(dataset=test_csv)
 
-        # Train again, this time the HDF5 cache will be used
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+    # Train again, this time the HDF5 cache will be used
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
 
-def test_api_training_determinism(csv_filename):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+def test_api_training_determinism(tmpdir):
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-        data_csv = generate_data(input_features, output_features, csv_filename)
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
-        }
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+    }
 
-        # Train the model 3 times:
-        #
-        # 1. seed x
-        # 2. seed y
-        # 3. seed x
-        #
-        # Check that models (1) and (3) produce the same weights,
-        # but (1) and (2) do not
-        rand_x = 42
-        rand_y = 24
+    # Train the model 3 times:
+    #
+    # 1. seed x
+    # 2. seed y
+    # 3. seed x
+    #
+    # Check that models (1) and (3) produce the same weights,
+    # but (1) and (2) do not
+    rand_x = 42
+    rand_y = 24
 
-        model_1 = LudwigModel(config)
-        model_1.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
+    model_1 = LudwigModel(config)
+    model_1.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
-        model_2 = LudwigModel(config)
-        model_2.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_y)
+    model_2 = LudwigModel(config)
+    model_2.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_y)
 
-        model_3 = LudwigModel(config)
-        model_3.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
+    model_3 = LudwigModel(config)
+    model_3.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
-        model_weights_1 = get_weights(model_1.model)
-        model_weights_2 = get_weights(model_2.model)
-        model_weights_3 = get_weights(model_3.model)
+    model_weights_1 = get_weights(model_1.model)
+    model_weights_2 = get_weights(model_2.model)
+    model_weights_3 = get_weights(model_3.model)
 
-        divergence = False
-        for weight_1, weight_2 in zip(model_weights_1, model_weights_2):
-            if not torch.allclose(weight_1, weight_2):
-                divergence = True
-                break
-        assert divergence, "model_1 and model_2 have identical weights with different seeds!"
+    divergence = False
+    for weight_1, weight_2 in zip(model_weights_1, model_weights_2):
+        if not torch.allclose(weight_1, weight_2):
+            divergence = True
+            break
+    assert divergence, "model_1 and model_2 have identical weights with different seeds!"
 
-        for weight_1, weight_3 in zip(model_weights_1, model_weights_3):
-            assert torch.allclose(weight_1, weight_3)
+    for weight_1, weight_3 in zip(model_weights_1, model_weights_3):
+        assert torch.allclose(weight_1, weight_3)
 
 
 def run_api_commands(
