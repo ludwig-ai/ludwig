@@ -131,7 +131,7 @@ class ConcatCombiner(Combiner):
         if self.fc_layers is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                first_layer_input_size=self.concatenated_shape[-1],
+                first_layer_input_size=self.concatenated_shape()[-1],
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
                 default_fc_size=config.fc_size,
@@ -205,8 +205,8 @@ class SequenceConcatCombiner(Combiner):
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=config.reduce_output,
-            max_sequence_length=self.concatenated_shape[0],
-            encoding_size=self.concatenated_shape[1],
+            max_sequence_length=self.concatenated_shape()[0],
+            encoding_size=self.concatenated_shape()[1],
         )
         if self.reduce_output is None:
             self.supports_masking = True
@@ -445,7 +445,7 @@ class TabNetCombiner(Combiner):
         logger.debug(f" {self.name}")
 
         self.tabnet = TabNet(
-            self.concatenated_shape[-1],
+            self.concatenated_shape()[-1],
             config.size,
             config.output_size,
             num_steps=config.num_steps,
@@ -725,6 +725,7 @@ class TabTransformerCombiner(Combiner):
 
         self.projectors = ModuleList()
         for i_f in self.embeddable_features:
+            print(f"input_features[i_f]: {input_features[i_f]}")
             flatten_size = self.get_flatten_size(input_features[i_f].output_shape())
             self.projectors.append(Linear(flatten_size[0], projector_size))
 

@@ -227,11 +227,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.bool
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 

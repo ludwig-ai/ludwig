@@ -50,7 +50,6 @@ class PseudoInputFeature:
     def type(self):
         return self.feature_type
 
-    @property
     def output_shape(self):
         return torch.Size(self._output_shape[1:])
 
@@ -242,7 +241,7 @@ def test_sequence_concat_combiner(
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
     # confirm correctness of concatenated_shape
-    assert combiner.concatenated_shape[-1] == hidden_size
+    assert combiner.concatenated_shape()[-1] == hidden_size
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -285,7 +284,7 @@ def test_sequence_combiner(
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
     # confirm correctness of concatenated_shape
-    assert combiner.concatenated_shape[-1] == hidden_size
+    assert combiner.concatenated_shape()[-1] == hidden_size
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -395,7 +394,7 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_fc_size: int, 
         hidden_size += np.prod(encoder_outputs_dict[k]["encoder_output"].shape[1:])
 
     # confirm correctness of effective_input_shape
-    assert combiner.concatenated_shape[-1] == hidden_size
+    assert combiner.concatenated_shape()[-1] == hidden_size
 
     # concatenate encoder outputs
     combiner_output = combiner(encoder_outputs_dict)

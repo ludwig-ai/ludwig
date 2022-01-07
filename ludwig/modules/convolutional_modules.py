@@ -107,7 +107,6 @@ class Conv1DLayer(LudwigModule):
         # for layer in self.layers:
         #     logger.debug('   {}'.format(layer.name))
 
-    @property
     def input_shape(self):
         """Returns the size of the input tensor without the batch dimension."""
         return torch.Size([self.sequence_size, self.in_channels])
@@ -255,7 +254,6 @@ class Conv1DStack(LudwigModule):
             # pass along shape for the input to the next layer
             l_in, prior_layer_channels = output_shape
 
-    @property
     def input_shape(self):
         """Returns the size of the input tensor without the batch dimension."""
         return torch.Size([self.max_sequence_length, self.in_channels])
@@ -382,7 +380,6 @@ class ParallelConv1D(LudwigModule):
                 f"{self.parallel_layers[i].output_shape()}"
             )
 
-    @property
     def input_shape(self) -> torch.Size:
         """Returns the size of the input tensor without the batch dimension."""
         return torch.Size([self.max_sequence_length, self.in_channels])
@@ -507,7 +504,6 @@ class ParallelConv1DStack(LudwigModule):
             num_channels = self.stack[i].output_shape()[1]
             sequence_length = self.stack[i].output_shape()[0]
 
-    @property
     def input_shape(self):
         """Returns the size of the input tensor without the batch dimension."""
         return torch.Size([self.max_sequence_length, self.in_channels])
@@ -619,11 +615,9 @@ class Conv2DLayer(LudwigModule):
 
         return hidden
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
@@ -782,11 +776,9 @@ class Conv2DStack(LudwigModule):
             "In_channels for first layer should be specified either via " "`first_in_channels` or `layers` arguments."
         )
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.size(self._input_shape)
 
@@ -847,11 +839,9 @@ class Conv2DLayerFixedPadding(LudwigModule):
 
         return hidden
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
@@ -935,11 +925,9 @@ class ResNetBlock(LudwigModule):
 
         return self.relu2(hidden + shortcut)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
@@ -1050,11 +1038,9 @@ class ResNetBottleneckBlock(LudwigModule):
 
         return self.relu3(hidden + shortcut)
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
@@ -1129,11 +1115,9 @@ class ResNetBlockLayer(LudwigModule):
             hidden = layer(hidden)
         return hidden
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
@@ -1265,11 +1249,9 @@ class ResNet(LudwigModule):
 
         return hidden
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
