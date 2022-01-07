@@ -93,7 +93,7 @@ class LudwigMetric(Metric, ABC):
         should_unsync: bool = True,
         distributed_available: Optional[Callable] = jit_distributed_available,
     ) -> Generator:
-        """Override the beahvior of this in the base class to support Horovod."""
+        """Override the behavior of this in the base class to support Horovod."""
         self.sync(
             dist_sync_fn=gather_all_tensors,
             process_group=process_group,
