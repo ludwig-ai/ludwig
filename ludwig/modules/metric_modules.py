@@ -161,6 +161,10 @@ class MeanMetric(LudwigMetric):
     def compute(self) -> Tensor:
         return self.avg.compute()[0]
 
+    def reset(self):
+        super().reset()
+        self.avg = _MeanMetric()
+
     @abstractmethod
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         raise NotImplementedError()
