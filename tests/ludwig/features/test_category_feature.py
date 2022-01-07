@@ -48,4 +48,4 @@ def test_category_input_feature(
     input_tensor = torch.randint(0, 3, size=(BATCH_SIZE,), dtype=torch.int32).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape())

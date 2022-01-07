@@ -65,11 +65,9 @@ class CategoricalEmbedEncoder(Encoder):
         embedded = self.embed(inputs)
         return embedded
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
@@ -113,10 +111,8 @@ class CategoricalSparseEncoder(Encoder):
         embedded = self.embed(inputs)
         return embedded
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])

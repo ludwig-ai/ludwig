@@ -27,7 +27,7 @@ def test_sequence_passthrough_encoder(reduce_output: str):
     inputs = torch.rand(batch_size, sequence_length, 8).to(DEVICE)
     outputs = sequence_passthrough_encoder(inputs)
     # SequencePassthroughEncoder does not implement output_shape, expect output to match input shape after reduce.
-    assert outputs["encoder_output"].shape[1:] == sequence_passthrough_encoder.reduce_sequence.output_shape
+    assert outputs["encoder_output"].shape[1:] == sequence_passthrough_encoder.reduce_sequence.output_shape()
 
 
 @pytest.mark.parametrize(
@@ -44,4 +44,4 @@ def test_sequence_encoders(encoder_type: Type, reduce_output: str, vocab_size: i
     ).to(DEVICE)
     inputs = torch.randint(2, (batch_size, sequence_length)).to(DEVICE)
     outputs = sequence_encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == sequence_encoder.output_shape
+    assert outputs["encoder_output"].shape[1:] == sequence_encoder.output_shape()

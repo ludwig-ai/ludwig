@@ -102,17 +102,14 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @property
     def input_dtype(self):
         return torch.uint8
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_VECTOR_LENGTH])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.encoder_obj.output_shape
+        return self.encoder_obj.output_shape()
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):

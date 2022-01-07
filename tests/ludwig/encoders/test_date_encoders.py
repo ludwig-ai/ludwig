@@ -15,7 +15,7 @@ def test_date_embed():
         [[2022, 6, 25, 5, 176, 9, 30, 59, 34259], [2022, 6, 25, 5, 176, 9, 30, 59, 34259]], dtype=torch.int32
     ).to(DEVICE)
     outputs = date_embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == date_embed.output_shape
+    assert outputs["encoder_output"].size()[1:] == date_embed.output_shape()
 
 
 def test_date_wave():
@@ -24,4 +24,4 @@ def test_date_wave():
         [[2022, 6, 25, 5, 176, 9, 30, 59, 34259], [2022, 6, 25, 5, 176, 9, 30, 59, 34259]], dtype=torch.int32
     ).to(DEVICE)
     outputs = date_embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == date_embed.output_shape
+    assert outputs["encoder_output"].size()[1:] == date_embed.output_shape()

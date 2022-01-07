@@ -146,7 +146,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     def create_sample_input(self):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
-        return torch.rand([2, *self.input_shape]).to(self.input_dtype)
+        return torch.rand([2, *self.input_shape()]).to(self.input_dtype())
 
     @staticmethod
     @abstractmethod
@@ -226,7 +226,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 self.dependency_reducers[dependency] = SequenceReducer(reduce_mode=self.reduce_dependencies)
 
     def create_sample_output(self):
-        return torch.rand(self.output_shape, dtype=self.get_output_dtype())
+        return torch.rand(self.output_shape(), dtype=self.get_output_dtype())
 
     @abstractmethod
     def get_prediction_set(self):
@@ -247,7 +247,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_decoder(self, decoder_parameters):
         decoder_parameters_copy = copy.copy(decoder_parameters)
         # Input to the decoder is the output feature's FC hidden layer.
-        decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
+        decoder_parameters_copy["input_size"] = self.fc_stack.output_shape()[-1]
         if "decoder" in decoder_parameters:
             decoder = decoder_parameters["decoder"]
         else:
@@ -450,7 +450,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         input_size_with_dependencies = combiner_output_size
         for feature_name in dependencies:
             if other_output_features[feature_name].num_fc_layers:
-                input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape[-1]
+                input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape()[-1]
             else:
                 # 0-layer FCStack. Use the output feature's input size.
                 input_size_with_dependencies += other_output_features[feature_name].input_size

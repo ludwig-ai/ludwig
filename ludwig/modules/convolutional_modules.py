@@ -247,8 +247,8 @@ class Conv1DStack(LudwigModule):
             )
 
             # retrieve number of channels from prior layer
-            input_shape = self.stack[i].input_shape
-            output_shape = self.stack[i].output_shape
+            input_shape = self.stack[i].input_shape()
+            output_shape = self.stack[i].output_shape()
 
             logger.debug(f"{self.__class__.__name__}: " f"input_shape {input_shape}, output shape {output_shape}")
 
@@ -378,8 +378,8 @@ class ParallelConv1D(LudwigModule):
 
             logger.debug(
                 f"{self.__class__.__name__} layer {i}, input shape "
-                f"{self.parallel_layers[i].input_shape}, output shape "
-                f"{self.parallel_layers[i].output_shape}"
+                f"{self.parallel_layers[i].input_shape()}, output shape "
+                f"{self.parallel_layers[i].output_shape()}"
             )
 
     @property
@@ -499,13 +499,13 @@ class ParallelConv1DStack(LudwigModule):
 
             logger.debug(
                 f"{self.__class__.__name__} layer {i}, input shape "
-                f"{self.stack[i].input_shape}, output shape "
-                f"{self.stack[i].output_shape}"
+                f"{self.stack[i].input_shape()}, output shape "
+                f"{self.stack[i].output_shape()}"
             )
 
             # set input specification for the layer
-            num_channels = self.stack[i].output_shape[1]
-            sequence_length = self.stack[i].output_shape[0]
+            num_channels = self.stack[i].output_shape()[1]
+            sequence_length = self.stack[i].output_shape()[0]
 
     @property
     def input_shape(self):
@@ -759,7 +759,7 @@ class Conv2DStack(LudwigModule):
                     pool_dilation=layer["pool_dilation"],
                 )
             )
-            in_channels, img_height, img_width = self.stack[-1].output_shape
+            in_channels, img_height, img_width = self.stack[-1].output_shape()
 
         self._output_shape = (in_channels, img_height, img_width)
 
@@ -884,7 +884,7 @@ class ResNetBlock(LudwigModule):
             kernel_size=3,
             stride=stride,
         )
-        in_channels, img_height, img_width = self.conv1.output_shape
+        in_channels, img_height, img_width = self.conv1.output_shape()
         self.norm1 = nn.BatchNorm2d(num_features=in_channels, eps=batch_norm_epsilon, momentum=batch_norm_momentum)
         self.relu1 = get_activation("relu")
 
@@ -902,14 +902,14 @@ class ResNetBlock(LudwigModule):
         for layer in [self.conv1, self.norm1, self.relu1, self.conv2, self.norm2, self.relu2]:
             logger.debug(f"   {layer._get_name()}")
 
-        self._output_shape = self.conv2.output_shape
+        self._output_shape = self.conv2.output_shape()
 
         self.projection_shortcut = projection_shortcut
-        if self.projection_shortcut is not None and self.projection_shortcut.output_shape != self._output_shape:
+        if self.projection_shortcut is not None and self.projection_shortcut.output_shape() != self._output_shape:
             raise ValueError(
                 f"Output shapes of ResnetBlock and projection_shortcut should "
                 f"match but are {self._output_shape} and "
-                f"{self.projection_shortcut.output_shape} respectively."
+                f"{self.projection_shortcut.output_shape()} respectively."
             )
         if self.projection_shortcut is None and self._input_shape != self._output_shape:
             self.projection_shortcut = Conv2DLayer(
@@ -974,7 +974,7 @@ class ResNetBottleneckBlock(LudwigModule):
             kernel_size=1,
             stride=1,
         )
-        in_channels, img_height, img_width = self.conv1.output_shape
+        in_channels, img_height, img_width = self.conv1.output_shape()
         self.norm1 = nn.BatchNorm2d(num_features=in_channels, eps=batch_norm_epsilon, momentum=batch_norm_momentum)
         self.relu1 = get_activation("relu")
 
@@ -986,7 +986,7 @@ class ResNetBottleneckBlock(LudwigModule):
             kernel_size=3,
             stride=stride,
         )
-        in_channels, img_height, img_width = self.conv2.output_shape
+        in_channels, img_height, img_width = self.conv2.output_shape()
         self.norm2 = nn.BatchNorm2d(num_features=in_channels, eps=batch_norm_epsilon, momentum=batch_norm_momentum)
         self.relu2 = get_activation("relu")
 
@@ -1014,14 +1014,14 @@ class ResNetBottleneckBlock(LudwigModule):
         ]:
             logger.debug(f"   {layer._get_name()}")
 
-        self._output_shape = self.conv3.output_shape
+        self._output_shape = self.conv3.output_shape()
 
         self.projection_shortcut = projection_shortcut
-        if self.projection_shortcut is not None and self.projection_shortcut.output_shape != self._output_shape:
+        if self.projection_shortcut is not None and self.projection_shortcut.output_shape() != self._output_shape:
             raise ValueError(
                 f"Output shapes of ResnetBlock and projection_shortcut should "
                 f"match but are {self._output_shape} and "
-                f"{self.projection_shortcut.output_shape} respectively."
+                f"{self.projection_shortcut.output_shape()} respectively."
             )
         if self.projection_shortcut is None and self._input_shape != self._output_shape:
             self.projection_shortcut = Conv2DLayer(
@@ -1102,7 +1102,7 @@ class ResNetBlockLayer(LudwigModule):
                 )
             ]
         )
-        in_channels, img_height, img_width = self.layers[-1].output_shape
+        in_channels, img_height, img_width = self.layers[-1].output_shape()
 
         for _ in range(1, num_blocks):
             self.layers.append(
@@ -1116,7 +1116,7 @@ class ResNetBlockLayer(LudwigModule):
                     batch_norm_epsilon=batch_norm_epsilon,
                 )
             )
-            in_channels, img_height, img_width = self.layers[-1].output_shape
+            in_channels, img_height, img_width = self.layers[-1].output_shape()
 
         for layer in self.layers:
             logger.debug(f"   {layer._get_name()}")
@@ -1201,7 +1201,7 @@ class ResNet(LudwigModule):
                 stride=conv_stride,
             )
         )
-        in_channels, img_height, img_width = self.layers[-1].output_shape
+        in_channels, img_height, img_width = self.layers[-1].output_shape()
         self.layers.append(
             nn.BatchNorm2d(num_features=out_channels, eps=batch_norm_epsilon, momentum=batch_norm_momentum)
         )
@@ -1234,7 +1234,7 @@ class ResNet(LudwigModule):
                 )
             )
             out_channels *= 2
-            in_channels, img_height, img_width = self.layers[-1].output_shape
+            in_channels, img_height, img_width = self.layers[-1].output_shape()
 
         for layer in self.layers:
             logger.debug(f"   {layer._get_name()}")

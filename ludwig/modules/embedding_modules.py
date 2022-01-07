@@ -157,11 +157,9 @@ class Embed(LudwigModule):
             embedded = self.dropout(embedded)
         return embedded
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
 
@@ -229,15 +227,12 @@ class EmbedSet(LudwigModule):
             embedded = self.dropout(embedded)
         return embedded
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.vocab_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
 
-    @property
     def input_dtype(self):
         return torch.bool
 
@@ -297,77 +292,11 @@ class EmbedWeighted(LudwigModule):
             embedded_reduced = self.dropout(embedded_reduced)
         return embedded_reduced
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.vocab_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
-
-
-# TODO(shreya): Implement sparse embedding lookup.
-# class EmbedSparse(LudwigModule):
-#     def __init__(
-#             self,
-#             vocab: List[str],
-#             embedding_size: int = 50,
-#             representation: str = 'dense',
-#             embeddings_trainable: bool = True,
-#             pretrained_embeddings: Optional[str] = None,
-#             force_embedding_size: bool = False,
-#             embeddings_on_cpu: bool = False,
-#             dropout: float = 0.0,
-#             embedding_initializer: Optional[str] = None,
-#             reduce_output: str = 'sum'
-#     ):
-#         super().__init__()
-
-#         self.embeddings, self.embedding_size = embedding_matrix_on_device(
-#             vocab,
-#             embedding_size,
-#             representation=representation,
-#             embeddings_trainable=embeddings_trainable,
-#             pretrained_embeddings=pretrained_embeddings,
-#             force_embedding_size=force_embedding_size,
-#             embeddings_on_cpu=embeddings_on_cpu,
-#             embedding_initializer=embedding_initializer,
-#         )
-
-#         if dropout > 0:
-#             self.dropout = nn.Dropout(dropout)
-#         else:
-#             self.dropout = None
-
-#         self.reduce_output = reduce_output
-
-#     def forward(self, inputs: torch.Tensor):
-#         # idx = tf.where(tf.equal(inputs, True))
-#         # TODO(shreya): Check if this is equivalent
-#         idx = torch.nonzero(inputs)
-
-#         # sparse_multiple_hot_indexes = tf.SparseTensor(
-#         #     idx,
-#         #     idx[:, 1],
-#         #     tf.shape(inputs, out_type=tf.int64)
-#         # )
-#         sparse_multiple_hot_index = torch.sparse_coo_tensor(
-#             idx, idx[:, 1], inputs.shape
-#         )
-
-#         # TODO(shreya): Check if supported in torch
-#         # embedded_reduced = tf.nn.embedding_lookup_sparse(
-#         #     self.embeddings,
-#         #     sparse_multiple_hot_indexes,
-#         #     sp_weights=None,
-#         #     combiner=self.reduce_output
-#         # )
-
-#         # if self.dropout:
-#         #     embedded_reduced = self.dropout(embedded_reduced)
-
-#         # return embedded_reduced
-#         return None
 
 
 class EmbedSequence(LudwigModule):
@@ -416,11 +345,9 @@ class EmbedSequence(LudwigModule):
             embedded = self.dropout(embedded)
         return embedded
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length, self.embedding_size])
 
@@ -459,13 +386,11 @@ class TokenAndPositionEmbedding(LudwigModule):
         )
         self.register_buffer("positions", torch.arange(0, max_sequence_length))
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.token_embed.output_shape
+        return self.token_embed.output_shape()
 
     def forward(self, inputs, mask: Optional[torch.Tensor] = None):
         positions_hidden = self.position_embed(self.positions)

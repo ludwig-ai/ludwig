@@ -82,7 +82,6 @@ class MultiHeadSelfAttention(LudwigModule):
         projected_outputs = self.combine_heads(concat_outputs)  # (batch_size, seq_len, h)
         return projected_outputs
 
-    @property
     def output_shape(self):
         return torch.Size([self.embedding_size])
 
@@ -103,7 +102,6 @@ class TransformerBlock(LudwigModule):
         self.dropout2 = nn.Dropout(dropout)
         self.layernorm2 = nn.LayerNorm(hidden_size, eps=1e-6)
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.sequence_size, self.input_size])
 
@@ -116,7 +114,6 @@ class TransformerBlock(LudwigModule):
         fc_output = self.dropout2(fc_output)  # [b, s, h]
         return self.layernorm2(ln1_output + fc_output)  # [b, s, h]
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.sequence_size, self.hidden_size])
 
@@ -144,12 +141,11 @@ class TransformerStack(LudwigModule):
                 dropout=dropout,
             )
             self.layers.append(layer)
-            prior_input_size = self.layers[i].output_shape[-1]
+            prior_input_size = self.layers[i].output_shape()[-1]
 
         for layer in self.layers:
             logger.debug(f"   {layer._get_name()}")
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.sequence_size, self.input_size])
 
@@ -159,7 +155,6 @@ class TransformerStack(LudwigModule):
             hidden = layer(hidden, mask=mask)
         return hidden
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.sequence_size, self.hidden_size])
 

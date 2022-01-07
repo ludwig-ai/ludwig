@@ -192,14 +192,14 @@ class DateEmbed(Encoder):
 
         # Summed sizes of all of the embeddings.
         fc_layer_input_size = (
-            self.year_fc.output_shape[0]
-            + self.embed_month.output_shape[0]
-            + self.embed_day.output_shape[0]
-            + self.embed_weekday.output_shape[0]
-            + self.embed_yearday.output_shape[0]
-            + self.embed_hour.output_shape[0]
-            + self.embed_minute.output_shape[0]
-            + self.embed_second.output_shape[0]
+            self.year_fc.output_shape()[0]
+            + self.embed_month.output_shape()[0]
+            + self.embed_day.output_shape()[0]
+            + self.embed_weekday.output_shape()[0]
+            + self.embed_yearday.output_shape()[0]
+            + self.embed_hour.output_shape()[0]
+            + self.embed_minute.output_shape()[0]
+            + self.embed_second.output_shape()[0]
             + 1  # for periodic_second_of_day.
         )
 
@@ -258,13 +258,11 @@ class DateEmbed(Encoder):
         hidden = self.fc_stack(hidden)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([DATE_INPUT_SIZE])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()
 
 
 @register_encoder("wave", DATE)
@@ -327,7 +325,7 @@ class DateWave(Encoder):
 
         # Summed sizes of all of the embeddings.
         # Additional 8 for periodic_[month, day, ..., second_of_day].
-        fc_layer_input_size = self.year_fc.output_shape[0] + 8
+        fc_layer_input_size = self.year_fc.output_shape()[0] + 8
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
@@ -383,10 +381,8 @@ class DateWave(Encoder):
         hidden = self.fc_stack(hidden)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([DATE_INPUT_SIZE])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()

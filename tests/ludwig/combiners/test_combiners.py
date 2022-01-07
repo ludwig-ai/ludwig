@@ -68,7 +68,7 @@ def check_combiner_output(combiner, combiner_output, batch_size):
     assert "combiner_output" in combiner_output
 
     # check for correct output shape
-    assert combiner_output["combiner_output"].shape == (batch_size, *combiner.output_shape)
+    assert combiner_output["combiner_output"].shape == (batch_size, *combiner.output_shape())
 
 
 # generates encoder outputs and minimal input feature objects for testing
@@ -200,11 +200,11 @@ def test_concat_combiner(
         input_features_dict, config=load_config(ConcatCombinerConfig, fc_layers=fc_layer, flatten_inputs=flatten_inputs)
     ).to(DEVICE)
 
-    # confirm correctness of input_shape property
-    assert isinstance(combiner.input_shape, dict)
+    # confirm correctness of input_shape
+    assert isinstance(combiner.input_shape(), dict)
     for k in encoder_outputs_dict:
-        assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert k in combiner.input_shape()
+        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape()[k]
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -231,10 +231,10 @@ def test_sequence_concat_combiner(
     ).to(DEVICE)
 
     # confirm correctness of input_shape property
-    assert isinstance(combiner.input_shape, dict)
+    assert isinstance(combiner.input_shape(), dict)
     for k in encoder_outputs_dict:
-        assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert k in combiner.input_shape()
+        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape()[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -274,10 +274,10 @@ def test_sequence_combiner(
     ).to(DEVICE)
 
     # confirm correctness of input_shape property
-    assert isinstance(combiner.input_shape, dict)
+    assert isinstance(combiner.input_shape(), dict)
     for k in encoder_outputs_dict:
-        assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert k in combiner.input_shape()
+        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape()[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -384,10 +384,10 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_fc_size: int, 
     )
 
     # confirm correctness of input_shape property
-    assert isinstance(combiner.input_shape, dict)
+    assert isinstance(combiner.input_shape(), dict)
     for k in encoder_outputs_dict:
-        assert k in combiner.input_shape
-        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape[k]
+        assert k in combiner.input_shape()
+        assert encoder_outputs_dict[k]["encoder_output"].shape[1:] == combiner.input_shape()[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0

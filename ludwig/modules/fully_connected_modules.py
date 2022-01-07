@@ -23,11 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class FCLayer(LudwigModule):
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.output_size])
 
@@ -175,12 +173,10 @@ class FCStack(LudwigModule):
             prev_fc_layer_size = layer.layers[0].out_features
         return hidden
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         if len(self.stack) > 0:
-            return self.stack[-1].output_shape
+            return self.stack[-1].output_shape()
         return torch.Size([self.input_size])

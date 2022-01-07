@@ -34,10 +34,8 @@ class GhostBatchNormalization(LudwigModule):
     def moving_variance(self) -> torch.Tensor:
         return self.bn.running_var
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.num_features])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.num_features])

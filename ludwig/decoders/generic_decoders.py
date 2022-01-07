@@ -50,9 +50,8 @@ class Regressor(Decoder):
             bias_initializer=bias_initializer,
         )
 
-    @property
     def input_shape(self):
-        return self.dense.input_shape
+        return self.dense.input_shape()
 
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)
@@ -96,9 +95,8 @@ class Projector(Decoder):
         else:
             self.clip = None
 
-    @property
     def input_shape(self):
-        return self.dense.input_shape
+        return self.dense.input_shape()
 
     def forward(self, inputs, **kwargs):
         values = self.activation(self.dense(inputs))
@@ -140,9 +138,8 @@ class Classifier(Decoder):
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
 
-    @property
     def input_shape(self):
-        return self.dense.input_shape
+        return self.dense.input_shape()
 
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)

@@ -67,7 +67,7 @@ class BagEmbedWeightedEncoder(Encoder):
         )
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
-            self.embed_weighted.output_shape[-1],
+            self.embed_weighted.output_shape()[-1],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,

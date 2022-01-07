@@ -36,7 +36,7 @@ class SequenceTaggerDecoder(Decoder):
                 input_size=input_size, hidden_size=attention_embedding_size, num_heads=attention_num_heads
             )
             # Adjust the input size to the final projection layer.
-            input_size = self.self_attention.output_shape[0]
+            input_size = self.self_attention.output_shape()[0]
         self.projection_layer = Dense(input_size=input_size, output_size=vocab_size, use_bias=use_bias)
 
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -73,11 +73,5 @@ class SequenceTaggerDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS}
 
-    @property
-    def input_shape(self):
-        # Dummy implementation.
-        return torch.Size([1])
-
-    @property
     def output_shape(self):
         return torch.Size([self.max_sequence_length, self.vocab_size])

@@ -315,11 +315,5 @@ class SequenceGeneratorDecoder(Decoder):
     def get_prediction_set(self):
         return {LOGITS}
 
-    @property
-    def input_shape(self):
-        # Dummy implementation.
-        return torch.Size([1])
-
-    @property
     def output_shape(self):
         return torch.Size([self.max_sequence_length, self.vocab_size])

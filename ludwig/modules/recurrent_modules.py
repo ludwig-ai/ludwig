@@ -56,13 +56,11 @@ class RecurrentStack(LudwigModule):
         # Delegate recurrent params to PyTorch's RNN/GRU/LSTM implementations.
         self.layers = rnn_layer_class(input_size, hidden_size, batch_first=True, **rnn_params)
 
-    @property
     def input_shape(self) -> torch.Size:
         if self.sequence_size:
             return torch.Size([self.sequence_size, self.input_size])
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.sequence_size:
             return torch.Size([self.sequence_size, self.hidden_size])

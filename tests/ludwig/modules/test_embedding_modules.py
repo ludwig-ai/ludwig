@@ -23,7 +23,7 @@ def test_embed(
     ).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, 1)).bool().to(DEVICE)
     outputs = embed(inputs)
-    assert outputs.shape[1:] == embed.output_shape
+    assert outputs.shape[1:] == embed.output_shape()
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c", "d"]])
@@ -41,7 +41,7 @@ def test_embed_set(
     ).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
     outputs = embed(inputs)
-    assert outputs.shape[1:] == embed.output_shape
+    assert outputs.shape[1:] == embed.output_shape()
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c", "d", "e", "f", "g", "h"]])
@@ -55,7 +55,7 @@ def test_embed_weighted(
     embed_weighted = EmbedWeighted(vocab=vocab, embedding_size=embedding_size, representation=representation).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
     outputs = embed_weighted(inputs)
-    assert outputs.shape[1:] == embed_weighted.output_shape
+    assert outputs.shape[1:] == embed_weighted.output_shape()
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c"]])
@@ -74,7 +74,7 @@ def test_embed_sequence(
     ).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, 10)).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs.shape[1:] == embed.output_shape
+    assert outputs.shape[1:] == embed.output_shape()
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c"]])
@@ -93,4 +93,4 @@ def test_token_and_position_embedding(
     ).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, 10)).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs.shape[1:] == embed.output_shape
+    assert outputs.shape[1:] == embed.output_shape()

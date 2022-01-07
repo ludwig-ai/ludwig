@@ -203,7 +203,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature["input_size"] = self.input_shape[-1]
+        feature["input_size"] = self.input_shape()[-1]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -224,13 +224,11 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return torch.Size(self.encoder_obj.output_shape)
+        return torch.Size(self.encoder_obj.output_shape())
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -259,7 +257,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
 
-        feature["input_size"] = self.input_shape[-1]
+        feature["input_size"] = self.input_shape()[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -288,7 +286,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
@@ -296,7 +293,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.float32
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 

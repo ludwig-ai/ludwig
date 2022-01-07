@@ -66,15 +66,15 @@ def test_sequence_input_feature(
     input_feature_obj = sequence_type(input_feature_defn).to(DEVICE)
 
     # confirm dtype property
-    assert input_feature_obj.input_dtype == torch.int32
+    assert input_feature_obj.input_dtype() == torch.int32
 
     # confirm input_shape property
-    assert input_feature_obj.input_shape == (SEQ_SIZE,)
+    assert input_feature_obj.input_shape() == (SEQ_SIZE,)
 
     # confirm output_shape property default output shape
     # from sequence_feature() function
     encoder_output = input_feature_obj(input_sequence)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape())
 
 
 # todo: add unit test for sequence output feature

@@ -69,7 +69,7 @@ class SetSparseEncoder(Encoder):
         logger.debug("  FCStack")
         # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
-            first_layer_input_size=self.embed.output_shape[-1],
+            first_layer_input_size=self.embed.output_shape()[-1],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -96,10 +96,8 @@ class SetSparseEncoder(Encoder):
 
         return hidden
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.vocab_size])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()

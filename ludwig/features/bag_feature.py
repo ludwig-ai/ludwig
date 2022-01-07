@@ -120,13 +120,11 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
         return {"encoder_output": encoder_output}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([len(self.vocab)])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.encoder_obj.output_shape
+        return self.encoder_obj.output_shape()
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):

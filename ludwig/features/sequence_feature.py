@@ -178,7 +178,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -192,13 +191,11 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "encoder", "parallel_cnn")
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.encoder_obj.output_shape
+        return self.encoder_obj.output_shape()
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
@@ -243,12 +240,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.int32
 
-    @property
-    def input_shape(self) -> torch.Size:
-        # Dummy implementation.
-        return torch.Size([1])
-
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 

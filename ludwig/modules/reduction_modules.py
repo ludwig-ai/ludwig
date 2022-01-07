@@ -59,7 +59,6 @@ class SequenceReducer(LudwigModule):
         """
         return self._reduce_obj(inputs, mask=mask)
 
-    @property
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
         if self._encoding_size is None:
@@ -67,10 +66,9 @@ class SequenceReducer(LudwigModule):
         else:
             return torch.Size([self._max_sequence_length, self._encoding_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         """Returns size of the output tensor without the batch dimension."""
-        input_shape = self.input_shape
+        input_shape = self.input_shape()
         if self._reduce_mode in {None, "none", "None"}:
             return input_shape
         elif self._reduce_mode == "concat":

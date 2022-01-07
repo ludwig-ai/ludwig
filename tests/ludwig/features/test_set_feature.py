@@ -57,4 +57,4 @@ def test_set_input_feature(
     input_tensor = torch.randint(0, 2, size=(BATCH_SIZE, len(set_def["vocab"])), dtype=torch.int64).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape())

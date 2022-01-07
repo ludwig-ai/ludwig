@@ -135,13 +135,11 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.vector_size])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.encoder_obj.output_shape
+        return self.encoder_obj.output_shape()
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -182,7 +180,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return self.loss
 
     def metric_kwargs(self):
-        return dict(num_outputs=self.output_shape[0])
+        return dict(num_outputs=self.output_shape()[0])
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -191,11 +189,9 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.float32
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.vector_size])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self._input_shape])
 

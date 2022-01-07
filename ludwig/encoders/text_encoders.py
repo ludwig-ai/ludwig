@@ -129,11 +129,9 @@ class ALBERTEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
@@ -145,7 +143,6 @@ class ALBERTEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -249,11 +246,9 @@ class MT5Encoder(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by MT5 tokenizer.
@@ -265,7 +260,6 @@ class MT5Encoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -341,11 +335,9 @@ class XLMRoBERTaEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by XLMRoberta tokenizer.
@@ -357,7 +349,6 @@ class XLMRoBERTaEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -457,12 +448,11 @@ class BERTEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
     # TODO(shreya): Confirm that this is it
-    @property
+
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
@@ -474,7 +464,6 @@ class BERTEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -593,12 +582,11 @@ class XLMEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
     # TODO(shreya): Confirm that this is it
-    @property
+
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
@@ -610,7 +598,6 @@ class XLMEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -696,17 +683,14 @@ class GPTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -796,17 +780,14 @@ class GPT2Encoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -878,17 +859,14 @@ class RoBERTaEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -995,18 +973,15 @@ class TransformerXLEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.config.d_model])
         else:
             return torch.Size([self.transformer.config.d_model])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1121,18 +1096,15 @@ class XLNetEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.config.d_model])
         else:
             return torch.Size([self.transformer.config.d_model])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1219,18 +1191,15 @@ class DistilBERTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
             return torch.Size([self.max_sequence_length - 2, self.transformer.config.dim])
         return torch.Size([self.transformer.config.dim])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1317,17 +1286,14 @@ class CTRLEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             return torch.Size([self.max_sequence_length, self.transformer.config.n_embd])
         return torch.Size([self.transformer.config.n_embd])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1426,11 +1392,9 @@ class CamemBERTEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
@@ -1442,7 +1406,6 @@ class CamemBERTEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1528,11 +1491,9 @@ class T5Encoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 1 to remove EOS token added by T5 tokenizer.
@@ -1544,7 +1505,6 @@ class T5Encoder(Encoder):
             )
         return torch.Size([self.transformer.config.d_model])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1658,11 +1618,9 @@ class FlauBERTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
@@ -1674,7 +1632,6 @@ class FlauBERTEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.emb_dim])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1766,11 +1723,9 @@ class ELECTRAEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
@@ -1782,7 +1737,6 @@ class ELECTRAEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1849,11 +1803,9 @@ class LongformerEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # Subtract 2 to remove CLS and PAD tokens added by Longformer (== Roberta) tokenizer.
@@ -1865,7 +1817,6 @@ class LongformerEncoder(Encoder):
             )
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32
 
@@ -1925,17 +1876,14 @@ class AutoTransformerEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # TODO(justin): This may need to be conditioned on which AutoModel gets chosen.
             return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
         return torch.Size([self.transformer.config.hidden_size])
 
-    @property
     def input_dtype(self):
         return torch.int32

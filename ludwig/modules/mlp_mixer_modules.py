@@ -68,7 +68,7 @@ class MixerBlock(LudwigModule):
         self.layernorm2 = nn.LayerNorm(normalized_shape=embed_size)
 
     def forward(self, inputs: torch.Tensor, **kwargs):
-        assert inputs.shape[1:] == self.input_shape
+        assert inputs.shape[1:] == self.input_shape()
 
         hidden = inputs
         hidden = self.layernorm1(hidden).transpose(1, 2)
@@ -80,7 +80,7 @@ class MixerBlock(LudwigModule):
         hidden = self.mlp2(hidden)
 
         output = hidden + mid
-        assert output.shape[1:] == self.output_shape
+        assert output.shape[1:] == self.output_shape()
         return output
 
     @property
@@ -145,7 +145,7 @@ class MLPMixer(LudwigModule):
             self._output_shape = torch.Size((n_patches, embed_size))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        assert inputs.shape[1:] == self.input_shape
+        assert inputs.shape[1:] == self.input_shape()
         hidden = self.patch_conv(inputs)
         hidden = hidden.flatten(2).transpose(1, 2)
 
@@ -156,7 +156,7 @@ class MLPMixer(LudwigModule):
         if self.avg_pool:
             hidden = torch.mean(hidden, dim=1)
 
-        assert hidden.shape[1:] == self.output_shape
+        assert hidden.shape[1:] == self.output_shape()
 
         return hidden
 

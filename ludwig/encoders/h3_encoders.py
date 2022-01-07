@@ -197,13 +197,11 @@ class H3Embed(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_INPUT_SIZE])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()
 
 
 @register_encoder("weighted_sum", H3)
@@ -266,7 +264,7 @@ class H3WeightedSum(Encoder):
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
-            first_layer_input_size=self.h3_embed.output_shape[0],
+            first_layer_input_size=self.h3_embed.output_shape()[0],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -303,13 +301,11 @@ class H3WeightedSum(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_INPUT_SIZE])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()
 
 
 @register_encoder("rnn", H3)
@@ -404,7 +400,7 @@ class H3RNN(Encoder):
 
         logger.debug("  RecurrentStack")
         self.recurrent_stack = RecurrentStack(
-            input_size=self.h3_embed.output_shape[0],
+            input_size=self.h3_embed.output_shape()[0],
             sequence_size=H3_INPUT_SIZE,
             hidden_size=hidden_size,
             cell_type=cell_type,
@@ -429,10 +425,8 @@ class H3RNN(Encoder):
 
         return {"encoder_output": hidden, "encoder_output_state": final_state}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_INPUT_SIZE])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.recurrent_stack.output_shape
+        return self.recurrent_stack.output_shape()

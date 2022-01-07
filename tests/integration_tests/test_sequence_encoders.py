@@ -130,7 +130,7 @@ def test_sequence_encoders(
             assert encoder_out["encoder_output_state"].shape == (BATCH_SIZE, TEST_STATE_SIZE)
 
     elif enc_encoder == "cnnrnn":
-        assert encoder_out["encoder_output"].shape[1:] == encoder_obj.output_shape
+        assert encoder_out["encoder_output"].shape[1:] == encoder_obj.output_shape()
         assert "encoder_output_state" in encoder_out
 
         if enc_cell_type == "lstm":
@@ -142,7 +142,7 @@ def test_sequence_encoders(
             assert encoder_out["encoder_output_state"].shape == (BATCH_SIZE, TEST_STATE_SIZE)
 
     elif enc_encoder == "stacked_cnn":
-        assert encoder_out["encoder_output"].shape[1:] == encoder_obj.output_shape
+        assert encoder_out["encoder_output"].shape[1:] == encoder_obj.output_shape()
 
     elif enc_encoder == "embed":
         assert (
@@ -152,7 +152,7 @@ def test_sequence_encoders(
         )
 
     elif enc_encoder == "transformer":
-        assert encoder_out["encoder_output"].shape[1:] == encoder_obj.output_shape
+        assert encoder_out["encoder_output"].shape[1:] == encoder_obj.output_shape()
 
     elif enc_encoder == "passthrough":
         assert (
@@ -191,4 +191,4 @@ def test_sequence_embed_encoder(enc_embedding_size: int, input_sequence: torch.T
 
     encoder_out = encoder_obj(input_sequence)
 
-    assert encoder_out["encoder_output"].size()[1:] == encoder_obj.output_shape
+    assert encoder_out["encoder_output"].size()[1:] == encoder_obj.output_shape()

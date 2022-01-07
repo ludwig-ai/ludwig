@@ -18,7 +18,7 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int):
     # In dense mode, the embedding size should be less than or equal to vocab size.
     assert outputs.shape[-1] == min(embedding_size, len(vocab))
     # Ensures output shape matches encoder expected output shape.
-    assert outputs.shape[1:] == dense_encoder.output_shape
+    assert outputs.shape[1:] == dense_encoder.output_shape()
 
 
 @pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
@@ -30,4 +30,4 @@ def test_categorical_sparse_encoder(vocab: List[str]):
     # In sparse mode, embedding_size will always be equal to vocab size.
     assert outputs.shape[-1] == len(vocab)
     # Ensures output shape matches encoder expected output shape.
-    assert outputs.shape[1:] == sparse_encoder.output_shape
+    assert outputs.shape[1:] == sparse_encoder.output_shape()

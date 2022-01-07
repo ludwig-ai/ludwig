@@ -279,11 +279,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    @property
     def input_dtype(self):
         return torch.int32
 
-    @property
     def input_shape(self):
         return torch.Size(self._input_shape)
 
@@ -303,9 +301,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         if hasattr(encoder_class, "default_params"):
             set_default_values(input_feature, encoder_class.default_params)
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.encoder_obj.output_shape
+        return self.encoder_obj.output_shape()
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
@@ -323,7 +320,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def get_output_dtype(cls):
         return torch.int32
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 

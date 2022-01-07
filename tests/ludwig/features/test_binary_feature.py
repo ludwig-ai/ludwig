@@ -24,4 +24,4 @@ def test_binary_input_feature(binary_config: Dict, encoder: str) -> None:
     binary_input_feature = BinaryInputFeature(binary_config)
     binary_tensor = torch.randn([SEQ_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = binary_input_feature(binary_tensor)
-    assert encoder_output["encoder_output"].shape[1:] == binary_input_feature.output_shape
+    assert encoder_output["encoder_output"].shape[1:] == binary_input_feature.output_shape()

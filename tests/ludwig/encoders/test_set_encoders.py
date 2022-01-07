@@ -15,4 +15,4 @@ def test_set_encoder(vocab: List[str], embedding_size: int, representation: str)
     set_encoder = SetSparseEncoder(vocab=vocab, representation=representation, embedding_size=embedding_size).to(DEVICE)
     inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
     outputs = set_encoder(inputs)
-    assert outputs.shape[1:] == set_encoder.output_shape
+    assert outputs.shape[1:] == set_encoder.output_shape()

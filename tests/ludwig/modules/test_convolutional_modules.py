@@ -151,12 +151,12 @@ def test_conv1d_stack(layers: Union[None, list], num_layers: Union[None, int]) -
     # check for correct output class
     assert isinstance(out_tensor, torch.Tensor)
 
-    assert out_tensor.size()[1:] == conv1_stack.output_shape[:]
+    assert out_tensor.size()[1:] == conv1_stack.output_shape()[:]
 
     # check for correct output shape
     last_module = conv1_stack.stack[-1]
     output_seq_size = expected_seq_size(
-        seq_size=last_module.input_shape[0],
+        seq_size=last_module.input_shape()[0],
         padding=last_module.padding,
         kernel_size=last_module.kernel_size,
         stride=last_module.stride,
@@ -209,7 +209,7 @@ def test_parallel_conv1d(layers: Union[None, list]) -> None:
     # check for correct output shape
     parallel_module = parallel_conv1d.parallel_layers[0]
     output_seq_size = expected_seq_size(
-        seq_size=parallel_module.input_shape[0],
+        seq_size=parallel_module.input_shape()[0],
         padding=parallel_module.padding,
         kernel_size=parallel_module.kernel_size,
         stride=parallel_module.stride,
@@ -277,7 +277,7 @@ def test_parallel_conv1d_stack(stacked_layers: Union[None, list]) -> None:
     assert isinstance(out_tensor, torch.Tensor)
 
     # check output shape
-    assert out_tensor.size() == (BATCH_SIZE, *parallel_conv1d_stack.output_shape)
+    assert out_tensor.size() == (BATCH_SIZE, *parallel_conv1d_stack.output_shape())
 
 
 ###
@@ -323,7 +323,7 @@ def test_conv2d_layer(
     )
     input_tensor = torch.rand(2, in_channels, img_height, img_width)
     output_tensor = conv2d_layer(input_tensor)
-    assert output_tensor.shape[1:] == conv2d_layer.output_shape
+    assert output_tensor.shape[1:] == conv2d_layer.output_shape()
 
 
 @pytest.mark.parametrize("img_height,img_width", [(224, 224)])
@@ -352,7 +352,7 @@ def test_conv2d_stack(
     )
     input_tensor = torch.rand(2, 3, img_height, img_width)
     output_tensor = conv2d_stack(input_tensor)
-    assert output_tensor.shape[1:] == conv2d_stack.output_shape
+    assert output_tensor.shape[1:] == conv2d_stack.output_shape()
 
 
 @pytest.mark.parametrize("img_height,img_width,in_channels", [(224, 224, 8)])
@@ -366,7 +366,7 @@ def test_conv2d_layer_fixed_padding(
     )
     input_tensor = torch.rand(2, in_channels, img_height, img_width)
     output_tensor = conv2d_fixed_padding(input_tensor)
-    assert output_tensor.shape[1:] == conv2d_fixed_padding.output_shape
+    assert output_tensor.shape[1:] == conv2d_fixed_padding.output_shape()
 
 
 @pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels", [(224, 224, 64, 64)])
@@ -386,7 +386,7 @@ def test_resnet_block(
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet_block(input_tensor)
-    assert output_tensor.shape[1:] == resnet_block.output_shape
+    assert output_tensor.shape[1:] == resnet_block.output_shape()
 
 
 @pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels", [(224, 224, 64, 64)])
@@ -406,7 +406,7 @@ def test_resnet_bottleneck_block(
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet_block(input_tensor)
-    assert output_tensor.shape[1:] == resnet_block.output_shape
+    assert output_tensor.shape[1:] == resnet_block.output_shape()
 
 
 @pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels,num_blocks", [(224, 224, 3, 64, 3)])
@@ -431,7 +431,7 @@ def test_resnet_block_layer(
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet_block_layer(input_tensor)
-    assert output_tensor.shape[1:] == resnet_block_layer.output_shape
+    assert output_tensor.shape[1:] == resnet_block_layer.output_shape()
 
 
 @pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels", [(224, 224, 3, 64)])
@@ -452,4 +452,4 @@ def test_resnet(
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet(input_tensor)
-    assert output_tensor.shape[1:] == resnet.output_shape
+    assert output_tensor.shape[1:] == resnet.output_shape()

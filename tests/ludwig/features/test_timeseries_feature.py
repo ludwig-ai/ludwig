@@ -33,4 +33,4 @@ def test_timeseries_input_feature(timeseries_config: Dict, encoder: str) -> None
     timeseries_input_feature = TimeseriesInputFeature(timeseries_config).to(DEVICE)
     timeseries_tensor = torch.randn([SEQ_SIZE, TIMESERIES_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = timeseries_input_feature(timeseries_tensor)
-    assert encoder_output["encoder_output"].shape[1:] == timeseries_input_feature.output_shape
+    assert encoder_output["encoder_output"].shape[1:] == timeseries_input_feature.output_shape()

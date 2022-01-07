@@ -64,13 +64,11 @@ class CustomNumericalEncoder(Encoder):
     def forward(self, inputs, **kwargs):
         return {"encoder_output": inputs}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.input_shape
+        return self.input_shape()
 
 
 @register_decoder("custom_numerical_decoder", NUMERICAL)
@@ -79,7 +77,6 @@ class CustomNumericalDecoder(Decoder):
         super().__init__()
         self.input_size = input_size
 
-    @property
     def input_shape(self):
         return torch.Size([self.input_size])
 

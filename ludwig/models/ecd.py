@@ -313,7 +313,7 @@ def build_outputs(output_features_def: List[Dict[str, Any]], combiner: Combiner)
     for output_feature_def in output_features_def:
         # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns for
         # seq2seq.
-        output_feature_def["input_size"] = combiner.output_shape[-1]
+        output_feature_def["input_size"] = combiner.output_shape()[-1]
         output_feature = build_single_output(output_feature_def, output_features)
         output_features[output_feature_def[NAME]] = output_feature
 

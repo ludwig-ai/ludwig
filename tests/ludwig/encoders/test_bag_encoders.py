@@ -19,4 +19,4 @@ def test_set_encoder(vocab: List[str], embedding_size: int, representation: str)
     ).to(DEVICE)
     inputs = torch.randint(0, 9, size=(2, len(vocab))).to(DEVICE)
     outputs = bag_encoder(inputs)
-    assert outputs.shape[1:] == bag_encoder.output_shape
+    assert outputs.shape[1:] == bag_encoder.output_shape()

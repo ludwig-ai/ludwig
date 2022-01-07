@@ -18,7 +18,7 @@ def test_h3_embed():
         dtype=torch.int32,
     ).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == embed.output_shape
+    assert outputs["encoder_output"].size()[1:] == embed.output_shape()
 
 
 def test_h3_weighted_sum():
@@ -31,7 +31,7 @@ def test_h3_weighted_sum():
         dtype=torch.int32,
     ).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == embed.output_shape
+    assert outputs["encoder_output"].size()[1:] == embed.output_shape()
 
 
 def test_h3_rnn_embed():
@@ -44,4 +44,4 @@ def test_h3_rnn_embed():
         dtype=torch.int32,
     ).to(DEVICE)
     outputs = embed(inputs)
-    assert outputs["encoder_output"].size()[1:] == embed.output_shape
+    assert outputs["encoder_output"].size()[1:] == embed.output_shape()

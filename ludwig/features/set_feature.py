@@ -140,11 +140,9 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
         return {"encoder_output": encoder_output}
 
-    @property
     def input_dtype(self):
         return torch.bool
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([len(self.vocab)])
 
@@ -156,9 +154,8 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.encoder_obj.output_shape
+        return self.encoder_obj.output_shape()
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
@@ -202,11 +199,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.bool
 
-    @property
     def input_shape(self) -> torch.Size:
-        return self.decoder_obj.input_shape
+        return self.decoder_obj.input_shape()
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.num_classes])
 

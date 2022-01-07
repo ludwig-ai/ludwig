@@ -148,11 +148,9 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def input_dtype(self):
         return torch.float32
 

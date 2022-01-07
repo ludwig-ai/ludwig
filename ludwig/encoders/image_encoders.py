@@ -106,7 +106,7 @@ class Stacked2DCNN(Encoder):
             default_pool_padding=pool_padding,
             default_pool_dilation=pool_dilation,
         )
-        out_channels, img_height, img_width = self.conv_stack_2d.output_shape
+        out_channels, img_height, img_width = self.conv_stack_2d.output_shape()
         first_fc_layer_input_size = out_channels * img_height * img_width
 
         self.flatten = torch.nn.Flatten()
@@ -138,11 +138,9 @@ class Stacked2DCNN(Encoder):
 
         return {"encoder_output": outputs}
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
@@ -197,7 +195,7 @@ class ResNetEncoder(Encoder):
             batch_norm_momentum=batch_norm_momentum,
             batch_norm_epsilon=batch_norm_epsilon,
         )
-        first_fc_layer_input_size = self.resnet.output_shape[0]
+        first_fc_layer_input_size = self.resnet.output_shape()[0]
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
@@ -222,11 +220,9 @@ class ResNetEncoder(Encoder):
         hidden = self.fc_stack(hidden)
         return {"encoder_output": hidden}
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
@@ -273,17 +269,15 @@ class MLPMixerEncoder(Encoder):
             avg_pool=avg_pool,
         )
 
-        self._output_shape = self.mlp_mixer.output_shape
+        self._output_shape = self.mlp_mixer.output_shape()
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = self.mlp_mixer(inputs)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return self._input_shape
 
-    @property
     def output_shape(self) -> torch.Size:
         return self._output_shape
 
@@ -367,10 +361,8 @@ class ViTEncoder(Encoder):
         output = self.model(inputs, head_mask=head_mask)
         return {"encoder_output": output.pooler_output}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)

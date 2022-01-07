@@ -29,9 +29,9 @@ def test_ghostbatchnormalization(mode: bool, virtual_batch_size: Optional[int]) 
     assert norm_tensor.shape == (BATCH_SIZE, FC_SIZE)
 
     # check for required properties
-    assert ghost_batch_norm.input_shape == inputs.shape[1:]
-    assert ghost_batch_norm.output_shape == inputs.shape[1:]
-    assert ghost_batch_norm.input_dtype == torch.float32
+    assert ghost_batch_norm.input_shape() == inputs.shape[1:]
+    assert ghost_batch_norm.output_shape() == inputs.shape[1:]
+    assert ghost_batch_norm.input_dtype() == torch.float32
 
     assert isinstance(ghost_batch_norm.moving_mean, torch.Tensor)
     assert ghost_batch_norm.moving_mean.shape == (FC_SIZE,)

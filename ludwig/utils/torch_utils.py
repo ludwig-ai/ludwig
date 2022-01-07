@@ -158,25 +158,29 @@ class LudwigModule(Module):
         if callable(loss):
             self._callable_losses.append(loss)
 
-    @property
     def input_dtype(self):
         return torch.float32
 
-    @property
     @abstractmethod
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
         raise NotImplementedError("Abstract class.")
 
-    @property
     def output_shape(self) -> torch.Size:
         """Returns size of the output tensor without the batch dimension."""
         return self._compute_output_shape()
 
     @lru_cache(maxsize=1)
     def _compute_output_shape(self) -> torch.Size:
-        dummy_input = torch.rand(2, *self.input_shape, device=self.device)
-        output_tensor = self.forward(dummy_input.type(self.input_dtype))
+        """Convenient (though inefficient) way to compute the module's output shape.
+
+        This is done by instantiating example input tensors with batch size 2, and returning the size of the tensor
+        output.
+
+        Notably this does not work for LudwigModules that accept dictionary inputs.
+        """
+        dummy_input = torch.rand(2, *self.input_shape(), device=self.device)
+        output_tensor = self.forward(dummy_input.type(self.input_dtype()))
 
         if isinstance(output_tensor, torch.Tensor):
             return output_tensor.size()[1:]
@@ -204,7 +208,6 @@ class Dense(LudwigModule):
             bias_initializer = initializer_registry[bias_initializer]
             bias_initializer(self.dense.bias)
 
-    @property
     def input_shape(self) -> torch.Size:
         return self.dense.input_shape
 

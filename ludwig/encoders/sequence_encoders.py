@@ -182,7 +182,7 @@ class SequenceEmbedEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=max_sequence_length,
-            encoding_size=self.embed_sequence.output_shape[-1],
+            encoding_size=self.embed_sequence.output_shape()[-1],
         )
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
@@ -195,13 +195,11 @@ class SequenceEmbedEncoder(Encoder):
         hidden = self.reduce_sequence(embedded_sequence)
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.reduce_sequence.output_shape
+        return self.reduce_sequence.output_shape()
 
 
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
@@ -414,7 +412,7 @@ class ParallelCNN(Encoder):
             )
 
         logger.debug("  ParallelConv1D")
-        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
+        in_channels = self.embed_sequence.output_shape()[-1] if self.should_embed else embedding_size
         self.parallel_conv1d = ParallelConv1D(
             in_channels=in_channels,
             max_sequence_length=self.max_sequence_length,
@@ -437,12 +435,12 @@ class ParallelCNN(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=max_sequence_length,
-            encoding_size=self.parallel_conv1d.output_shape[-1],
+            encoding_size=self.parallel_conv1d.output_shape()[-1],
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.reduce_sequence.output_shape[-1],
+                self.reduce_sequence.output_shape()[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -484,15 +482,13 @@ class ParallelCNN(Encoder):
 
         return {"encoder_output": hidden}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
-            return self.fc_stack.output_shape
-        return self.parallel_conv1d.output_shape
+            return self.fc_stack.output_shape()
+        return self.parallel_conv1d.output_shape()
 
 
 @register_encoder("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
@@ -737,7 +733,7 @@ class StackedCNN(Encoder):
             )
 
         logger.debug("  Conv1DStack")
-        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
+        in_channels = self.embed_sequence.output_shape()[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
             in_channels=in_channels,
             max_sequence_length=max_sequence_length,
@@ -763,13 +759,13 @@ class StackedCNN(Encoder):
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
-            max_sequence_length=self.conv1d_stack.output_shape[-2],
-            encoding_size=self.conv1d_stack.output_shape[-1],
+            max_sequence_length=self.conv1d_stack.output_shape()[-2],
+            encoding_size=self.conv1d_stack.output_shape()[-1],
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.reduce_sequence.output_shape[-1],
+                self.reduce_sequence.output_shape()[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -782,15 +778,13 @@ class StackedCNN(Encoder):
                 default_dropout=dropout,
             )
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
-            return self.conv1d_stack.output_shape
-        return self.fc_stack.output_shape
+            return self.conv1d_stack.output_shape()
+        return self.fc_stack.output_shape()
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
@@ -1045,7 +1039,7 @@ class StackedParallelCNN(Encoder):
                 embedding_initializer=weights_initializer,
             )
 
-        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
+        in_channels = self.embed_sequence.output_shape()[-1] if self.should_embed else embedding_size
         logger.debug("  ParallelConv1DStack")
         self.parallel_conv1d_stack = ParallelConv1DStack(
             in_channels=in_channels,
@@ -1067,13 +1061,13 @@ class StackedParallelCNN(Encoder):
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
-            max_sequence_length=self.parallel_conv1d_stack.output_shape[-2],
-            encoding_size=self.parallel_conv1d_stack.output_shape[-1],
+            max_sequence_length=self.parallel_conv1d_stack.output_shape()[-2],
+            encoding_size=self.parallel_conv1d_stack.output_shape()[-1],
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.reduce_sequence.output_shape[-1],
+                self.reduce_sequence.output_shape()[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1086,15 +1080,13 @@ class StackedParallelCNN(Encoder):
                 default_dropout=dropout,
             )
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
-            return self.fc_stack.output_shape
-        return self.parallel_conv1d_stack.output_shape
+            return self.fc_stack.output_shape()
+        return self.parallel_conv1d_stack.output_shape()
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
@@ -1307,7 +1299,7 @@ class StackedRNN(Encoder):
             )
 
         logger.debug("  RecurrentStack")
-        input_size = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
+        input_size = self.embed_sequence.output_shape()[-1] if self.should_embed else embedding_size
         self.recurrent_stack = RecurrentStack(
             input_size=input_size,
             hidden_size=state_size,
@@ -1329,8 +1321,8 @@ class StackedRNN(Encoder):
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
-            max_sequence_length=self.recurrent_stack.output_shape[-2],
-            encoding_size=self.recurrent_stack.output_shape[-1],  # state_size
+            max_sequence_length=self.recurrent_stack.output_shape()[-2],
+            encoding_size=self.recurrent_stack.output_shape()[-1],  # state_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
@@ -1350,15 +1342,13 @@ class StackedRNN(Encoder):
                 default_dropout=fc_dropout,
             )
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
-            return self.fc_stack.output_shape
-        return self.recurrent_stack.output_shape
+            return self.fc_stack.output_shape()
+        return self.recurrent_stack.output_shape()
 
     def input_dtype(self):
         return torch.int32
@@ -1587,9 +1577,9 @@ class StackedCNNRNN(Encoder):
 
         logger.debug("  RecurrentStack")
         self.recurrent_stack = RecurrentStack(
-            input_size=self.conv1d_stack.output_shape[1],
+            input_size=self.conv1d_stack.output_shape()[1],
             hidden_size=state_size,
-            sequence_size=self.conv1d_stack.output_shape[0],
+            sequence_size=self.conv1d_stack.output_shape()[0],
             cell_type=cell_type,
             num_layers=num_rec_layers,
             bidirectional=bidirectional,
@@ -1607,13 +1597,13 @@ class StackedCNNRNN(Encoder):
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
-            max_sequence_length=self.recurrent_stack.output_shape[-2],
-            encoding_size=self.recurrent_stack.output_shape[-1],  # State size
+            max_sequence_length=self.recurrent_stack.output_shape()[-2],
+            encoding_size=self.recurrent_stack.output_shape()[-1],  # State size
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.reduce_sequence.output_shape[-1],
+                self.reduce_sequence.output_shape()[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1626,15 +1616,13 @@ class StackedCNNRNN(Encoder):
                 default_dropout=fc_dropout,
             )
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
-            return self.fc_stack.output_shape
-        return self.recurrent_stack.output_shape
+            return self.fc_stack.output_shape()
+        return self.recurrent_stack.output_shape()
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
@@ -1844,10 +1832,10 @@ class StackedTransformer(Encoder):
                 embedding_initializer=weights_initializer,
             )
             # If vocab size is smaller than embedding size, embedding layer will use len(vocab) as embedding_size.
-            used_embedding_size = self.embed_sequence.output_shape[-1]
+            used_embedding_size = self.embed_sequence.output_shape()[-1]
             if used_embedding_size != hidden_size:
                 logger.debug("  project_to_embed_size")
-                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape[-1], hidden_size)
+                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape()[-1], hidden_size)
                 self.should_project = True
         else:
             logger.debug("  project_to_embed_size")
@@ -1868,15 +1856,15 @@ class StackedTransformer(Encoder):
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
-            max_sequence_length=self.transformer_stack.output_shape[-2],
-            encoding_size=self.transformer_stack.output_shape[-1],  # hidden_size
+            max_sequence_length=self.transformer_stack.output_shape()[-2],
+            encoding_size=self.transformer_stack.output_shape()[-1],  # hidden_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
         else:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.reduce_sequence.output_shape[-1],
+                self.reduce_sequence.output_shape()[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1889,15 +1877,13 @@ class StackedTransformer(Encoder):
                 default_dropout=fc_dropout,
             )
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
-            return self.fc_stack.output_shape
-        return self.transformer_stack.output_shape
+            return self.fc_stack.output_shape()
+        return self.transformer_stack.output_shape()
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """

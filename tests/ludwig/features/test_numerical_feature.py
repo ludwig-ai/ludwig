@@ -32,4 +32,4 @@ def test_numerical_input_feature(
     input_tensor = torch.rand(2, dtype=torch.float32).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
+    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape())

@@ -152,11 +152,9 @@ class TabNet(LudwigModule):
 
         return final_output, aggregated_mask, masks
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.output_size])
 
@@ -201,7 +199,6 @@ class FeatureBlock(LudwigModule):
             hidden = glu(hidden)  # [bs, s]
         return hidden  # [b_s, 2*s] if apply_glu else [b_s, s]
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
@@ -252,11 +249,9 @@ class AttentiveTransformer(LudwigModule):
 
         return self.sparsemax(hidden)  # [b_s, s]
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.size])
 
@@ -318,10 +313,8 @@ class FeatureTransformer(LudwigModule):
     def shared_fc_layers(self):
         return [self.blocks[i].fc_layer for i in range(self.num_shared_blocks)]
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.size])

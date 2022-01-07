@@ -66,28 +66,25 @@ class Combiner(LudwigModule, ABC):
         super().__init__()
         self.input_features = input_features
 
-    @property
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features]
+        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape()])) for k in self.input_features]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
-    @property
     def input_shape(self) -> Dict:
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
-        return {k: self.input_features[k].output_shape for k in self.input_features}
+        return {k: self.input_features[k].output_shape() for k in self.input_features}
 
-    @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
         pseudo_input = {}
         for k in self.input_features:
             pseudo_input[k] = {
                 "encoder_output": torch.rand(
-                    2, *self.input_features[k].output_shape, dtype=self.input_dtype, device=self.device
+                    2, *self.input_features[k].output_shape(), dtype=self.input_dtype(), device=self.device
                 )
             }
         output_tensor = self.forward(pseudo_input)
@@ -215,7 +212,6 @@ class SequenceConcatCombiner(Combiner):
             self.supports_masking = True
         self.main_sequence_feature = config.main_sequence_feature
 
-    @property
     def concatenated_shape(self) -> torch.Size:
         # computes the effective shape of the input tensor after combining
         # all the encoder outputs
@@ -225,15 +221,17 @@ class SequenceConcatCombiner(Combiner):
         seq_size = None
         for k in self.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
-            if len(self.input_features[k].output_shape) == 2:
-                seq_size = self.input_features[k].output_shape[0]
+            if len(self.input_features[k].output_shape()) == 2:
+                seq_size = self.input_features[k].output_shape()[0]
                 break
         if not seq_size:
             raise ValueError("At least one of the input features for SequenceConcatCombiner should be a sequence.")
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
-        shapes = [self.input_features[k].output_shape[-1] for k in self.input_features]  # output shape not input shape
+        shapes = [
+            self.input_features[k].output_shape()[-1] for k in self.input_features
+        ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
@@ -365,21 +363,20 @@ class SequenceCombiner(Combiner):
         )
 
         logger.debug(
-            f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape}"
+            f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape()}"
         )
 
         self.encoder_obj = get_from_registry(config.encoder, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=config.reduce_output,
-            embedding_size=self.combiner.output_shape[1],
-            max_sequence_length=self.combiner.output_shape[0],
+            embedding_size=self.combiner.output_shape()[1],
+            max_sequence_length=self.combiner.output_shape()[0],
             **kwargs,
         )
 
         if hasattr(self.encoder_obj, "supports_masking") and self.encoder_obj.supports_masking:
             self.supports_masking = True
 
-    @property
     def concatenated_shape(self) -> torch.Size:
         # computes the effective shape of the input tensor after combining
         # all the encoder outputs
@@ -389,13 +386,15 @@ class SequenceCombiner(Combiner):
         seq_size = None
         for k in self.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
-            if len(self.input_features[k].output_shape) == 2:
-                seq_size = self.input_features[k].output_shape[0]
+            if len(self.input_features[k].output_shape()) == 2:
+                seq_size = self.input_features[k].output_shape()[0]
                 break
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
-        shapes = [self.input_features[k].output_shape[-1] for k in self.input_features]  # output shape not input shape
+        shapes = [
+            self.input_features[k].output_shape()[-1] for k in self.input_features
+        ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
@@ -464,11 +463,10 @@ class TabNetCombiner(Combiner):
         else:
             self.dropout = None
 
-    @property
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup
-        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features]
+        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape()])) for k in self.input_features]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
@@ -509,9 +507,8 @@ class TabNetCombiner(Combiner):
     def get_schema_cls():
         return TabNetCombinerConfig
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.tabnet.output_shape
+        return self.tabnet.output_shape()
 
 
 @dataclass
@@ -565,7 +562,8 @@ class TransformerCombiner(Combiner):
             # after flattening the encoder output tensor
             [
                 Linear(
-                    torch.prod(torch.Tensor([*input_features[inp].output_shape])).type(torch.int32), config.hidden_size
+                    torch.prod(torch.Tensor([*input_features[inp].output_shape()])).type(torch.int32),
+                    config.hidden_size,
                 )
                 for inp in input_features
             ]
@@ -585,7 +583,7 @@ class TransformerCombiner(Combiner):
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.transformer_stack.output_shape[-1],
+                self.transformer_stack.output_shape()[-1],
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
                 default_fc_size=config.fc_size,
@@ -727,7 +725,7 @@ class TabTransformerCombiner(Combiner):
 
         self.projectors = ModuleList()
         for i_f in self.embeddable_features:
-            flatten_size = self.get_flatten_size(input_features[i_f].output_shape)
+            flatten_size = self.get_flatten_size(input_features[i_f].output_shape())
             self.projectors.append(Linear(flatten_size[0], projector_size))
 
         # input to layer_norm are the encoder outputs for unembeddable features,
@@ -735,7 +733,7 @@ class TabTransformerCombiner(Combiner):
         # tensors.  Size should be concatenation of these tensors.
         concatenated_unembeddable_encoders_size = 0
         for i_f in self.unembeddable_features:
-            concatenated_unembeddable_encoders_size += input_features[i_f].output_shape[0]
+            concatenated_unembeddable_encoders_size += input_features[i_f].output_shape()[0]
 
         self.layer_norm = torch.nn.LayerNorm(concatenated_unembeddable_encoders_size)
 
@@ -757,7 +755,7 @@ class TabTransformerCombiner(Combiner):
         if config.reduce_output == "concat":
             fc_input_size = len(self.embeddable_features) * config.hidden_size
         else:
-            fc_input_size = self.reduce_sequence.output_shape[-1] if len(self.embeddable_features) > 0 else 0
+            fc_input_size = self.reduce_sequence.output_shape()[-1] if len(self.embeddable_features) > 0 else 0
         self.fc_stack = FCStack(
             fc_input_size + concatenated_unembeddable_encoders_size,
             layers=config.fc_layers,
@@ -785,9 +783,8 @@ class TabTransformerCombiner(Combiner):
         size = torch.prod(torch.Tensor([*output_shape]))
         return torch.Size([size.type(torch.int32)])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.fc_stack.output_shape()
 
     def forward(
         self,
@@ -950,10 +947,9 @@ class ComparatorCombiner(Combiner):
         )
 
     def get_entity_shape(self, entity: list) -> torch.Size:
-        sizes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in entity]
+        sizes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape()])) for k in entity]
         return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([2 * self.last_fc_layer_fc_size + 2])
 

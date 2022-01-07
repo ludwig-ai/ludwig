@@ -122,7 +122,7 @@ def test_image_encoders_resnet():
 
     assert encoder is not None
     assert encoder.resnet.__class__.__name__ == "ResNet"
-    assert list(encoder.resnet.output_shape) == [64, 3, 3]
+    assert list(encoder.resnet.output_shape()) == [64, 3, 3]
     assert len(encoder.fc_stack.layers) == 1
     assert encoder.fc_stack.layers[0]["fc_size"] == 28
     assert encoder.fc_stack.layers[0]["activation"] == "relu"
@@ -139,7 +139,7 @@ def test_image_encoders_stacked_2dcnn():
 
     assert encoder is not None
     assert encoder.conv_stack_2d is not None
-    assert list(encoder.conv_stack_2d.output_shape) == [32, 1, 1]
+    assert list(encoder.conv_stack_2d.output_shape()) == [32, 1, 1]
     assert len(encoder.fc_stack.layers) == 1
     assert encoder.conv_stack_2d.layers[0]["pool_kernel_size"] == 2
     assert encoder.conv_stack_2d.layers[0]["stride"] == 1
@@ -203,7 +203,7 @@ def test_image_encoders_mlpmixer():
     assert encoder is not None
     assert encoder.mlp_mixer.__class__.__name__ == "MLPMixer"
     assert len(encoder.mlp_mixer.mixer_blocks) == 2
-    assert list(encoder.mlp_mixer.mixer_blocks[0].mlp1.output_shape) == [4]
+    assert list(encoder.mlp_mixer.mixer_blocks[0].mlp1.output_shape()) == [4]
     assert encoder.mlp_mixer.patch_conv.__class__.__name__ == "Conv2d"
     assert encoder.mlp_mixer.patch_conv.kernel_size == (5, 5)
 

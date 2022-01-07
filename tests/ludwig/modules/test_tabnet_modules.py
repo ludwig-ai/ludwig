@@ -55,9 +55,9 @@ def test_feature_block(
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, size)
 
-    assert feature_block.input_shape[-1] == input_size
-    assert feature_block.output_shape[-1] == size
-    assert feature_block.input_dtype == torch.float32
+    assert feature_block.input_shape()[-1] == input_size
+    assert feature_block.output_shape()[-1] == size
+    assert feature_block.input_dtype() == torch.float32
 
 
 @pytest.mark.parametrize("num_total_blocks, num_shared_blocks", [(4, 2), (6, 4), (3, 1)])
@@ -85,9 +85,9 @@ def test_feature_transformer(
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, size)
 
-    assert feature_transformer.input_shape[-1] == input_size
-    assert feature_transformer.output_shape[-1] == size
-    assert feature_transformer.input_dtype == torch.float32
+    assert feature_transformer.input_shape()[-1] == input_size
+    assert feature_transformer.output_shape()[-1] == size
+    assert feature_transformer.input_dtype() == torch.float32
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -112,9 +112,9 @@ def test_attentive_transformer(input_size: int, size: int, output_size: int, vir
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, input_size)
 
-    assert attentive_transformer.input_shape[-1] == size
-    assert attentive_transformer.output_shape[-1] == input_size
-    assert attentive_transformer.input_dtype == torch.float32
+    assert attentive_transformer.input_shape()[-1] == size
+    assert attentive_transformer.output_shape()[-1] == input_size
+    assert attentive_transformer.input_dtype() == torch.float32
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -134,6 +134,6 @@ def test_tabnet(input_size: int, output_size: int, size: int, virtual_batch_size
     assert isinstance(output, tuple)
     assert output[0].shape == (BATCH_SIZE, output_size)
 
-    assert tabnet.input_shape[-1] == input_size
-    assert tabnet.output_shape[-1] == output_size
-    assert tabnet.input_dtype == torch.float32
+    assert tabnet.input_shape()[-1] == input_size
+    assert tabnet.output_shape()[-1] == output_size
+    assert tabnet.input_dtype() == torch.float32

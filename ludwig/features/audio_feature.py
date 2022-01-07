@@ -421,11 +421,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length, self.embedding_size])
 
-    @property
     def input_dtype(self):
         return torch.float32
 

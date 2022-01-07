@@ -19,4 +19,4 @@ def test_sequence_tagger(use_attention, use_bias):
 
     outputs = tagger_decoder(decoder_inputs)
 
-    assert outputs[LOGITS].size()[1:] == tagger_decoder.output_shape
+    assert outputs[LOGITS].size()[1:] == tagger_decoder.output_shape()

@@ -40,10 +40,8 @@ class BinaryPassthroughEncoder(Encoder):
 
         return inputs
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])

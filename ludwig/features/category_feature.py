@@ -143,17 +143,14 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {"encoder_output": encoder_output}
 
-    @property
     def input_dtype(self):
         return torch.int32
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @property
     def output_shape(self) -> torch.Size:
-        return torch.Size(self.encoder_obj.output_shape)
+        return torch.Size(self.encoder_obj.output_shape())
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -202,15 +199,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
 
-    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @classmethod
     def get_output_dtype(cls):
         return torch.int64
 
-    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
