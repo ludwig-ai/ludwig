@@ -1102,9 +1102,15 @@ def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
     for feature in features:
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
-            dataset_df[feature[COLUMN]], backend
-        )
+        try:
+            dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
+                dataset_df[feature[COLUMN]], backend
+            )
+        except KeyError as e:
+            raise KeyError(
+                f"Feature name {e} specified in the config was not found in dataset with columns: "
+                + f"{list(dataset_df.columns)}"
+            )
 
     return dataset_cols
 

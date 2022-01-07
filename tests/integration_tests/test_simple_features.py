@@ -27,7 +27,9 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     numerical_feature,
+    sequence_feature,
     set_feature,
+    text_feature,
     vector_feature,
 )
 
@@ -84,46 +86,6 @@ def run_experiment(input_features, output_features, **kwargs):
         # Categorical feature
         (category_feature(), category_feature(), None),
         (category_feature(), category_feature(), {"loss": {"type": "softmax_cross_entropy"}}),
-        #     (
-        #             category_feature(),
-        #             category_feature(),
-        #             {'loss': {
-        #                 'type': 'sampled_softmax_cross_entropy',
-        #                 'sampler': 'fixed_unigram',
-        #                 'negative_samples': 10
-        #             }
-        #             }
-        #     ),
-        #     (
-        #             category_feature(),
-        #             category_feature(),
-        #             {'loss': {
-        #                 'type': 'sampled_softmax_cross_entropy',
-        #                 'sampler': 'uniform',
-        #                 'negative_samples': 10
-        #             }
-        #             }
-        #     ),
-        #     (
-        #             category_feature(),
-        #             category_feature(),
-        #             {'loss': {
-        #                 'type': 'sampled_softmax_cross_entropy',
-        #                 'sampler': 'log_uniform',
-        #                 'negative_samples': 10
-        #             }
-        #             }
-        #     ),
-        #     (
-        #             category_feature(),
-        #             category_feature(),
-        #             {'loss': {
-        #                 'type': 'sampled_softmax_cross_entropy',
-        #                 'sampler': 'learned_unigram',
-        #                 'negative_samples': 10
-        #             }
-        #             }
-        #     )
     ],
 )
 def test_feature(input_test_feature, output_test_feature, output_loss_parameter, csv_filename):
@@ -146,11 +108,9 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
         ([category_feature()], [binary_feature(), binary_feature()]),
         ([category_feature()], [category_feature(vocab_size=5), category_feature(vocab_size=7)]),
         ([category_feature()], [numerical_feature(), numerical_feature()]),
-        # ([category_feature()],
-        #  [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
+        ([category_feature()], [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
         ([set_feature(vocab_size=5)], [set_feature(vocab_size=5), set_feature(vocab_size=7)]),
-        # ([category_feature()],
-        #  [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
+        ([category_feature()], [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
         ([category_feature()], [vector_feature(), vector_feature()]),
         ([vector_feature()], [vector_feature(), vector_feature()]),
         ([bag_feature()], [vector_feature(), vector_feature()]),

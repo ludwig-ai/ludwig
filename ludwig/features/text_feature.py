@@ -361,13 +361,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     "for feature {}".format(output_feature[COLUMN])
                 )
 
-        if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
-            level_str2freq = "{}_str2freq".format(output_feature["level"])
-            level_idx2str = "{}_idx2str".format(output_feature["level"])
-            output_feature[LOSS]["class_counts"] = [
-                feature_metadata[level_str2freq][cls] for cls in feature_metadata[level_idx2str]
-            ]
-
     @staticmethod
     def calculate_overall_stats(
         predictions,
