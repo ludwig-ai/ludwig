@@ -31,13 +31,6 @@ def csv_filename():
 
 
 @pytest.fixture()
-def tmpdir():
-    """Yields a temporary directory for holding temporary data."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield tmpdir
-
-
-@pytest.fixture()
 def yaml_filename():
     """Yields a yaml filename for holding a temporary config."""
     with tempfile.TemporaryDirectory() as tmpdir:
