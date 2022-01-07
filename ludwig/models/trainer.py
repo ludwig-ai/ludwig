@@ -961,7 +961,7 @@ class Trainer(BaseTrainer):
 
             # training step loop
             progress_bar = tqdm(
-                desc="Trainining online",
+                desc="Training online",
                 total=batcher.steps_per_epoch,
                 file=sys.stdout,
                 disable=is_progressbar_disabled(),
