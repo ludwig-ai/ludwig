@@ -39,7 +39,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     def create_trainer(self, **kwargs):
         config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
-        return Trainer(config=config, **kwargs)
+        return Trainer(horovod=self._horovod, config=config, **kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
         return Predictor(model, horovod=self._horovod, **kwargs)
