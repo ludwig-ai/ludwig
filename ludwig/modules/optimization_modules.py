@@ -133,6 +133,7 @@ class SGDOptimizer(BaseOptimizer):
 class AdamOptimizer(BaseOptimizer):
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     type: str = "adam"
+    lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
     betas: Tuple[float, float] = (0.9, 0.999)
     eps: float = NonNegativeFloat(default=1e-08)
 
