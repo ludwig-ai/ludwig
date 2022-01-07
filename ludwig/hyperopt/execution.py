@@ -1136,6 +1136,7 @@ class RayTuneExecutor(HyperoptExecutor):
             search_alg=search_alg,
             num_samples=self.num_samples,
             keep_checkpoints_num=1,
+            max_failures=1,  # retry a trial failure once
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
             sync_config=self.sync_config,
@@ -1178,37 +1179,42 @@ class RayTuneExecutor(HyperoptExecutor):
                             sync_client.wait()
                         self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
                         best_model_path = analysis.get_best_checkpoint(trial_path.rstrip('/'))
-                        best_model = LudwigModel.load(
-                            os.path.join(best_model_path, 'model'),
-                            backend=backend,
-                            gpus=gpus,
-                            gpu_memory_limit=gpu_memory_limit,
-                            allow_parallel_threads=allow_parallel_threads,
-                        )
-                        if best_model.config[TRAINING]['eval_batch_size']:
-                            batch_size = best_model.config[TRAINING]['eval_batch_size']
-                        else:
-                            batch_size = best_model.config[TRAINING]['batch_size']
-                        try:
-                            eval_stats, _, _ = best_model.evaluate(
-                                dataset=validation_set,
-                                data_format=data_format,
-                                batch_size=batch_size,
-                                output_directory=trial_path,
-                                skip_save_unprocessed_output=skip_save_unprocessed_output,
-                                skip_save_predictions=skip_save_predictions,
-                                skip_save_eval_stats=skip_save_eval_stats,
-                                collect_predictions=False,
-                                collect_overall_stats=True,
-                                return_type='dict',
-                                debug=debug
+                        if best_model_path is not None:
+                            best_model = LudwigModel.load(
+                                os.path.join(best_model_path, 'model'),
+                                backend=backend,
+                                gpus=gpus,
+                                gpu_memory_limit=gpu_memory_limit,
+                                allow_parallel_threads=allow_parallel_threads,
                             )
-                            trial['eval_stats'] = json.dumps(eval_stats, cls=NumpyEncoder)
-                        except NotImplementedError:
+                            if best_model.config[TRAINING]['eval_batch_size']:
+                                batch_size = best_model.config[TRAINING]['eval_batch_size']
+                            else:
+                                batch_size = best_model.config[TRAINING]['batch_size']
+                            try:
+                                eval_stats, _, _ = best_model.evaluate(
+                                    dataset=validation_set,
+                                    data_format=data_format,
+                                    batch_size=batch_size,
+                                    output_directory=trial_path,
+                                    skip_save_unprocessed_output=skip_save_unprocessed_output,
+                                    skip_save_predictions=skip_save_predictions,
+                                    skip_save_eval_stats=skip_save_eval_stats,
+                                    collect_predictions=False,
+                                    collect_overall_stats=True,
+                                    return_type='dict',
+                                    debug=debug
+                                )
+                                trial['eval_stats'] = json.dumps(eval_stats, cls=NumpyEncoder)
+                            except NotImplementedError:
+                                logger.warning(
+                                    "Skipping evaluation as the necessary methods are not "
+                                    "supported. Full exception below:\n"
+                                    f"{traceback.format_exc()}"
+                                )
+                        else:
                             logger.warning(
-                                "Skipping evaluation as the necessary methods are not "
-                                "supported. Full exception below:\n"
-                                f"{traceback.format_exc()}"
+                                "Skipping evaluation as no checkpoints were available"
                             )
                     else:
                         logger.warning(
