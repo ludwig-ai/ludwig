@@ -260,7 +260,6 @@ def load_config(cls, **kwargs):
 def load_config_with_kwargs(cls, kwargs):
     schema = marshmallow_dataclass.class_schema(cls)()
     fields = schema.fields.keys()
-    # print(kwargs)
     return load_config(cls, **{k: v for k, v in kwargs.items() if k in fields}), {
         k: v for k, v in kwargs.items() if k not in fields
     }

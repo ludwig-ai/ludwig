@@ -99,7 +99,6 @@ class LocalTrainingMixin:
         from ludwig.models.trainer import Trainer
         from ludwig.utils.schema_utils import load_config_with_kwargs
 
-        print(f"create_trainer {kwargs['horovod']}")
         config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
         return Trainer(config=config, **kwargs)
 

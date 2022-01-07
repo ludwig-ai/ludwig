@@ -48,9 +48,6 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
 
     try:
         # Training with csv
-        print("RUN_API_EXPERIMENT" + "-" * 100)
-        print(kwargs)
-        print(model)
         _, _, output_dir = model.train(dataset=dataset, **kwargs)
 
         model.predict(dataset=dataset)

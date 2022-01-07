@@ -298,8 +298,6 @@ class Trainer(BaseTrainer):
         :param device: The device to load the model on from a saved checkpoint.
         :type device: str
         """
-        print(f"trainer init {horovod}")
-
         self.epochs = config.epochs
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
@@ -640,7 +638,6 @@ class Trainer(BaseTrainer):
         :param validation_set: The validation dataset
         :param test_set: The test dataset
         """
-        print(f"train/641 start {self.is_coordinator()}, {save_path}, {self.horovod}")
         # ====== General setup =======
         output_features = self.model.output_features
         digits_per_epochs = len(str(self.epochs))
@@ -692,8 +689,6 @@ class Trainer(BaseTrainer):
         training_checkpoints_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
-            print("trainer.train COORDINATOR" + "*" * 100)
-            print(f"trainer.train COORDINATOR: {save_path}")
             os.makedirs(save_path, exist_ok=True)
             model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
