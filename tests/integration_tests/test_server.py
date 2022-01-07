@@ -15,7 +15,6 @@
 import json
 import logging
 import os
-import shutil
 import sys
 
 import numpy as np
@@ -47,12 +46,13 @@ except ImportError:
     sys.exit(-1)
 
 
-def train_model(input_features, output_features, data_csv):
-    """Helper method to avoid code repetition in running an experiment.
+def train_and_predict_model(input_features, output_features, data_csv, output_directory):
+    """Helper method to avoid code repetition for training a model and using it for prediction.
 
     :param input_features: input schema
     :param output_features: output schema
     :param data_csv: path to data
+    :param output_directory: model output directory
     :return: None
     """
     config = {
@@ -62,12 +62,15 @@ def train_model(input_features, output_features, data_csv):
         "training": {"epochs": 2},
     }
     model = LudwigModel(config, backend=LocalTestBackend())
-    _, _, output_dir = model.train(
-        dataset=data_csv, skip_save_processed_input=True, skip_save_progress=True, skip_save_unprocessed_output=True
+    model.train(
+        dataset=data_csv,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        output_directory=output_directory,
     )
-    model.predict(dataset=data_csv, output_directory=output_dir)
-
-    return model, output_dir
+    model.predict(dataset=data_csv, output_directory=output_directory)
+    return model
 
 
 def output_keys_for(output_features):
@@ -113,9 +116,9 @@ def convert_to_batch_form(data_df):
     return files
 
 
-def test_server_integration_with_images(csv_filename):
+def test_server_integration_with_images(tmpdir):
     # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     # Resnet encoder
     input_features = [
@@ -131,8 +134,9 @@ def test_server_integration_with_images(csv_filename):
     output_features = [category_feature(vocab_size=4), numerical_feature()]
 
     np.random.seed(123)  # reproducible synthetic data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    model, output_dir = train_model(input_features, output_features, data_csv=rel_path)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
 
     app = server(model)
     client = TestClient(app)
@@ -175,15 +179,11 @@ def test_server_integration_with_images(csv_filename):
     model_output = model_output.to_dict("split")
     assert model_output == server_response
 
-    # Cleanup
-    shutil.rmtree(output_dir, ignore_errors=True)
-    shutil.rmtree(image_dest_folder, ignore_errors=True)
-
 
 @pytest.mark.parametrize("single_record", [False, True])
-def test_server_integration_with_audio(single_record, csv_filename):
+def test_server_integration_with_audio(single_record, tmpdir):
     # Audio Inputs
-    audio_dest_folder = os.path.join(os.getcwd(), "generated_audio")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
     # Resnet encoder
     input_features = [
@@ -195,8 +195,9 @@ def test_server_integration_with_audio(single_record, csv_filename):
     ]
     output_features = [category_feature(vocab_size=4), numerical_feature()]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    model, output_dir = train_model(input_features, output_features, data_csv=rel_path)
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    model = train_and_predict_model(input_features, output_features, data_csv=rel_path, output_directory=tmpdir)
 
     app = server(model)
     client = TestClient(app)
@@ -239,7 +240,3 @@ def test_server_integration_with_audio(single_record, csv_filename):
         model_output, _ = model.predict(dataset=data_df)
         model_output = model_output.to_dict("split")
         assert model_output == server_response
-
-    # Cleanup
-    shutil.rmtree(output_dir, ignore_errors=True)
-    shutil.rmtree(audio_dest_folder, ignore_errors=True)
