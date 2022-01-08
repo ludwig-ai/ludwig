@@ -365,36 +365,36 @@ class RayTuneExecutor(HyperoptExecutor):
             sync_client, remote_checkpoint_dir = sync_info
             sync_client.sync_down(remote_checkpoint_dir, trial_path)
             sync_client.wait()
-        self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
-        return analysis.get_best_checkpoint(trial_path.rstrip('/'))
+        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
+        return analysis.get_best_checkpoint(trial_path.rstrip("/"))
 
     @staticmethod
     def _evaluate_best_model(
-            trial,
-            trial_path,
-            best_model_path,
-            dataset,
-            data_format,
-            skip_save_unprocessed_output,
-            skip_save_predictions,
-            skip_save_eval_stats,
-            gpus,
-            gpu_memory_limit,
-            allow_parallel_threads,
-            backend,
-            debug,
+        trial,
+        trial_path,
+        best_model_path,
+        dataset,
+        data_format,
+        skip_save_unprocessed_output,
+        skip_save_predictions,
+        skip_save_eval_stats,
+        gpus,
+        gpu_memory_limit,
+        allow_parallel_threads,
+        backend,
+        debug,
     ):
         best_model = LudwigModel.load(
-            os.path.join(best_model_path, 'model'),
+            os.path.join(best_model_path, "model"),
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        if best_model.config[TRAINING]['eval_batch_size']:
-            batch_size = best_model.config[TRAINING]['eval_batch_size']
+        if best_model.config[TRAINING]["eval_batch_size"]:
+            batch_size = best_model.config[TRAINING]["eval_batch_size"]
         else:
-            batch_size = best_model.config[TRAINING]['batch_size']
+            batch_size = best_model.config[TRAINING]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
@@ -406,10 +406,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 skip_save_eval_stats=skip_save_eval_stats,
                 collect_predictions=False,
                 collect_overall_stats=True,
-                return_type='dict',
-                debug=debug
+                return_type="dict",
+                debug=debug,
             )
-            trial['eval_stats'] = json.dumps(eval_stats, cls=NumpyEncoder)
+            trial["eval_stats"] = json.dumps(eval_stats, cls=NumpyEncoder)
         except NotImplementedError:
             logger.warning(
                 "Skipping evaluation as the necessary methods are not "
