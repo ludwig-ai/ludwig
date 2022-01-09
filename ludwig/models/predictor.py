@@ -144,6 +144,8 @@ class Predictor(BasePredictor):
             predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
     def batch_evaluation(self, dataset, collect_predictions=False, dataset_name=None):
+        model_training_mode = self.model.training
+        self.model.eval()  # Sets model training mode to False.
         with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
             progress_bar = None
@@ -198,7 +200,7 @@ class Predictor(BasePredictor):
 
         metrics = self.model.get_metrics()
         self.model.reset_metrics()
-
+        self.model.train(model_training_mode)  # Restores previous model training mode.
         return metrics, from_numpy_dataset(predictions)
 
     def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):

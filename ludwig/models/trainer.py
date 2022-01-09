@@ -380,6 +380,7 @@ class Trainer(BaseTrainer):
         total_steps: int = 3,
     ):
         """Function to be used by tune_batch_size."""
+        self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
 
             step_count = 0
@@ -441,6 +442,7 @@ class Trainer(BaseTrainer):
             except Exception:
                 return None
 
+        self.model.train()  # Sets model training mode.
         with training_set.initialize_batcher(
             batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
         ) as batcher:
@@ -720,6 +722,7 @@ class Trainer(BaseTrainer):
                     )
 
                 # Reset the metrics at the start of the next epoch
+                self.model.train()  # Sets model to training mode.
                 self.model.reset_metrics()
 
                 # ================ Train ================
@@ -955,6 +958,7 @@ class Trainer(BaseTrainer):
         )
 
     def train_online(self, dataset):
+        self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
             batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
         ) as batcher:
