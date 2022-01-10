@@ -128,7 +128,7 @@ def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0
 class LudwigModule(Module):
     def __init__(self):
         super().__init__()
-        self._losses = {}
+        self._losses = nn.ModuleDict()
         self.register_buffer("device_tensor", torch.zeros(0))
 
     @property
