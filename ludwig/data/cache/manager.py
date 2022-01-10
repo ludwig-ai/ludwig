@@ -133,7 +133,7 @@ class CacheManager:
         if self._cache_dir is None:
             if input_fname is not None:
                 return os.path.dirname(input_fname)
-            return "."
+            return os.getcwd()
         return self._cache_dir
 
     def can_cache(self, skip_save_processed_input):

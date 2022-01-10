@@ -19,7 +19,7 @@ import queue
 import threading
 from distutils.version import LooseVersion
 from functools import lru_cache
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +42,7 @@ _SCALAR_TYPES = {BINARY, CATEGORY, NUMERICAL}
 class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset."""
 
-    def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
+    def __init__(self, df: Union[str, DataFrame], features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
         self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
@@ -86,7 +86,7 @@ class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: DataFrame, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         return RayDataset(dataset, get_proc_features(config), training_set_metadata)
 
     def save(
