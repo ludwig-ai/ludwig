@@ -18,7 +18,7 @@ from typing import ClassVar, Iterable, List, Optional, Tuple, Union
 import torch
 from marshmallow import fields, missing, ValidationError
 from marshmallow.decorators import validates
-from marshmallow.utils import INCLUDE
+from marshmallow.utils import EXCLUDE, RAISE
 from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
@@ -110,7 +110,7 @@ class BaseOptimizer:
             )
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_optimizer(name="sgd")
@@ -124,6 +124,11 @@ class SGDOptimizer(BaseOptimizer):
         ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"], default="sgd", nullable=False
     )
     lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :
+    momentum: float = NonNegativeFloat(default=0)
+    weight_decay: float = NonNegativeFloat(default=0)
+    dampening: float = NonNegativeFloat(default=0)
+    nesterov: bool = False
 
 
 # TODO: Check range limits/validation in the below classes? Also some hyperparameters supported by Torch currently do
@@ -136,6 +141,9 @@ class AdamOptimizer(BaseOptimizer):
     lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
     betas: Tuple[float, float] = (0.9, 0.999)
     eps: float = NonNegativeFloat(default=1e-08)
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
+    weight_decay: float = NonNegativeFloat(default=0)
+    amsgrad: bool = False
 
     @validates("betas")
     def validateBetas(self, data):
@@ -152,6 +160,9 @@ class AdadeltaOptimizer(BaseOptimizer):
     type: str = "adadelta"
     rho: float = FloatRange(default=0.95, min=0.0, max=1.0)
     eps: float = NonNegativeFloat(default=1e-08)
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :
+    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)
+    weight_decay: float = NonNegativeFloat(default=0)
 
 
 @register_optimizer(name="adagrad")
@@ -160,17 +171,33 @@ class AdagradOptimizer(BaseOptimizer):
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
     type: str = "adagrad"
     initial_accumulator_value: float = NonNegativeFloat(default=0.1)
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
+    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
+    lr_decay: float = 0
+    weight_decay: float = 0
+    eps: float = 1e-10
 
 
-# TODO: No vars for adamax?
 @register_optimizer(name="adamax")
 @dataclass
 class AdamaxOptimizer(BaseOptimizer):
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
     type: str = "adamax"
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adamax.html#torch.optim.Adamax :
+    lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
+    betas: Tuple[float, float] = (0.9, 0.999)
+    eps: float = NonNegativeFloat(default=1e-08)
+    weight_decay: float = NonNegativeFloat(default=0)
+
+    @validates("betas")
+    def validateBetas(self, data):
+        if isinstance(data, tuple) and list(map(type, data)) == [float, float]:
+            if all(list(map(lambda b: 0.0 <= b <= 1.0, data))):
+                return data
+        raise ValidationError(f'Field "betas" should be of type "Tuple[float, float]", instead received: {data}')
 
 
-# NOTE: keep ftrl and nadam optimizers out of registry since Torch does not have corresponding classes for them:
+# NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
 @dataclass
 class FtrlOptimizer(BaseOptimizer):
@@ -182,12 +209,24 @@ class FtrlOptimizer(BaseOptimizer):
     l2_regularization_strength: float = NonNegativeFloat(default=0.0)
 
 
-# TODO: No vars for nadam?
 # @register_optimizer(name="nadam")
 @dataclass
 class NadamOptimizer(BaseOptimizer):
     # torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
     type: str = "nadam"
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
+    lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
+    betas: Tuple[float, float] = (0.9, 0.999)
+    eps: float = NonNegativeFloat(default=1e-08)
+    weight_decay: float = NonNegativeFloat(default=0)
+    momentum_decay: float = NonNegativeFloat(default=4e-3)
+
+    @validates("betas")
+    def validateBetas(self, data):
+        if isinstance(data, tuple) and list(map(type, data)) == [float, float]:
+            if all(list(map(lambda b: 0.0 <= b <= 1.0, data))):
+                return data
+        raise ValidationError(f'Field "betas" should be of type "Tuple[float, float]", instead received: {data}')
 
 
 @register_optimizer(name="rmsprop")
@@ -199,6 +238,8 @@ class RMSPropOptimizer(BaseOptimizer):
     momentum: float = NonNegativeFloat(default=0.0)
     eps: float = NonNegativeFloat(default=1e-10)
     centered: bool = False
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:
+    alpha: float = NonNegativeFloat(default=0.99)
 
 
 class OptimizerMarshmallowField(fields.Field):
