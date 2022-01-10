@@ -24,7 +24,7 @@ from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
-from ludwig.utils.schema_utils import FloatRange, NonNegativeFloat, StringOptions
+from ludwig.utils.schema_utils import Dict, FloatRange, NonNegativeFloat, StringOptions
 
 optimizer_registry = Registry()
 
@@ -257,7 +257,7 @@ class OptimizerMarshmallowField(fields.Field):
         raise ValidationError("Field should be dict")
 
     def _jsonschema_type_mapping(self):
-        return {"oneOf": [{"type": "null"}, js().dump(BaseOptimizer.Schema())["definitions"]["BaseOptimizer"]]}
+        return {"oneOf": [{"type": "null"}, *list(get_all_optimizer_json_schemas().values())]}
 
 
 def OptimizerDataclassField(default={"type": "adam"}):
@@ -291,7 +291,7 @@ def OptimizerDataclassField(default={"type": "adam"}):
 #     }
 
 
-def get_all_optimizer_json_schemas() -> List[str]:
+def get_all_optimizer_json_schemas() -> Dict[str]:
     optimizer_schemas_json = {}
     for opt in optimizer_registry:
         schema_cls = optimizer_registry[opt][1]
