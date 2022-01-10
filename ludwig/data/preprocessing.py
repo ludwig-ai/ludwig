@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1121,7 +1121,7 @@ def build_metadata(
     feature_configs: List[Dict[str, Any]],
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
-):
+) -> Dict[str, Any]:
     for feature_config in feature_configs:
         if feature_config[NAME] in metadata:
             continue
@@ -1317,7 +1317,9 @@ def preprocess_for_training(
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
-):
+) -> Tuple[Dataset, Dataset, Dataset, Dict[str, Any]]:
+    """Returns training, val and test datasets with training set metadata."""
+
     # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")

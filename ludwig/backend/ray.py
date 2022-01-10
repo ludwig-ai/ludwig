@@ -17,7 +17,7 @@
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import dask
 import numpy as np
@@ -191,7 +191,13 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
-    def train(self, training_set, validation_set=None, test_set=None, **kwargs):
+    def train(
+        self,
+        training_set: RayDataset,
+        validation_set: Optional[RayDataset] = None,
+        test_set: Optional[RayDataset] = None,
+        **kwargs,
+    ):
         executable_kwargs = self.executable_kwargs
 
         kwargs = {
