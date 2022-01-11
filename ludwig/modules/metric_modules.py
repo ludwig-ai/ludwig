@@ -163,7 +163,7 @@ class MeanMetric(LudwigMetric):
 
     def reset(self):
         super().reset()
-        self.avg = _MeanMetric()
+        self.avg.reset()
 
     @abstractmethod
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
