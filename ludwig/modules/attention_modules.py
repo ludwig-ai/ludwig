@@ -88,7 +88,15 @@ class MultiHeadSelfAttention(LudwigModule):
 
 
 class TransformerBlock(LudwigModule):
-    def __init__(self, input_size, sequence_size, hidden_size, num_heads, output_size, dropout=0.1):
+    def __init__(
+        self,
+        input_size: int,
+        sequence_size: int,
+        hidden_size: int,
+        num_heads: int,
+        output_size: int,
+        dropout: float = 0.1,
+    ):
         super().__init__()
         self.input_size = input_size
         self.sequence_size = sequence_size
@@ -124,13 +132,13 @@ class TransformerBlock(LudwigModule):
 class TransformerStack(LudwigModule):
     def __init__(
         self,
-        input_size,
-        sequence_size,
-        hidden_size=256,
-        num_heads=8,
-        output_size=256,
-        num_layers=1,
-        dropout=0.1,
+        input_size: int,
+        sequence_size: int,
+        hidden_size: int = 256,
+        num_heads: int = 8,
+        output_size: int = 256,
+        num_layers: int = 1,
+        dropout: float = 0.1,
         **kwargs,
     ):
         super().__init__()

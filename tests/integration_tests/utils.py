@@ -224,7 +224,7 @@ def audio_feature(folder, **kwargs):
             {"filter_size": 400, "pool_size": 16, "num_filters": 32, "regularize": "false"},
             {"filter_size": 40, "pool_size": 10, "num_filters": 64, "regularize": "false"},
         ],
-        "output_size": 256,
+        "output_size": 16,
         "destination_folder": folder,
     }
     feature.update(kwargs)
