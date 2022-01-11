@@ -35,6 +35,7 @@ import numpy as np
 import pandas as pd
 import ray
 import torch
+from tabulate import tabulate
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
@@ -398,14 +399,22 @@ class LudwigModel:
 
                     if not skip_save_training_description:
                         save_json(description_fn, description)
+
                     # print description
-                    logger.info(f"Experiment name: {experiment_name}")
-                    logger.info(f"Model name: {model_name}")
-                    logger.info(f"Output directory: {output_directory}")
-                    logger.info("\n")
+                    experiment_description = [
+                        ["Experiment name", experiment_name],
+                        ["Model name", model_name],
+                        ["Output directory", output_directory],
+                    ]
                     for key, value in description.items():
-                        logger.info(f"{key}: {pformat(value, indent=4)}")
-                    logger.info("\n")
+                        if key != "config":  # Config is printed separately.
+                            experiment_description.append([key, pformat(value, indent=4)])
+
+                    print_boxed("Experiment description")
+                    logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
+
+                    print_boxed("Ludwig config")
+                    logger.info(pformat(self.config, indent=4))
 
                 for callback in self.callbacks:
                     callback.on_preprocess_start(self.config)
@@ -440,15 +449,19 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                logger.info(f"Training set: {len(training_set)}")
+                dataset_statistics = [["Dataset", "Size"]]
+                dataset_statistics.append(["Training", len(training_set)])
                 if validation_set is not None:
-                    logger.info(f"Validation set: {len(validation_set)}")
+                    dataset_statistics.append(["Validation", len(validation_set)])
                 if test_set is not None:
-                    logger.info(f"Test set: {len(test_set)}")
+                    dataset_statistics.append(["Test", len(test_set)])
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
                     save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
+
+                logger.info("\nDataset sizes:")
+                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
             for callback in self.callbacks:
                 callback.on_train_init(
@@ -464,9 +477,10 @@ class LudwigModel:
             # if it was provided it means it was already loaded
             if not self.model:
                 if self.backend.is_coordinator():
-                    print_boxed("MODEL", print_fun=logger.debug)
+                    print_boxed("MODEL")
                 # update config with metadata properties
                 update_config_with_metadata(self.config, training_set_metadata)
+                logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
             # init trainer
@@ -543,6 +557,7 @@ class LudwigModel:
                     best_function = get_best_function(validation_metric)
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
+                        print_boxed("Training report")
                         epoch_best_vali_metric, best_vali_metric = best_function(
                             enumerate(validation_field_result[validation_metric]), key=lambda pair: pair[1]
                         )
@@ -574,6 +589,7 @@ class LudwigModel:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
 
+                print_boxed("Finished")
                 return train_stats, preprocessed_data, output_url
 
     def train_online(
@@ -1750,7 +1766,6 @@ def get_experiment_description(
         description["data_format"] = str(data_format)
 
     description["config"] = config
-
     description["torch_version"] = torch.__version__
 
     compute_description = {"num_nodes": 1}
