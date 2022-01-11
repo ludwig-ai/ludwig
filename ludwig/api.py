@@ -62,6 +62,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
+from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -1432,26 +1433,10 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def save_savedmodel(self, save_path: str) -> None:
-        """This function allows to save models on disk.
-
-        # Inputs
-
-        :param  save_path: (str) path to the directory where the SavedModel
-                is going to be saved.
-
-        # Return
-
-        :return: `None`
-
-        # Example usage
-
-        ```python
-        ludwig_model.save_for_serving(save_path)
-        ```
-        """
+    def to_torchscript(self):
         self._check_initialization()
-        self.model.save_savedmodel(save_path)
+        inf_model = InferenceModule(self.config, self.training_set_metadata)
+        return torch.jit.trace(inf_model, inf_model.sample_inputs(), strict=False)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
