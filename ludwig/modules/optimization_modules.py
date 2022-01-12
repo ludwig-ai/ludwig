@@ -39,6 +39,18 @@ def register_optimizer(name: str):
 
 @dataclass
 class BaseOptimizer:
+    """Base class for optimizers. Not meant to be used directly as the dataclass format prevents arbitrary
+    properties from being set. Consequently, in child classes, all properties from the correspondong
+    `torch.optim.Optimizer` class are copied over: check each class to check which attributes are different from
+    the torch-specified defaults.
+
+    :param torch_type: Class variable pointing to the corresponding `torch.optim.Optimizer` class.
+    :param type: Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
+           Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
+           result in a `ValidationError`.
+    :param Meta: Sub-class specifying meta information for Marshmallow. Used for excluding unknown properties.
+    """
+
     torch_type: ClassVar[Optional[torch.optim.Optimizer]] = None
     type: str  # StringOptions(optimizer_registry.keys(), default=None)
 
@@ -163,6 +175,10 @@ class RMSPropOptimizer(BaseOptimizer):
 
 
 class OptimizerMarshmallowField(fields.Field):
+    """Custom marshmallow field that deserializes a dict to a valid optimizer from
+    `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema for
+    external usage."""
+
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, dict):
             if "type" in value:
@@ -181,6 +197,11 @@ class OptimizerMarshmallowField(fields.Field):
 
 
 def OptimizerDataclassField(default={"type": "adam"}):
+    """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
+    `ludwig.modules.optimization_modules.optimizer_registry`.
+
+    Does not allow `None`, sets default optimizer to 'adam'.
+    """
     try:
         opt = optimizer_registry[default["type"].lower()][1]
         if default["type"] not in optimizer_registry:
@@ -217,6 +238,8 @@ class Clipper:
 
 
 def create_optimizer_with_clipper(model, optimizer=SGDOptimizer(), clipper=Clipper(clipglobalnorm=5.0), horovod=None):
+    """Creates an appropriately distributed torch optimizer, returns it and a
+    `ludwig.modules.optimization_modules.Clipper` object for gradient clipping."""
     optimizer_cls = get_from_registry(optimizer.type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
     cls_kwargs = {k: optimizer.__dict__[k] for k in optimizer.__dict__ if k != "type"}
     optimizer = create_optimizer(optimizer_cls, model, horovod, **cls_kwargs)
@@ -224,6 +247,8 @@ def create_optimizer_with_clipper(model, optimizer=SGDOptimizer(), clipper=Clipp
 
 
 def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
+    """Takes a given `torch.optim.Optimizer` class and set of attributes via kwargs and constructs and returns a
+    ready-to-use optimizer for training."""
     optimizer = optimizer_cls(params=model.parameters(), **kwargs)
     if horovod:
         optimizer = horovod.DistributedOptimizer(
@@ -234,6 +259,9 @@ def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
 
 
 class ClipperMarshmallowField(fields.Field):
+    """Custom marshmallow field that deserializes a dict to a valid instance of
+    `ludwig.modules.optimization_modules.Clipper` and creates a corresponding JSON schema for external usage."""
+
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, dict):
             try:
@@ -247,6 +275,10 @@ class ClipperMarshmallowField(fields.Field):
 
 
 def ClipperDataclassField(default={}, allow_none=True):
+    """Custom dataclass field for `ludwig.modules.optimization_modules.Clipper`.
+
+    Allows `None` by default.
+    """
     return field(
         metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
         default_factory=lambda: Clipper.Schema().load(default),
