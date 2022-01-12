@@ -160,6 +160,7 @@ class RMSPropOptimizer(BaseOptimizer):
     eps: float = NonNegativeFloat(default=1e-10)
     centered: bool = False
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:
+    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
     alpha: float = NonNegativeFloat(default=0.99)
 
 
