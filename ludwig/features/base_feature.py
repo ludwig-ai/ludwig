@@ -144,10 +144,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def preprocess_inference_graph(t: Any, metadata: Dict[str, Any]):
-        raise NotImplementedError("Torchscript tracing not supported for feature")
-
     def create_sample_input(self):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([2, *self.input_shape]).to(self.input_dtype)
@@ -164,6 +160,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     def initialize_encoder(self, encoder_parameters):
         return get_encoder_cls(self.type(), self.encoder)(**encoder_parameters)
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        raise NotImplementedError("Torchscript tracing not supported for feature")
 
 
 class OutputFeature(BaseFeature, LudwigModule, ABC):
@@ -425,9 +425,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         raise NotImplementedError
 
     @staticmethod
-    def postprocess_inference_graph(
-        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
-    ) -> Dict[str, torch.Tensor]:
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
 
     @staticmethod

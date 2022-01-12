@@ -50,6 +50,30 @@ from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 logger = logging.getLogger(__name__)
 
 
+class _CategoryPreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.str2idx = metadata["str2idx"]
+
+    def forward(self, s: str):
+        s = s.strip()
+        return self.str2idx.get(s, self.str2idx[UNKNOWN_SYMBOL])
+
+
+class _CategoryPostprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.idx2str = metadata["idx2str"]
+
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        lookup_table = {i: v for i, v in enumerate(self.idx2str)}
+        inv_preds = lookup_table.get(preds[PREDICTIONS], "")
+        return {
+            PREDICTIONS: inv_preds,
+            PROBABILITIES: preds[PROBABILITIES],
+        }
+
+
 class CategoryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
@@ -164,9 +188,8 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     @staticmethod
-    def preprocess_inference_graph(s: str, metadata: Dict[str, Any]):
-        s = s.strip()
-        return metadata["str2idx"].get(s, metadata["str2idx"][UNKNOWN_SYMBOL])
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPreprocessing(metadata)
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
@@ -372,15 +395,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return predictions
 
     @staticmethod
-    def postprocess_inference_graph(
-        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
-    ) -> Dict[str, torch.Tensor]:
-        lookup_table = {i: v for i, v in enumerate(metadata["idx2str"])}
-        inv_preds = lookup_table.get(preds[PREDICTIONS], "")
-        return {
-            PREDICTIONS: inv_preds,
-            PROBABILITIES: preds[PROBABILITIES],
-        }
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPostprocessing(metadata)
 
     @staticmethod
     def populate_defaults(output_feature):

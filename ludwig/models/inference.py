@@ -10,47 +10,40 @@ from ludwig.utils.misc_utils import get_from_registry
 
 class InferenceModule(nn.Module):
     def __init__(self, model: ECD, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+        super().__init__()
         self.model = model.to_torchscript()
-        self.config = config
-        self.training_set_metadata = training_set_metadata
-        self.input_features = {
+
+        input_features = {
             feature[NAME]: get_from_registry(feature[TYPE], input_type_registry)(feature)
             for feature in self.config["input_features"]
         }
-
-    def forward(self, inputs):
-        preproc_inputs = {
-            feature_name: feature.preprocess_inference_graph(
-                inputs[feature_name], self.training_set_metadata[feature_name]
-            )
-            for feature_name, feature in self.input_features.items()
-        }
-
-        preproc_outputs = self.model.call(preproc_inputs)
+        self.preproc_modules = nn.ModuleDict(
+            {
+                feature_name: feature.create_preproc_module(training_set_metadata)
+                for feature_name, feature in input_features.items()
+            }
+        )
 
         output_features = {
             feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)(feature)
             for feature in self.config["output_features"]
         }
+        self.postproc_modules = nn.ModuleDict(
+            {
+                feature_name: feature.create_postproc_module(training_set_metadata)
+                for feature_name, feature in output_features.items()
+            }
+        )
 
-        preproc_preds = {
-            feature_name: feature.predictions(preproc_outputs[feature_name], training=False)
-            for feature_name, feature in output_features.items()
+    def forward(self, inputs):
+        preproc_inputs = {
+            feature_name: self.preproc_modules[feature_name](inpt) for feature_name, inpt in inputs.items()
         }
 
-        outputs = {
-            feature_name: feature.postprocess_inference_graph(
-                preproc_preds[feature_name], self.training_set_metadata[feature_name]
-            )
-            for feature_name, feature in output_features.items()
+        model_outputs = self.model(preproc_inputs)
+
+        postproc_outputs = {
+            feature_name: self.postproc_modules[feature_name](outpt) for feature_name, outpt in model_outputs.items()
         }
 
-        return outputs
-
-    def sample_inputs(self):
-        inputs = {
-            feature_name: feature.create_inference_input(feature_name)
-            for feature_name, feature in self.input_features.items()
-        }
-
-        return inputs
+        return postproc_outputs

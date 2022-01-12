@@ -198,7 +198,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     # Configure features to be tested:
     input_features = [
         # binary_feature(),
-        numerical_feature(),
+        # numerical_feature(),
         category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
@@ -214,7 +214,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     output_features = [
         category_feature(vocab_size=3),
         # binary_feature(),
-        numerical_feature(),
+        # numerical_feature(),
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
         # set_feature(vocab_size=3),
@@ -240,4 +240,4 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Create graph inference model (Tensorflow) from trained Ludwig model.
     # Note that Tensorflow is running with eager execution enabled:
-    ludwig_model.to_torchscript()
+    _ = ludwig_model.to_torchscript()
