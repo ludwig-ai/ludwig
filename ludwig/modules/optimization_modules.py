@@ -218,8 +218,9 @@ class Clipper:
 
 
 def create_optimizer_with_clipper(model, optimizer=SGDOptimizer(), clipper=Clipper(clipglobalnorm=5.0), horovod=None):
-    optimizer_cls = get_from_registry(type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
-    optimizer = create_optimizer(optimizer_cls, model, horovod, **optimizer.__dict__)
+    optimizer_cls = get_from_registry(optimizer.type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
+    cls_kwargs = {k: optimizer.__dict__[k] for k in optimizer.__dict__ if k != "type"}
+    optimizer = create_optimizer(optimizer_cls, model, horovod, **cls_kwargs)
     return optimizer, clipper
 
 
