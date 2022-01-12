@@ -70,7 +70,7 @@ class Combiner(LudwigModule, ABC):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features]
+        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features.keys()]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     @property
@@ -78,13 +78,13 @@ class Combiner(LudwigModule, ABC):
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
-        return {k: self.input_features[k].output_shape for k in self.input_features}
+        return {k: self.input_features[k].output_shape for k in self.input_features.keys()}
 
     @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
         pseudo_input = {}
-        for k in self.input_features:
+        for k in self.input_features.keys():
             pseudo_input[k] = {
                 "encoder_output": torch.rand(
                     2, *self.input_features[k].output_shape, dtype=self.input_dtype, device=self.device

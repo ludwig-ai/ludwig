@@ -595,7 +595,7 @@ class Trainer(BaseTrainer):
         if self.validation_field == "combined":
             valid_validation_field = True
             if self.validation_metric is not LOSS and len(output_features) == 1:
-                only_of = next(iter(output_features))
+                only_of = output_features.keys()[0]
                 if self.validation_metric in metrics_names[only_of]:
                     self._validation_field = only_of
                     logger.warning(
@@ -605,7 +605,7 @@ class Trainer(BaseTrainer):
                         "but is valid for '{}'.".format(only_of, self.validation_metric, only_of)
                     )
         else:
-            for output_feature in output_features:
+            for output_feature in output_features.keys():
                 if self.validation_field == output_feature:
                     valid_validation_field = True
 
@@ -1004,7 +1004,7 @@ class Trainer(BaseTrainer):
         return self._validation_metric
 
     def append_metrics(self, dataset_name, results, metrics_log, tables):
-        for output_feature in self.model.output_features:
+        for output_feature in self.model.output_features.keys():
             scores = [dataset_name]
 
             # collect metric names based on output features metrics to
