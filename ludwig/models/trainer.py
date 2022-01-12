@@ -24,12 +24,12 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import psutil
 import torch
-from marshmallow import INCLUDE
+from marshmallow.utils import RAISE
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
@@ -103,9 +103,46 @@ class BaseTrainer(ABC):
 
 @dataclass
 class TrainerConfig:
-    """Test thing."""
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.
 
-    """Test 2"""
+    :param optimizer: An object that specifies a torch-supported optimizer and its attributes, set to adam by default.
+    :param validation_field: The first output feature, by default it is set
+           as the same field of the first output feature.
+    :param validation_metric: The metric used on the validation field, set by default to accuracy.
+    :param regularization_lambda: Strength of the $L2$ regularization
+    :param regularization_type: Type of regularization, (l1, l2, l1_l2).
+    :param epochs: Number of epochs the algorithm is intended to be run over
+    :param learning_rate: Learning rate for the algorithm, represents how
+           much to scale the gradients by
+    :param batch_size: Size of batch to pass to the model for training.
+    :param eval_batch_size: Size of batch to pass to the model for evaluation.
+    :param should_shuffle: Shuffle batches during training when true (default: True).
+    :param validation_field: The first output feature, by default it is set
+           as the same field of the first output feature.
+    :param validation_metric: metric used on the validation field, it is
+           accuracy by default
+    :param dropout: dropout probability (probability of dropping
+           a neuron in a given layer)
+    :param early_stop: How many epochs without any improvement in the
+           validation_metric triggers the algorithm to stop
+    :param reduce_learning_rate_on_plateau: Reduces the learning rate when
+           the algorithm hits a plateau (i.e. the performance on the
+           validation does not improve)
+    :param reduce_learning_rate_on_plateau_patience: How many epochs have
+           to pass before the learning rate reduces
+    :param reduce_learning_rate_on_plateau_rate: Rate at which we reduce
+           the learning rate
+    :param increase_batch_size_on_plateau: Increase the batch size on a
+           plateau
+    :param increase_batch_size_on_plateau_patience: How many epochs to wait
+           for before increasing the batch size
+    :param increase_batch_size_on_plateau_rate: The rate at which the batch
+           size increases.
+    :param increase_batch_size_on_plateau_max: The maximum size of the batch
+    :param learning_rate_warmup_epochs: The number of epochs to warmup the
+           learning rate for.
+    """
+
     optimizer: Optional[BaseOptimizer] = OptimizerDataclassField(default={"type": "adam"})
     epochs: int = schema.PositiveInteger(default=100)
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
@@ -145,7 +182,7 @@ class TrainerConfig:
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 class Trainer(BaseTrainer):
@@ -158,114 +195,21 @@ class Trainer(BaseTrainer):
     def __init__(
         self,
         model: ECD,
-        # optimizer=None,
-        # epochs=100,
-        # regularization_lambda=0.0,
-        # regularization_type=None,
-        # learning_rate=0.001,
-        # decay=False,
-        # decay_rate=0.96,
-        # decay_steps=10000,
-        # staircase=False,
-        # batch_size=128,
-        # eval_batch_size=None,
-        # should_shuffle=True,
-        # bucketing_field=None, ####
-        # validation_field="combined",
-        # validation_metric="loss",
-        # early_stop=20,
-        # reduce_learning_rate_on_plateau=0,
-        # reduce_learning_rate_on_plateau_patience=5,
-        # reduce_learning_rate_on_plateau_rate=0.5,
-        # reduce_learning_rate_eval_metric=LOSS,
-        # reduce_learning_rate_eval_split=TRAINING,
-        # increase_batch_size_on_plateau=0,
-        # increase_batch_size_on_plateau_patience=5,
-        # increase_batch_size_on_plateau_rate=2,
-        # increase_batch_size_on_plateau_max=512,
-        # increase_batch_size_eval_metric=LOSS,
-        # increase_batch_size_eval_split=TRAINING,
-        # learning_rate_warmup_epochs=1,
-        resume=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        callbacks=None,
-        random_seed=default_random_seed,
-        horovod=None,
-        debug=False,
-        device=None,
-        config: TrainerConfig = None,
+        resume: float = False,
+        skip_save_model: bool = False,
+        skip_save_progress: bool = False,
+        skip_save_log: bool = False,
+        callbacks: List = None,
+        random_seed: float = default_random_seed,
+        horovod: Optional[Dict] = None,
+        debug: bool = False,
+        device: Optional[str] = None,
+        config: Optional[TrainerConfig] = TrainerConfig(),
         **kwargs,
     ):
-        """Trains a model with a set of hyperparameters listed below. Customizable.
+        """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
-        :param training_set: The training set
-        :param validation_set: The validation dataset
-        :param test_set: The test dataset
-        :param validation_field: The first output feature, by default it is set
-               as the same field of the first output feature.
-        :param validation_metric: metric used on the validation field, it is
-               accuracy by default
-        :type validation_metric:
-        :param save_path: The path to save the file
-        :type save_path: filepath (str)
-        :param regularization_lambda: Strength of the $L2$ regularization
-        :type regularization_lambda: Integer
-        :param regularization_type: Type of regularization, (l1, l2, l1_l2).
-        :type regularization_type: str
-        :param epochs: Number of epochs the algorithm is intended to be run over
-        :type epochs: Integer
-        :param learning_rate: Learning rate for the algorithm, represents how
-               much to scale the gradients by
-        :type learning_rate: Integer
-        :param batch_size: Size of batch to pass to the model for training.
-        :type batch_size: Integer
-        :param eval_batch_size: Size of batch to pass to the model for evaluation.
-        :type eval_batch_size: Integer
-        :param should_shuffle: Shuffle batches during training when true (default: True).
-        :type should_shuffle: Boolean
-        :param bucketing_field: when batching, buckets datapoints based the
-               length of a field together. Bucketing on text length speeds up
-               training of RNNs consistently, 30% in some cases
-        :type bucketing_field:
-        :param validation_field: The first output feature, by default it is set
-               as the same field of the first output feature.
-        :param validation_metric: metric used on the validation field, it is
-               accuracy by default
-        :type validation_metric:
-        :param dropout: dropout probability (probability of dropping
-               a neuron in a given layer)
-        :type dropout: Float
-        :param early_stop: How many epochs without any improvement in the
-               validation_metric triggers the algorithm to stop
-        :type early_stop: Integer
-        :param reduce_learning_rate_on_plateau: Reduces the learning rate when
-               the algorithm hits a plateau (i.e. the performance on the
-               validation does not improve)
-        :type reduce_learning_rate_on_plateau: Float
-        :param reduce_learning_rate_on_plateau_patience: How many epochs have
-               to pass before the learning rate reduces
-        :type reduce_learning_rate_on_plateau_patience: Float
-        :param reduce_learning_rate_on_plateau_rate: Rate at which we reduce
-               the learning rate
-        :type reduce_learning_rate_on_plateau_rate: Float
-        :param increase_batch_size_on_plateau: Increase the batch size on a
-               plateau
-        :type increase_batch_size_on_plateau: Integer
-        :param increase_batch_size_on_plateau_patience: How many epochs to wait
-               for before increasing the batch size
-        :type increase_batch_size_on_plateau_patience: Integer
-        :param increase_batch_size_on_plateau_rate: The rate at which the batch
-               size increases.
-        :type increase_batch_size_on_plateau_rate: Float
-        :param increase_batch_size_on_plateau_max: The maximum size of the batch
-        :type increase_batch_size_on_plateau_max: Integer
-        :param learning_rate_warmup_epochs: The number of epochs to warmup the
-               learning rate for.
-        :type learning_rate_warmup_epochs: Integer
         :param resume: Resume training a model that was being trained.
-        :type resume: Boolean
         :param skip_save_model: disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
@@ -274,32 +218,29 @@ class Trainer(BaseTrainer):
                the weights and just find out what performance a model can get
                with a set of hyperparameters, use this parameter to skip it,
                but the model will not be loadable later on.
-        :type skip_save_model: Boolean
         :param skip_save_progress: disables saving progress each epoch.
                By default Ludwig saves weights and stats  after each epoch
                for enabling resuming of training, but if the model is
                really big that can be time consuming and will uses twice
                as much space, use this parameter to skip it, but training
                cannot be resumed later on
-        :type skip_save_progress: Boolean
         :param skip_save_log: Disables saving TensorBoard
                logs. By default Ludwig saves logs for the TensorBoard, but if it
                is not needed turning it off can slightly increase the
                overall speed..
-        :type skip_save_log: Boolean
         :param callbacks: a list of `ludwig.callbacks.Callback` objects that
                provide hooks into the Ludwig pipeline.
-        :type: list
         :param random_seed: Default initialization for the random seeds
-        :type: Float
         :param horovod: Horovod parameters
-        :type horovod: dict
         :param debug: Enables debugging mode, which prints out a lot of
                 information about the training process.
         :type debug: Boolean
         :param device: The device to load the model on from a saved checkpoint.
         :type device: str
         """
+        if config is None:
+            config = TrainerConfig()
+
         self.epochs = config.epochs
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type

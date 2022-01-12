@@ -149,7 +149,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
                 * N,
             }
 
-    def validateRange(data: Tuple):
+    def validate_range(data: Tuple):
         if isinstance(data, tuple) and list(map(type, data)) == [float] * N:
             if all(list(map(lambda b: min <= b <= max, data))):
                 return data
@@ -163,7 +163,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             "marshmallow_field": FloatTupleMarshmallowField(
                 tuple_fields=[fields.Float()] * N,
                 allow_none=default is None,
-                validate=validateRange,
+                validate=validate_range,
             )
         },
         default=default,
@@ -227,13 +227,13 @@ def IntegerOrStringOptionsField(
     options: List[str],
     nullable: bool,
     default: Union[None, int],
-    isIntegeric: bool = True,
+    is_integer: bool = True,
     min: Union[None, int] = None,
     max: Union[None, int] = None,
-    exclusiveMin: Union[None, int] = None,
-    exclusiveMax: Union[None, int] = None,
+    min_exclusive: Union[None, int] = None,
+    max_exclusive: Union[None, int] = None,
 ):
-    isIntegeric = True
+    is_integer = True
     return NumericOrStringOptionsField(**locals())
 
 
@@ -241,26 +241,26 @@ def NumericOrStringOptionsField(
     options: List[str],
     nullable: bool,
     default: Union[None, int, float],
-    isIntegeric: bool = False,
+    is_integer: bool = False,
     min: Union[None, int] = None,
     max: Union[None, int] = None,
-    exclusiveMin: Union[None, int] = None,
-    exclusiveMax: Union[None, int] = None,
+    min_exclusive: Union[None, int] = None,
+    max_exclusive: Union[None, int] = None,
 ):
     class IntegerOrStringOptionsField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
-            msgType = "integer" if isIntegeric else "numeric"
-            if (isIntegeric and isinstance(value, int)) or isinstance(value, float):
+            msg_type = "integer" if is_integer else "numeric"
+            if (is_integer and isinstance(value, int)) or isinstance(value, float):
                 if (
                     (min is not None and value < min)
-                    or (exclusiveMin is not None and value <= exclusiveMin)
+                    or (min_exclusive is not None and value <= min_exclusive)
                     or (max is not None and value > max)
-                    or (exclusiveMax is not None and value >= exclusiveMax)
+                    or (max_exclusive is not None and value >= max_exclusive)
                 ):
-                    errMinR, errMinN = "(", exclusiveMin if exclusiveMin is not None else "[", min
-                    errMaxR, errMaxN = ")", exclusiveMax if exclusiveMax is not None else "]", max
+                    err_min_r, err_min_n = "(", min_exclusive if min_exclusive is not None else "[", min
+                    errMaxR, errMaxN = ")", max_exclusive if max_exclusive is not None else "]", max
                     raise ValidationError(
-                        f"If value is {msgType} should be in range: {errMinR}{errMinN},{errMaxN}{errMaxR}"
+                        f"If value is {msg_type} should be in range: {err_min_r}{err_min_n},{errMaxN}{errMaxR}"
                     )
                 return value
             if isinstance(value, str):
@@ -268,19 +268,19 @@ def NumericOrStringOptionsField(
                     raise ValidationError(f"String value should be one of {options}")
                 return value
 
-            raise ValidationError(f"Field should be either a {msgType} or string")
+            raise ValidationError(f"Field should be either a {msg_type} or string")
 
         def _jsonschema_type_mapping(self):
-            jsonType = "integer" if isIntegeric else "number"
+            jsonType = "integer" if is_integer else "number"
             tmp = {"type": jsonType}
             if min is not None:
                 tmp["minimum"] = min
-            if exclusiveMin is not None:
-                tmp["exclusiveMinimum"] = exclusiveMin
+            if min_exclusive is not None:
+                tmp["exclusiveMinimum"] = min_exclusive
             if max is not None:
                 tmp["maximum"] = max
-            if exclusiveMax is not None:
-                tmp["exclusiveMaximum"] = exclusiveMax
+            if max_exclusive is not None:
+                tmp["exclusiveMaximum"] = max_exclusive
             return {
                 "oneOf": [
                     tmp,

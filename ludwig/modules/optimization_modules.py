@@ -73,8 +73,6 @@ class SGDOptimizer(BaseOptimizer):
     nesterov: bool = False
 
 
-# TODO: Check range limits/validation in the below classes? Also some hyperparameters supported by Torch currently do
-# not have defaults in defaults.py (e.g. "lr" for all the below), so I haven't added them here yet.
 @register_optimizer(name="adam")
 @dataclass
 class AdamOptimizer(BaseOptimizer):
