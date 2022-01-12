@@ -111,7 +111,8 @@ class TrainerConfig:
     :param regularization_lambda: Strength of the $L2$ regularization
     :param regularization_type: Type of regularization, one of ('l1', 'l2', 'l1_l2').
     :param should_shuffle: Whether to shuffle batches during training when true (default: True).
-    :param learning_rate: Learning rate for the algorithm, represents how much to scale the gradients by
+    :param learning_rate: Learning rate for the algorithm, represents how much to scale the gradients by. Overrides `lr`
+           parameter on `optimizer`.
     :param batch_size: Size of batch to pass to the model for training
     :param eval_batch_size: Size of batch to pass to the model for evaluation
     :param early_stop: How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop
@@ -273,6 +274,7 @@ class Trainer(BaseTrainer):
 
         # ================ Optimizer ================
         optimizer = config.optimizer if config.optimizer is not None else AdamOptimizer()
+        optimizer.lr = self.learning_rate
         clipper = config.gradient_clipping if config.gradient_clipping is not None else Clipper()
         self.optimizer, self.clipper = create_optimizer_with_clipper(
             model, horovod=horovod, optimizer=optimizer, clipper=clipper

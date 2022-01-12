@@ -214,7 +214,33 @@ def OptimizerDataclassField(default={"type": "adam"}):
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
+def generate_extra_json_schema_props(schema_cls) -> str:
+    """Workaround for adding 'description' attrs to a marshmallow schema's JSON Schema.
+
+    TODO(ksbrar): Watch this [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this
+    eventually.
+    """
+
+    def split_params(docstring: str) -> Dict[str, str]:
+        raw_params = docstring.split(":param ")[1:]
+        params = {}
+        for rp in raw_params:
+            k, v = rp.split(":")
+            params[k.strip()] = v.strip()
+        return params
+
+    schema_dump = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
+    if schema_cls.__doc__ is not None:
+        params = split_params(schema_cls.__doc__)
+        for p in params:
+            if p in schema_dump["properties"]:
+                schema_dump["properties"][p]["description"] = params[p]
+
+    return schema_dump
+
+
 def get_all_optimizer_json_schemas() -> Dict[str, str]:
+    """Return a dict of strings, wherein each key is an optimizer name pointing to its stringified JSON schema."""
     optimizer_schemas_json = {}
     for opt in optimizer_registry:
         schema_cls = optimizer_registry[opt][1]
@@ -224,6 +250,13 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
 
 @dataclass
 class Clipper:
+    """Dataclass that holds gradient clipping parameters.
+
+    :param clipglobalnorm: TODO
+    :param clipnorm: TODO
+    :param clipvalue: TODO
+    """
+
     clipglobalnorm: Optional[float] = 0.5
     clipnorm: Optional[float] = None
     clipvalue: Optional[float] = None
