@@ -171,7 +171,7 @@ class TrainerConfig:
     decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
     staircase: bool = False
     gradient_clipping: Optional[Clipper] = ClipperDataclassField()
-    # TODO: Need some more logic here for validating against output features
+    # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = COMBINED
     validation_metric: str = LOSS
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
