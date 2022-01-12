@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import re
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -94,7 +94,7 @@ class LudwigFeatureDict(torch.nn.Module):
         super().__init__()
         self.module_dict = torch.nn.ModuleDict()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> torch.nn.Module:
         return self.module_dict[key + FEATURE_NAME_SUFFIX]
 
     def __setitem__(self, key: str, module: torch.nn.Module) -> None:
@@ -103,17 +103,27 @@ class LudwigFeatureDict(torch.nn.Module):
     def __len__(self) -> int:
         return len(self.module_dict)
 
-    def keys(self):
+    def __next__(self) -> None:
+        raise ValueError(
+            "LudwigFeatureDict doesn't support implicit iteration. Please explicitly iterate over keys() or values()."
+        )
+
+    def __iter__(self) -> None:
+        raise ValueError(
+            "LudwigFeatureDict doesn't support implicit iteration. Please explicitly iterate over keys() or values()."
+        )
+
+    def keys(self) -> List[str]:
         return [feature_name[:-FEATURE_NAME_SUFFIX_LENGTH] for feature_name in self.module_dict.keys()]
 
-    def values(self):
+    def values(self) -> List[torch.nn.Module]:
         return [module for _, module in self.module_dict.items()]
 
-    def items(self):
+    def items(self) -> List[Tuple[str, torch.nn.Module]]:
         return [
             (feature_name[:-FEATURE_NAME_SUFFIX_LENGTH], module) for feature_name, module in self.module_dict.items()
         ]
 
-    def update(self, modules: Dict[str, torch.nn.Module]):
+    def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         for feature_name, module in modules.items():
             self[feature_name] = module

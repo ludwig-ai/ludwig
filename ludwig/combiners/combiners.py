@@ -223,7 +223,7 @@ class SequenceConcatCombiner(Combiner):
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
         seq_size = None
-        for k in self.input_features:
+        for k in self.input_features.keys():
             # dim-2 output_shape implies a sequence [seq_size, hidden]
             if len(self.input_features[k].output_shape) == 2:
                 seq_size = self.input_features[k].output_shape[0]
@@ -233,7 +233,9 @@ class SequenceConcatCombiner(Combiner):
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
-        shapes = [self.input_features[k].output_shape[-1] for k in self.input_features]  # output shape not input shape
+        shapes = [
+            self.input_features[k].output_shape[-1] for k in self.input_features.keys()
+        ]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
