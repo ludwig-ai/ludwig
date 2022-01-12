@@ -4,11 +4,13 @@ from torch import nn
 
 from ludwig.constants import NAME, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.models.ecd import ECD
 from ludwig.utils.misc_utils import get_from_registry
 
 
 class InferenceModule(nn.Module):
-    def __init__(self, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def __init__(self, model: ECD, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+        self.model = model.to_torchscript()
         self.config = config
         self.training_set_metadata = training_set_metadata
         self.input_features = {

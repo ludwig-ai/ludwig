@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import torch
@@ -162,6 +162,11 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def preprocess_inference_graph(s: str, metadata: Dict[str, Any]):
+        s = s.strip()
+        return metadata["str2idx"].get(s, metadata["str2idx"][UNKNOWN_SYMBOL])
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
@@ -365,6 +370,17 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 )
 
         return predictions
+
+    @staticmethod
+    def postprocess_inference_graph(
+        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
+    ) -> Dict[str, torch.Tensor]:
+        lookup_table = {i: v for i, v in enumerate(metadata["idx2str"])}
+        inv_preds = lookup_table.get(preds[PREDICTIONS], "")
+        return {
+            PREDICTIONS: inv_preds,
+            PROBABILITIES: preds[PROBABILITIES],
+        }
 
     @staticmethod
     def populate_defaults(output_feature):

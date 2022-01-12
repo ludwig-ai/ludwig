@@ -190,3 +190,54 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
 
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
+
+
+def test_torchscript_e2e(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    # Configure features to be tested:
+    input_features = [
+        # binary_feature(),
+        numerical_feature(),
+        category_feature(vocab_size=3),
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # vector_feature(),
+        # image_feature(image_dest_folder),
+        # audio_feature(audio_dest_folder),
+        # timeseries_feature(),
+        # date_feature(),
+        # h3_feature(),
+        # set_feature(vocab_size=3),
+        # bag_feature(vocab_size=3),
+    ]
+    output_features = [
+        category_feature(vocab_size=3),
+        # binary_feature(),
+        numerical_feature(),
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # set_feature(vocab_size=3),
+        # vector_feature()
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    # Train Ludwig (Pythonic) model:
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=training_data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+
+    # Create graph inference model (Tensorflow) from trained Ludwig model.
+    # Note that Tensorflow is running with eager execution enabled:
+    ludwig_model.to_torchscript()

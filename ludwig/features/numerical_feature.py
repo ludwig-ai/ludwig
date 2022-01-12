@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import random
-from typing import Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import torch
@@ -53,9 +53,21 @@ class ZScoreTransformer:
         self.sigma = std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.mu) / self.sigma
+        return self._transform(x)
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return self._inverse_transform(x)
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._transform(x)
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._inverse_transform(x)
+
+    def _transform(self, x: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
+        return (x - self.mu) / self.sigma
+
+    def _inverse_transform(self, x: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
         return x * self.sigma + self.mu
 
     @staticmethod
@@ -74,9 +86,21 @@ class MinMaxTransformer:
         self.range = None if min is None or max is None else max - min
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.min_value) / self.range
+        return self._transform(x)
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return self._inverse_transform(x)
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._transform(x)
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._inverse_transform(x)
+
+    def _transform(self, x: Union[np.ndarray, torch.Tensor]):
+        return (x - self.min_value) / self.range
+
+    def _inverse_transform(self, x: Union[np.ndarray, torch.Tensor]):
         if self.range is None:
             raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
         return x * self.range + self.min_value
@@ -104,6 +128,12 @@ class Log1pTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return np.expm1(x)
 
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.log1p(x)
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.expm1(x)
+
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
@@ -119,6 +149,12 @@ class IdentityTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return x
 
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return x
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return x
+
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
@@ -130,6 +166,13 @@ numeric_transformation_registry = {
     "log1p": Log1pTransformer,
     None: IdentityTransformer,
 }
+
+
+def get_transformer(metadata, preprocessing_parameters):
+    return get_from_registry(
+        preprocessing_parameters.get("normalization", None),
+        numeric_transformation_registry,
+    )(**metadata)
 
 
 class NumericalFeatureMixin(BaseFeatureMixin):
@@ -186,10 +229,7 @@ class NumericalFeatureMixin(BaseFeatureMixin):
         proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]].astype(np.float32).values
 
         # normalize data as required
-        numeric_transformer = get_from_registry(
-            preprocessing_parameters.get("normalization", None),
-            numeric_transformation_registry,
-        )(**metadata[feature_config[NAME]])
+        numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
 
         proc_df[feature_config[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature_config[PROC_COLUMN]])
 
@@ -239,6 +279,12 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def preprocess_inference_graph(v: float, metadata):
+        t = torch.Tensor([v])
+        numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
+        return numeric_transformer.transform_inference(t)
 
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
@@ -329,6 +375,13 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             )
 
         return predictions
+
+    @staticmethod
+    def postprocess_inference_graph(
+        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
+    ) -> Dict[str, torch.Tensor]:
+        numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
+        return {PREDICTIONS: numeric_transformer.inverse_transform_inference(preds[PREDICTIONS])}
 
     @staticmethod
     def populate_defaults(output_feature):

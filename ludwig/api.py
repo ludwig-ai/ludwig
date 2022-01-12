@@ -1435,8 +1435,8 @@ class LudwigModel:
 
     def to_torchscript(self):
         self._check_initialization()
-        inf_model = InferenceModule(self.config, self.training_set_metadata)
-        return torch.jit.trace(inf_model, inf_model.sample_inputs(), strict=False)
+        inf_model = InferenceModule(self.model, self.config, self.training_set_metadata)
+        return torch.jit.script(inf_model)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:

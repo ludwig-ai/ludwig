@@ -78,10 +78,13 @@ class ECD(LudwigModule):
         }
         return inputs
 
-    def save_torchscript(self, save_path):
+    def to_torchscript(self):
         model_inputs = self.get_model_inputs()
         # We set strict=False to enable dict inputs and outputs.
-        traced = torch.jit.trace(self, model_inputs, strict=False)
+        return torch.jit.trace(self, model_inputs, strict=False)
+
+    def save_torchscript(self, save_path):
+        traced = self.to_torchscript()
         traced.save(save_path)
 
     @property
