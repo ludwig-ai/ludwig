@@ -38,63 +38,6 @@ def register_optimizer(name: str):
 
 
 @dataclass
-class Clipper:
-    clipglobalnorm: Optional[float] = 0.5
-    clipnorm: Optional[float] = None
-    clipvalue: Optional[float] = None
-
-    def clip_grads(self, variables: Iterable[torch.Tensor]):
-        if self.clipglobalnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-        if self.clipnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-        if self.clipvalue:
-            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
-
-
-def create_optimizer_with_clipper(
-    model, type="sgd", clipglobalnorm=5.0, clipnorm=None, clipvalue=None, horovod=None, **kwargs
-):
-    optimizer_cls = get_from_registry(type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
-    clipper = kwargs["clipper"]
-    if clipper is None:
-        clipper = Clipper(clipglobalnorm=clipglobalnorm, clipnorm=clipnorm, clipvalue=clipvalue)
-    kwargs.pop("clipper", None)
-    optimizer = create_optimizer(optimizer_cls, model, horovod, **kwargs)
-    return optimizer, clipper
-
-
-def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
-    optimizer = optimizer_cls(params=model.parameters(), **kwargs)
-    if horovod:
-        optimizer = horovod.DistributedOptimizer(
-            optimizer,
-            named_parameters=model.named_parameters(),
-        )
-    return optimizer
-
-
-class ClipperMarshmallowField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, dict):
-            try:
-                return Clipper.Schema().load(value)
-            except (TypeError, ValidationError):
-                raise ValidationError(f"Invalid params for clipper: {value}, see Clipper class.")
-        raise ValidationError("Field should be dict")
-
-    def _jsonschema_type_mapping(self):
-        return {"oneOf": [{"type": "null"}, js().dump(Clipper.Schema())["definitions"]["Clipper"]]}
-
-
-def ClipperDataclassField(default={}):
-    return field(
-        metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=False)},
-        default_factory=lambda: Clipper.Schema().load(default),
-    )
-
-
-@dataclass
 class BaseOptimizer:
     torch_type: ClassVar[Optional[torch.optim.Optimizer]] = None
     type: str  # StringOptions(optimizer_registry.keys(), default=None)
@@ -257,3 +200,54 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
         schema_cls = optimizer_registry[opt][1]
         optimizer_schemas_json[opt] = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
     return optimizer_schemas_json
+
+
+@dataclass
+class Clipper:
+    clipglobalnorm: Optional[float] = 0.5
+    clipnorm: Optional[float] = None
+    clipvalue: Optional[float] = None
+
+    def clip_grads(self, variables: Iterable[torch.Tensor]):
+        if self.clipglobalnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+        if self.clipnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+        if self.clipvalue:
+            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
+
+
+def create_optimizer_with_clipper(model, optimizer=SGDOptimizer(), clipper=Clipper(clipglobalnorm=5.0), horovod=None):
+    optimizer_cls = get_from_registry(type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
+    optimizer = create_optimizer(optimizer_cls, model, horovod, **optimizer.__dict__)
+    return optimizer, clipper
+
+
+def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
+    optimizer = optimizer_cls(params=model.parameters(), **kwargs)
+    if horovod:
+        optimizer = horovod.DistributedOptimizer(
+            optimizer,
+            named_parameters=model.named_parameters(),
+        )
+    return optimizer
+
+
+class ClipperMarshmallowField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, dict):
+            try:
+                return Clipper.Schema().load(value)
+            except (TypeError, ValidationError):
+                raise ValidationError(f"Invalid params for clipper: {value}, see Clipper class.")
+        raise ValidationError("Field should be dict")
+
+    def _jsonschema_type_mapping(self):
+        return {"oneOf": [{"type": "null"}, js().dump(Clipper.Schema())["definitions"]["Clipper"]]}
+
+
+def ClipperDataclassField(default={}, allow_none=True):
+    return field(
+        metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
+        default_factory=lambda: Clipper.Schema().load(default),
+    )

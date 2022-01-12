@@ -51,6 +51,8 @@ from ludwig.modules.metric_modules import get_improved_fun, get_initial_validati
 from ludwig.modules.optimization_modules import (
     AdamOptimizer,
     BaseOptimizer,
+    Clipper,
+    ClipperDataclassField,
     create_optimizer_with_clipper,
     OptimizerDataclassField,
 )
@@ -136,7 +138,7 @@ class TrainerConfig:
     decay_steps: int = schema.PositiveInteger(default=10000)
     decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
     staircase: bool = False
-    # "gradient_clipping": None, # TODO: What is this?
+    gradient_clipping: Optional[Clipper] = ClipperDataclassField()
     # TODO: Need some more logic here for validating against output features
     validation_field: str = COMBINED
     validation_metric: str = LOSS
@@ -345,10 +347,11 @@ class Trainer(BaseTrainer):
         self.model = self.model.to(self.device)
 
         # ================ Optimizer ================
-        optimizer = config.optimizer
-        if optimizer is None:
-            optimizer = AdamOptimizer.Schema().load({})
-        self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer.__dict__)
+        optimizer = config.optimizer if config.optimizer is not None else AdamOptimizer()
+        clipper = config.gradient_clipping if config.gradient_clipping is not None else Clipper()
+        self.optimizer, self.clipper = create_optimizer_with_clipper(
+            model, horovod=horovod, optimizer=optimizer, clipper=clipper
+        )
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
