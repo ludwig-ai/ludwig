@@ -106,23 +106,14 @@ class TrainerConfig:
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.
 
     :param optimizer: An object that specifies a torch-supported optimizer and its attributes, set to adam by default.
-    :param validation_field: The first output feature, by default it is set
-           as the same field of the first output feature.
-    :param validation_metric: The metric used on the validation field, set by default to accuracy.
+    :param epochs: Number of epochs the algorithm is intended to be run over
     :param regularization_lambda: Strength of the $L2$ regularization
     :param regularization_type: Type of regularization, (l1, l2, l1_l2).
-    :param epochs: Number of epochs the algorithm is intended to be run over
+    :param should_shuffle: Shuffle batches during training when true (default: True).
     :param learning_rate: Learning rate for the algorithm, represents how
            much to scale the gradients by
     :param batch_size: Size of batch to pass to the model for training.
     :param eval_batch_size: Size of batch to pass to the model for evaluation.
-    :param should_shuffle: Shuffle batches during training when true (default: True).
-    :param validation_field: The first output feature, by default it is set
-           as the same field of the first output feature.
-    :param validation_metric: metric used on the validation field, it is
-           accuracy by default
-    :param dropout: dropout probability (probability of dropping
-           a neuron in a given layer)
     :param early_stop: How many epochs without any improvement in the
            validation_metric triggers the algorithm to stop
     :param reduce_learning_rate_on_plateau: Reduces the learning rate when
@@ -132,6 +123,8 @@ class TrainerConfig:
            to pass before the learning rate reduces
     :param reduce_learning_rate_on_plateau_rate: Rate at which we reduce
            the learning rate
+    :param reduce_learning_rate_eval_metric: TODO
+    :param reduce_learning_rate_eval_split: TODO
     :param increase_batch_size_on_plateau: Increase the batch size on a
            plateau
     :param increase_batch_size_on_plateau_patience: How many epochs to wait
@@ -139,6 +132,16 @@ class TrainerConfig:
     :param increase_batch_size_on_plateau_rate: The rate at which the batch
            size increases.
     :param increase_batch_size_on_plateau_max: The maximum size of the batch
+    :param increase_batch_size_eval_metric: TODO
+    :param increase_batch_size_eval_split: TODO
+    :param decay: TODO
+    :param decay_steps: TODO
+    :param decay_rate: TODO
+    :param staircase: TODO
+    :param gradient_clipping: TODO
+    :param validation_field: The first output feature, by default it is set
+           as the same field of the first output feature.
+    :param validation_metric: The metric used on the validation field, set by default to accuracy.
     :param learning_rate_warmup_epochs: The number of epochs to warmup the
            learning rate for.
     """
@@ -154,10 +157,10 @@ class TrainerConfig:
         default=0.001, min=0.0, max=1.0, options=["auto"], nullable=False
     )
     batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
-        default=128, options=["auto"], nullable=False, exclusiveMin=0
+        default=128, options=["auto"], nullable=False, min_exclusive=0
     )
     eval_batch_size: Optional[int] = schema.IntegerOrStringOptionsField(
-        default=None, options=["auto"], nullable=True, exclusiveMin=0
+        default=None, options=["auto"], nullable=True, min_exclusive=0
     )
     early_stop: int = schema.IntegerRange(default=5, min=-1)  # Can be -1, which disables early_stop
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
