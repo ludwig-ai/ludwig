@@ -224,7 +224,7 @@ class ParallelCNN(Encoder):
         pool_size=None,
         fc_layers=None,
         num_fc_layers=None,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -317,24 +317,24 @@ class ParallelCNN(Encoder):
                of the list determines the number of stacked fully connected
                layers and the content of each dictionary determines
                the parameters for a specific layer. The available parameters
-               for each layer are: `fc_size`, `norm` and `activation`.
+               for each layer are: `output_size`, `norm` and `activation`.
                If any of those values is missing from
                the dictionary, the default one specified as a parameter of
                the encoder will be used instead. If both `fc_layers` and
                `num_fc_layers` are `None`, a default list will be assigned
                to `fc_layers` with the value
-               `[{fc_size: 512}, {fc_size: 256}]`
+               `[{output_size: 512}, {output_size: 256}]`
                (only applies if `reduce_output` is not `None`).
         :type fc_layers: List
         :param num_fc_layers: if `fc_layers` is `None`, this is the number
                of stacked fully connected layers (only applies if
                `reduce_output` is not `None`).
         :type num_fc_layers: Integer
-        :param fc_size: if a `fc_size` is not already specified in
-               `fc_layers` this is the default `fc_size` that will be used
+        :param output_size: if a `output_size` is not already specified in
+               `fc_layers` this is the default `output_size` that will be used
                for each layer. It indicates the size of the output
                of a fully connected layer.
-        :type fc_size: Integer
+        :type output_size: Integer
         :param norm: if a `norm` is not already specified in `conv_layers`
                or `fc_layers` this is the default `norm` that will be used
                for each layer. It indicates the norm of the output.
@@ -391,7 +391,7 @@ class ParallelCNN(Encoder):
         # both or neither.
         if fc_layers is None and num_fc_layers is None:
             # use default layers with varying filter sizes
-            fc_layers = [{"fc_size": 512}, {"fc_size": 256}]
+            fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
@@ -445,7 +445,7 @@ class ParallelCNN(Encoder):
                 self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
-                default_fc_size=fc_size,
+                default_output_size=output_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
@@ -522,7 +522,7 @@ class StackedCNN(Encoder):
         pool_padding="same",
         fc_layers=None,
         num_fc_layers=None,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -615,24 +615,24 @@ class StackedCNN(Encoder):
                of the list determines the number of stacked fully connected
                layers and the content of each dictionary determines
                the parameters for a specific layer. The available parameters
-               for each layer are: `fc_size`, `norm` and `activation`.
+               for each layer are: `output_size`, `norm` and `activation`.
                If any of those values is missing from
                the dictionary, the default one specified as a parameter of
                the encoder will be used instead. If both `fc_layers` and
                `num_fc_layers` are `None`, a default list will be assigned
                to `fc_layers` with the value
-               `[{fc_size: 512}, {fc_size: 256}]`
+               `[{output_size: 512}, {output_size: 256}]`
                (only applies if `reduce_output` is not `None`).
         :type fc_layers: List
         :param num_fc_layers: if `fc_layers` is `None`, this is the number
                of stacked fully connected layers (only applies if
                `reduce_output` is not `None`).
         :type num_fc_layers: Integer
-        :param fc_size: if a `fc_size` is not already specified in
-               `fc_layers` this is the default `fc_size` that will be used
+        :param output_size: if a `output_size` is not already specified in
+               `fc_layers` this is the default `output_size` that will be used
                for each layer. It indicates the size of the output
                of a fully connected layer.
-        :type fc_size: Integer
+        :type output_size: Integer
         :param norm: if a `norm` is not already specified in `conv_layers`
                or `fc_layers` this is the default `norm` that will be used
                for each layer. It indicates the norm of the output.
@@ -712,7 +712,7 @@ class StackedCNN(Encoder):
         # both or neither.
         if fc_layers is None and num_fc_layers is None:
             # use default layers with varying filter sizes
-            fc_layers = [{"fc_size": 512}, {"fc_size": 256}]
+            fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
@@ -772,7 +772,7 @@ class StackedCNN(Encoder):
                 self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
-                default_fc_size=fc_size,
+                default_output_size=output_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
@@ -820,7 +820,7 @@ class StackedCNN(Encoder):
             hidden = self.fc_stack(hidden, mask=mask)
 
         # no reduction: hidden [batch_size, seq_size, num_filters]
-        # with reduction: hidden [batch_size, fc_size]
+        # with reduction: hidden [batch_size, output_size]
         return {"encoder_output": hidden}
 
 
@@ -844,7 +844,7 @@ class StackedParallelCNN(Encoder):
         pool_size=None,
         fc_layers=None,
         num_fc_layers=None,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -944,24 +944,24 @@ class StackedParallelCNN(Encoder):
                of the list determines the number of stacked fully connected
                layers and the content of each dictionary determines
                the parameters for a specific layer. The available parameters
-               for each layer are: `fc_size`, `norm` and `activation`.
+               for each layer are: `output_size`, `norm` and `activation`.
                If any of those values is missing from
                the dictionary, the default one specified as a parameter of
                the encoder will be used instead. If both `fc_layers` and
                `num_fc_layers` are `None`, a default list will be assigned
                to `fc_layers` with the value
-               `[{fc_size: 512}, {fc_size: 256}]`
+               `[{output_size: 512}, {output_size: 256}]`
                (only applies if `reduce_output` is not `None`).
         :type fc_layers: List
         :param num_fc_layers: if `fc_layers` is `None`, this is the number
                of stacked fully connected layers (only applies if
                `reduce_output` is not `None`).
         :type num_fc_layers: Integer
-        :param fc_size: if a `fc_size` is not already specified in
-               `fc_layers` this is the default `fc_size` that will be used
+        :param output_size: if a `output_size` is not already specified in
+               `fc_layers` this is the default `output_size` that will be used
                for each layer. It indicates the size of the output
                of a fully connected layer.
-        :type fc_size: Integer
+        :type output_size: Integer
         :param norm: if a `norm` is not already specified in `conv_layers`
                or `fc_layers` this is the default `norm` that will be used
                for each layer. It indicates the norm of the output.
@@ -1023,7 +1023,7 @@ class StackedParallelCNN(Encoder):
         # both or neither.
         if fc_layers is None and num_fc_layers is None:
             # use default layers with varying filter sizes
-            fc_layers = [{"fc_size": 512}, {"fc_size": 256}]
+            fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
@@ -1076,7 +1076,7 @@ class StackedParallelCNN(Encoder):
                 self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
-                default_fc_size=fc_size,
+                default_output_size=output_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
@@ -1124,7 +1124,7 @@ class StackedParallelCNN(Encoder):
             hidden = self.fc_stack(hidden, mask=mask)
 
         # no reduction: hidden [batch_size, seq_size, num_filter]
-        # with reduction: hidden [batch_size, fc_size]
+        # with reduction: hidden [batch_size, output_size]
         return {"encoder_output": hidden}
 
 
@@ -1153,7 +1153,7 @@ class StackedRNN(Encoder):
         recurrent_dropout=0.0,
         fc_layers=None,
         num_fc_layers=0,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -1340,7 +1340,7 @@ class StackedRNN(Encoder):
                 self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
-                default_fc_size=fc_size,
+                default_output_size=output_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
@@ -1430,7 +1430,7 @@ class StackedCNNRNN(Encoder):
         recurrent_dropout=0.0,
         fc_layers=None,
         num_fc_layers=0,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -1616,7 +1616,7 @@ class StackedCNNRNN(Encoder):
                 self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
-                default_fc_size=fc_size,
+                default_output_size=output_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
@@ -1667,7 +1667,7 @@ class StackedCNNRNN(Encoder):
             hidden = self.fc_stack(hidden, mask=mask)
 
         # no reduction: hidden [batch_size, seq_size, state_size]
-        # with reduction: hidden [batch_size, seq_size, fc_size]
+        # with reduction: hidden [batch_size, seq_size, output_size]
         # final_state: if rnn/gru [batch_size, state_size]
         #              lstm ([batch_size, state_size], [batch_size, state_size])
         return {"encoder_output": hidden, "encoder_output_state": final_state}
@@ -1688,11 +1688,11 @@ class StackedTransformer(Encoder):
         num_layers=1,
         hidden_size=256,
         num_heads=8,
-        transformer_fc_size=256,
+        transformer_output_size=256,
         dropout=0.1,
         fc_layers=None,
         num_fc_layers=0,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -1860,7 +1860,7 @@ class StackedTransformer(Encoder):
             sequence_size=max_sequence_length,
             hidden_size=hidden_size,
             num_heads=num_heads,
-            fc_size=transformer_fc_size,
+            output_size=transformer_output_size,
             num_layers=num_layers,
             dropout=dropout,
         )
@@ -1879,7 +1879,7 @@ class StackedTransformer(Encoder):
                 self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
-                default_fc_size=fc_size,
+                default_output_size=output_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,

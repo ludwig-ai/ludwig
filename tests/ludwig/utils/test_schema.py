@@ -110,7 +110,7 @@ def test_config_encoders():
                 image_feature("/tmp/destination_folder"),
             ],
             "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
         }
         validate_config(config)
 
@@ -157,7 +157,7 @@ def test_config_bad_feature_type():
     config = {
         "input_features": [{"name": "foo", "type": "fake"}],
         "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
     }
 
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
@@ -168,7 +168,7 @@ def test_config_bad_encoder_name():
     config = {
         "input_features": [sequence_feature(reduce_output="sum", encoder="fake")],
         "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
     }
 
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
@@ -191,7 +191,7 @@ def test_config_bad_preprocessing_param():
             ),
         ],
         "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
     }
 
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):

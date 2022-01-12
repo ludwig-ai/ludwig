@@ -40,9 +40,9 @@ TrainingResult = namedtuple("TrainingResult", ["name", "train_stats"])
 FullyConnectedLayers = namedtuple("FullyConnectedLayers", ["name", "fc_layers"])
 
 list_of_fc_layers = [
-    FullyConnectedLayers(name="Option1", fc_layers=[{"fc_size": 64}]),
-    FullyConnectedLayers(name="Option2", fc_layers=[{"fc_size": 128}, {"fc_size": 64}]),
-    FullyConnectedLayers(name="Option3", fc_layers=[{"fc_size": 128}]),
+    FullyConnectedLayers(name="Option1", fc_layers=[{"output_size": 64}]),
+    FullyConnectedLayers(name="Option2", fc_layers=[{"output_size": 128}, {"output_size": 64}]),
+    FullyConnectedLayers(name="Option3", fc_layers=[{"output_size": 128}]),
 ]
 
 #

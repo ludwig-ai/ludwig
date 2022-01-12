@@ -28,7 +28,7 @@ RANKED_MODIFIABLE_PARAM_LIST = {
     "concat": OrderedDict(
         {
             "training.batch_size": 32,
-            "combiner.fc_size": 64,
+            "combiner.output_size": 64,
             "combiner.num_fc_layers": 1,
         }
     ),

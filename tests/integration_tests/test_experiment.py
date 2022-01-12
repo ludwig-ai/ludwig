@@ -139,7 +139,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
     with open(yaml_filename, "w") as yaml_out:
@@ -265,7 +265,7 @@ def test_basic_image_feature(num_channels, image_source, in_memory, skip_save_pr
                 "num_channels": num_channels,
                 "num_processes": 5,
             },
-            fc_size=16,
+            output_size=16,
             num_filters=8,
         )
     ]
@@ -293,7 +293,7 @@ def test_experiment_infer_image_metadata(tmpdir):
 
     # Resnet encoder
     input_features = [
-        image_feature(folder=image_dest_folder, encoder="stacked_cnn", fc_size=16, num_filters=8),
+        image_feature(folder=image_dest_folder, encoder="stacked_cnn", output_size=16, num_filters=8),
         text_feature(encoder="embed", min_len=1),
         numerical_feature(normalization="zscore"),
     ]
@@ -328,7 +328,7 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
             folder=image_dest_folder,
             encoder="resnet",
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            fc_size=16,
+            output_size=16,
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1),
@@ -363,7 +363,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
             folder=image_dest_folder,
             encoder="stacked_cnn",
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            fc_size=16,
+            output_size=16,
             num_filters=8,
         ),
     ]
@@ -374,7 +374,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
         "training": {"epochs": 2},
     }
@@ -459,7 +459,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
         "training": {"epochs": 2},
     }
@@ -620,7 +620,7 @@ def test_experiment_model_resume(tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
 
@@ -658,7 +658,7 @@ def test_visual_question_answering(tmpdir):
             folder=image_dest_folder,
             encoder="resnet",
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
-            fc_size=8,
+            output_size=8,
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1, level="word"),
@@ -685,7 +685,7 @@ def test_image_resizing_num_channel_handling(tmpdir):
             folder=image_dest_folder,
             encoder="resnet",
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
-            fc_size=8,
+            output_size=8,
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1),

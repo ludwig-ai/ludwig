@@ -20,7 +20,7 @@ def test_tune_batch_size_and_lr(tmpdir):
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {
                 "epochs": 2,
                 "batch_size": "auto",

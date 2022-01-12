@@ -7,7 +7,7 @@ from tests.integration_tests.utils import audio_feature
 BATCH_SIZE = 2
 SEQ_SIZE = 20
 AUDIO_W_SIZE = 16
-DEFAULT_FC_SIZE = 256
+DEFAULT_OUTPUT_SIZE = 256
 
 
 @pytest.mark.parametrize(
@@ -35,4 +35,4 @@ def test_audio_feature(enc_encoder):
     if enc_encoder == "passthrough":
         assert encoder_output["encoder_output"].shape == (BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE)
     else:
-        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_FC_SIZE)
+        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)

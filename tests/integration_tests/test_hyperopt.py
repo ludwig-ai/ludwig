@@ -48,7 +48,7 @@ HYPEROPT_CONFIG = {
         },
         "combiner.fc_layers": {
             "type": "category",
-            "values": [[{"fc_size": 512}, {"fc_size": 256}], [{"fc_size": 512}], [{"fc_size": 256}]],
+            "values": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
         },
         "utterance.cell_type": {"type": "category", "values": ["rnn", "gru"]},
         "utterance.bidirectional": {"type": "category", "values": [True, False]},
@@ -158,9 +158,13 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
             output_feature_name
             + ".fc_layers": {
                 "type": "category",
-                "values": [[{"fc_size": 512}, {"fc_size": 256}], [{"fc_size": 512}], [{"fc_size": 256}]],
+                "values": [
+                    [{"output_size": 64}, {"output_size": 32}],
+                    [{"output_size": 64}],
+                    [{"output_size": 32}],
+                ],
             },
-            output_feature_name + ".fc_size": {"type": "int", "low": 32, "high": 256, "steps": 5},
+            output_feature_name + ".output_size": {"type": "int", "low": 16, "high": 36, "steps": 5},
             output_feature_name + ".num_fc_layers": {"type": "int", "low": 1, "high": 5, "space": "linear", "steps": 4},
         },
         "goal": "minimize",

@@ -43,7 +43,7 @@ def run_api_experiment_separated_datasets(input_features, output_features, data_
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
 
@@ -174,7 +174,7 @@ def test_api_train_online(csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
     }
     model = LudwigModel(config)
 
@@ -278,7 +278,7 @@ def run_api_commands(
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
 
@@ -434,7 +434,7 @@ def test_api_callbacks(csv_filename):
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": epochs, "batch_size": batch_size},
         }
         model = LudwigModel(config, callbacks=[mock_callback])

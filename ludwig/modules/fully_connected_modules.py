@@ -99,7 +99,7 @@ class FCStack(LudwigModule):
         layers=None,
         num_layers=1,
         default_input_rank=2,
-        default_fc_size=256,
+        default_output_size=256,
         default_use_bias=True,
         default_weights_initializer="xavier_uniform",
         default_bias_initializer="zeros",
@@ -124,11 +124,11 @@ class FCStack(LudwigModule):
             self.layers[0]["input_size"] = first_layer_input_size
         for i, layer in enumerate(self.layers):
             if i != 0:
-                layer["input_size"] = self.layers[i - 1]["fc_size"]
+                layer["input_size"] = self.layers[i - 1]["output_size"]
             if "input_rank" not in layer:
                 layer["input_rank"] = default_input_rank
-            if "fc_size" not in layer:
-                layer["fc_size"] = default_fc_size
+            if "output_size" not in layer:
+                layer["output_size"] = default_output_size
             if "use_bias" not in layer:
                 layer["use_bias"] = default_use_bias
             if "weights_initializer" not in layer:
@@ -151,7 +151,7 @@ class FCStack(LudwigModule):
                 FCLayer(
                     input_size=layer["input_size"],
                     input_rank=layer["input_rank"],
-                    output_size=layer["fc_size"],
+                    output_size=layer["output_size"],
                     use_bias=layer["use_bias"],
                     weights_initializer=layer["weights_initializer"],
                     bias_initializer=layer["bias_initializer"],
@@ -168,7 +168,7 @@ class FCStack(LudwigModule):
         prev_fc_layer_size = self.input_size
         for layer in self.stack:
             out = layer(hidden)
-            if self.residual and layer.fc_size == prev_fc_layer_size:
+            if self.residual and layer.output_size == prev_fc_layer_size:
                 hidden = hidden + out
             else:
                 hidden = out

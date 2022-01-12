@@ -40,7 +40,7 @@ class DateEmbed(Encoder):
         embeddings_on_cpu: bool = False,
         fc_layers: Optional[List[Dict]] = None,
         num_fc_layers: int = 0,
-        fc_size: int = 10,
+        output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
@@ -70,8 +70,8 @@ class DateEmbed(Encoder):
         :type fc_layers: List
         :param num_fc_layers: Number of stacked fully connected layers.
         :type num_fc_layers: Integer
-        :param fc_size: Size of each layer.
-        :type fc_size: Integer
+        :param output_size: Size of each layer.
+        :type output_size: Integer
         :param use_bias: bool determines where to use a bias vector.
         :type use_bias: bool
         :param weights_initializer: Initializer for the weights (aka kernel)
@@ -96,7 +96,7 @@ class DateEmbed(Encoder):
         self.year_fc = FCStack(
             first_layer_input_size=1,
             num_layers=1,
-            default_fc_size=1,
+            default_output_size=1,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
@@ -208,7 +208,7 @@ class DateEmbed(Encoder):
             first_layer_input_size=fc_layer_input_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
-            default_fc_size=fc_size,
+            default_output_size=output_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
@@ -273,7 +273,7 @@ class DateWave(Encoder):
         self,
         fc_layers: Optional[List[FCStack]] = None,
         num_fc_layers: int = 1,
-        fc_size: int = 10,
+        output_size: int = 10,
         use_bias: bool = True,
         weights_initializer: str = "xavier_uniform",
         bias_initializer: str = "zeros",
@@ -289,8 +289,8 @@ class DateWave(Encoder):
         :type fc_layers: List
         :param num_fc_layers: Number of stacked fully connected layers.
         :type num_fc_layers: Integer
-        :param fc_size: Size of each layer.
-        :type fc_size: Integer
+        :param output_size: Size of each layer.
+        :type output_size: Integer
         :param use_bias: bool determines where to use a bias vector.
         :type use_bias: bool
         :param weights_initializer: Initializer for the weights (aka kernel)
@@ -315,7 +315,7 @@ class DateWave(Encoder):
         self.year_fc = FCStack(
             first_layer_input_size=1,
             num_layers=1,
-            default_fc_size=1,
+            default_output_size=1,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
@@ -334,7 +334,7 @@ class DateWave(Encoder):
             first_layer_input_size=fc_layer_input_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
-            default_fc_size=fc_size,
+            default_output_size=output_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,

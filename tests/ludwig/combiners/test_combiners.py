@@ -34,8 +34,8 @@ BATCH_SIZE = 16
 SEQ_SIZE = 12
 HIDDEN_SIZE = 24
 OTHER_HIDDEN_SIZE = 32
-FC_SIZE = 8
-BASE_FC_SIZE = 16
+OUTPUT_SIZE = 8
+BASE_OUTPUT_SIZE = 16
 NUM_FILTERS = 20
 
 
@@ -143,7 +143,7 @@ def encoder_comparator_outputs():
     for i, (feature_name, batch_shape) in enumerate(zip(text_feature_names, shapes_list)):
         # is there a better way to do this?
         if i == 0 or i == 3:
-            dot_product_shape = [batch_shape[0], BASE_FC_SIZE]
+            dot_product_shape = [batch_shape[0], BASE_OUTPUT_SIZE]
             encoder_outputs[feature_name] = {
                 "encoder_output": torch.randn(dot_product_shape, dtype=torch.float32, device=DEVICE)
             }
@@ -156,7 +156,7 @@ def encoder_comparator_outputs():
 
     for i, (feature_name, batch_shape) in enumerate(zip(image_feature_names, shapes_list)):
         if i == 0 or i == 3:
-            dot_product_shape = [batch_shape[0], BASE_FC_SIZE]
+            dot_product_shape = [batch_shape[0], BASE_OUTPUT_SIZE]
             encoder_outputs[feature_name] = {
                 "encoder_output": torch.randn(dot_product_shape, dtype=torch.float32, device=DEVICE)
             }
@@ -173,7 +173,7 @@ def encoder_comparator_outputs():
 # test for simple concatenation combiner
 @pytest.mark.parametrize("number_inputs", [None, 1])
 @pytest.mark.parametrize("flatten_inputs", [True, False])
-@pytest.mark.parametrize("fc_layer", [None, [{"fc_size": FC_SIZE}, {"fc_size": FC_SIZE}]])
+@pytest.mark.parametrize("fc_layer", [None, [{"output_size": OUTPUT_SIZE}, {"output_size": OUTPUT_SIZE}]])
 def test_concat_combiner(
     encoder_outputs: Tuple, fc_layer: Optional[List[Dict]], flatten_inputs: bool, number_inputs: Optional[int]
 ) -> None:
@@ -269,7 +269,7 @@ def test_sequence_combiner(
             reduce_output=reduce_output,
         ),
         # following emulates encoder parameters passed in from config file
-        fc_size=FC_SIZE,
+        output_size=OUTPUT_SIZE,
         num_fc_layers=3,
     ).to(DEVICE)
 
@@ -344,7 +344,7 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
     assert combiner_output["combiner_output"].shape == (BATCH_SIZE, output_size)
 
 
-@pytest.mark.parametrize("fc_layer", [None, [{"fc_size": 64}, {"fc_size": 32}]])
+@pytest.mark.parametrize("fc_layer", [None, [{"output_size": 64}, {"output_size": 32}]])
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(
@@ -358,11 +358,11 @@ def test_comparator_combiner(
     del encoder_comparator_outputs_dict["image_feature_4"]
 
     # setup combiner to test set to 256 for case when none as it's the default size
-    fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
+    output_size = fc_layer[0]["output_size"] if fc_layer else 256
     combiner = ComparatorCombiner(
         input_features_dict,
         config=load_config(
-            ComparatorCombinerConfig, entity_1=entity_1, entity_2=entity_2, fc_layers=fc_layer, fc_size=fc_size
+            ComparatorCombinerConfig, entity_1=entity_1, entity_2=entity_2, fc_layers=fc_layer, output_size=output_size
         ),
     ).to(DEVICE)
 
@@ -373,9 +373,9 @@ def test_comparator_combiner(
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
-@pytest.mark.parametrize("fc_size", [8, 16])
-@pytest.mark.parametrize("transformer_fc_size", [4, 12])
-def test_transformer_combiner(encoder_outputs: tuple, transformer_fc_size: int, fc_size: int) -> None:
+@pytest.mark.parametrize("output_size", [8, 16])
+@pytest.mark.parametrize("transformer_output_size", [4, 12])
+def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: int, output_size: int) -> None:
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner to test
@@ -429,7 +429,7 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_fc_size: int, 
 )
 @pytest.mark.parametrize("num_layers", [1, 2])
 @pytest.mark.parametrize("reduce_output", ["concat", "sum"])
-@pytest.mark.parametrize("fc_layers", [None, [{"fc_size": 256}]])
+@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner(
     features_to_test: tuple,

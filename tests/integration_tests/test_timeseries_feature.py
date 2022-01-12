@@ -6,7 +6,7 @@ from tests.integration_tests.utils import timeseries_feature
 
 BATCH_SIZE = 2
 SEQ_SIZE = 10
-DEFAULT_FC_SIZE = 4
+DEFAULT_OUTPUT_SIZE = 4
 
 
 @pytest.mark.parametrize(
@@ -20,7 +20,7 @@ def test_timeseries_feature(enc_encoder):
     timeseries_feature_config = timeseries_feature(
         encoder=enc_encoder,
         max_len=SEQ_SIZE,
-        fc_layers=[{"fc_size": DEFAULT_FC_SIZE}],
+        fc_layers=[{"output_size": DEFAULT_OUTPUT_SIZE}],
         # simulated parameters determined by pre-processing
         max_sequence_length=SEQ_SIZE,
     )
@@ -38,4 +38,4 @@ def test_timeseries_feature(enc_encoder):
     if enc_encoder == "passthrough":
         assert encoder_output["encoder_output"].shape == (BATCH_SIZE, SEQ_SIZE, 1)
     else:
-        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_FC_SIZE)
+        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_OUTPUT_SIZE)

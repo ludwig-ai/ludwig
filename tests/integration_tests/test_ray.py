@@ -144,7 +144,7 @@ def run_test_parquet(
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2, "batch_size": 8},
         }
 
@@ -218,7 +218,7 @@ def test_ray_image():
                 folder=image_dest_folder,
                 encoder="resnet",
                 preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-                fc_size=16,
+                output_size=16,
                 num_filters=8,
             ),
         ]
@@ -275,7 +275,7 @@ def test_ray_lazy_load_image_error():
                 folder=image_dest_folder,
                 encoder="resnet",
                 preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-                fc_size=16,
+                output_size=16,
                 num_filters=8,
             ),
         ]
