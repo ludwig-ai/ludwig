@@ -13,18 +13,18 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import field
-from typing import ClassVar, Iterable, List, Optional, Tuple, Union
+from typing import ClassVar, Dict, Iterable, Optional, Tuple
 
 import torch
 from marshmallow import fields, missing, ValidationError
 from marshmallow.decorators import validates
-from marshmallow.utils import EXCLUDE, RAISE
+from marshmallow.utils import RAISE
 from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
-from ludwig.utils.schema_utils import Dict, FloatRange, NonNegativeFloat, StringOptions
+from ludwig.utils.schema_utils import FloatRange, FloatRangeTupleDataclassField, NonNegativeFloat, StringOptions
 
 optimizer_registry = Registry()
 
@@ -98,7 +98,6 @@ def ClipperDataclassField(default={}):
 class BaseOptimizer:
     torch_type: ClassVar[Optional[torch.optim.Optimizer]] = None
     type: str  # StringOptions(optimizer_registry.keys(), default=None)
-    clipper: Union[None, Clipper] = ClipperDataclassField()
 
     # Workaround to enforce immutable `type` in defined optimizer classes:
     @validates("type")
@@ -139,18 +138,11 @@ class AdamOptimizer(BaseOptimizer):
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     type: str = "adam"
     lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
-    betas: Tuple[float, float] = (0.9, 0.999)
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
     eps: float = NonNegativeFloat(default=1e-08)
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
     weight_decay: float = NonNegativeFloat(default=0)
     amsgrad: bool = False
-
-    @validates("betas")
-    def validateBetas(self, data):
-        if isinstance(data, tuple) and list(map(type, data)) == [float, float]:
-            if all(list(map(lambda b: 0.0 <= b <= 1.0, data))):
-                return data
-        raise ValidationError(f'Field "betas" should be of type "Tuple[float, float]", instead received: {data}')
 
 
 @register_optimizer(name="adadelta")
@@ -185,16 +177,9 @@ class AdamaxOptimizer(BaseOptimizer):
     type: str = "adamax"
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adamax.html#torch.optim.Adamax :
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
-    betas: Tuple[float, float] = (0.9, 0.999)
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
     eps: float = NonNegativeFloat(default=1e-08)
     weight_decay: float = NonNegativeFloat(default=0)
-
-    @validates("betas")
-    def validateBetas(self, data):
-        if isinstance(data, tuple) and list(map(type, data)) == [float, float]:
-            if all(list(map(lambda b: 0.0 <= b <= 1.0, data))):
-                return data
-        raise ValidationError(f'Field "betas" should be of type "Tuple[float, float]", instead received: {data}')
 
 
 # NOTE: keep ftrl and nadam optimizers out of registry:
@@ -216,17 +201,10 @@ class NadamOptimizer(BaseOptimizer):
     type: str = "nadam"
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
-    betas: Tuple[float, float] = (0.9, 0.999)
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
     eps: float = NonNegativeFloat(default=1e-08)
     weight_decay: float = NonNegativeFloat(default=0)
     momentum_decay: float = NonNegativeFloat(default=4e-3)
-
-    @validates("betas")
-    def validateBetas(self, data):
-        if isinstance(data, tuple) and list(map(type, data)) == [float, float]:
-            if all(list(map(lambda b: 0.0 <= b <= 1.0, data))):
-                return data
-        raise ValidationError(f'Field "betas" should be of type "Tuple[float, float]", instead received: {data}')
 
 
 @register_optimizer(name="rmsprop")
@@ -269,29 +247,11 @@ def OptimizerDataclassField(default={"type": "adam"}):
             metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=False)},
             default_factory=lambda: opt.Schema().load(default),
         )
-    except (TypeError, ValidationError):
-        raise ValidationError(f"Unsupported optimizer type: {default['type']}")
+    except (TypeError, ValidationError) as e:
+        raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
-# def get_all_optimizers_schemas() -> List[BaseOptimizer]:
-#     return BaseOptimizer.__subclasses__()
-
-
-# def get_optimizers_registry() -> Dict[str, Tuple[torch.optim.Optimizer, BaseOptimizer]]:
-#     schemas = {
-#         schema.type: (schema.torch_type, schema)
-#         for schema in get_all_optimizers_schemas()
-#         if schema.torch_type is not None
-#     }
-#     return {
-#         **schemas,
-#         **dict.fromkeys(
-#             ["sgd", "stochastic_gradient_descent", "gd", "gradient_descent"], (torch.optim.SGD, SGDOptimizer)
-#         ),
-#     }
-
-
-def get_all_optimizer_json_schemas() -> Dict[str]:
+def get_all_optimizer_json_schemas() -> Dict[str, str]:
     optimizer_schemas_json = {}
     for opt in optimizer_registry:
         schema_cls = optimizer_registry[opt][1]

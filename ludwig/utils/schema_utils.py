@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
@@ -129,6 +129,45 @@ _embed_options = ["add"]
 
 def InitializerOrDict(default: str = "xavier_uniform"):
     return field(metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=False)}, default=default)
+
+
+def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1):
+    if N != len(default):
+        raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
+
+    class FloatTupleMarshmallowField(fields.Tuple):
+        def _jsonschema_type_mapping(self):
+            return {
+                "type": "array",
+                "prefixItems": [
+                    {
+                        "type": "number",
+                        "minimum": min,
+                        "maximum": max,
+                    }
+                ]
+                * N,
+            }
+
+    def validateRange(data: Tuple):
+        if isinstance(data, tuple) and list(map(type, data)) == [float] * N:
+            if all(list(map(lambda b: min <= b <= max, data))):
+                return data
+            raise ValidationError(
+                f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
+            )
+        raise ValidationError(f'Received value should be of {N}-dimensional "Tuple[float]", instead received: {data}')
+
+    return field(
+        metadata={
+            "marshmallow_field": FloatTupleMarshmallowField(
+                tuple_fields=[fields.Float()] * N,
+                allow_none=default is None,
+                validate=validateRange,
+            )
+        },
+        default=default,
+    )
 
 
 class EmbedInputFeatureNameField(fields.Field):
