@@ -24,6 +24,8 @@ from ludwig.utils.misc_utils import hash_dict
 from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
+FEATURE_NAME_SUFFIX = "__ludwig"
+FEATURE_NAME_SUFFIX_LENGTH = 8
 
 
 def should_regularize(regularize_layers):
@@ -80,8 +82,12 @@ class LudwigFeatureDict(torch.nn.Module):
     """Torch ModuleDict wrapper that permits keys with any name.
 
     Torch's ModuleDict implementation doesn't allow certain keys to be used if they conflict with existing class
-    attribute. This is an unnecessary limitation to impose on users. This class is a simple wrapper around torch's
-    ModuleDict that utilitizes a simple suffixing protocol to prevent name conflicts.
+    attributes, e.g.
+
+    > torch.nn.ModuleDict({'type': torch.nn.Module()})  # Raises KeyError.
+
+    This class is a simple wrapper around torch's ModuleDict that mitigates possible conflicts by using a key-suffixing
+    protocol.
     """
 
     def __init__(self):
@@ -89,22 +95,24 @@ class LudwigFeatureDict(torch.nn.Module):
         self.module_dict = torch.nn.ModuleDict()
 
     def __getitem__(self, key):
-        return self.module_dict[key + "__ludwig"]
+        return self.module_dict[key + FEATURE_NAME_SUFFIX]
 
     def __setitem__(self, key: str, module: torch.nn.Module) -> None:
-        self.module_dict[key + "__ludwig"] = module
+        self.module_dict[key + FEATURE_NAME_SUFFIX] = module
 
     def __len__(self) -> int:
         return len(self.module_dict)
 
     def keys(self):
-        return [feature_name[:-8] for feature_name in self.module_dict.keys()]
+        return [feature_name[:-FEATURE_NAME_SUFFIX_LENGTH] for feature_name in self.module_dict.keys()]
 
     def values(self):
         return [module for _, module in self.module_dict.items()]
 
     def items(self):
-        return [(feature_name[:-8], module) for feature_name, module in self.module_dict.items()]
+        return [
+            (feature_name[:-FEATURE_NAME_SUFFIX_LENGTH], module) for feature_name, module in self.module_dict.items()
+        ]
 
     def update(self, modules: Dict[str, torch.nn.Module]):
         for feature_name, module in modules.items():
