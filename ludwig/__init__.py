@@ -15,26 +15,6 @@
 import logging
 import sys
 
-import absl.logging
-
 from ludwig.globals import LUDWIG_VERSION as __version__  # noqa
 
-# Tensorflow 1.14 has compatibility issues with python native logging
-# This was one of the suggested solutions to continue using native logging
-# https://github.com/tensorflow/tensorflow/issues/26691
-logging.root.removeHandler(absl.logging._absl_handler)
-absl.logging._warn_preinit_stderr = False
-
-logger = logging.getLogger(__name__)
-# Default logging level for the project
-logger.setLevel(logging.INFO)
-
-# Configure stream handler
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.DEBUG)
-
-# Set formatter
-formatter = logging.Formatter("%(message)s")
-ch.setFormatter(formatter)
-
-logger.addHandler(ch)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")

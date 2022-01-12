@@ -94,6 +94,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers, set_random_seed
+from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.type_utils import Column
 from ludwig.utils.types import DataFrame
 
@@ -1506,6 +1507,8 @@ def _preprocess_file_for_training(
     else:
         raise ValueError("either data or data_train have to be not None")
 
+    logger.info("Building dataset: DONE")
+
     data = backend.df_engine.persist(data)
     if SPLIT in data.columns:
         logger.debug("split on split column")
@@ -1534,16 +1537,16 @@ def _preprocess_df_for_training(
     This doesn't have the option to save the processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
+    print_boxed("Preprocessing")
+
     if dataset is not None:
         # needs preprocessing
         logger.info("Using full dataframe")
-        logger.info("Building dataset (it may take a while)")
-
     elif training_set is not None:
         # needs preprocessing
         logger.info("Using training dataframe")
-        logger.info("Building dataset (it may take a while)")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
+    logger.info("Building dataset (it may take a while)")
 
     dataset, training_set_metadata = build_dataset(
         dataset,
@@ -1555,6 +1558,8 @@ def _preprocess_df_for_training(
         callbacks=callbacks,
         mode="training",
     )
+
+    logger.info("Building dataset: DONE")
 
     dataset = backend.df_engine.persist(dataset)
     if SPLIT in dataset.columns:

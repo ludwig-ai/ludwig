@@ -718,7 +718,7 @@ class Trainer(BaseTrainer):
                 start_time = time.time()
                 if self.is_coordinator():
                     logger.info(
-                        "\nEpoch {epoch:{digits}d}".format(epoch=progress_tracker.epoch + 1, digits=digits_per_epochs)
+                        "Epoch {epoch:{digits}d}".format(epoch=progress_tracker.epoch + 1, digits=digits_per_epochs)
                     )
 
                 # Reset the metrics at the start of the next epoch
@@ -1070,21 +1070,14 @@ class Trainer(BaseTrainer):
             if self.is_coordinator() and not skip_save_model:
                 torch.save(self.model.state_dict(), model_weights_path)
                 logger.info(
-                    "Validation {} on {} improved, model saved".format(
-                        validation_metric, validation_output_feature_name
-                    )
+                    f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved."
                 )
 
         progress_tracker.last_improvement = progress_tracker.epoch - progress_tracker.last_improvement_epoch
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
             logger.info(
-                "Last improvement of {} validation {} "
-                "happened {} epoch{} ago".format(
-                    validation_output_feature_name,
-                    validation_metric,
-                    progress_tracker.last_improvement,
-                    "" if progress_tracker.last_improvement == 1 else "s",
-                )
+                f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
+                + f"{progress_tracker.last_improvement} epoch(s) ago."
             )
 
         # ========== Reduce Learning Rate Plateau logic ========
@@ -1107,19 +1100,10 @@ class Trainer(BaseTrainer):
                 and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
             ):
                 logger.info(
-                    "Last learning rate reduction "
-                    "happened {} epoch{} ago, "
-                    "improvement of {} {} {} "
-                    "happened {} epoch{} ago"
-                    "".format(
-                        progress_tracker.last_learning_rate_reduction,
-                        "" if progress_tracker.last_learning_rate_reduction == 1 else "s",
-                        validation_output_feature_name,
-                        reduce_learning_rate_eval_split,
-                        reduce_learning_rate_eval_metric,
-                        progress_tracker.last_reduce_learning_rate_eval_metric_improvement,
-                        "" if progress_tracker.last_reduce_learning_rate_eval_metric_improvement == 1 else "s",
-                    )
+                    f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} epoch(s) "
+                    f"ago, improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
+                    f"{reduce_learning_rate_eval_metric} happened "
+                    f"{progress_tracker.last_reduce_learning_rate_eval_metric_improvement} epoch(s) ago."
                 )
 
         # ========== Increase Batch Size Plateau logic =========
@@ -1145,17 +1129,10 @@ class Trainer(BaseTrainer):
             ):
                 logger.info(
                     "Last batch size increase "
-                    "happened {} epoch{} ago, "
-                    "improvement of {} {} {} "
-                    "happened {} epoch{} ago".format(
-                        progress_tracker.last_increase_batch_size,
-                        "" if progress_tracker.last_increase_batch_size == 1 else "s",
-                        validation_output_feature_name,
-                        increase_batch_size_eval_split,
-                        increase_batch_size_eval_metric,
-                        progress_tracker.last_increase_batch_size_eval_metric_improvement,
-                        "" if progress_tracker.last_increase_batch_size_eval_metric_improvement == 1 else "s",
-                    )
+                    f"happened {progress_tracker.last_increase_batch_size} epoch(s) ago, "
+                    f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
+                    f"{increase_batch_size_eval_metric} happened "
+                    f"{progress_tracker.last_increase_batch_size_eval_metric_improvement} epoch(s) ago."
                 )
 
         # ========== Early Stop logic ==========
@@ -1164,8 +1141,8 @@ class Trainer(BaseTrainer):
                 logger.info(
                     "\nEARLY STOPPING due to lack of "
                     "validation improvement, "
-                    "it has been {} epochs since last "
-                    "validation improvement\n".format(progress_tracker.epoch - progress_tracker.last_improvement_epoch)
+                    f"it has been {progress_tracker.epoch - progress_tracker.last_improvement_epoch} epoch(s) since "
+                    "last validation improvement.\n"
                 )
             should_break = True
         return should_break
@@ -1268,13 +1245,9 @@ class Trainer(BaseTrainer):
 
                     if self.is_coordinator():
                         logger.info(
-                            "PLATEAU REACHED, reducing learning rate to {} "
-                            "due to lack of improvement of {} {} {}".format(
-                                progress_tracker.learning_rate,
-                                validation_output_feature_name,
-                                reduce_learning_rate_eval_split,
-                                validation_metric,
-                            )
+                            f"PLATEAU REACHED, reducing learning rate to {progress_tracker.learning_rate} due to lack "
+                            f"of improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
+                            f"{validation_metric}."
                         )
 
                     progress_tracker.last_learning_rate_reduction_epoch = progress_tracker.epoch
@@ -1284,10 +1257,8 @@ class Trainer(BaseTrainer):
                     if progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau:
                         if self.is_coordinator():
                             logger.info(
-                                "Learning rate was already reduced "
-                                "{} times, not reducing it anymore".format(
-                                    progress_tracker.num_reductions_learning_rate
-                                )
+                                f"Learning rate was already reduced {progress_tracker.num_reductions_learning_rate} "
+                                "time(s), not reducing it anymore."
                             )
 
     def increase_batch_size(
@@ -1341,13 +1312,9 @@ class Trainer(BaseTrainer):
 
                     if self.is_coordinator():
                         logger.info(
-                            "PLATEAU REACHED, increasing batch size to {} "
-                            "due to lack of improvement of {} {} {}".format(
-                                progress_tracker.batch_size,
-                                validation_output_feature_name,
-                                increase_batch_size_eval_split,
-                                validation_metric,
-                            )
+                            f"PLATEAU REACHED, increasing batch size to {progress_tracker.batch_size} due to lack of "
+                            f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
+                            f"{validation_metric}."
                         )
 
                     progress_tracker.last_increase_batch_size_epoch = progress_tracker.epoch
@@ -1357,17 +1324,14 @@ class Trainer(BaseTrainer):
                     if progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau:
                         if self.is_coordinator():
                             logger.info(
-                                "Batch size was already increased "
-                                "{} times, not increasing it anymore".format(progress_tracker.num_increases_batch_size)
+                                f"Batch size was already increased {progress_tracker.num_increases_batch_size} times, "
+                                "not increasing it anymore."
                             )
                     elif progress_tracker.batch_size >= increase_batch_size_on_plateau_max:
                         if self.is_coordinator():
                             logger.info(
-                                "Batch size was already increased "
-                                "{} times, currently it is {}, "
-                                "the maximum allowed".format(
-                                    progress_tracker.num_increases_batch_size, progress_tracker.batch_size
-                                )
+                                f"Batch size was already increased {progress_tracker.num_increases_batch_size} times, "
+                                f"currently it is {progress_tracker.batch_size}, the maximum allowed."
                             )
 
     def is_coordinator(self):
