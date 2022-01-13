@@ -1,5 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
+import torch
 from torch import nn
 
 from ludwig.constants import NAME, TYPE
@@ -14,36 +15,36 @@ class InferenceModule(nn.Module):
         self.model = model.to_torchscript()
 
         input_features = {
-            feature[NAME]: get_from_registry(feature[TYPE], input_type_registry)(feature)
-            for feature in self.config["input_features"]
+            feature[NAME]: get_from_registry(feature[TYPE], input_type_registry) for feature in config["input_features"]
         }
         self.preproc_modules = nn.ModuleDict(
             {
-                feature_name: feature.create_preproc_module(training_set_metadata)
+                feature_name: feature.create_preproc_module(training_set_metadata[feature_name])
                 for feature_name, feature in input_features.items()
             }
         )
 
         output_features = {
-            feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)(feature)
-            for feature in self.config["output_features"]
+            feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)
+            for feature in config["output_features"]
         }
         self.postproc_modules = nn.ModuleDict(
             {
-                feature_name: feature.create_postproc_module(training_set_metadata)
+                feature_name: feature.create_postproc_module(training_set_metadata[feature_name])
                 for feature_name, feature in output_features.items()
             }
         )
 
-    def forward(self, inputs):
+    def forward(self, inputs: Dict[str, Union[str, torch.Tensor]]):
         preproc_inputs = {
-            feature_name: self.preproc_modules[feature_name](inpt) for feature_name, inpt in inputs.items()
+            feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()
         }
 
         model_outputs = self.model(preproc_inputs)
 
         postproc_outputs = {
-            feature_name: self.postproc_modules[feature_name](outpt) for feature_name, outpt in model_outputs.items()
+            feature_name: postproc(model_outputs[feature_name])
+            for feature_name, postproc in self.postproc_modules.items()
         }
 
         return postproc_outputs

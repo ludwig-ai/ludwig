@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import torch
@@ -54,23 +54,29 @@ class _CategoryPreprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.str2idx = metadata["str2idx"]
+        self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, s: str):
-        s = s.strip()
-        return self.str2idx.get(s, self.str2idx[UNKNOWN_SYMBOL])
+    def forward(self, v: Union[str, torch.Tensor]):
+        if not isinstance(v, str):
+            raise ValueError(f"Unexpected type: {type(v)}")
+        s = v.strip()
+        idx = self.str2idx.get(s, self.unk)
+        return torch.tensor(idx, dtype=torch.int32)
 
 
 class _CategoryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        self.idx2str = metadata["idx2str"]
+        self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.unk = ""
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        lookup_table = {i: v for i, v in enumerate(self.idx2str)}
-        inv_preds = lookup_table.get(preds[PREDICTIONS], "")
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        inv_preds = self.idx2str.get(preds[self.predictions_key], self.unk)
         return {
-            PREDICTIONS: inv_preds,
-            PROBABILITIES: preds[PROBABILITIES],
+            self.predictions_key: inv_preds,
+            self.probabilities_key: preds[self.probabilities_key],
         }
 
 
