@@ -24,7 +24,13 @@ from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
-from ludwig.utils.schema_utils import FloatRange, FloatRangeTupleDataclassField, NonNegativeFloat, StringOptions
+from ludwig.utils.schema_utils import (
+    FloatRange,
+    FloatRangeTupleDataclassField,
+    generate_extra_json_schema_props,
+    NonNegativeFloat,
+    StringOptions,
+)
 
 optimizer_registry = Registry()
 
@@ -39,10 +45,11 @@ def register_optimizer(name: str):
 
 @dataclass
 class BaseOptimizer:
-    """Base class for optimizers. Not meant to be used directly as the dataclass format prevents arbitrary
-    properties from being set. Consequently, in child classes, all properties from the correspondong
-    `torch.optim.Optimizer` class are copied over: check each class to check which attributes are different from
-    the torch-specified defaults.
+    """Base class for optimizers. Not meant to be used directly.
+
+    The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
+    from the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are
+    different from the torch-specified defaults.
 
     :param torch_type: Class variable pointing to the corresponding `torch.optim.Optimizer` class.
     :param type: Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
@@ -73,6 +80,18 @@ class BaseOptimizer:
 @register_optimizer(name="gradient_descent")
 @dataclass
 class SGDOptimizer(BaseOptimizer):
+    """Parameters for stochastic gradient descent.
+
+    The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
+    from the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are
+    different from the torch-specified defaults.
+
+    :param torch_type: Class variable pointing to the corresponding `torch.optim.Optimizer` class.
+    :param type: Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
+           Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
+           result in a `ValidationError`.
+    """
+
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
     type: str = StringOptions(
         ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"], default="sgd", nullable=False
@@ -214,37 +233,13 @@ def OptimizerDataclassField(default={"type": "adam"}):
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
-def generate_extra_json_schema_props(schema_cls) -> str:
-    """Workaround for adding 'description' attrs to a marshmallow schema's JSON Schema.
-
-    TODO(ksbrar): Watch this [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this
-    eventually.
-    """
-
-    def split_params(docstring: str) -> Dict[str, str]:
-        raw_params = docstring.split(":param ")[1:]
-        params = {}
-        for rp in raw_params:
-            k, v = rp.split(":")
-            params[k.strip()] = v.strip()
-        return params
-
-    schema_dump = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
-    if schema_cls.__doc__ is not None:
-        params = split_params(schema_cls.__doc__)
-        for p in params:
-            if p in schema_dump["properties"]:
-                schema_dump["properties"][p]["description"] = params[p]
-
-    return schema_dump
-
-
 def get_all_optimizer_json_schemas() -> Dict[str, str]:
     """Return a dict of strings, wherein each key is an optimizer name pointing to its stringified JSON schema."""
     optimizer_schemas_json = {}
     for opt in optimizer_registry:
         schema_cls = optimizer_registry[opt][1]
-        optimizer_schemas_json[opt] = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
+        optimizer_schemas_json[opt] = generate_extra_json_schema_props(schema_cls)
+        # optimizer_schemas_json[opt] = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
     return optimizer_schemas_json
 
 

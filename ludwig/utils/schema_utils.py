@@ -1,11 +1,46 @@
+import re
 from dataclasses import field
 from typing import List, Tuple, Union
 
 import marshmallow_dataclass
+from docstring_parser import parse
 from marshmallow import fields, validate, ValidationError
+from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
+
+
+def generate_extra_json_schema_props(schema_cls) -> str:
+    """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema.
+
+    TODO(ksbrar): Watch this [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this
+    eventually.
+    """
+
+    def cleanup_docstring(dstring):
+        # Add spaces after periods:
+        dstring = re.sub(r"\.(?! )", ". ", dstring)
+        # Delete internal newlines:
+        dstring = re.sub("\n+", "", dstring)
+        # Replace any multiple-spaces with single spaces:
+        dstring = re.sub(" +", " ", dstring)
+        # Remove leading/ending spaces:
+        return dstring.strip()
+
+    schema_dump = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
+    if schema_cls.__doc__ is not None:
+        parsed_docstring = parse(schema_cls.__doc__)
+        params_dict = {p.arg_name: p.description for p in parsed_docstring.params if p.description is not None}
+        if parsed_docstring.short_description is not None:
+            desc = parsed_docstring.short_description
+            desc += parsed_docstring.long_description if parsed_docstring.long_description is not None else ""
+            schema_dump["description"] = cleanup_docstring(desc)
+        for prop in schema_dump["properties"]:
+            if prop in params_dict:
+                schema_dump["properties"][prop]["description"] = cleanup_docstring(params_dict[prop])
+
+    return schema_dump
 
 
 def InitializerOptions(default: Union[None, str] = None):

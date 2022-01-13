@@ -19,6 +19,7 @@ jsonschema
 marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass
+docstring_parser
 tensorboard
 torchmetrics>=0.6.0
 torchinfo
