@@ -23,7 +23,7 @@ import pickle
 import random
 import re
 from itertools import islice
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -446,8 +446,7 @@ def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str,
     return embeddings
 
 
-def split_data(split, data):
-    # type: (float, list) -> (list, list)
+def split_data(split: float, data: List) -> Tuple[List, List]:
     split_length = int(round(split * len(data)))
     random.shuffle(data)
     return data[:split_length], data[split_length:]
