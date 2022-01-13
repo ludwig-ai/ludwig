@@ -738,93 +738,7 @@ class Trainer(BaseTrainer):
                 self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                 # training step loop
-                while not batcher.last_batch():
-                    self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
-
-                    # Set learning rate for this batch
-                    current_learning_rate = progress_tracker.learning_rate
-
-                    if self.decay:
-                        current_learning_rate = exponential_decay(
-                            current_learning_rate,
-                            self.decay_rate,
-                            self.decay_steps,
-                            progress_tracker.steps,
-                            self.staircase,
-                        )
-
-                    if self.horovod:
-                        current_learning_rate = (
-                            learning_rate_warmup_distributed(
-                                current_learning_rate,
-                                progress_tracker.epoch,
-                                self.learning_rate_warmup_epochs,
-                                self.horovod.size(),
-                                batcher.step,
-                                batcher.steps_per_epoch,
-                            )
-                            * self.horovod.size()
-                        )
-                    else:
-                        current_learning_rate = learning_rate_warmup(
-                            current_learning_rate,
-                            progress_tracker.epoch,
-                            self.learning_rate_warmup_epochs,
-                            batcher.step,
-                            batcher.steps_per_epoch,
-                        )
-                    self.set_learning_rate(current_learning_rate)
-
-                    # obtain batch
-                    batch = batcher.next_batch()
-
-                    # Move tensors to cuda here.
-                    inputs = {
-                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
-                        for i_feat in self.model.input_features.values()
-                    }
-                    targets = {
-                        o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
-                        for o_feat in self.model.output_features.values()
-                    }
-
-                    # Reintroduce for tensorboard graph
-                    # if first_batch and self.is_coordinator() and not skip_save_log:
-                    #    tf.summary.trace_on(graph=True, profiler=True)
-
-                    loss, all_losses = self.train_step(
-                        inputs,
-                        targets,
-                    )
-
-                    # Reintroduce for tensorboard graph
-                    # if first_batch and self.is_coordinator() and not skip_save_log:
-                    #     with train_summary_writer.as_default():
-                    #         tf.summary.trace_export(
-                    #             name="Model",
-                    #             step=0,
-                    #             profiler_outdir=tensorboard_log_dir
-                    #         )
-
-                    if self.is_coordinator() and not self.skip_save_log:
-                        self.write_step_summary(
-                            train_summary_writer=train_summary_writer,
-                            combined_loss=loss,
-                            all_losses=all_losses,
-                            step=progress_tracker.steps,
-                            learning_rate=current_learning_rate,
-                        )
-
-                    progress_tracker.steps += 1
-                    if self.is_coordinator():
-                        progress_bar.update(1)
-                        logger.debug(
-                            f"training: completed batch {progress_bar.n} "
-                            f"memory used: "
-                            f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
-                        )
-
-                    self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+                self._train_loop(batcher, progress_tracker, save_path, train_summary_writer, progress_bar)
 
                 # ================ Post Training Epoch ================
                 if self.is_coordinator():
@@ -956,6 +870,95 @@ class Trainer(BaseTrainer):
             progress_tracker.vali_metrics,
             progress_tracker.test_metrics,
         )
+
+    def _train_loop(self, batcher, progress_tracker, save_path, train_summary_writer, progress_bar):
+        while not batcher.last_batch():
+            self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
+
+            # Set learning rate for this batch
+            current_learning_rate = progress_tracker.learning_rate
+
+            if self.decay:
+                current_learning_rate = exponential_decay(
+                    current_learning_rate,
+                    self.decay_rate,
+                    self.decay_steps,
+                    progress_tracker.steps,
+                    self.staircase,
+                )
+
+            if self.horovod:
+                current_learning_rate = (
+                    learning_rate_warmup_distributed(
+                        current_learning_rate,
+                        progress_tracker.epoch,
+                        self.learning_rate_warmup_epochs,
+                        self.horovod.size(),
+                        batcher.step,
+                        batcher.steps_per_epoch,
+                    )
+                    * self.horovod.size()
+                )
+            else:
+                current_learning_rate = learning_rate_warmup(
+                    current_learning_rate,
+                    progress_tracker.epoch,
+                    self.learning_rate_warmup_epochs,
+                    batcher.step,
+                    batcher.steps_per_epoch,
+                )
+            self.set_learning_rate(current_learning_rate)
+
+            # obtain batch
+            batch = batcher.next_batch()
+
+            # Move tensors to cuda here.
+            inputs = {
+                i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                for i_feat in self.model.input_features.values()
+            }
+            targets = {
+                o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                for o_feat in self.model.output_features.values()
+            }
+
+            # Reintroduce for tensorboard graph
+            # if first_batch and self.is_coordinator() and not skip_save_log:
+            #    tf.summary.trace_on(graph=True, profiler=True)
+
+            loss, all_losses = self.train_step(
+                inputs,
+                targets,
+            )
+
+            # Reintroduce for tensorboard graph
+            # if first_batch and self.is_coordinator() and not skip_save_log:
+            #     with train_summary_writer.as_default():
+            #         tf.summary.trace_export(
+            #             name="Model",
+            #             step=0,
+            #             profiler_outdir=tensorboard_log_dir
+            #         )
+
+            if self.is_coordinator() and not self.skip_save_log:
+                self.write_step_summary(
+                    train_summary_writer=train_summary_writer,
+                    combined_loss=loss,
+                    all_losses=all_losses,
+                    step=progress_tracker.steps,
+                    learning_rate=current_learning_rate,
+                )
+
+            progress_tracker.steps += 1
+            if self.is_coordinator():
+                progress_bar.update(1)
+                logger.debug(
+                    f"training: completed batch {progress_bar.n} "
+                    f"memory used: "
+                    f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                )
+
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
     def train_online(self, dataset):
         self.model.train()  # Sets model training mode.
