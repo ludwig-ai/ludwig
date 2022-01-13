@@ -119,7 +119,17 @@ class Callback(ABC):
     def on_build_data_end(self, df, mode):
         pass
 
+    def on_evaluation_start(self):
+        pass
+
+    def on_evaluation_end(self):
+        pass
+
     def on_visualize_figure(self, fig):
+        pass
+
+    def on_ludwig_end(self):
+        """Convenience method for any cleanup."""
         pass
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):

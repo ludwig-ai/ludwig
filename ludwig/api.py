@@ -829,6 +829,9 @@ class LudwigModel:
         """
         self._check_initialization()
 
+        for callback in self.callbacks:
+            callback.on_evaluation_start()
+
         # preprocessing
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
@@ -912,6 +915,9 @@ class LudwigModel:
                     self.model.output_features,
                     return_type=return_type,
                 )
+
+            for callback in self.callbacks:
+                callback.on_evaluation_end()
 
             return eval_stats, postproc_predictions, output_directory
 
