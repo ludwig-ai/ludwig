@@ -274,7 +274,6 @@ class Trainer(BaseTrainer):
 
         # ================ Optimizer ================
         optimizer = config.optimizer if config.optimizer is not None else AdamOptimizer()
-        optimizer.lr = self.learning_rate
         clipper = config.gradient_clipping if config.gradient_clipping is not None else Clipper()
         self.optimizer, self.clipper = create_optimizer_with_clipper(
             model, horovod=horovod, optimizer=optimizer, clipper=clipper
