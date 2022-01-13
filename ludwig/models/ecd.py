@@ -157,7 +157,7 @@ class ECD(LudwigModule):
     def predictions(self, inputs):
         outputs = self(inputs)
         predictions = {}
-        for of_name in self.output_features.keys():
+        for of_name in self.output_features:
             predictions[of_name] = self.output_features[of_name].predictions(outputs, of_name)
         return predictions
 

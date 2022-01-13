@@ -106,8 +106,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
             # assert list(preds_2[key]) == list(preds_3[key]), key
 
         # Compare model weights
-        # this has to be done after predicts because of TF2 lazy restoration
-        for if_name in ludwig_model1.model.input_features.keys():
+        for if_name in ludwig_model1.model.input_features:
             if1 = ludwig_model1.model.input_features[if_name]
             if2 = ludwig_model2.model.input_features[if_name]
             for if1_w, if2_w in zip(if1.encoder_obj.parameters(), if2.encoder_obj.parameters()):
@@ -118,7 +117,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
         for c1_w, c2_w in zip(c1.parameters(), c2.parameters()):
             assert torch.allclose(c1_w, c2_w)
 
-        for of_name in ludwig_model1.model.output_features.keys():
+        for of_name in ludwig_model1.model.output_features:
             of1 = ludwig_model1.model.output_features[of_name]
             of2 = ludwig_model2.model.output_features[of_name]
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):

@@ -70,7 +70,7 @@ class Combiner(LudwigModule, ABC):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features.keys()]
+        shapes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in self.input_features]
         return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     @property
@@ -78,13 +78,13 @@ class Combiner(LudwigModule, ABC):
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
-        return {k: self.input_features[k].output_shape for k in self.input_features.keys()}
+        return {k: self.input_features[k].output_shape for k in self.input_features}
 
     @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
         pseudo_input = {}
-        for k in self.input_features.keys():
+        for k in self.input_features:
             pseudo_input[k] = {
                 "encoder_output": torch.rand(
                     2, *self.input_features[k].output_shape, dtype=self.input_dtype, device=self.device
@@ -223,7 +223,7 @@ class SequenceConcatCombiner(Combiner):
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
         seq_size = None
-        for k in self.input_features.keys():
+        for k in self.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
             if len(self.input_features[k].output_shape) == 2:
                 seq_size = self.input_features[k].output_shape[0]
@@ -233,9 +233,7 @@ class SequenceConcatCombiner(Combiner):
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
-        shapes = [
-            self.input_features[k].output_shape[-1] for k in self.input_features.keys()
-        ]  # output shape not input shape
+        shapes = [self.input_features[k].output_shape[-1] for k in self.input_features]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
