@@ -18,7 +18,7 @@ import os
 
 import pandas as pd
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
-from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
+from ludwig.datasets.mixins.download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import ParquetLoadMixin
 from ludwig.utils.fs_utils import makedirs, rename
 
@@ -29,7 +29,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
     return dataset.load(split=split)
 
 
-class Higgs(UncompressedFileDownloadMixin, ParquetLoadMixin, BaseDataset):
+class Higgs(GZipDownloadMixin, ParquetLoadMixin, BaseDataset):
     """The Higgs Boson dataset.
 
     This is a classification problem to distinguish between a signal process
