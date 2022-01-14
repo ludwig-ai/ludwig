@@ -82,14 +82,9 @@ class BaseOptimizer:
 class SGDOptimizer(BaseOptimizer):
     """Parameters for stochastic gradient descent.
 
-    The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
-    from the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are
-    different from the torch-specified defaults.
-
-    :param torch_type: Class variable pointing to the corresponding `torch.optim.Optimizer` class.
-    :param type: Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
-           Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
-           result in a `ValidationError`.
+    :param torch_type: Points to `torch.optim.SGD`.
+    :param type: Must be one of ['sgd', 'gd', 'stochastic_gradient_descent', 'gradient_descent']  - corresponds to names
+           in `ludwig.modules.optimization_modules.optimizer_registry`.
     """
 
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
@@ -107,6 +102,12 @@ class SGDOptimizer(BaseOptimizer):
 @register_optimizer(name="adam")
 @dataclass
 class AdamOptimizer(BaseOptimizer):
+    """Parameters for stochastic gradient descent.
+
+    :param torch_type: Points to `torch.optim.Adam`.
+    :param type: Must be 'adam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`.
+    """
+
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     type: str = "adam"
     lr: float = FloatRange(default=0.001, min=0.0, max=1.0)

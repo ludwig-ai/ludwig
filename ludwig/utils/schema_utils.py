@@ -11,34 +11,48 @@ from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
 
 
+def cleanup_python_comment(dstring: str) -> str:
+    """Cleans up some common issues with parsed comments/docstrings."""
+    # Add spaces after periods:
+    dstring = re.sub(r"\.(?! )", ". ", dstring)
+    # Replace internal newlines with spaces:
+    dstring = re.sub("\n+", " ", dstring)
+    # Replace any multiple-spaces with single spaces:
+    dstring = re.sub(" +", " ", dstring)
+    # Remove leading/ending spaces:
+    dstring = dstring.strip()
+    # Add final period if it's not there:
+    dstring += "." if dstring[-1] != "." else ""
+    # Capitalize first word in string and first word in each sentence.
+    dstring = re.sub(r"((?<=[\.\?!]\s)(\w+)|(^\w+))", lambda m: m.group().capitalize(), dstring)
+    return dstring
+
+
 def generate_extra_json_schema_props(schema_cls) -> str:
-    """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema.
+    """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema. Currently targeted for use
+    with optimizer schema; if there is no description provided for a particular field, the description is pulled
+    from the corresponding torch optimizer.
 
-    TODO(ksbrar): Watch this [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this
-    eventually.
+    Note that this currently overrides whatever may be in the description field. TODO(ksbrar): Watch this
+    [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this eventually.
     """
-
-    def cleanup_docstring(dstring):
-        # Add spaces after periods:
-        dstring = re.sub(r"\.(?! )", ". ", dstring)
-        # Delete internal newlines:
-        dstring = re.sub("\n+", "", dstring)
-        # Replace any multiple-spaces with single spaces:
-        dstring = re.sub(" +", " ", dstring)
-        # Remove leading/ending spaces:
-        return dstring.strip()
 
     schema_dump = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
     if schema_cls.__doc__ is not None:
         parsed_docstring = parse(schema_cls.__doc__)
+        parsed_torch = parse(schema_cls.torch_type.__doc__)
         params_dict = {p.arg_name: p.description for p in parsed_docstring.params if p.description is not None}
+        torch_dict = {p.arg_name: p.description for p in parsed_torch.params if p.description is not None}
         if parsed_docstring.short_description is not None:
             desc = parsed_docstring.short_description
             desc += parsed_docstring.long_description if parsed_docstring.long_description is not None else ""
-            schema_dump["description"] = cleanup_docstring(desc)
+            schema_dump["description"] = cleanup_python_comment(desc)
         for prop in schema_dump["properties"]:
+            schema_prop = schema_dump["properties"][prop]
             if prop in params_dict:
-                schema_dump["properties"][prop]["description"] = cleanup_docstring(params_dict[prop])
+                schema_prop["description"] = cleanup_python_comment(params_dict[prop])
+            elif prop in torch_dict:
+                schema_prop["description"] = cleanup_python_comment(torch_dict[prop])
 
     return schema_dump
 

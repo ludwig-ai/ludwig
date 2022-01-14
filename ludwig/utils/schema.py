@@ -21,6 +21,7 @@ from ludwig.combiners.combiners import combiner_registry
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.models.trainer import TrainerConfig
 
 
 def get_schema():
@@ -69,7 +70,7 @@ def get_schema():
                 "allOf": get_combiner_conds(combiner_types),
                 "required": ["type"],
             },
-            "training": {},
+            "training": JSONSchema().dump(TrainerConfig.Schema())["definitions"][TrainerConfig.__name__],
             "preprocessing": {},
             "hyperopt": {},
         },
@@ -145,8 +146,6 @@ def get_combiner_conds(combiner_types):
         schema = marshmallow_dataclass.class_schema(schema_cls)()
         schema_json = JSONSchema().dump(schema)
         combiner_json = schema_json["definitions"][schema_cls.__name__]["properties"]
-
-        # TODO: add type to schema: https://github.com/lovasoa/marshmallow_dataclass/issues/62
         combiner_cond = create_cond({"type": combiner_type}, combiner_json)
         conds.append(combiner_cond)
     return conds
