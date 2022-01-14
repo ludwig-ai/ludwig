@@ -1,8 +1,8 @@
 from typing import List, Optional, Tuple
 
 import torch
+import torch.nn as nn
 
-from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import LudwigModule, Sparsemax
 
@@ -50,7 +50,7 @@ class TabNet(LudwigModule):
         self.bn_epsilon = bn_epsilon
         self.bn_virtual_bs = bn_virtual_bs
 
-        self.batch_norm = torch.nn.BatchNorm1d(input_size, momentum=bn_momentum, eps=bn_epsilon)
+        self.batch_norm = nn.BatchNorm1d(input_size, momentum=bn_momentum, eps=bn_epsilon)
 
         kargs = {
             "num_total_blocks": num_total_blocks,
@@ -62,8 +62,8 @@ class TabNet(LudwigModule):
 
         # first feature transformer block is built first
         # to get the shared blocks
-        self.feature_transforms = torch.nn.ModuleList([FeatureTransformer(input_size, size + output_size, **kargs)])
-        self.attentive_transforms = torch.nn.ModuleList([None])
+        self.feature_transforms = nn.ModuleList([FeatureTransformer(input_size, size + output_size, **kargs)])
+        self.attentive_transforms = nn.ModuleList([None])
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
@@ -80,7 +80,7 @@ class TabNet(LudwigModule):
             self.attentive_transforms.append(
                 AttentiveTransformer(size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs)
             )
-        self.final_projection = torch.nn.Linear(output_size, output_size)
+        self.final_projection = nn.Linear(output_size, output_size)
 
         # Register tensors to be used in forward pass. This is needed in order to move these tensors
         # to the correct device (GPU/CPU) during the forward pass.
@@ -136,7 +136,7 @@ class TabNet(LudwigModule):
             x = self.feature_transforms[step_i](masked_features)  # [b_s, s + o_s]
 
             # x in following is shape [b_s, o_s]
-            out = torch.nn.functional.relu(x[:, : self.output_size])  # [b_s, o_s]
+            out = nn.functional.relu(x[:, : self.output_size])  # [b_s, o_s]
             out_accumulator += out
 
             # Aggregated masks are used for visualization of the
@@ -180,7 +180,7 @@ class FeatureBlock(LudwigModule):
         if shared_fc_layer:
             self.fc_layer = shared_fc_layer
         else:
-            self.fc_layer = torch.nn.Linear(input_size, units, bias=False)
+            self.fc_layer = nn.Linear(input_size, units, bias=False)
 
         self.batch_norm = GhostBatchNormalization(
             units, virtual_batch_size=bn_virtual_bs, momentum=bn_momentum, epsilon=bn_epsilon
@@ -197,7 +197,7 @@ class FeatureBlock(LudwigModule):
         hidden = self.fc_layer(inputs)  # [b_s, u]
         hidden = self.batch_norm(hidden)  # [b_s, u]
         if self.apply_glu:
-            hidden = glu(hidden)  # [bs, s]
+            hidden = nn.functional.glu(hidden, dim=-1)  # [bs, s]
         return hidden  # [b_s, 2*s] if apply_glu else [b_s, s]
 
     @property
@@ -287,7 +287,7 @@ class FeatureTransformer(LudwigModule):
         }
 
         # build blocks
-        self.blocks = torch.nn.ModuleList()
+        self.blocks = nn.ModuleList()
         for n in range(num_total_blocks):
             if shared_fc_layers and n < len(shared_fc_layers):
                 # add shared blocks
