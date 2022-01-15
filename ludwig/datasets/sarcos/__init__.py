@@ -19,7 +19,7 @@ import pandas as pd
 from scipy.io import loadmat
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
+from ludwig.datasets.mixins.download import BinaryFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 from ludwig.utils.fs_utils import open_file
@@ -30,7 +30,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     return dataset.load(split=split)
 
 
-class Sarcos(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
+class Sarcos(BinaryFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
     """The Sarcos dataset.
 
     Details:
