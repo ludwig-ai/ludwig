@@ -82,5 +82,4 @@ training:
   decay_steps: 20000
   decay_rate: 0.9
   staircase: true
-  regularization_lambda: 1
   validation_field: label
