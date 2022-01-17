@@ -10,7 +10,6 @@ from ludwig.features.audio_feature import AudioInputFeature
 BATCH_SIZE = 2
 SEQ_SIZE = 20
 AUDIO_W_SIZE = 16
-DEFAULT_FC_SIZE = 256
 
 CHARS = ascii_uppercase + ascii_lowercase + digits
 VOCAB = ["".join(choice(CHARS) for _ in range(2)) for _ in range(256)]

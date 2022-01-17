@@ -146,62 +146,63 @@ class Predictor(BasePredictor):
     def batch_evaluation(self, dataset, collect_predictions=False, dataset_name=None):
         model_training_mode = self.model.training
         self.model.eval()  # Sets model training mode to False.
-        with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
+        with torch.no_grad():
+            with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
-            progress_bar = None
-            if self.is_coordinator():
-                progress_bar = tqdm(
-                    desc="Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
-                    total=batcher.steps_per_epoch,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled(),
-                )
-
-            predictions = defaultdict(list)
-            while not batcher.last_batch():
-                batch = batcher.next_batch()
-                logger.debug(
-                    f"evaluation for {dataset_name}: obtained next batch "
-                    f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
-                )
-                inputs = {
-                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
-                    for i_feat in self.model.input_features.values()
-                }
-                targets = {
-                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
-                    for o_feat in self.model.output_features.values()
-                }
-
-                preds = self.model.evaluation_step(inputs, targets)
-
-                # accumulate predictions from batch for each output feature
-                if collect_predictions:
-                    for of_name, of_preds in preds.items():
-                        for pred_name, pred_values in of_preds.items():
-                            if pred_name not in EXCLUDE_PRED_SET:
-                                key = f"{of_name}_{pred_name}"
-                                predictions[key].append(pred_values)
-
+                progress_bar = None
                 if self.is_coordinator():
-                    progress_bar.update(1)
-                    logger.debug(
-                        f"evaluation for {dataset_name}: completed batch {progress_bar.n} "
-                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                    progress_bar = tqdm(
+                        desc="Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
+                        total=batcher.steps_per_epoch,
+                        file=sys.stdout,
+                        disable=is_progressbar_disabled(),
                     )
 
-            if self.is_coordinator():
-                progress_bar.close()
+                predictions = defaultdict(list)
+                while not batcher.last_batch():
+                    batch = batcher.next_batch()
+                    logger.debug(
+                        f"evaluation for {dataset_name}: obtained next batch "
+                        f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                    )
+                    inputs = {
+                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                        for i_feat in self.model.input_features.values()
+                    }
+                    targets = {
+                        o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                        for o_feat in self.model.output_features.values()
+                    }
 
-        # consolidate predictions from each batch to a single tensor
-        if collect_predictions:
-            for key, pred_value_list in predictions.items():
-                predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+                    preds = self.model.evaluation_step(inputs, targets)
 
-        metrics = self.model.get_metrics()
-        self.model.reset_metrics()
-        self.model.train(model_training_mode)  # Restores previous model training mode.
-        return metrics, from_numpy_dataset(predictions)
+                    # accumulate predictions from batch for each output feature
+                    if collect_predictions:
+                        for of_name, of_preds in preds.items():
+                            for pred_name, pred_values in of_preds.items():
+                                if pred_name not in EXCLUDE_PRED_SET:
+                                    key = f"{of_name}_{pred_name}"
+                                    predictions[key].append(pred_values)
+
+                    if self.is_coordinator():
+                        progress_bar.update(1)
+                        logger.debug(
+                            f"evaluation for {dataset_name}: completed batch {progress_bar.n} "
+                            f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                        )
+
+                if self.is_coordinator():
+                    progress_bar.close()
+
+            # consolidate predictions from each batch to a single tensor
+            if collect_predictions:
+                for key, pred_value_list in predictions.items():
+                    predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
+
+            metrics = self.model.get_metrics()
+            self.model.reset_metrics()
+            self.model.train(model_training_mode)  # Restores previous model training mode.
+            return metrics, from_numpy_dataset(predictions)
 
     def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):
         if bucketing_field:

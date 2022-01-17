@@ -88,7 +88,15 @@ class MultiHeadSelfAttention(LudwigModule):
 
 
 class TransformerBlock(LudwigModule):
-    def __init__(self, input_size, sequence_size, hidden_size, num_heads, fc_size, dropout=0.1):
+    def __init__(
+        self,
+        input_size: int,
+        sequence_size: int,
+        hidden_size: int,
+        num_heads: int,
+        output_size: int,
+        dropout: float = 0.1,
+    ):
         super().__init__()
         self.input_size = input_size
         self.sequence_size = sequence_size
@@ -98,7 +106,7 @@ class TransformerBlock(LudwigModule):
         self.dropout1 = nn.Dropout(dropout)
         self.layernorm1 = nn.LayerNorm(hidden_size, eps=1e-6)
         self.fully_connected = nn.Sequential(
-            nn.Linear(input_size, fc_size), get_activation("relu"), nn.Linear(fc_size, hidden_size)
+            nn.Linear(input_size, output_size), get_activation("relu"), nn.Linear(output_size, hidden_size)
         )
         self.dropout2 = nn.Dropout(dropout)
         self.layernorm2 = nn.LayerNorm(hidden_size, eps=1e-6)
@@ -123,7 +131,15 @@ class TransformerBlock(LudwigModule):
 
 class TransformerStack(LudwigModule):
     def __init__(
-        self, input_size, sequence_size, hidden_size=256, num_heads=8, fc_size=256, num_layers=1, dropout=0.1, **kwargs
+        self,
+        input_size: int,
+        sequence_size: int,
+        hidden_size: int = 256,
+        num_heads: int = 8,
+        output_size: int = 256,
+        num_layers: int = 1,
+        dropout: float = 0.1,
+        **kwargs,
     ):
         super().__init__()
         self.supports_masking = True
@@ -140,7 +156,7 @@ class TransformerStack(LudwigModule):
                 sequence_size=sequence_size,
                 hidden_size=hidden_size,
                 num_heads=num_heads,
-                fc_size=fc_size,
+                output_size=output_size,
                 dropout=dropout,
             )
             self.layers.append(layer)

@@ -15,7 +15,7 @@
 import copy
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import torch
 from torch import Tensor
@@ -23,7 +23,7 @@ from torch import Tensor
 from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOSS, NAME, PROC_COLUMN, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
@@ -187,7 +187,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         self.fc_layers = None
         self.num_fc_layers = 0
-        self.fc_size = 256
+        self.output_size = 256
         self.use_bias = True
         self.weights_initializer = "xavier_uniform"
         self.bias_initializer = "zeros"
@@ -202,15 +202,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        self.input_size = self.get_input_size_with_dependencies(
-            self.input_size, self.dependencies, other_output_features
-        )
+        self.input_size = get_input_size_with_dependencies(self.input_size, self.dependencies, other_output_features)
 
         self.fc_stack = FCStack(
             first_layer_input_size=self.input_size,
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
-            default_fc_size=self.fc_size,
+            default_output_size=self.output_size,
             default_use_bias=self.use_bias,
             default_weights_initializer=self.weights_initializer,
             default_bias_initializer=self.bias_initializer,
@@ -442,27 +440,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def populate_defaults(input_feature):
         pass
-
-    def get_input_size_with_dependencies(
-        self, combiner_output_size: int, dependencies: List[str], other_output_features: Dict[str, "OutputFeature"]
-    ):
-        """Returns the input size for the first layer of this output feature's FC stack, accounting for
-        dependencies on other output features.
-
-        In the forward pass, the hidden states of any dependent output features get concatenated with the combiner's
-        output.
-
-        If this output feature depends on other output features, then the input size for this feature's FCStack is the
-        sum of the output sizes of other output features + the combiner's output size.
-        """
-        input_size_with_dependencies = combiner_output_size
-        for feature_name in dependencies:
-            if other_output_features[feature_name].num_fc_layers:
-                input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape[-1]
-            else:
-                # 0-layer FCStack. Use the output feature's input size.
-                input_size_with_dependencies += other_output_features[feature_name].input_size
-        return input_size_with_dependencies
 
     def output_specific_fully_connected(self, inputs, mask=None):
         feature_hidden = inputs

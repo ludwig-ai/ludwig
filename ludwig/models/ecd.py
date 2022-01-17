@@ -11,6 +11,7 @@ from ludwig.combiners.combiners import Combiner, get_combiner_class
 from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
@@ -30,11 +31,9 @@ class ECD(LudwigModule):
         output_features_def,
         random_seed=None,
     ):
-        # Deep copy to prevent TensorFlow from hijacking the dicts within the config and
-        # transforming them into _DictWrapper classes, which are not JSON serializable.
-        self._input_features_df = copy.deepcopy(input_features_def)
+        self._input_features_def = copy.deepcopy(input_features_def)
         self._combiner_def = copy.deepcopy(combiner_def)
-        self._output_features_df = copy.deepcopy(output_features_def)
+        self._output_features_def = copy.deepcopy(output_features_def)
 
         self._random_seed = random_seed
 
@@ -44,9 +43,9 @@ class ECD(LudwigModule):
         super().__init__()
 
         # ================ Inputs ================
-        self.input_features = torch.nn.ModuleDict()
+        self.input_features = LudwigFeatureDict()
         try:
-            self.input_features.update(build_inputs(input_features_def))
+            self.input_features.update(build_inputs(self._input_features_def))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
@@ -62,8 +61,8 @@ class ECD(LudwigModule):
         self.combiner = combiner_class(input_features=self.input_features, config=config, **kwargs)
 
         # ================ Outputs ================
-        self.output_features = torch.nn.ModuleDict()
-        self.output_features.update(build_outputs(output_features_def, self.combiner))
+        self.output_features = LudwigFeatureDict()
+        self.output_features.update(build_outputs(self._output_features_def, self.combiner))
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -123,7 +122,7 @@ class ECD(LudwigModule):
         else:
             targets = None
 
-        assert inputs.keys() == self.input_features.keys()
+        assert list(inputs.keys()) == self.input_features.keys()
 
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
@@ -158,46 +157,20 @@ class ECD(LudwigModule):
             output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
         return output_logits
 
-    def predictions(self, inputs, output_features=None):
-        # check validity of output_features
-        if output_features is None:
-            of_list = self.output_features
-        elif isinstance(output_features, str):
-            if output_features == "all":
-                of_list = set(self.output_features.keys())
-            elif output_features in self.output_features:
-                of_list = [output_features]
-            else:
-                raise ValueError(
-                    "'output_features' {} is not a valid for this model. "
-                    "Available ones are: {}".format(output_features, set(self.output_features.keys()))
-                )
-        elif isinstance(output_features, list or set):
-            if output_features.issubset(self.output_features):
-                of_list = output_features
-            else:
-                raise ValueError(
-                    "'output_features' {} must be a subset of "
-                    "available features {}".format(output_features, set(self.output_features.keys()))
-                )
-        else:
-            raise ValueError("'output_features' must be None or a string or a list " "of output features")
-
+    def predictions(self, inputs):
         outputs = self(inputs)
-
         predictions = {}
-        for of_name in of_list:
+        for of_name in self.output_features:
             predictions[of_name] = self.output_features[of_name].predictions(outputs, of_name)
-
         return predictions
 
     def evaluation_step(self, inputs, targets):
-        predictions = self.predictions(inputs, output_features=None)
+        predictions = self.predictions(inputs)
         self.update_metrics(targets, predictions)
         return predictions
 
     def predict_step(self, inputs):
-        return self.predictions(inputs, output_features=None)
+        return self.predictions(inputs)
 
     def train_loss(
         self,

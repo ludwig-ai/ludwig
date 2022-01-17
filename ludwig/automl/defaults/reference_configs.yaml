@@ -61,7 +61,6 @@ datasets:
        decay: true
        decay_steps: 500
        decay_rate: 0.95
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: allstate_claims_severity
    goal: minimize
@@ -485,7 +484,6 @@ datasets:
        decay: true
        decay_steps: 10000
        decay_rate: 0.9
-       regularization_lambda: 1
        validation_metric: root_mean_squared_error
  - name: bnp_claims_management
    goal: maximize
@@ -781,7 +779,6 @@ datasets:
        decay: true
        decay_steps: 2000
        decay_rate: 0.4
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: ieee_fraud
    goal: maximize
@@ -1679,7 +1676,6 @@ datasets:
        decay: true
        decay_steps: 10000
        decay_rate: 0.95
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: mercedes_benz_greener
    goal: minimize
@@ -2465,7 +2461,6 @@ datasets:
        decay: true
        decay_steps: 500
        decay_rate: 0.95
-       regularization_lambda: 1
        validation_metric: root_mean_squared_error
  - name: otto_group_product
    goal: maximize
@@ -2685,7 +2680,6 @@ datasets:
        decay: true
        decay_steps: 20000
        decay_rate: 0.4
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: poker_hand
    goal: maximize
@@ -2739,7 +2733,6 @@ datasets:
        decay: true
        decay_steps: 8000
        decay_rate: 0.8
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: porto_seguro_safe_driver
    goal: maximize
@@ -2887,7 +2880,6 @@ datasets:
        decay: true
        decay_steps: 10000
        decay_rate: 0.9
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: santander_customer_satisfaction
    goal: maximize
@@ -3659,7 +3651,6 @@ datasets:
        decay: true
        decay_steps: 10000
        decay_rate: 0.8
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: santander_customer_transaction
    goal: maximize
@@ -4093,7 +4084,6 @@ datasets:
        decay: true
        decay_steps: 20000
        decay_rate: 0.95
-       regularization_lambda: 1
        validation_metric: accuracy
  - name: sarcos
    goal: minimize
@@ -4169,7 +4159,6 @@ datasets:
        decay: true
        decay_steps: 20000
        decay_rate: 0.4
-       regularization_lambda: 1
        validation_metric: root_mean_squared_error
  - name: walmart_recruiting
    goal: maximize
@@ -4213,5 +4202,4 @@ datasets:
        decay: true
        decay_steps: 20000
        decay_rate: 0.9
-       regularization_lambda: 1
        validation_metric: accuracy

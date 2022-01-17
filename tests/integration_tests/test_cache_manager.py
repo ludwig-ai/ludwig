@@ -21,7 +21,7 @@ def test_cache_dataset(use_cache_dir, use_split, tmpdir):
     config = {
         "input_features": [sequence_feature(reduce_output="sum")],
         "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
     }
 

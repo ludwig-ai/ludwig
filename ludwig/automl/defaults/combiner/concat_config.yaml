@@ -9,7 +9,7 @@ hyperopt:
       type: int
       lower: 1
       upper: 4
-    combiner.fc_size:
+    combiner.output_size:
       space: choice
       categories: [128, 256]
     combiner.dropout:

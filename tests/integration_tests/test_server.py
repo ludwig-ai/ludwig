@@ -58,7 +58,7 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
     model = LudwigModel(config, backend=LocalTestBackend())
@@ -125,7 +125,7 @@ def test_server_integration_with_images(tmpdir):
         image_feature(
             folder=image_dest_folder,
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
-            fc_size=16,
+            output_size=16,
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1),

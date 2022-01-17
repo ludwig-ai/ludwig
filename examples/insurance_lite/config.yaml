@@ -1,6 +1,5 @@
 input_features:
-  -
-    name: image_path
+  - name: image_path
     type: image
     preprocessing:
       height: 224
@@ -15,39 +14,33 @@ input_features:
     num_hidden_layers: 12
     num_attention_heads: 12
     intermediate_size: 3072
-  -
-    name: insurance_company
+  - name: insurance_company
     type: category
     preprocessing:
       missing_value_strategy: fill_with_const
       fill_value: UNKNOWN
-  -
-    name: cost_of_vehicle
+  - name: cost_of_vehicle
     type: numerical
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: zscore
-  -
-    name: expiry_date
+  - name: expiry_date
     type: date
     preprocessing:
       missing_value_strategy: fill_with_const
-      fill_value: ''
+      fill_value: ""
       datetime_format: "%Y-%m-%d"
-  -
-    name: min_coverage
+  - name: min_coverage
     type: numerical
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: zscore
-  -
-    name: max_coverage
+  - name: max_coverage
     type: numerical
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: zscore
-  -
-    name: condition
+  - name: condition
     type: category
     preprocessing:
       missing_value_strategy: fill_with_const
@@ -55,10 +48,9 @@ input_features:
 combiner:
   type: concat
   num_fc_layers: 3
-  fc_size: 256
+  output_size: 256
 output_features:
-  -
-    name: amount
+  - name: amount
     type: numerical
     preprocessing:
       normalization: zscore
