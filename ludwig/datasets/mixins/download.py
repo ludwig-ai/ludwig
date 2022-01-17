@@ -124,6 +124,26 @@ class GZipDownloadMixin:
         return self.config["download_urls"]
 
 
+class BinaryFileDownloadMixin:
+    """Downloads the binary file containing the training data."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        """Download the raw dataset and store that in the cache location."""
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
+            for file_download_url in self.download_urls:
+                filename = file_download_url.split("/")[-1]
+                with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=filename) as t:
+                    urllib.request.urlretrieve(file_download_url, os.path.join(tmpdir, filename), t.update_to)
+
+    @property
+    def download_urls(self):
+        return self.config["download_urls"]
+
+
 class UncompressedFileDownloadMixin:
     """Downloads the json file containing the training data and extracts the contents."""
 
