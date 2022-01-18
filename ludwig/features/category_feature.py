@@ -61,7 +61,7 @@ class _CategoryPreprocessing(torch.nn.Module):
             raise ValueError(f"Unexpected type: {type(v)}")
         s = v.strip()
         idx = self.str2idx.get(s, self.unk)
-        return torch.tensor(idx, dtype=torch.int32)
+        return torch.tensor([idx], dtype=torch.int32)
 
 
 class _CategoryPostprocessing(torch.nn.Module):
@@ -74,7 +74,7 @@ class _CategoryPostprocessing(torch.nn.Module):
 
     def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         predictions = preds[self.predictions_key].long()
-        inv_preds = self.idx2str.get(predictions, self.unk)
+        inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
         return {
             self.predictions_key: inv_preds,
             self.probabilities_key: preds[self.probabilities_key],

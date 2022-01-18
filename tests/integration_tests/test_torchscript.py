@@ -18,6 +18,7 @@ import tempfile
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 
@@ -242,3 +243,9 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     # Note that Tensorflow is running with eager execution enabled:
     script_module = ludwig_model.to_torchscript()
     print(script_module.graph)
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = {name: df[feature.column][0] for name, feature in ludwig_model.model.input_features.items()}
+    print(inputs)
+    outputs = script_module(inputs)
+    print(outputs)

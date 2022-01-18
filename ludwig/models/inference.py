@@ -85,6 +85,7 @@ class InferenceModule(nn.Module):
             feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()
         }
 
+        print(preproc_inputs)
         outputs = self.model(preproc_inputs)
 
         predictions = {
