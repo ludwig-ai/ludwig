@@ -7,3 +7,4 @@ input_features:
 output_features:
   - name: fr
     type: text
+    tokenizer: french_tokenize
