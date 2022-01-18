@@ -494,3 +494,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"RayBackend does not support lazy loading of data files at train time. "
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
+
+    @property
+    def num_nodes(self) -> int:
+        if not ray.is_initialized():
+            return 1
+        return len(ray.nodes())

@@ -33,7 +33,6 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import ray
 import torch
 from tabulate import tabulate
 
@@ -394,6 +393,7 @@ class LudwigModel:
                         test_set=test_set,
                         training_set_metadata=training_set_metadata,
                         data_format=data_format,
+                        backend=self.backend,
                         random_seed=random_seed,
                     )
 
@@ -1736,6 +1736,7 @@ def get_experiment_description(
     test_set=None,
     training_set_metadata=None,
     data_format=None,
+    backend=None,
     random_seed=None,
 ):
     description = OrderedDict()
@@ -1774,13 +1775,13 @@ def get_experiment_description(
     description["config"] = config
     description["torch_version"] = torch.__version__
 
-    compute_description = {"num_nodes": 1}
-    if ray.is_initialized():
-        compute_description = {"num_nodes": len(ray.nodes())}
+    gpu_info = {}
     if torch.cuda.is_available():
         # Assumption: All nodes are of the same instance type.
-        compute_description["gpu_type"] = torch.cuda.get_device_name(0)
-        compute_description["gpus_per_node"] = torch.cuda.device_count()
+        # TODO: fix for Ray where workers may be of different skus
+        gpu_info = {"gpu_type": torch.cuda.get_device_name(0), "gpus_per_node": torch.cuda.device_count()}
+
+    compute_description = {"num_nodes": backend.num_nodes, **gpu_info}
 
     description["compute"] = compute_description
 
