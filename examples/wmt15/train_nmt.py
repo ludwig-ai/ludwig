@@ -1,8 +1,6 @@
-"""Sample ludwig training code for training an NMT model (en -> fr).
+"""Sample ludwig training code for training an NMT model (en -> fr) on WMT15 (https://www.statmt.org/wmt15/).
 
 The dataset is rather large (8GB), which can take several minutes to preprocess.
-
-If modeling speed is still a concern, try modeling with config_small.
 """
 
 import logging
