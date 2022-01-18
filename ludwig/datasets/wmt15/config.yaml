@@ -1,0 +1,5 @@
+version: 2.0
+competition: dhruvildave/en-fr-translation-dataset
+archive_filename: en-fr-translation-dataset.zip
+download_file_type: csv
+csv_filename: en-fr.csv
