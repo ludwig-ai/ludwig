@@ -81,29 +81,21 @@ class InferenceModule(nn.Module):
         # self.model = torch.jit.script(model_with_preds)
 
     def forward(self, inputs: Dict[str, Union[List[str], torch.Tensor]]):
-        preproc_inputs = {
-            feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()
-        }
+        with torch.no_grad():
+            preproc_inputs = {
+                feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()
+            }
 
-        print(preproc_inputs)
-        outputs = self.model(preproc_inputs)
+            print(preproc_inputs)
+            outputs = self.model(preproc_inputs)
 
-        predictions = {
-            feature_name: predict(outputs, feature_name) for feature_name, predict in self.predict_modules.items()
-        }
+            predictions = {
+                feature_name: predict(outputs, feature_name) for feature_name, predict in self.predict_modules.items()
+            }
 
-        postproc_outputs = {
-            feature_name: postproc(predictions[feature_name])
-            for feature_name, postproc in self.postproc_modules.items()
-        }
+            postproc_outputs = {
+                feature_name: postproc(predictions[feature_name])
+                for feature_name, postproc in self.postproc_modules.items()
+            }
 
-        return postproc_outputs
-
-        # model_outputs = self.model(preproc_inputs)
-
-        # postproc_outputs = {
-        #     feature_name: postproc(model_outputs[feature_name])
-        #     for feature_name, postproc in self.postproc_modules.items()
-        # }
-
-        # return postproc_outputs
+            return postproc_outputs
