@@ -40,7 +40,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -72,7 +72,7 @@ class _CategoryPostprocessing(torch.nn.Module):
         self.unk = ""
 
     def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key].long()
+        predictions = preds[self.predictions_key]
         inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
         return {
             self.predictions_key: inv_preds,
@@ -80,18 +80,12 @@ class _CategoryPostprocessing(torch.nn.Module):
         }
 
 
-class _CategoryPredict(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
-        super().__init__()
-        self.predictions_key = PREDICTIONS
-        self.probabilities_key = PROBABILITIES
-        self.logits_key = LOGITS
-
+class _CategoryPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)
-        # predictions = predictions.long()
+        predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
         # predictions: [batch_size]
@@ -241,17 +235,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        probabilities = torch.softmax(logits, -1)
-        predictions = torch.argmax(logits, -1)
-        predictions = predictions.long()
-
-        # EXPECTED SHAPE OF RETURNED TENSORS
-        # predictions: [batch_size]
-        # probabilities: [batch_size, num_classes]
-        # logits: [batch_size, num_classes]
-        return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
+    def create_predict_module(self) -> torch.nn.Module:
+        return _CategoryPredict()
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -423,10 +408,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
-
-    @staticmethod
-    def create_predict_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _CategoryPredict(metadata)
 
     @staticmethod
     def populate_defaults(output_feature):

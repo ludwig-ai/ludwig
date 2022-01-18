@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOSS, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -101,6 +101,14 @@ class BaseFeatureMixin(ABC):
             skip_save_processed_input: Whether to skip saving the processed input.
         """
         raise NotImplementedError
+
+
+class PredictModule(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.logits_key = LOGITS
 
 
 class BaseFeature:
@@ -217,6 +225,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+        self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
         self.reduce_sequence_input = SequenceReducer(reduce_mode=self.reduce_input)
@@ -283,6 +292,27 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         }
 
     @abstractmethod
+    def create_predict_module(self) -> torch.nn.Module:
+        raise NotImplementedError()
+
+    @property
+    def prediction_module(self) -> torch.nn.Module:
+        return self._prediction_module
+
+    def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        """Computes actual predictions from the outputs of feature decoders.
+
+        TODO(Justin): Consider refactoring this to accept feature-specific decoder outputs.
+
+        Args:
+            all_decoder_outputs: A dictionary of {feature name}::{tensor_name} -> output tensor.
+        Returns:
+            Dictionary of tensors with predictions as well as any additional tensors that may be
+            necessary for computing evaluation metrics.
+        """
+        return self.prediction_module(all_decoder_outputs, feature_name)
+
+    @abstractmethod
     def logits(self, combiner_outputs: Dict[str, torch.Tensor], target=None, **kwargs) -> Dict[str, torch.Tensor]:
         """Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's forward pass.
 
@@ -295,22 +325,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             tensors that may be necessary for computing predictions or evaluation metrics.
         """
         raise NotImplementedError("OutputFeature is missing logits() implementation.")
-
-    @abstractmethod
-    def predictions(
-        self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs
-    ) -> Dict[str, torch.Tensor]:
-        """Computes actual predictions from the outputs of feature decoders.
-
-        TODO(Justin): Consider refactoring this to accept feature-specific decoder outputs.
-
-        Args:
-            all_decoder_outputs: A dictionary of {feature name}::{tensor_name} -> output tensor.
-        Returns:
-            Dictionary of tensors with predictions as well as any additional tensors that may be
-            necessary for computing evaluation metrics.
-        """
-        raise NotImplementedError("OutputFeature is missing predictions() implementation.")
 
     def loss_kwargs(self) -> Dict[str, Any]:
         """Returns arguments that are used to instantiate an instance of the loss class."""

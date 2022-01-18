@@ -64,10 +64,7 @@ class InferenceModule(nn.Module):
             for feature in config["output_features"]
         }
         self.predict_modules = nn.ModuleDict(
-            {
-                feature_name: feature.create_predict_module(training_set_metadata[feature_name])
-                for feature_name, feature in output_features.items()
-            }
+            {feature_name: feature.prediction_module for feature_name, feature in model.output_features.items()}
         )
         self.postproc_modules = nn.ModuleDict(
             {
@@ -75,10 +72,6 @@ class InferenceModule(nn.Module):
                 for feature_name, feature in output_features.items()
             }
         )
-
-        # model_with_preds = _ModelWithPreds(self.script_model, postproc_modules)
-        # model_inputs = model.get_model_inputs()
-        # self.model = torch.jit.script(model_with_preds)
 
     def forward(self, inputs: Dict[str, Union[List[str], torch.Tensor]]):
         with torch.no_grad():
