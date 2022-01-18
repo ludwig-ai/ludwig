@@ -240,4 +240,5 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Create graph inference model (Tensorflow) from trained Ludwig model.
     # Note that Tensorflow is running with eager execution enabled:
-    _ = ludwig_model.to_torchscript()
+    script_module = ludwig_model.to_torchscript()
+    print(script_module.graph)

@@ -73,11 +73,32 @@ class _CategoryPostprocessing(torch.nn.Module):
         self.unk = ""
 
     def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        inv_preds = self.idx2str.get(preds[self.predictions_key], self.unk)
+        predictions = preds[self.predictions_key].long()
+        inv_preds = self.idx2str.get(predictions, self.unk)
         return {
             self.predictions_key: inv_preds,
             self.probabilities_key: preds[self.probabilities_key],
         }
+
+
+class _CategoryPredict(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.logits_key = LOGITS
+
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
+        # predictions = predictions.long()
+
+        # EXPECTED SHAPE OF RETURNED TENSORS
+        # predictions: [batch_size]
+        # probabilities: [batch_size, num_classes]
+        # logits: [batch_size, num_classes]
+        return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
 class CategoryFeatureMixin(BaseFeatureMixin):
@@ -403,6 +424,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
+
+    @staticmethod
+    def create_predict_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPredict(metadata)
 
     @staticmethod
     def populate_defaults(output_feature):
