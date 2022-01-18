@@ -245,7 +245,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     print(script_module.graph)
 
     df = pd.read_csv(training_data_csv_path)
-    inputs = {name: df[feature.column][0] for name, feature in ludwig_model.model.input_features.items()}
+    inputs = {name: [df[feature.column][0]] for name, feature in ludwig_model.model.input_features.items()}
     print(inputs)
     outputs = script_module(inputs)
     print(outputs)

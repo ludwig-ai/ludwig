@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import torch
 from torch import nn
@@ -80,7 +80,7 @@ class InferenceModule(nn.Module):
         # model_inputs = model.get_model_inputs()
         # self.model = torch.jit.script(model_with_preds)
 
-    def forward(self, inputs: Dict[str, Union[str, torch.Tensor]]):
+    def forward(self, inputs: Dict[str, Union[List[str], torch.Tensor]]):
         preproc_inputs = {
             feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()
         }

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -56,12 +56,11 @@ class _CategoryPreprocessing(torch.nn.Module):
         self.str2idx = metadata["str2idx"]
         self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, v: Union[str, torch.Tensor]):
-        if not isinstance(v, str):
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if isinstance(v, torch.Tensor):
             raise ValueError(f"Unexpected type: {type(v)}")
-        s = v.strip()
-        idx = self.str2idx.get(s, self.unk)
-        return torch.tensor([idx], dtype=torch.int32)
+        indices = [self.str2idx.get(s.strip(), self.unk) for s in v]
+        return torch.tensor(indices, dtype=torch.int32)
 
 
 class _CategoryPostprocessing(torch.nn.Module):
