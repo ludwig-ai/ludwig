@@ -13,6 +13,7 @@ class InferenceModule(nn.Module):
     def __init__(self, model: ECD, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
+        model.cpu()
         self.model = model.to_torchscript()
 
         input_features = {

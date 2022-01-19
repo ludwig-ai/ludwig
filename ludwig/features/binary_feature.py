@@ -84,9 +84,13 @@ class _BinaryPostprocessing(torch.nn.Module):
         if self.bool2str is not None:
             predictions = predictions.to(dtype=torch.int32)
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
+
+        probs = preds[self.probabilities_key]
+        probs = torch.dstack(1 - probs, probs)
+
         return {
             self.predictions_key: predictions,
-            self.probabilities_key: preds[self.probabilities_key],
+            self.probabilities_key: probs,
         }
 
 

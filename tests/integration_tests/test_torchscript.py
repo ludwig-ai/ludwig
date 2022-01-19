@@ -24,7 +24,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME
+from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
@@ -205,6 +205,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
+        # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
         # vector_feature(),
@@ -221,6 +222,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
+        # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
         # set_feature(vocab_size=3),
@@ -250,10 +252,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
-    # Create graph inference model (Tensorflow) from trained Ludwig model.
-    # Note that Tensorflow is running with eager execution enabled:
+    # Obtain predictions from Python model
+    preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
+
+    # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
-    print(script_module.graph)
 
     def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
         if s.dtype == "object":
@@ -262,8 +265,28 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     df = pd.read_csv(training_data_csv_path)
     inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
-    print()
-    print(inputs)
     outputs = script_module(inputs)
-    print()
-    print(outputs)
+
+    # TODO: these are the only outputs we provide from Torchscript for now
+    ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}
+
+    # Compare results from Python trained model against Torchscript
+    for feature_name, feature_outputs_expected in preds_dict.items():
+        assert feature_name in outputs
+
+        feature_outputs = outputs[feature_name]
+        for output_name, output_values_expected in feature_outputs_expected.items():
+            if output_name not in ts_outputs:
+                continue
+
+            assert output_name in feature_outputs
+            output_values = feature_outputs[output_name]
+            if isinstance(output_values, list):
+                # Strings should match exactly
+                assert np.all(
+                    output_values == output_values_expected
+                ), f"feature: {feature_name}, output: {output_name}"
+            else:
+                assert np.allclose(
+                    output_values, output_values_expected
+                ), f"feature: {feature_name}, output: {output_name}"
