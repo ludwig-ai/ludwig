@@ -58,7 +58,7 @@ class _CategoryPreprocessing(torch.nn.Module):
 
     def forward(self, v: Union[List[str], torch.Tensor]):
         if isinstance(v, torch.Tensor):
-            raise ValueError(f"Unexpected type: {type(v)}")
+            raise ValueError(f"Unsupported input: {v}")
         indices = [self.str2idx.get(s.strip(), self.unk) for s in v]
         return torch.tensor(indices, dtype=torch.int32)
 

@@ -24,6 +24,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.constants import NAME
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
@@ -198,8 +199,10 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     # Configure features to be tested:
+    bin_str_feature = binary_feature()
     input_features = [
-        # binary_feature(),
+        bin_str_feature,
+        binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
@@ -228,6 +231,12 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
+    # Convert bool values to strings, e.g., {'Yes', 'No'}
+    df = pd.read_csv(training_data_csv_path)
+    false_value, true_value = "No", "Yes"
+    df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
+    df.to_csv(training_data_csv_path)
+
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
@@ -252,6 +261,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     df = pd.read_csv(training_data_csv_path)
     inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
+    print()
     print(inputs)
     outputs = script_module(inputs)
+    print()
     print(outputs)
