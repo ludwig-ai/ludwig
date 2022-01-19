@@ -123,7 +123,8 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         def write_processed_image(t):
             i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
-            self.write_png(torch.from_numpy(images[i]), output_filename)
+            torch_image = torch.from_numpy(images[i].copy()).view(1, 28, 28)
+            self.write_png(torch_image, output_filename)
 
         # write out image data
         tasks = list(enumerate(labels))
