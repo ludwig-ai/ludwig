@@ -406,10 +406,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return predictions
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _CategoryPostprocessing(metadata)
-
-    @staticmethod
     def populate_defaults(output_feature):
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
@@ -431,3 +427,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
         )
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPostprocessing(metadata)

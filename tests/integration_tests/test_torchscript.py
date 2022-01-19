@@ -16,6 +16,7 @@ import os
 import shutil
 import tempfile
 from copy import deepcopy
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -199,7 +200,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     # Configure features to be tested:
     input_features = [
         # binary_feature(),
-        # numerical_feature(),
+        numerical_feature(),
         category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
@@ -244,8 +245,13 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     script_module = ludwig_model.to_torchscript()
     print(script_module.graph)
 
+    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+        if s.dtype == "object":
+            return s.to_list()
+        return torch.from_numpy(s.to_numpy())
+
     df = pd.read_csv(training_data_csv_path)
-    inputs = {name: df[feature.column].to_list() for name, feature in ludwig_model.model.input_features.items()}
+    inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
     print(inputs)
     outputs = script_module(inputs)
     print(outputs)
