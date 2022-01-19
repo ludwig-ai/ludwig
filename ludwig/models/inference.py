@@ -2,45 +2,11 @@ from typing import Any, Dict, List, Union
 
 import torch
 from torch import nn
-from torch._C import ScriptModule
 
 from ludwig.constants import NAME, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import EXCLUDE_PRED_SET
 from ludwig.utils.misc_utils import get_from_registry
-
-
-class _ModelWithPreds(nn.Module):
-    def __init__(self, model: ScriptModule, postproc_modules: nn.ModuleDict):
-        super().__init__()
-        self.model = model
-        self.postproc_modules = postproc_modules
-
-    def forward(self, inputs: Dict[str, torch.Tensor]) -> Dict[str, Union[str, torch.Tensor]]:
-        preds = self.model(inputs)
-        print("PREDS", preds)
-
-        postproc_outputs = {
-            feature_name: postproc(preds[feature_name]) for feature_name, postproc in self.postproc_modules.items()
-        }
-        print("POSTPROC OUTPUTS", postproc_outputs)
-
-        flat_tensor_outputs = {}
-        flat_str_outputs = {}
-        for of_name, of_preds in postproc_outputs.items():
-            for pred_name, pred_values in of_preds.items():
-                if pred_name not in EXCLUDE_PRED_SET:
-                    key = f"{of_name}_{pred_name}"
-                    if isinstance(pred_values, str):
-                        flat_str_outputs[key] = pred_values
-                    else:
-                        flat_tensor_outputs[key] = pred_values
-                    # flat_outputs[key] = pred_values
-        print("FLAT TENSOR OUTPUTS", flat_tensor_outputs)
-        print("FLAT STR OUTPUTS", flat_str_outputs)
-
-        return flat_tensor_outputs, flat_str_outputs
 
 
 class InferenceModule(nn.Module):
