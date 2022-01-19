@@ -19,6 +19,7 @@ import sys
 from multiprocessing.pool import ThreadPool
 
 import numpy as np
+import torch
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import GZipDownloadMixin
@@ -122,7 +123,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         def write_processed_image(t):
             i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
-            self.save_image(data[i], output_filename)
+            self.save_image(torch.from_numpy(data[i]), output_filename)
 
         # write out image data
         tasks = list(enumerate(labels))

@@ -23,6 +23,7 @@ import uuid
 from typing import List
 
 import numpy as np
+import torch
 import yaml
 
 from ludwig.constants import (
@@ -323,7 +324,7 @@ def generate_image(feature):
             os.makedirs(destination_folder)
 
         image_dest_path = os.path.join(destination_folder, image_filename)
-        save_image(img.astype("uint8"), image_dest_path)
+        save_image(torch.from_numpy(img.astype("uint8")), image_dest_path)
 
     except OSError as e:
         raise OSError("Unable to create a folder for images/save image to disk." "{}".format(e))
