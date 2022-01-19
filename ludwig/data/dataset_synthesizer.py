@@ -285,7 +285,7 @@ def generate_audio(feature):
 
 def generate_image(feature):
     try:
-        from torchvision.io import save_image
+        from torchvision.utils import save_image
     except ImportError:
         logger.error(
             " torchvision is not installed. "

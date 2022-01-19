@@ -48,7 +48,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         try:
-            from torchvision.io import save_image
+            from torchvision.utils import save_image
 
             self.save_image = save_image
         except ImportError:
