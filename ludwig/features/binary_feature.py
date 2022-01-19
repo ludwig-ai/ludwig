@@ -38,7 +38,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
@@ -51,6 +51,22 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
+
+
+class _BinaryPredict(PredictModule):
+    def __init__(self, threshold):
+        super().__init__()
+        self.threshold = threshold
+
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        probabilities = torch.sigmoid(logits)
+        predictions = probabilities >= self.threshold
+        return {
+            self.probabilities_key: probabilities,
+            self.predictions_key: predictions,
+            self.logits_key: logits,
+        }
 
 
 class BinaryFeatureMixin(BaseFeatureMixin):
@@ -206,22 +222,15 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        probabilities = torch.sigmoid(logits)
-        predictions = probabilities >= self.threshold
-        return {
-            PROBABILITIES: probabilities,
-            PREDICTIONS: predictions,
-            LOGITS: logits,
-        }
-
     def loss_kwargs(self):
         return dict(
             positive_class_weight=self.loss["positive_class_weight"],
             robust_lambda=self.loss["robust_lambda"],
             confidence_penalty=self.loss["confidence_penalty"],
         )
+
+    def create_predict_module(self) -> torch.nn.Module:
+        return _BinaryPredict(self.threshold)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

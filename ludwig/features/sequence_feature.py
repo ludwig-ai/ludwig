@@ -27,7 +27,6 @@ from ludwig.constants import (
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
-    LOGITS,
     LOSS,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
@@ -43,7 +42,7 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
@@ -58,6 +57,18 @@ from ludwig.utils.strings_utils import (
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
+
+
+class _SequencePredict(PredictModule):
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
+
+        # predictions: [batch_size, sequence_length]
+        # probabilities: [batch_size, sequence_length, vocab_size]
+        # logits: [batch_size, sequence_length, vocab_size]
+        return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
 class SequenceFeatureMixin(BaseFeatureMixin):
@@ -226,15 +237,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def logits(self, inputs: Dict[str, torch.Tensor], target=None):
         return self.decoder_obj(inputs, target=target)
 
-    def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(all_decoder_outputs, feature_name, LOGITS)
-        probabilities = torch.softmax(logits, -1)
-        predictions = torch.argmax(logits, -1)
-
-        # predictions: [batch_size, sequence_length]
-        # probabilities: [batch_size, sequence_length, vocab_size]
-        # logits: [batch_size, sequence_length, vocab_size]
-        return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
+    def create_predict_module(self) -> torch.nn.Module:
+        return _SequencePredict()
 
     def get_prediction_set(self):
         return self.decoder_obj.get_prediction_set()
