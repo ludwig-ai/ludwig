@@ -286,7 +286,7 @@ def generate_audio(feature):
 
 def generate_image(feature):
     try:
-        from torchvision.utils import save_image
+        from torchvision.io import write_png
     except ImportError:
         logger.error(
             " torchvision is not installed. "
@@ -311,9 +311,9 @@ def generate_image(feature):
 
     # Create a Random Image
     if num_channels == 1:
-        img = np.random.rand(width, height) * 255
+        img = torch.randint(0, 255, (width, height), dtype=torch.uint8)
     else:
-        img = np.random.rand(width, height, num_channels) * 255.0
+        img = torch.randint(0, 255, (num_channels, width, height), dtype=torch.uint8)
 
     # Generate a unique random filename
     image_filename = uuid.uuid4().hex[:10].upper() + ".png"
@@ -324,7 +324,8 @@ def generate_image(feature):
             os.makedirs(destination_folder)
 
         image_dest_path = os.path.join(destination_folder, image_filename)
-        save_image(torch.from_numpy(img.astype("uint8")), image_dest_path)
+        # save_image(torch.from_numpy(img.astype("uint8")), image_dest_path)
+        write_png(img, image_dest_path)
 
     except OSError as e:
         raise OSError("Unable to create a folder for images/save image to disk." "{}".format(e))

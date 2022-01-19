@@ -49,9 +49,9 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         try:
-            from torchvision.utils import save_image
+            from torchvision.io import write_png
 
-            self.save_image = save_image
+            self.write_png = write_png
         except ImportError:
             print(
                 " torchvision is not installed. "
@@ -68,8 +68,8 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
             print(f">>> create ludwig formatted {dataset} data")
-            labels, data = self.read_source_dataset(dataset, self.raw_dataset_path)
-            self.write_output_dataset(labels, data, os.path.join(self.processed_temp_path, dataset))
+            labels, images = self.read_source_dataset(dataset, self.raw_dataset_path)
+            self.write_output_dataset(labels, images, os.path.join(self.processed_temp_path, dataset))
         self.output_training_and_test_data()
         rename(self.processed_temp_path, self.processed_dataset_path)
         print(">>> completed data preparation")
@@ -103,7 +103,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
 
         return lbl, img
 
-    def write_output_dataset(self, labels, data, output_dir):
+    def write_output_dataset(self, labels, images, output_dir):
         """Create output directories where we write out the images.
 
         :args:
@@ -123,7 +123,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         def write_processed_image(t):
             i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
-            self.save_image(torch.from_numpy(data[i]), output_filename)
+            self.write_png(torch.from_numpy(images[i]), output_filename)
 
         # write out image data
         tasks = list(enumerate(labels))
