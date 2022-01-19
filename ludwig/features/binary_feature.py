@@ -75,20 +75,14 @@ class _BinaryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         bool2str = metadata.get("bool2str")
-        self.bool2str = (
-            {
-                0: bool2str[0],
-                1: bool2str[1],
-            }
-            if bool2str is not None
-            else None
-        )
+        self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
     def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         predictions = preds[self.predictions_key]
         if self.bool2str is not None:
+            predictions = predictions.to(dtype=torch.int32)
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
         return {
             self.predictions_key: predictions,
