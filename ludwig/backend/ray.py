@@ -169,16 +169,11 @@ def train_fn(
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
     if results is not None:
-        # only return the model state dict back to the driver
+        # only return the model state dict back to the head node.
         trained_model, *args = results
-        results = (trained_model.state_dict(), *args)
+        results = (trained_model.cpu().state_dict(), *args)
 
-    # TODO(shreya): Figure out GPU memory leak
-    # TODO(shreya): Check if placing model off GPU explicitly makes a difference
-    # Clear CUDA memory, place model on CPU, return model to user
-    # torch.cuda.empty_cache()
-    # model.cpu()
-
+    torch.cuda.empty_cache()
     return results, trainer.validation_field, trainer.validation_metric
 
 
