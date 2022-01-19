@@ -310,10 +310,7 @@ def generate_image(feature):
         raise ValueError("Invalid arguments for generating images")
 
     # Create a Random Image
-    if num_channels == 1:
-        img = torch.randint(0, 255, (width, height), dtype=torch.uint8)
-    else:
-        img = torch.randint(0, 255, (num_channels, width, height), dtype=torch.uint8)
+    img = torch.randint(0, 255, (num_channels, width, height), dtype=torch.uint8)
 
     # Generate a unique random filename
     image_filename = uuid.uuid4().hex[:10].upper() + ".png"
