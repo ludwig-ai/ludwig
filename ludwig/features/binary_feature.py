@@ -62,7 +62,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     def preprocessing_defaults() -> Dict[str, Any]:
         return {
             "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": "False",  # Default False.
+            "fill_value": "False",
         }
 
     @staticmethod
