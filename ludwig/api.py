@@ -410,10 +410,10 @@ class LudwigModel:
                         if key != "config":  # Config is printed separately.
                             experiment_description.append([key, pformat(value, indent=4)])
 
-                    print_boxed("Experiment description")
+                    print_boxed("EXPERIMENT DESCRIPTION")
                     logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
-                    print_boxed("Ludwig config")
+                    print_boxed("LUDWIG CONFIG")
                     logger.info(pformat(self.config, indent=4))
 
                 for callback in self.callbacks:
@@ -557,7 +557,7 @@ class LudwigModel:
                     best_function = get_best_function(validation_metric)
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
-                        print_boxed("Training report")
+                        print_boxed("TRAINING REPORT")
                         epoch_best_vali_metric, best_vali_metric = best_function(
                             enumerate(validation_field_result[validation_metric]), key=lambda pair: pair[1]
                         )
@@ -589,7 +589,7 @@ class LudwigModel:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
 
-                print_boxed("Finished")
+                print_boxed("FINISHED")
                 return train_stats, preprocessed_data, output_url
 
     def train_online(
@@ -1263,7 +1263,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        # preprocess
+        print_boxed("PREPROCESSING")
         preprocessed_data = preprocess_for_training(
             self.config,
             dataset=dataset,
