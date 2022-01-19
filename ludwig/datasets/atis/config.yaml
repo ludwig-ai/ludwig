@@ -1,0 +1,4 @@
+version: 1.0
+competition: hassanamin/atis-airlinetravelinformationsystem
+archive_filename: atis-airlinetravelinformationsystem.zip
+csv_filename: atis_intents.csv

@@ -42,13 +42,15 @@ class CSVLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self, split) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+    def load_processed_dataset(
+        self, split, **kwargs
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed CSV into a dataframe.
 
         :param split: Splits along 'split' column if present
         :returns: A pandas dataframe
         """
-        data_df = pd.read_csv(self.dataset_path)
+        data_df = pd.read_csv(self.dataset_path, **kwargs)
         return _split(data_df, split)
 
     @property
@@ -66,14 +68,16 @@ class ParquetLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self, split) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+    def load_processed_dataset(
+        self, split, **kwargs
+    ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed Parquet into a dataframe.
 
         :param split: Splits along 'split' column if present
         :returns: A pandas dataframe
         """
         dataset_path = os.path.join(self.processed_dataset_path, self.parquet_filename)
-        data_df = pd.read_parquet(dataset_path)
+        data_df = pd.read_parquet(dataset_path, **kwargs)
         return _split(data_df, split)
 
     @property

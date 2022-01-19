@@ -61,14 +61,14 @@ class BaseDataset:
             self.download()
         self.process_downloaded_dataset()
 
-    def load(self, split=False) -> pd.DataFrame:
+    def load(self, split=False, **kwargs) -> pd.DataFrame:
         """Loads the processed data into a Pandas DataFrame.
 
         :param split: Splits dataset along 'split' column if present.
         """
         if not self.is_processed():
             self.process()
-        return self.load_processed_dataset(split)
+        return self.load_processed_dataset(split, **kwargs)
 
     @property
     def raw_dataset_path(self):
