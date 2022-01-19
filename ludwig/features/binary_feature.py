@@ -62,7 +62,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     def preprocessing_defaults() -> Dict[str, Any]:
         return {
             "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": 0,
+            "fill_value": False,  # Default False.
         }
 
     @staticmethod
@@ -96,25 +96,22 @@ class BinaryFeatureMixin(BaseFeatureMixin):
             return {}
 
         distinct_values = backend.df_engine.compute(column.drop_duplicates())
-        if len(distinct_values) > 2:
-            raise ValueError(
-                f"Binary feature column {column.name} expects 2 distinct values, "
-                f"found: {distinct_values.values.tolist()}"
-            )
-        if "fallback_true_label" in preprocessing_parameters:
-            fallback_true_label = preprocessing_parameters["fallback_true_label"]
-        else:
-            fallback_true_label = sorted(distinct_values)[0]
-            logger.warning(
-                f"In case binary feature {column.name} doesn't have conventional boolean values, "
-                f"we will interpret {fallback_true_label} as 1 and the other values as 0. "
-                f"If this is incorrect, please use the category feature type or "
-                f"manually specify the true value with `preprocessing.fallback_true_label`."
-            )
+
+        fallback_true_label = None
+        if not strings_utils.are_conventional_bools(distinct_values):
+            if "fallback_true_label" in preprocessing_parameters:
+                fallback_true_label = preprocessing_parameters["fallback_true_label"]
+            else:
+                fallback_true_label = sorted(distinct_values)[0]
+                logger.warning(
+                    f"Binary feature '{column.name}' has at least 1 unconventional boolean value. We will interpret "
+                    f"'{fallback_true_label}' as True and the other values as False. If this is incorrect, please use "
+                    "the category feature type or manually specify the true value with "
+                    "`preprocessing.fallback_true_label`."
+                )
 
         str2bool = {v: strings_utils.str2bool(v, fallback_true_label) for v in distinct_values}
         bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
-
         return {"str2bool": str2bool, "bool2str": bool2str, "fallback_true_label": fallback_true_label}
 
     @staticmethod
