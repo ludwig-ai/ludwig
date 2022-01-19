@@ -184,11 +184,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     default_validation_metric = JACCARD
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-
         self.num_classes = 0
         self.threshold = 0.5
 
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
