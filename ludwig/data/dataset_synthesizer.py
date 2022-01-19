@@ -285,10 +285,10 @@ def generate_audio(feature):
 
 def generate_image(feature):
     try:
-        from skimage.io import imsave
+        from torchvision.io import save_image
     except ImportError:
         logger.error(
-            " scikit-image is not installed. "
+            " torchvision is not installed. "
             "In order to install all image feature dependencies run "
             "pip install ludwig[image]"
         )
@@ -315,7 +315,7 @@ def generate_image(feature):
         img = np.random.rand(width, height, num_channels) * 255.0
 
     # Generate a unique random filename
-    image_filename = uuid.uuid4().hex[:10].upper() + ".jpg"
+    image_filename = uuid.uuid4().hex[:10].upper() + ".png"
 
     # Save the image to disk either in a specified location/new folder
     try:
@@ -323,7 +323,7 @@ def generate_image(feature):
             os.makedirs(destination_folder)
 
         image_dest_path = os.path.join(destination_folder, image_filename)
-        imsave(image_dest_path, img.astype("uint8"))
+        save_image(img.astype("uint8"), image_dest_path)
 
     except OSError as e:
         raise OSError("Unable to create a folder for images/save image to disk." "{}".format(e))

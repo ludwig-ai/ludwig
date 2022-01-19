@@ -15,10 +15,10 @@
 # ==============================================================================
 import os
 import struct
+import sys
 from multiprocessing.pool import ThreadPool
 
 import numpy as np
-from skimage.io import imsave
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import GZipDownloadMixin
@@ -47,6 +47,18 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
     processed_dataset_path: str
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
+        try:
+            from torchvision.io import save_image
+
+            self.save_image = save_image
+        except ImportError:
+            print(
+                " torchvision is not installed. "
+                "In order to install all image feature dependencies run "
+                "pip install ludwig[image]",
+                file=sys.stderr,
+            )
+            sys.exit(-1)
         super().__init__(dataset_name="mnist", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
@@ -110,7 +122,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         def write_processed_image(t):
             i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
-            imsave(output_filename, data[i])
+            self.save_image(data[i], output_filename)
 
         # write out image data
         tasks = list(enumerate(labels))
