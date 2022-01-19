@@ -206,14 +206,14 @@ class _NumericalPredict(PredictModule):
         self.clip = clip
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
         predictions = logits
 
         if self.clip is not None:
             predictions = torch.clamp(logits, self.clip[0], self.clip[1])
             logger.debug(f"  clipped_predictions: {predictions}")
 
-        return {PREDICTIONS: predictions, LOGITS: logits}
+        return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class NumericalFeatureMixin(BaseFeatureMixin):

@@ -216,7 +216,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     output_features = [
         category_feature(vocab_size=3),
         # binary_feature(),
-        # numerical_feature(),
+        numerical_feature(),
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
         # set_feature(vocab_size=3),
