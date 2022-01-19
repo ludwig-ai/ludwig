@@ -215,6 +215,7 @@ class RayTrainerV2(BaseTrainer):
 
         # load state dict back into the model
         state_dict, *args = results
+        # print(f"state_dict: {state_dict}")
         self.model.load_state_dict(state_dict)
         results = (self.model, *args)
 
