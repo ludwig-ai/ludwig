@@ -104,6 +104,12 @@ class BaseFeatureMixin(ABC):
 
 
 class PredictModule(torch.nn.Module):
+    """Base class for all modules that convert model outputs to predictions.
+
+    Explicit member variables needed here for scripting, as Torchscript will not be able to recognize global variables
+    during scripting.
+    """
+
     def __init__(self):
         super().__init__()
         self.predictions_key = PREDICTIONS
@@ -292,11 +298,16 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         }
 
     @abstractmethod
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
+        """Creates and returns a `nn.Module` that converts raw model outputs (logits) to predictions.
+
+        Thos module is needed when generating the Torchscript model using scripting.
+        """
         raise NotImplementedError()
 
     @property
-    def prediction_module(self) -> torch.nn.Module:
+    def prediction_module(self) -> PredictModule:
+        """Returns the PredictModule used to convert model outputs to predictions."""
         return self._prediction_module
 
     def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:

@@ -200,7 +200,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def loss_kwargs(self):
         return self.loss
 
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
         return _SetPredict(self.threshold)
 
     def get_prediction_set(self):

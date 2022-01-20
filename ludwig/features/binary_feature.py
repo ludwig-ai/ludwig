@@ -274,7 +274,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
         )
 
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
         return _BinaryPredict(self.threshold)
 
     def get_prediction_set(self):

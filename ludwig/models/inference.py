@@ -10,6 +10,11 @@ from ludwig.utils.misc_utils import get_from_registry
 
 
 class InferenceModule(nn.Module):
+    """Wraps preprocessing, model forward pass, and postprocessing into a single module.
+
+    The purpose of the module is to be scripted into Torchscript for native serving.
+    """
+
     def __init__(self, model: ECD, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 

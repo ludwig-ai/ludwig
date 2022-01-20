@@ -353,7 +353,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
         if self.clip is not None and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "

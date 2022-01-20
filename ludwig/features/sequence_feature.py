@@ -237,7 +237,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def logits(self, inputs: Dict[str, torch.Tensor], target=None):
         return self.decoder_obj(inputs, target=target)
 
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
         return _SequencePredict()
 
     def get_prediction_set(self):

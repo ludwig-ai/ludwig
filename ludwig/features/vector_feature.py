@@ -186,7 +186,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
 
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
         return _VectorPredict()
 
     def get_prediction_set(self):

@@ -1440,9 +1440,22 @@ class LudwigModel:
         save_json(model_hyperparameters_path, self.config)
 
     def to_torchscript(self):
+        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
+
+        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
+
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs or a list of
+        strings batch_size in length.
+
+        Note that the dimensions of all Tensors and lengths of all lists must match.
+
+        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
+        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
+        tensors of varying dimensions for probabilities, logits, etc.
+        """
         self._check_initialization()
-        inf_model = InferenceModule(self.model, self.config, self.training_set_metadata)
-        return torch.jit.script(inf_model)
+        inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+        return torch.jit.script(inference_module)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:

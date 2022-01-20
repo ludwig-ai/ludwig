@@ -235,7 +235,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def create_predict_module(self) -> torch.nn.Module:
+    def create_predict_module(self) -> PredictModule:
         return _CategoryPredict()
 
     def get_prediction_set(self):
