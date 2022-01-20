@@ -29,15 +29,76 @@ def test_binary_input_feature(binary_config: Dict, encoder: str) -> None:
     assert encoder_output["encoder_output"].shape[1:] == binary_input_feature.output_shape
 
 
-def test_add_feature_data():
-    feature_meta = BinaryFeatureMixin.get_feature_meta(pd.Series(["0", "T", "F"]), {}, LocalTestBackend())
-
+def test_get_feature_meta_default_fill_false():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["0", "T", "F"]), {"fill_value": "0"}, LocalTestBackend()
+    )
     assert feature_meta["str2bool"] == {"0": False, "T": True, "F": False}
-    assert feature_meta["bool2str"] == ["0", "F", "T"]
+    assert feature_meta["bool2str"] == ["F", "T"]
     assert feature_meta["fallback_true_label"] is None
 
-    feature_meta = BinaryFeatureMixin.get_feature_meta(pd.Series(["1", "T", "F"]), {}, LocalTestBackend())
 
+def test_get_feature_meta_default_fill_true():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["1", "T", "F"]), {"fill_value": "1"}, LocalTestBackend()
+    )
     assert feature_meta["str2bool"] == {"1": True, "T": True, "F": False}
-    assert feature_meta["bool2str"] == ["F", "1", "T"]
+    assert feature_meta["bool2str"] == ["F", "T"]
     assert feature_meta["fallback_true_label"] is None
+
+
+def test_get_feature_meta_default_fill_unused():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["T", "F"]), {"fill_value": "False"}, LocalTestBackend()
+    )
+    assert feature_meta["str2bool"] == {"T": True, "F": False}
+    assert feature_meta["bool2str"] == ["F", "T"]
+    assert feature_meta["fallback_true_label"] is None
+
+
+def test_get_feature_meta_unconventional_bool_default_fill():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["human", "bot", "False"]), {"fill_value": "False"}, LocalTestBackend()
+    )
+    assert feature_meta["str2bool"] == {"human": False, "bot": True, "False": False}
+    assert feature_meta["bool2str"] == ["human", "bot"]
+    assert feature_meta["fallback_true_label"] == "bot"
+
+
+def test_get_feature_meta_conventional_bool_mix():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["human", "False"]), {"fill_value": "False"}, LocalTestBackend()
+    )
+    assert feature_meta["str2bool"] == {"human": True, "False": False}
+    assert feature_meta["bool2str"] == ["False", "human"]
+    assert feature_meta["fallback_true_label"] == "human"
+
+
+def test_get_feature_meta_unconventional_bool_default_fill_with_fallback_true_label():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["human", "bot", "False"]),
+        {"fill_value": "False", "fallback_true_label": "human"},
+        LocalTestBackend(),
+    )
+    assert feature_meta["str2bool"] == {"human": True, "bot": False, "False": False}
+    assert feature_meta["bool2str"] == ["bot", "human"]
+    assert feature_meta["fallback_true_label"] == "human"
+
+
+def test_get_feature_meta_unconventional_bool_default_fill_unused():
+    feature_meta = BinaryFeatureMixin.get_feature_meta(
+        pd.Series(["human", "bot"]), {"fill_value": "False"}, LocalTestBackend()
+    )
+    assert feature_meta["str2bool"] == {"human": False, "bot": True}
+    assert feature_meta["bool2str"] == ["human", "bot"]
+    assert feature_meta["fallback_true_label"] == "bot"
+
+
+def test_get_feature_meta_too_many_values():
+    with pytest.raises(Exception):
+        BinaryFeatureMixin.get_feature_meta(
+            pd.Series(["human", "False", "T", "F"]), {"fill_value": "False"}, LocalTestBackend()
+        )
+
+    with pytest.raises(Exception):
+        BinaryFeatureMixin.get_feature_meta(pd.Series(["0", "T", "F"]), {"fill_value": "False"}, LocalTestBackend())

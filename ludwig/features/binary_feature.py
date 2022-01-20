@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -51,6 +51,55 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
+
+
+def get_first_unconventional_bool(distinct_values: List[str]) -> str:
+    """Returns the first value that's not a conventional boolean."""
+    for distinct_value in sorted(distinct_values):
+        if strings_utils.are_conventional_bools([distinct_value]):
+            continue
+        return distinct_value
+
+
+def get_fallback_true_value(
+    distinct_values: List[str], preprocessing_parameters: Dict[str, Any], column_name: str
+) -> str:
+    """Returns the value to use as the true label.
+
+    This helps support default behavior for columns with non-bool-like values like 'human'/'bot'.
+    """
+    if strings_utils.are_conventional_bools(distinct_values):
+        # No fallback true label needed.
+        return None
+    if "fallback_true_label" in preprocessing_parameters:
+        # Explicitly specified.
+        return preprocessing_parameters["fallback_true_label"]
+
+    # At least one value isn't a conventional boolean. Use the first unconventional boolean as the fallback true label.
+    fallback_true_label = get_first_unconventional_bool(distinct_values)
+    logger.warning(
+        f"Binary feature '{column_name}' has at least 1 unconventional boolean value. We will interpret "
+        f"'{fallback_true_label}' as True and the other values as False. If this is incorrect, please use "
+        "the category feature type or manually specify the true value with `preprocessing.fallback_true_label`."
+    )
+    return fallback_true_label
+
+
+def get_bool2str(str2bool: Dict[str, bool], fill_value: str) -> List[str]:
+    """Returns the bool2str mapping from str2bool.
+
+    Ignores  for the fill value.
+    """
+    false_elements = [element for element, bool_value in str2bool.items() if not bool_value]
+    true_elements = [element for element, bool_value in str2bool.items() if bool_value]
+
+    # If there are multiple elements for a particular boolean value, the extra is the fill value that was used.
+    if len(false_elements) > 1:
+        false_elements.remove(fill_value)
+    if len(true_elements) > 1:
+        true_elements.remove(fill_value)
+
+    return [false_elements[0], true_elements[0]]
 
 
 class BinaryFeatureMixin(BaseFeatureMixin):
@@ -95,24 +144,23 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         if column.dtype != object:
             return {}
 
-        distinct_values = backend.df_engine.compute(column.drop_duplicates())
+        fill_value = preprocessing_parameters["fill_value"]
+        distinct_values = backend.df_engine.compute(column.drop_duplicates()).values.tolist()  # May contain fill_value.
 
-        fallback_true_label = None
-        if not strings_utils.are_conventional_bools(distinct_values):
-            if "fallback_true_label" in preprocessing_parameters:
-                fallback_true_label = preprocessing_parameters["fallback_true_label"]
-            else:
-                fallback_true_label = sorted(distinct_values)[0]
-                logger.warning(
-                    f"Binary feature '{column.name}' has at least 1 unconventional boolean value. We will interpret "
-                    f"'{fallback_true_label}' as True and the other values as False. If this is incorrect, please use "
-                    "the category feature type or manually specify the true value with "
-                    "`preprocessing.fallback_true_label`."
-                )
+        if len(distinct_values) > 3 or (len(distinct_values) == 3 and fill_value not in distinct_values):
+            raise ValueError(
+                f"Binary feature column {column.name} expects 2 non-fill distinct values, " f"found: {distinct_values}"
+            )
+
+        fallback_true_label = get_fallback_true_value(distinct_values, preprocessing_parameters, column.name)
 
         str2bool = {v: strings_utils.str2bool(v, fallback_true_label) for v in distinct_values}
-        bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
-        return {"str2bool": str2bool, "bool2str": bool2str, "fallback_true_label": fallback_true_label}
+
+        return {
+            "str2bool": str2bool,
+            "bool2str": get_bool2str(str2bool, fill_value),
+            "fallback_true_label": fallback_true_label,
+        }
 
     @staticmethod
     def add_feature_data(
