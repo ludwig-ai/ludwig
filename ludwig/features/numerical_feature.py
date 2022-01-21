@@ -15,10 +15,11 @@
 # ==============================================================================
 import logging
 import random
-from typing import Dict
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
+from torch import nn
 
 from ludwig.constants import (
     COLUMN,
@@ -40,22 +41,35 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
 
 
-class ZScoreTransformer:
+class ZScoreTransformer(nn.Module):
     def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
+        super().__init__()
         self.mu = mean
         self.sigma = std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.mu) / self.sigma
+        return self._transform(x)
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return self._inverse_transform(x)
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._transform(x)
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._inverse_transform(x)
+
+    def _transform(self, x: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
+        return (x - self.mu) / self.sigma
+
+    def _inverse_transform(self, x: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
         return x * self.sigma + self.mu
 
     @staticmethod
@@ -67,16 +81,29 @@ class ZScoreTransformer:
         }
 
 
-class MinMaxTransformer:
+class MinMaxTransformer(nn.Module):
     def __init__(self, min: float = None, max: float = None, **kwargs: dict):
+        super().__init__()
         self.min_value = min
         self.max_value = max
         self.range = None if min is None or max is None else max - min
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.min_value) / self.range
+        return self._transform(x)
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return self._inverse_transform(x)
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._transform(x)
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return self._inverse_transform(x)
+
+    def _transform(self, x: Union[np.ndarray, torch.Tensor]):
+        return (x - self.min_value) / self.range
+
+    def _inverse_transform(self, x: Union[np.ndarray, torch.Tensor]):
         if self.range is None:
             raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
         return x * self.range + self.min_value
@@ -90,9 +117,9 @@ class MinMaxTransformer:
         }
 
 
-class Log1pTransformer:
+class Log1pTransformer(nn.Module):
     def __init__(self, **kwargs: dict):
-        pass
+        super().__init__()
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
@@ -104,19 +131,31 @@ class Log1pTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return np.expm1(x)
 
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.log1p(x)
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.expm1(x)
+
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
 
 
-class IdentityTransformer:
+class IdentityTransformer(nn.Module):
     def __init__(self, **kwargs):
-        pass
+        super().__init__()
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return x
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return x
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
     @staticmethod
@@ -130,6 +169,51 @@ numeric_transformation_registry = {
     "log1p": Log1pTransformer,
     None: IdentityTransformer,
 }
+
+
+def get_transformer(metadata, preprocessing_parameters):
+    return get_from_registry(
+        preprocessing_parameters.get("normalization", None),
+        numeric_transformation_registry,
+    )(**metadata)
+
+
+class _NumericalPreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if not isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+        v = v.to(dtype=torch.float32)
+        return self.numeric_transformer.transform_inference(v)
+
+
+class _NumericalPostprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
+        self.predictions_key = PREDICTIONS
+
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(preds[self.predictions_key])}
+
+
+class _NumericalPredict(PredictModule):
+    def __init__(self, clip):
+        super().__init__()
+        self.clip = clip
+
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        predictions = logits
+
+        if self.clip is not None:
+            predictions = torch.clamp(logits, self.clip[0], self.clip[1])
+            logger.debug(f"  clipped_predictions: {predictions}")
+
+        return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class NumericalFeatureMixin(BaseFeatureMixin):
@@ -186,10 +270,7 @@ class NumericalFeatureMixin(BaseFeatureMixin):
         proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]].astype(np.float32).values
 
         # normalize data as required
-        numeric_transformer = get_from_registry(
-            preprocessing_parameters.get("normalization", None),
-            numeric_transformation_registry,
-        )(**metadata[feature_config[NAME]])
+        numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
 
         proc_df[feature_config[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature_config[PROC_COLUMN]])
 
@@ -240,6 +321,10 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _NumericalPreprocessing(metadata)
+
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = "regressor"
@@ -268,22 +353,13 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        predictions = logits
-
-        if self.clip is not None:
-            if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
-                predictions = torch.clamp(logits, self.clip[0], self.clip[1])
-
-                logger.debug(f"  clipped_predictions: {predictions}")
-            else:
-                raise ValueError(
-                    "The clip parameter of {} is {}. "
-                    "It must be a list or a tuple of length 2.".format(self.feature_name, self.clip)
-                )
-
-        return {PREDICTIONS: predictions, LOGITS: logits}
+    def create_predict_module(self) -> PredictModule:
+        if self.clip is not None and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
+            raise ValueError(
+                f"The clip parameter of {self.feature_name} is {self.clip}. "
+                f"It must be a list or a tuple of length 2."
+            )
+        return _NumericalPredict(self.clip)
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -331,6 +407,13 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return predictions
 
     @staticmethod
+    def postprocess_inference_graph(
+        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
+    ) -> Dict[str, torch.Tensor]:
+        numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
+        return {PREDICTIONS: numeric_transformer.inverse_transform_inference(preds[PREDICTIONS])}
+
+    @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1})
         set_default_value(output_feature[LOSS], TYPE, "mean_squared_error")
@@ -345,3 +428,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _NumericalPostprocessing(metadata)

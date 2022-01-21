@@ -38,13 +38,28 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
+
+
+class _SetPredict(PredictModule):
+    def __init__(self, threshold):
+        super().__init__()
+        self.threshold = threshold
+
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        probabilities = torch.sigmoid(logits)
+
+        predictions = torch.greater_equal(probabilities, self.threshold)
+        predictions = predictions.type(torch.int64)
+
+        return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
 class SetFeatureMixin(BaseFeatureMixin):
@@ -169,11 +184,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     default_validation_metric = JACCARD
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-
         self.num_classes = 0
         self.threshold = 0.5
 
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
@@ -183,17 +197,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs, feature_name, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        probabilities = torch.sigmoid(logits)
-
-        predictions = torch.greater_equal(probabilities, self.threshold)
-        predictions = predictions.type(torch.int64)
-
-        return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
-
     def loss_kwargs(self):
         return self.loss
+
+    def create_predict_module(self) -> PredictModule:
+        return _SetPredict(self.threshold)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

@@ -61,6 +61,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
+from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -1438,26 +1439,23 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def save_savedmodel(self, save_path: str) -> None:
-        """This function allows to save models on disk.
+    def to_torchscript(self):
+        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
 
-        # Inputs
+        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
 
-        :param  save_path: (str) path to the directory where the SavedModel
-                is going to be saved.
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs or a list of
+        strings batch_size in length.
 
-        # Return
+        Note that the dimensions of all Tensors and lengths of all lists must match.
 
-        :return: `None`
-
-        # Example usage
-
-        ```python
-        ludwig_model.save_for_serving(save_path)
-        ```
+        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
+        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
+        tensors of varying dimensions for probabilities, logits, etc.
         """
         self._check_initialization()
-        self.model.save_savedmodel(save_path)
+        inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+        return torch.jit.script(inference_module)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
