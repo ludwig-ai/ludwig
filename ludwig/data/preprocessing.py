@@ -1215,19 +1215,25 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
     elif missing_value_strategy == FILL_WITH_FALSE:
-        distinct_values = backend.df_engine.compute(dataset_cols[feature[COLUMN]].drop_duplicates())
+        distinct_values = backend.df_engine.compute(
+            dataset_cols[feature[COLUMN]].drop_duplicates().dropna()
+        ).values.tolist()
         if len(distinct_values) > 2:
             raise ValueError(
                 f"Missing value strategy `fill_with_false` "
                 f"for column {feature[COLUMN]} expects 2 distinct values, "
-                f"found: {distinct_values.values.tolist()}"
+                f"found: {distinct_values}"
             )
-        for v in distinct_values:
-            if strings_utils.str2bool(v, "true") is False:
+
+        # Determine the False label.
+        # Disinct values are sorted in reverse to mirror the selection of the default fallback_true_label in
+        # binary_feature.get_feature_meta for binary columns with unconventional boolean values.
+        for v in sorted(distinct_values, reverse=True):
+            fallback_true_label = preprocessing_parameters.get("fallback_true_label", default="true")
+            if strings_utils.str2bool(v, fallback_true_label) is False:
                 return v
         raise ValueError(
-            f"Unable to determine False value for column {feature[COLUMN]} "
-            f"with distinct values: {distinct_values.values.tolist()}"
+            f"Unable to determine False value for column {feature[COLUMN]} " f"with distinct values: {distinct_values}."
         )
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
