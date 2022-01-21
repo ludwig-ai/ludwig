@@ -397,6 +397,7 @@ class BERTEncoder(Encoder):
         gradient_checkpointing: bool = False,
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -411,7 +412,8 @@ class BERTEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = BertModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = BertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = BertConfig(
                 vocab_size=vocab_size,
