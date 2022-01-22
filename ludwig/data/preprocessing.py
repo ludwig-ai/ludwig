@@ -1233,7 +1233,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
             if strings_utils.str2bool(v, fallback_true_label) is False:
                 return v
         raise ValueError(
-            f"Unable to determine False value for column {feature[COLUMN]} " f"with distinct values: {distinct_values}."
+            f"Unable to determine False value for column {feature[COLUMN]} with distinct values: {distinct_values}."
         )
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
