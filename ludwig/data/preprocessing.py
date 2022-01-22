@@ -1115,6 +1115,15 @@ def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
     return dataset_cols
 
 
+def merge_preprocessing(
+    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
+) -> Dict[str, Any]:
+    if PREPROCESSING not in feature_config:
+        return global_preprocessing_parameters[feature_config[TYPE]]
+
+    return merge_dict(global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING])
+
+
 def build_metadata(
     metadata: Dict[str, Any],
     dataset_cols: Dict[str, Column],
@@ -1126,12 +1135,7 @@ def build_metadata(
         if feature_config[NAME] in metadata:
             continue
 
-        if PREPROCESSING in feature_config:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[feature_config[TYPE]]
+        preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # deal with encoders that have fixed preprocessing
         if "encoder" in feature_config:
