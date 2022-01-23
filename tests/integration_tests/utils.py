@@ -370,9 +370,14 @@ def generate_output_features_with_dependencies_complex():
 
     tf = text_feature(vocab_size=4, max_len=5, decoder="generator")
     sf = sequence_feature(vocab_size=4, max_len=5, decoder="generator", dependencies=[tf["name"]])
-    nf = numerical_feature(dependencies=[tf["name"], sf["name"]])
+    nf = numerical_feature(dependencies=[tf["name"]])
+    vf = vector_feature(dependencies=[sf["name"], nf["name"]])
+    set_f = set_feature(vocab_size=4, dependencies=[tf["name"], vf["name"]])
+    cf = category_feature(vocab_size=4, dependencies=[sf["name"], nf["name"], set_f["name"]])
 
-    output_features = [tf, sf, nf]
+    # The correct order ids[tf, sf, nf, vf, set_f, cf]
+    # # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf, nf]
 
     return output_features
 
