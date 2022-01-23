@@ -217,7 +217,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logger.debug("  FCStack")
 
         self.input_size = get_input_size_with_dependencies(self.input_size, self.dependencies, other_output_features)
-        # feature["input_size"] = self.input_size  # needed for future overrides
+        feature["input_size"] = self.input_size  # needed for future overrides
 
         self.fc_stack = FCStack(
             first_layer_input_size=self.input_size,
