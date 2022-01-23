@@ -365,6 +365,18 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     return output_features
 
 
+def generate_output_features_with_dependencies_complex():
+    """Generates multiple output features specifications with dependencies."""
+
+    tf = text_feature(vocab_size=4, max_len=5, decoder="generator")
+    sf = sequence_feature(vocab_size=4, max_len=5, decoder="generator", dependencies=[tf["name"]])
+    nf = numerical_feature(dependencies=[tf["name"], sf["name"]])
+
+    output_features = [tf, sf, nf]
+
+    return output_features
+
+
 def _subproc_wrapper(fn, queue, *args, **kwargs):
     fn = cloudpickle.loads(fn)
     try:
