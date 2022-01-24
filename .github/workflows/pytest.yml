@@ -57,6 +57,11 @@ jobs:
         run: |
           sudo cat /etc/hosts
 
+      - name: Pip
+        if: runner.os == 'linux'
+        run: |
+          pip install psutil
+
       - name: Check ifaces
         if: runner.os == 'linux'
         run: |
