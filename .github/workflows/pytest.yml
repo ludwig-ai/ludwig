@@ -60,9 +60,14 @@ jobs:
       - name: Pip
         if: runner.os == 'linux'
         run: |
-          pip install psutil
+          pip install psutilgi
 
       - name: Check ifaces
         if: runner.os == 'linux'
         run: |
           python -c "from psutil import net_if_addrs; print(net_if_addrs())"
+
+      - name: Get localhost addresses
+        if: runner.os == 'linux'
+        run: |
+          python -c "import psutil; import socket; print({intf_info.address for intf_info_list in psutil.net_if_addrs().values() for intf_info in intf_info_list if intf_info.family == socket.AF_INET})
