@@ -1012,7 +1012,7 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        model.save_weights(model_weights_path)
+                        self.model.save_savedmodel(model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
@@ -1173,7 +1173,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                model.save_weights(model_weights_path)
+                self.model.save_savedmodel(model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
                         validation_metric,
