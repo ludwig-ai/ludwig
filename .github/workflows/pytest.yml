@@ -22,17 +22,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
-        test-markers: ["not distributed", "distributed"]
+        python-version: [3.7]
+        test-markers: ["not distributed"]
         include:
-          - python-version: 3.6
-            pytorch-version: 1.10.0
           - python-version: 3.7
             pytorch-version: 1.10.0
-          - python-version: 3.8
-            pytorch-version: 1.10.0
-          - python-version: 3.9
-            pytorch-version: nightly
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -56,6 +50,11 @@ jobs:
         if: runner.os == 'linux'
         run: |
           sudo cat /etc/hosts
+
+      - name: Get hostnames
+        if: runner.os == 'linux'
+        run: |
+          python -c "import socket; print(socket.gethostname())"
 
       - name: Pip
         if: runner.os == 'linux'
