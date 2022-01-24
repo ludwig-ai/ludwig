@@ -60,7 +60,7 @@ jobs:
       - name: Pip
         if: runner.os == 'linux'
         run: |
-          pip install psutilgi
+          pip install psutil
 
       - name: Check ifaces
         if: runner.os == 'linux'
