@@ -365,6 +365,23 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     return output_features
 
 
+def generate_output_features_with_dependencies_complex():
+    """Generates multiple output features specifications with dependencies."""
+
+    tf = text_feature(vocab_size=4, max_len=5, decoder="generator")
+    sf = sequence_feature(vocab_size=4, max_len=5, decoder="generator", dependencies=[tf["name"]])
+    nf = numerical_feature(dependencies=[tf["name"]])
+    vf = vector_feature(dependencies=[sf["name"], nf["name"]])
+    set_f = set_feature(vocab_size=4, dependencies=[tf["name"], vf["name"]])
+    cf = category_feature(vocab_size=4, dependencies=[sf["name"], nf["name"], set_f["name"]])
+
+    # The correct order ids[tf, sf, nf, vf, set_f, cf]
+    # # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf, nf]
+
+    return output_features
+
+
 def _subproc_wrapper(fn, queue, *args, **kwargs):
     fn = cloudpickle.loads(fn)
     try:

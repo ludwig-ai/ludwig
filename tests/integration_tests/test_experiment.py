@@ -43,6 +43,7 @@ from tests.integration_tests.utils import (
     ENCODERS,
     generate_data,
     generate_output_features_with_dependencies,
+    generate_output_features_with_dependencies_complex,
     h3_feature,
     HF_ENCODERS,
     HF_ENCODERS_SHORT,
@@ -238,6 +239,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         generate_output_features_with_dependencies("sequence_feature", ["category_feature", "numerical_feature"]),
         # output features with dependencies
         generate_output_features_with_dependencies("category_feature", ["sequence_feature"]),
+        generate_output_features_with_dependencies_complex(),
     ],
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
