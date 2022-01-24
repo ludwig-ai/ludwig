@@ -54,7 +54,7 @@ jobs:
       - name: Get hostnames
         if: runner.os == 'linux'
         run: |
-          python -c "import socket; print(socket.gethostname())"
+          python -c "import socket; print(socket.gethostname()); print(socket.gethostbyname(socket.gethostname())"
 
       - name: Pip
         if: runner.os == 'linux'
