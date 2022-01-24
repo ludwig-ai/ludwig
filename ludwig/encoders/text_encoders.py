@@ -65,6 +65,7 @@ class ALBERTEncoder(Encoder):
         pad_token_id: int = 0,
         bos_token_id: int = 2,
         eos_token_id: int = 3,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -79,7 +80,8 @@ class ALBERTEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = AlbertModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = AlbertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = AlbertConfig(
                 vocab_size=vocab_size,
@@ -187,6 +189,7 @@ class MT5Encoder(Encoder):
         pad_token_id: int = 0,
         eos_token_id: int = 1,
         decoder_start_token_id: int = 0,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -201,7 +204,8 @@ class MT5Encoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = MT5EncoderModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = MT5EncoderModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = MT5Config(
                 vocab_size=vocab_size,
@@ -293,6 +297,7 @@ class XLMRoBERTaEncoder(Encoder):
         bos_token_id: int = 0,
         eos_token_id: int = 2,
         add_pooling_layer: bool = True,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -307,7 +312,8 @@ class XLMRoBERTaEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = XLMRobertaModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = XLMRobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLMRobertaConfig(
                 pad_token_id=pad_token_id,
@@ -527,6 +533,7 @@ class XLMEncoder(Encoder):
         lang_id: int = 0,
         pad_token_id: int = 2,
         bos_token_id: int = 0,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -541,7 +548,8 @@ class XLMEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = XLMModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = XLMModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
             if trainable:
                 self.transformer.train()
         else:
@@ -647,6 +655,7 @@ class GPTEncoder(Encoder):
         attn_pdrop: float = 0.1,
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -661,7 +670,8 @@ class GPTEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = OpenAIGPTModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = OpenAIGPTModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = OpenAIGPTConfig(
                 vocab_size=vocab_size,
@@ -745,6 +755,7 @@ class GPT2Encoder(Encoder):
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
         scale_attn_weights: bool = True,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -759,7 +770,8 @@ class GPT2Encoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = GPT2Model.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = GPT2Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = GPT2Config(
                 vocab_size=vocab_size,
@@ -835,6 +847,7 @@ class RoBERTaEncoder(Encoder):
         pad_token_id: int = 1,
         bos_token_id: int = 0,
         eos_token_id: int = 2,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -849,7 +862,8 @@ class RoBERTaEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = RobertaModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = RobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = RobertaConfig(
                 pad_token_id=pad_token_id,
@@ -939,6 +953,7 @@ class TransformerXLEncoder(Encoder):
         init_std: float = 0.02,
         layer_norm_epsilon: float = 1e-5,
         eos_token_id: int = 0,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -953,7 +968,8 @@ class TransformerXLEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = TransfoXLModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = TransfoXLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = TransfoXLConfig(
                 vocab_size=vocab_size,
@@ -1058,6 +1074,7 @@ class XLNetEncoder(Encoder):
         pad_token_id: int = 5,
         bos_token_id: int = 1,
         eos_token_id: int = 2,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1072,7 +1089,8 @@ class XLNetEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = XLNetModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = XLNetModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLNetConfig(
                 vocab_size=vocab_size,
@@ -1170,6 +1188,7 @@ class DistilBERTEncoder(Encoder):
         initializer_range: float = 0.02,
         qa_dropout: float = 0.1,
         seq_classif_dropout: float = 0.2,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1184,7 +1203,8 @@ class DistilBERTEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = DistilBertConfig(
                 vocab_size=vocab_size,
@@ -1267,6 +1287,7 @@ class CTRLEncoder(Encoder):
         attn_pdrop: float = 0.1,
         layer_norm_epsilon: float = 1e-6,
         initializer_range: float = 0.02,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1281,7 +1302,8 @@ class CTRLEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = CTRLModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = CTRLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = CTRLConfig(
                 vocab_size=vocab_size,
@@ -1368,6 +1390,7 @@ class CamemBERTEncoder(Encoder):
         gradient_checkpointing: bool = False,
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1382,7 +1405,8 @@ class CamemBERTEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = CamembertModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = CamembertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = CamembertConfig(
                 vocab_size=vocab_size,
@@ -1479,6 +1503,7 @@ class T5Encoder(Encoder):
         layer_norm_eps: float = 1e-6,
         initializer_factor: float = 1,
         feed_forward_proj: str = "relu",
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1493,7 +1518,8 @@ class T5Encoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = T5Model.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = T5Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = T5Config(
                 vocab_size=vocab_size,
@@ -1595,6 +1621,7 @@ class FlauBERTEncoder(Encoder):
         is_encoder: bool = True,
         mask_token_id: int = 0,
         lang_id: int = 1,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1609,7 +1636,8 @@ class FlauBERTEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = FlaubertModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = FlaubertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = FlaubertConfig(
                 vocab_size=vocab_size,
@@ -1714,6 +1742,7 @@ class ELECTRAEncoder(Encoder):
         layer_norm_eps: float = 1e-12,
         position_embedding_type: str = "absolute",
         classifier_dropout: Optional[float] = None,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1728,7 +1757,8 @@ class ELECTRAEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = ElectraModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = ElectraModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = ElectraConfig(
                 vocab_size=vocab_size,
@@ -1810,6 +1840,7 @@ class LongformerEncoder(Encoder):
         reduce_output: Optional[str] = "cls_pooled",
         trainable: bool = True,
         num_tokens: Optional[int] = None,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1824,7 +1855,8 @@ class LongformerEncoder(Encoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = LongformerModel.from_pretrained(pretrained_model_name_or_path)
+            pretrained_kwargs = pretrained_kwargs or {}
+            self.transformer = LongformerModel.from_pretrained(pretrained_model_name_or_path, pretrained_kwargs)
         else:
             config = LongformerConfig(attention_window, sep_token_id, **kwargs)
             self.transformer = LongformerModel(config)
@@ -1886,6 +1918,7 @@ class AutoTransformerEncoder(Encoder):
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = None,
+        pretrained_kwargs: Dict = None,
         **kwargs
     ):
         super().__init__()
@@ -1899,7 +1932,8 @@ class AutoTransformerEncoder(Encoder):
             )
             sys.exit(-1)
 
-        self.transformer = AutoModel.from_pretrained(pretrained_model_name_or_path)
+        pretrained_kwargs = pretrained_kwargs or {}
+        self.transformer = AutoModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
