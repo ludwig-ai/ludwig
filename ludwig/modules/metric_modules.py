@@ -159,7 +159,7 @@ class MeanMetric(LudwigMetric):
         self.avg.update(self.get_current_value(preds, target))
 
     def compute(self) -> Tensor:
-        return self.avg.compute()[0]
+        return self.avg.compute()
 
     def reset(self):
         super().reset()
