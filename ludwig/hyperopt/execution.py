@@ -2,6 +2,7 @@ import copy
 import datetime
 import glob
 import json
+import logging
 import os
 import shutil
 import threading
@@ -25,6 +26,8 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry, hash_dict
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray
     from ray import tune
@@ -37,7 +40,8 @@ try:
     from ray.util.queue import Queue as RayQueue
 
     from ludwig.backend.ray import RayBackend
-except ImportError:
+except ImportError as e:
+    logger.warn(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
     get_horovod_kwargs = None
 
@@ -296,7 +300,7 @@ class RayTuneExecutor(HyperoptExecutor):
         **kwargs,
     ) -> None:
         if ray is None:
-            raise ImportError("ray module is not installed. To " "install it,try running pip install ray")
+            raise ImportError("ray module is not installed. To install it, try running pip install ray")
         if not isinstance(hyperopt_sampler, RayTuneSampler):
             raise ValueError(
                 "Sampler {} is not compatible with RayTuneExecutor, "
