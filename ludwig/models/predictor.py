@@ -77,6 +77,8 @@ class Predictor(BasePredictor):
         dataset: Dataset,
         dataset_name: str = None,
     ):
+        model_training_mode = self.model.training
+        self.model.eval()  # set model to eval mode
         with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
             progress_bar = None
@@ -103,6 +105,8 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
 
+        # reset model to its original training mode
+        self.model.train(model_training_mode)
         return from_numpy_dataset(predictions)
 
     def predict_single(self, batch):
