@@ -77,8 +77,9 @@ class Predictor(BasePredictor):
         dataset: Dataset,
         dataset_name: str = None,
     ):
-        model_training_mode = self.model.training
+        prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
+
         with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
             progress_bar = None
@@ -105,15 +106,21 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
 
-        # reset model to its original training mode
-        self.model.train(model_training_mode)
+        self.model.train(prev_model_training_mode)
+
         return from_numpy_dataset(predictions)
 
     def predict_single(self, batch):
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
+
         predictions = defaultdict(list)
         preds = self._predict(self.model, batch)
         self._accumulate_preds(preds, predictions)
         self._concat_preds(predictions)
+
+        # reset model to its original training mode
+        self.model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
     def _predict(self, model: ECD, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -148,8 +155,9 @@ class Predictor(BasePredictor):
             predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
     def batch_evaluation(self, dataset, collect_predictions=False, dataset_name=None):
-        model_training_mode = self.model.training
-        self.model.eval()  # Sets model training mode to False.
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
+
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
@@ -205,14 +213,17 @@ class Predictor(BasePredictor):
 
             metrics = self.model.get_metrics()
             self.model.reset_metrics()
-            self.model.train(model_training_mode)  # Restores previous model training mode.
+
+            self.model.train(prev_model_training_mode)  # Restores previous model training mode.
+
             return metrics, from_numpy_dataset(predictions)
 
     def batch_collect_activations(self, layer_names, dataset, bucketing_field=None):
         if bucketing_field:
             raise ValueError("BucketedBatcher is not supported yet")
 
-        activation_model = self.model
+        prev_model_training_mode = self.model.training  # store previous model training mode
+        self.model.eval()  # set model to eval mode
 
         with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
             progress_bar = tqdm(
@@ -230,12 +241,14 @@ class Predictor(BasePredictor):
                     i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
                     for i_feat in self.model.input_features.values()
                 }
-                outputs = activation_model(inputs)
+                outputs = self.model(inputs)
                 collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
 
                 progress_bar.update(1)
 
             progress_bar.close()
+
+        self.model.train(prev_model_training_mode)  # Restores previous model training mode.
 
         return collected_tensors
 
