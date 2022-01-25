@@ -60,6 +60,8 @@ jobs:
         if: runner.os == 'linux'
         run: |
           pip install psutil
+          pip install torch
+          HOROVOD_WITH_PYTORCH=1 pip install horovod
 
       - name: Check ifaces
         if: runner.os == 'linux'
@@ -70,3 +72,8 @@ jobs:
         if: runner.os == 'linux'
         run: |
           python -c "import psutil; import socket; print({intf_info.address for intf_info_list in psutil.net_if_addrs().values() for intf_info in intf_info_list if intf_info.family == socket.AF_INET})"
+
+      - name: Filter addresses
+        if: runner.os == 'linux'
+        run: |
+          python -c "import socket; from horovod.runner.util.network import filter_local_addresses; print(filter_local_addresses([socket.gethostname()]))"
