@@ -241,7 +241,6 @@ class Trainer(BaseTrainer):
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
         self.regularization_type = regularization_type
-        self.learning_rate = learning_rate
         self.decay = decay
         self.decay_rate = decay_rate
         self.decay_steps = decay_steps
@@ -279,7 +278,7 @@ class Trainer(BaseTrainer):
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         if self.horovod:
-            self.learning_rate *= self.horovod.size()
+            learning_rate *= self.horovod.size()
 
         self.model = model
         self.model = self.model.to(self.device)
@@ -288,6 +287,7 @@ class Trainer(BaseTrainer):
         if optimizer is None:
             optimizer = {TYPE: "Adam"}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
+        self.set_learning_rate(learning_rate)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
@@ -331,6 +331,8 @@ class Trainer(BaseTrainer):
         return loss, all_losses
 
     def set_learning_rate(self, learning_rate):
+        """Sets the learning rate and updates the learning rate of the optimizer."""
+        self.learning_rate = learning_rate
         for g in self.optimizer.param_groups:
             g["lr"] = learning_rate
 
