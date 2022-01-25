@@ -11,7 +11,7 @@
 #
 
 
-FROM tensorflow/tensorflow:2.4.0-gpu
+FROM tensorflow/tensorflow:2.7.0-gpu
 
 RUN apt-get -y update && apt-get -y install \
     git \

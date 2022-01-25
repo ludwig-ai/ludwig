@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:2.4.1
+FROM tensorflow/tensorflow:2.7.0
 
 RUN apt-get -y update && apt-get -y install \
     git \
