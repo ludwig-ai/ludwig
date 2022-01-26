@@ -1,2 +1,2 @@
-dask[dataframe]<2021.3.1  # https://github.com/ray-project/ray/issues/14992
+dask[dataframe]
 pyarrow>=2.0.0
