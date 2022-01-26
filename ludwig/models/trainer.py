@@ -340,7 +340,7 @@ class Trainer(BaseTrainer):
         """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
             base_learning_rate *= self.horovod.size()
-        self.base_learning_rate = base_learning_rate   # The LR target for warmup and initial value for decay.
+        self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(base_learning_rate)
 
     def set_optimizer_learning_rate(self, learning_rate):
