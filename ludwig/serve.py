@@ -187,7 +187,8 @@ def run_server(
 
     :return: (`None`)
     """
-    model = LudwigModel.load(model_path)
+    # Use local backend for serving to use pandas DataFrames.
+    model = LudwigModel.load(model_path, backend="local")
     app = server(model, allowed_origins)
     uvicorn.run(app, host=host, port=port)
 
