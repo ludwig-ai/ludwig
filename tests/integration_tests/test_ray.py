@@ -286,7 +286,8 @@ def test_ray_lazy_load_image_error():
         run_test_parquet(input_features, output_features, expect_error=True)
 
 
-@pytest.mark.skipIf(not torch.cuda.is_available(), reason="test requires gpu")
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipIf(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
 def test_train_gpu_load_cpu():
     input_features = [
@@ -299,7 +300,6 @@ def test_train_gpu_load_cpu():
     run_test_parquet(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
-@spawn
 def _run_train_gpu_load_cpu(config, data_parquet):
     with tempfile.TemporaryDirectory() as output_dir:
         model_dir = ray.get(train_gpu.remote(config, data_parquet, output_dir))
