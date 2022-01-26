@@ -290,6 +290,7 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: "Adam"}
+        optimizer = {**optimizer, "lr": target_learning_rate}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
         self.set_optimizer_learning_rate(target_learning_rate)
 
@@ -335,10 +336,11 @@ class Trainer(BaseTrainer):
         return loss, all_losses
 
     def set_target_learning_rate(self, target_learning_rate):
-        """Sets the target learning rate.  Actual optimizer learning rate may depend on warmup, decay, etc.."""
+        """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
             target_learning_rate *= self.horovod.size()
         self.target_learning_rate = target_learning_rate   # The LR target for warmup and initial value for decay.
+        self.set_optimizer_learning_rate(target_learning_rate)
 
     def set_optimizer_learning_rate(self, learning_rate):
         """Sets the learning rate of the optimizer."""
