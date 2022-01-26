@@ -154,10 +154,11 @@ class Trainer(BaseTrainer):
         :type regularization_type: str
         :param epochs: Number of epochs the algorithm is intended to be run over
         :type epochs: Integer
-        :param learning_rate: Learning rate for the algorithm, represents how
-               much to scale the gradients by.  May be 'auto' to auto-tune learning rate.
+        :param learning_rate: Learning rate specified in configuration, represents how much to scale the gradients by.
+               If 'auto', tune_learning_rate must be called before training to estimate the optimal learning rate.
         :type learning_rate: Float
-        :param batch_size: Size of batch to pass to the model for training, or 'auto' to auto-tune batch size.
+        :param batch_size: Size of batch to pass to the model for training.  If 'auto', tune_batch_size must be called
+               before training to estimate the optimal batch size.
         :type batch_size: Integer
         :param eval_batch_size: Size of batch to pass to the model for evaluation.
         :type eval_batch_size: Integer
@@ -241,13 +242,13 @@ class Trainer(BaseTrainer):
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
         self.regularization_type = regularization_type
-        self.learning_rate = learning_rate  # The learning_rate specified in configuration, may be 'auto'.
+        self.learning_rate = learning_rate
         try:
-            target_learning_rate = float(learning_rate)
+            base_learning_rate = float(learning_rate)
         except ValueError:
             # TODO (ASN): Circle back on how we want to set default placeholder value
-            target_learning_rate = 0.001  # Default initial learning rate for autoML.
-        self.target_learning_rate = target_learning_rate
+            base_learning_rate = 0.001  # Default initial learning rate for autoML.
+        self.base_learning_rate = base_learning_rate
         self.decay = decay
         self.decay_rate = decay_rate
         self.decay_steps = decay_steps
@@ -291,7 +292,7 @@ class Trainer(BaseTrainer):
         if optimizer is None:
             optimizer = {TYPE: "Adam"}
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training.
-        optimizer = {**optimizer, "lr": target_learning_rate}
+        optimizer = {**optimizer, "lr": base_learning_rate}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
 
     def train_step(
@@ -335,12 +336,12 @@ class Trainer(BaseTrainer):
 
         return loss, all_losses
 
-    def set_target_learning_rate(self, target_learning_rate):
+    def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
-            target_learning_rate *= self.horovod.size()
-        self.target_learning_rate = target_learning_rate   # The LR target for warmup and initial value for decay.
-        self.set_optimizer_learning_rate(target_learning_rate)
+            base_learning_rate *= self.horovod.size()
+        self.base_learning_rate = base_learning_rate   # The LR target for warmup and initial value for decay.
+        self.set_optimizer_learning_rate(base_learning_rate)
 
     def set_optimizer_learning_rate(self, learning_rate):
         """Sets the learning rate of the optimizer."""
@@ -424,7 +425,7 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
-        learning_rate = self.target_learning_rate
+        learning_rate = self.base_learning_rate
 
         current_learning_rate = min_lr
         losses = []
@@ -684,7 +685,7 @@ class Trainer(BaseTrainer):
                 last_improvement_epoch=0,
                 last_learning_rate_reduction_epoch=0,
                 last_increase_batch_size_epoch=0,
-                learning_rate=self.target_learning_rate,
+                learning_rate=self.base_learning_rate,
                 best_eval_metric=get_initial_validation_value(self.validation_metric),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
                     self.reduce_learning_rate_eval_metric
