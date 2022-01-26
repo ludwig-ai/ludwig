@@ -20,6 +20,7 @@ import pytest
 import ray
 import torch
 
+from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.utils.data_utils import read_parquet
@@ -60,9 +61,10 @@ RAY_BACKEND_CONFIG = {
 
 
 @contextlib.contextmanager
-def ray_start(num_cpus=2):
+def ray_start(num_cpus=2, num_gpus=0):
     res = ray.init(
         num_cpus=num_cpus,
+        num_gpus=num_gpus,
         include_dashboard=False,
         object_store_memory=150 * 1024 * 1024,
     )
@@ -139,8 +141,9 @@ def run_test_parquet(
     run_fn=run_api_experiment,
     expect_error=False,
     num_cpus=2,
+    num_gpus=0,
 ):
-    with ray_start(num_cpus=num_cpus):
+    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
             "input_features": input_features,
             "output_features": output_features,
@@ -281,3 +284,36 @@ def test_ray_lazy_load_image_error():
         ]
         output_features = [binary_feature()]
         run_test_parquet(input_features, output_features, expect_error=True)
+
+
+@pytest.mark.skipIf(not torch.cuda.is_available(), reason="test requires gpu")
+@pytest.mark.distributed
+def test_train_gpu_load_cpu():
+    input_features = [
+        category_feature(vocab_size=2, reduce_input="sum"),
+        numerical_feature(normalization="zscore"),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    run_test_parquet(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
+
+
+@spawn
+def _run_train_gpu_load_cpu(config, data_parquet):
+    with tempfile.TemporaryDirectory() as output_dir:
+        model_dir = ray.get(train_gpu.remote(config, data_parquet, output_dir))
+        ray.get(predict_cpu(model_dir, data_parquet))
+
+
+@ray.remote(num_cpus=1, num_gpus=1)
+def train_gpu(config, dataset, output_directory):
+    model = LudwigModel(config, backend="local")
+    _, _, output_dir = model.train(dataset, output_directory=output_directory)
+    return os.path.join(output_dir, "model")
+
+
+@ray.remote(num_cpus=1, num_gpus=0)
+def predict_cpu(model_dir, dataset):
+    model = LudwigModel.load(model_dir, backend="local")
+    model.predict(dataset)

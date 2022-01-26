@@ -1387,7 +1387,8 @@ class LudwigModel:
         """
         if self.backend.is_coordinator():
             weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            self.model.load_state_dict(torch.load(weights_save_path))
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
 
         self.backend.sync_model(self.model)
 
