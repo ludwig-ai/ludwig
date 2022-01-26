@@ -198,7 +198,7 @@ def test_export_savedmodel_cli(csv_filename):
 
 
 @pytest.mark.distributed
-@pytest.mark.skipIf(LooseVersion(platform.python_version()) >= LooseVersion('3.8'))
+@pytest.mark.skipIf(LooseVersion(platform.python_version()) == LooseVersion('3.9'))
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
     with tempfile.TemporaryDirectory() as tmpdir:

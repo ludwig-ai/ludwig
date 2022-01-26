@@ -36,7 +36,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.skipIf(LooseVersion(platform.python_version()) >= LooseVersion('3.8'))
+@pytest.mark.skipIf(LooseVersion(platform.python_version()) == LooseVersion('3.9'))
 def test_neuropod(csv_filename):
     #######
     # Setup
