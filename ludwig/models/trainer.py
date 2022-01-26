@@ -155,9 +155,9 @@ class Trainer(BaseTrainer):
         :param epochs: Number of epochs the algorithm is intended to be run over
         :type epochs: Integer
         :param learning_rate: Learning rate for the algorithm, represents how
-               much to scale the gradients by
-        :type learning_rate: Integer
-        :param batch_size: Size of batch to pass to the model for training.
+               much to scale the gradients by.  May be 'auto' to auto-tune learning rate.
+        :type learning_rate: Float
+        :param batch_size: Size of batch to pass to the model for training, or 'auto' to auto-tune batch size.
         :type batch_size: Integer
         :param eval_batch_size: Size of batch to pass to the model for evaluation.
         :type eval_batch_size: Integer
@@ -241,6 +241,13 @@ class Trainer(BaseTrainer):
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
         self.regularization_type = regularization_type
+        self.learning_rate = learning_rate  # The learning_rate specified in configuration, may be 'auto'.
+        try:
+            target_learning_rate = float(learning_rate)
+        except ValueError:
+            # TODO (ASN): Circle back on how we want to set default placeholder value
+            target_learning_rate = 0.001  # Default initial learning rate for autoML.
+        self.target_learning_rate = target_learning_rate
         self.decay = decay
         self.decay_rate = decay_rate
         self.decay_steps = decay_steps
@@ -277,9 +284,6 @@ class Trainer(BaseTrainer):
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        if self.horovod:
-            learning_rate *= self.horovod.size()
-
         self.model = model
         self.model = self.model.to(self.device)
 
@@ -287,7 +291,7 @@ class Trainer(BaseTrainer):
         if optimizer is None:
             optimizer = {TYPE: "Adam"}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
-        self.set_learning_rate(learning_rate)
+        self.set_optimizer_learning_rate(target_learning_rate)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
@@ -330,9 +334,14 @@ class Trainer(BaseTrainer):
 
         return loss, all_losses
 
-    def set_learning_rate(self, learning_rate):
-        """Sets the learning rate and updates the learning rate of the optimizer."""
-        self.learning_rate = learning_rate
+    def set_target_learning_rate(self, target_learning_rate):
+        """Sets the target learning rate.  Actual optimizer learning rate may depend on warmup, decay, etc.."""
+        if self.horovod:
+            target_learning_rate *= self.horovod.size()
+        self.target_learning_rate = target_learning_rate   # The LR target for warmup and initial value for decay.
+
+    def set_optimizer_learning_rate(self, learning_rate):
+        """Sets the learning rate of the optimizer."""
         for g in self.optimizer.param_groups:
             g["lr"] = learning_rate
 
@@ -413,10 +422,7 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
-        # TODO (ASN): Circle back on how we want to set default placeholder value
-        # Currently, since self.learning_rate is originally set to auto, we provide a
-        # placeholder starting value (namely, .001)
-        learning_rate = 0.001
+        learning_rate = self.target_learning_rate
 
         current_learning_rate = min_lr
         losses = []
@@ -489,7 +495,7 @@ class Trainer(BaseTrainer):
                     else:
                         current_learning_rate = linear_scheduler(current_learning_rate, step_count)
 
-                    self.set_learning_rate(current_learning_rate)
+                    self.set_optimizer_learning_rate(current_learning_rate)
                     step_count += 1
 
                 epoch += 1
@@ -509,7 +515,6 @@ class Trainer(BaseTrainer):
     ) -> int:
         def _is_valid_batch_size(batch_size):
             return batch_size < len(training_set)
-
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value (namely, 128)
@@ -517,7 +522,6 @@ class Trainer(BaseTrainer):
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
-
         # Set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
@@ -678,7 +682,7 @@ class Trainer(BaseTrainer):
                 last_improvement_epoch=0,
                 last_learning_rate_reduction_epoch=0,
                 last_increase_batch_size_epoch=0,
-                learning_rate=self.learning_rate,
+                learning_rate=self.target_learning_rate,
                 best_eval_metric=get_initial_validation_value(self.validation_metric),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
                     self.reduce_learning_rate_eval_metric
@@ -909,7 +913,7 @@ class Trainer(BaseTrainer):
                     batcher.step,
                     batcher.steps_per_epoch,
                 )
-            self.set_learning_rate(current_learning_rate)
+            self.set_optimizer_learning_rate(current_learning_rate)
 
             # obtain batch
             batch = batcher.next_batch()
