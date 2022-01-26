@@ -17,6 +17,7 @@ from distutils.version import LooseVersion
 import itertools
 import os
 import platform
+import pytest
 import shutil
 import tempfile
 
