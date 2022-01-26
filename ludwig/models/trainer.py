@@ -518,6 +518,7 @@ class Trainer(BaseTrainer):
     ) -> int:
         def _is_valid_batch_size(batch_size):
             return batch_size < len(training_set)
+
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value (namely, 128)
