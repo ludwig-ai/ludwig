@@ -290,9 +290,9 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: "Adam"}
+        # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training.
         optimizer = {**optimizer, "lr": target_learning_rate}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
-        self.set_optimizer_learning_rate(target_learning_rate)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
