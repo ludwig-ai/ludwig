@@ -339,7 +339,7 @@ class Trainer(BaseTrainer):
         """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
             target_learning_rate *= self.horovod.size()
-        self.target_learning_rate = target_learning_rate   # The LR target for warmup and initial value for decay.
+        self.target_learning_rate = target_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(target_learning_rate)
 
     def set_optimizer_learning_rate(self, learning_rate):
@@ -517,6 +517,7 @@ class Trainer(BaseTrainer):
     ) -> int:
         def _is_valid_batch_size(batch_size):
             return batch_size < len(training_set)
+
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value (namely, 128)
