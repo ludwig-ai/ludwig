@@ -153,15 +153,13 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
             return read_image(img, mode=ImageReadMode.RGB_ALPHA)
         else:
             return read_image(img)
-    except HTTPError as e:
+    except Exception as e:
         upgraded = upgrade_http(img)
         if upgraded:
             logger.info(f"reading image url {img} failed due to {e}. upgrading to https and retrying")
-            return read_image(upgraded)
-        logger.info(f"reading image url {img} failed due to {e} and cannot be upgraded to https")
+            return read_image_from_str(upgraded, num_channels)
+        logger.info(f"reading image url {img} failed due to {e}")
         return None
-    except Exception as e:
-        logger.info(f"reading image url {img} failed with error: ", e)
 
 
 def pad(
