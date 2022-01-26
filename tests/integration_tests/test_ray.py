@@ -61,7 +61,7 @@ RAY_BACKEND_CONFIG = {
 
 
 @contextlib.contextmanager
-def ray_start(num_cpus=2, num_gpus=0):
+def ray_start(num_cpus=2, num_gpus=None):
     res = ray.init(
         num_cpus=num_cpus,
         num_gpus=num_gpus,
@@ -141,7 +141,7 @@ def run_test_parquet(
     run_fn=run_api_experiment,
     expect_error=False,
     num_cpus=2,
-    num_gpus=0,
+    num_gpus=None,
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
