@@ -20,7 +20,6 @@ import sys
 from collections.abc import Iterable
 from io import BytesIO
 from typing import BinaryIO, List, Optional, TextIO, Tuple, Union
-from urllib.error import HTTPError
 
 import numpy as np
 import torch
