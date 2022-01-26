@@ -15,15 +15,3 @@ repos:
     rev: v4.1.0
     hooks:
       - id: check-ast
-      - id: check-byte-order-marker
-      - id: check-case-conflict
-      - id: check-docstring-first
-      - id: check-executables-have-shebangs
-      - id: check-json
-      - id: check-toml
-      - id: check-yaml
-      - id: debug-statements
-      - id: detect-private-key
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: mixed-line-ending
