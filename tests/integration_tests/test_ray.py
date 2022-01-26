@@ -303,7 +303,7 @@ def test_train_gpu_load_cpu():
 def _run_train_gpu_load_cpu(config, data_parquet):
     with tempfile.TemporaryDirectory() as output_dir:
         model_dir = ray.get(train_gpu.remote(config, data_parquet, output_dir))
-        ray.get(predict_cpu(model_dir, data_parquet))
+        ray.get(predict_cpu.remote(model_dir, data_parquet))
 
 
 @ray.remote(num_cpus=1, num_gpus=1)
