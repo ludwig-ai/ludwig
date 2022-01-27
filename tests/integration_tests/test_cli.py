@@ -196,7 +196,7 @@ def test_export_savedmodel_cli(csv_filename):
                     )
 
 
-@pytest.mark.skipIf(sys.version_info >= (3, 9))
+@pytest.mark.skipif(sys.version_info >= (3, 9))
 @pytest.mark.distributed
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
