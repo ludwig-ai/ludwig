@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
@@ -29,12 +29,12 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 
 
 class Protein(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
-    """
-    Physicochemical Properties of Protein Tertiary Structure Data Set
+    """Physicochemical Properties of Protein Tertiary Structure Data Set.
 
     Additional Details:
 
     https://archive.ics.uci.edu/ml/datasets/Physicochemical+Properties+of+Protein+Tertiary+Structure
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="protein", cache_dir=cache_dir)

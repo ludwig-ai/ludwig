@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
@@ -29,33 +29,41 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 
 
 class Naval(ZipDownloadMixin, CSVLoadMixin, BaseDataset):
-    """
-    Condition Based Maintenance of Naval Propulsion Plants Data Set
+    """Condition Based Maintenance of Naval Propulsion Plants Data Set.
 
     Additional Details:
 
     https://archive.ics.uci.edu/ml/datasets/Condition+Based+Maintenance+of+Naval+Propulsion+Plants
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="naval", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
-        df = pd.read_csv(
-            os.path.join(self.raw_dataset_path, "UCI CBM Dataset", "data.txt"),
-            header=None,
-            sep='   '
-        )
+        df = pd.read_csv(os.path.join(self.raw_dataset_path, "UCI CBM Dataset", "data.txt"), header=None, sep="   ")
 
         columns = [
-            "lp", "v", "gtt", "gtn", "ggn",
-            "ts", "tp", "t48", "t1", "t2",
-            "p48", "p1", "p2", "pexh",
-            "tic", "mf",
-            "gtcdsc", "gttdsc"
+            "lp",
+            "v",
+            "gtt",
+            "gtn",
+            "ggn",
+            "ts",
+            "tp",
+            "t48",
+            "t1",
+            "t2",
+            "p48",
+            "p1",
+            "p2",
+            "pexh",
+            "tic",
+            "mf",
+            "gtcdsc",
+            "gttdsc",
         ]
         df.columns = columns
 
         makedirs(self.processed_temp_path, exist_ok=True)
-        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
-                  index=False)
+        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename), index=False)
         rename(self.processed_temp_path, self.processed_dataset_path)
