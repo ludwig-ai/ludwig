@@ -33,8 +33,8 @@ from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
 logger = logging.getLogger(__name__)
 
 
-def get_gray_default_image(height: int, width: int, num_channels: int) -> np.ndarray:
-    return np.full((height, width, num_channels), 128, dtype=np.uint8)
+def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
+    return np.full((num_channels, height, width), 128, dtype=np.uint8)
 
 
 def get_average_image(image_lst: List[np.ndarray]) -> np.array:
