@@ -13,13 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from distutils.version import LooseVersion
 import os
 import os.path
 import re
-import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 from io import StringIO
 
@@ -197,8 +196,8 @@ def test_export_savedmodel_cli(csv_filename):
                     )
 
 
+@pytest.mark.skipIf(sys.version_info >= (3, 9))
 @pytest.mark.distributed
-@pytest.mark.skipIf(LooseVersion(platform.python_version()) >= LooseVersion('3.9'))
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
     with tempfile.TemporaryDirectory() as tmpdir:

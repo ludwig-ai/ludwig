@@ -13,12 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from distutils.version import LooseVersion
 import itertools
 import os
-import platform
 import pytest
 import shutil
+import sys
 import tempfile
 
 import numpy as np
@@ -36,7 +35,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.skipIf(LooseVersion(platform.python_version()) >= LooseVersion('3.9'))
+@pytest.mark.skipIf(sys.version_info >= (3, 9))
 def test_neuropod(csv_filename):
     #######
     # Setup
