@@ -17,9 +17,9 @@ RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
     cmake \
-    libcudnn7=7.6.5.32-1+cuda10.1 \
-    libnccl2=2.7.8-1+cuda10.1 \
-    libnccl-dev=2.7.8-1+cuda10.1
+    libcudnn8=8.1.1.33-1+cuda11.2 \
+    libnccl2=2.8.4-1+cuda11.2 \
+    libnccl-dev=2.8.4-1+cuda11.2
 
 WORKDIR /ludwig
 
