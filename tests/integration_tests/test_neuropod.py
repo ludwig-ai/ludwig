@@ -46,7 +46,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 9))
+@pytest.mark.skipif(sys.version_info >= (3, 9), reason="neuropod requires python3.8 or lower.")
 def test_neuropod(csv_filename):
     #######
     # Setup
