@@ -522,7 +522,7 @@ class LudwigModel:
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
                     tuned_learning_rate = trainer.tune_learning_rate(self.config, training_set, random_seed=random_seed)
                     self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
-                    trainer.learning_rate = tuned_learning_rate
+                    trainer.set_base_learning_rate(tuned_learning_rate)
 
                 # train model
                 if self.backend.is_coordinator():

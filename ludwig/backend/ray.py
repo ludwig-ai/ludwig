@@ -284,7 +284,7 @@ class RayLegacyTrainer(BaseTrainer):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         if RayExecutor is None:
             logger.error(
-                "RayLegacyTrainer failed to initialize: RayExecutor is None." "Make sure horovod[ray] is installed."
+                "RayLegacyTrainer failed to initialize: RayExecutor is None. Make sure horovod[ray] is installed."
             )
             return
         setting = RayExecutor.create_settings(timeout_s=30)
