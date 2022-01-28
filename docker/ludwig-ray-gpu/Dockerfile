@@ -9,8 +9,7 @@
 #   model serving
 #
 
-# Pin to 1.5.1 to ensure CUDA 11.2 following: https://github.com/ray-project/ray/pull/17806
-FROM rayproject/ray:1.5.1-gpu
+FROM rayproject/ray:1.9.2-py37-cu112
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
@@ -23,8 +22,8 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
     rsync \
     vim
 
-# Upgrade to the latest ray
-RUN pip install --upgrade ray
+# Install PyTorch with CUDA 11.1 (compatible with 11.2 image)
+RUN pip install torch==1.10.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html
 
 WORKDIR /ludwig
 

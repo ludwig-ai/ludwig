@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
+FROM pytorch/pytorch:1.10.1-cuda11.3-cudnn8-devel
 
 RUN apt-get -y update && apt-get -y install \
     git \
