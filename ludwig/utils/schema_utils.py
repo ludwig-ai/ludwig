@@ -58,53 +58,65 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
 
         Currently targeted for use with optimizer and combiner schema; if there is no description provided for a
         particular field, the description is pulled from the corresponding torch optimizer. Note that this currently
-        overrides whatever may be in the description field. TODO(ksbrar): Watch this
+        overrides whatever may already be in the description/default fields. TODO(ksbrar): Watch this
         [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this eventually.
         """
 
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
-        # loaded_docstring = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
-        # if schema_cls.__doc__ is not None:
-        #     parsed_docstring = parse.class_(schema_cls)
+        if schema_cls.__doc__ is not None:
+            parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
 
-        #     # Add the top-level description to the schema if it exists:
-        #     if "doc" in parsed_docstring:
-        #         schema_dump["description"] = parsed_docstring["doc"]
+            # Add the top-level description to the schema if it exists:
+            if parsed_documentation.docstring is not None:
+                schema_dump["description"] = cleanup_python_comment(parsed_documentation.docstring)
 
-        # For each prop in the schema, set its description and default if they are not already set. If not already
-        # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
-        # (e.g. for optimizer parameters).
-        #     parsed_torch = parse.class_(schema_cls.torch_type) if hasattr(schema_cls, "torch_type") else None
-        #     for prop in schema_dump["properties"]:
-        #         schema_prop = schema_dump["properties"][prop]
+            parsed_attrs = {attr.name: attr for attr in parsed_documentation.attributes}
 
-        #         if prop in parsed_docstring["params"]:
-        #             # Handle descriptions:
-        #             pdprop = parsed_docstring["params"][prop]
+            # For each prop in the schema, set its description and default if they are not already set. If not already
+            # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
+            # (e.g. for optimizer parameters).
+            parsed_torch = (
+                {
+                    param.name: param
+                    for param in googleloader.get_object_documentation(schema_cls.torch_type)
+                    .docstring_sections[1]
+                    .value
+                }
+                if hasattr(schema_cls, "torch_type")
+                else None
+            )
+            for prop in schema_dump["properties"]:
+                schema_prop = schema_dump["properties"][prop]
 
-        #             # pdprop = [parser object, etc.]
-        #             # pdprop.parser[1].short_description, long_description
-        #             desc = ""
-        #             if "doc" in pdprop:
-        #                 desc = parsed_docstring["params"][prop]["doc"]
-        #             elif (
-        #                 desc == ""
-        #                 and parsed_torch is not None
-        #                 and prop in parsed_torch["params"]
-        #                 and "doc" in parsed_torch["params"][prop]
-        #             ):
-        #                 desc = parsed_torch["params"][prop]["doc"]
+                if prop in parsed_attrs:
+                    # Handle descriptions:
 
-        #             # Don't add empty descriptions:
-        #             if (
-        #                 "description" not in schema_prop
-        #                 or schema_prop["description"] is None
-        #                 or schema_prop["description"] == ""
-        #             ):
-        #                 schema_prop["description"] = cleanup_python_comment(desc)
+                    # Get the particular attribute's docstring (if it has one), strip the default from the string:
+                    parsed_desc = parsed_attrs[prop].docstring
+                    if parsed_desc is None:
+                        parsed_desc = ""
+                    parsed_desc = parsed_desc.split("(default: ")[0]
 
-        #             # Handle defaults:
-        #             default = None
+                    # If no description is provided, attempt to pull from torch if applicable:
+                    desc = parsed_desc
+                    if (
+                        desc == ""
+                        and parsed_torch is not None
+                        and prop in parsed_torch
+                        and (parsed_torch[prop].description is not None or parsed_torch[prop].description != "")
+                    ):
+                        desc = parsed_torch[prop].description
+
+                    # Don't add empty descriptions:
+                    if (
+                        "description" not in schema_prop
+                        or schema_prop["description"] is None
+                        or schema_prop["description"] == ""
+                    ):
+                        schema_prop["description"] = cleanup_python_comment(desc)
+
+                    # Handle defaults:
+                    # default = getattr()
         #             if "default" in pdprop:
         #                 default = parsed_docstring["params"][prop]["default"]
         #             elif (
