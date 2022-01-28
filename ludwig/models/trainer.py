@@ -103,81 +103,114 @@ class BaseTrainer(ABC):
 
 @dataclass
 class TrainerConfig:
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.
-
-    :param optimizer: `ludwig.modules.optimization_modules.BaseOptimizer` object that specifies a torch-supported
-           optimizer and its attributes, set to `ludwig.modules.optimization_modules.AdamOptimizer` by default
-    :param epochs: Number of epochs the algorithm is intended to be run over
-    :param regularization_lambda: Strength of the $L2$ regularization
-    :param regularization_type: Type of regularization, one of ('l1', 'l2', 'l1_l2').
-    :param should_shuffle: Whether to shuffle batches during training when true (default: True).
-    :param learning_rate: Learning rate for the algorithm, represents how much to scale the gradients by. Overrides `lr`
-           parameter on `optimizer`.
-    :param batch_size: Size of batch to pass to the model for training
-    :param eval_batch_size: Size of batch to pass to the model for evaluation
-    :param early_stop: How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop
-    :param reduce_learning_rate_on_plateau: Reduces the learning rate when the algorithm hits a plateau (i.e. the
-           performance on the validation does not improve)
-    :param reduce_learning_rate_on_plateau_patience: How many epochs have to pass before the learning rate reduces
-    :param reduce_learning_rate_on_plateau_rate: Rate at which we reduce the learning rate
-    :param reduce_learning_rate_eval_metric: TODO
-    :param reduce_learning_rate_eval_split: TODO
-    :param increase_batch_size_on_plateau: Number to increase the batch size by on a plateau
-    :param increase_batch_size_on_plateau_patience: How many epochs to wait for before increasing the batch size
-    :param increase_batch_size_on_plateau_rate: Rate at which the batch size increases
-    :param increase_batch_size_on_plateau_max: Maximum size of the batch
-    :param increase_batch_size_eval_metric: TODO
-    :param increase_batch_size_eval_split: TODO
-    :param decay: TODO
-    :param decay_steps: TODO
-    :param decay_rate: TODO
-    :param staircase: TODO
-    :param gradient_clipping: TODO
-    :param validation_field: First output feature, by default it is set as the same field of the first output feature.
-    :param validation_metric: Metric used on `validation_field`, set by default to accuracy
-    :param learning_rate_warmup_epochs: Number of epochs to warmup the learning rate for
-    """
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
     optimizer: Optional[BaseOptimizer] = OptimizerDataclassField(default={"type": "adam"})
+    """Instance of `ludwig.modules.optimization_modules.BaseOptimizer` that specifies a torch-supported optimizer and
+       its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`)."""
+
     epochs: int = schema.PositiveInteger(default=100)
+    "Number of epochs the algorithm is intended to be run over (default: 100)."
+
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
+    "Strength of the $L2$ regularization (default: 0.0)."
+
     regularization_type: Optional[str] = schema.StringOptions(
         options=["l1", "l2", "l1_l2"], default="l2", nullable=True
     )
+    "Type of regularization, one of ('l1', 'l2', 'l1_l2') (default: 'l2')."
+
     should_shuffle: bool = True
+    "Whether to shuffle batches during training when true (default: True)."
+
     learning_rate: float = schema.NumericOrStringOptionsField(
         default=0.001, min=0.0, max=1.0, options=["auto"], nullable=False
     )
+    """Learning rate for the algorithm, represents how much to scale the gradients by. Overrides `lr`
+       parameter on `optimizer`. (default: 0.001). """
+
     batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
         default=128, options=["auto"], nullable=False, min_exclusive=0
     )
-    eval_batch_size: Optional[int] = schema.IntegerOrStringOptionsField(
+    "Size of batch to pass to the model for training (default: 128)."
+
+    eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
         default=None, options=["auto"], nullable=True, min_exclusive=0
     )
-    early_stop: int = schema.IntegerRange(default=5, min=-1)  # Can be -1, which disables early_stop
+    "Size of batch to pass to the model for evaluation (default: 'auto')."
+
+    early_stop: int = schema.IntegerRange(default=5, min=-1)
+    """How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to
+       -1, which disables early_stop (default: 5)."""
+
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
-    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(5)
+    """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
+       improve). (default: 0.0)."""
+
+    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
+    "How many epochs have to pass before the learning rate reduces (default: 5)."
+
     reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)
+    "Rate at which we reduce the learning rate (default: 0.5)."
+
     reduce_learning_rate_eval_metric: str = LOSS
+    "TODO (default: 'loss')."
+
     reduce_learning_rate_eval_split: str = TRAINING
+    "TODO (default: 'training')."
+
     increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
+    "Number to increase the batch size by on a plateau (default: 0)."
+
     increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
+    "How many epochs to wait for before increasing the batch size (default: 5)."
+
     increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(default=2.0)
+    "Rate at which the batch size increases (default: 2.0)."
+
     increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)
+    "Maximum size of the batch (default: 512)."
+
     increase_batch_size_eval_metric: str = LOSS
+    "TODO (default: 'loss')."
+
     increase_batch_size_eval_split: str = TRAINING
+    "TODO (default: 'training')."
+
     decay: bool = False
+    "TODO (default: False)."
+
     decay_steps: int = schema.PositiveInteger(default=10000)
+    "TODO (default: 10000)."
+
     decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
+    "TODO (default: 0.96)."
+
     staircase: bool = False
-    gradient_clipping: Optional[Clipper] = ClipperDataclassField()
+    "TODO (default: False)."
+
+    gradient_clipping: Optional[Clipper] = ClipperDataclassField(default={})
+    """Instance of `ludwig.modules.optimization_modules.Clipper` that sets gradient clipping params.
+       (default: `ludwig.modules.optimization_modules.Clipper()`)"""
+
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = COMBINED
+    "First output feature, by default it is set as the same field of the first output feature."
+
     validation_metric: str = LOSS
+    "Metric used on `validation_field`, set by default to accuracy"
+
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
+    "Number of epochs to warmup the learning rate for"
 
     class Meta:
+        """Sub-class specifying meta information for Marshmallow.
+
+        Used for excluding unknown properties.
+        """
+
         unknown = RAISE
+        "Flag that sets marshmallow `load` calls to raise an error if an unknown property is passed as a parameter."
 
 
 class Trainer(BaseTrainer):
@@ -205,23 +238,27 @@ class Trainer(BaseTrainer):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
         :param model: Underlying Ludwig model
-        :param resume: Resume training a model that was being trained.
+        :param resume: Resume training a model that was being trained. (default: False).
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
                really big that can be time consuming. If you do not want to keep the weights and just find out what
                performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
-               will not be loadable later on.
+               will not be loadable later on. (default: False).
         :param skip_save_progress: Disables saving progress each epoch. By default Ludwig saves weights and stats after
                each epoch for enabling resuming of training, but if the model is really big that can be time consuming
-               and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later on
+               and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
+               on. (default: False).
         :param skip_save_log: TODO Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
-               but if it is not needed turning it off can slightly increase the overall speed.
+               but if it is not needed turning it off can slightly increase the overall speed. (default: False).
         :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
-        :param random_seed: Default initialization for the random seeds
-        :param horovod: Horovod parameters
-        :param debug: Enables debugging mode, which prints out a lot of information about the training process
-        :param device: Device to load the model on from a saved checkpoint
-        :param config: `ludwig.models.trainer.TrainerConfig` object that specifies training hyperparameters
+               (default: None).
+        :param random_seed: Default initialization for the random seeds (default: 42).
+        :param horovod: Horovod parameters (default: None).
+        :param debug: Enables debugging mode, which prints out a lot of information about the training process (default:
+               False)
+        :param device: Device to load the model on from a saved checkpoint (default: None).
+        :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
+               `ludwig.models.trainer.TrainerConfig()`).
         """
         if config is None:
             config = TrainerConfig()
@@ -284,12 +321,9 @@ class Trainer(BaseTrainer):
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
-        Params:
-            inputs: A dictionary of input data, from feature name to tensor.
-            targets: A dictionary of target data, from feature name to tensor.
-
-        Returns:
-            A tuple of the loss and a dictionary of metrics.
+        :param inputs: A dictionary of input data, from feature name to tensor.
+        :param targets: A dictionary of target data, from feature name to tensor.
+        :return: A tuple of the loss and a dictionary of metrics.
         """
         self.optimizer.zero_grad()
 

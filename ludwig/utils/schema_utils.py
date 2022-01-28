@@ -1,60 +1,133 @@
 import re
 from dataclasses import field
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Type, Union
 
 import marshmallow_dataclass
-from docstring_parser import parse
-from marshmallow import fields, validate, ValidationError
+from marshmallow import fields, Schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
+from pytkdocs import loader as pytkloader
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
 
-
-def cleanup_python_comment(dstring: str) -> str:
-    """Cleans up some common issues with parsed comments/docstrings."""
-    # Add spaces after periods:
-    dstring = re.sub(r"\.(?! )", ". ", dstring)
-    # Replace internal newlines with spaces:
-    dstring = re.sub("\n+", " ", dstring)
-    # Replace any multiple-spaces with single spaces:
-    dstring = re.sub(" +", " ", dstring)
-    # Remove leading/ending spaces:
-    dstring = dstring.strip()
-    # Add final period if it's not there:
-    dstring += "." if dstring[-1] != "." else ""
-    # Capitalize first word in string and first word in each sentence.
-    dstring = re.sub(r"((?<=[\.\?!]\s)(\w+)|(^\w+))", lambda m: m.group().capitalize(), dstring)
-    return dstring
+restloader = pytkloader.Loader(docstring_style="restructured-text")
+googleloader = pytkloader.Loader(docstring_style="google")
 
 
-def generate_extra_json_schema_props(schema_cls) -> str:
-    """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema. Currently targeted for use
-    with optimizer schema; if there is no description provided for a particular field, the description is pulled
-    from the corresponding torch optimizer.
+def create_cond(if_pred: Dict, then_pred: Dict):
+    """Returns a JSONSchema conditional for the given if-then predicates."""
+    return {
+        "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
+        "then": {"properties": {k: v for k, v in then_pred.items()}},
+    }
 
-    Note that this currently overrides whatever may be in the description field. TODO(ksbrar): Watch this
-    [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this eventually.
-    """
 
-    schema_dump = js().dump(schema_cls.Schema())["definitions"][schema_cls.__name__]
-    if schema_cls.__doc__ is not None:
-        parsed_docstring = parse(schema_cls.__doc__)
-        parsed_torch = parse(schema_cls.torch_type.__doc__)
-        params_dict = {p.arg_name: p.description for p in parsed_docstring.params if p.description is not None}
-        torch_dict = {p.arg_name: p.description for p in parsed_torch.params if p.description is not None}
-        if parsed_docstring.short_description is not None:
-            desc = parsed_docstring.short_description
-            desc += parsed_docstring.long_description if parsed_docstring.long_description is not None else ""
-            schema_dump["description"] = cleanup_python_comment(desc)
-        for prop in schema_dump["properties"]:
-            schema_prop = schema_dump["properties"][prop]
-            if prop in params_dict:
-                schema_prop["description"] = cleanup_python_comment(params_dict[prop])
-            elif prop in torch_dict:
-                schema_prop["description"] = cleanup_python_comment(torch_dict[prop])
+def get_fully_qualified_class_name(cls):
+    """Returns fully dot-qualified path of a class, e.g. `ludwig.models.trainer.TrainerConfig` given
+    `TrainerConfig`."""
+    return ".".join([cls.__module__, cls.__name__])
 
-    return schema_dump
+
+def unload_schema_from_marshmallow_jsonschema_dump(mclass) -> Dict:
+    """Helper method to get a marshmallow class's direct schema without extra wrapping props."""
+    return js().dump(mclass.Schema())["definitions"][mclass.__name__]
+
+
+def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
+    """Get Ludwig-customized schema from a given marshmallow class."""
+
+    def cleanup_python_comment(dstring: str) -> str:
+        """Cleans up some common issues with parsed comments/docstrings."""
+        # Add spaces after periods:
+        dstring = re.sub(r"\.(?! )", ". ", dstring)
+        # Replace internal newlines with spaces:
+        dstring = re.sub("\n+", " ", dstring)
+        # Replace any multiple-spaces with single spaces:
+        dstring = re.sub(" +", " ", dstring)
+        # Remove leading/ending spaces:
+        dstring = dstring.strip()
+        # Add final period if it's not there:
+        dstring += "." if dstring[-1] != "." else ""
+        # Capitalize first word in string and first word in each sentence.
+        dstring = re.sub(r"((?<=[\.\?!]\s)(\w+)|(^\w+))", lambda m: m.group().capitalize(), dstring)
+        return dstring
+
+    def generate_extra_json_schema_props(schema_cls) -> Dict:
+        """Workaround for adding 'description' and 'default' fields to a marshmallow schema's JSON Schema. Heres an
+        extra description.
+
+        Currently targeted for use with optimizer and combiner schema; if there is no description provided for a
+        particular field, the description is pulled from the corresponding torch optimizer. Note that this currently
+        overrides whatever may be in the description field. TODO(ksbrar): Watch this
+        [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this eventually.
+        """
+
+        schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
+        # loaded_docstring = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
+        # if schema_cls.__doc__ is not None:
+        #     parsed_docstring = parse.class_(schema_cls)
+
+        #     # Add the top-level description to the schema if it exists:
+        #     if "doc" in parsed_docstring:
+        #         schema_dump["description"] = parsed_docstring["doc"]
+
+        # For each prop in the schema, set its description and default if they are not already set. If not already
+        # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
+        # (e.g. for optimizer parameters).
+        #     parsed_torch = parse.class_(schema_cls.torch_type) if hasattr(schema_cls, "torch_type") else None
+        #     for prop in schema_dump["properties"]:
+        #         schema_prop = schema_dump["properties"][prop]
+
+        #         if prop in parsed_docstring["params"]:
+        #             # Handle descriptions:
+        #             pdprop = parsed_docstring["params"][prop]
+
+        #             # pdprop = [parser object, etc.]
+        #             # pdprop.parser[1].short_description, long_description
+        #             desc = ""
+        #             if "doc" in pdprop:
+        #                 desc = parsed_docstring["params"][prop]["doc"]
+        #             elif (
+        #                 desc == ""
+        #                 and parsed_torch is not None
+        #                 and prop in parsed_torch["params"]
+        #                 and "doc" in parsed_torch["params"][prop]
+        #             ):
+        #                 desc = parsed_torch["params"][prop]["doc"]
+
+        #             # Don't add empty descriptions:
+        #             if (
+        #                 "description" not in schema_prop
+        #                 or schema_prop["description"] is None
+        #                 or schema_prop["description"] == ""
+        #             ):
+        #                 schema_prop["description"] = cleanup_python_comment(desc)
+
+        #             # Handle defaults:
+        #             default = None
+        #             if "default" in pdprop:
+        #                 default = parsed_docstring["params"][prop]["default"]
+        #             elif (
+        #                 desc == ""
+        #                 and parsed_torch is not None
+        #                 and prop in parsed_torch["params"]
+        #                 and "doc" in parsed_torch["params"][prop]
+        #             ):
+        #                 desc = parsed_torch["params"][prop]["doc"]
+
+        #         elif prop in torch_dict:
+        #             schema_prop["description"] = cleanup_python_comment(torch_dict[prop])
+
+        #     # params_dict = {p: p["doc"] for p in parsed_docstring["params"] if "doc" in p}
+        #     # torch_dict = {p: p["doc"] for p in parsed_torch["params"] if "doc" in p}
+        # if parsed_docstring.short_description is not None:
+        #     desc = parsed_docstring.short_description
+        #     desc += parsed_docstring.long_description if parsed_docstring.long_description is not None else ""
+        #     schema_dump["description"] = cleanup_python_comment(desc)
+
+        return schema_dump
+
+    return generate_extra_json_schema_props(mclass)
 
 
 def InitializerOptions(default: Union[None, str] = None):
@@ -330,12 +403,13 @@ def NumericOrStringOptionsField(
                 tmp["maximum"] = max
             if max_exclusive is not None:
                 tmp["exclusiveMaximum"] = max_exclusive
-            return {
-                "oneOf": [
-                    tmp,
-                    {"type": "string", "enum": options},
-                ]
-            }
+            oneOf = [
+                tmp,
+                {"type": "string", "enum": options},
+            ]
+            if nullable:
+                oneOf += [{"type": "null"}]
+            return {"oneOf": oneOf}
 
     return field(metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable)}, default=default)
 
