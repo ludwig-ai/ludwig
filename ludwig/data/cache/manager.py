@@ -92,7 +92,8 @@ class DatasetCache:
     def delete(self):
         for fname in self.cache_map.values():
             if path_exists(fname):
-                delete(fname)
+                # Parquet entries in the cache_ma can be pointers to directories.
+                delete(fname, recursive=True)
 
 
 class CacheManager:
