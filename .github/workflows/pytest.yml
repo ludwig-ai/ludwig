@@ -26,15 +26,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [ 3.6, 3.7, 3.8 ]
+        python-version: [ 3.7, 3.8, 3.9 ]
         test-markers: [ "not distributed", "distributed" ]
         include:
-          - python-version: 3.6
-            tensorflow-version: 2.3.1
           - python-version: 3.7
             tensorflow-version: 2.5.0
           - python-version: 3.8
-            tensorflow-version: 2.5.0
+            tensorflow-version: 2.7.0
+          - python-version: 3.9
+            tensorflow-version: 2.7.0
     env:
       TENSORFLOW: ${{ matrix.tensorflow-version }}
       MARKERS: ${{ matrix.test-markers }}

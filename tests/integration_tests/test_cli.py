@@ -18,6 +18,7 @@ import os.path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from io import StringIO
 
@@ -195,6 +196,7 @@ def test_export_savedmodel_cli(csv_filename):
                     )
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 9), reason="neuropod requires python3.8 or lower.")
 @pytest.mark.distributed
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
