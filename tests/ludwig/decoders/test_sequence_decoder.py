@@ -13,10 +13,10 @@ from ludwig.decoders.sequence_decoders import (
 
 @pytest.mark.parametrize("cell_type", ["rnn", "gru"])
 @pytest.mark.parametrize("num_layers", [1, 2])
-def test_rnn_decoder(cell_type, num_layers):
+@pytest.mark.parametrize("batch_size", [20, 1])
+def test_rnn_decoder(cell_type, num_layers, batch_size):
     hidden_size = 256
     vocab_size = 50
-    batch_size = 20
 
     input = torch.randint(vocab_size, size=(batch_size,))
     initial_hidden = torch.zeros(num_layers, batch_size, hidden_size)
@@ -30,10 +30,10 @@ def test_rnn_decoder(cell_type, num_layers):
 
 
 @pytest.mark.parametrize("num_layers", [1, 2])
-def test_lstm_decoder(num_layers):
+@pytest.mark.parametrize("batch_size", [20, 1])
+def test_lstm_decoder(num_layers, batch_size):
     hidden_size = 256
     vocab_size = 50
-    batch_size = 20
 
     input = torch.randint(vocab_size, size=(batch_size,))
     initial_hidden = torch.zeros(num_layers, batch_size, hidden_size)
@@ -50,10 +50,10 @@ def test_lstm_decoder(num_layers):
 
 @pytest.mark.parametrize("cell_type", ["rnn", "gru"])
 @pytest.mark.parametrize("num_layers", [1, 2])
-def test_sequence_rnn_decoder(cell_type, num_layers):
+@pytest.mark.parametrize("batch_size", [20, 1])
+def test_sequence_rnn_decoder(cell_type, num_layers, batch_size):
     hidden_size = 256
     vocab_size = 50
-    batch_size = 20
     max_sequence_length = 10
 
     combiner_outputs = {HIDDEN: torch.rand([batch_size, hidden_size])}
@@ -67,10 +67,10 @@ def test_sequence_rnn_decoder(cell_type, num_layers):
 
 
 @pytest.mark.parametrize("num_layers", [1, 2])
-def test_sequence_lstm_decoder(num_layers):
+@pytest.mark.parametrize("batch_size", [20, 1])
+def test_sequence_lstm_decoder(num_layers, batch_size):
     hidden_size = 256
     vocab_size = 50
-    batch_size = 20
     max_sequence_length = 10
 
     combiner_outputs = {HIDDEN: torch.rand([batch_size, hidden_size])}
@@ -83,10 +83,10 @@ def test_sequence_lstm_decoder(num_layers):
 
 @pytest.mark.parametrize("cell_type", ["rnn", "gru", "lstm"])
 @pytest.mark.parametrize("num_layers", [1, 2])
-def test_sequence_generator_decoder(cell_type, num_layers):
+@pytest.mark.parametrize("batch_size", [20, 1])
+def test_sequence_generator_decoder(cell_type, num_layers, batch_size):
     hidden_size = 256
     vocab_size = 50
-    batch_size = 20
     max_sequence_length = 10
 
     combiner_outputs = {HIDDEN: torch.rand([batch_size, hidden_size])}

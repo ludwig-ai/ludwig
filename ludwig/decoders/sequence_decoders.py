@@ -103,13 +103,9 @@ class LSTMDecoder(nn.Module):
             - hidden_state: [batch_size, hidden_size] tensor with the hidden state for the next time step.
             - cell_state: [batch_size, hidden_size] tensor with the cell state for the next time step.
         """
-        print(f"incoming hidden_state.size(): {hidden_state.size()}")
-        print(f"incoming cell_state.size(): {cell_state.size()}")
-        print(f"incoming input.size(): {input.size()}")
         # Unsqueeze predicted tokens.
         input = input.unsqueeze(1).to(torch.int)
         output = self.embedding(input)
-        print(f"incoming output.size(): {output.size()}")
         output, (hidden_state, cell_state) = self.lstm(output, (hidden_state, cell_state))
         output_logits = self.out(output)
         return output_logits, hidden_state, cell_state
@@ -176,7 +172,8 @@ class SequenceRNNDecoder(nn.Module):
             # TODO: Use a configurable ratio for how often to use teacher forcing during training.
             if target is None:
                 _, topi = decoder_output.topk(1)
-                decoder_input = topi.squeeze().detach()  # detach from history as input
+                # Squeeze out multilayer and vocabulary dimensions.
+                decoder_input = topi.squeeze(1).squeeze(1).detach()  # detach from history as input
             else:
                 # Teacher forcing.
                 decoder_input = target[:, di]
@@ -244,7 +241,8 @@ class SequenceLSTMDecoder(nn.Module):
             # TODO: Use a configurable ratio for how often to use teacher forcing during training.
             if target is None:
                 _, topi = decoder_output.topk(1)
-                decoder_input = topi.squeeze().detach()  # detach from history as input
+                # Squeeze out multilayer and vocabulary dimensions.
+                decoder_input = topi.squeeze(1).squeeze(1).detach()  # detach from history as input
             else:
                 # Teacher forcing.
                 decoder_input = target[:, di]
