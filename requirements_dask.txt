@@ -1,2 +1,2 @@
-dask[dataframe]
+dask[dataframe]<2022.1.1
 pyarrow>=2.0.0
