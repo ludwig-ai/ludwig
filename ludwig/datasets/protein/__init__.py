@@ -13,22 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
-from ludwig.datasets.kdd_dataset import KDDCup2009Dataset
+
+from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
+from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, include_test_download=False):
-    dataset = KDDAppetency(cache_dir=cache_dir, include_test_download=include_test_download)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
+    dataset = Protein(cache_dir=cache_dir)
     return dataset.load(split=split)
 
 
-class KDDAppetency(KDDCup2009Dataset):
-    """The KDD Cup 2009 Appetency dataset.
+class Protein(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
+    """Physicochemical Properties of Protein Tertiary Structure Data Set.
 
     Additional Details:
 
-    https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
+    https://archive.ics.uci.edu/ml/datasets/Physicochemical+Properties+of+Protein+Tertiary+Structure
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, include_test_download=False):
-        super().__init__(task_name="appetency", cache_dir=cache_dir, include_test_download=include_test_download)
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
+        super().__init__(dataset_name="protein", cache_dir=cache_dir)

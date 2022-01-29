@@ -522,7 +522,7 @@ class LudwigModel:
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
                     tuned_learning_rate = trainer.tune_learning_rate(self.config, training_set, random_seed=random_seed)
                     self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
-                    trainer.learning_rate = tuned_learning_rate
+                    trainer.set_base_learning_rate(tuned_learning_rate)
 
                 # train model
                 if self.backend.is_coordinator():
@@ -1387,7 +1387,8 @@ class LudwigModel:
         """
         if self.backend.is_coordinator():
             weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            self.model.load_state_dict(torch.load(weights_save_path))
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
 
         self.backend.sync_model(self.model)
 

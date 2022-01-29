@@ -14,14 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
 import os
 
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray as _ray
-except Exception:
+except Exception as e:
+    logger.warning(f"import ray failed with exception: {e}")
     _ray = None
 
 
@@ -50,7 +54,8 @@ def _has_ray():
     try:
         _ray.init("auto", ignore_reinit_error=True)
         return True
-    except Exception:
+    except Exception as e:
+        logger.error(f"ray.init() failed: {e}")
         return False
 
 

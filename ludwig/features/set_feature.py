@@ -178,15 +178,13 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = "classifier"
-    num_classes = 0
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
+    num_classes = 0
+    threshold = 0.5
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        self.num_classes = 0
-        self.threshold = 0.5
-
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)

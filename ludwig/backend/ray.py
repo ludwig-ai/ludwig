@@ -24,7 +24,6 @@ import numpy as np
 import pandas as pd
 import ray
 import torch
-from horovod.ray import RayExecutor
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -45,13 +44,18 @@ _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
+logger = logging.getLogger(__name__)
+
+try:
+    from horovod.ray import RayExecutor
+except ImportError as e:
+    logger.warn(f"ImportError (ray.py) from horovod.ray import RayExecutor failed with error: \n\t{e}")
+    RayExecutor = None
+
 if _ray19:
     from ray.train.horovod import HorovodConfig
 else:
     from ray.train.backends.horovod import HorovodConfig
-
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: deprecated v0.5
@@ -278,6 +282,11 @@ def legacy_train_fn(
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
+        if RayExecutor is None:
+            logger.error(
+                "RayLegacyTrainer failed to initialize: RayExecutor is None. Make sure horovod[ray] is installed."
+            )
+            return
         setting = RayExecutor.create_settings(timeout_s=30)
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})

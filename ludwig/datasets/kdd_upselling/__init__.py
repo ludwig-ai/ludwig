@@ -33,8 +33,8 @@ from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.kdd_dataset import KDDCup2009Dataset
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = KDDUpselling(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, include_test_download=False):
+    dataset = KDDUpselling(cache_dir=cache_dir, include_test_download=include_test_download)
     return dataset.load(split=split)
 
 
@@ -46,5 +46,5 @@ class KDDUpselling(KDDCup2009Dataset):
     https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(task_name="upselling", cache_dir=cache_dir)
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, include_test_download=False):
+        super().__init__(task_name="upselling", cache_dir=cache_dir, include_test_download=include_test_download)

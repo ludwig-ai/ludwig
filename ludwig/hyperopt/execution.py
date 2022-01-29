@@ -2,6 +2,7 @@ import copy
 import datetime
 import glob
 import json
+import logging
 import os
 import shutil
 import threading
@@ -17,13 +18,15 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import HyperoptSampler, logger, RayTuneSampler
+from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry, hash_dict
+
+logger = logging.getLogger(__name__)
 
 try:
     import ray
@@ -37,7 +40,8 @@ try:
     from ray.util.queue import Queue as RayQueue
 
     from ludwig.backend.ray import RayBackend
-except ImportError:
+except ImportError as e:
+    logger.warn(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
     get_horovod_kwargs = None
 
@@ -296,7 +300,7 @@ class RayTuneExecutor(HyperoptExecutor):
         **kwargs,
     ) -> None:
         if ray is None:
-            raise ImportError("ray module is not installed. To " "install it,try running pip install ray")
+            raise ImportError("ray module is not installed. To install it, try running pip install ray")
         if not isinstance(hyperopt_sampler, RayTuneSampler):
             raise ValueError(
                 "Sampler {} is not compatible with RayTuneExecutor, "

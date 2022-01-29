@@ -24,7 +24,7 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     COLUMN,
-    FILL_WITH_CONST,
+    FILL_WITH_FALSE,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -118,8 +118,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_defaults() -> Dict[str, Any]:
         return {
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": 0,
+            "missing_value_strategy": FILL_WITH_FALSE,
         }
 
     @staticmethod
@@ -134,7 +133,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return {
             "missing_value_strategy": {
                 "type": "string",
-                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
+                "enum": [FILL_WITH_FALSE] + MISSING_VALUE_STRATEGY_OPTIONS,
             },
             "fill_value": fill_value_schema,
             "computed_fill_value": fill_value_schema,

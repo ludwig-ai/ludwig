@@ -53,7 +53,7 @@ Available sub-commands:
    collect_summary       Prints names of weights and layers activations to use with other collect commands
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
-   export_savedmodel     Exports Ludwig models to SavedModel
+   export_torchscript    Exports Ludwig models to Torchscript
    export_neuropod       Exports Ludwig models to Neuropod
    export_mlflow         Exports Ludwig models to MLflow
    preprocess            Preprocess data and saves it into HDF5 and JSON format

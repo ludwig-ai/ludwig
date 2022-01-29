@@ -47,7 +47,7 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import upload_h5
+from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     get_image_from_path,
@@ -314,10 +314,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if PREPROCESSING in feature_config and "num_processes" in feature_config[PREPROCESSING]:
             num_processes = feature_config[PREPROCESSING]["num_processes"]
 
-        src_path = None
-        if SRC in metadata:
-            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-
         num_images = len(input_df[feature_config[COLUMN]])
         if num_images == 0:
             raise ValueError("There are no images in the dataset provided.")
@@ -330,6 +326,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 "Invalid image feature data type.  Detected type is {}, "
                 "expect either string for file path or numpy array.".format(type(first_img_entry))
             )
+
+        src_path = None
+        if SRC in metadata:
+            if isinstance(first_img_entry, str) and not has_remote_protocol(first_img_entry):
+                src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
         try:
             first_img_entry = get_image_from_path(src_path, first_img_entry, ret_bytes=True)
@@ -362,7 +363,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         # TODO: alternatively use get_average_image() for unreachable images
-        default_image = get_gray_default_image(height, width, num_channels)
+        default_image = get_gray_default_image(num_channels, height, width)
 
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.

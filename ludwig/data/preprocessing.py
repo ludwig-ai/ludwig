@@ -29,6 +29,7 @@ from ludwig.constants import (
     DROP_ROW,
     FFILL,
     FILL_WITH_CONST,
+    FILL_WITH_FALSE,
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
@@ -50,7 +51,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.utils import data_utils
+from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -1217,6 +1218,27 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
                 f"only for numerical types, not for type {feature[TYPE]}.",
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
+    elif missing_value_strategy == FILL_WITH_FALSE:
+        distinct_values = backend.df_engine.compute(
+            dataset_cols[feature[COLUMN]].drop_duplicates().dropna()
+        ).values.tolist()
+        if len(distinct_values) > 2:
+            raise ValueError(
+                f"Missing value strategy `fill_with_false` "
+                f"for column {feature[COLUMN]} expects 2 distinct values, "
+                f"found: {distinct_values}"
+            )
+
+        # Determine the False label.
+        # Disinct values are sorted in reverse to mirror the selection of the default fallback_true_label (in
+        # binary_feature.get_feature_meta) for binary columns with unconventional boolean values, "human"/"bot".
+        for v in sorted(distinct_values, reverse=True):
+            fallback_true_label = preprocessing_parameters.get("fallback_true_label", "true")
+            if strings_utils.str2bool(v, fallback_true_label) is False:
+                return v
+        raise ValueError(
+            f"Unable to determine False value for column {feature[COLUMN]} with distinct values: {distinct_values}."
+        )
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
