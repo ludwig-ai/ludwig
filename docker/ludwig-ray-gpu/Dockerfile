@@ -22,9 +22,6 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
     rsync \
     vim
 
-# Install PyTorch with CUDA 11.1 (compatible with 11.2 image)
-RUN pip install torch==1.10.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html
-
 WORKDIR /ludwig
 
 COPY . .
@@ -33,4 +30,6 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' && horovodrun --check-build
+    pip install --no-cache-dir '.[full]' -f https://download.pytorch.org/whl/cu111/torch_stable.html && \
+    horovodrun --check-build && \
+    python -c "import horovod.torch; horovod.torch.init()"
