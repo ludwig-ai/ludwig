@@ -10,6 +10,7 @@
 #   unit testing
 #
 
+FROM python:3.8.12-slim
 
 FROM tensorflow/tensorflow:2.4.0-gpu
 

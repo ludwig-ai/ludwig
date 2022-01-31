@@ -9,6 +9,8 @@
 #   model serving
 #
 
+FROM python:3.8.12-slim
+
 # Pin to 1.5.1 to ensure CUDA 11.2 following: https://github.com/ray-project/ray/pull/17806
 FROM rayproject/ray:1.5.1-gpu
 

@@ -9,6 +9,8 @@
 #   model serving
 #
 
+FROM python:3.8.12-slim
+
 FROM rayproject/ray:latest
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \

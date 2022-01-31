@@ -9,6 +9,8 @@
 #   model serving
 #
 
+FROM python:3.8.12-slim
+
 FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
 
 RUN apt-get -y update && apt-get -y install \
