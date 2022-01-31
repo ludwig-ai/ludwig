@@ -277,7 +277,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
                 "lower": 0.001,
                 "upper": 0.1,
             },
-            output_feature_name + ".fc_size": {"space": "randint", "lower": 32, "upper": 256},
+            output_feature_name + ".output_size": {"space": "randint", "lower": 2, "upper": 32},
             output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
         },
         "goal": "minimize",

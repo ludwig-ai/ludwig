@@ -1,0 +1,5 @@
+version: 1.0
+competition: numerai/encrypted-stock-market-data-from-numerai
+archive_filename: encrypted-stock-market-data-from-numerai.zip
+download_file_type: csv
+csv_filename: numerai_training_data.csv

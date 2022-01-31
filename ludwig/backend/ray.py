@@ -17,14 +17,13 @@
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import dask
 import numpy as np
 import pandas as pd
 import ray
 import torch
-from horovod.ray import RayExecutor
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -45,13 +44,18 @@ _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
+logger = logging.getLogger(__name__)
+
+try:
+    from horovod.ray import RayExecutor
+except ImportError as e:
+    logger.warn(f"ImportError (ray.py) from horovod.ray import RayExecutor failed with error: \n\t{e}")
+    RayExecutor = None
+
 if _ray19:
     from ray.train.horovod import HorovodConfig
 else:
     from ray.train.backends.horovod import HorovodConfig
-
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: deprecated v0.5
@@ -169,16 +173,11 @@ def train_fn(
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
     if results is not None:
-        # only return the model state dict back to the driver
+        # only return the model state dict back to the head node.
         trained_model, *args = results
-        results = (trained_model.state_dict(), *args)
+        results = (trained_model.cpu().state_dict(), *args)
 
-    # TODO(shreya): Figure out GPU memory leak
-    # TODO(shreya): Check if placing model off GPU explicitly makes a difference
-    # Clear CUDA memory, place model on CPU, return model to user
-    # torch.cuda.empty_cache()
-    # model.cpu()
-
+    torch.cuda.empty_cache()
     return results, trainer.validation_field, trainer.validation_metric
 
 
@@ -191,7 +190,13 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
-    def train(self, training_set, validation_set=None, test_set=None, **kwargs):
+    def train(
+        self,
+        training_set: RayDataset,
+        validation_set: Optional[RayDataset] = None,
+        test_set: Optional[RayDataset] = None,
+        **kwargs,
+    ):
         executable_kwargs = self.executable_kwargs
 
         kwargs = {
@@ -277,6 +282,11 @@ def legacy_train_fn(
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
+        if RayExecutor is None:
+            logger.error(
+                "RayLegacyTrainer failed to initialize: RayExecutor is None. Make sure horovod[ray] is installed."
+            )
+            return
         setting = RayExecutor.create_settings(timeout_s=30)
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
@@ -488,3 +498,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"RayBackend does not support lazy loading of data files at train time. "
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
+
+    @property
+    def num_nodes(self) -> int:
+        if not ray.is_initialized():
+            return 1
+        return len(ray.nodes())

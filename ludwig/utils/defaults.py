@@ -20,7 +20,19 @@ import sys
 
 import yaml
 
-from ludwig.constants import BINARY, CATEGORY, COLUMN, COMBINED, LOSS, NAME, PROC_COLUMN, TRAINING, TYPE
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    COLUMN,
+    COMBINED,
+    DROP_ROW,
+    LOSS,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    TRAINING,
+    TYPE,
+)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
@@ -247,7 +259,6 @@ def merge_with_defaults(config):
 
     # ===== Training Optimizer =====
     optimizer = config[TRAINING]["optimizer"]
-    set_default_value(optimizer, "lr", config[TRAINING]["learning_rate"])
     default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])
@@ -262,6 +273,10 @@ def merge_with_defaults(config):
     # ===== Output features =====
     for output_feature in config["output_features"]:
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
+
+        # By default, drop rows with missing output features
+        set_default_value(output_feature, PREPROCESSING, {})
+        set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
 
     return config
 

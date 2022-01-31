@@ -55,7 +55,7 @@ class DenseEncoder(Encoder):
         input_size,
         layers=None,
         num_layers=1,
-        fc_size=256,
+        output_size=256,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
@@ -74,7 +74,7 @@ class DenseEncoder(Encoder):
             first_layer_input_size=input_size,
             layers=layers,
             num_layers=num_layers,
-            default_fc_size=fc_size,
+            default_output_size=output_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
@@ -97,4 +97,4 @@ class DenseEncoder(Encoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.fc_stack.layers[-1]["fc_size"]])
+        return torch.Size([self.fc_stack.layers[-1]["output_size"]])

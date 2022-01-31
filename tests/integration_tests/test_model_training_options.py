@@ -32,7 +32,13 @@ def get_feature_configs():
         {"name": "x", "type": "numerical"},
     ]
     output_features = [
-        {"name": "y", "type": "numerical", "loss": {"type": "mean_squared_error"}, "num_fc_layers": 5, "fc_size": 64}
+        {
+            "name": "y",
+            "type": "numerical",
+            "loss": {"type": "mean_squared_error"},
+            "num_fc_layers": 5,
+            "output_size": 64,
+        }
     ]
 
     return input_features, output_features

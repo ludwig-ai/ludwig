@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -40,7 +40,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -48,6 +48,50 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
+
+
+class _CategoryPreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.str2idx = metadata["str2idx"]
+        self.unk = self.str2idx[UNKNOWN_SYMBOL]
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+        indices = [self.str2idx.get(s.strip(), self.unk) for s in v]
+        return torch.tensor(indices, dtype=torch.int32)
+
+
+class _CategoryPostprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.unk = ""
+
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        predictions = preds[self.predictions_key]
+        inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
+        return {
+            self.predictions_key: inv_preds,
+            self.probabilities_key: preds[self.probabilities_key],
+        }
+
+
+class _CategoryPredict(PredictModule):
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
+        predictions = predictions.long()
+
+        # EXPECTED SHAPE OF RETURNED TENSORS
+        # predictions: [batch_size]
+        # probabilities: [batch_size, num_classes]
+        # logits: [batch_size, num_classes]
+        return {self.predictions_key: predictions, self.probabilities_key: probabilities, self.logits_key: logits}
 
 
 class CategoryFeatureMixin(BaseFeatureMixin):
@@ -163,6 +207,10 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPreprocessing(metadata)
+
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = "classifier"
@@ -187,17 +235,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        probabilities = torch.softmax(logits, -1)
-        predictions = torch.argmax(logits, -1)
-        predictions = predictions.long()
-
-        # EXPECTED SHAPE OF RETURNED TENSORS
-        # predictions: [batch_size]
-        # probabilities: [batch_size, num_classes]
-        # logits: [batch_size, num_classes]
-        return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
+    def create_predict_module(self) -> PredictModule:
+        return _CategoryPredict()
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -388,3 +427,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
         )
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPostprocessing(metadata)

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -24,7 +24,7 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     COLUMN,
-    FILL_WITH_CONST,
+    FILL_WITH_FALSE,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -38,7 +38,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
@@ -53,6 +53,63 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
+class _BinaryPreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        str2bool = metadata.get("str2bool")
+        self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
+        self.should_lower = str2bool is None
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if isinstance(v, torch.Tensor):
+            return v.to(dtype=torch.bool)
+
+        v = [s.strip() for s in v]
+        if self.should_lower:
+            v = [s.lower() for s in v]
+        indices = [self.str2bool.get(s, False) for s in v]
+        return torch.tensor(indices, dtype=torch.bool)
+
+
+class _BinaryPostprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        bool2str = metadata.get("bool2str")
+        self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        predictions = preds[self.predictions_key]
+        if self.bool2str is not None:
+            predictions = predictions.to(dtype=torch.int32)
+            predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
+
+        probs = preds[self.probabilities_key]
+        probs = torch.dstack(1 - probs, probs)
+
+        return {
+            self.predictions_key: predictions,
+            self.probabilities_key: probs,
+        }
+
+
+class _BinaryPredict(PredictModule):
+    def __init__(self, threshold):
+        super().__init__()
+        self.threshold = threshold
+
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        probabilities = torch.sigmoid(logits)
+        predictions = probabilities >= self.threshold
+        return {
+            self.probabilities_key: probabilities,
+            self.predictions_key: predictions,
+            self.logits_key: logits,
+        }
+
+
 class BinaryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
@@ -61,8 +118,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_defaults() -> Dict[str, Any]:
         return {
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": 0,
+            "missing_value_strategy": FILL_WITH_FALSE,
         }
 
     @staticmethod
@@ -77,7 +133,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return {
             "missing_value_strategy": {
                 "type": "string",
-                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
+                "enum": [FILL_WITH_FALSE] + MISSING_VALUE_STRATEGY_OPTIONS,
             },
             "fill_value": fill_value_schema,
             "computed_fill_value": fill_value_schema,
@@ -187,6 +243,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def create_sample_input(self):
         return torch.Tensor([True, False])
 
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _BinaryPreprocessing(metadata)
+
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
@@ -206,22 +266,15 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        probabilities = torch.sigmoid(logits)
-        predictions = probabilities >= self.threshold
-        return {
-            PROBABILITIES: probabilities,
-            PREDICTIONS: predictions,
-            LOGITS: logits,
-        }
-
     def loss_kwargs(self):
         return dict(
             positive_class_weight=self.loss["positive_class_weight"],
             robust_lambda=self.loss["robust_lambda"],
             confidence_penalty=self.loss["confidence_penalty"],
         )
+
+    def create_predict_module(self) -> PredictModule:
+        return _BinaryPredict(self.threshold)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -337,3 +390,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _BinaryPostprocessing(metadata)

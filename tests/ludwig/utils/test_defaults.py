@@ -2,7 +2,8 @@ import copy
 
 import pytest
 
-from ludwig.constants import HYPEROPT, TRAINING
+from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, PREPROCESSING, TRAINING
+from ludwig.data.preprocessing import merge_preprocessing
 from ludwig.utils.defaults import default_training_params, merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
@@ -26,9 +27,9 @@ HYPEROPT_CONFIG = {
         "utterance.fc_layers": {
             "space": "choice",
             "categories": [
-                [{"fc_size": 512}, {"fc_size": 256}],
-                [{"fc_size": 512}],
-                [{"fc_size": 256}],
+                [{"output_size": 512}, {"output_size": 256}],
+                [{"output_size": 512}],
+                [{"output_size": 256}],
             ],
         },
     },
@@ -83,3 +84,26 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     expected = -1 if use_hyperopt_scheduler else default_early_stop
     assert merged_config[TRAINING]["early_stop"] == expected
+
+
+def test_missing_outputs_drop_rows():
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        PREPROCESSING: {CATEGORY: {"missing_value_strategy": FILL_WITH_MODE}},
+    }
+
+    merged_config = merge_with_defaults(config)
+    feature_config = merged_config["output_features"][0]
+    assert feature_config[PREPROCESSING]["missing_value_strategy"] == DROP_ROW
+
+    global_preprocessing = merged_config[PREPROCESSING]
+    feature_preprocessing = merge_preprocessing(feature_config, global_preprocessing)
+    assert feature_preprocessing["missing_value_strategy"] == DROP_ROW
+
+    feature_preprocessing = merge_preprocessing(merged_config["input_features"][0], global_preprocessing)
+    assert feature_preprocessing["missing_value_strategy"] == FILL_WITH_MODE

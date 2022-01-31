@@ -69,7 +69,7 @@ for p in num_features:
     input_features.append(a_feature)
 
 # Create ludwig output features
-output_features = [{"name": "diagnosis", "type": "binary", "num_fc_layers": 2, "fc_size": 64}]
+output_features = [{"name": "diagnosis", "type": "binary", "num_fc_layers": 2, "output_size": 64}]
 
 # setup ludwig config
 config = {

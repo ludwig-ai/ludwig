@@ -21,7 +21,6 @@
 import glob
 import json
 import os
-import shutil
 import subprocess
 
 from ludwig.experiment import experiment_cli
@@ -41,26 +40,18 @@ from tests.integration_tests.utils import (
 )
 
 
-def run_experiment(input_features, output_features, **kwargs):
-    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk after
-    running the experiment.
+def run_experiment_with_visualization(input_features, output_features, dataset):
+    """Helper method to run an experiment with visualization enabled.
 
-    :param input_features: list of input feature dictionaries
-    :param output_features: list of output feature dictionaries
-    **kwargs you may also pass extra parameters to the experiment as keyword
-    arguments
-    :return: None
+    Does not garbage collect.
     """
-    config = None
-    if input_features is not None and output_features is not None:
-        # This if is necessary so that the caller can call with
-        # config_file (and not config)
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
-            "training": {"epochs": 2},
-        }
+    output_directory = os.path.dirname(dataset)
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+        "training": {"epochs": 2},
+    }
 
     args = {
         "config": config,
@@ -68,12 +59,13 @@ def run_experiment(input_features, output_features, **kwargs):
         "skip_save_progress": False,
         "skip_save_unprocessed_output": False,
         "skip_save_eval_stats": False,
+        "dataset": dataset,
+        "output_directory": output_directory,
     }
-    args.update(kwargs)
 
-    _, _, _, _, output_dir = experiment_cli(**args)
+    _, _, _, _, experiment_dir = experiment_cli(**args)
 
-    return output_dir
+    return experiment_dir
 
 
 def get_output_feature_name(experiment_dir, output_feature=0):
@@ -103,7 +95,7 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
 
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -133,8 +125,6 @@ def test_visualization_learning_curves_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 4 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-
 
 def test_visualization_confusion_matrix_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -148,7 +138,7 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     experiment_source_data_name = csv_filename.split(".")[0]
@@ -178,14 +168,6 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 2 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_performance_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -202,10 +184,9 @@ def test_visualization_compare_performance_output_saved(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
-    experiment_source_data_name = csv_filename.split(".")[0]
     test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
 
     test_cmd_pdf = [
@@ -235,14 +216,6 @@ def test_visualization_compare_performance_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -256,7 +229,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filena
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
 
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -300,14 +273,6 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filena
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -321,7 +286,7 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filena
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
 
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -365,14 +330,6 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filena
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -386,7 +343,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filena
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -429,14 +386,6 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filena
 
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
-
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
 
 
 def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filename):
@@ -451,7 +400,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filena
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -495,14 +444,6 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filena
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -515,7 +456,7 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -560,14 +501,6 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     """It should be possible to save figures as pdf in the specified directory."""
@@ -576,7 +509,7 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -621,14 +554,6 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -641,7 +566,7 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(c
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -676,14 +601,6 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(c
         assert 0 == result.returncode
         assert 4 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -697,7 +614,7 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_file
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -739,14 +656,6 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_file
 
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
-
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
 
 
 def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_filename):
@@ -761,7 +670,7 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_file
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -804,14 +713,6 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_file
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -824,7 +725,7 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -867,14 +768,6 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -887,7 +780,7 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -930,14 +823,6 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -950,7 +835,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_file
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -993,14 +878,6 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_file
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1013,7 +890,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(c
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1058,14 +935,6 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(c
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1078,7 +947,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(c
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1125,14 +994,6 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(c
         # hence one figure per class
         assert 3 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1154,7 +1015,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
@@ -1199,14 +1060,6 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 3 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1228,7 +1081,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
@@ -1271,14 +1124,6 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1298,7 +1143,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1345,14 +1190,6 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_roc_curves_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1365,7 +1202,7 @@ def test_visualization_roc_curves_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1412,14 +1249,6 @@ def test_visualization_roc_curves_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_roc_curves_from_test_statistics_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1432,12 +1261,11 @@ def test_visualization_roc_curves_from_test_statistics_output_saved(csv_filename
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = os.path.join(exp_dir_name, TEST_STATISTICS_FILE_NAME)
-    experiment_source_data_name = csv_filename.split(".")[0]
     test_cmd_pdf = [
         "python",
         "-m",
@@ -1465,14 +1293,6 @@ def test_visualization_roc_curves_from_test_statistics_output_saved(csv_filename
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1485,7 +1305,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1532,14 +1352,6 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 5 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_calibration_multiclass_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1552,7 +1364,7 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1595,14 +1407,6 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 2 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1615,7 +1419,7 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
     output_feature_name = get_output_feature_name(exp_dir_name)
@@ -1653,14 +1457,6 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
         assert 0 == result.returncode
         assert 2 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-    shutil.rmtree("results", ignore_errors=True)
-    for file in glob.glob(experiment_source_data_name + ".*"):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print(f"Error: {e.filename} - {e.strerror}.")
-
 
 def test_load_ground_truth_split_from_file(csv_filename):
     """Ensure correct ground truth split is loaded when ground_truth_split is given.
@@ -1673,7 +1469,7 @@ def test_load_ground_truth_split_from_file(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    exp_dir_name = run_experiment(input_features, output_features, dataset=rel_path)
+    exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     output_feature_name = get_output_feature_name(exp_dir_name)
     experiment_source_data_name = csv_filename.split(".")[0]
     ground_truth = experiment_source_data_name + ".csv"

@@ -128,7 +128,7 @@ def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0
 class LudwigModule(Module):
     def __init__(self):
         super().__init__()
-        self._callable_losses = []
+        self._losses = {}
         self.register_buffer("device_tensor", torch.zeros(0))
 
     @property
@@ -137,8 +137,8 @@ class LudwigModule(Module):
 
     def losses(self):
         collected_losses = []
-        for loss_fn in self._callable_losses:
-            collected_losses.append(loss_fn())
+        for loss in self._losses.values():
+            collected_losses.append(loss)
 
         for child in self.children():
             if isinstance(child, LudwigModule):
@@ -154,9 +154,9 @@ class LudwigModule(Module):
 
         return collected_losses
 
-    def add_loss(self, loss):
-        if callable(loss):
-            self._callable_losses.append(loss)
+    def update_loss(self, key: str, loss: torch.Tensor):
+        """This should be called in the forward pass to add a custom loss term to the combined loss."""
+        self._losses[key] = loss
 
     @property
     def input_dtype(self):

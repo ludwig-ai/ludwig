@@ -98,7 +98,7 @@ def encoder_test(
 
 def test_image_encoders_resnet():
     # Test the resnet encoder for images
-    encoder_kwargs = {"resnet_size": 8, "num_filters": 8, "fc_size": 28, "dropout": DROPOUT}
+    encoder_kwargs = {"resnet_size": 8, "num_filters": 8, "output_size": 28, "dropout": DROPOUT}
     image_size = (3, 10, 10)
 
     output_shape = [1, 28]
@@ -124,13 +124,13 @@ def test_image_encoders_resnet():
     assert encoder.resnet.__class__.__name__ == "ResNet"
     assert list(encoder.resnet.output_shape) == [64, 3, 3]
     assert len(encoder.fc_stack.layers) == 1
-    assert encoder.fc_stack.layers[0]["fc_size"] == 28
+    assert encoder.fc_stack.layers[0]["output_size"] == 28
     assert encoder.fc_stack.layers[0]["activation"] == "relu"
 
 
 def test_image_encoders_stacked_2dcnn():
     # Test the resnet encoder for images
-    encoder_kwargs = {"num_conv_layers": 2, "num_filters": 16, "fc_size": 28, "dropout": DROPOUT}
+    encoder_kwargs = {"num_conv_layers": 2, "num_filters": 16, "output_size": 28, "dropout": DROPOUT}
     image_size = (3, 10, 10)
 
     encoder = create_encoder(
@@ -254,7 +254,7 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     num_sentences = 4
     embedding_size = 5
     max_len = 7
-    fc_size = 3
+    output_size = 3
 
     # Generate data
     text, vocab = generate_random_sentences(
@@ -265,15 +265,15 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     encoder_kwargs = {
         "embedding_size": embedding_size,
         "vocab": vocab,
-        "fc_size": fc_size,
+        "output_size": output_size,
         "num_fc_layers": 1,
         "filter_size": 3,
         "num_filters": 8,
-        "state_size": fc_size,
+        "state_size": output_size,
     }
 
     # todo figure out the output size for parallel 1d conv
-    output_shape = [num_sentences, fc_size]
+    output_shape = [num_sentences, output_size]
 
     encoder_kwargs["embeddings_trainable"] = trainable
     encoder_kwargs["dropout"] = DROPOUT

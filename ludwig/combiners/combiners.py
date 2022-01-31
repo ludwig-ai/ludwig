@@ -98,7 +98,7 @@ class Combiner(LudwigModule, ABC):
 class ConcatCombinerConfig:
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    fc_size: int = schema.PositiveInteger(default=256)
+    output_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
@@ -128,7 +128,7 @@ class ConcatCombiner(Combiner):
         if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
             for i in range(config.num_fc_layers):
-                fc_layers.append({"fc_size": config.fc_size})
+                fc_layers.append({"output_size": config.output_size})
 
         self.fc_layers = fc_layers
         if self.fc_layers is not None:
@@ -137,7 +137,7 @@ class ConcatCombiner(Combiner):
                 first_layer_input_size=self.concatenated_shape[-1],
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
-                default_fc_size=config.fc_size,
+                default_output_size=config.output_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
@@ -519,11 +519,11 @@ class TransformerCombinerConfig:
     num_layers: int = schema.PositiveInteger(default=1)
     hidden_size: int = schema.NonNegativeInteger(default=256)
     num_heads: int = schema.NonNegativeInteger(default=8)
-    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    transformer_output_size: int = schema.NonNegativeInteger(default=256)
     dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    fc_size: int = schema.PositiveInteger(default=256)
+    output_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
@@ -577,7 +577,7 @@ class TransformerCombiner(Combiner):
             sequence_size=self.sequence_size,
             hidden_size=config.hidden_size,
             num_heads=config.num_heads,
-            fc_size=config.transformer_fc_size,
+            output_size=config.transformer_output_size,
             num_layers=config.num_layers,
             dropout=config.dropout,
         )
@@ -588,7 +588,7 @@ class TransformerCombiner(Combiner):
                 self.transformer_stack.output_shape[-1],
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
-                default_fc_size=config.fc_size,
+                default_output_size=config.output_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
@@ -644,11 +644,11 @@ class TabTransformerCombinerConfig:
     num_layers: int = schema.PositiveInteger(default=1)
     hidden_size: int = schema.NonNegativeInteger(default=256)
     num_heads: int = schema.NonNegativeInteger(default=8)
-    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    transformer_output_size: int = schema.NonNegativeInteger(default=256)
     dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    fc_size: int = schema.PositiveInteger(default=256)
+    output_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
@@ -746,7 +746,7 @@ class TabTransformerCombiner(Combiner):
             hidden_size=config.hidden_size,
             # todo: can we just use projector_size? # hidden_size,
             num_heads=config.num_heads,
-            fc_size=config.transformer_fc_size,
+            output_size=config.transformer_output_size,
             num_layers=config.num_layers,
             dropout=config.dropout,
         )
@@ -762,7 +762,7 @@ class TabTransformerCombiner(Combiner):
             fc_input_size + concatenated_unembeddable_encoders_size,
             layers=config.fc_layers,
             num_layers=config.num_fc_layers,
-            default_fc_size=config.fc_size,
+            default_output_size=config.output_size,
             default_use_bias=config.use_bias,
             default_weights_initializer=config.weights_initializer,
             default_bias_initializer=config.bias_initializer,
@@ -873,7 +873,7 @@ class ComparatorCombinerConfig:
     entity_2: List[str]
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
-    fc_size: int = schema.PositiveInteger(default=256)
+    output_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
@@ -901,7 +901,7 @@ class ComparatorCombiner(Combiner):
         self.entity_1 = config.entity_1
         self.entity_2 = config.entity_2
         self.required_inputs = set(config.entity_1 + config.entity_2)
-        self.fc_size = config.fc_size
+        self.output_size = config.output_size
 
         self.fc_stack = None
 
@@ -909,8 +909,8 @@ class ComparatorCombiner(Combiner):
         fc_layers = config.fc_layers
         if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
-            for i in range(config.num_fc_layers):
-                fc_layers.append({"fc_size": config.fc_size})
+            for _ in range(config.num_fc_layers):
+                fc_layers.append({"output_size": config.output_size})
 
         if fc_layers is not None:
             logger.debug("Setting up FCStack")
@@ -918,7 +918,7 @@ class ComparatorCombiner(Combiner):
                 self.get_entity_shape(config.entity_1)[-1],
                 layers=fc_layers,
                 num_layers=config.num_fc_layers,
-                default_fc_size=config.fc_size,
+                default_output_size=config.output_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
@@ -931,7 +931,7 @@ class ComparatorCombiner(Combiner):
                 self.get_entity_shape(config.entity_2)[-1],
                 layers=fc_layers,
                 num_layers=config.num_fc_layers,
-                default_fc_size=config.fc_size,
+                default_output_size=config.output_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
@@ -941,12 +941,12 @@ class ComparatorCombiner(Combiner):
                 default_dropout=config.dropout,
             )
 
-        self.last_fc_layer_fc_size = fc_layers[-1]["fc_size"]
+        self.last_fc_layer_output_size = fc_layers[-1]["output_size"]
 
         # todo: set initializer and regularization
         self.register_buffer(
             "bilinear_weights",
-            torch.randn([self.last_fc_layer_fc_size, self.last_fc_layer_fc_size], dtype=torch.float32),
+            torch.randn([self.last_fc_layer_output_size, self.last_fc_layer_output_size], dtype=torch.float32),
         )
 
     def get_entity_shape(self, entity: list) -> torch.Size:
@@ -955,7 +955,7 @@ class ComparatorCombiner(Combiner):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([2 * self.last_fc_layer_fc_size + 2])
+        return torch.Size([2 * self.last_fc_layer_output_size + 2])
 
     def forward(
         self,
@@ -980,7 +980,7 @@ class ComparatorCombiner(Combiner):
             e1_hidden = list(e1_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e1_hidden = self.e1_fc_stack(e1_hidden)  # [bs, fc_size]
+        e1_hidden = self.e1_fc_stack(e1_hidden)  # [bs, output_size]
 
         ############
         # Entity 2 #
@@ -998,7 +998,7 @@ class ComparatorCombiner(Combiner):
             e2_hidden = list(e2_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e2_hidden = self.e2_fc_stack(e2_hidden)  # [bs, fc_size]
+        e2_hidden = self.e2_fc_stack(e2_hidden)  # [bs, output_size]
 
         ###########
         # Compare #
@@ -1010,9 +1010,9 @@ class ComparatorCombiner(Combiner):
                 f"entity2 shape: {e2_hidden.shape}"
             )
 
-        element_wise_mul = e1_hidden * e2_hidden  # [bs, fc_size]
+        element_wise_mul = e1_hidden * e2_hidden  # [bs, output_size]
         dot_product = torch.sum(element_wise_mul, 1, keepdim=True)  # [bs, 1]
-        abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, fc_size]
+        abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, output_size]
         bilinear_prod = torch.bmm(
             torch.mm(e1_hidden, self.bilinear_weights).unsqueeze(1), e2_hidden.unsqueeze(-1)
         ).squeeze(
@@ -1024,7 +1024,7 @@ class ComparatorCombiner(Combiner):
             f"dot_product: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}"
             f", abs_diff: {abs_diff.shape}, bilinear_prod {bilinear_prod.shape}"
         )
-        hidden = torch.cat([dot_product, element_wise_mul, abs_diff, bilinear_prod], 1)  # [bs, 2 * fc_size + 2]
+        hidden = torch.cat([dot_product, element_wise_mul, abs_diff, bilinear_prod], 1)  # [bs, 2 * output_size + 2]
 
         return {"combiner_output": hidden}
 

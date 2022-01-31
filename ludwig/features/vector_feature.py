@@ -37,12 +37,18 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
-from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
+
+
+class _VectorPredict(PredictModule):
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+        return {self.predictions_key: logits, self.logits_key: logits}
 
 
 class VectorFeatureMixin:
@@ -174,15 +180,14 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs, feature_name, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        return {PREDICTIONS: logits, LOGITS: logits}
-
     def loss_kwargs(self):
         return self.loss
 
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
+
+    def create_predict_module(self) -> PredictModule:
+        return _VectorPredict()
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}

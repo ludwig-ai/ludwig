@@ -17,7 +17,6 @@ from typing import Tuple, Union
 import torch
 import torch.nn as nn
 
-from ludwig.modules.activation_modules import gelu
 from ludwig.utils.torch_utils import LudwigModule
 
 
@@ -42,7 +41,7 @@ class MLP(LudwigModule):
         self.dropout2 = nn.Dropout(dropout)
 
     def forward(self, inputs, **kwargs):
-        hidden = self.dropout1(gelu(self.linear1(inputs)))
+        hidden = self.dropout1(nn.functional.gelu(self.linear1(inputs)))
         return self.dropout2(self.linear2(hidden))
 
     @property

@@ -126,8 +126,8 @@ class TrainerConfig:
     learning_rate: float = schema.NumericOrStringOptionsField(
         default=0.001, min=0.0, max=1.0, options=["auto"], nullable=False
     )
-    """Learning rate for the algorithm, represents how much to scale the gradients by. Overrides `lr`
-       parameter on `optimizer`. (default: 0.001). """
+    """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
+       `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""
 
     batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
         default=128, options=["auto"], nullable=False, min_exclusive=0
@@ -238,25 +238,35 @@ class Trainer(BaseTrainer):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
         :param model: Underlying Ludwig model
+        :type model: `ludwig.models.ecd.ECD`
         :param resume: Resume training a model that was being trained. (default: False).
+        :type resume: Boolean
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
                really big that can be time consuming. If you do not want to keep the weights and just find out what
                performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
                will not be loadable later on. (default: False).
+        :type skip_save_model: Boolean
         :param skip_save_progress: Disables saving progress each epoch. By default Ludwig saves weights and stats after
                each epoch for enabling resuming of training, but if the model is really big that can be time consuming
                and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
                on. (default: False).
-        :param skip_save_log: TODO Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
-               but if it is not needed turning it off can slightly increase the overall speed. (default: False).
+        :type skip_save_progress: Boolean
+        :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
+               it is not needed turning it off can slightly increase the overall speed. (default: False).
+        :type skip_save_log: Boolean
         :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
                (default: None).
+        :type callbacks: list
         :param random_seed: Default initialization for the random seeds (default: 42).
+        :type random_seed: Float
         :param horovod: Horovod parameters (default: None).
+        :type horovod: dict
         :param debug: Enables debugging mode, which prints out a lot of information about the training process (default:
                False)
+        :type debug: Boolean
         :param device: Device to load the model on from a saved checkpoint (default: None).
+        :type device: str
         :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
                `ludwig.models.trainer.TrainerConfig()`).
         """
@@ -267,6 +277,13 @@ class Trainer(BaseTrainer):
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
+        try:
+            base_learning_rate = float(config.learning_rate)
+        except ValueError:
+            # TODO (ASN): Circle back on how we want to set default placeholder value
+            base_learning_rate = 0.001  # Default initial learning rate for autoML.
+
+        self.base_learning_rate = base_learning_rate
         self.decay = config.decay
         self.decay_rate = config.decay_rate
         self.decay_steps = config.decay_steps
@@ -303,14 +320,13 @@ class Trainer(BaseTrainer):
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        if self.horovod:
-            self.learning_rate *= self.horovod.size()
-
         self.model = model
         self.model = self.model.to(self.device)
 
         # ================ Optimizer ================
         optimizer = config.optimizer if config.optimizer is not None else AdamOptimizer()
+        # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
+        optimizer.lr = base_learning_rate
         clipper = config.gradient_clipping if config.gradient_clipping is not None else Clipper()
         self.optimizer, self.clipper = create_optimizer_with_clipper(
             model, horovod=horovod, optimizer=optimizer, clipper=clipper
@@ -354,7 +370,15 @@ class Trainer(BaseTrainer):
 
         return loss, all_losses
 
-    def set_learning_rate(self, learning_rate):
+    def set_base_learning_rate(self, base_learning_rate):
+        """Sets the target learning rate, and updates the optimizer learning rate."""
+        if self.horovod:
+            base_learning_rate *= self.horovod.size()
+        self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
+        self.set_optimizer_learning_rate(base_learning_rate)
+
+    def set_optimizer_learning_rate(self, learning_rate):
+        """Sets the learning rate of the optimizer."""
         for g in self.optimizer.param_groups:
             g["lr"] = learning_rate
 
@@ -404,6 +428,7 @@ class Trainer(BaseTrainer):
         total_steps: int = 3,
     ):
         """Function to be used by tune_batch_size."""
+        self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
 
             step_count = 0
@@ -434,10 +459,7 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
-        # TODO (ASN): Circle back on how we want to set default placeholder value
-        # Currently, since self.learning_rate is originally set to auto, we provide a
-        # placeholder starting value (namely, .001)
-        learning_rate = 0.001
+        learning_rate = self.base_learning_rate
 
         current_learning_rate = min_lr
         losses = []
@@ -465,6 +487,7 @@ class Trainer(BaseTrainer):
             except Exception:
                 return None
 
+        self.model.train()  # Sets model training mode.
         with training_set.initialize_batcher(
             batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
         ) as batcher:
@@ -509,7 +532,7 @@ class Trainer(BaseTrainer):
                     else:
                         current_learning_rate = linear_scheduler(current_learning_rate, step_count)
 
-                    self.set_learning_rate(current_learning_rate)
+                    self.set_optimizer_learning_rate(current_learning_rate)
                     step_count += 1
 
                 epoch += 1
@@ -537,7 +560,6 @@ class Trainer(BaseTrainer):
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
-
         # Set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
@@ -698,7 +720,7 @@ class Trainer(BaseTrainer):
                 last_improvement_epoch=0,
                 last_learning_rate_reduction_epoch=0,
                 last_increase_batch_size_epoch=0,
-                learning_rate=self.learning_rate,
+                learning_rate=self.base_learning_rate,
                 best_eval_metric=get_initial_validation_value(self.validation_metric),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
                     self.reduce_learning_rate_eval_metric
@@ -740,10 +762,11 @@ class Trainer(BaseTrainer):
                 start_time = time.time()
                 if self.is_coordinator():
                     logger.info(
-                        "\nEpoch {epoch:{digits}d}".format(epoch=progress_tracker.epoch + 1, digits=digits_per_epochs)
+                        "Epoch {epoch:{digits}d}".format(epoch=progress_tracker.epoch + 1, digits=digits_per_epochs)
                     )
 
                 # Reset the metrics at the start of the next epoch
+                self.model.train()  # Sets model to training mode.
                 self.model.reset_metrics()
 
                 # ================ Train ================
@@ -759,93 +782,7 @@ class Trainer(BaseTrainer):
                 self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                 # training step loop
-                while not batcher.last_batch():
-                    self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
-
-                    # Set learning rate for this batch
-                    current_learning_rate = progress_tracker.learning_rate
-
-                    if self.decay:
-                        current_learning_rate = exponential_decay(
-                            current_learning_rate,
-                            self.decay_rate,
-                            self.decay_steps,
-                            progress_tracker.steps,
-                            self.staircase,
-                        )
-
-                    if self.horovod:
-                        current_learning_rate = (
-                            learning_rate_warmup_distributed(
-                                current_learning_rate,
-                                progress_tracker.epoch,
-                                self.learning_rate_warmup_epochs,
-                                self.horovod.size(),
-                                batcher.step,
-                                batcher.steps_per_epoch,
-                            )
-                            * self.horovod.size()
-                        )
-                    else:
-                        current_learning_rate = learning_rate_warmup(
-                            current_learning_rate,
-                            progress_tracker.epoch,
-                            self.learning_rate_warmup_epochs,
-                            batcher.step,
-                            batcher.steps_per_epoch,
-                        )
-                    self.set_learning_rate(current_learning_rate)
-
-                    # obtain batch
-                    batch = batcher.next_batch()
-
-                    # Move tensors to cuda here.
-                    inputs = {
-                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
-                        for i_feat in self.model.input_features.values()
-                    }
-                    targets = {
-                        o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
-                        for o_feat in self.model.output_features.values()
-                    }
-
-                    # Reintroduce for tensorboard graph
-                    # if first_batch and self.is_coordinator() and not skip_save_log:
-                    #    tf.summary.trace_on(graph=True, profiler=True)
-
-                    loss, all_losses = self.train_step(
-                        inputs,
-                        targets,
-                    )
-
-                    # Reintroduce for tensorboard graph
-                    # if first_batch and self.is_coordinator() and not skip_save_log:
-                    #     with train_summary_writer.as_default():
-                    #         tf.summary.trace_export(
-                    #             name="Model",
-                    #             step=0,
-                    #             profiler_outdir=tensorboard_log_dir
-                    #         )
-
-                    if self.is_coordinator() and not self.skip_save_log:
-                        self.write_step_summary(
-                            train_summary_writer=train_summary_writer,
-                            combined_loss=loss,
-                            all_losses=all_losses,
-                            step=progress_tracker.steps,
-                            learning_rate=current_learning_rate,
-                        )
-
-                    progress_tracker.steps += 1
-                    if self.is_coordinator():
-                        progress_bar.update(1)
-                        logger.debug(
-                            f"training: completed batch {progress_bar.n} "
-                            f"memory used: "
-                            f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
-                        )
-
-                    self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+                self._train_loop(batcher, progress_tracker, save_path, train_summary_writer, progress_bar)
 
                 # ================ Post Training Epoch ================
                 if self.is_coordinator():
@@ -978,14 +915,104 @@ class Trainer(BaseTrainer):
             progress_tracker.test_metrics,
         )
 
+    def _train_loop(self, batcher, progress_tracker, save_path, train_summary_writer, progress_bar):
+        while not batcher.last_batch():
+            self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
+
+            # Set learning rate for this batch
+            current_learning_rate = progress_tracker.learning_rate
+
+            if self.decay:
+                current_learning_rate = exponential_decay(
+                    current_learning_rate,
+                    self.decay_rate,
+                    self.decay_steps,
+                    progress_tracker.steps,
+                    self.staircase,
+                )
+
+            if self.horovod:
+                current_learning_rate = (
+                    learning_rate_warmup_distributed(
+                        current_learning_rate,
+                        progress_tracker.epoch,
+                        self.learning_rate_warmup_epochs,
+                        self.horovod.size(),
+                        batcher.step,
+                        batcher.steps_per_epoch,
+                    )
+                    * self.horovod.size()
+                )
+            else:
+                current_learning_rate = learning_rate_warmup(
+                    current_learning_rate,
+                    progress_tracker.epoch,
+                    self.learning_rate_warmup_epochs,
+                    batcher.step,
+                    batcher.steps_per_epoch,
+                )
+            self.set_optimizer_learning_rate(current_learning_rate)
+
+            # obtain batch
+            batch = batcher.next_batch()
+
+            # Move tensors to cuda here.
+            inputs = {
+                i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                for i_feat in self.model.input_features.values()
+            }
+            targets = {
+                o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                for o_feat in self.model.output_features.values()
+            }
+
+            # Reintroduce for tensorboard graph
+            # if first_batch and self.is_coordinator() and not skip_save_log:
+            #    tf.summary.trace_on(graph=True, profiler=True)
+
+            loss, all_losses = self.train_step(
+                inputs,
+                targets,
+            )
+
+            # Reintroduce for tensorboard graph
+            # if first_batch and self.is_coordinator() and not skip_save_log:
+            #     with train_summary_writer.as_default():
+            #         tf.summary.trace_export(
+            #             name="Model",
+            #             step=0,
+            #             profiler_outdir=tensorboard_log_dir
+            #         )
+
+            if self.is_coordinator() and not self.skip_save_log:
+                self.write_step_summary(
+                    train_summary_writer=train_summary_writer,
+                    combined_loss=loss,
+                    all_losses=all_losses,
+                    step=progress_tracker.steps,
+                    learning_rate=current_learning_rate,
+                )
+
+            progress_tracker.steps += 1
+            if self.is_coordinator():
+                progress_bar.update(1)
+                logger.debug(
+                    f"training: completed batch {progress_bar.n} "
+                    f"memory used: "
+                    f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+                )
+
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
     def train_online(self, dataset):
+        self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
             batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
         ) as batcher:
 
             # training step loop
             progress_bar = tqdm(
-                desc="Trainining online",
+                desc="Training online",
                 total=batcher.steps_per_epoch,
                 file=sys.stdout,
                 disable=is_progressbar_disabled(),
@@ -1090,21 +1117,14 @@ class Trainer(BaseTrainer):
             if self.is_coordinator() and not skip_save_model:
                 torch.save(self.model.state_dict(), model_weights_path)
                 logger.info(
-                    "Validation {} on {} improved, model saved".format(
-                        validation_metric, validation_output_feature_name
-                    )
+                    f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved."
                 )
 
         progress_tracker.last_improvement = progress_tracker.epoch - progress_tracker.last_improvement_epoch
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
             logger.info(
-                "Last improvement of {} validation {} "
-                "happened {} epoch{} ago".format(
-                    validation_output_feature_name,
-                    validation_metric,
-                    progress_tracker.last_improvement,
-                    "" if progress_tracker.last_improvement == 1 else "s",
-                )
+                f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
+                + f"{progress_tracker.last_improvement} epoch(s) ago."
             )
 
         # ========== Reduce Learning Rate Plateau logic ========
@@ -1127,19 +1147,10 @@ class Trainer(BaseTrainer):
                 and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
             ):
                 logger.info(
-                    "Last learning rate reduction "
-                    "happened {} epoch{} ago, "
-                    "improvement of {} {} {} "
-                    "happened {} epoch{} ago"
-                    "".format(
-                        progress_tracker.last_learning_rate_reduction,
-                        "" if progress_tracker.last_learning_rate_reduction == 1 else "s",
-                        validation_output_feature_name,
-                        reduce_learning_rate_eval_split,
-                        reduce_learning_rate_eval_metric,
-                        progress_tracker.last_reduce_learning_rate_eval_metric_improvement,
-                        "" if progress_tracker.last_reduce_learning_rate_eval_metric_improvement == 1 else "s",
-                    )
+                    f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} epoch(s) "
+                    f"ago, improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
+                    f"{reduce_learning_rate_eval_metric} happened "
+                    f"{progress_tracker.last_reduce_learning_rate_eval_metric_improvement} epoch(s) ago."
                 )
 
         # ========== Increase Batch Size Plateau logic =========
@@ -1165,17 +1176,10 @@ class Trainer(BaseTrainer):
             ):
                 logger.info(
                     "Last batch size increase "
-                    "happened {} epoch{} ago, "
-                    "improvement of {} {} {} "
-                    "happened {} epoch{} ago".format(
-                        progress_tracker.last_increase_batch_size,
-                        "" if progress_tracker.last_increase_batch_size == 1 else "s",
-                        validation_output_feature_name,
-                        increase_batch_size_eval_split,
-                        increase_batch_size_eval_metric,
-                        progress_tracker.last_increase_batch_size_eval_metric_improvement,
-                        "" if progress_tracker.last_increase_batch_size_eval_metric_improvement == 1 else "s",
-                    )
+                    f"happened {progress_tracker.last_increase_batch_size} epoch(s) ago, "
+                    f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
+                    f"{increase_batch_size_eval_metric} happened "
+                    f"{progress_tracker.last_increase_batch_size_eval_metric_improvement} epoch(s) ago."
                 )
 
         # ========== Early Stop logic ==========
@@ -1184,8 +1188,8 @@ class Trainer(BaseTrainer):
                 logger.info(
                     "\nEARLY STOPPING due to lack of "
                     "validation improvement, "
-                    "it has been {} epochs since last "
-                    "validation improvement\n".format(progress_tracker.epoch - progress_tracker.last_improvement_epoch)
+                    f"it has been {progress_tracker.epoch - progress_tracker.last_improvement_epoch} epoch(s) since "
+                    "last validation improvement.\n"
                 )
             should_break = True
         return should_break
@@ -1288,13 +1292,9 @@ class Trainer(BaseTrainer):
 
                     if self.is_coordinator():
                         logger.info(
-                            "PLATEAU REACHED, reducing learning rate to {} "
-                            "due to lack of improvement of {} {} {}".format(
-                                progress_tracker.learning_rate,
-                                validation_output_feature_name,
-                                reduce_learning_rate_eval_split,
-                                validation_metric,
-                            )
+                            f"PLATEAU REACHED, reducing learning rate to {progress_tracker.learning_rate} due to lack "
+                            f"of improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
+                            f"{validation_metric}."
                         )
 
                     progress_tracker.last_learning_rate_reduction_epoch = progress_tracker.epoch
@@ -1304,10 +1304,8 @@ class Trainer(BaseTrainer):
                     if progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau:
                         if self.is_coordinator():
                             logger.info(
-                                "Learning rate was already reduced "
-                                "{} times, not reducing it anymore".format(
-                                    progress_tracker.num_reductions_learning_rate
-                                )
+                                f"Learning rate was already reduced {progress_tracker.num_reductions_learning_rate} "
+                                "time(s), not reducing it anymore."
                             )
 
     def increase_batch_size(
@@ -1361,13 +1359,9 @@ class Trainer(BaseTrainer):
 
                     if self.is_coordinator():
                         logger.info(
-                            "PLATEAU REACHED, increasing batch size to {} "
-                            "due to lack of improvement of {} {} {}".format(
-                                progress_tracker.batch_size,
-                                validation_output_feature_name,
-                                increase_batch_size_eval_split,
-                                validation_metric,
-                            )
+                            f"PLATEAU REACHED, increasing batch size to {progress_tracker.batch_size} due to lack of "
+                            f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
+                            f"{validation_metric}."
                         )
 
                     progress_tracker.last_increase_batch_size_epoch = progress_tracker.epoch
@@ -1377,17 +1371,14 @@ class Trainer(BaseTrainer):
                     if progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau:
                         if self.is_coordinator():
                             logger.info(
-                                "Batch size was already increased "
-                                "{} times, not increasing it anymore".format(progress_tracker.num_increases_batch_size)
+                                f"Batch size was already increased {progress_tracker.num_increases_batch_size} times, "
+                                "not increasing it anymore."
                             )
                     elif progress_tracker.batch_size >= increase_batch_size_on_plateau_max:
                         if self.is_coordinator():
                             logger.info(
-                                "Batch size was already increased "
-                                "{} times, currently it is {}, "
-                                "the maximum allowed".format(
-                                    progress_tracker.num_increases_batch_size, progress_tracker.batch_size
-                                )
+                                f"Batch size was already increased {progress_tracker.num_increases_batch_size} times, "
+                                f"currently it is {progress_tracker.batch_size}, the maximum allowed."
                             )
 
     def is_coordinator(self):

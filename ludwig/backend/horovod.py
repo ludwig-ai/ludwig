@@ -63,3 +63,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     def is_coordinator(self):
         return self._horovod.rank() == 0
+
+    @property
+    def num_nodes(self) -> int:
+        return self._horovod.size()

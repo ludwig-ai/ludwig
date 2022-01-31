@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -29,6 +29,7 @@ from ludwig.constants import (
     DROP_ROW,
     FFILL,
     FILL_WITH_CONST,
+    FILL_WITH_FALSE,
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
@@ -50,7 +51,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.utils import data_utils
+from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -1115,23 +1116,27 @@ def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
     return dataset_cols
 
 
+def merge_preprocessing(
+    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
+) -> Dict[str, Any]:
+    if PREPROCESSING not in feature_config:
+        return global_preprocessing_parameters[feature_config[TYPE]]
+
+    return merge_dict(global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING])
+
+
 def build_metadata(
     metadata: Dict[str, Any],
     dataset_cols: Dict[str, Column],
     feature_configs: List[Dict[str, Any]],
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
-):
+) -> Dict[str, Any]:
     for feature_config in feature_configs:
         if feature_config[NAME] in metadata:
             continue
 
-        if PREPROCESSING in feature_config:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[feature_config[TYPE]]
+        preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # deal with encoders that have fixed preprocessing
         if "encoder" in feature_config:
@@ -1213,6 +1218,27 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
                 f"only for numerical types, not for type {feature[TYPE]}.",
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
+    elif missing_value_strategy == FILL_WITH_FALSE:
+        distinct_values = backend.df_engine.compute(
+            dataset_cols[feature[COLUMN]].drop_duplicates().dropna()
+        ).values.tolist()
+        if len(distinct_values) > 2:
+            raise ValueError(
+                f"Missing value strategy `fill_with_false` "
+                f"for column {feature[COLUMN]} expects 2 distinct values, "
+                f"found: {distinct_values}"
+            )
+
+        # Determine the False label.
+        # Disinct values are sorted in reverse to mirror the selection of the default fallback_true_label (in
+        # binary_feature.get_feature_meta) for binary columns with unconventional boolean values, "human"/"bot".
+        for v in sorted(distinct_values, reverse=True):
+            fallback_true_label = preprocessing_parameters.get("fallback_true_label", "true")
+            if strings_utils.str2bool(v, fallback_true_label) is False:
+                return v
+        raise ValueError(
+            f"Unable to determine False value for column {feature[COLUMN]} with distinct values: {distinct_values}."
+        )
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
@@ -1317,7 +1343,9 @@ def preprocess_for_training(
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
-):
+) -> Tuple[Dataset, Dataset, Dataset, Dict[str, Any]]:
+    """Returns training, val and test datasets with training set metadata."""
+
     # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
         raise ValueError("No training data is provided!")
@@ -1504,6 +1532,8 @@ def _preprocess_file_for_training(
     else:
         raise ValueError("either data or data_train have to be not None")
 
+    logger.info("Building dataset: DONE")
+
     data = backend.df_engine.persist(data)
     if SPLIT in data.columns:
         logger.debug("split on split column")
@@ -1535,13 +1565,11 @@ def _preprocess_df_for_training(
     if dataset is not None:
         # needs preprocessing
         logger.info("Using full dataframe")
-        logger.info("Building dataset (it may take a while)")
-
     elif training_set is not None:
         # needs preprocessing
         logger.info("Using training dataframe")
-        logger.info("Building dataset (it may take a while)")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
+    logger.info("Building dataset (it may take a while)")
 
     dataset, training_set_metadata = build_dataset(
         dataset,
@@ -1553,6 +1581,8 @@ def _preprocess_df_for_training(
         callbacks=callbacks,
         mode="training",
     )
+
+    logger.info("Building dataset: DONE")
 
     dataset = backend.df_engine.persist(dataset)
     if SPLIT in dataset.columns:

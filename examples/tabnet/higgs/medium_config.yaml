@@ -82,6 +82,5 @@ training:
   decay_steps: 10000
   decay_rate: 0.9
   staircase: true
-  regularization_lambda: 1
   validation_field: label
   shuffle_buffer_size: 1500000

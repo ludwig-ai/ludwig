@@ -77,6 +77,11 @@ class Backend(ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def num_nodes(self) -> int:
+        raise NotImplementedError()
+
 
 class LocalPreprocessingMixin:
     @property
@@ -134,3 +139,7 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
 
     def initialize(self):
         pass
+
+    @property
+    def num_nodes(self) -> int:
+        return 1

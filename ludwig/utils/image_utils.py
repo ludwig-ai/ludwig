@@ -20,7 +20,6 @@ import sys
 from collections.abc import Iterable
 from io import BytesIO
 from typing import BinaryIO, List, Optional, TextIO, Tuple, Union
-from urllib.error import HTTPError
 
 import numpy as np
 import torch
@@ -34,8 +33,8 @@ from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
 logger = logging.getLogger(__name__)
 
 
-def get_gray_default_image(height: int, width: int, num_channels: int) -> np.ndarray:
-    return np.full((height, width, num_channels), 128, dtype=np.uint8)
+def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
+    return np.full((num_channels, height, width), 128, dtype=np.uint8)
 
 
 def get_average_image(image_lst: List[np.ndarray]) -> np.array:
@@ -153,15 +152,13 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
             return read_image(img, mode=ImageReadMode.RGB_ALPHA)
         else:
             return read_image(img)
-    except HTTPError as e:
+    except Exception as e:
         upgraded = upgrade_http(img)
         if upgraded:
             logger.info(f"reading image url {img} failed due to {e}. upgrading to https and retrying")
-            return read_image(upgraded)
-        logger.info(f"reading image url {img} failed due to {e} and cannot be upgraded to https")
+            return read_image_from_str(upgraded, num_channels)
+        logger.info(f"reading image url {img} failed due to {e}")
         return None
-    except Exception as e:
-        logger.info(f"reading image url {img} failed with error: ", e)
 
 
 def pad(

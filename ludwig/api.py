@@ -33,8 +33,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import ray
 import torch
+from tabulate import tabulate
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
@@ -61,6 +61,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
+from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -397,19 +398,28 @@ class LudwigModel:
                         test_set=test_set,
                         training_set_metadata=training_set_metadata,
                         data_format=data_format,
+                        backend=self.backend,
                         random_seed=random_seed,
                     )
 
                     if not skip_save_training_description:
                         save_json(description_fn, description)
+
                     # print description
-                    logger.info(f"Experiment name: {experiment_name}")
-                    logger.info(f"Model name: {model_name}")
-                    logger.info(f"Output directory: {output_directory}")
-                    logger.info("\n")
+                    experiment_description = [
+                        ["Experiment name", experiment_name],
+                        ["Model name", model_name],
+                        ["Output directory", output_directory],
+                    ]
                     for key, value in description.items():
-                        logger.info(f"{key}: {pformat(value, indent=4)}")
-                    logger.info("\n")
+                        if key != "config":  # Config is printed separately.
+                            experiment_description.append([key, pformat(value, indent=4)])
+
+                    print_boxed("EXPERIMENT DESCRIPTION")
+                    logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
+
+                    print_boxed("LUDWIG CONFIG")
+                    logger.info(pformat(self.config, indent=4))
 
                 for callback in self.callbacks:
                     callback.on_preprocess_start(self.config)
@@ -444,15 +454,19 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                logger.info(f"Training set: {len(training_set)}")
+                dataset_statistics = [["Dataset", "Size"]]
+                dataset_statistics.append(["Training", len(training_set)])
                 if validation_set is not None:
-                    logger.info(f"Validation set: {len(validation_set)}")
+                    dataset_statistics.append(["Validation", len(validation_set)])
                 if test_set is not None:
-                    logger.info(f"Test set: {len(test_set)}")
+                    dataset_statistics.append(["Test", len(test_set)])
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
                     save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
+
+                logger.info("\nDataset sizes:")
+                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
             for callback in self.callbacks:
                 callback.on_train_init(
@@ -468,9 +482,10 @@ class LudwigModel:
             # if it was provided it means it was already loaded
             if not self.model:
                 if self.backend.is_coordinator():
-                    print_boxed("MODEL", print_fun=logger.debug)
+                    print_boxed("MODEL")
                 # update config with metadata properties
                 update_config_with_metadata(self.config, training_set_metadata)
+                logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
             # init trainer
@@ -511,7 +526,7 @@ class LudwigModel:
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
                     tuned_learning_rate = trainer.tune_learning_rate(self.config, training_set, random_seed=random_seed)
                     self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
-                    trainer.learning_rate = tuned_learning_rate
+                    trainer.set_base_learning_rate(tuned_learning_rate)
 
                 # train model
                 if self.backend.is_coordinator():
@@ -547,6 +562,7 @@ class LudwigModel:
                     best_function = get_best_function(validation_metric)
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
+                        print_boxed("TRAINING REPORT")
                         epoch_best_vali_metric, best_vali_metric = best_function(
                             enumerate(validation_field_result[validation_metric]), key=lambda pair: pair[1]
                         )
@@ -578,6 +594,7 @@ class LudwigModel:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
 
+                print_boxed("FINISHED")
                 return train_stats, preprocessed_data, output_url
 
     def train_online(
@@ -817,6 +834,9 @@ class LudwigModel:
         """
         self._check_initialization()
 
+        for callback in self.callbacks:
+            callback.on_evaluation_start()
+
         # preprocessing
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
@@ -900,6 +920,9 @@ class LudwigModel:
                     self.model.output_features,
                     return_type=return_type,
                 )
+
+            for callback in self.callbacks:
+                callback.on_evaluation_end()
 
             return eval_stats, postproc_predictions, output_directory
 
@@ -1245,7 +1268,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        # preprocess
+        print_boxed("PREPROCESSING")
         preprocessed_data = preprocess_for_training(
             self.config,
             dataset=dataset,
@@ -1368,7 +1391,8 @@ class LudwigModel:
         """
         if self.backend.is_coordinator():
             weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            self.model.load_state_dict(torch.load(weights_save_path))
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
 
         self.backend.sync_model(self.model)
 
@@ -1420,26 +1444,23 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def save_savedmodel(self, save_path: str) -> None:
-        """This function allows to save models on disk.
+    def to_torchscript(self):
+        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
 
-        # Inputs
+        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
 
-        :param  save_path: (str) path to the directory where the SavedModel
-                is going to be saved.
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs or a list of
+        strings batch_size in length.
 
-        # Return
+        Note that the dimensions of all Tensors and lengths of all lists must match.
 
-        :return: `None`
-
-        # Example usage
-
-        ```python
-        ludwig_model.save_for_serving(save_path)
-        ```
+        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
+        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
+        tensors of varying dimensions for probabilities, logits, etc.
         """
         self._check_initialization()
-        self.model.save_savedmodel(save_path)
+        inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+        return torch.jit.script(inference_module)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
@@ -1718,6 +1739,7 @@ def get_experiment_description(
     test_set=None,
     training_set_metadata=None,
     data_format=None,
+    backend=None,
     random_seed=None,
 ):
     description = OrderedDict()
@@ -1754,16 +1776,15 @@ def get_experiment_description(
         description["data_format"] = str(data_format)
 
     description["config"] = config
-
     description["torch_version"] = torch.__version__
 
-    compute_description = {"num_nodes": 1}
-    if ray.is_initialized():
-        compute_description = {"num_nodes": len(ray.nodes())}
+    gpu_info = {}
     if torch.cuda.is_available():
         # Assumption: All nodes are of the same instance type.
-        compute_description["gpu_type"] = torch.cuda.get_device_name(0)
-        compute_description["gpus_per_node"] = torch.cuda.device_count()
+        # TODO: fix for Ray where workers may be of different skus
+        gpu_info = {"gpu_type": torch.cuda.get_device_name(0), "gpus_per_node": torch.cuda.device_count()}
+
+    compute_description = {"num_nodes": backend.num_nodes, **gpu_info}
 
     description["compute"] = compute_description
 

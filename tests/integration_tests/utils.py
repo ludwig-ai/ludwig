@@ -18,6 +18,7 @@ import os
 import random
 import shutil
 import sys
+import tempfile
 import traceback
 import unittest
 import uuid
@@ -176,7 +177,7 @@ def sequence_feature(**kwargs):
         "max_len": 7,
         "encoder": "embed",
         "embedding_size": 8,
-        "fc_size": 8,
+        "output_size": 8,
         "state_size": 8,
         "num_filters": 8,
         "hidden_size": 8,
@@ -195,7 +196,7 @@ def image_feature(folder, **kwargs):
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         "resnet_size": 8,
         "destination_folder": folder,
-        "fc_size": 8,
+        "output_size": 8,
         "num_filters": 8,
     }
     feature.update(kwargs)
@@ -223,7 +224,7 @@ def audio_feature(folder, **kwargs):
             {"filter_size": 400, "pool_size": 16, "num_filters": 32, "regularize": "false"},
             {"filter_size": 40, "pool_size": 10, "num_filters": 64, "regularize": "false"},
         ],
-        "fc_size": 256,
+        "output_size": 16,
         "destination_folder": folder,
     }
     feature.update(kwargs)
@@ -285,10 +286,10 @@ def vector_feature(**kwargs):
 
 
 def run_experiment(
-    input_features, output_features, skip_save_processed_input=True, config=None, backend=None, **kwargs
+    input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
-    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk after
-    running the experiment.
+    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk related to
+    running an experiment.
 
     :param input_features: list of input feature dictionaries
     :param output_features: list of output feature dictionaries
@@ -296,35 +297,37 @@ def run_experiment(
     arguments
     :return: None
     """
-    if input_features is not None and output_features is not None:
-        # This if is necessary so that the caller can call with
-        # config_file (and not config)
+    if input_features is None and output_features is None and config is None:
+        raise ValueError("Cannot run test experiment without features nor config.")
+
+    if config is None:
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 14},
+            "combiner": {"type": "concat", "output_size": 14},
             "training": {"epochs": 2},
         }
 
-    args = {
-        "config": config,
-        "backend": backend or LocalTestBackend(),
-        "skip_save_training_description": True,
-        "skip_save_training_statistics": True,
-        "skip_save_processed_input": skip_save_processed_input,
-        "skip_save_progress": True,
-        "skip_save_unprocessed_output": True,
-        "skip_save_model": True,
-        "skip_save_predictions": True,
-        "skip_save_eval_stats": True,
-        "skip_collect_predictions": True,
-        "skip_collect_overall_stats": True,
-        "skip_save_log": True,
-    }
-    args.update(kwargs)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        args = {
+            "config": config,
+            "backend": backend or LocalTestBackend(),
+            "skip_save_training_description": True,
+            "skip_save_training_statistics": True,
+            "skip_save_processed_input": skip_save_processed_input,
+            "skip_save_progress": True,
+            "skip_save_unprocessed_output": True,
+            "skip_save_model": True,
+            "skip_save_predictions": True,
+            "skip_save_eval_stats": True,
+            "skip_collect_predictions": True,
+            "skip_collect_overall_stats": True,
+            "skip_save_log": True,
+            "output_directory": tmpdir,
+        }
+        args.update(kwargs)
 
-    _, _, _, _, exp_dir_name = experiment_cli(**args)
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
+        experiment_cli(**args)
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):
@@ -358,6 +361,23 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 
     # specify dependencies for the main_feature
     output_features[feature_names[main_feature][0]]["dependencies"] = generated_dependencies
+
+    return output_features
+
+
+def generate_output_features_with_dependencies_complex():
+    """Generates multiple output features specifications with dependencies."""
+
+    tf = text_feature(vocab_size=4, max_len=5, decoder="generator")
+    sf = sequence_feature(vocab_size=4, max_len=5, decoder="generator", dependencies=[tf["name"]])
+    nf = numerical_feature(dependencies=[tf["name"]])
+    vf = vector_feature(dependencies=[sf["name"], nf["name"]])
+    set_f = set_feature(vocab_size=4, dependencies=[tf["name"], vf["name"]])
+    cf = category_feature(vocab_size=4, dependencies=[sf["name"], nf["name"], set_f["name"]])
+
+    # The correct order ids[tf, sf, nf, vf, set_f, cf]
+    # # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf, nf]
 
     return output_features
 
@@ -416,7 +436,7 @@ def run_api_experiment(input_features, output_features, data_csv):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         "training": {"epochs": 2},
     }
 

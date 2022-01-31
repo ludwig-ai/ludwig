@@ -14,19 +14,18 @@
 # ==============================================================================
 import logging
 import os
-import shutil
 
 import pandas as pd
 import pytest
 
 from ludwig.constants import NAME
-from ludwig.experiment import experiment_cli
 from tests.integration_tests.utils import (
     bag_feature,
     binary_feature,
     category_feature,
     generate_data,
     numerical_feature,
+    run_experiment,
     sequence_feature,
     set_feature,
     text_feature,
@@ -36,42 +35,6 @@ from tests.integration_tests.utils import (
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
-
-
-def run_experiment(input_features, output_features, **kwargs):
-    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk after
-    running the experiment.
-
-    :param input_features: list of input feature dictionaries
-    :param output_features: list of output feature dictionaries
-    **kwargs you may also pass extra parameters to the experiment as keyword
-    arguments
-    :return: None
-    """
-    config = None
-    if input_features is not None and output_features is not None:
-        # This if is necessary so that the caller can call with
-        # config_file (and not config)
-        config = {
-            "backend": "local",
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "fc_size": 64, "num_fc_layers": 5},
-            "training": {"epochs": 2},
-        }
-
-    args = {
-        "config": config,
-        "skip_save_processed_input": True,
-        "skip_save_progress": True,
-        "skip_save_unprocessed_output": True,
-        "skip_save_model": True,
-        "skip_save_log": True,
-    }
-    args.update(kwargs)
-
-    exp_dir_name = experiment_cli(**args)
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
 @pytest.mark.parametrize(

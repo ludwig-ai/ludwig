@@ -106,7 +106,6 @@ def test_model_save_reload_api(csv_filename, tmp_path):
             # assert list(preds_2[key]) == list(preds_3[key]), key
 
         # Compare model weights
-        # this has to be done after predicts because of TF2 lazy restoration
         for if_name in ludwig_model1.model.input_features:
             if1 = ludwig_model1.model.input_features[if_name]
             if2 = ludwig_model2.model.input_features[if_name]

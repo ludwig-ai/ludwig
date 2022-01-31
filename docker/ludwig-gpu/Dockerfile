@@ -24,7 +24,7 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]'
+    pip install --no-cache-dir '.[full]' && horovodrun --check-build
 
 WORKDIR /data
 

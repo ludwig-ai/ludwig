@@ -354,11 +354,11 @@ def create_optimizer_with_clipper(
     """
     optimizer_cls = get_from_registry(optimizer.type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
     cls_kwargs = {k: optimizer.__dict__[k] for k in optimizer.__dict__ if k != "type"}
-    optimizer = create_optimizer(optimizer_cls, model, horovod, **cls_kwargs)
-    return optimizer, clipper
+    torch_optimizer: torch.optim.Optimizer = create_optimizer(optimizer_cls, model, horovod, **cls_kwargs)
+    return torch_optimizer, clipper
 
 
-def create_optimizer(optimizer_cls: BaseOptimizer, model, horovod=None, **kwargs):
+def create_optimizer(optimizer_cls: BaseOptimizer, model, horovod=None, **kwargs) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer.
 
     Takes a given `torch.optim.Optimizer` class and set of attributes via `kwargs` and constructs and returns a

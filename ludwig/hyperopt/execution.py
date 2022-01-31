@@ -2,6 +2,7 @@ import copy
 import datetime
 import glob
 import json
+import logging
 import os
 import shutil
 import threading
@@ -17,13 +18,15 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import HyperoptSampler, logger, RayTuneSampler
+from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry, hash_dict
+
+logger = logging.getLogger(__name__)
 
 try:
     import ray
@@ -37,7 +40,8 @@ try:
     from ray.util.queue import Queue as RayQueue
 
     from ludwig.backend.ray import RayBackend
-except ImportError:
+except ImportError as e:
+    logger.warn(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
     get_horovod_kwargs = None
 
@@ -296,7 +300,7 @@ class RayTuneExecutor(HyperoptExecutor):
         **kwargs,
     ) -> None:
         if ray is None:
-            raise ImportError("ray module is not installed. To " "install it,try running pip install ray")
+            raise ImportError("ray module is not installed. To install it, try running pip install ray")
         if not isinstance(hyperopt_sampler, RayTuneSampler):
             raise ValueError(
                 "Sampler {} is not compatible with RayTuneExecutor, "
@@ -358,6 +362,64 @@ class RayTuneExecutor(HyperoptExecutor):
             if len(metadata_file) < 1:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
+
+    def _get_best_model_path(self, trial_path, analysis):
+        sync_info = self._get_sync_client_and_remote_checkpoint_dir(Path(trial_path))
+        if sync_info is not None:
+            sync_client, remote_checkpoint_dir = sync_info
+            sync_client.sync_down(remote_checkpoint_dir, trial_path)
+            sync_client.wait()
+        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
+        return analysis.get_best_checkpoint(trial_path.rstrip("/"))
+
+    @staticmethod
+    def _evaluate_best_model(
+        trial,
+        trial_path,
+        best_model_path,
+        dataset,
+        data_format,
+        skip_save_unprocessed_output,
+        skip_save_predictions,
+        skip_save_eval_stats,
+        gpus,
+        gpu_memory_limit,
+        allow_parallel_threads,
+        backend,
+        debug,
+    ):
+        best_model = LudwigModel.load(
+            os.path.join(best_model_path, "model"),
+            backend=backend,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+        )
+        if best_model.config[TRAINING]["eval_batch_size"]:
+            batch_size = best_model.config[TRAINING]["eval_batch_size"]
+        else:
+            batch_size = best_model.config[TRAINING]["batch_size"]
+        try:
+            eval_stats, _, _ = best_model.evaluate(
+                dataset=dataset,
+                data_format=data_format,
+                batch_size=batch_size,
+                output_directory=trial_path,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
+                skip_save_predictions=skip_save_predictions,
+                skip_save_eval_stats=skip_save_eval_stats,
+                collect_predictions=False,
+                collect_overall_stats=True,
+                return_type="dict",
+                debug=debug,
+            )
+            trial["eval_stats"] = json.dumps(eval_stats, cls=NumpyEncoder)
+        except NotImplementedError:
+            logger.warning(
+                "Skipping evaluation as the necessary methods are not "
+                "supported. Full exception below:\n"
+                f"{traceback.format_exc()}"
+            )
 
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
@@ -680,6 +742,7 @@ class RayTuneExecutor(HyperoptExecutor):
             search_alg=search_alg,
             num_samples=self.num_samples,
             keep_checkpoints_num=1,
+            max_failures=1,  # retry a trial failure once
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
             sync_config=self.sync_config,
@@ -712,45 +775,25 @@ class RayTuneExecutor(HyperoptExecutor):
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        sync_info = self._get_sync_client_and_remote_checkpoint_dir(Path(trial_path))
-                        if sync_info is not None:
-                            sync_client, remote_checkpoint_dir = sync_info
-                            sync_client.sync_down(remote_checkpoint_dir, trial_path)
-                            sync_client.wait()
-                        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
-                        best_model_path = analysis.get_best_checkpoint(trial_path.rstrip("/"))
-                        best_model = LudwigModel.load(
-                            os.path.join(best_model_path, "model"),
-                            backend=backend,
-                            gpus=gpus,
-                            gpu_memory_limit=gpu_memory_limit,
-                            allow_parallel_threads=allow_parallel_threads,
-                        )
-                        if best_model.config[TRAINING]["eval_batch_size"]:
-                            batch_size = best_model.config[TRAINING]["eval_batch_size"]
+                        best_model_path = self._get_best_model_path(trial_path, analysis)
+                        if best_model_path is not None:
+                            self._evaluate_best_model(
+                                trial,
+                                trial_path,
+                                best_model_path,
+                                validation_set,
+                                data_format,
+                                skip_save_unprocessed_output,
+                                skip_save_predictions,
+                                skip_save_eval_stats,
+                                gpus,
+                                gpu_memory_limit,
+                                allow_parallel_threads,
+                                backend,
+                                debug,
+                            )
                         else:
-                            batch_size = best_model.config[TRAINING]["batch_size"]
-                        try:
-                            eval_stats, _, _ = best_model.evaluate(
-                                dataset=validation_set,
-                                data_format=data_format,
-                                batch_size=batch_size,
-                                output_directory=trial_path,
-                                skip_save_unprocessed_output=skip_save_unprocessed_output,
-                                skip_save_predictions=skip_save_predictions,
-                                skip_save_eval_stats=skip_save_eval_stats,
-                                collect_predictions=False,
-                                collect_overall_stats=True,
-                                return_type="dict",
-                                debug=debug,
-                            )
-                            trial["eval_stats"] = json.dumps(eval_stats, cls=NumpyEncoder)
-                        except NotImplementedError:
-                            logger.warning(
-                                "Skipping evaluation as the necessary methods are not "
-                                "supported. Full exception below:\n"
-                                f"{traceback.format_exc()}"
-                            )
+                            logger.warning("Skipping evaluation as no model checkpoints were available")
                     else:
                         logger.warning("Skipping evaluation as no validation set was provided")
 

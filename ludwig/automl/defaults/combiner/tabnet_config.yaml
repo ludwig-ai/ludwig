@@ -9,7 +9,6 @@ training:
   decay_steps: 500
   decay_rate: 0.95
   # early_stop: 300
-  regularization_lambda: 1
   optimizer:
     type: adam
   tune_batch_size:
