@@ -38,6 +38,8 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
 
     def cleanup_python_comment(dstring: str) -> str:
         """Cleans up some common issues with parsed comments/docstrings."""
+        if dstring is None or dstring == "" or str.isspace(dstring):
+            return ""
         # Add spaces after periods:
         dstring = re.sub(r"\.(?! )", ". ", dstring)
         # Replace internal newlines with spaces:
@@ -63,6 +65,7 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
         """
 
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
+        schema_default = schema_cls()
         if schema_cls.__doc__ is not None:
             parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
 
@@ -78,11 +81,13 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
             parsed_torch = (
                 {
                     param.name: param
-                    for param in googleloader.get_object_documentation(schema_cls.torch_type)
+                    for param in googleloader.get_object_documentation(
+                        get_fully_qualified_class_name(schema_cls.torch_type)
+                    )
                     .docstring_sections[1]
                     .value
                 }
-                if hasattr(schema_cls, "torch_type")
+                if hasattr(schema_cls, "torch_type") and schema_cls.torch_type is not None
                 else None
             )
             for prop in schema_dump["properties"]:
@@ -107,36 +112,17 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
                     ):
                         desc = parsed_torch[prop].description
 
-                    # Don't add empty descriptions:
-                    if (
-                        "description" not in schema_prop
-                        or schema_prop["description"] is None
-                        or schema_prop["description"] == ""
-                    ):
-                        schema_prop["description"] = cleanup_python_comment(desc)
+                    schema_prop["description"] = cleanup_python_comment(desc)
 
                     # Handle defaults:
-                    # default = getattr()
-        #             if "default" in pdprop:
-        #                 default = parsed_docstring["params"][prop]["default"]
-        #             elif (
-        #                 desc == ""
-        #                 and parsed_torch is not None
-        #                 and prop in parsed_torch["params"]
-        #                 and "doc" in parsed_torch["params"][prop]
-        #             ):
-        #                 desc = parsed_torch["params"][prop]["doc"]
+                    if hasattr(schema_default, prop):
+                        default = getattr(schema_default, prop)
 
-        #         elif prop in torch_dict:
-        #             schema_prop["description"] = cleanup_python_comment(torch_dict[prop])
+                        # If the prop is itself another schema class, then convert its value to a dict:
+                        if hasattr(type(default), "Schema"):
+                            default = type(default).Schema().dump(default)
 
-        #     # params_dict = {p: p["doc"] for p in parsed_docstring["params"] if "doc" in p}
-        #     # torch_dict = {p: p["doc"] for p in parsed_torch["params"] if "doc" in p}
-        # if parsed_docstring.short_description is not None:
-        #     desc = parsed_docstring.short_description
-        #     desc += parsed_docstring.long_description if parsed_docstring.long_description is not None else ""
-        #     schema_dump["description"] = cleanup_python_comment(desc)
-
+                        schema_prop["default"] = default
         return schema_dump
 
     return generate_extra_json_schema_props(mclass)
