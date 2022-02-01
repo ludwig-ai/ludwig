@@ -72,6 +72,10 @@ class DaskEngine(DataFrameEngine):
         meta = meta or ("data", "object")
         return series.map(map_fn, meta=meta)
 
+    def map_partitions(self, series, map_fn, meta=None):
+        meta = meta or ("data", "object")
+        return series.map_partitions(map_fn, meta=meta)
+
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta or ("data", "object")
         return df.apply(apply_fn, axis=1, meta=meta)

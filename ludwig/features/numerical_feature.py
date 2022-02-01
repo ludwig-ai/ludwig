@@ -18,6 +18,7 @@ import random
 from typing import Any, Dict, List, Union
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 
@@ -267,12 +268,13 @@ class NumericalFeatureMixin(BaseFeatureMixin):
         backend,
         skip_save_processed_input,
     ):
-        proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]].astype(np.float32).values
+        def normalize(series: pd.Series) -> pd.Series:
+            numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
+            series.update(numeric_transformer.transform(series.values))
+            return series
 
-        # normalize data as required
-        numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
-
-        proc_df[feature_config[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature_config[PROC_COLUMN]])
+        input_series = input_df[feature_config[COLUMN]].astype(np.float32)
+        proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_partitions(input_series, normalize)
 
         return proc_df
 
