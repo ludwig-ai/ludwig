@@ -267,12 +267,13 @@ class NumericalFeatureMixin(BaseFeatureMixin):
         backend,
         skip_save_processed_input,
     ):
-        proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]].astype(np.float32).values
+        proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]]
+        values = input_df[feature_config[COLUMN]].astype(np.float32).values
 
         # normalize data as required
         numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
 
-        proc_df[feature_config[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature_config[PROC_COLUMN]])
+        proc_df[feature_config[PROC_COLUMN]].update(numeric_transformer.transform(values))
 
         return proc_df
 

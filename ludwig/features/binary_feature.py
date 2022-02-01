@@ -193,7 +193,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 # No predefined mapping from string to bool, so compute it directly
                 column = column.map(strings_utils.str2bool)
 
-        proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_).values
+        proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_)
         return proc_df
 
 
