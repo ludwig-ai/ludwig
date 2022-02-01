@@ -1,4 +1,4 @@
-"""Ludwig: a deep learning experimentation toolbox
+"""Ludwig: Data-centric declarative deep learning framework
 """
 from codecs import open
 from os import path
@@ -53,7 +53,7 @@ with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
 setup(
     name="ludwig",
     version="0.5.dev0",
-    description="A deep learning experimentation toolbox",
+    description="Data-centric declarative deep learning framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ludwig-ai/ludwig",
