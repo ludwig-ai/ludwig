@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
+from ludwig.constants import DROP_ROW, PREPROCESSING
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -66,19 +67,19 @@ def test_missing_value_prediction(csv_filename):
 def test_missing_values_drop_rows(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
-    # Configure features to be tested:
+    kwargs = {PREPROCESSING: {"missing_value_strategy": DROP_ROW}}
     input_features = [
         numerical_feature(),
         binary_feature(),
         category_feature(vocab_size=3),
     ]
     output_features = [
-        binary_feature(),
-        numerical_feature(),
-        category_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3),
-        set_feature(vocab_size=3),
+        binary_feature(**kwargs),
+        numerical_feature(**kwargs),
+        category_feature(vocab_size=3, **kwargs),
+        sequence_feature(vocab_size=3, **kwargs),
+        text_feature(vocab_size=3, **kwargs),
+        set_feature(vocab_size=3, **kwargs),
         vector_feature(),
     ]
     backend = LocalTestBackend()
