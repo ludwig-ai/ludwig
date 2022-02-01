@@ -19,7 +19,7 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Union
 
 import torch
-from marshmallow import INCLUDE
+from marshmallow import RAISE
 from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
@@ -97,20 +97,44 @@ class Combiner(LudwigModule, ABC):
 @dataclass
 class ConcatCombinerConfig:
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    """TODO (default: None)."""
+
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    """TODO (default: 0)."""
+
     output_size: int = schema.PositiveInteger(default=256)
+    """Output size of a fully connected layer (default: 256)."""
+
     use_bias: bool = True
+    """Whether the layer uses a bias vector (default: True)."""
+
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
+    """TODO (default: 'xavier_uniform')."""
+
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
+    """TODO (default: 'zeros')."""
+
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
+    """TODO (default: norm)."""
+
     norm_params: Optional[dict] = schema.Dict()
+    """TODO (default: None)."""
+
     activation: str = "relu"
+    """TODO (default: 'relu')."""
+
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    """TODO (default: 0.0)."""
+
     flatten_inputs: bool = False
+    """Whether to flatten input tensors to a vector (default: False)."""
+
     residual: bool = False
+    """Whether to add a residual connection to each fully connected layer block. All fully connected layers must have
+       the same size (default: False)."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="concat")
@@ -190,10 +214,13 @@ class ConcatCombiner(Combiner):
 @dataclass
 class SequenceConcatCombinerConfig:
     main_sequence_feature: Optional[str] = None
+    """TODO (default: None)."""
+
     reduce_output: Optional[str] = schema.ReductionOptions()
+    """TODO (default: None)."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="sequence_concat")
@@ -345,11 +372,16 @@ class SequenceConcatCombiner(Combiner):
 @dataclass
 class SequenceCombinerConfig:
     main_sequence_feature: Optional[str] = None
+    """TODO (default: None)."""
+
     reduce_output: Optional[str] = schema.ReductionOptions()
+    """TODO (default: None)."""
+
     encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
+    """TODO (default: None)."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="sequence")
@@ -419,21 +451,45 @@ class SequenceCombiner(Combiner):
 
 @dataclass
 class TabNetCombinerConfig:
-    size: int = schema.PositiveInteger(default=32)  # N_a in the paper
-    output_size: int = schema.PositiveInteger(default=32)  # N_d in the paper
-    num_steps: int = schema.NonNegativeInteger(default=1)  # N_steps in the paper
+    size: int = schema.PositiveInteger(default=32)
+    """`N_a` in the paper (default: 32)."""
+
+    output_size: int = schema.PositiveInteger(default=32)
+    """Output size of a fully connected layer. `N_d` in the paper (default: 32)."""
+
+    num_steps: int = schema.NonNegativeInteger(default=1)
+    """Number of steps / repetitions of the the attentive transformer and feature transformer computations. `N_steps` in
+       the paper (default: 1)."""
+
     num_total_blocks: int = schema.NonNegativeInteger(default=4)
+    """Total number of feature transformer block at each step (default: 4)."""
+
     num_shared_blocks: int = schema.NonNegativeInteger(default=2)
-    relaxation_factor: float = 1.5  # gamma in the paper
+    """Number of shared feature transformer blocks across the steps (default: 2)."""
+
+    relaxation_factor: float = 1.5
+    """Factor that influences how many times a feature should be used across the steps of computation. a value of 1
+       implies it each feature should be use once, a higher value allows for multiple usages. `gamma` in the paper
+       (default: 1.5)."""
+
     bn_epsilon: float = 1e-3
-    bn_momentum: float = 0.7  # m_B in the paper
-    # B_v from the paper
+    """Epsilon to be added to the batch norm denominator (default: 1e-3)."""
+
+    bn_momentum: float = 0.7
+    """Momentum of the batch norm. `m_B` in the paper (default: 0.7)."""
+
     bn_virtual_bs: Optional[int] = schema.PositiveInteger()
-    sparsity: float = 1e-5  # lambda_sparse in the paper
+    """Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. `B_v` from
+       the paper (default: None)."""
+
+    sparsity: float = 1e-5
+    """Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper (default: 1e-5)."""
+
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    """Dropout rate for the transformer block (default: 0.0)."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="tabnet")
@@ -514,28 +570,63 @@ class TabNetCombiner(Combiner):
         return self.tabnet.output_shape
 
 
+# TODO(ksbrar): Refactor transformers into using base class for common attrs?
 @dataclass
 class TransformerCombinerConfig:
     num_layers: int = schema.PositiveInteger(default=1)
+    """TODO (default: 1)."""
+
     hidden_size: int = schema.NonNegativeInteger(default=256)
+    """The size of the hidden representation within the transformer block. It is usually the same as `embedding_size`,
+       but if the two values are different, a projection layer will be added before the first transformer block.
+       (default: 256)."""
+
     num_heads: int = schema.NonNegativeInteger(default=8)
+    """Number of heads of the self attention in the transformer block (default: 8)."""
+
     transformer_output_size: int = schema.NonNegativeInteger(default=256)
+    """Size of the fully connected layer after self attention in the transformer block. This is usually the same as
+       `hidden_size` and `embedding_size` (default: 256)."""
+
     dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
+    """Dropout rate for the transformer block (default: 0.1)."""
+
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    """The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."""
+
     output_size: int = schema.PositiveInteger(default=256)
+    """Output size of a fully connected layer (default: 256)."""
+
     use_bias: bool = True
+    """Whether the layer uses a bias vector (default: True)."""
+
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
+    """TODO (default: 'xavier_uniform')."""
+
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
+    """TODO (default: 'zeros')."""
+
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
+    """TODO (default: None)."""
+
     norm_params: Optional[dict] = schema.Dict()
+    """TODO (default: None)."""
+
     fc_activation: str = "relu"
+    """TODO (default: 'relu')."""
+
     fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    """TODO: (default: 0.0)"""
+
     fc_residual: bool = False
+    """TODO: (default: False)."""
+
     reduce_output: Optional[str] = schema.ReductionOptions(default="mean")
+    """TODO: (default: 'mean')."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="transformer")
@@ -641,26 +732,63 @@ class TransformerCombiner(Combiner):
 @dataclass
 class TabTransformerCombinerConfig:
     embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()
+    """TODO (default: None)."""
+
     num_layers: int = schema.PositiveInteger(default=1)
+    """TODO (default: 1)."""
+
     hidden_size: int = schema.NonNegativeInteger(default=256)
+    """The size of the hidden representation within the transformer block. It is usually the same as `embedding_size`,
+       but if the two values are different, a projection layer will be added before the first transformer block.
+       (default: 256)."""
+
     num_heads: int = schema.NonNegativeInteger(default=8)
+    """Number of heads of the self attention in the transformer block (default: 8)."""
+
     transformer_output_size: int = schema.NonNegativeInteger(default=256)
+    """TODO (default: 256)."""
+
     dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
+    """Dropout rate for the transformer block (default: 0.1)."""
+
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    """TODO (default: None)."""
+
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    """The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."""
+
     output_size: int = schema.PositiveInteger(default=256)
+    """Output size of a fully connected layer (default: 256)."""
+
     use_bias: bool = True
+    """Whether the layer uses a bias vector (default: True)."""
+
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
+    """TODO (default: 'xavier_uniform')."""
+
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
+    """TODO (default: 'zeros')."""
+
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
+    """TODO (default: None)."""
+
     norm_params: Optional[dict] = schema.Dict()
+    """TODO (default: None)."""
+
     fc_activation: str = "relu"
+    """TODO (default: 'relu')."""
+
     fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    """TODO (default: 0.0)."""
+
     fc_residual: bool = False
+    """TODO (default: False)."""
+
     reduce_output: str = schema.ReductionOptions(default="concat")
+    """TODO (default: 'concat')."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="tabtransformer")
@@ -870,20 +998,43 @@ class TabTransformerCombiner(Combiner):
 @dataclass
 class ComparatorCombinerConfig:
     entity_1: List[str]
+    """TODO"""
+
     entity_2: List[str]
+    """TODO"""
+
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    """TODO (default: None)."""
+
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
+    """TODO (default: 1)."""
+
     output_size: int = schema.PositiveInteger(default=256)
+    """Output size of a fully connected layer (default: 256)."""
+
     use_bias: bool = True
+    """Whether the layer uses a bias vector (default: True)."""
+
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
+    """TODO (default: 'xavier_uniform')."""
+
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
+    """TODO (default: 'zeros')."""
+
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
+    """TODO (default: None)."""
+
     norm_params: Optional[dict] = schema.Dict()
+    """TODO (default: None)."""
+
     activation: str = "relu"
+    """TODO (default: 'relu')."""
+
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    """Dropout rate for the transformer block (default: 0.0)."""
 
     class Meta:
-        unknown = INCLUDE
+        unknown = RAISE
 
 
 @register_combiner(name="comparator")
@@ -1033,5 +1184,10 @@ class ComparatorCombiner(Combiner):
         return ComparatorCombinerConfig
 
 
-def get_combiner_class(combiner_type):
+def get_combiner_class(combiner_type: str):
+    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
+
+    :param combiner_type: identifier that should correspond to a registered combiner
+    :type combiner_type: str
+    """
     return get_from_registry(combiner_type, combiner_registry)

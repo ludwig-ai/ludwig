@@ -178,7 +178,7 @@ class TrainerConfig:
     "TODO (default: 'training')."
 
     decay: bool = False
-    "TODO (default: False)."
+    "Turn on exponential decay of the learning rate (default: False)."
 
     decay_steps: int = schema.PositiveInteger(default=10000)
     "TODO (default: 10000)."
@@ -187,7 +187,7 @@ class TrainerConfig:
     "TODO (default: 0.96)."
 
     staircase: bool = False
-    "TODO (default: False)."
+    "Decays the learning rate at discrete intervals (default: False)."
 
     gradient_clipping: Optional[Clipper] = ClipperDataclassField(default={})
     """Instance of `ludwig.modules.optimization_modules.Clipper` that sets gradient clipping params.
