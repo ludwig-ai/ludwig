@@ -27,14 +27,13 @@ from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def export_savedmodel(model_path: str, output_path: str = "savedmodel", **kwargs) -> None:
-    """Exports a model to SavedModel.
+def export_torchscript(model_path: str, output_path: str = "torchscript", **kwargs) -> None:
+    """Exports a model to torchscript.
 
     # Inputs
 
     :param model_path: (str) filepath to pre-trained model.
-    :param output_path: (str, default: `'savedmodel'`) directory to store the
-        savedmodel
+    :param output_path: (str, default: `'torchscript'`) directory to store torchscript
 
     # Return
     :returns: (`None`)
@@ -45,7 +44,7 @@ def export_savedmodel(model_path: str, output_path: str = "savedmodel", **kwargs
 
     model = LudwigModel.load(model_path)
     os.makedirs(output_path, exist_ok=True)
-    model.save_savedmodel(output_path)
+    model.save_torchscript(output_path)
 
     logger.info(f"Saved to: {output_path}")
 
@@ -100,10 +99,10 @@ def export_mlflow(model_path, output_path="mlflow", registered_model_name=None, 
     logger.info(f"Saved to: {output_path}")
 
 
-def cli_export_savedmodel(sys_argv):
+def cli_export_torchscript(sys_argv):
     parser = argparse.ArgumentParser(
-        description="This script loads a pretrained model " "and saves it as a SavedModel.",
-        prog="ludwig export_savedmodel",
+        description="This script loads a pretrained model " "and saves it as torchscript.",
+        prog="ludwig export_torchscript",
         usage="%(prog)s [options]",
     )
 
@@ -133,16 +132,16 @@ def cli_export_savedmodel(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline("export_savedmodel", *sys_argv)
+        callback.on_cmdline("export_torchscript", *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.export")
 
-    print_ludwig("Export SavedModel", LUDWIG_VERSION)
+    print_ludwig("Export Torchscript", LUDWIG_VERSION)
 
-    export_savedmodel(**vars(args))
+    export_torchscript(**vars(args))
 
 
 def cli_export_neuropod(sys_argv):
@@ -242,7 +241,7 @@ def cli_export_mlflow(sys_argv):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "savedmodel":
-            cli_export_savedmodel(sys.argv[2:])
+            cli_export_torchscript(sys.argv[2:])
         elif sys.argv[1] == "neuropod":
             cli_export_neuropod(sys.argv[2:])
         else:

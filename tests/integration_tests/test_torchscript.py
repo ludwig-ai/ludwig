@@ -156,6 +156,7 @@ def test_torchscript(csv_filename, should_load_model):
             ludwig_model.config,
             dataset=data_csv_path,
             training_set_metadata=training_set_metadata_json_fp,
+            include_outputs=False,
             backend=backend,
         )
 
