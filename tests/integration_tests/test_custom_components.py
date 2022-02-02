@@ -1,10 +1,10 @@
 import os
 import tempfile
-from dataclasses import dataclass
 from typing import Dict
 
 import torch
 from marshmallow import INCLUDE
+from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
