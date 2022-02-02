@@ -65,7 +65,6 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
         """
 
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
-        schema_default = schema_cls()
         if schema_cls.__doc__ is not None:
             parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
 
@@ -115,14 +114,18 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
                     schema_prop["description"] = cleanup_python_comment(desc)
 
                     # Handle defaults:
-                    if hasattr(schema_default, prop):
-                        default = getattr(schema_default, prop)
+                    # if hasattr(schema_cls, prop):
+                    #     default = getattr(schema_cls, prop)
 
-                        # If the prop is itself another schema class, then convert its value to a dict:
-                        if hasattr(type(default), "Schema"):
-                            default = type(default).Schema().dump(default)
+                    #     schema_cls.Schema().fields[prop]
+                    #     # If the prop is itself another schema class, then convert its value to a dict:
+                    #     if hasattr(type(default), "Schema"):
+                    #         default = type(default).Schema().dump(default)
 
-                        schema_prop["default"] = default
+                    #     schema_prop["default"] = default
+
+        # Workaround because marshmallow_jsonschema does not support setting this field.
+        schema_dump["additionalProperties"] = True
         return schema_dump
 
     return generate_extra_json_schema_props(mclass)

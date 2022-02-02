@@ -19,7 +19,7 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Union
 
 import torch
-from marshmallow import RAISE
+from marshmallow import EXCLUDE
 from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
@@ -134,7 +134,7 @@ class ConcatCombinerConfig:
        the same size (default: False)."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="concat")
@@ -220,7 +220,7 @@ class SequenceConcatCombinerConfig:
     """TODO (default: None)."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="sequence_concat")
@@ -381,7 +381,7 @@ class SequenceCombinerConfig:
     """TODO (default: None)."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="sequence")
@@ -489,7 +489,7 @@ class TabNetCombinerConfig:
     """Dropout rate for the transformer block (default: 0.0)."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="tabnet")
@@ -626,7 +626,7 @@ class TransformerCombinerConfig:
     """TODO: (default: 'mean')."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="transformer")
@@ -788,7 +788,7 @@ class TabTransformerCombinerConfig:
     """TODO (default: 'concat')."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="tabtransformer")
@@ -1034,7 +1034,7 @@ class ComparatorCombinerConfig:
     """Dropout rate for the transformer block (default: 0.0)."""
 
     class Meta:
-        unknown = RAISE
+        unknown = EXCLUDE
 
 
 @register_combiner(name="comparator")

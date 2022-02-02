@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import psutil
 import torch
-from marshmallow.utils import RAISE
+from marshmallow.utils import EXCLUDE
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
@@ -209,7 +209,7 @@ class TrainerConfig:
         Used for excluding unknown properties.
         """
 
-        unknown = RAISE
+        unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to raise an error if an unknown property is passed as a parameter."
 
 

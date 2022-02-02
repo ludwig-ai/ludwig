@@ -154,9 +154,4 @@ def get_custom_definitions():
 
 
 def validate_config(config):
-    from pprint import pprint as print
-
-    print(config["training"])
-    # config["training"].pop("bucketing_field")
-    # print(get_schema()["properties"]["training"])
     validate(instance=config, schema=get_schema())
