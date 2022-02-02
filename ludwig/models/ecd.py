@@ -185,7 +185,7 @@ class ECD(LudwigModule):
         Args:
             targets: A dictionary of target names to target tensors.
             predictions: A dictionary of output names to output tensors.
-            regularization_type: One of 'l1', 'l2', 'l1_l2'.
+            regularization_type: One of 'l1', 'l2', 'l1_l2', or None.
             regularization_lambda: The regularization lambda.
 
         Returns:

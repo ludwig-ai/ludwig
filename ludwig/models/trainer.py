@@ -115,10 +115,8 @@ class TrainerConfig:
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
     "Strength of the $L2$ regularization (default: 0.0)."
 
-    regularization_type: Optional[str] = schema.StringOptions(
-        options=["l1", "l2", "l1_l2"], default="l2", nullable=True
-    )
-    "Type of regularization, one of ('l1', 'l2', 'l1_l2') (default: 'l2')."
+    regularization_type: Optional[str] = schema.RegularizerOptions()
+    "Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."
 
     should_shuffle: bool = True
     "Whether to shuffle batches during training when true (default: True)."

@@ -137,6 +137,10 @@ def RegularizerOptions(nullable: bool = True):
 
 
 def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True):
+    # If None should be allowed for an enum field, it also has to be defined as a valid
+    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
+    if nullable:
+        options += [None] if None not in options else []
     return field(
         metadata={
             "marshmallow_field": fields.String(
