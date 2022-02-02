@@ -16,7 +16,7 @@
 
 Translated in [🇰🇷 Korean](README_KR.md)/
 
-Ludwig is a data-centric deep learning framework that allows users to train and test deep learning models by specifying a declarative configuration tht matches the schema of the data.
+Ludwig is a data-centric deep learning framework that allows users to train and test deep learning models by specifying a declarative configuration that matches the schema of the data.
 It is built on top of PyTorch.
 
 To train a model all you need to provide is a file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
