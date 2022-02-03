@@ -114,7 +114,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
 
     def __init__(
         self,
-        positive_class_weight: Optional[Tensor, int] = None,
+        positive_class_weight: Optional[Union[Tensor, int]] = None,
         robust_lambda: int = 0,
         confidence_penalty: int = 0,
         **kwargs,
