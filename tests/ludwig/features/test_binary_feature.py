@@ -42,7 +42,7 @@ def test_binary_output_feature():
             },
         },
         {},
-    )
+    ).to(DEVICE)
     combiner_outputs = {}
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
@@ -66,7 +66,7 @@ def test_binary_output_feature_without_positive_class_weight():
             },
         },
         {},
-    )
+    ).to(DEVICE)
     combiner_outputs = {}
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
