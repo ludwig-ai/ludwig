@@ -120,7 +120,10 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         **kwargs,
     ):
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(positive_class_weight), **kwargs)
+        if positive_class_weight:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([positive_class_weight]), **kwargs)
+        else:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
         self.robust_lambda = robust_lambda
         self.confidence_penalty = confidence_penalty
 

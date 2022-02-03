@@ -371,13 +371,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
-                "positive_class_weight": None,
+                "positive_class_weight": None,  # Weight for each label.
+                "weight": 1,  # Weight across output features.
             },
         )
-
-        set_default_value(output_feature[LOSS], "robust_lambda", 0)
-        set_default_value(output_feature[LOSS], "confidence_penalty", 0)
-        set_default_value(output_feature[LOSS], "positive_class_weight", None)
 
         set_default_values(
             output_feature,
