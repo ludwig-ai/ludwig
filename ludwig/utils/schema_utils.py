@@ -1,9 +1,9 @@
 import re
 from dataclasses import field
-from typing import Dict, List, Tuple, Type, Union
+from typing import Dict, List, Tuple, Union
 
 import marshmallow_dataclass
-from marshmallow import fields, Schema, validate, ValidationError
+from marshmallow import fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
 from pytkdocs import loader as pytkloader
 
@@ -14,12 +14,32 @@ restloader = pytkloader.Loader(docstring_style="restructured-text")
 googleloader = pytkloader.Loader(docstring_style="google")
 
 
+def load_config(cls, **kwargs):
+    """Takes a marshmallow schema and."""
+    schema = marshmallow_dataclass.class_schema(cls)()
+    return schema.load(kwargs)
+
+
+def load_config_with_kwargs(cls, kwargs):
+    schema = marshmallow_dataclass.class_schema(cls)()
+    fields = schema.fields.keys()
+    return load_config(cls, **{k: v for k, v in kwargs.items() if k in fields}), {
+        k: v for k, v in kwargs.items() if k not in fields
+    }
+
+
 def create_cond(if_pred: Dict, then_pred: Dict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
         "then": {"properties": {k: v for k, v in then_pred.items()}},
     }
+
+
+def assert_is_a_marshmallow_class(cls):
+    assert hasattr(cls, "Schema") and isinstance(
+        cls.Schema, schema.SchemaMeta
+    ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
 def get_fully_qualified_class_name(cls):
@@ -29,12 +49,14 @@ def get_fully_qualified_class_name(cls):
 
 
 def unload_schema_from_marshmallow_jsonschema_dump(mclass) -> Dict:
-    """Helper method to get a marshmallow class's direct schema without extra wrapping props."""
+    """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
+    assert_is_a_marshmallow_class(mclass)
     return js().dump(mclass.Schema())["definitions"][mclass.__name__]
 
 
-def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
+def get_custom_schema_from_marshmallow_class(mclass) -> Dict:
     """Get Ludwig-customized schema from a given marshmallow class."""
+    assert_is_a_marshmallow_class(mclass)
 
     def cleanup_python_comment(dstring: str) -> str:
         """Cleans up some common issues with parsed comments/docstrings."""
@@ -55,8 +77,7 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
         return dstring
 
     def generate_extra_json_schema_props(schema_cls) -> Dict:
-        """Workaround for adding 'description' and 'default' fields to a marshmallow schema's JSON Schema. Heres an
-        extra description.
+        """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema.
 
         Currently targeted for use with optimizer and combiner schema; if there is no description provided for a
         particular field, the description is pulled from the corresponding torch optimizer. Note that this currently
@@ -113,7 +134,7 @@ def get_custom_schema_from_marshmallow_class(mclass: Type[Schema]) -> Dict:
 
                     schema_prop["description"] = cleanup_python_comment(desc)
 
-        # Workaround because marshmallow_jsonschema does not support setting this field.
+        # Manual workaround because marshmallow_{dataclass,jsonschema} do not support setting this field (see above):
         schema_dump["additionalProperties"] = True
         return schema_dump
 
@@ -406,16 +427,3 @@ def NumericOrStringOptionsField(
             return {"oneOf": oneOf}
 
     return field(metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable)}, default=default)
-
-
-def load_config(cls, **kwargs):
-    schema = marshmallow_dataclass.class_schema(cls)()
-    return schema.load(kwargs)
-
-
-def load_config_with_kwargs(cls, kwargs):
-    schema = marshmallow_dataclass.class_schema(cls)()
-    fields = schema.fields.keys()
-    return load_config(cls, **{k: v for k, v in kwargs.items() if k in fields}), {
-        k: v for k, v in kwargs.items() if k not in fields
-    }

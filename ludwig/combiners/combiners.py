@@ -592,6 +592,8 @@ class TransformerCombinerConfig:
     """Dropout rate for the transformer block (default: 0.1)."""
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+
+    # TODO(#1673): Add conditional logic for fields like this one:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     """The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."""
 
