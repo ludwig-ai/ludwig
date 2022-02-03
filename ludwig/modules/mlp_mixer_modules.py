@@ -116,7 +116,7 @@ class MLPMixer(LudwigModule):
         assert (img_height % patch_size == 0) and (img_width % patch_size == 0)
 
         self._input_shape = (in_channels, img_height, img_width)
-        n_patches = int(img_height * img_width / (patch_size ** 2))
+        n_patches = int(img_height * img_width / (patch_size**2))
 
         self.patch_conv = nn.Conv2d(
             in_channels=in_channels, out_channels=embed_size, kernel_size=patch_size, stride=patch_size

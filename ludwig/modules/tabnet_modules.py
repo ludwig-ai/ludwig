@@ -310,7 +310,7 @@ class FeatureTransformer(LudwigModule):
         # inputs shape [b_s, i_s]
         hidden = self.blocks[0](inputs)  # [b_s, s]
         for n in range(1, self.num_total_blocks):
-            hidden = (self.blocks[n](hidden) + hidden) * (0.5 ** 0.5)  # [b_s, s]
+            hidden = (self.blocks[n](hidden) + hidden) * (0.5**0.5)  # [b_s, s]
         return hidden  # [b_s, s]
 
     @property
