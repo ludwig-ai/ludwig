@@ -140,7 +140,7 @@ Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이
 그리고 사용자의 콘솔 창에서 다음의 명령을 입력하여 학습을 시작합니다:
 
 ```
-ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
+ludwig train --dataset path/to/file.csv --config_str "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
 위의 명령어에서 `path/to/file.csv`부분은 위의 표(이외에 많은 데이터 타입이 지원됩니다)에서 UTF-8로 인코딩 되어 있는 dataset파일을 포함하는 경로입니다.

@@ -37,7 +37,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.data_utils import load_config_from_str
+from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
@@ -299,8 +299,15 @@ def cli_render_config(sys_argv):
     parser.add_argument(
         "-c",
         "--config",
+        type=load_yaml,
+        help="Path to the YAML file containing the model configuration",
+    )
+    parser.add_argument(
+        "-cs",
+        "--config_str",
+        dest="config",
         type=load_config_from_str,
-        help="input user YAML config path",
+        help="JSON or YAML serialized string of the model configuration",
     )
     parser.add_argument(
         "-o",
