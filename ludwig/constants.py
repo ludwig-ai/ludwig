@@ -128,6 +128,7 @@ PARAMETERS = "parameters"
 NAME = "name"
 COLUMN = "column"
 TYPE = "type"
+OUTPUT_FLAG = "output_flag"
 
 RAY = "ray"
 
