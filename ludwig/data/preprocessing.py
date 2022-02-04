@@ -1065,15 +1065,42 @@ def build_dataset(
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
 
-    logger.debug("get split")
-    split = get_split(
-        dataset_df,
-        force_split=global_preprocessing_parameters["force_split"],
-        split_probabilities=global_preprocessing_parameters["split_probabilities"],
-        stratify=global_preprocessing_parameters["stratify"],
-        backend=backend,
-        random_seed=random_seed,
-    )
+    if global_preprocessing_parameters['undersample_majority'] is not None \
+            or global_preprocessing_parameters['oversample_minority'] is not None:
+        logger.debug("balancing data")
+        proc_cols, total_df = balance_data(
+            dataset_df,
+            proc_cols,
+            proc_features,
+            global_preprocessing_parameters,
+            backend,
+            skip_save_processed_input
+        )
+
+        logger.debug("get split")
+        split = get_split(
+            total_df,
+            force_split=global_preprocessing_parameters['force_split'],
+            split_probabilities=global_preprocessing_parameters[
+                'split_probabilities'
+            ],
+            stratify=global_preprocessing_parameters['stratify'],
+            backend=backend,
+            random_seed=random_seed
+        )
+    else:
+        logger.debug("get split")
+        split = get_split(
+            dataset_df,
+            force_split=global_preprocessing_parameters['force_split'],
+            split_probabilities=global_preprocessing_parameters[
+                'split_probabilities'
+            ],
+            stratify=global_preprocessing_parameters['stratify'],
+            backend=backend,
+            random_seed=random_seed
+        )
+
     if split is not None:
         proc_cols[SPLIT] = split
 
@@ -1204,6 +1231,40 @@ def build_data(
 
     return proc_cols
 
+def balance_data(
+        dataset_df,
+        input_cols,
+        features,
+        preprocessing_parameters,
+        backend,
+        skip_save_processed_input
+):
+
+    proc_cols = {}
+
+    for feature in features:
+        if feature[OUTPUT_FLAG]:
+            target = feature[PROC_COLUMN]
+
+    df = backend.df_engine.df_like(dataset_df, input_cols)
+    majority_class = df[target].value_counts().idxmax()
+    minority_class = df[target].value_counts().idxmin()
+    majority_df = df[df[target] == majority_class]
+    minority_df = df[df[target] == minority_class]
+
+    if preprocessing_parameters['oversample_minority']:
+        sample_size = int((len(majority_df) * preprocessing_parameters['oversample_minority']) - len(minority_df))
+        minority_df = pd.concat([minority_df, minority_df.sample(n=sample_size, replace=True)])
+    elif preprocessing_parameters['undersample_majority']:
+        sample_size = int(len(minority_df) / preprocessing_parameters['undersample_majority'])
+        majority_df = majority_df.sample(n=sample_size, replace=False)
+
+    total_df = pd.concat([minority_df, majority_df])
+
+    for column in input_cols.keys():
+        proc_cols[column] = total_df[column]
+
+    return proc_cols, total_df
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
