@@ -133,7 +133,7 @@ def test_kfold_cv_cli(features_to_use: FeaturesToUse):
 
 @pytest.mark.distributed
 def test_kfold_cv_api_from_file():
-    # k-fold_cross_validate api with config_file
+    # k-fold_cross_validate api with config file
     num_folds = 3
 
     # setup temporary directory to run test
