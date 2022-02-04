@@ -31,7 +31,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 
 
 class Iris(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
-    """The Mushroom Edibility dataset.
+    """The Iris dataset.
 
     Additional Details:
 
