@@ -310,7 +310,7 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
 
 
 @dataclass
-class Clipper:
+class Clipper(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = 0.5

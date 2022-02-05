@@ -127,7 +127,6 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                 attrs = {attr.name: attr for attr in parent.attributes}
                 parsed_parent_attrs = {**parsed_parent_attrs, **attrs}
             parsed_attrs = {**parsed_parent_attrs, **parsed_attrs}
-            print(parsed_attrs)
 
             # For each prop in the schema, set its description and default if they are not already set. If not already
             # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
@@ -458,9 +457,11 @@ def NumericOrStringOptionsField(
                 numeric_option["exclusiveMaximum"] = max_exclusive
 
             # Prepare string option (remove None):
+            if None in options:
+                options.remove(None)
             string_option = {
                 "type": "string",
-                "enum": filter(lambda opt: opt is not None, options),
+                "enum": options,
                 # "default": default_option,
             }
             oneof_list = [
