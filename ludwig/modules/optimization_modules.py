@@ -18,12 +18,12 @@ from typing import ClassVar, Dict, Iterable, Optional, Tuple
 import torch
 from marshmallow import fields, missing, ValidationError
 from marshmallow.decorators import validates
-from marshmallow.utils import RAISE
 from marshmallow_dataclass import dataclass
 
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
 from ludwig.utils.schema_utils import (
+    BaseMarshmallowConfig,
     create_cond,
     FloatRange,
     FloatRangeTupleDataclassField,
@@ -44,7 +44,7 @@ def register_optimizer(name: str):
 
 
 @dataclass
-class BaseOptimizer:
+class BaseOptimizer(BaseMarshmallowConfig):
     """Base class for optimizers. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
@@ -70,15 +70,6 @@ class BaseOptimizer:
             raise ValidationError(
                 f"{self.__class__.__name__} expects field `type` to be '{default}', instead received '{data}'"
             )
-
-    class Meta:
-        """Sub-class specifying meta information for Marshmallow.
-
-        Used for excluding unknown properties.
-        """
-
-        unknown = RAISE
-        "Flag that sets marshmallow `load` calls to raise an error if an unknown property is passed as a parameter."
 
 
 @register_optimizer(name="sgd")
