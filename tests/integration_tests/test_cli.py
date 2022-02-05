@@ -111,7 +111,7 @@ def test_train_cli_dataset(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
 
 
 @pytest.mark.distributed
@@ -127,7 +127,7 @@ def test_train_cli_training_set(csv_filename):
             training_set=dataset_filename,
             validation_set=validation_filename,
             test_set=test_filename,
-            config_file=config_filename,
+            config=config_filename,
             output_directory=tmpdir,
         )
 
@@ -141,7 +141,7 @@ def test_train_cli_horovod(csv_filename):
         _run_ludwig_horovod(
             "train",
             dataset=dataset_filename,
-            config_file=config_filename,
+            config=config_filename,
             output_directory=tmpdir,
             experiment_name="horovod_experiment",
         )
@@ -150,7 +150,7 @@ def test_train_cli_horovod(csv_filename):
         _run_ludwig_horovod(
             "train",
             dataset=dataset_filename,
-            config_file=config_filename,
+            config=config_filename,
             output_directory=tmpdir,
             model_load_path=os.path.join(tmpdir, "horovod_experiment_run", "model"),
         )
@@ -163,10 +163,10 @@ def test_export_savedmodel_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
         _run_ludwig(
             "export_savedmodel",
-            model_path=os.path.join(tmpdir, "experiment_run", "model"),
+            model=os.path.join(tmpdir, "experiment_run", "model"),
             output_path=os.path.join(tmpdir, "savedmodel"),
         )
 
@@ -178,10 +178,10 @@ def test_export_neuropod_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
         _run_ludwig(
             "export_neuropod",
-            model_path=os.path.join(tmpdir, "experiment_run", "model"),
+            model=os.path.join(tmpdir, "experiment_run", "model"),
             output_path=os.path.join(tmpdir, "neuropod"),
         )
 
@@ -192,7 +192,7 @@ def test_experiment_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("experiment", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("experiment", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
 
 
 @pytest.mark.distributed
@@ -201,11 +201,11 @@ def test_predict_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
         _run_ludwig(
             "predict",
             dataset=dataset_filename,
-            model_path=os.path.join(tmpdir, "experiment_run", "model"),
+            model=os.path.join(tmpdir, "experiment_run", "model"),
             output_directory=os.path.join(tmpdir, "predictions"),
         )
 
@@ -216,11 +216,11 @@ def test_evaluate_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
         _run_ludwig(
             "evaluate",
             dataset=dataset_filename,
-            model_path=os.path.join(tmpdir, "experiment_run", "model"),
+            model=os.path.join(tmpdir, "experiment_run", "model"),
             output_directory=os.path.join(tmpdir, "predictions"),
         )
 
@@ -231,7 +231,7 @@ def test_hyperopt_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_hyperopt_data(csv_filename, config_filename)
-        _run_ludwig("hyperopt", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("hyperopt", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
 
 
 @pytest.mark.distributed
@@ -240,7 +240,7 @@ def test_visualize_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
         _run_ludwig(
             "visualize",
             visualization="learning_curves",
@@ -256,8 +256,8 @@ def test_collect_summary_activations_weights_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config_file=config_filename, output_directory=tmpdir)
-        completed_process = _run_ludwig("collect_summary", model_path=os.path.join(tmpdir, "experiment_run", "model"))
+        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+        completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
         stdout = completed_process.stdout.decode("utf-8")
 
         assert "Modules" in stdout
@@ -298,4 +298,4 @@ def test_preprocess_cli(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config_file=config_filename)
+        _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)

@@ -388,14 +388,17 @@ def cli(sys_argv):
     # ----------------
     config = parser.add_mutually_exclusive_group(required=True)
     config.add_argument(
-        "-c", "--config", type=load_config_from_str, help="JSON or YAML serialized string of the model configuration"
-    )
-    config.add_argument(
-        "-cf",
-        "--config_file",
-        dest="config",
+        "-c",
+        "--config",
         type=load_yaml,
         help="Path to the YAML file containing the model configuration",
+    )
+    config.add_argument(
+        "-cs",
+        "--config_str",
+        dest="config",
+        type=load_config_from_str,
+        help="JSON or YAML serialized string of the model configuration",
     )
 
     parser.add_argument("-mlp", "--model_load_path", help="path of a pretrained model to load as initialization")
