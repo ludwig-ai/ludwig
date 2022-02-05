@@ -5,13 +5,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, TRAINER
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    numerical_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -29,7 +23,7 @@ TestCase = namedtuple("TestCase", "output_features validation_metrics")
     "test_case",
     [
         TestCase(
-            [numerical_feature()],
+            [number_feature()],
             [
                 "root_mean_squared_percentage_error",
                 "mean_squared_error",
@@ -65,7 +59,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
     test_scenarios.append(("combined", "loss"))
 
     # setup features for the test
-    input_features = [numerical_feature(), category_feature(), binary_feature()]
+    input_features = [number_feature(), category_feature(), binary_feature()]
     output_features = test_case.output_features
 
     # generate training data
@@ -95,14 +89,14 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
 # test for multiple output features
 @pytest.mark.parametrize(
     "test_case",
-    [TestCase([numerical_feature(), numerical_feature()], []), TestCase([category_feature(), numerical_feature()], [])],
+    [TestCase([number_feature(), number_feature()], []), TestCase([category_feature(), number_feature()], [])],
 )
 def test_validation_metrics_mulitiple_output(test_case: TestCase, csv_filename: str):
     test_validation_metrics(test_case, csv_filename)
 
 
 # negative test for invalid metric name
-@pytest.mark.parametrize("test_case", [TestCase([numerical_feature()], ["invalid_metric"])])
+@pytest.mark.parametrize("test_case", [TestCase([number_feature()], ["invalid_metric"])])
 def test_validation_invalid_metric(test_case: TestCase, csv_filename: str):
     # this should generate ValueError Exception
     try:

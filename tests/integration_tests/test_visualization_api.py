@@ -31,7 +31,7 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -490,7 +490,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
@@ -562,7 +562,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),

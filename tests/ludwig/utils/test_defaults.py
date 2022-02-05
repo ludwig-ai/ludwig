@@ -2,13 +2,13 @@ import copy
 
 import pytest
 
-from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, PREPROCESSING, TRAINER
+from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, NUMBER, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.preprocessing import merge_preprocessing
 from ludwig.utils.defaults import default_training_params, merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     text_feature,
     vector_feature,
@@ -56,7 +56,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
     all_input_features = [
         binary_feature(),
         category_feature(),
-        numerical_feature(),
+        number_feature(),
         text_feature(),
     ]
     all_output_features = [
@@ -107,3 +107,35 @@ def test_missing_outputs_drop_rows():
 
     feature_preprocessing = merge_preprocessing(merged_config["input_features"][0], global_preprocessing)
     assert feature_preprocessing["missing_value_strategy"] == FILL_WITH_MODE
+
+
+def test_deprecated_field_aliases():
+    config = {
+        "input_features": [{"name": "num_in", "type": "numerical"}],
+        "output_features": [{"name": "num_out", "type": "numerical"}],
+        "training": {
+            "epochs": 2,
+        },
+        "hyperopt": {
+            "parameters": {
+                "training.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.001,
+                    "upper": 0.1,
+                },
+            },
+            "goal": "minimize",
+        },
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config["input_features"][0][TYPE] == NUMBER
+    assert merged_config["output_features"][0][TYPE] == NUMBER
+
+    assert "training" not in merged_config
+    assert merged_config[TRAINER]["epochs"] == 2
+
+    hparams = merged_config[HYPEROPT]["parameters"]
+    assert "training.learning_rate" not in hparams
+    assert "trainer.learning_rate" in hparams

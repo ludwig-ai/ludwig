@@ -35,7 +35,7 @@ from tests.integration_tests.utils import (
     generate_data,
     h3_feature,
     image_feature,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     spawn,
@@ -169,7 +169,7 @@ def test_ray_tabular():
     input_features = [
         sequence_feature(reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
         bag_feature(),
@@ -179,7 +179,7 @@ def test_ray_tabular():
     ]
     output_features = [
         binary_feature(),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
     run_test_parquet(input_features, output_features)
 
@@ -234,7 +234,7 @@ def test_ray_image():
 @pytest.mark.distributed
 def test_ray_split():
     input_features = [
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
     ]
@@ -250,7 +250,7 @@ def test_ray_split():
 @pytest.mark.distributed
 def test_ray_timeseries():
     input_features = [timeseries_feature()]
-    output_features = [numerical_feature()]
+    output_features = [number_feature()]
     run_test_parquet(input_features, output_features)
 
 
@@ -293,7 +293,7 @@ def test_ray_lazy_load_image_error():
 def test_train_gpu_load_cpu():
     input_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
     output_features = [
         binary_feature(),

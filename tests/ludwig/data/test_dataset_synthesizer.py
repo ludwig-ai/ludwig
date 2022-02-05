@@ -5,7 +5,7 @@ def test_build_synthetic_dataset():
     features = [
         {"name": "text", "type": "text"},
         {"name": "category", "type": "category"},
-        {"name": "numerical", "type": "numerical"},
+        {"name": "number", "type": "number"},
         {"name": "binary", "type": "binary"},
         {"name": "set", "type": "set"},
         {"name": "bag", "type": "bag"},

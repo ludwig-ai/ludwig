@@ -17,6 +17,8 @@ import argparse
 import copy
 import logging
 import sys
+import warnings
+from typing import Any, Dict
 
 import yaml
 
@@ -26,8 +28,10 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
+    HYPEROPT,
     LOSS,
     NAME,
+    NUMBER,
     PREPROCESSING,
     PROC_COLUMN,
     TRAINER,
@@ -133,6 +137,31 @@ def get_default_optimizer_params(optimizer_type):
         raise ValueError("Incorrect optimizer type: " + optimizer_type)
 
 
+def _upgrade_deprecated_fields(config: Dict[str, Any]):
+    if "training" in config:
+        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
+        config[TRAINER] = config["training"]
+        del config["training"]
+
+    for feature in config.get("input_features", []) + config.get("output_features", []):
+        if feature.get(TYPE) == "numerical":
+            warnings.warn(
+                'Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning
+            )
+            feature[TYPE] = NUMBER
+
+    if HYPEROPT in config and "parameters" in config[HYPEROPT]:
+        hparams = config[HYPEROPT]["parameters"]
+        for k, v in list(hparams.items()):
+            substr = "training."
+            if k.startswith(substr):
+                warnings.warn(
+                    'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
+                )
+                hparams["trainer." + k[len(substr) :]] = v
+                del hparams[k]
+
+
 def _perform_sanity_checks(config):
     assert "input_features" in config, "config does not define any input features"
 
@@ -228,6 +257,7 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
 
 def merge_with_defaults(config):
     config = copy.deepcopy(config)
+    _upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)

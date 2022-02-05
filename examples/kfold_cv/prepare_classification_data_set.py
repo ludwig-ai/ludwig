@@ -65,7 +65,7 @@ input_features = []
 for p in num_features:
     a_feature = {
         "name": p,
-        "type": "numerical",
+        "type": "number",
         "preprocessing": {"missing_value_strategy": "fill_with_mean", "normalization": "zscore"},
     }
     input_features.append(a_feature)

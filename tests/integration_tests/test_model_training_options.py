@@ -15,7 +15,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import TRAINER
 from ludwig.experiment import experiment_cli
-from ludwig.features.numerical_feature import numeric_transformation_registry
+from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
@@ -30,12 +30,12 @@ GeneratedData = namedtuple("GeneratedData", "train_df validation_df test_df")
 
 def get_feature_configs():
     input_features = [
-        {"name": "x", "type": "numerical"},
+        {"name": "x", "type": "number"},
     ]
     output_features = [
         {
             "name": "y",
-            "type": "numerical",
+            "type": "number",
             "loss": {"type": "mean_squared_error"},
             "num_fc_layers": 5,
             "output_size": 64,
@@ -464,8 +464,8 @@ def test_numeric_transformer(transformer_key, tmpdir):
     # now test numeric transformer with output feature
     df = pd.DataFrame(np.array([raw_values, raw_values]).T, columns=["x", "y"])
     config = {
-        "input_features": [{"name": "x", "type": "numerical"}],
-        "output_features": [{"name": "y", "type": "numerical", "preprocessing": {"normalization": transformer_key}}],
+        "input_features": [{"name": "x", "type": "number"}],
+        "output_features": [{"name": "y", "type": "number", "preprocessing": {"normalization": transformer_key}}],
         "combiner": {
             "type": "concat",
         },

@@ -32,13 +32,7 @@ from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
-from tests.integration_tests.utils import (
-    binary_feature,
-    create_data_set_to_use,
-    generate_data,
-    numerical_feature,
-    spawn,
-)
+from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -109,7 +103,7 @@ RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}, "use_legacy": True}
 
 
 def _get_config(sampler, executor):
-    input_features = [numerical_feature(), numerical_feature()]
+    input_features = [number_feature(), number_feature()]
     output_features = [binary_feature()]
 
     return {
@@ -253,7 +247,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
 def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
-    input_features = [numerical_feature(), numerical_feature()]
+    input_features = [number_feature(), number_feature()]
     output_features = [binary_feature()]
 
     csv_filename = os.path.join(ray_mock_dir, "dataset.csv")

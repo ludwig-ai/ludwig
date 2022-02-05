@@ -20,7 +20,7 @@ input_features:
       missing_value_strategy: fill_with_const
       fill_value: UNKNOWN
   - name: cost_of_vehicle
-    type: numerical
+    type: number
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: zscore
@@ -31,12 +31,12 @@ input_features:
       fill_value: ""
       datetime_format: "%Y-%m-%d"
   - name: min_coverage
-    type: numerical
+    type: number
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: zscore
   - name: max_coverage
-    type: numerical
+    type: number
     preprocessing:
       missing_value_strategy: fill_with_mean
       normalization: zscore
@@ -51,7 +51,7 @@ combiner:
   output_size: 256
 output_features:
   - name: amount
-    type: numerical
+    type: number
     preprocessing:
       normalization: zscore
 trainer:

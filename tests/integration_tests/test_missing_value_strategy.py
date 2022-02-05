@@ -26,7 +26,7 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -69,13 +69,13 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
 
     kwargs = {PREPROCESSING: {"missing_value_strategy": DROP_ROW}}
     input_features = [
-        numerical_feature(),
+        number_feature(),
         binary_feature(),
         category_feature(vocab_size=3),
     ]
     output_features = [
         binary_feature(**kwargs),
-        numerical_feature(**kwargs),
+        number_feature(**kwargs),
         category_feature(vocab_size=3, **kwargs),
         sequence_feature(vocab_size=3, **kwargs),
         text_feature(vocab_size=3, **kwargs),

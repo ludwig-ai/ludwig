@@ -278,7 +278,7 @@ def test_synthesize_dataset_cli(csv_filename):
             features="'[ \
                   {name: text, type: text}, \
                   {name: category, type: category}, \
-                  {name: numerical, type: numerical}, \
+                  {name: number, type: number}, \
                   {name: binary, type: binary}, \
                   {name: set, type: set}, \
                   {name: bag, type: bag}, \

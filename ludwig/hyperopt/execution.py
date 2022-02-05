@@ -115,14 +115,12 @@ class HyperoptExecutor(ABC):
                 if metric_part in stats:
                     stats = stats[metric_part]
                 else:
-                    raise ValueError(f"Evaluation statistics do not contain " f"the metric {self.metric}")
+                    raise ValueError(f"Evaluation statistics do not contain the metric {self.metric}")
             else:
-                raise ValueError(f"Evaluation statistics do not contain " f"the metric {self.metric}")
+                raise ValueError(f"Evaluation statistics do not contain the metric {self.metric}")
 
         if not isinstance(stats, float):
-            raise ValueError(
-                f"The metric {self.metric} in " f"evaluation statistics is not " f"a numerical value: {stats}"
-            )
+            raise ValueError(f"The metric {self.metric} in evaluation statistics is not a numerical value: {stats}")
         return stats
 
     def get_metric_score_from_train_stats(self, train_stats, select_split=None) -> float:

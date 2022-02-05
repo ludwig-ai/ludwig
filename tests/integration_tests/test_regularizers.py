@@ -16,7 +16,7 @@ from tests.integration_tests.utils import (
     generate_data,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
 )
@@ -31,14 +31,14 @@ IMAGE_DIR = tempfile.mkdtemp()
     "input_features,output_features",
     [
         (
-            [numerical_feature(num_layers=2, encoder="dense", preprocessing={"normalization": "zscore"})],
-            [numerical_feature()],
+            [number_feature(num_layers=2, encoder="dense", preprocessing={"normalization": "zscore"})],
+            [number_feature()],
         ),
-        ([image_feature(IMAGE_DIR, encoder="stacked_cnn")], [numerical_feature()]),
+        ([image_feature(IMAGE_DIR, encoder="stacked_cnn")], [number_feature()]),
         ([image_feature(IMAGE_DIR, encoder="resnet")], [category_feature()]),
         (
             [category_feature(representation="dense")],
-            [numerical_feature(decoder="regressor", loss={"type": "mean_squared_error"}, num_fc_layers=5)],
+            [number_feature(decoder="regressor", loss={"type": "mean_squared_error"}, num_fc_layers=5)],
         ),
         ([date_feature()], [binary_feature()]),
         ([sequence_feature(encoder="parallel_cnn", cell_type="gru")], [binary_feature()]),

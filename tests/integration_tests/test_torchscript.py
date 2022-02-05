@@ -39,7 +39,7 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -63,7 +63,7 @@ def test_torchscript(csv_filename, should_load_model):
         # Single sequence input, single category output
         input_features = [
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
@@ -81,7 +81,7 @@ def test_torchscript(csv_filename, should_load_model):
         output_features = [
             category_feature(vocab_size=3),
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             set_feature(vocab_size=3),
             vector_feature(),
             sequence_feature(vocab_size=3),
@@ -204,7 +204,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     input_features = [
         bin_str_feature,
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
@@ -221,7 +221,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     output_features = [
         bin_str_feature,
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),

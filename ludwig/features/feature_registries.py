@@ -36,7 +36,7 @@ from ludwig.features.category_feature import CategoryFeatureMixin, CategoryInput
 from ludwig.features.date_feature import DateFeatureMixin, DateInputFeature
 from ludwig.features.h3_feature import H3FeatureMixin, H3InputFeature
 from ludwig.features.image_feature import ImageFeatureMixin, ImageInputFeature
-from ludwig.features.numerical_feature import NumericalFeatureMixin, NumericalInputFeature, NumericalOutputFeature
+from ludwig.features.number_feature import NumberFeatureMixin, NumberInputFeature, NumberOutputFeature
 from ludwig.features.sequence_feature import SequenceFeatureMixin, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOutputFeature
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
@@ -50,7 +50,7 @@ base_type_registry = {
     SET: SetFeatureMixin,
     BAG: BagFeatureMixin,
     BINARY: BinaryFeatureMixin,
-    NUMBER: NumericalFeatureMixin,
+    NUMBER: NumberFeatureMixin,
     SEQUENCE: SequenceFeatureMixin,
     TIMESERIES: TimeseriesFeatureMixin,
     IMAGE: ImageFeatureMixin,
@@ -61,7 +61,7 @@ base_type_registry = {
 }
 input_type_registry = {
     TEXT: TextInputFeature,
-    NUMBER: NumericalInputFeature,
+    NUMBER: NumberInputFeature,
     BINARY: BinaryInputFeature,
     CATEGORY: CategoryInputFeature,
     SET: SetInputFeature,
@@ -77,7 +77,7 @@ input_type_registry = {
 output_type_registry = {
     CATEGORY: CategoryOutputFeature,
     BINARY: BinaryOutputFeature,
-    NUMBER: NumericalOutputFeature,
+    NUMBER: NumberOutputFeature,
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
     TEXT: TextOutputFeature,

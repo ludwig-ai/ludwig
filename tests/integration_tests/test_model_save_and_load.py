@@ -20,7 +20,7 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -39,7 +39,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     input_features = [
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         sequence_feature(vocab_size=3),
         text_feature(vocab_size=3, encoder="rnn", cell_type="lstm", num_layers=2, bidirections=True),
@@ -56,7 +56,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     output_features = [
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         sequence_feature(vocab_size=3),
         text_feature(vocab_size=3),

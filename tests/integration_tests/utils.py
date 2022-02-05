@@ -129,8 +129,8 @@ def random_string(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
-def numerical_feature(normalization=None, **kwargs):
-    feature = {"name": "num_" + random_string(), "type": "numerical", "preprocessing": {"normalization": normalization}}
+def number_feature(normalization=None, **kwargs):
+    feature = {"name": "num_" + random_string(), "type": "number", "preprocessing": {"normalization": normalization}}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -334,17 +334,17 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """Generates multiple output features specifications with dependencies.
 
     Example usage:
-        generate_output_features_with_dependencies('sequence_feature', ['category_feature', 'numerical_feature'])
+        generate_output_features_with_dependencies('sequence_feature', ['category_feature', 'number_feature'])
 
     Args:
-        main_feature: feature identifier, valid values 'category_feature', 'sequence_feature', 'numerical_feature'
+        main_feature: feature identifier, valid values 'category_feature', 'sequence_feature', 'number_feature'
         dependencies: list of dependencies for 'main_feature', do not li
     """
 
     output_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
         sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature(),
+        number_feature(),
     ]
 
     # value portion of dictionary is a tuple: (position, feature_name)
@@ -353,7 +353,7 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     feature_names = {
         "category_feature": (0, output_features[0]["name"]),
         "sequence_feature": (1, output_features[1]["name"]),
-        "numerical_feature": (2, output_features[2]["name"]),
+        "number_feature": (2, output_features[2]["name"]),
     }
 
     # generate list of dependencies with real feature names
@@ -370,7 +370,7 @@ def generate_output_features_with_dependencies_complex():
 
     tf = text_feature(vocab_size=4, max_len=5, decoder="generator")
     sf = sequence_feature(vocab_size=4, max_len=5, decoder="generator", dependencies=[tf["name"]])
-    nf = numerical_feature(dependencies=[tf["name"]])
+    nf = number_feature(dependencies=[tf["name"]])
     vf = vector_feature(dependencies=[sf["name"], nf["name"]])
     set_f = set_feature(vocab_size=4, dependencies=[tf["name"], vf["name"]])
     cf = category_feature(vocab_size=4, dependencies=[sf["name"], nf["name"], set_f["name"]])

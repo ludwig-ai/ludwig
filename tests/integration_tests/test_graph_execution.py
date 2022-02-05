@@ -18,7 +18,7 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     generate_output_features_with_dependencies,
-    numerical_feature,
+    number_feature,
     run_experiment,
     sequence_feature,
     set_feature,
@@ -34,30 +34,30 @@ from tests.integration_tests.utils import (
         [
             category_feature(vocab_size=2, reduce_input="sum"),
             sequence_feature(vocab_size=10, max_len=5),
-            numerical_feature(),
+            number_feature(),
         ],
         # use generator as decoder
         [
             category_feature(vocab_size=2, reduce_input="sum"),
             sequence_feature(vocab_size=10, max_len=5, decoder="generator"),
-            numerical_feature(),
+            number_feature(),
         ],
         # Generator decoder and reduce_input = None
         [
             category_feature(vocab_size=2, reduce_input="sum"),
             sequence_feature(max_len=5, decoder="generator", reduce_input=None),
-            numerical_feature(normalization="minmax"),
+            number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
-        generate_output_features_with_dependencies("numerical_feature", ["category_feature"]),
+        generate_output_features_with_dependencies("number_feature", ["category_feature"]),
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies("numerical_feature", ["category_feature", "sequence_feature"]),
+        generate_output_features_with_dependencies("number_feature", ["category_feature", "sequence_feature"]),
     ],
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),

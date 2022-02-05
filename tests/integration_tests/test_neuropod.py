@@ -35,7 +35,7 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -57,7 +57,7 @@ def test_neuropod(csv_filename):
 
         input_features = [
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
@@ -73,7 +73,7 @@ def test_neuropod(csv_filename):
 
         output_features = [
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),

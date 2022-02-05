@@ -110,7 +110,7 @@ Ludwig will compose a deep learning model accordingly and train it for you.
 Currently, the available datatypes in Ludwig are:
 
 - binary
-- numerical
+- number
 - category
 - set
 - bag
@@ -130,9 +130,9 @@ By choosing different datatype for inputs and outputs, users can solve many diff
 - image input + text output = image captioning
 - audio input + binary output = speaker verification
 - text input + sequence output = named entity recognition / summarization
-- category, numerical and binary inputs + numerical output = regression
-- timeseries input + numerical output = forecasting model
-- category, numerical and binary inputs + binary output = fraud detection
+- category, number and binary inputs + number output = regression
+- timeseries input + number output = forecasting model
+- category, number and binary inputs + binary output = fraud detection
 
 take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several more tasks.
 

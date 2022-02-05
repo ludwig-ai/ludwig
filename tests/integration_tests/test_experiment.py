@@ -49,7 +49,7 @@ from tests.integration_tests.utils import (
     HF_ENCODERS_SHORT,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     run_experiment,
     sequence_feature,
     set_feature,
@@ -217,26 +217,26 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         [
             category_feature(vocab_size=2, reduce_input="sum"),
             sequence_feature(vocab_size=10, max_len=5),
-            numerical_feature(),
+            number_feature(),
         ],
         # use generator as decoder
         [
             category_feature(vocab_size=2, reduce_input="sum"),
             sequence_feature(vocab_size=10, max_len=5, decoder="generator"),
-            numerical_feature(),
+            number_feature(),
         ],
         # Generator decoder and reduce_input = None
         [
             category_feature(vocab_size=2, reduce_input="sum"),
             sequence_feature(max_len=5, decoder="generator", reduce_input=None),
-            numerical_feature(normalization="minmax"),
+            number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
-        generate_output_features_with_dependencies("numerical_feature", ["category_feature"]),
+        generate_output_features_with_dependencies("number_feature", ["category_feature"]),
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies("numerical_feature", ["category_feature", "sequence_feature"]),
+        generate_output_features_with_dependencies("number_feature", ["category_feature", "sequence_feature"]),
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies("sequence_feature", ["category_feature", "numerical_feature"]),
+        generate_output_features_with_dependencies("sequence_feature", ["category_feature", "number_feature"]),
         # output features with dependencies
         generate_output_features_with_dependencies("category_feature", ["sequence_feature"]),
         generate_output_features_with_dependencies_complex(),
@@ -245,7 +245,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
@@ -305,9 +305,9 @@ def test_experiment_infer_image_metadata(tmpdir):
     input_features = [
         image_feature(folder=image_dest_folder, encoder="stacked_cnn", output_size=16, num_filters=8),
         text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum"), numerical_feature()]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum"), number_feature()]
 
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
@@ -342,9 +342,9 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum"), numerical_feature()]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum"), number_feature()]
 
     input_features[0]["encoder"] = image_params.image_encoder
     input_features[0]["preprocessing"]["in_memory"] = image_params.in_memory_flag
@@ -463,8 +463,8 @@ def test_experiment_dataset_formats(data_format, csv_filename):
     # primary focus of this test is to determine if exceptions are
     # raised for different data set formats and in_memory setting
 
-    input_features = [numerical_feature(), category_feature()]
-    output_features = [category_feature(), numerical_feature()]
+    input_features = [number_feature(), category_feature()]
+    output_features = [category_feature(), number_feature()]
 
     config = {
         "input_features": input_features,
@@ -699,9 +699,9 @@ def test_image_resizing_num_channel_handling(tmpdir):
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="minmax"),
+        number_feature(normalization="minmax"),
     ]
-    output_features = [binary_feature(), numerical_feature()]
+    output_features = [binary_feature(), number_feature()]
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset1.csv"), num_examples=50)
 
     df1 = read_csv(rel_path)

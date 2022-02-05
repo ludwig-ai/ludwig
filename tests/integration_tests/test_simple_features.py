@@ -24,7 +24,7 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
-    numerical_feature,
+    number_feature,
     run_experiment,
     sequence_feature,
     set_feature,
@@ -40,10 +40,10 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 @pytest.mark.parametrize(
     "input_test_feature, output_test_feature, output_loss_parameter",
     [
-        # numerical features
-        (numerical_feature(), numerical_feature(), None),
-        (numerical_feature(normalization="minmax"), numerical_feature(), {"loss": {"type": "mean_squared_error"}}),
-        (numerical_feature(normalization="zscore"), numerical_feature(), {"loss": {"type": "mean_absolute_error"}}),
+        # number features
+        (number_feature(), number_feature(), None),
+        (number_feature(normalization="minmax"), number_feature(), {"loss": {"type": "mean_squared_error"}}),
+        (number_feature(normalization="zscore"), number_feature(), {"loss": {"type": "mean_absolute_error"}}),
         # binary feature
         (binary_feature(), binary_feature(), None),
         # Categorical feature
@@ -70,7 +70,7 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
     [
         ([category_feature()], [binary_feature(), binary_feature()]),
         ([category_feature()], [category_feature(vocab_size=5), category_feature(vocab_size=7)]),
-        ([category_feature()], [numerical_feature(), numerical_feature()]),
+        ([category_feature()], [number_feature(), number_feature()]),
         ([category_feature()], [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
         ([set_feature(vocab_size=5)], [set_feature(vocab_size=5), set_feature(vocab_size=7)]),
         ([category_feature()], [text_feature(vocab_size=5), text_feature(vocab_size=7)]),

@@ -16,7 +16,7 @@ from tests.integration_tests.utils import (
     category_feature,
     create_data_set_to_use,
     generate_data,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     text_feature,
 )
@@ -30,26 +30,26 @@ FeaturesToUse = namedtuple("FeaturesToUse", "input_features output_features")
 FEATURES_TO_TEST = [
     FeaturesToUse(
         # input feature
-        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
-        [numerical_feature()],
+        [number_feature()],
     ),
     FeaturesToUse(
         # input feature
-        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
         [binary_feature()],
     ),
     FeaturesToUse(
         # input feature
-        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
         [category_feature(vocab_size=4, reduce_input="sum")],
     ),
     FeaturesToUse(
         # input feature
         # [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)],
-        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
         [
             sequence_feature(
@@ -65,7 +65,7 @@ FEATURES_TO_TEST = [
     ),
     FeaturesToUse(
         # input feature
-        [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],
+        [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
         [text_feature()],
     ),
@@ -145,7 +145,7 @@ def test_kfold_cv_api_from_file():
         config_fp = os.path.join(tmpdir, "config.yaml")
 
         # generate synthetic data for the test
-        input_features = [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")]
+        input_features = [number_feature(normalization="zscore"), number_feature(normalization="zscore")]
 
         output_features = [category_feature(vocab_size=3, reduce_input="sum")]
 
@@ -187,9 +187,9 @@ def test_kfold_cv_api_in_memory():
         training_data_fp = os.path.join(tmpdir, "train.csv")
 
         # generate synthetic data for the test
-        input_features = [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")]
+        input_features = [number_feature(normalization="zscore"), number_feature(normalization="zscore")]
 
-        output_features = [numerical_feature()]
+        output_features = [number_feature()]
 
         generate_data(input_features, output_features, training_data_fp)
 
@@ -244,9 +244,9 @@ def test_kfold_cv_dataset_formats(data_format):
         training_data_fp = os.path.join(tmpdir, "train.csv")
 
         # generate synthetic data for the test
-        input_features = [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")]
+        input_features = [number_feature(normalization="zscore"), number_feature(normalization="zscore")]
 
-        output_features = [numerical_feature()]
+        output_features = [number_feature()]
 
         generate_data(input_features, output_features, training_data_fp)
         dataset_to_use = create_data_set_to_use(data_format, training_data_fp)
