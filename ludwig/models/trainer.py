@@ -122,7 +122,7 @@ class TrainerConfig:
     "Whether to shuffle batches during training when true (default: True)."
 
     learning_rate: float = schema.NumericOrStringOptionsField(
-        default=0.001, default_numeric=0.001, min=0.0, max=1.0, options=["auto"], default_option="auto", nullable=False
+        default=0.001, min=0.0, max=1.0, options=["auto"], nullable=False
     )
     """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
        `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""

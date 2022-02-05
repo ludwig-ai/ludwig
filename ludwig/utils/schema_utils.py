@@ -387,8 +387,8 @@ def IntegerOrStringOptionsField(
     options: List[str],
     nullable: bool,
     default: Union[None, int],
-    default_numeric: Union[None, int],
-    default_option: Union[None, str],
+    # default_numeric: Union[None, int],
+    # default_option: Union[None, str],
     is_integer: bool = True,
     min: Union[None, int] = None,
     max: Union[None, int] = None,
@@ -403,8 +403,8 @@ def NumericOrStringOptionsField(
     options: List[str],
     nullable: bool,
     default: Union[None, int, float, str],
-    default_numeric: Union[None, int, float],
-    default_option: Union[None, str],
+    # default_numeric: Union[None, int, float],
+    # default_option: Union[None, str],
     is_integer: bool = False,
     min: Union[None, int] = None,
     max: Union[None, int] = None,
@@ -447,7 +447,7 @@ def NumericOrStringOptionsField(
 
             # Prepare numeric option:
             numeric_type = "integer" if is_integer else "number"
-            numeric_option = {"type": numeric_type, "default": default_numeric}
+            numeric_option = {"type": numeric_type}  # , "default": default_numeric}
             if min is not None:
                 numeric_option["minimum"] = min
             if min_exclusive is not None:
@@ -461,7 +461,7 @@ def NumericOrStringOptionsField(
             string_option = {
                 "type": "string",
                 "enum": filter(lambda opt: opt is not None, options),
-                "default": default_option,
+                # "default": default_option,
             }
             oneof_list = [
                 numeric_option,
