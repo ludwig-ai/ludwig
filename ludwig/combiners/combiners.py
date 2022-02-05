@@ -104,10 +104,10 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    """TODO (default: 0)."""
+    """TODO: Document parameters. (default: 0)."""
 
     output_size: int = schema.PositiveInteger(default=256)
     """Output size of a fully connected layer (default: 256)."""
@@ -116,22 +116,22 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     """Whether the layer uses a bias vector (default: True)."""
 
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
-    """TODO (default: 'xavier_uniform')."""
+    """TODO: Document parameters. (default: 'xavier_uniform')."""
 
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    """TODO (default: 'zeros')."""
+    """TODO: Document parameters. (default: 'zeros')."""
 
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
-    """TODO (default: norm)."""
+    """TODO: Document parameters. (default: norm)."""
 
     norm_params: Optional[dict] = schema.Dict()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     activation: str = "relu"
-    """TODO (default: 'relu')."""
+    """TODO: Document parameters. (default: 'relu')."""
 
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
-    """TODO (default: 0.0)."""
+    """TODO: Document parameters. (default: 0.0)."""
 
     flatten_inputs: bool = False
     """Whether to flatten input tensors to a vector (default: False)."""
@@ -220,10 +220,10 @@ class SequenceConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence concat combiner."""
 
     main_sequence_feature: Optional[str] = None
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     reduce_output: Optional[str] = schema.ReductionOptions()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
 
 @register_combiner(name="sequence_concat")
@@ -377,13 +377,13 @@ class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
     main_sequence_feature: Optional[str] = None
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     reduce_output: Optional[str] = schema.ReductionOptions()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
 
 @register_combiner(name="sequence")
@@ -576,12 +576,11 @@ class CommonTransformerConfig:
     """Common transformer parameter values."""
 
     num_layers: int = schema.PositiveInteger(default=1)
-    """TODO (default: 1)."""
+    """TODO: Document parameters. (default: 1)."""
 
     hidden_size: int = schema.NonNegativeInteger(default=256)
-    """The size of the hidden representation within the transformer block. It is usually the same as `embedding_size`,
-       but if the two values are different, a projection layer will be added before the first transformer block.
-       (default: 256)."""
+    """The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is
+       projected to before feeding to the TransformerStack (default: 256)."""
 
     num_heads: int = schema.NonNegativeInteger(default=8)
     """Number of heads of the self attention in the transformer block (default: 8)."""
@@ -594,7 +593,7 @@ class CommonTransformerConfig:
     """Dropout rate for the transformer block (default: 0.1)."""
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     # TODO(#1673): Add conditional logic for fields like this one:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
@@ -607,25 +606,25 @@ class CommonTransformerConfig:
     """Whether the layer uses a bias vector (default: True)."""
 
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
-    """TODO (default: 'xavier_uniform')."""
+    """TODO: Document parameters. (default: 'xavier_uniform')."""
 
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    """TODO (default: 'zeros')."""
+    """TODO: Document parameters. (default: 'zeros')."""
 
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     norm_params: Optional[dict] = schema.Dict()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     fc_activation: str = "relu"
-    """TODO (default: 'relu')."""
+    """TODO: Document parameters. (default: 'relu')."""
 
     fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
-    """TODO (default: 0.0)."""
+    """TODO: Document parameters. (default: 0.0)."""
 
     fc_residual: bool = False
-    """TODO (default: False)."""
+    """TODO: Document parameters. (default: False)."""
 
 
 # TODO(ksbrar): Refactor transformers into using base class for common attrs?
@@ -633,59 +632,8 @@ class CommonTransformerConfig:
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
-    # num_layers: int = schema.PositiveInteger(default=1)
-    # """TODO (default: 1)."""
-
-    # hidden_size: int = schema.NonNegativeInteger(default=256)
-    # """The size of the hidden representation within the transformer block. It is usually the same as `embedding_size`,
-    #    but if the two values are different, a projection layer will be added before the first transformer block.
-    #    (default: 256)."""
-
-    # num_heads: int = schema.NonNegativeInteger(default=8)
-    # """Number of heads of the self attention in the transformer block (default: 8)."""
-
-    # transformer_output_size: int = schema.NonNegativeInteger(default=256)
-    # """Size of the fully connected layer after self attention in the transformer block. This is usually the same as
-    #    `hidden_size` and `embedding_size` (default: 256)."""
-
-    # dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
-    # """Dropout rate for the transformer block (default: 0.1)."""
-
-    # fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-
-    # # TODO(#1673): Add conditional logic for fields like this one:
-    # num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    # """The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."""
-
-    # output_size: int = schema.PositiveInteger(default=256)
-    # """Output size of a fully connected layer (default: 256)."""
-
-    # use_bias: bool = True
-    # """Whether the layer uses a bias vector (default: True)."""
-
-    # weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
-    # """TODO (default: 'xavier_uniform')."""
-
-    # bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    # """TODO (default: 'zeros')."""
-
-    # norm: Optional[str] = schema.StringOptions(["batch", "layer"])
-    # """TODO (default: None)."""
-
-    # norm_params: Optional[dict] = schema.Dict()
-    # """TODO (default: None)."""
-
-    # fc_activation: str = "relu"
-    # """TODO (default: 'relu')."""
-
-    # fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
-    # """TODO: (default: 0.0)"""
-
-    # fc_residual: bool = False
-    # """TODO (default: False)."""
-
     reduce_output: Optional[str] = schema.ReductionOptions(default="mean")
-    """TODO (default: 'mean')."""
+    """TODO: Document parameters. (default: 'mean')."""
 
 
 @register_combiner(name="transformer")
@@ -793,60 +741,10 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 
     embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()
-    """TODO (default: None)."""
-
-    # num_layers: int = schema.PositiveInteger(default=1)
-    # """TODO (default: 1)."""
-
-    # hidden_size: int = schema.NonNegativeInteger(default=256)
-    # """The size of the hidden representation within the transformer block. It is usually the same as `embedding_size`,
-    #    but if the two values are different, a projection layer will be added before the first transformer block.
-    #    (default: 256)."""
-
-    # num_heads: int = schema.NonNegativeInteger(default=8)
-    # """Number of heads of the self attention in the transformer block (default: 8)."""
-
-    # transformer_output_size: int = schema.NonNegativeInteger(default=256)
-    # """TODO (default: 256)."""
-
-    # dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
-    # """Dropout rate for the transformer block (default: 0.1)."""
-
-    # fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-    # """TODO (default: None)."""
-
-    # num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    # """The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."""
-
-    # output_size: int = schema.PositiveInteger(default=256)
-    # """Output size of a fully connected layer (default: 256)."""
-
-    # use_bias: bool = True
-    # """Whether the layer uses a bias vector (default: True)."""
-
-    # weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
-    # """TODO (default: 'xavier_uniform')."""
-
-    # bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    # """TODO (default: 'zeros')."""
-
-    # norm: Optional[str] = schema.StringOptions(["batch", "layer"])
-    # """TODO (default: None)."""
-
-    # norm_params: Optional[dict] = schema.Dict()
-    # """TODO (default: None)."""
-
-    # fc_activation: str = "relu"
-    # """TODO (default: 'relu')."""
-
-    # fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
-    # """TODO (default: 0.0)."""
-
-    # fc_residual: bool = False
-    # """TODO (default: False)."""
+    """TODO: Document parameters. (default: None)."""
 
     reduce_output: str = schema.ReductionOptions(default="concat")
-    """TODO (default: 'concat')."""
+    """TODO: Document parameters. (default: 'concat')."""
 
 
 @register_combiner(name="tabtransformer")
@@ -1058,16 +956,16 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
     entity_1: List[str]
-    """TODO"""
+    """TODO: Document parameters."""
 
     entity_2: List[str]
-    """TODO"""
+    """TODO: Document parameters."""
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
-    """TODO (default: 1)."""
+    """TODO: Document parameters. (default: 1)."""
 
     output_size: int = schema.PositiveInteger(default=256)
     """Output size of a fully connected layer (default: 256)."""
@@ -1076,19 +974,19 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     """Whether the layer uses a bias vector (default: True)."""
 
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
-    """TODO (default: 'xavier_uniform')."""
+    """TODO: Document parameters. (default: 'xavier_uniform')."""
 
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    """TODO (default: 'zeros')."""
+    """TODO: Document parameters. (default: 'zeros')."""
 
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     norm_params: Optional[dict] = schema.Dict()
-    """TODO (default: None)."""
+    """TODO: Document parameters. (default: None)."""
 
     activation: str = "relu"
-    """TODO (default: 'relu')."""
+    """TODO: Document parameters. (default: 'relu')."""
 
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
     """Dropout rate for the transformer block (default: 0.0)."""

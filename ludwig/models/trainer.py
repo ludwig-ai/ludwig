@@ -29,7 +29,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import psutil
 import torch
-from marshmallow.utils import EXCLUDE
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
@@ -102,7 +101,7 @@ class BaseTrainer(ABC):
 
 
 @dataclass
-class TrainerConfig:
+class TrainerConfig(schema.BaseMarshmallowConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
     optimizer: Optional[BaseOptimizer] = OptimizerDataclassField(default={"type": "adam"})
@@ -135,7 +134,7 @@ class TrainerConfig:
     eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
         default=None, options=["auto"], nullable=True, min_exclusive=0
     )
-    "Size of batch to pass to the model for evaluation (default: 'auto')."
+    """Size of batch to pass to the model for evaluation (default: 'auto')."""
 
     early_stop: int = schema.IntegerRange(default=5, min=-1)
     """How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to
@@ -146,19 +145,19 @@ class TrainerConfig:
        improve). (default: 0.0)."""
 
     reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
-    "How many epochs have to pass before the learning rate reduces (default: 5)."
+    """How many epochs have to pass before the learning rate reduces (default: 5)."""
 
     reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)
-    "Rate at which we reduce the learning rate (default: 0.5)."
+    """Rate at which we reduce the learning rate (default: 0.5)."""
 
     reduce_learning_rate_eval_metric: str = LOSS
-    "TODO (default: 'loss')."
+    """TODO: Document parameters. (default: `ludwig.constants.LOSS`)."""
 
     reduce_learning_rate_eval_split: str = TRAINING
-    "TODO (default: 'training')."
+    """TODO (default: `ludwig.constants.TRAINING`)."""
 
     increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
-    "Number to increase the batch size by on a plateau (default: 0)."
+    """Number to increase the batch size by on a plateau (default: 0)."""
 
     increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
     "How many epochs to wait for before increasing the batch size (default: 5)."
@@ -170,22 +169,22 @@ class TrainerConfig:
     "Maximum size of the batch (default: 512)."
 
     increase_batch_size_eval_metric: str = LOSS
-    "TODO (default: 'loss')."
+    """TODO: Document parameters. (default: 'loss')."""
 
     increase_batch_size_eval_split: str = TRAINING
-    "TODO (default: 'training')."
+    """TODO: Document parameters. (default: 'training')."""
 
     decay: bool = False
-    "Turn on exponential decay of the learning rate (default: False)."
+    """Turn on exponential decay of the learning rate (default: False)."""
 
     decay_steps: int = schema.PositiveInteger(default=10000)
-    "TODO (default: 10000)."
+    """TODO: Document parameters. (default: 10000)."""
 
     decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
-    "TODO (default: 0.96)."
+    """TODO: Document parameters. (default: 0.96)."""
 
     staircase: bool = False
-    "Decays the learning rate at discrete intervals (default: False)."
+    """Decays the learning rate at discrete intervals (default: False)."""
 
     gradient_clipping: Optional[Clipper] = ClipperDataclassField(default={})
     """Instance of `ludwig.modules.optimization_modules.Clipper` that sets gradient clipping params.
@@ -193,22 +192,14 @@ class TrainerConfig:
 
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = COMBINED
-    "First output feature, by default it is set as the same field of the first output feature."
+    """First output feature, by default it is set as the same field of the first output feature (default:
+       `ludwig.constants.COMBINED`)."""
 
     validation_metric: str = LOSS
-    "Metric used on `validation_field`, set by default to accuracy"
+    """Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`)."""
 
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
-    "Number of epochs to warmup the learning rate for"
-
-    class Meta:
-        """Sub-class specifying meta information for Marshmallow.
-
-        Used for excluding unknown properties.
-        """
-
-        unknown = EXCLUDE
-        "Flag that sets marshmallow `load` calls to raise an error if an unknown property is passed as a parameter."
+    """Number of epochs to warmup the learning rate for (default: 1.0)."""
 
 
 class Trainer(BaseTrainer):
