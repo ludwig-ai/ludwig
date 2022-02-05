@@ -9,7 +9,7 @@ from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
-from ludwig.constants import NUMERICAL
+from ludwig.constants import NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -55,7 +55,7 @@ class CustomTestCombiner(Combiner):
         return CustomTestCombinerConfig
 
 
-@register_encoder("custom_numerical_encoder", NUMERICAL)
+@register_encoder("custom_numerical_encoder", NUMBER)
 class CustomNumericalEncoder(Encoder):
     def __init__(self, input_size, **kwargs):
         super().__init__()
@@ -73,7 +73,7 @@ class CustomNumericalEncoder(Encoder):
         return self.input_shape
 
 
-@register_decoder("custom_numerical_decoder", NUMERICAL)
+@register_decoder("custom_numerical_decoder", NUMBER)
 class CustomNumericalDecoder(Decoder):
     def __init__(self, input_size, **kwargs):
         super().__init__()
@@ -87,7 +87,7 @@ class CustomNumericalDecoder(Decoder):
         return torch.mean(inputs, 1)
 
 
-@register_loss("custom_loss", [NUMERICAL])
+@register_loss("custom_loss", [NUMBER])
 class CustomLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, **kwargs):
         super().__init__()
@@ -96,7 +96,7 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
         return torch.mean(torch.square(preds - target))
 
 
-@register_metric("custom_loss", [NUMERICAL])
+@register_metric("custom_loss", [NUMBER])
 class CustomLossMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()
@@ -144,7 +144,7 @@ def _run_test(input_features=None, output_features=None, combiner=None):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": combiner,
-            "training": {"epochs": 2},
+            TRAINER: {"epochs": 2},
         }
 
         model = LudwigModel(config, backend=LocalTestBackend())

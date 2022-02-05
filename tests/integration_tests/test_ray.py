@@ -23,6 +23,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
+from ludwig.constants import TRAINER
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
@@ -148,7 +149,7 @@ def run_test_parquet(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            "training": {"epochs": 2, "batch_size": 8},
+            TRAINER: {"epochs": 2, "batch_size": 8},
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:

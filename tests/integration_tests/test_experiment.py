@@ -25,7 +25,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import H3
+from ludwig.constants import H3, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
@@ -141,7 +141,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
     with open(yaml_filename, "w") as yaml_out:
         yaml.safe_dump(config, yaml_out)
@@ -386,7 +386,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     # create temporary name for train and test data sets
@@ -471,7 +471,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     # setup training data format to test
@@ -573,7 +573,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
             category_feature(vocab_size=5),
         ],
         "output_features": [category_feature(reduce_input="sum", vocab_size=5)],
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
             "encoder": "rnn",
@@ -604,7 +604,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
             category_feature(vocab_size=5),
         ],
         "output_features": [category_feature(reduce_input="sum", vocab_size=5)],
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
             "encoder": "rnn",
@@ -631,7 +631,7 @@ def test_experiment_model_resume(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)

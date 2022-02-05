@@ -2,7 +2,7 @@ import copy
 
 import pytest
 
-from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, PREPROCESSING, TRAINING
+from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.data.preprocessing import merge_preprocessing
 from ludwig.utils.defaults import default_training_params, merge_with_defaults
 from tests.integration_tests.utils import (
@@ -16,7 +16,7 @@ from tests.integration_tests.utils import (
 
 HYPEROPT_CONFIG = {
     "parameters": {
-        "training.learning_rate": {
+        "trainer.learning_rate": {
             "space": "loguniform",
             "lower": 0.001,
             "upper": 0.1,
@@ -74,7 +74,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
     config = copy.deepcopy(config)
 
     if use_train:
-        config[TRAINING] = {"batch_size": "42"}
+        config[TRAINER] = {"batch_size": "42"}
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
@@ -83,7 +83,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
     merged_config = merge_with_defaults(config)
 
     expected = -1 if use_hyperopt_scheduler else default_early_stop
-    assert merged_config[TRAINING]["early_stop"] == expected
+    assert merged_config[TRAINER]["early_stop"] == expected
 
 
 def test_missing_outputs_drop_rows():

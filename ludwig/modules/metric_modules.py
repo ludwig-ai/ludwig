@@ -38,7 +38,7 @@ from ludwig.constants import (
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
     MINIMIZE,
-    NUMERICAL,
+    NUMBER,
     PREDICTIONS,
     PROBABILITIES,
     R2,
@@ -106,7 +106,7 @@ class LudwigMetric(Metric, ABC):
         self.unsync(should_unsync=self._is_synced and should_unsync)
 
 
-@register_metric(ROOT_MEAN_SQUARED_ERROR, [NUMERICAL])
+@register_metric(ROOT_MEAN_SQUARED_ERROR, [NUMBER])
 class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
@@ -170,7 +170,7 @@ class MeanMetric(LudwigMetric):
         raise NotImplementedError()
 
 
-@register_metric(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMERICAL])
+@register_metric(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMBER])
 class RMSPEMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
@@ -190,7 +190,7 @@ class RMSPEMetric(MeanMetric):
 
 
 # TODO(shreya): Double check difference in computation.
-@register_metric(R2, [NUMERICAL, VECTOR])
+@register_metric(R2, [NUMBER, VECTOR])
 class R2Score(_R2Score, LudwigMetric):
     """R-squared metric."""
 
@@ -357,7 +357,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
         return feature.decoder_obj.num_classes > feature.top_k
 
 
-@register_metric(MEAN_ABSOLUTE_ERROR, [NUMERICAL, VECTOR])
+@register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR])
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
@@ -374,7 +374,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
         return PREDICTIONS
 
 
-@register_metric(MEAN_SQUARED_ERROR, [NUMERICAL, VECTOR])
+@register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)

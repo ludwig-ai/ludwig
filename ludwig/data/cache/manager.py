@@ -4,7 +4,7 @@ import re
 import uuid
 from pathlib import Path
 
-from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
+from ludwig.constants import CHECKSUM, META, TEST, TRAINER, VALIDATION
 from ludwig.data.cache.util import calculate_checksum
 from ludwig.utils import data_utils
 from ludwig.utils.fs_utils import delete, path_exists
@@ -31,7 +31,7 @@ class DatasetCache:
 
         cache_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
 
-        cached_training_set = self.cache_map[TRAINING] if path_exists(self.cache_map[TRAINING]) else None
+        cached_training_set = self.cache_map[TRAINER] if path_exists(self.cache_map[TRAINER]) else None
 
         cached_test_set = self.cache_map[TEST] if path_exists(self.cache_map[TEST]) else None
 
@@ -44,11 +44,11 @@ class DatasetCache:
     def put(self, training_set, test_set, validation_set, training_set_metadata):
         logger.info("Writing preprocessed training set cache")
         training_set = self.dataset_manager.save(
-            self.cache_map[TRAINING],
+            self.cache_map[TRAINER],
             training_set,
             self.config,
             training_set_metadata,
-            TRAINING,
+            TRAINER,
         )
 
         if test_set is not None:
@@ -93,7 +93,7 @@ class CacheManager:
             key = self.get_cache_key(dataset, config)
             cache_map = {
                 META: self.get_cache_path(dataset, key, META, "json"),
-                TRAINING: self.get_cache_path(dataset, key, TRAINING),
+                TRAINER: self.get_cache_path(dataset, key, TRAINER),
                 TEST: self.get_cache_path(dataset, key, TEST),
                 VALIDATION: self.get_cache_path(dataset, key, VALIDATION),
             }
@@ -102,7 +102,7 @@ class CacheManager:
             key = self.get_cache_key(training_set, config)
             cache_map = {
                 META: self.get_cache_path(training_set, key, META, "json"),
-                TRAINING: self.get_cache_path(training_set, key, TRAINING),
+                TRAINER: self.get_cache_path(training_set, key, TRAINER),
                 TEST: self.get_cache_path(test_set, key, TEST),
                 VALIDATION: self.get_cache_path(validation_set, key, VALIDATION),
             }

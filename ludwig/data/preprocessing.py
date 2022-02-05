@@ -34,7 +34,7 @@ from ludwig.constants import (
     FILL_WITH_MODE,
     FULL,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PAD,
     PREPROCESSING,
     PROC_COLUMN,
@@ -42,7 +42,7 @@ from ludwig.constants import (
     SRC,
     TEST,
     TEXT,
-    TRAINING,
+    TRAINER,
     TYPE,
     VALIDATION,
 )
@@ -1212,7 +1212,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     elif missing_value_strategy == FILL_WITH_MODE:
         return dataset_cols[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
-        if feature[TYPE] != NUMERICAL:
+        if feature[TYPE] != NUMBER:
             raise ValueError(
                 f"Filling missing values with mean is supported "
                 f"only for numerical types, not for type {feature[TYPE]}.",
@@ -1695,7 +1695,7 @@ def preprocess_for_prediction(
         if split != FULL:
             training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
 
-    if split == TRAINING:
+    if split == TRAINER:
         dataset = training_set
     elif split == VALIDATION:
         dataset = validation_set

@@ -32,7 +32,7 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PREDICTIONS,
     PROC_COLUMN,
     R2,
@@ -220,7 +220,7 @@ class _NumericalPredict(PredictModule):
 class NumericalFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
-        return NUMERICAL
+        return NUMBER
 
     @staticmethod
     def preprocessing_defaults():

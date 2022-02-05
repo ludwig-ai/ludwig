@@ -21,7 +21,7 @@ from ludwig.constants import (
     H3,
     IMAGE,
     NAME,
-    NUMERICAL,
+    NUMBER,
     SEQUENCE,
     SET,
     TEXT,
@@ -50,7 +50,7 @@ base_type_registry = {
     SET: SetFeatureMixin,
     BAG: BagFeatureMixin,
     BINARY: BinaryFeatureMixin,
-    NUMERICAL: NumericalFeatureMixin,
+    NUMBER: NumericalFeatureMixin,
     SEQUENCE: SequenceFeatureMixin,
     TIMESERIES: TimeseriesFeatureMixin,
     IMAGE: ImageFeatureMixin,
@@ -61,7 +61,7 @@ base_type_registry = {
 }
 input_type_registry = {
     TEXT: TextInputFeature,
-    NUMERICAL: NumericalInputFeature,
+    NUMBER: NumericalInputFeature,
     BINARY: BinaryInputFeature,
     CATEGORY: CategoryInputFeature,
     SET: SetInputFeature,
@@ -77,7 +77,7 @@ input_type_registry = {
 output_type_registry = {
     CATEGORY: CategoryOutputFeature,
     BINARY: BinaryOutputFeature,
-    NUMERICAL: NumericalOutputFeature,
+    NUMBER: NumericalOutputFeature,
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
     TEXT: TextOutputFeature,

@@ -33,7 +33,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import COMBINED, LOSS, TEST, TRAINER, TYPE, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -117,13 +117,13 @@ class Trainer(BaseTrainer):
         reduce_learning_rate_on_plateau_patience=5,
         reduce_learning_rate_on_plateau_rate=0.5,
         reduce_learning_rate_eval_metric=LOSS,
-        reduce_learning_rate_eval_split=TRAINING,
+        reduce_learning_rate_eval_split=TRAINER,
         increase_batch_size_on_plateau=0,
         increase_batch_size_on_plateau_patience=5,
         increase_batch_size_on_plateau_rate=2,
         increase_batch_size_on_plateau_max=512,
         increase_batch_size_eval_metric=LOSS,
-        increase_batch_size_eval_split=TRAINING,
+        increase_batch_size_eval_split=TRAINER,
         learning_rate_warmup_epochs=1,
         resume=False,
         skip_save_model=False,
@@ -665,7 +665,7 @@ class Trainer(BaseTrainer):
         validation_summary_writer = None
         test_summary_writer = None
         if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
-            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
+            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINER))
             if validation_set is not None and validation_set.size > 0:
                 validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
             if test_set is not None and test_set.size > 0:
@@ -1224,11 +1224,11 @@ class Trainer(BaseTrainer):
         reduce_learning_rate_on_plateau_patience,
         reduce_learning_rate_on_plateau_rate,
         reduce_learning_rate_eval_metric=LOSS,
-        reduce_learning_rate_eval_split=TRAINING,
+        reduce_learning_rate_eval_split=TRAINER,
     ):
         if not (progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau):
 
-            if reduce_learning_rate_eval_split == TRAINING:
+            if reduce_learning_rate_eval_split == TRAINER:
                 split_metrics = progress_tracker.train_metrics
             elif reduce_learning_rate_eval_split == VALIDATION:
                 split_metrics = progress_tracker.vali_metrics
@@ -1283,14 +1283,14 @@ class Trainer(BaseTrainer):
         increase_batch_size_on_plateau_rate,
         increase_batch_size_on_plateau_max,
         increase_batch_size_eval_metric=LOSS,
-        increase_batch_size_eval_split=TRAINING,
+        increase_batch_size_eval_split=TRAINER,
     ):
         if (
             not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
             and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
         ):
 
-            if increase_batch_size_eval_split == TRAINING:
+            if increase_batch_size_eval_split == TRAINER:
                 split_metrics = progress_tracker.train_metrics
             elif increase_batch_size_eval_split == VALIDATION:
                 split_metrics = progress_tracker.vali_metrics

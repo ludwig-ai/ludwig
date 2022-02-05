@@ -4,7 +4,7 @@ from collections import namedtuple
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN
+from ludwig.constants import COLUMN, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -77,7 +77,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
         config = {
             "input_features": input_features,
             "output_features": output_features,
-            "training": {"epochs": 3, "validation_field": validation_field, "validation_metric": validation_metric},
+            TRAINER: {"epochs": 3, "validation_field": validation_field, "validation_metric": validation_metric},
         }
 
         model = LudwigModel(config)

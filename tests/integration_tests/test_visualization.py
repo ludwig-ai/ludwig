@@ -23,6 +23,7 @@ import json
 import os
 import subprocess
 
+from ludwig.constants import TRAINER
 from ludwig.experiment import experiment_cli
 from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import get_split_path
@@ -50,7 +51,7 @@ def run_experiment_with_visualization(input_features, output_features, dataset):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "fc_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     args = {

@@ -25,7 +25,7 @@ import torchinfo
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
+from ludwig.constants import FULL, TEST, TRAINER, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_boxed, print_ludwig
@@ -248,7 +248,7 @@ def cli_collect_activations(sys_argv):
         "-s",
         "--split",
         default=FULL,
-        choices=[TRAINING, VALIDATION, TEST, FULL],
+        choices=[TRAINER, VALIDATION, TEST, FULL],
         help="the split to obtain the model activations from",
     )
 

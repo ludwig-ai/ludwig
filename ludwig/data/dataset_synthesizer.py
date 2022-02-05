@@ -35,7 +35,7 @@ from ludwig.constants import (
     H3,
     IMAGE,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PREPROCESSING,
     SEQUENCE,
     SET,
@@ -374,7 +374,7 @@ def generate_vector(feature):
 
 generators_registry = {
     BINARY: generate_binary,
-    NUMERICAL: generate_numerical,
+    NUMBER: generate_numerical,
     CATEGORY: generate_category,
     SET: generate_set,
     BAG: generate_bag,

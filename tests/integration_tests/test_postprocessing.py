@@ -22,7 +22,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME
+from ludwig.constants import NAME, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data
 
 
@@ -48,7 +48,7 @@ def test_binary_predictions(tmpdir, distinct_values):
     false_value, true_value = distinct_values
     data_df[feature[NAME]] = data_df[feature[NAME]].map(lambda x: true_value if x else false_value)
 
-    config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 1}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
     ludwig_model = LudwigModel(config)
     _, _, output_directory = ludwig_model.train(
         dataset=data_df,

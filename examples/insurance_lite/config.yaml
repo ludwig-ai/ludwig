@@ -54,7 +54,7 @@ output_features:
     type: numerical
     preprocessing:
       normalization: zscore
-training:
+trainer:
   epochs: 10
   early_stop: 0
   batch_size: 8

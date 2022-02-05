@@ -16,7 +16,7 @@ from typing import Optional, Tuple, Union
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
-from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
@@ -395,10 +395,10 @@ class RayTuneExecutor(HyperoptExecutor):
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        if best_model.config[TRAINING]["eval_batch_size"]:
-            batch_size = best_model.config[TRAINING]["eval_batch_size"]
+        if best_model.config[TRAINER]["eval_batch_size"]:
+            batch_size = best_model.config[TRAINER]["eval_batch_size"]
         else:
-            batch_size = best_model.config[TRAINING]["batch_size"]
+            batch_size = best_model.config[TRAINER]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
@@ -462,7 +462,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def report(progress_tracker):
             train_stats = {
-                TRAINING: progress_tracker.train_metrics,
+                TRAINER: progress_tracker.train_metrics,
                 VALIDATION: progress_tracker.vali_metrics,
                 TEST: progress_tracker.test_metrics,
             }
@@ -845,7 +845,7 @@ def substitute_parameters(config, parameters):
     for output_feature in config["output_features"]:
         set_values(output_feature, output_feature[COLUMN], parameters_dict)
     set_values(config["combiner"], "combiner", parameters_dict)
-    set_values(config["training"], "training", parameters_dict)
+    set_values(config[TRAINER], TRAINER, parameters_dict)
     set_values(config["preprocessing"], "preprocessing", parameters_dict)
     return config
 

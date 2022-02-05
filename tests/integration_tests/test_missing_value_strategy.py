@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DROP_ROW, PREPROCESSING
+from ludwig.constants import DROP_ROW, PREPROCESSING, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -83,7 +83,7 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         vector_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = pd.read_csv(training_data_csv_path)

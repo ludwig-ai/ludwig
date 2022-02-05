@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.constants import TRAINER
 from ludwig.experiment import experiment_cli
 from ludwig.features.numerical_feature import numeric_transformation_registry
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
@@ -94,7 +95,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        "training": {"epochs": 30, "early_stop": early_stop, "batch_size": 16},
+        TRAINER: {"epochs": 30, "early_stop": early_stop, "batch_size": 16},
     }
 
     # create sub-directory to store results
@@ -128,7 +129,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         metadata = json.load(f)
 
     # get early stopping value
-    early_stop_value = metadata["config"]["training"]["early_stop"]
+    early_stop_value = metadata["config"][TRAINER]["early_stop"]
 
     # retrieve validation losses
     vald_losses = np.array(train_stats["validation"]["combined"]["loss"])
@@ -148,7 +149,7 @@ def test_model_progress_save(skip_save_progress, skip_save_model, generated_data
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        "training": {"epochs": 5},
+        TRAINER: {"epochs": 5},
     }
 
     # create sub-directory to store results
@@ -192,7 +193,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        "training": {"epochs": 2, "early_stop": 1000, "batch_size": 16, "optimizer": {"type": optimizer}},
+        TRAINER: {"epochs": 2, "early_stop": 1000, "batch_size": 16, "optimizer": {"type": optimizer}},
     }
 
     # create sub-directory to store results
@@ -206,7 +207,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         test_set=generated_data.test_df,
     )
 
-    config["training"]["epochs"] = 4
+    config[TRAINER]["epochs"] = 4
 
     experiment_cli(
         config,
@@ -228,7 +229,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     ts2 = load_json(os.path.join(output_dir2, "training_statistics.json"))
     print("ts1", ts1)
     print("ts2", ts2)
-    assert ts1["training"]["combined"]["loss"] == ts2["training"]["combined"]["loss"]
+    assert ts1[TRAINER]["combined"]["loss"] == ts2[TRAINER]["combined"]["loss"]
 
     # compare predictions with and without resuming
     y_pred1 = np.load(os.path.join(output_dir1, "y_predictions.npy"))
@@ -246,12 +247,12 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        "training": {"epochs": 5, "batch_size": 16, "optimizer": {"type": optimizer_type}},
+        TRAINER: {"epochs": 5, "batch_size": 16, "optimizer": {"type": optimizer_type}},
     }
 
     # special handling for adadelta, break out of local minima
     if optimizer_type == "adadelta":
-        config["training"]["learning_rate"] = 0.1
+        config[TRAINER]["learning_rate"] = 0.1
 
     model = LudwigModel(config)
 
@@ -272,7 +273,7 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     )
 
     # retrieve training losses for first and last epochs
-    train_losses = np.array(train_stats["training"]["combined"]["loss"])
+    train_losses = np.array(train_stats[TRAINER]["combined"]["loss"])
     last_epoch = train_losses.shape[0]
 
     # ensure train loss for last epoch is less than first epoch
@@ -286,7 +287,7 @@ def test_regularization(generated_data, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        "training": {
+        TRAINER: {
             "epochs": 1,
             "batch_size": 16,
             "regularization_lambda": 1,
@@ -303,7 +304,7 @@ def test_regularization(generated_data, tmp_path):
         torch.manual_seed(RANDOM_SEED)
 
         # setup regularization parameters
-        config["training"]["regularization_type"] = regularizer
+        config[TRAINER]["regularization_type"] = regularizer
 
         # run experiment
         _, _, _, _, output_dir = experiment_cli(
@@ -332,7 +333,7 @@ def test_regularization(generated_data, tmp_path):
             train_stats = json.load(f)
 
         # retrieve training losses for all epochs
-        train_losses = np.array(train_stats["training"]["combined"]["loss"])
+        train_losses = np.array(train_stats[TRAINER]["combined"]["loss"])
         regularization_losses.append(train_losses[0])
 
     # create a set of losses
@@ -355,7 +356,7 @@ def test_cache_checksum(csv_filename, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "preprocessing": {"text": {"most_common_word": 1000}},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     backend = LocalTestBackend()
@@ -468,7 +469,7 @@ def test_numeric_transformer(transformer_key, tmpdir):
         "combiner": {
             "type": "concat",
         },
-        "training": {
+        TRAINER: {
             "epochs": 2,
             "batch_size": 16,
         },

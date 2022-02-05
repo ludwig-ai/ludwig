@@ -16,6 +16,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
+from ludwig.constants import TRAINER
 from ludwig.features.audio_feature import AudioFeatureMixin
 from ludwig.features.bag_feature import BagFeatureMixin
 from ludwig.features.binary_feature import BinaryFeatureMixin
@@ -134,7 +135,7 @@ def test_config_tabnet():
             "use_keras_batch_norm": False,
             "bn_virtual_bs": 512,
         },
-        "training": {
+        TRAINER: {
             "batch_size": 16384,
             "eval_batch_size": 500000,
             "epochs": 1000,
@@ -367,7 +368,7 @@ def test_validate_with_preprocessing_defaults():
             vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults()),
         ],
         "output_features": [{"name": "target", "type": "category"}],
-        "training": {
+        TRAINER: {
             "decay": True,
             "learning_rate": 0.001,
             "validation_field": "target",

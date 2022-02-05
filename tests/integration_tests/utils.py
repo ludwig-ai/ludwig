@@ -31,7 +31,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN, VECTOR
+from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -305,7 +305,7 @@ def run_experiment(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            "training": {"epochs": 2},
+            TRAINER: {"epochs": 2},
         }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -437,7 +437,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     model = LudwigModel(config)

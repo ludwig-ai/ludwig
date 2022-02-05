@@ -2,6 +2,7 @@ import logging
 import os
 
 from ludwig.callbacks import Callback
+from ludwig.constants import TRAINER
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
 
@@ -45,7 +46,7 @@ class MlflowCallback(Callback):
         mlflow.log_dict(to_json_dict(base_config), "config.yaml")
 
     def on_train_start(self, config, **kwargs):
-        self._log_params({"training": config["training"]})
+        self._log_params({TRAINER: config[TRAINER]})
 
     def on_train_end(self, output_directory):
         _log_artifacts(output_directory)

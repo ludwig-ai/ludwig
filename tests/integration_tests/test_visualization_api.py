@@ -23,7 +23,7 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, SPLIT
+from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, SPLIT, TRAINER
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import (
@@ -49,7 +49,7 @@ def run_api_experiment(input_features, output_features):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     model = LudwigModel(config)
@@ -107,7 +107,7 @@ class Experiment:
             "input_features": self.input_features,
             "output_features": self.output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            "training": {"epochs": 2},
+            TRAINER: {"epochs": 2},
         }
         return LudwigModel(config, logging_level=logging.WARN)
 

@@ -27,7 +27,7 @@ from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     LOGITS,
-    NUMERICAL,
+    NUMBER,
     SEQUENCE,
     SET,
     TEXT,
@@ -68,7 +68,7 @@ class LogitsInputsMixin:
         return LOGITS
 
 
-@register_loss("mean_squared_error", [NUMERICAL, TIMESERIES, VECTOR])
+@register_loss("mean_squared_error", [NUMBER, TIMESERIES, VECTOR])
 class MSELoss(_MSELoss, LogitsInputsMixin):
     """Mean squared error."""
 
@@ -76,7 +76,7 @@ class MSELoss(_MSELoss, LogitsInputsMixin):
         super().__init__()
 
 
-@register_loss("mean_absolute_error", [NUMERICAL, TIMESERIES, VECTOR])
+@register_loss("mean_absolute_error", [NUMBER, TIMESERIES, VECTOR])
 class MAELoss(L1Loss, LogitsInputsMixin):
     """Mean absolute error."""
 
@@ -84,7 +84,7 @@ class MAELoss(L1Loss, LogitsInputsMixin):
         super().__init__()
 
 
-@register_loss("root_mean_squared_error", [NUMERICAL])
+@register_loss("root_mean_squared_error", [NUMBER])
 class RMSELoss(nn.Module, LogitsInputsMixin):
     """Root mean square error."""
 
@@ -96,7 +96,7 @@ class RMSELoss(nn.Module, LogitsInputsMixin):
         return torch.sqrt(self.mse(preds, target))
 
 
-@register_loss("root_mean_squared_percentage_error", [NUMERICAL])
+@register_loss("root_mean_squared_percentage_error", [NUMBER])
 class RMSPELoss(nn.Module, LogitsInputsMixin):
     """Root mean square percentage error."""
 

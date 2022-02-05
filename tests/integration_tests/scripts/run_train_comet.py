@@ -17,6 +17,7 @@ from unittest.mock import Mock, patch
 import comet_ml  # noqa
 
 from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.contribs.comet import CometCallback
 from tests.integration_tests.utils import category_feature, generate_data, image_feature
 
@@ -44,7 +45,7 @@ def run(csv_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     callback = CometCallback()

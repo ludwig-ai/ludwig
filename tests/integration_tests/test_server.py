@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.serve import ALL_FEATURES_PRESENT_ERROR, server
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -59,7 +60,7 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
     model = LudwigModel(config, backend=LocalTestBackend())
     model.train(

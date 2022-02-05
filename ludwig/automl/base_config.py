@@ -21,7 +21,7 @@ from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
-from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMERICAL, TEXT
+from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMBER, TEXT
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
@@ -332,7 +332,7 @@ def infer_type(
 
     # Use numerical if all of the distinct values are numerical.
     if strings_utils.are_all_numericals(distinct_values):
-        return NUMERICAL
+        return NUMBER
 
     # TODO (ASN): add other modalities (image, etc. )
     # Fallback to TEXT.
@@ -352,7 +352,7 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID") or upper_name.startswith("ID"):
+        if (idx == 0 and dtype == NUMBER) or upper_name.endswith("ID") or upper_name.startswith("ID"):
             return True
 
     return False

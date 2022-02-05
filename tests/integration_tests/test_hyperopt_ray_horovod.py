@@ -26,7 +26,7 @@ from ray.tune.sync_client import get_sync_client
 from ludwig.api import LudwigModel
 from ludwig.backend.ray import RayBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY
+from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
@@ -63,7 +63,7 @@ def mock_storage_client(path):
 
 HYPEROPT_CONFIG = {
     "parameters": {
-        "training.learning_rate": {
+        "trainer.learning_rate": {
             "space": "loguniform",
             "lower": 0.001,
             "upper": 0.1,
@@ -116,7 +116,7 @@ def _get_config(sampler, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -264,7 +264,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 4, "learning_rate": 0.001},
+        TRAINER: {"epochs": 4, "learning_rate": 0.001},
         "backend": {"type": "ray", **RAY_BACKEND_KWARGS},
     }
 
@@ -272,7 +272,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
 
     hyperopt_configs = {
         "parameters": {
-            "training.learning_rate": {
+            "trainer.learning_rate": {
                 "space": "loguniform",
                 "lower": 0.001,
                 "upper": 0.1,

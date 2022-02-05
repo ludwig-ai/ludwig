@@ -6,7 +6,7 @@ from typing import Dict, List
 from dataclasses_json import dataclass_json, LetterCase
 from pandas import Series
 
-from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NUMERICAL, PARAMETERS, SAMPLER, TRAINING, TYPE
+from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
 from ludwig.utils.defaults import default_combiner_type
 
 try:
@@ -109,7 +109,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
         hyperopt_params = base_config[HYPEROPT][PARAMETERS]
         point_to_evaluate = {}
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, COMBINER)
-        _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, TRAINING)
+        _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, TRAINER)
         base_config[HYPEROPT][SAMPLER]["search_alg"]["points_to_evaluate"] = [point_to_evaluate]
     return base_config
 
@@ -118,7 +118,7 @@ def _get_ratio_numeric_input_features(input_features: Dict) -> float:
     num_input_features = len(input_features)
     num_numeric_input = 0
     for input_feature in input_features:
-        if input_feature[TYPE] == NUMERICAL:
+        if input_feature[TYPE] == NUMBER:
             num_numeric_input = num_numeric_input + 1
     return num_numeric_input / num_input_features
 

@@ -15,6 +15,8 @@ import requests
 import yaml
 from sklearn.model_selection import train_test_split
 
+from ludwig.constants import TRAINER
+
 # Constants
 DATA_SET_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
 DATA_SET = "wdbc.data"
@@ -75,7 +77,7 @@ output_features = [{"name": "diagnosis", "type": "binary", "num_fc_layers": 2, "
 config = {
     "input_features": input_features,
     "output_features": output_features,
-    "training": {"epochs": 20, "batch_size": 32},
+    TRAINER: {"epochs": 20, "batch_size": 32},
 }
 
 with open("config.yaml", "w") as f:

@@ -19,12 +19,12 @@ from ludwig.hyperopt.sampling import GridSampler, PySOTSampler, RandomSampler
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
-            "training.learning_rate": {"type": "float", "low": 0.0001, "high": 0.1, "steps": 4, "space": "log"},
+            "trainer.learning_rate": {"type": "float", "low": 0.0001, "high": 0.1, "steps": 4, "space": "log"},
             "combiner.num_fc_layers": {"type": "int", "low": 1, "high": 4},
             "utterance.cell_type": {"type": "category", "values": ["rnn", "gru", "lstm"]},
         },
         "expected_search_space": {
-            "training.learning_rate": [0.0001, 0.001, 0.01, 0.1],
+            "trainer.learning_rate": [0.0001, 0.001, 0.01, 0.1],
             "combiner.num_fc_layers": [1, 2, 3, 4],
             "utterance.cell_type": ["rnn", "gru", "lstm"],
         },
@@ -34,11 +34,11 @@ HYPEROPT_PARAMS = {
     },
     "test_2": {
         "parameters": {
-            "training.learning_rate": {"type": "float", "low": 0.001, "high": 0.1, "steps": 4, "space": "linear"},
+            "trainer.learning_rate": {"type": "float", "low": 0.001, "high": 0.1, "steps": 4, "space": "linear"},
             "combiner.num_fc_layers": {"type": "int", "low": 2, "high": 6, "steps": 3},
         },
         "expected_search_space": {
-            "training.learning_rate": [0.001, 0.034, 0.067, 0.1],
+            "trainer.learning_rate": [0.001, 0.034, 0.067, 0.1],
             "combiner.num_fc_layers": [2, 4, 6],
         },
         "goal": "maximize",
