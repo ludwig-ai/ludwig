@@ -111,6 +111,8 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
         if schema_cls.__doc__ is not None:
             parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
+            print("????")
+            print(schema_cls)
             print(schema_cls.__bases__)
             parsed_parents = [
                 restloader.get_object_documentation(get_fully_qualified_class_name(parent))
