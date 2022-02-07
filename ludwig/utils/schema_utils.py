@@ -111,6 +111,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
         if schema_cls.__doc__ is not None:
             parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
+            print(schema_cls.__bases__)
             parsed_parents = [
                 restloader.get_object_documentation(get_fully_qualified_class_name(parent))
                 for parent in schema_cls.__bases__
@@ -178,7 +179,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
 
                     # Add parsed default back to string if it exists:
                     if parsed_default is not None:
-                        desc += f"(default: {parsed_default})."
+                        desc += f"(default: {parsed_default}"
                     schema_prop["description"] = cleanup_python_comment(desc)
 
         # Manual workaround because marshmallow_{dataclass,jsonschema} do not support setting this field (see above):
