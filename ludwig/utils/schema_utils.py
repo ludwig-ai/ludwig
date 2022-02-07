@@ -150,8 +150,12 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                     # Handle descriptions:
 
                     # Get the particular attribute's docstring (if it has one), strip the default from the string:
+                    parsed_docstring = parsed_attrs[prop].docstring
+                    if parsed_docstring is None:
+                        parsed_docstring = ""
+
                     parsed_desc = parsed_default = None
-                    docstring_split = parsed_attrs[prop].docstring.split("(default: ")
+                    docstring_split = parsed_docstring.split("(default: ")
                     if len(docstring_split) == 2:
                         parsed_default = docstring_split[1]
                     parsed_desc = docstring_split[0]
