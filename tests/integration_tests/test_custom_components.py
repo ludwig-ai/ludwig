@@ -3,7 +3,6 @@ import tempfile
 from typing import Dict
 
 import torch
-from marshmallow import INCLUDE
 from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
@@ -28,9 +27,6 @@ from tests.integration_tests.utils import (
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
     foo: bool = False
-
-    class Meta:
-        unknown = INCLUDE
 
 
 @register_combiner(name="custom_test")
