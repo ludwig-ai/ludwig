@@ -65,10 +65,17 @@ class BaseOptimizer(BaseMarshmallowConfig):
 
         :param data: Any-typed object that should be a string correctly identifying the optimizer type.
         """
+        if not isinstance(data, str):
+            raise ValidationError(
+                f"{self.__class__.__name__} expects type of field `type` to be `str`, instead received '{data}'"
+            )
         default = self.declared_fields["type"].dump_default
         if default is not missing and data != default:
+            # Handle aliases:
+            if optimizer_registry[default] is optimizer_registry[data]:
+                return
             raise ValidationError(
-                f"{self.__class__.__name__} expects field `type` to be '{default}', instead received '{data}'"
+                f"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'"
             )
 
 
