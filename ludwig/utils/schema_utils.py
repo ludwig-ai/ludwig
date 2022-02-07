@@ -150,10 +150,13 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                     # Handle descriptions:
 
                     # Get the particular attribute's docstring (if it has one), strip the default from the string:
-                    parsed_desc = parsed_attrs[prop].docstring
+                    parsed_desc = parsed_default = None
+                    docstring_split = parsed_attrs[prop].docstring.split("(default: ")
+                    if len(docstring_split) == 2:
+                        parsed_default = docstring_split[1]
+                    parsed_desc = docstring_split[0]
                     if parsed_desc is None:
                         parsed_desc = ""
-                    parsed_desc = parsed_desc
 
                     # If no description is provided, attempt to pull from torch if applicable:
                     desc = parsed_desc
@@ -163,8 +166,14 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                         and prop in parsed_torch
                         and (parsed_torch[prop].description is not None or parsed_torch[prop].description != "")
                     ):
+                        desc_split = parsed_torch[prop].description.split("(default: ")
+                        if parsed_default is None and len(desc_split) == 2:
+                            parsed_default = desc_split[1]
                         desc = parsed_torch[prop].description
 
+                    # Add parsed default back to string if it exists:
+                    if parsed_default is not None:
+                        desc += f"(default: {parsed_default})."
                     schema_prop["description"] = cleanup_python_comment(desc)
 
         # Manual workaround because marshmallow_{dataclass,jsonschema} do not support setting this field (see above):

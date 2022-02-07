@@ -54,7 +54,7 @@ class BaseOptimizer(BaseMarshmallowConfig):
 
     torch_type: ClassVar[Optional[torch.optim.Optimizer]] = None
     "Class variable pointing to the corresponding `torch.optim.Optimizer` class."
-    type: str  # StringOptions(optimizer_registry.keys(), default=None)
+    type: str
     """Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
        Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
        result in a `ValidationError`."""
