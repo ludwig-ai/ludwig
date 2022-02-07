@@ -8,7 +8,7 @@ from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
-from ludwig.combiners.combiners import Combiner, register_combiner
+from ludwig.combiners.combiners import BaseCombinerConfig, Combiner, register_combiner
 from ludwig.constants import NUMERICAL
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
@@ -26,7 +26,7 @@ from tests.integration_tests.utils import (
 
 
 @dataclass
-class CustomTestCombinerConfig:
+class CustomTestCombinerConfig(BaseCombinerConfig):
     foo: bool = False
 
     class Meta:
