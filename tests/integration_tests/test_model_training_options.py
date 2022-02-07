@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import TRAINER
+from ludwig.constants import TRAINER, TRAINING
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
@@ -273,7 +273,7 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     )
 
     # retrieve training losses for first and last epochs
-    train_losses = np.array(train_stats[TRAINER]["combined"]["loss"])
+    train_losses = np.array(train_stats[TRAINING]["combined"]["loss"])
     last_epoch = train_losses.shape[0]
 
     # ensure train loss for last epoch is less than first epoch
@@ -333,7 +333,7 @@ def test_regularization(generated_data, tmp_path):
             train_stats = json.load(f)
 
         # retrieve training losses for all epochs
-        train_losses = np.array(train_stats[TRAINER]["combined"]["loss"])
+        train_losses = np.array(train_stats[TRAINING]["combined"]["loss"])
         regularization_losses.append(train_losses[0])
 
     # create a set of losses

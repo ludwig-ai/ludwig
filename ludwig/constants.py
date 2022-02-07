@@ -95,6 +95,7 @@ CROP_OR_PAD = "crop_or_pad"
 INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
+TRAINER = "trainer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"
@@ -108,7 +109,7 @@ APPEND = "append"
 SEQ_SUM = "seq_sum"
 AVG_EXP = "avg_exp"
 
-TRAINER = "trainer"
+TRAINING = "training"
 VALIDATION = "validation"
 TEST = "test"
 SPLIT = "split"

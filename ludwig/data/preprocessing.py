@@ -42,7 +42,7 @@ from ludwig.constants import (
     SRC,
     TEST,
     TEXT,
-    TRAINER,
+    TRAINING,
     TYPE,
     VALIDATION,
 )
@@ -1695,7 +1695,7 @@ def preprocess_for_prediction(
         if split != FULL:
             training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
 
-    if split == TRAINER:
+    if split == TRAINING:
         dataset = training_set
     elif split == VALIDATION:
         dataset = validation_set

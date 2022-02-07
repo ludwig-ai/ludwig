@@ -16,7 +16,7 @@ from typing import Optional, Tuple, Union
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
-from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TYPE, VALIDATION
+from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
@@ -460,7 +460,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def report(progress_tracker):
             train_stats = {
-                TRAINER: progress_tracker.train_metrics,
+                TRAINING: progress_tracker.train_metrics,
                 VALIDATION: progress_tracker.vali_metrics,
                 TEST: progress_tracker.test_metrics,
             }

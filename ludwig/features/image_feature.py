@@ -42,7 +42,7 @@ from ludwig.constants import (
     RESIZE_METHODS,
     SRC,
     TIED,
-    TRAINER,
+    TRAINING,
     WIDTH,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
@@ -410,7 +410,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 for img_entry in input_df[feature_config[COLUMN]]
             ]
 
-            data_fp = backend.cache.get_cache_path(metadata.get(SRC), metadata.get(CHECKSUM), TRAINER)
+            data_fp = backend.cache.get_cache_path(metadata.get(SRC), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(

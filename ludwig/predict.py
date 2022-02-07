@@ -23,7 +23,7 @@ import pandas as pd
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, TEST, TRAINER, VALIDATION
+from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
@@ -155,7 +155,7 @@ def cli(sys_argv):
         ],
     )
     parser.add_argument(
-        "-s", "--split", default=FULL, choices=[TRAINER, VALIDATION, TEST, FULL], help="the split to test the model on"
+        "-s", "--split", default=FULL, choices=[TRAINING, VALIDATION, TEST, FULL], help="the split to test the model on"
     )
 
     # ----------------

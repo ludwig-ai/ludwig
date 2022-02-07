@@ -47,6 +47,7 @@ from ludwig.constants import (
     PREPROCESSING,
     TEST,
     TRAINER,
+    TRAINING,
     VALIDATION,
 )
 from ludwig.data.dataset.base import Dataset
@@ -540,7 +541,7 @@ class LudwigModel:
 
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = {
-                        TRAINER: train_trainset_stats,
+                        TRAINING: train_trainset_stats,
                         VALIDATION: train_valiset_stats,
                         TEST: train_testset_stats,
                     }
@@ -1081,7 +1082,7 @@ class LudwigModel:
         (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
 
         eval_set = validation_set
-        if eval_split == TRAINER:
+        if eval_split == TRAINING:
             eval_set = training_set
         elif eval_split == VALIDATION:
             eval_set = validation_set

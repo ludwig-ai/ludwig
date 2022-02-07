@@ -24,7 +24,7 @@ import pandas as pd
 from ludwig.api import kfold_cross_validate, LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, TEST, TRAINER, VALIDATION
+from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_config_from_str, load_yaml, save_json
@@ -348,7 +348,7 @@ def cli(sys_argv):
         "-es",
         "--eval_split",
         default=TEST,
-        choices=[TRAINER, VALIDATION, TEST, FULL],
+        choices=[TRAINING, VALIDATION, TEST, FULL],
         help="the split to evaluate the model on",
     )
 

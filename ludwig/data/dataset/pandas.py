@@ -17,7 +17,7 @@ import contextlib
 
 import numpy as np
 
-from ludwig.constants import PREPROCESSING, TRAINER
+from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
@@ -81,7 +81,7 @@ class PandasDatasetManager(DatasetManager):
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
         data_utils.save_hdf5(cache_path, dataset)
-        if tag == TRAINER:
+        if tag == TRAINING:
             training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path
         return dataset
 

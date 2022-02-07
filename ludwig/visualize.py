@@ -29,7 +29,7 @@ from sklearn.metrics import brier_score_loss
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPLIT, TRAINER, TYPE, VALIDATION
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPLIT, TRAINING, TYPE, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
@@ -1229,13 +1229,13 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0][TRAINER][output_feature_name]:
+            if metric in train_stats_per_model_list[0][TRAINING][output_feature_name]:
                 filename = None
                 if filename_template_path:
                     filename = filename_template_path.format(output_feature_name, metric)
 
                 training_stats = [
-                    learning_stats[TRAINER][output_feature_name][metric]
+                    learning_stats[TRAINING][output_feature_name][metric]
                     for learning_stats in train_stats_per_model_list
                 ]
 

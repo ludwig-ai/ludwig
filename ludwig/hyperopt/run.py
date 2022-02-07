@@ -8,7 +8,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, SAMPLER, TEST, TRAINER, TYPE, VALIDATION
+from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, SAMPLER, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
@@ -189,7 +189,7 @@ def hyperopt(
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
-    if split == TRAINER:
+    if split == TRAINING:
         if training_set is None and (config["preprocessing"]["split_probabilities"][0] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
@@ -215,7 +215,7 @@ def hyperopt(
             )
     else:
         raise ValueError(
-            'unrecognized hyperopt split "{}". ' "Please provide one of: {}".format(split, {TRAINER, VALIDATION, TEST})
+            'unrecognized hyperopt split "{}". ' "Please provide one of: {}".format(split, {TRAINING, VALIDATION, TEST})
         )
     if output_feature == COMBINED:
         if metric != LOSS:
