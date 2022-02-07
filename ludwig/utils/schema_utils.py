@@ -154,6 +154,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                     if parsed_docstring is None:
                         parsed_docstring = ""
 
+                    # Split the description and default (if they exist in the string):
                     parsed_desc = parsed_default = None
                     docstring_split = parsed_docstring.split("(default: ")
                     if len(docstring_split) == 2:
@@ -162,7 +163,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                     if parsed_desc is None:
                         parsed_desc = ""
 
-                    # If no description is provided, attempt to pull from torch if applicable:
+                    # If no description is provided, attempt to pull from torch if applicable (e.g. for optimizers):
                     desc = parsed_desc
                     if (
                         desc == ""
