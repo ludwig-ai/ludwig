@@ -1,6 +1,8 @@
 import argparse
 import importlib
+import os
 import pkgutil
+import shutil
 from typing import List
 
 from ludwig import datasets
@@ -27,9 +29,21 @@ def describe_dataset(dataset: str) -> str:
 
 
 def download_dataset(dataset: str, output_dir: str = "."):
-    import importlib
+    dataset_obj = dataset_registry[dataset]()
+    if not dataset_obj.is_processed():
+        dataset_obj.process()
+    processed_path = dataset_obj.processed_dataset_path
+    _copytree(processed_path, output_dir)
 
-    importlib.import_module(f"ludwig.datasets.{dataset}")
+
+def _copytree(src, dst, symlinks=False, ignore=None):
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+        if os.path.isdir(s):
+            shutil.copytree(s, d, symlinks, ignore)
+        else:
+            shutil.copy2(s, d)
 
 
 def cli(sys_argv):
@@ -66,6 +80,6 @@ def cli(sys_argv):
     elif args.command == "describe":
         print(describe_dataset(args.dataset))
     elif args.command == "download":
-        download_dataset(**vars(args))
+        download_dataset(args.dataset, args.output_dir)
     else:
         raise ValueError(f"Unrecognized command: {args.command}")
