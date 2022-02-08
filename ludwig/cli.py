@@ -158,6 +158,11 @@ Available sub-commands:
 
         defaults.cli_render_config(sys.argv[2:])
 
+    def datasets(self):
+        from ludwig import datasets
+
+        datasets.cli(sys.argv[2:])
+
 
 def main():
     ludwig.contrib.preload(sys.argv)
