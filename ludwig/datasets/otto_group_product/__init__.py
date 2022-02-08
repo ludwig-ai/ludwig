@@ -17,6 +17,7 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import IdentityProcessMixin
+from ludwig.datasets.registry import register_dataset
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
@@ -24,6 +25,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
     return dataset.load(split=split)
 
 
+@register_dataset(name="otto_group_product")
 class OttoGroupProduct(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
     """The Otto Group Product Classification Challenge https://www.kaggle.com/c/otto-group-product-classification-
     challenge/overview."""

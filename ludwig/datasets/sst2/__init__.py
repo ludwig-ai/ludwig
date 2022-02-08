@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
+from ludwig.datasets.registry import register_dataset
 from ludwig.datasets.sst2.sst_utils import SST
 
 
@@ -33,6 +34,7 @@ def load(
     return dataset.load(split=split)
 
 
+@register_dataset(name="sst2")
 class SST2(SST):
     """The SST2 dataset.
 

@@ -21,6 +21,7 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs
 
 
@@ -29,6 +30,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
     return dataset.load(split=split)
 
 
+@register_dataset(name="ieee_fraud")
 class IEEEFraud(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, BaseDataset):
     """The IEEE-CIS Fraud Detection Dataset https://www.kaggle.com/c/ieee-fraud-detection/overview."""
 

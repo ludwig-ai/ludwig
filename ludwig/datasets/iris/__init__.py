@@ -20,6 +20,7 @@ import pandas as pd
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs
 
 
@@ -30,6 +31,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
+@register_dataset(name="iris")
 class Iris(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
     """The Iris dataset.
 

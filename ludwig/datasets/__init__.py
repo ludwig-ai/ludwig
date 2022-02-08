@@ -1,12 +1,19 @@
 import argparse
+from typing import List
 
-import ludwig.datasets
+from ludwig.datasets.registry import dataset_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 
 
-def download(dataset: str, output_dir: str = "."):
-    pass
+def list_datasets() -> List[str]:
+    return list(dataset_registry.keys())
+
+
+def download_dataset(dataset: str, output_dir: str = "."):
+    import importlib
+
+    importlib.import_module(f"ludwig.datasets.{dataset}")
 
 
 def cli(sys_argv):
@@ -34,12 +41,10 @@ def cli(sys_argv):
     print_ludwig(f"Datasets {args.command}", LUDWIG_VERSION)
 
     if args.command == "list":
-        import pkgutil
-
-        datasets = [ds.name for ds in pkgutil.iter_modules(ludwig.datasets.__path__) if ds.name != "mixins"]
+        datasets = list_datasets()
         for ds in datasets:
             print(ds)
     elif args.command == "download":
-        download(**vars(args))
+        download_dataset(**vars(args))
     else:
         raise ValueError(f"Unrecognized command: {args.command}")
