@@ -1,9 +1,21 @@
 import argparse
+import importlib
+import pkgutil
 from typing import List
 
+from ludwig import datasets
 from ludwig.datasets.registry import dataset_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
+
+
+def _import_submodules():
+    for _, name, _ in pkgutil.walk_packages(datasets.__path__):
+        full_name = datasets.__name__ + "." + name
+        importlib.import_module(full_name)
+
+
+_import_submodules()
 
 
 def list_datasets() -> List[str]:
