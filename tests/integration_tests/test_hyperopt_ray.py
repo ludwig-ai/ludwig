@@ -21,7 +21,7 @@ import pytest
 import ray
 from mlflow.tracking import MlflowClient
 
-from ludwig.constants import ACCURACY
+from ludwig.constants import ACCURACY, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import RayTuneResults
@@ -36,7 +36,7 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 HYPEROPT_CONFIG = {
     "parameters": {
-        "training.learning_rate": {
+        "trainer.learning_rate": {
             "space": "loguniform",
             "lower": 0.001,
             "upper": 0.1,
@@ -89,7 +89,7 @@ def _get_config(sampler, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -192,14 +192,14 @@ def test_hyperopt_run_hyperopt(csv_filename):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "num_fc_layers": 2},
-            "training": {"epochs": 2, "learning_rate": 0.001},
+            TRAINER: {"epochs": 2, "learning_rate": 0.001},
         }
 
         output_feature_name = output_features[0]["name"]
 
         hyperopt_configs = {
             "parameters": {
-                "training.learning_rate": {
+                "trainer.learning_rate": {
                     "space": "loguniform",
                     "lower": 0.001,
                     "upper": 0.1,

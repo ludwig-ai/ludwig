@@ -23,7 +23,7 @@ from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
 import ludwig.utils.schema_utils as schema
-from ludwig.constants import BINARY, NUMERICAL
+from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.sequence_encoders import ParallelCNN, StackedCNN, StackedCNNRNN, StackedParallelCNN, StackedRNN
 from ludwig.features.base_feature import InputFeature
 from ludwig.modules.attention_modules import TransformerStack
@@ -769,7 +769,7 @@ class TabTransformerCombiner(Combiner):
             vocab = [
                 i_f
                 for i_f in input_features
-                if input_features[i_f].type() != NUMERICAL or input_features[i_f].type() != BINARY
+                if input_features[i_f].type() != NUMBER or input_features[i_f].type() != BINARY
             ]
             if self.embed_input_feature_name == "add":
                 self.embed_i_f_name_layer = Embed(vocab, config.hidden_size, force_embedding_size=True)
@@ -804,7 +804,7 @@ class TabTransformerCombiner(Combiner):
         self.unembeddable_features = []
         self.embeddable_features = []
         for i_f in input_features:
-            if input_features[i_f].type in {NUMERICAL, BINARY}:
+            if input_features[i_f].type in {NUMBER, BINARY}:
                 self.unembeddable_features.append(i_f)
             else:
                 self.embeddable_features.append(i_f)

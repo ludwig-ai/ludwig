@@ -18,7 +18,7 @@ from functools import partial
 
 import torch
 
-from ludwig.constants import BINARY, CATEGORY, LOSS, NUMERICAL, SET, TYPE, VECTOR
+from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.utils.torch_utils import Dense, get_activation
@@ -26,7 +26,7 @@ from ludwig.utils.torch_utils import Dense, get_activation
 logger = logging.getLogger(__name__)
 
 
-@register_decoder("regressor", [BINARY, NUMERICAL], default=True)
+@register_decoder("regressor", [BINARY, NUMBER], default=True)
 class Regressor(Decoder):
     def __init__(
         self,

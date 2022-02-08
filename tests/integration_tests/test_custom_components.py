@@ -8,7 +8,7 @@ from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import BaseCombinerConfig, Combiner, register_combiner
-from ludwig.constants import NUMERICAL
+from ludwig.constants import NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -19,7 +19,7 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
 )
 
@@ -51,8 +51,8 @@ class CustomTestCombiner(Combiner):
         return CustomTestCombinerConfig
 
 
-@register_encoder("custom_numerical_encoder", NUMERICAL)
-class CustomNumericalEncoder(Encoder):
+@register_encoder("custom_number_encoder", NUMBER)
+class CustomNumberEncoder(Encoder):
     def __init__(self, input_size, **kwargs):
         super().__init__()
         self.input_size = input_size
@@ -69,8 +69,8 @@ class CustomNumericalEncoder(Encoder):
         return self.input_shape
 
 
-@register_decoder("custom_numerical_decoder", NUMERICAL)
-class CustomNumericalDecoder(Decoder):
+@register_decoder("custom_number_decoder", NUMBER)
+class CustomNumberDecoder(Decoder):
     def __init__(self, input_size, **kwargs):
         super().__init__()
         self.input_size = input_size
@@ -83,7 +83,7 @@ class CustomNumericalDecoder(Decoder):
         return torch.mean(inputs, 1)
 
 
-@register_loss("custom_loss", [NUMERICAL])
+@register_loss("custom_loss", [NUMBER])
 class CustomLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, **kwargs):
         super().__init__()
@@ -92,7 +92,7 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
         return torch.mean(torch.square(preds - target))
 
 
-@register_metric("custom_loss", [NUMERICAL])
+@register_metric("custom_loss", [NUMBER])
 class CustomLossMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()
@@ -109,17 +109,17 @@ def test_custom_combiner():
 def test_custom_encoder_decoder():
     input_features = [
         sequence_feature(reduce_output="sum"),
-        numerical_feature(encoder="custom_numerical_encoder"),
+        number_feature(encoder="custom_number_encoder"),
     ]
     output_features = [
-        numerical_feature(decoder="custom_numerical_decoder"),
+        number_feature(decoder="custom_number_decoder"),
     ]
     _run_test(input_features=input_features, output_features=output_features)
 
 
 def test_custom_loss_metric():
     output_features = [
-        numerical_feature(loss={"type": "custom_loss"}),
+        number_feature(loss={"type": "custom_loss"}),
     ]
     _run_test(output_features=output_features)
 
@@ -128,7 +128,7 @@ def _run_test(input_features=None, output_features=None, combiner=None):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = input_features or [
             sequence_feature(reduce_output="sum"),
-            numerical_feature(),
+            number_feature(),
         ]
         output_features = output_features or [category_feature(vocab_size=2, reduce_input="sum")]
         combiner = combiner or {"type": "concat"}
@@ -140,7 +140,7 @@ def _run_test(input_features=None, output_features=None, combiner=None):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": combiner,
-            "training": {"epochs": 2},
+            TRAINER: {"epochs": 2},
         }
 
         model = LudwigModel(config, backend=LocalTestBackend())

@@ -92,7 +92,7 @@ config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야
 현재, Ludwig에서 사용 가능한 데이터 유형은 아래와 같습니다.
 
 - binary
-- numerical
+- number
 - category
 - set
 - bag
@@ -112,9 +112,9 @@ config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야
 - image input + text output = image captioning
 - audio input + binary output = speaker verification
 - text input + sequence output = named entity recognition / summarization
-- category, numerical and binary inputs + numerical output = regression
-- timeseries input + numerical output = forecasting model
-- category, numerical and binary inputs + binary output = fraud detection
+- category, number and binary inputs + number output = regression
+- timeseries input + number output = forecasting model
+- category, number and binary inputs + binary output = fraud detection
 
 [예시](https://ludwig-ai.github.io/ludwig-docs/examples/)를 참고하여 Ludwig을 통해 어떤 작업을 실행하는지 확인하세요.
 
@@ -140,7 +140,7 @@ Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이
 그리고 사용자의 콘솔 창에서 다음의 명령을 입력하여 학습을 시작합니다:
 
 ```
-ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
+ludwig train --dataset path/to/file.csv --config_str "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
 위의 명령어에서 `path/to/file.csv`부분은 위의 표(이외에 많은 데이터 타입이 지원됩니다)에서 UTF-8로 인코딩 되어 있는 dataset파일을 포함하는 경로입니다.

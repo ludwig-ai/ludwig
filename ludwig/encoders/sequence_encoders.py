@@ -468,6 +468,7 @@ class ParallelCNN(Encoder):
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
                 embedded_sequence = embedded_sequence.unsqueeze(-1)
+            embedded_sequence = embedded_sequence.to(dtype=torch.float)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence

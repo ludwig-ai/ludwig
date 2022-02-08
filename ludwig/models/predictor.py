@@ -80,28 +80,29 @@ class Predictor(BasePredictor):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
-        with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
+        with torch.no_grad():
+            with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
-            progress_bar = None
-            if self.is_coordinator():
-                progress_bar = tqdm(
-                    desc="Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
-                    total=batcher.steps_per_epoch,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled(),
-                )
+                progress_bar = None
+                if self.is_coordinator():
+                    progress_bar = tqdm(
+                        desc="Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
+                        total=batcher.steps_per_epoch,
+                        file=sys.stdout,
+                        disable=is_progressbar_disabled(),
+                    )
 
-            predictions = defaultdict(list)
-            while not batcher.last_batch():
-                batch = batcher.next_batch()
-                preds = self._predict(self.model, batch)
-                self._accumulate_preds(preds, predictions)
+                predictions = defaultdict(list)
+                while not batcher.last_batch():
+                    batch = batcher.next_batch()
+                    preds = self._predict(self.model, batch)
+                    self._accumulate_preds(preds, predictions)
+
+                    if self.is_coordinator():
+                        progress_bar.update(1)
 
                 if self.is_coordinator():
-                    progress_bar.update(1)
-
-            if self.is_coordinator():
-                progress_bar.close()
+                    progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
@@ -114,10 +115,11 @@ class Predictor(BasePredictor):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
-        predictions = defaultdict(list)
-        preds = self._predict(self.model, batch)
-        self._accumulate_preds(preds, predictions)
-        self._concat_preds(predictions)
+        with torch.no_grad():
+            predictions = defaultdict(list)
+            preds = self._predict(self.model, batch)
+            self._accumulate_preds(preds, predictions)
+            self._concat_preds(predictions)
 
         # reset model to its original training mode
         self.model.train(prev_model_training_mode)
@@ -225,28 +227,29 @@ class Predictor(BasePredictor):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
-        with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
-            progress_bar = tqdm(
-                desc="Collecting Tensors",
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled(),
-            )
+        with torch.no_grad():
+            with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
+                progress_bar = tqdm(
+                    desc="Collecting Tensors",
+                    total=batcher.steps_per_epoch,
+                    file=sys.stdout,
+                    disable=is_progressbar_disabled(),
+                )
 
-            collected_tensors = []
-            while not batcher.last_batch():
-                batch = batcher.next_batch()
+                collected_tensors = []
+                while not batcher.last_batch():
+                    batch = batcher.next_batch()
 
-                inputs = {
-                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
-                    for i_feat in self.model.input_features.values()
-                }
-                outputs = self.model(inputs)
-                collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
+                    inputs = {
+                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                        for i_feat in self.model.input_features.values()
+                    }
+                    outputs = self.model(inputs)
+                    collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
 
-                progress_bar.update(1)
+                    progress_bar.update(1)
 
-            progress_bar.close()
+                progress_bar.close()
 
         self.model.train(prev_model_training_mode)  # Restores previous model training mode.
 

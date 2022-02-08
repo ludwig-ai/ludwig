@@ -26,7 +26,7 @@ from ludwig.hyperopt.sampling import RayTuneSampler
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
-            "training.learning_rate": {"space": "uniform", "lower": 0.001, "upper": 0.1},
+            "trainer.learning_rate": {"space": "uniform", "lower": 0.001, "upper": 0.1},
             "combiner.num_fc_layers": {"space": "qrandint", "lower": 3, "upper": 6, "q": 3},
             "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru", "lstm"]},
         },
@@ -35,7 +35,7 @@ HYPEROPT_PARAMS = {
     },
     "test_2": {
         "parameters": {
-            "training.learning_rate": {
+            "trainer.learning_rate": {
                 "space": "loguniform",
                 "lower": 0.001,
                 "upper": 0.1,
@@ -52,12 +52,12 @@ HYPEROPT_PARAMS = {
 if RAY_AVAILABLE:
     EXPECTED_SEARCH_SPACE = {
         "test_1": {
-            "training.learning_rate": tune.uniform(0.001, 0.1),
+            "trainer.learning_rate": tune.uniform(0.001, 0.1),
             "combiner.num_fc_layers": tune.qrandint(3, 6, 3),
             "utterance.cell_type": tune.grid_search(["rnn", "gru", "lstm"]),
         },
         "test_2": {
-            "training.learning_rate": tune.loguniform(0.001, 0.1),
+            "trainer.learning_rate": tune.loguniform(0.001, 0.1),
             "combiner.num_fc_layers": tune.randint(2, 6),
             "utterance.cell_type": tune.choice(["rnn", "gru", "lstm"]),
         },

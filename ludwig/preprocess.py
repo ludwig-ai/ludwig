@@ -219,19 +219,19 @@ def cli(sys_argv):
     preprocessing_def.add_argument(
         "-pc",
         "--preprocessing_config",
-        type=yaml.safe_load,
-        help="preproceesing config. "
+        dest="preprocessing_config",
+        type=load_yaml,
+        help="YAML file describing the preprocessing. "
+        "Ignores --preprocessing_config."
         "Uses the same format of config, "
         "but ignores encoder specific parameters, "
         "decoder specific paramters, combiner and training parameters",
     )
     preprocessing_def.add_argument(
-        "-pcf",
-        "--preprocessing_config_file",
-        dest="preprocessing_config",
-        type=load_yaml,
-        help="YAML file describing the preprocessing. "
-        "Ignores --preprocessing_config."
+        "-pcs",
+        "--preprocessing_config_str",
+        type=yaml.safe_load,
+        help="preproceesing config. "
         "Uses the same format of config, "
         "but ignores encoder specific parameters, "
         "decoder specific paramters, combiner and training parameters",

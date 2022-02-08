@@ -20,7 +20,18 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from tests.integration_tests.utils import binary_feature, category_feature, generate_data
+from ludwig.constants import DROP_ROW, PREPROCESSING, TRAINER
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    vector_feature,
+)
 
 
 def test_missing_value_prediction(csv_filename):
@@ -51,3 +62,38 @@ def test_missing_value_prediction(csv_filename):
 
         model = LudwigModel.load(os.path.join(output_dir, "model"))
         model.predict(dataset=dataset)
+
+
+def test_missing_values_drop_rows(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    kwargs = {PREPROCESSING: {"missing_value_strategy": DROP_ROW}}
+    input_features = [
+        number_feature(),
+        binary_feature(),
+        category_feature(vocab_size=3),
+    ]
+    output_features = [
+        binary_feature(**kwargs),
+        number_feature(**kwargs),
+        category_feature(vocab_size=3, **kwargs),
+        sequence_feature(vocab_size=3, **kwargs),
+        text_feature(vocab_size=3, **kwargs),
+        set_feature(vocab_size=3, **kwargs),
+        vector_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # set 10% of values to NaN
+    nan_percent = 0.1
+    ix = [(row, col) for row in range(df.shape[0]) for col in range(df.shape[1])]
+    for row, col in random.sample(ix, int(round(nan_percent * len(ix)))):
+        df.iat[row, col] = np.nan
+
+    # run preprocessing
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.preprocess(dataset=df)

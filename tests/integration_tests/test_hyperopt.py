@@ -18,7 +18,7 @@ import os.path
 import pytest
 import torch
 
-from ludwig.constants import ACCURACY
+from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
@@ -32,7 +32,7 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 HYPEROPT_CONFIG = {
     "parameters": {
-        "training.learning_rate": {
+        "trainer.learning_rate": {
             "type": "float",
             "low": 0.0001,
             "high": 0.1,
@@ -84,7 +84,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
     config = merge_with_defaults(config)
@@ -141,14 +141,14 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
     output_feature_name = output_features[0]["name"]
 
     hyperopt_configs = {
         "parameters": {
-            "training.learning_rate": {
+            "trainer.learning_rate": {
                 "type": "float",
                 "low": 0.0001,
                 "high": 0.01,

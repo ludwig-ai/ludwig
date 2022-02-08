@@ -18,6 +18,7 @@ import random
 from typing import Any, Dict, List, Union
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 
@@ -31,7 +32,7 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PREDICTIONS,
     PROC_COLUMN,
     R2,
@@ -178,7 +179,7 @@ def get_transformer(metadata, preprocessing_parameters):
     )(**metadata)
 
 
-class _NumericalPreprocessing(torch.nn.Module):
+class _NumberPreprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
@@ -190,7 +191,7 @@ class _NumericalPreprocessing(torch.nn.Module):
         return self.numeric_transformer.transform_inference(v)
 
 
-class _NumericalPostprocessing(torch.nn.Module):
+class _NumberPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
@@ -200,7 +201,7 @@ class _NumericalPostprocessing(torch.nn.Module):
         return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(preds[self.predictions_key])}
 
 
-class _NumericalPredict(PredictModule):
+class _NumberPredict(PredictModule):
     def __init__(self, clip):
         super().__init__()
         self.clip = clip
@@ -216,10 +217,10 @@ class _NumericalPredict(PredictModule):
         return {self.predictions_key: predictions, self.logits_key: logits}
 
 
-class NumericalFeatureMixin(BaseFeatureMixin):
+class NumberFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
-        return NUMERICAL
+        return NUMBER
 
     @staticmethod
     def preprocessing_defaults():
@@ -267,17 +268,18 @@ class NumericalFeatureMixin(BaseFeatureMixin):
         backend,
         skip_save_processed_input,
     ):
-        proc_df[feature_config[PROC_COLUMN]] = input_df[feature_config[COLUMN]].astype(np.float32).values
+        def normalize(series: pd.Series) -> pd.Series:
+            numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
+            series.update(numeric_transformer.transform(series.values))
+            return series
 
-        # normalize data as required
-        numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
-
-        proc_df[feature_config[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature_config[PROC_COLUMN]])
+        input_series = input_df[feature_config[COLUMN]].astype(np.float32)
+        proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_partitions(input_series, normalize)
 
         return proc_df
 
 
-class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
+class NumberInputFeature(NumberFeatureMixin, InputFeature):
     encoder = "passthrough"
 
     def __init__(self, feature, encoder_obj=None):
@@ -323,10 +325,10 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _NumericalPreprocessing(metadata)
+        return _NumberPreprocessing(metadata)
 
 
-class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
+class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {
@@ -357,7 +359,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumericalPredict(self.clip)
+        return _NumberPredict(self.clip)
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -429,4 +431,4 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _NumericalPostprocessing(metadata)
+        return _NumberPostprocessing(metadata)

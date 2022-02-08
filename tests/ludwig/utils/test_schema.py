@@ -24,7 +24,7 @@ from ludwig.features.date_feature import DateFeatureMixin
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.h3_feature import H3FeatureMixin
 from ludwig.features.image_feature import ImageFeatureMixin
-from ludwig.features.numerical_feature import NumericalFeatureMixin
+from ludwig.features.number_feature import NumberFeatureMixin
 from ludwig.features.sequence_feature import SequenceFeatureMixin
 from ludwig.features.set_feature import SetFeatureMixin
 from ludwig.features.text_feature import TextFeatureMixin
@@ -41,7 +41,7 @@ from tests.integration_tests.utils import (
     ENCODERS,
     h3_feature,
     image_feature,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -59,7 +59,7 @@ def test_config_features():
         date_feature(),
         h3_feature(),
         image_feature("/tmp/destination_folder"),
-        numerical_feature(),
+        number_feature(),
         sequence_feature(),
         set_feature(),
         text_feature(),
@@ -69,7 +69,7 @@ def test_config_features():
     all_output_features = [
         binary_feature(),
         category_feature(),
-        numerical_feature(),
+        number_feature(),
         sequence_feature(),
         set_feature(),
         text_feature(),
@@ -119,7 +119,7 @@ def test_config_tabnet():
     config = {
         "input_features": [
             category_feature(vocab_size=2, reduce_input="sum"),
-            numerical_feature(),
+            number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
         "combiner": {
@@ -134,7 +134,7 @@ def test_config_tabnet():
             "use_keras_batch_norm": False,
             "bn_virtual_bs": 512,
         },
-        "training": {
+        "trainer": {
             "batch_size": 16384,
             "eval_batch_size": 500000,
             "epochs": 1000,
@@ -202,7 +202,7 @@ def test_config_bad_combiner():
     config = {
         "input_features": [
             category_feature(vocab_size=2, reduce_input="sum"),
-            numerical_feature(),
+            number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
         "combiner": {
@@ -250,7 +250,7 @@ def test_config_bad_combiner_types_enums():
     config = {
         "input_features": [
             category_feature(vocab_size=2, reduce_input="sum"),
-            numerical_feature(),
+            number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
         "combiner": {"type": "concat", "weights_initializer": "zeros"},
@@ -359,7 +359,7 @@ def test_validate_with_preprocessing_defaults():
             date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults()),
             h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults()),
             image_feature("/tmp/destination_folder", preprocessing=ImageFeatureMixin.preprocessing_defaults()),
-            numerical_feature(preprocessing=NumericalFeatureMixin.preprocessing_defaults()),
+            number_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults()),
             sequence_feature(preprocessing=SequenceFeatureMixin.preprocessing_defaults()),
             set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults()),
             text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults()),
@@ -367,7 +367,7 @@ def test_validate_with_preprocessing_defaults():
             vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults()),
         ],
         "output_features": [{"name": "target", "type": "category"}],
-        "training": {
+        "trainer": {
             "decay": True,
             "learning_rate": 0.001,
             "validation_field": "target",

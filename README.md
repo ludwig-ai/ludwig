@@ -16,7 +16,7 @@
 
 Translated in [🇰🇷 Korean](README_KR.md)/
 
-Ludwig is a data-centric deep learning framework that allows users to train and test deep learning models by specifying a declarative configuration tht matches the schema of the data.
+Ludwig is a data-centric deep learning framework that allows users to train and test deep learning models by specifying a declarative configuration that matches the schema of the data.
 It is built on top of PyTorch.
 
 To train a model all you need to provide is a file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
@@ -110,7 +110,7 @@ Ludwig will compose a deep learning model accordingly and train it for you.
 Currently, the available datatypes in Ludwig are:
 
 - binary
-- numerical
+- number
 - category
 - set
 - bag
@@ -130,9 +130,9 @@ By choosing different datatype for inputs and outputs, users can solve many diff
 - image input + text output = image captioning
 - audio input + binary output = speaker verification
 - text input + sequence output = named entity recognition / summarization
-- category, numerical and binary inputs + numerical output = regression
-- timeseries input + numerical output = forecasting model
-- category, numerical and binary inputs + binary output = fraud detection
+- category, number and binary inputs + number output = regression
+- timeseries input + number output = forecasting model
+- category, number and binary inputs + binary output = fraud detection
 
 take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several more tasks.
 
@@ -160,7 +160,7 @@ You can use the following config:
 and start the training typing the following command in your console:
 
 ```
-ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
+ludwig train --dataset path/to/file.csv --config_str "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
 where `path/to/file.csv` is the path to a UTF-8 encoded CSV file containing the dataset in the previous table (many other data formats are supported).

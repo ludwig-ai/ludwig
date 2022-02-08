@@ -35,7 +35,7 @@ from ludwig.constants import (
     H3,
     IMAGE,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PREPROCESSING,
     SEQUENCE,
     SET,
@@ -124,7 +124,7 @@ def build_feature_parameters(features):
 parameters_builders_registry = {
     "category": assign_vocab,
     "text": assign_vocab,
-    "numerical": return_none,
+    "number": return_none,
     "binary": return_none,
     "set": assign_vocab,
     "bag": assign_vocab,
@@ -154,8 +154,8 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
         {name: text_2, type: text, vocab_size: 20, max_len: 20},
         {name: category_1, type: category, vocab_size: 10},
         {name: category_2, type: category, vocab_size: 15},
-        {name: numerical_1, type: numerical},
-        {name: numerical_2, type: numerical},
+        {name: number_1, type: number},
+        {name: number_2, type: number},
         {name: binary_1, type: binary},
         {name: binary_2, type: binary},
         {name: set_1, type: set, vocab_size: 20, max_len: 20},
@@ -201,7 +201,7 @@ def generate_category(feature):
     return random.choice(feature["idx2str"])
 
 
-def generate_numerical(feature):
+def generate_number(feature):
     return random.uniform(feature["min"] if "min" in feature else 0, feature["max"] if "max" in feature else 1)
 
 
@@ -374,7 +374,7 @@ def generate_vector(feature):
 
 generators_registry = {
     BINARY: generate_binary,
-    NUMERICAL: generate_numerical,
+    NUMBER: generate_number,
     CATEGORY: generate_category,
     SET: generate_set,
     BAG: generate_bag,
@@ -433,8 +433,8 @@ def cli_synthesize_dataset(dataset_size: int, features: List[dict], output_path:
         {name: text_2, type: text, vocab_size: 20, max_len: 20},
         {name: category_1, type: category, vocab_size: 10},
         {name: category_2, type: category, vocab_size: 15},
-        {name: numerical_1, type: numerical},
-        {name: numerical_2, type: numerical},
+        {name: number_1, type: number},
+        {name: number_2, type: number},
         {name: binary_1, type: binary},
         {name: binary_2, type: binary},
         {name: set_1, type: set, vocab_size: 20, max_len: 20},
@@ -477,8 +477,8 @@ def cli(sys_argv):
           {name: text_2, type: text, vocab_size: 20, max_len: 20}, \
           {name: category_1, type: category, vocab_size: 10}, \
           {name: category_2, type: category, vocab_size: 15}, \
-          {name: numerical_1, type: numerical}, \
-          {name: numerical_2, type: numerical}, \
+          {name: number_1, type: number}, \
+          {name: number_2, type: number}, \
           {name: binary_1, type: binary}, \
           {name: binary_2, type: binary}, \
           {name: set_1, type: set, vocab_size: 20, max_len: 20}, \

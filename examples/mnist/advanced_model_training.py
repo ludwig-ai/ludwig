@@ -14,6 +14,7 @@ import yaml
 
 # ## Import required libraries
 from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.datasets import mnist
 from ludwig.visualize import learning_curves
 
@@ -58,7 +59,7 @@ for model_option in list_of_fc_layers:
     # set up Python dictionary to hold model training parameters
     config = base_model.copy()
     config["input_features"][0]["fc_layers"] = model_option.fc_layers
-    config["training"]["epochs"] = 5
+    config[TRAINER]["epochs"] = 5
 
     # Define Ludwig model object that drive model training
     model = LudwigModel(config, logging_level=logging.INFO)

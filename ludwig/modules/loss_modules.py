@@ -27,7 +27,7 @@ from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     LOGITS,
-    NUMERICAL,
+    NUMBER,
     SEQUENCE,
     SET,
     TEXT,
@@ -68,7 +68,7 @@ class LogitsInputsMixin:
         return LOGITS
 
 
-@register_loss("mean_squared_error", [NUMERICAL, TIMESERIES, VECTOR])
+@register_loss("mean_squared_error", [NUMBER, TIMESERIES, VECTOR])
 class MSELoss(_MSELoss, LogitsInputsMixin):
     """Mean squared error."""
 
@@ -76,7 +76,7 @@ class MSELoss(_MSELoss, LogitsInputsMixin):
         super().__init__()
 
 
-@register_loss("mean_absolute_error", [NUMERICAL, TIMESERIES, VECTOR])
+@register_loss("mean_absolute_error", [NUMBER, TIMESERIES, VECTOR])
 class MAELoss(L1Loss, LogitsInputsMixin):
     """Mean absolute error."""
 
@@ -84,7 +84,7 @@ class MAELoss(L1Loss, LogitsInputsMixin):
         super().__init__()
 
 
-@register_loss("root_mean_squared_error", [NUMERICAL])
+@register_loss("root_mean_squared_error", [NUMBER])
 class RMSELoss(nn.Module, LogitsInputsMixin):
     """Root mean square error."""
 
@@ -96,7 +96,7 @@ class RMSELoss(nn.Module, LogitsInputsMixin):
         return torch.sqrt(self.mse(preds, target))
 
 
-@register_loss("root_mean_squared_percentage_error", [NUMERICAL])
+@register_loss("root_mean_squared_percentage_error", [NUMBER])
 class RMSPELoss(nn.Module, LogitsInputsMixin):
     """Root mean square percentage error."""
 
@@ -114,13 +114,16 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
 
     def __init__(
         self,
-        positive_class_weight: Optional[Tensor] = None,
+        positive_class_weight: Optional[Union[Tensor, int]] = None,
         robust_lambda: int = 0,
         confidence_penalty: int = 0,
         **kwargs,
     ):
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
+        if positive_class_weight:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([positive_class_weight]), **kwargs)
+        else:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
         self.robust_lambda = robust_lambda
         self.confidence_penalty = confidence_penalty
 

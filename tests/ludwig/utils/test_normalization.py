@@ -18,11 +18,11 @@ import pandas as pd
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import COLUMN, NAME, PROC_COLUMN
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.features.numerical_feature import NumericalFeatureMixin
+from ludwig.features.number_feature import NumberFeatureMixin
 
 
-def numerical_feature():
-    feature = {NAME: "x", COLUMN: "x", "type": "numerical"}
+def number_feature():
+    feature = {NAME: "x", COLUMN: "x", "type": "number"}
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
@@ -33,17 +33,17 @@ proc_df = pd.DataFrame(columns=["x"])
 
 
 def test_norm():
-    feature_1_meta = NumericalFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "zscore"}, LOCAL_BACKEND)
-    feature_2_meta = NumericalFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "minmax"}, LOCAL_BACKEND)
+    feature_1_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "zscore"}, LOCAL_BACKEND)
+    feature_2_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "minmax"}, LOCAL_BACKEND)
 
     assert feature_1_meta["mean"] == 6
     assert feature_2_meta["min"] == 2
     assert feature_2_meta["max"] == 10
 
     # value checks after normalization
-    num_feature = numerical_feature()
+    num_feature = number_feature()
 
-    NumericalFeatureMixin.add_feature_data(
+    NumberFeatureMixin.add_feature_data(
         feature_config=num_feature,
         input_df=data_df,
         proc_df=proc_df,
@@ -56,7 +56,7 @@ def test_norm():
         np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-1.26491106, -0.63245553, 0, 0.63245553, 1.26491106])
     )
 
-    NumericalFeatureMixin.add_feature_data(
+    NumberFeatureMixin.add_feature_data(
         feature_config=num_feature,
         input_df=data_df,
         proc_df=proc_df,

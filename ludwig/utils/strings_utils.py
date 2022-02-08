@@ -111,7 +111,7 @@ def is_numerical(s: Union[str, int, float]):
 
 
 def are_all_numericals(values: List[Union[str, int, float]]):
-    """Returns whether all values are numericals."""
+    """Returns whether all values are numbers."""
     for value in values:
         if not is_numerical(value):
             return False

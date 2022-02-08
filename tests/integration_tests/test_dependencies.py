@@ -5,7 +5,7 @@ import torch
 
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
-from tests.integration_tests.utils import numerical_feature
+from tests.integration_tests.utils import number_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -48,7 +48,7 @@ def test_multiple_dependencies(reduce_dependencies, hidden_shape, dependent_hidd
     }
 
     # setup dummy output feature to be root of dependency list
-    num_feature_defn = numerical_feature()
+    num_feature_defn = number_feature()
     num_feature_defn["loss"] = {"type": "mean_squared_error"}
     num_feature_defn["dependencies"] = ["feature_name"]
     if len(dependent_hidden_shape) > 2:

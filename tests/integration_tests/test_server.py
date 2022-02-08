@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.serve import ALL_FEATURES_PRESENT_ERROR, server
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -29,7 +30,7 @@ from tests.integration_tests.utils import (
     generate_data,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     text_feature,
 )
 
@@ -59,7 +60,7 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
     model = LudwigModel(config, backend=LocalTestBackend())
     model.train(
@@ -85,7 +86,7 @@ def output_keys_for(output_features):
             for category in feature["idx2str"]:
                 keys.append(f"{name}_probabilities_{category}")
 
-        elif feature["type"] == "numerical":
+        elif feature["type"] == "number":
             keys.append(f"{name}_predictions")
         else:
             raise NotImplementedError
@@ -129,9 +130,9 @@ def test_server_integration_with_images(tmpdir):
             num_filters=8,
         ),
         text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(vocab_size=4), numerical_feature()]
+    output_features = [category_feature(vocab_size=4), number_feature()]
 
     np.random.seed(123)  # reproducible synthetic data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
@@ -191,9 +192,9 @@ def test_server_integration_with_audio(single_record, tmpdir):
             folder=audio_dest_folder,
         ),
         text_feature(encoder="embed", min_len=1),
-        numerical_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(vocab_size=4), numerical_feature()]
+    output_features = [category_feature(vocab_size=4), number_feature()]
 
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 

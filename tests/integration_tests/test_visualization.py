@@ -23,6 +23,7 @@ import json
 import os
 import subprocess
 
+from ludwig.constants import TRAINER
 from ludwig.experiment import experiment_cli
 from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import get_split_path
@@ -33,7 +34,7 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -50,7 +51,7 @@ def run_experiment_with_visualization(input_features, output_features, dataset):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "fc_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     args = {
@@ -1003,7 +1004,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
@@ -1069,7 +1070,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
@@ -1133,7 +1134,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),

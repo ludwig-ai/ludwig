@@ -22,7 +22,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BINARY, SEQUENCE, SET, TEXT
+from ludwig.constants import BINARY, SEQUENCE, SET, TEXT, TRAINER
 from ludwig.utils.neuropod_utils import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import (
@@ -35,7 +35,7 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -57,7 +57,7 @@ def test_neuropod(csv_filename):
 
         input_features = [
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
@@ -73,7 +73,7 @@ def test_neuropod(csv_filename):
 
         output_features = [
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
@@ -87,7 +87,7 @@ def test_neuropod(csv_filename):
         #############
         # Train model
         #############
-        config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
+        config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
         ludwig_model = LudwigModel(config, backend=LocalTestBackend())
         ludwig_model.train(
             dataset=data_csv_path,

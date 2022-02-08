@@ -28,7 +28,7 @@ from ray.data import from_dask, read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
-from ludwig.constants import BINARY, CATEGORY, NAME, NUMERICAL, TYPE
+from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
@@ -36,7 +36,7 @@ from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
-_SCALAR_TYPES = {BINARY, CATEGORY, NUMERICAL}
+_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 class RayDataset(Dataset):

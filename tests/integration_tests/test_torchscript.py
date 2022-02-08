@@ -24,7 +24,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES
+from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
@@ -39,7 +39,7 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -63,7 +63,7 @@ def test_torchscript(csv_filename, should_load_model):
         # Single sequence input, single category output
         input_features = [
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
@@ -81,7 +81,7 @@ def test_torchscript(csv_filename, should_load_model):
         output_features = [
             category_feature(vocab_size=3),
             binary_feature(),
-            numerical_feature(),
+            number_feature(),
             set_feature(vocab_size=3),
             vector_feature(),
             sequence_feature(vocab_size=3),
@@ -97,7 +97,7 @@ def test_torchscript(csv_filename, should_load_model):
         # Train model
         #############
         backend = LocalTestBackend()
-        config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
+        config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
         ludwig_model = LudwigModel(config, backend=backend)
         ludwig_model.train(
             dataset=data_csv_path,
@@ -204,7 +204,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     input_features = [
         bin_str_feature,
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
@@ -221,7 +221,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     output_features = [
         bin_str_feature,
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
@@ -230,7 +230,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         # vector_feature()
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)

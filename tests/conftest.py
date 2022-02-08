@@ -18,6 +18,7 @@ import uuid
 
 import pytest
 
+from ludwig.constants import TRAINER
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -55,14 +56,14 @@ def hyperopt_results():
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
     output_feature_name = output_features[0]["name"]
 
     hyperopt_configs = {
         "parameters": {
-            "training.learning_rate": {
+            "trainer.learning_rate": {
                 "type": "float",
                 "low": 0.0001,
                 "high": 0.01,

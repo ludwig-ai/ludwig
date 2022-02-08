@@ -6,14 +6,14 @@ from ludwig.models.ecd import build_inputs
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
-    numerical_feature,
+    number_feature,
     run_experiment,
     sequence_feature,
     text_feature,
 )
 
 # InputFeatureOptions namedtuple structure:
-# feature_type: input feature type, e.g., numerical, category, etc.
+# feature_type: input feature type, e.g., number, category, etc.
 # feature_options: None or dictionary of required input feature specification
 # tie_features: boolean, True to tie features, False not to tie features
 InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_options tie_features")
@@ -27,8 +27,8 @@ InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_op
     "input_feature_options",
     [
         # tie input features, encoders should be the same
-        InputFeatureOptions("numerical", None, True),
-        InputFeatureOptions("numerical", {"preprocessing": {"normalization": "zscore"}}, True),
+        InputFeatureOptions("number", None, True),
+        InputFeatureOptions("number", {"preprocessing": {"normalization": "zscore"}}, True),
         InputFeatureOptions("binary", None, True),
         InputFeatureOptions("category", {"vocab": ["a", "b", "c"]}, True),
         InputFeatureOptions("set", {"vocab": ["a", "b", "c"]}, True),
@@ -37,8 +37,8 @@ InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_op
         InputFeatureOptions("timeseries", {"max_sequence_length": 10, "should_embed": False}, True),
         InputFeatureOptions("audio", {"embedding_size": 64, "max_sequence_length": 16, "should_embed": False}, True),
         # do not tie input features, encoders should be different
-        InputFeatureOptions("numerical", None, False),
-        InputFeatureOptions("numerical", {"preprocessing": {"normalization": "zscore"}}, False),
+        InputFeatureOptions("number", None, False),
+        InputFeatureOptions("number", {"preprocessing": {"normalization": "zscore"}}, False),
         InputFeatureOptions("binary", None, False),
         InputFeatureOptions("category", {"vocab": ["a", "b", "c"]}, False),
         InputFeatureOptions("set", {"vocab": ["a", "b", "c"]}, False),
@@ -84,14 +84,14 @@ TiedUseCase = namedtuple("TiedUseCase", "input_feature output_feature")
 @pytest.mark.parametrize(
     "tied_use_case",
     [
-        TiedUseCase(numerical_feature, numerical_feature),
+        TiedUseCase(number_feature, number_feature),
         TiedUseCase(text_feature, category_feature),
         TiedUseCase(sequence_feature, sequence_feature),
     ],
 )
 def test_tied_macro_level(tied_use_case: TiedUseCase, csv_filename: str):
     input_features = [
-        numerical_feature(),  # Other feature
+        number_feature(),  # Other feature
         tied_use_case.input_feature(),  # first feature to be tied
         tied_use_case.input_feature(),  # second feature to be tied
         category_feature(),  # other feature

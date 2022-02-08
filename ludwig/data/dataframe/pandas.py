@@ -42,6 +42,9 @@ class PandasEngine(DataFrameEngine):
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
 
+    def map_partitions(self, series, map_fn, meta=None):
+        return map_fn(series)
+
     def apply_objects(self, df, apply_fn, meta=None):
         return df.apply(apply_fn, axis=1)
 

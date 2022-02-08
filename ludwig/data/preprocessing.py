@@ -34,7 +34,7 @@ from ludwig.constants import (
     FILL_WITH_MODE,
     FULL,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PAD,
     PREPROCESSING,
     PROC_COLUMN,
@@ -1212,7 +1212,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     elif missing_value_strategy == FILL_WITH_MODE:
         return dataset_cols[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
-        if feature[TYPE] != NUMERICAL:
+        if feature[TYPE] != NUMBER:
             raise ValueError(
                 f"Filling missing values with mean is supported "
                 f"only for numerical types, not for type {feature[TYPE]}.",
