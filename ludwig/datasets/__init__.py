@@ -22,6 +22,10 @@ def list_datasets() -> List[str]:
     return list(dataset_registry.keys())
 
 
+def describe_dataset(dataset: str) -> str:
+    return dataset_registry[dataset].__doc__
+
+
 def download_dataset(dataset: str, output_dir: str = "."):
     import importlib
 
@@ -49,6 +53,9 @@ def cli(sys_argv):
 
     sub_parsers.add_parser("list", help="list datasets")
 
+    parser_describe = sub_parsers.add_parser("describe", help="describe datasets")
+    parser_describe.add_argument("dataset", help="dataset to describe")
+
     args = parser.parse_args(sys_argv)
     print_ludwig(f"Datasets {args.command}", LUDWIG_VERSION)
 
@@ -56,6 +63,8 @@ def cli(sys_argv):
         datasets = list_datasets()
         for ds in datasets:
             print(ds)
+    elif args.command == "describe":
+        print(describe_dataset(args.dataset))
     elif args.command == "download":
         download_dataset(**vars(args))
     else:
