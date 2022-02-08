@@ -1,7 +1,7 @@
 combiner:
   type: tabnet
 
-training:
+trainer:
   # validation_metric: accuracy
   batch_size: auto #2048
   learning_rate: auto #0.02
@@ -18,16 +18,16 @@ training:
 hyperopt:
   # goal: maximize
   parameters:
-    training.learning_rate:
+    trainer.learning_rate:
       space: choice
       categories: [0.005, 0.01, 0.02, 0.025]
-    training.batch_size:
+    trainer.batch_size:
       space: choice
       categories: [256, 512, 1024, 2048, 4096, 8192]
-    training.decay_rate:
+    trainer.decay_rate:
       space: choice
       categories: [0.8, 0.9, 0.95]
-    training.decay_steps:
+    trainer.decay_steps:
       space: choice
       categories: [500, 2000, 8000, 10000, 20000]
     combiner.size:

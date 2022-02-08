@@ -17,6 +17,8 @@ import argparse
 import copy
 import logging
 import sys
+import warnings
+from typing import Any, Dict
 
 import yaml
 
@@ -26,11 +28,13 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
+    HYPEROPT,
     LOSS,
     NAME,
+    NUMBER,
     PREPROCESSING,
     PROC_COLUMN,
-    TRAINING,
+    TRAINER,
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
@@ -133,6 +137,31 @@ def get_default_optimizer_params(optimizer_type):
         raise ValueError("Incorrect optimizer type: " + optimizer_type)
 
 
+def _upgrade_deprecated_fields(config: Dict[str, Any]):
+    if "training" in config:
+        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
+        config[TRAINER] = config["training"]
+        del config["training"]
+
+    for feature in config.get("input_features", []) + config.get("output_features", []):
+        if feature.get(TYPE) == "numerical":
+            warnings.warn(
+                'Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning
+            )
+            feature[TYPE] = NUMBER
+
+    if HYPEROPT in config and "parameters" in config[HYPEROPT]:
+        hparams = config[HYPEROPT]["parameters"]
+        for k, v in list(hparams.items()):
+            substr = "training."
+            if k.startswith(substr):
+                warnings.warn(
+                    'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
+                )
+                hparams["trainer." + k[len(substr) :]] = v
+                del hparams[k]
+
+
 def _perform_sanity_checks(config):
     assert "input_features" in config, "config does not define any input features"
 
@@ -150,8 +179,8 @@ def _perform_sanity_checks(config):
 
     assert len(config["output_features"]) > 0, "config needs to have at least one output feature"
 
-    if TRAINING in config:
-        assert isinstance(config[TRAINING], dict), (
+    if TRAINER in config:
+        assert isinstance(config[TRAINER], dict), (
             "There is an issue while reading the training section of the "
             "config. The parameters are expected to be"
             "read as a dictionary. Please check your config format."
@@ -184,7 +213,7 @@ def _set_proc_column(config: dict) -> None:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
 
-def _merge_hyperopt_with_training(config: dict) -> None:
+def _merge_hyperopt_with_trainer(config: dict) -> None:
     if "hyperopt" not in config:
         return
 
@@ -192,46 +221,47 @@ def _merge_hyperopt_with_training(config: dict) -> None:
     if not scheduler:
         return
 
-    if TRAINING not in config:
-        config[TRAINING] = {}
+    if TRAINER not in config:
+        config[TRAINER] = {}
 
     # Disable early stopping when using a scheduler. We achieve this by setting the parameter
     # to -1, which ensures the condition to apply early stopping is never met.
-    training = config[TRAINING]
-    early_stop = training.get("early_stop")
+    trainer = config[TRAINER]
+    early_stop = trainer.get("early_stop")
     if early_stop is not None and early_stop != -1:
         raise ValueError(
-            "Cannot set training parameter `early_stop` when using a hyperopt scheduler. "
+            "Cannot set trainer parameter `early_stop` when using a hyperopt scheduler. "
             "Unset this parameter in your config."
         )
-    training["early_stop"] = -1
+    trainer["early_stop"] = -1
 
     # At most one of max_t and epochs may be specified by the user, and we set them to be equal to
     # ensure that Ludwig does not stop training before the scheduler has finished the trial, unless
     # max_t is in time_total_s, in which case we set epochs very high to continue train until stopped.
     max_t = scheduler.get("max_t")
     time_attr = scheduler.get("time_attr")
-    epochs = training.get("epochs")
+    epochs = trainer.get("epochs")
     if max_t is not None and epochs is not None and max_t != epochs and time_attr != "time_total_s":
         raise ValueError(
-            "Cannot set training parameter `epochs` when using a hyperopt scheduler with `max_t`. "
+            "Cannot set trainer parameter `epochs` when using a hyperopt scheduler with `max_t`. "
             "Unset one of these parameters in your config."
         )
     elif max_t is not None:
         if time_attr == "time_total_s":
-            training["epochs"] = sys.maxsize  # essentially continue training until stopped
+            trainer["epochs"] = sys.maxsize  # essentially continue training until stopped
         else:
-            training["epochs"] = max_t
+            trainer["epochs"] = max_t
     elif epochs is not None:
         scheduler["max_t"] = epochs
 
 
 def merge_with_defaults(config):
     config = copy.deepcopy(config)
+    _upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)
-    _merge_hyperopt_with_training(config)
+    _merge_hyperopt_with_trainer(config)
 
     # ===== Preprocessing =====
     config["preprocessing"] = merge_dict(default_preprocessing_parameters, config.get("preprocessing", {}))
@@ -246,19 +276,19 @@ def merge_with_defaults(config):
             raise ValueError("Stratify feature must be binary or category")
 
     # ===== Training =====
-    set_default_value(config, TRAINING, default_training_params)
+    set_default_value(config, TRAINER, default_training_params)
 
     for param, value in default_training_params.items():
-        set_default_value(config[TRAINING], param, value)
+        set_default_value(config[TRAINER], param, value)
 
     set_default_value(
-        config[TRAINING],
+        config[TRAINER],
         "validation_metric",
         output_type_registry[config["output_features"][0][TYPE]].default_validation_metric,
     )
 
     # ===== Training Optimizer =====
-    optimizer = config[TRAINING]["optimizer"]
+    optimizer = config[TRAINER]["optimizer"]
     default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])

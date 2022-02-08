@@ -21,6 +21,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
@@ -44,7 +45,7 @@ def run_api_experiment_separated_datasets(input_features, output_features, data_
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     model = LudwigModel(config)
@@ -279,7 +280,7 @@ def run_api_commands(
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     model = LudwigModel(config)
@@ -435,7 +436,7 @@ def test_api_callbacks(csv_filename):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            "training": {"epochs": epochs, "batch_size": batch_size},
+            TRAINER: {"epochs": epochs, "batch_size": batch_size},
         }
         model = LudwigModel(config, callbacks=[mock_callback])
 

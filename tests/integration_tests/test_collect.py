@@ -21,6 +21,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights, print_model_summary
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature, spawn
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -43,7 +44,7 @@ def _train(input_features, output_features, data_csv, **kwargs):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     model = LudwigModel(config)

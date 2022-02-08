@@ -11,7 +11,7 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     NAME,
-    NUMERICAL,
+    NUMBER,
     PREDICTIONS,
     PROBABILITIES,
     PROBABILITY,
@@ -66,7 +66,7 @@ def postprocess_for_neuropod(predicted, config):
                 predicted[feature_name][PROBABILITY].astype("float64"), 1
             )
             postprocessed[feature_name + "_probabilities"] = predicted[feature_name][PROBABILITIES].astype("float64")
-        elif feature_type == NUMERICAL:
+        elif feature_type == NUMBER:
             postprocessed[feature_name + "_predictions"] = np.expand_dims(
                 predicted[feature_name][PREDICTIONS].astype("float64"), 1
             )
@@ -140,7 +140,7 @@ def export_neuropod(
             output_spec.append({"name": feature_name + "_predictions", "dtype": "str", "shape": (None, 1)})
             output_spec.append({"name": feature_name + "_probability", "dtype": "float64", "shape": (None, 1)})
             output_spec.append({"name": feature_name + "_probabilities", "dtype": "float64", "shape": (None, 2)})
-        elif feature_type == NUMERICAL:
+        elif feature_type == NUMBER:
             output_spec.append({"name": feature_name + "_predictions", "dtype": "float64", "shape": (None, 1)})
         elif feature_type == CATEGORY:
             output_spec.append({"name": feature_name + "_predictions", "dtype": "str", "shape": (None, 1)})

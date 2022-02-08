@@ -18,6 +18,7 @@ from jsonschema import validate
 from marshmallow_jsonschema import JSONSchema
 
 from ludwig.combiners.combiners import combiner_registry
+from ludwig.constants import TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -69,7 +70,7 @@ def get_schema():
                 "allOf": get_combiner_conds(combiner_types),
                 "required": ["type"],
             },
-            "training": {},
+            TRAINER: {},
             "preprocessing": {},
             "hyperopt": {},
         },

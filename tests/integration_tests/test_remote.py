@@ -7,6 +7,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
 
 
@@ -31,7 +32,7 @@ def test_remote_training_set(tmpdir, fs_protocol):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            "training": {"epochs": 2},
+            TRAINER: {"epochs": 2},
         }
 
         config_path = os.path.join(tmpdir, "config.yaml")

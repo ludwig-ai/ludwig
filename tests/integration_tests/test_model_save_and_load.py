@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import SPLIT
+from ludwig.constants import SPLIT, TRAINER
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import (
@@ -20,7 +20,7 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     LocalTestBackend,
-    numerical_feature,
+    number_feature,
     sequence_feature,
     set_feature,
     text_feature,
@@ -39,7 +39,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     input_features = [
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         sequence_feature(vocab_size=3),
         text_feature(vocab_size=3, encoder="rnn", cell_type="lstm", num_layers=2, bidirections=True),
@@ -56,7 +56,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     output_features = [
         binary_feature(),
-        numerical_feature(),
+        number_feature(),
         category_feature(vocab_size=3),
         sequence_feature(vocab_size=3),
         text_feature(vocab_size=3),
@@ -70,7 +70,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     #############
     # Train model
     #############
-    config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     data_df = read_csv(data_csv_path)
     data_df[SPLIT] = get_split(data_df)

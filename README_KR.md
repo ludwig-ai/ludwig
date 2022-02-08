@@ -92,7 +92,7 @@ config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야
 현재, Ludwig에서 사용 가능한 데이터 유형은 아래와 같습니다.
 
 - binary
-- numerical
+- number
 - category
 - set
 - bag
@@ -112,9 +112,9 @@ config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야
 - image input + text output = image captioning
 - audio input + binary output = speaker verification
 - text input + sequence output = named entity recognition / summarization
-- category, numerical and binary inputs + numerical output = regression
-- timeseries input + numerical output = forecasting model
-- category, numerical and binary inputs + binary output = fraud detection
+- category, number and binary inputs + number output = regression
+- timeseries input + number output = forecasting model
+- category, number and binary inputs + binary output = fraud detection
 
 [예시](https://ludwig-ai.github.io/ludwig-docs/examples/)를 참고하여 Ludwig을 통해 어떤 작업을 실행하는지 확인하세요.
 

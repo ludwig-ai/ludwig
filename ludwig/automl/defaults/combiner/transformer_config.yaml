@@ -1,7 +1,7 @@
 combiner:
   type: transformer
 
-training:
+trainer:
   batch_size: auto #256
   learning_rate: auto #0.0001
   # validation_metric: accuracy
@@ -9,11 +9,11 @@ training:
 hyperopt:
   # goal: maximize
   parameters:
-    training.learning_rate:
+    trainer.learning_rate:
       space: loguniform
       lower: 0.00002
       upper: 0.001
-    training.batch_size:
+    trainer.batch_size:
       space: choice
       categories: [64, 128, 256]
     combiner.num_heads:

@@ -7,6 +7,7 @@ import yaml
 from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.contribs import MlflowCallback
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
 
@@ -23,7 +24,7 @@ def test_mlflow_callback(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": epochs, "batch_size": batch_size},
+        TRAINER: {"epochs": epochs, "batch_size": batch_size},
     }
 
     data_csv = generate_data(

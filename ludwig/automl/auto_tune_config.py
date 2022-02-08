@@ -11,7 +11,7 @@ except ImportError:
 
 from ludwig.api import LudwigModel
 from ludwig.automl.utils import get_available_resources, get_model_name
-from ludwig.constants import BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TRAINING
+from ludwig.constants import BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TRAINER
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
@@ -20,21 +20,21 @@ from ludwig.utils.defaults import merge_with_defaults
 RANKED_MODIFIABLE_PARAM_LIST = {
     "tabnet": OrderedDict(
         {
-            "training.batch_size": 32,
+            "trainer.batch_size": 32,
             "combiner.size": 8,
             "combiner.output_size": 8,
         }
     ),
     "concat": OrderedDict(
         {
-            "training.batch_size": 32,
+            "trainer.batch_size": 32,
             "combiner.output_size": 64,
             "combiner.num_fc_layers": 1,
         }
     ),
     "tabtransformer": OrderedDict(
         {
-            "training.batch_size": 32,
+            "trainer.batch_size": 32,
             "combiner.num_heads:": 4,
             "combiner.output_size": 8,
             "combiner.num_layers": 4,
@@ -89,7 +89,7 @@ def compute_memory_usage(config, training_set_metadata) -> int:
     lm = LudwigModel.create_model(config)
     model_tensors = lm.collect_weights()
     total_size = 0
-    batch_size = config[TRAINING][BATCH_SIZE]
+    batch_size = config[TRAINER][BATCH_SIZE]
     for tnsr in model_tensors:
         total_size += tnsr[1].numpy().size * batch_size
     total_bytes = total_size * 32  # assumes 32-bit precision

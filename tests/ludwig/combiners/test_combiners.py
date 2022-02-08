@@ -299,16 +299,16 @@ def test_sequence_combiner(
     [
         [  # only numeric features
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("numerical", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
         ],
         [  # only numeric features
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("numerical", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("numerical", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
         ],
         [  # numeric and categorical features
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("numerical", [BATCH_SIZE, 12]),  # dense encoder
+            ("number", [BATCH_SIZE, 12]),  # dense encoder
             ("category", [BATCH_SIZE, 8]),  # dense encoder
         ],
     ],
@@ -408,22 +408,22 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
     "feature_list",  # defines parameter for fixture features_to_test()
     [
         [  # single numeric, single categorical
-            ("numerical", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
             ("category", [BATCH_SIZE, 64]),
         ],
         [  # multiple numeric, multiple categorical
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
             ("category", [BATCH_SIZE, 16]),
-            ("numerical", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
             ("category", [BATCH_SIZE, 48]),
-            ("numerical", [BATCH_SIZE, 32]),  # dense encoder
+            ("number", [BATCH_SIZE, 32]),  # dense encoder
         ],
         [  # only numeric features
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("numerical", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
         ],
         [("category", [BATCH_SIZE, 16]), ("category", [BATCH_SIZE, 8])],  # only category features
-        [("numerical", [BATCH_SIZE, 1])],  # only single numeric feature  # passthrough encoder
+        [("number", [BATCH_SIZE, 1])],  # only single numeric feature  # passthrough encoder
         [("category", [BATCH_SIZE, 8])],  # only single category feature
     ],
 )

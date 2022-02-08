@@ -3,7 +3,7 @@ import shutil
 import tempfile
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINING
+from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
 
 
@@ -21,7 +21,7 @@ def test_tune_batch_size_and_lr(tmpdir):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            "training": {
+            TRAINER: {
                 "epochs": 2,
                 "batch_size": "auto",
                 "eval_batch_size": "auto",
@@ -32,9 +32,9 @@ def test_tune_batch_size_and_lr(tmpdir):
         model = LudwigModel(config, backend=LocalTestBackend())
 
         # check preconditions
-        assert model.config[TRAINING][BATCH_SIZE] == "auto"
-        assert model.config[TRAINING][EVAL_BATCH_SIZE] == "auto"
-        assert model.config[TRAINING][LEARNING_RATE] == "auto"
+        assert model.config[TRAINER][BATCH_SIZE] == "auto"
+        assert model.config[TRAINER][EVAL_BATCH_SIZE] == "auto"
+        assert model.config[TRAINER][LEARNING_RATE] == "auto"
 
         _, _, output_directory = model.train(
             training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=outdir
@@ -42,17 +42,17 @@ def test_tune_batch_size_and_lr(tmpdir):
 
         def check_postconditions(model):
             # check batch size
-            assert model.config[TRAINING][BATCH_SIZE] != "auto"
-            assert model.config[TRAINING][BATCH_SIZE] > 1
+            assert model.config[TRAINER][BATCH_SIZE] != "auto"
+            assert model.config[TRAINER][BATCH_SIZE] > 1
 
-            assert model.config[TRAINING][EVAL_BATCH_SIZE] != "auto"
-            assert model.config[TRAINING][EVAL_BATCH_SIZE] > 1
+            assert model.config[TRAINER][EVAL_BATCH_SIZE] != "auto"
+            assert model.config[TRAINER][EVAL_BATCH_SIZE] > 1
 
-            assert model.config[TRAINING][BATCH_SIZE] == model.config[TRAINING][EVAL_BATCH_SIZE]
+            assert model.config[TRAINER][BATCH_SIZE] == model.config[TRAINER][EVAL_BATCH_SIZE]
 
             # check learning rate
-            assert model.config[TRAINING][LEARNING_RATE] != "auto"
-            assert model.config[TRAINING][LEARNING_RATE] > 0
+            assert model.config[TRAINER][LEARNING_RATE] != "auto"
+            assert model.config[TRAINER][LEARNING_RATE] > 0
 
         check_postconditions(model)
 

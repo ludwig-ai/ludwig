@@ -26,19 +26,13 @@ from ray.tune.sync_client import get_sync_client
 from ludwig.api import LudwigModel
 from ludwig.backend.ray import RayBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY
+from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
-from tests.integration_tests.utils import (
-    binary_feature,
-    create_data_set_to_use,
-    generate_data,
-    numerical_feature,
-    spawn,
-)
+from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -63,7 +57,7 @@ def mock_storage_client(path):
 
 HYPEROPT_CONFIG = {
     "parameters": {
-        "training.learning_rate": {
+        "trainer.learning_rate": {
             "space": "loguniform",
             "lower": 0.001,
             "upper": 0.1,
@@ -109,14 +103,14 @@ RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}, "use_legacy": True}
 
 
 def _get_config(sampler, executor):
-    input_features = [numerical_feature(), numerical_feature()]
+    input_features = [number_feature(), number_feature()]
     output_features = [binary_feature()]
 
     return {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -253,7 +247,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
 def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
-    input_features = [numerical_feature(), numerical_feature()]
+    input_features = [number_feature(), number_feature()]
     output_features = [binary_feature()]
 
     csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
@@ -264,7 +258,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 4, "learning_rate": 0.001},
+        TRAINER: {"epochs": 4, "learning_rate": 0.001},
         "backend": {"type": "ray", **RAY_BACKEND_KWARGS},
     }
 
@@ -272,7 +266,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
 
     hyperopt_configs = {
         "parameters": {
-            "training.learning_rate": {
+            "trainer.learning_rate": {
                 "space": "loguniform",
                 "lower": 0.001,
                 "upper": 0.1,

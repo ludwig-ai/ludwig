@@ -21,6 +21,7 @@ import tempfile
 import pytest
 import yaml
 
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
 
 
@@ -58,7 +59,7 @@ def _prepare_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
     }
 
     with open(config_filename, "w") as f:
@@ -80,10 +81,10 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 4},
-        "training": {"epochs": 2},
+        TRAINER: {"epochs": 2},
         "hyperopt": {
             "parameters": {
-                "training.learning_rate": {
+                "trainer.learning_rate": {
                     "type": "float",
                     "low": 0.0001,
                     "high": 0.01,
@@ -277,7 +278,7 @@ def test_synthesize_dataset_cli(csv_filename):
             features="'[ \
                   {name: text, type: text}, \
                   {name: category, type: category}, \
-                  {name: numerical, type: numerical}, \
+                  {name: number, type: number}, \
                   {name: binary, type: binary}, \
                   {name: set, type: set}, \
                   {name: bag, type: bag}, \

@@ -1,78 +1,78 @@
 input_features:
   - name: lepton_pT
-    type: numerical
+    type: number
   - name: lepton_eta
-    type: numerical
+    type: number
   - name: lepton_phi
-    type: numerical
+    type: number
   - name: missing_energy_magnitude
-    type: numerical
+    type: number
   - name: missing_energy_phi
-    type: numerical
+    type: number
   - name: jet_1_pt
-    type: numerical
+    type: number
   - name: jet_1_eta
-    type: numerical
+    type: number
   - name: jet_1_phi
-    type: numerical
+    type: number
   - name: jet_1_b-tag
-    type: numerical
+    type: number
   - name: jet_2_pt
-    type: numerical
+    type: number
   - name: jet_2_eta
-    type: numerical
+    type: number
   - name: jet_2_phi
-    type: numerical
+    type: number
   - name: jet_2_b-tag
-    type: numerical
+    type: number
   - name: jet_3_pt
-    type: numerical
+    type: number
   - name: jet_3_eta
-    type: numerical
+    type: number
   - name: jet_3_phi
-    type: numerical
+    type: number
   - name: jet_3_b-tag
-    type: numerical
+    type: number
   - name: jet_4_pt
-    type: numerical
+    type: number
   - name: jet_4_eta
-    type: numerical
+    type: number
   - name: jet_4_phi
-    type: numerical
+    type: number
   - name: jet_4_b-tag
-    type: numerical
+    type: number
   - name: m_jj
-    type: numerical
+    type: number
   - name: m_jjj
-    type: numerical
+    type: number
   - name: m_lv
-    type: numerical
+    type: number
   - name: m_jlv
-    type: numerical
+    type: number
   - name: m_bb
-    type: numerical
+    type: number
   - name: m_wbb
-    type: numerical
+    type: number
   - name: m_wwbb
-    type: numerical
+    type: number
 output_features:
   - name: label
     type: binary
     weight_regularization: null
 combiner:
   type: tabnet
-  size: 32  # N_a
-  output_size: 96  # N_d
-  sparsity: 0.000001  # lambda_sparse
-  bn_virtual_divider: 32  # factor to divide batch_size B to get B_v from the paper
-  bn_momentum: 0.9  # m_B
-  num_steps: 8  # N_steps
-  relaxation_factor: 2  # gamma
+  size: 32 # N_a
+  output_size: 96 # N_d
+  sparsity: 0.000001 # lambda_sparse
+  bn_virtual_divider: 32 # factor to divide batch_size B to get B_v from the paper
+  bn_momentum: 0.9 # m_B
+  num_steps: 8 # N_steps
+  relaxation_factor: 2 # gamma
   use_keras_batch_norm: false
-  bn_virtual_bs: 256  # B_v
-training:
-  batch_size: 8192  # B
-  eval_batch_size: 500000  # 65536 131072 262144 524288
+  bn_virtual_bs: 256 # B_v
+trainer:
+  batch_size: 8192 # B
+  eval_batch_size: 500000 # 65536 131072 262144 524288
   epochs: 1000
   early_stop: 20
   learning_rate: 0.025

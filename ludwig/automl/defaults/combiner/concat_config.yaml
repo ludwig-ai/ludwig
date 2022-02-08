@@ -17,11 +17,11 @@ hyperopt:
       type: float
       lower: 0.0
       upper: 0.1
-    training.learning_rate:
+    trainer.learning_rate:
       space: loguniform
       type: float
       lower: 0.00002
       upper: 0.001
-    training.batch_size:
+    trainer.batch_size:
       space: choice
       categories: [64, 128, 256, 512, 1024]

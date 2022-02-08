@@ -4,7 +4,7 @@ import pytest
 
 from ludwig.automl.base_config import infer_type, should_exclude
 from ludwig.automl.utils import FieldInfo
-from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMERICAL, TEXT
+from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMBER, TEXT
 from ludwig.data.dataset_synthesizer import generate_string
 
 ROW_COUNT = 100
@@ -15,13 +15,13 @@ TARGET_NAME = "target"
     "num_distinct_values,distinct_values,img_values,missing_vals,expected",
     [
         # Random numbers.
-        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT)], 0, 0.0, NUMERICAL),
+        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT)], 0, 0.0, NUMBER),
         # Random numbers with NaNs.
-        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT - 1)] + ["NaN"], 0, 0.0, NUMERICAL),
+        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT - 1)] + ["NaN"], 0, 0.0, NUMBER),
         # Finite list of numbers.
         (10, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], 0, 0.0, CATEGORY),
-        (2, ["1.5", "3.7"], 0, 0.1, NUMERICAL),
-        (2, ["1.5", "3.7", "nan"], 0, 0.1, NUMERICAL),
+        (2, ["1.5", "3.7"], 0, 0.1, NUMBER),
+        (2, ["1.5", "3.7", "nan"], 0, 0.1, NUMBER),
         # Bool-like values.
         (2, ["0", "1"], 0, 0.0, BINARY),
         # Mostly bool-like values.
@@ -49,12 +49,12 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, missing_va
 @pytest.mark.parametrize(
     "idx,num_distinct_values,dtype,name,expected",
     [
-        (3, ROW_COUNT, NUMERICAL, "id", True),
-        (0, ROW_COUNT, NUMERICAL, "foo", True),
+        (3, ROW_COUNT, NUMBER, "id", True),
+        (0, ROW_COUNT, NUMBER, "foo", True),
         (3, ROW_COUNT, TEXT, "uuid", True),
         (0, ROW_COUNT, TEXT, "name", False),
-        (0, ROW_COUNT, NUMERICAL, TARGET_NAME, False),
-        (0, ROW_COUNT - 1, NUMERICAL, "id", False),
+        (0, ROW_COUNT, NUMBER, TARGET_NAME, False),
+        (0, ROW_COUNT - 1, NUMBER, "id", False),
         (0, 0, CATEGORY, "empty_col", True),
     ],
 )

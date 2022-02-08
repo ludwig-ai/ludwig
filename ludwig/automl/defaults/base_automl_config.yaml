@@ -1,4 +1,4 @@
-training:
+trainer:
   batch_size: auto #256
   learning_rate: auto #.001
   # validation_metric: accuracy
