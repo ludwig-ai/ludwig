@@ -4,6 +4,7 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import IdentityProcessMixin
+from ludwig.datasets.registry import register_dataset
 from ludwig.utils.print_utils import print_boxed
 
 
@@ -16,6 +17,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, kaggle_username=None, kaggle_key=None
     return loaded_dataset
 
 
+@register_dataset(name="wmt15")
 class WMT15(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
     """French/English parallel texts for training translation models. Over 22.5 million sentences in French and
     English.

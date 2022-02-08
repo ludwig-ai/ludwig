@@ -20,6 +20,7 @@ import pandas as pd
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import ParquetLoadMixin
+from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs, rename
 
 
@@ -28,6 +29,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, add_validation_set=False
     return dataset.load(split=split)
 
 
+@register_dataset(name="higgs")
 class Higgs(GZipDownloadMixin, ParquetLoadMixin, BaseDataset):
     """The Higgs Boson dataset.
 

@@ -22,6 +22,7 @@ import pandas as pd
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs, rename
 
 
@@ -30,6 +31,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
     return dataset.load(split=split)
 
 
+@register_dataset(name="rossmann_store_sales")
 class RossmannStoreSales(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     """The Rossmann Store Sales dataset.
 

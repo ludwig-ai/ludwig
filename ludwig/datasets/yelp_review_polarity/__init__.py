@@ -21,6 +21,7 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import TarDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.registry import register_dataset
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
@@ -28,6 +29,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     return dataset.load(split=split)
 
 
+@register_dataset(name="yelp_polarity")
 class YelpPolarity(TarDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
     """
         The Yelp Polarity dataset

@@ -15,6 +15,7 @@
 # ==============================================================================
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.kdd_dataset import KDDCup2009Dataset
+from ludwig.datasets.registry import register_dataset
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, include_test_download=False):
@@ -22,6 +23,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, include_test_download=Fa
     return dataset.load(split=split)
 
 
+@register_dataset(name="kdd_appetency")
 class KDDAppetency(KDDCup2009Dataset):
     """The KDD Cup 2009 Appetency dataset.
 
