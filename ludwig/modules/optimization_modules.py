@@ -71,10 +71,8 @@ class BaseOptimizer(BaseMarshmallowConfig):
             )
         default = self.declared_fields["type"].dump_default
         if default is not missing and data != default:
-            print(f"default: {default}")
-            print(f"data: {data}")
             # Handle aliases:
-            if optimizer_registry[default] is optimizer_registry[data]:
+            if optimizer_registry[default] == optimizer_registry[data]:
                 return
             raise ValidationError(
                 f"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'"
