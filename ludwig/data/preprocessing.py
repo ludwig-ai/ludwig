@@ -1090,7 +1090,6 @@ def build_dataset(
             feature_configs,
             global_preprocessing_parameters,
             backend,
-            skip_save_processed_input
         )
 
     # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
@@ -1226,8 +1225,7 @@ def balance_data(
         input_cols,
         features,
         preprocessing_parameters,
-        backend,
-        skip_save_processed_input
+        backend
 ):
     try:
         proc_cols = {}
@@ -1262,7 +1260,6 @@ def balance_data(
     except KeyError as e:
         logger.debug("No target column found, returning unbalanced DF", e)
         return input_cols, dataset_df
-
 
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
