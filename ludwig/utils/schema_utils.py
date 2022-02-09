@@ -45,7 +45,7 @@ def create_cond(if_pred: tDict, then_pred: tDict):
 class BaseMarshmallowConfig:
     """Base marshmallow class for common attributes and metadata."""
 
-    class BaseMarshmallowMeta:
+    class Meta:
         """Sub-class specifying meta information for Marshmallow.
 
         Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are
