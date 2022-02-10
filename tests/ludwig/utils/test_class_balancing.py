@@ -1,9 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
-from ludwig.data.preprocessing import balance_data
+
+from ludwig.constants import OUTPUT_FLAG, PROC_COLUMN, SPLIT
+from ludwig.data.preprocessing import balance_data, build_dataset, cast_columns, get_split
 from ludwig.backend import initialize_backend, RAY
-from ludwig.backend.base import Backend, LocalBackend
+from ludwig.backend.base import LocalBackend
+from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.api import LudwigModel
 
 DFS = {
     "test_df_1": pd.DataFrame({"Index": np.arange(0, 200, 1),
@@ -13,49 +17,65 @@ DFS = {
 }
 
 CONFIGS = {
-    "test_oversample": {
+    "test_config_1": {
         "input_features": [
-            {"name": "Index", "proc_column": "Index_1234", "type": "numerical", "output_flag": False},
-            {"name": "random_1", "proc_column": "random_1_2345", "type": "numerical", "output_flag": False},
-            {"name": "random_2", "proc_column": "random_2_3456", "type": "numerical", "output_flag": False}],
+            {"name": "Index", "column": "Index", "type": "numerical", "output_flag": False},
+            {"name": "random_1", "column": "random_1", "type": "numerical", "output_flag": False},
+            {"name": "random_2", "column": "random_2", "type": "numerical", "output_flag": False}],
         "output_features": [
-            {"name": "Label", "proc_column": "Label_4567", "type": "numerical", "output_flag": True}
+            {"name": "Label", "column": "Label", "type": "numerical", "output_flag": True}
         ],
         "preprocessing": {
-            "undersample_majority": None,
-            "oversample_minority": 0.5
-        }
-    },
-    "test_undersample": {
-        "input_features": [
-            {"name": "Index", "proc_column": "Index_1234", "type": "numerical", "output_flag": False},
-            {"name": "random_1", "proc_column": "random_1_2345", "type": "numerical", "output_flag": False},
-            {"name": "random_2", "proc_column": "random_2_3456", "type": "numerical", "output_flag": False}],
-        "output_features": [
-            {"name": "Label", "proc_column": "Label_4567", "type": "numerical", "output_flag": True}
-        ],
-        "preprocessing": {
-            "undersample_majority": 0.5,
-            "oversample_minority": None
         }
     }
 }
 
-TEST_COLS = {
-    "df1_cols": {"Index_1234": DFS["test_df_1"]["Index"],
-                 "random_1_2345": DFS["test_df_1"]["random_1"],
-                 "random_2_3456": DFS["test_df_1"]["random_2"],
-                 "Label_4567": DFS["test_df_1"]["Label"],
-                 "split": pd.Series(np.random.choice(3, len(DFS["test_df_1"]), p=(0.7, 0.1, 0.2)))
-                 }
-}
-
 LOCAL_BACKEND = LocalBackend()
 REMOTE_BACKEND = initialize_backend(RAY)
+TEST_BALANCE_CONFIG = merge_with_defaults(CONFIGS['test_config_1'].copy())
+TEST_BUILD_DATA_CONFIG = merge_with_defaults(CONFIGS['test_config_1'].copy())
+TEST_TRAIN_CONFIG = CONFIGS['test_config_1'].copy()
+
 
 
 @pytest.mark.parametrize(
-    "config, backend",
+    "balance, backend",
+    [
+        ("oversample_minority", LOCAL_BACKEND),
+        ("undersample_majority", LOCAL_BACKEND),
+        ("oversample_minority", REMOTE_BACKEND),
+        ("undersample_majority", REMOTE_BACKEND),
+    ],
+)
+def test_balance_data(balance, backend, config=TEST_BALANCE_CONFIG):
+    config[balance] = 0.5
+    features = config['input_features'] + config['output_features']
+    columns = cast_columns(DFS['test_df_1'], features, backend)
+    split = get_split(DFS['test_df_1'])
+    columns[SPLIT] = split
+
+    test_proc_cols, test_df = balance_data(DFS['test_df_1'],
+                                           columns,
+                                           features,
+                                           config['preprocessing'],
+                                           backend,
+                                           )
+
+    for feature in features:
+        if feature[OUTPUT_FLAG]:
+            target = feature[PROC_COLUMN]
+    balanced_train = test_df[test_df.split == 0]
+    new_class_balance = round(balanced_train[target].value_counts()[
+                                  balanced_train[target].value_counts().idxmin()] / \
+                              balanced_train[target].value_counts()[
+                                  balanced_train[target].value_counts().idxmax()], 1)
+
+    assert len(test_proc_cols) == 5
+    assert new_class_balance == 0.5
+
+
+@pytest.mark.parametrize(
+    "balance, backend",
     [
         ("test_oversample", LOCAL_BACKEND),
         ("test_undersample", LOCAL_BACKEND),
@@ -63,30 +83,37 @@ REMOTE_BACKEND = initialize_backend(RAY)
         ("test_undersample", REMOTE_BACKEND),
     ],
 )
-def test_balance_data(config, backend):
-    test_proc_cols, test_df = balance_data(DFS['test_df_1'],
-                                           TEST_COLS['df1_cols'],
-                                           CONFIGS[config]['input_features'] + CONFIGS[config]['output_features'],
-                                           CONFIGS[config]['preprocessing'],
-                                           backend,
-                                           )
-    balanced_train = test_df[test_df.split == 0]
-    new_class_balance = round(balanced_train["Label_4567"].value_counts()[
-                                  balanced_train["Label_4567"].value_counts().idxmin()] / \
-                              balanced_train["Label_4567"].value_counts()[
-                                  balanced_train["Label_4567"].value_counts().idxmax()], 1)
-    assert len(test_proc_cols) == 5
-    assert new_class_balance == 0.5
-
-
-def test_build_dataset(config):
+def test_build_dataset(balance, backend, config=TEST_BUILD_DATA_CONFIG):
+    if balance == "test_oversample":
+        config['preprocessing']['oversample_minority'] = 0.5
+    else:
+        config['preprocessing']['undersample_majority'] = 0.5
+    test_dataset, test_metadata = build_dataset(DFS['test_df_1'],
+                                                config['input_features'] + config['output_features'],
+                                                config['preprocessing'],
+                                                metadata=None,
+                                                backend=backend,
+                                                random_seed=default_random_seed,
+                                                skip_save_processed_input=False,
+                                                callbacks=None,
+                                                mode=None,
+                                                )
     assert True is True
 
 
-@pytest.mark.parametrize("config", ["test_oversample", "test_undersample"])
-def test_train_local_backend(config):
-    assert True is True
+@pytest.mark.parametrize(
+    "balance, backend",
+    [
+        ("oversample_minority", LOCAL_BACKEND),
+        ("undersample_majority", LOCAL_BACKEND),
+        ("oversample_minority", REMOTE_BACKEND),
+        ("undersample_majority", REMOTE_BACKEND),
+    ],
+)
+def test_train_full_stack(balance, backend, config=TEST_TRAIN_CONFIG):
+    config[balance] = 0.5
+    model = LudwigModel(config)
+    train_stats, processed_df, url = model.train(DFS['test_df_1'])
 
+    assert len(DFS['test_df_1']) < len(processed_df)
 
-def test_train_remote_backend(config):
-    assert True is True
