@@ -22,7 +22,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
          include_subtrees=False, convert_parentheses=True, 
          remove_duplicates=False):
     dataset = SST2(cache_dir=cache_dir, include_subtrees=include_subtrees,
-                   convert_parentheses=onvert_parentheses, 
+                   convert_parentheses=convert_parentheses,
                    remove_duplicates=remove_duplicates)
     return dataset.load(split=split)
 
