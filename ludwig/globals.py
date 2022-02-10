@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = "0.5.dev0"
+LUDWIG_VERSION = "0.5.rc"
 
 MODEL_WEIGHTS_FILE_NAME = "model_weights"
 MODEL_HYPERPARAMETERS_FILE_NAME = "model_hyperparameters.json"
