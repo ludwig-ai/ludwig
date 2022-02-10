@@ -1084,7 +1084,7 @@ def build_dataset(
     if global_preprocessing_parameters['undersample_majority'] is not None \
             or global_preprocessing_parameters['oversample_minority'] is not None:
         logger.debug("balancing data")
-        proc_cols, total_df = balance_data(
+        proc_cols, dataset_df = balance_data(
             dataset_df,
             proc_cols,
             feature_configs,
@@ -1102,7 +1102,7 @@ def build_dataset(
             if reshape is not None:
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
-    dataset = backend.df_engine.df_like(total_df, proc_cols)
+    dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
