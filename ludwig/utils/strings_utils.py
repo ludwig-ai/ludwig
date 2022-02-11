@@ -16,7 +16,8 @@
 import logging
 import re
 import unicodedata
-from collections import Counter
+
+# from collections import Counter
 from enum import Enum
 from typing import List, Set, Union
 
@@ -175,41 +176,139 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
     vocab_list.insert(index, symbol)
 
 
+# def create_vocabulary(
+#     data: DataFrame,
+#     tokenizer_type: str = "space",
+#     lowercase: bool = True,
+#     num_most_frequent: int = None,
+#     vocab_file: str = None,
+#     add_special_symbols: bool = True,
+#     unknown_symbol: str = UNKNOWN_SYMBOL,
+#     padding_symbol: str = PADDING_SYMBOL,
+#     start_symbol: str = START_SYMBOL,
+#     stop_symbol: str = STOP_SYMBOL,
+#     pretrained_model_name_or_path: str = None,
+#     processor: str = PANDAS,
+# ):
+#     """Computes a vocabulary over the provided data frame.
+
+#     A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data
+#     provided, producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer',
+#     then a pre-trained huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is
+#     used directly.
+
+#     The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+#     STOP) are added if add_special_symbols=True.
+
+#     Args:
+#         data: DataFrame of string data.
+#         tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
+#         lowercase: Whether to lowercase all strings.
+#         num_most_frequent: Upper limit on vocabulary size.,
+#         add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
+#             always added.
+#         unknown_symbol: String representation for the UNKNOWN symbol.
+#         padding_symbol: String representation for the PADDING symbol.
+#         start_symbol: String representation for the START symbol.
+#         stop_symbol: String representation for the STOP symbol.
+#         pretrained_model_name_or_path: Name/path to huggingface model.
+#         processor: Which processor to use to process data.
+
+#     Returns:
+#         Tuple of:
+#             vocab: List of strings representing the computed vocabulary.
+#             str2idx: Map of symbol to index.
+#             str2freq: Map of symbol to frequency.
+#             max_line_length: (int) maximum sequence length.
+#             pad_idx: Index to padding symbol.
+#             padding_symbol: Actual padding symbol.
+#             unknown_symbol: Actual unknown symbol.
+
+#     TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
+#     """
+#     vocab = None
+
+#     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+#         vocab_file=vocab_file,
+#         pretrained_model_name_or_path=pretrained_model_name_or_path,
+#     )
+
+#     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
+#     if tokenizer_type == "hf_tokenizer":
+#         try:
+#             vocab = tokenizer.tokenizer.get_vocab()
+#             vocab = list(vocab.keys())
+#         except NotImplementedError:
+#             vocab = []
+#             for idx in range(tokenizer.tokenizer.vocab_size):
+#                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
+#             vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
+
+#         pad_token = tokenizer.tokenizer.pad_token
+#         unk_token = tokenizer.tokenizer.unk_token
+
+#         if unk_token is None:
+#             vocab = [unknown_symbol] + vocab
+#         else:
+#             unknown_symbol = unk_token
+
+#         if pad_token is None and add_special_symbols:
+#             vocab = [padding_symbol] + vocab
+#         else:
+#             padding_symbol = pad_token
+
+#     elif vocab_file is not None:
+#         vocab = load_vocabulary(vocab_file)
+
+#     print('\nTokenizing data')
+#     print(f'\tTokenizer: {tokenizer}')
+#     print(f'Dataset header: \n{data.head()}')
+#     print(f'Vocab: \n{vocab}')
+
+#     processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
+#     processed_counts = processed_lines.explode().value_counts(sort=False)
+#     processed_counts = processor.compute(processed_counts)
+#     unit_counts = Counter(dict(processed_counts))
+#     max_line_length = processor.compute(processed_lines.map(len).max())
+
+#     if vocab is None:
+#         vocab = [unit for unit, count in unit_counts.most_common(num_most_frequent)]
+
+#     vocab_set = set(vocab)
+
+#     if tokenizer_type != "hf_tokenizer":
+#         if add_special_symbols:
+#             add_or_move_symbol(vocab, vocab_set, stop_symbol, SpecialSymbol.STOP.value)
+#             add_or_move_symbol(vocab, vocab_set, start_symbol, SpecialSymbol.START.value)
+#             add_or_move_symbol(vocab, vocab_set, padding_symbol, SpecialSymbol.PADDING.value)
+#         # Always add the UNKNOWN symbol if we're using our own tokenizer.
+#         add_or_move_symbol(vocab, vocab_set, unknown_symbol, SpecialSymbol.UNKNOWN.value)
+
+#     str2idx = {unit: i for i, unit in enumerate(vocab)}
+#     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
+
+#     pad_idx = None
+#     if padding_symbol in str2idx.keys():
+#         pad_idx = str2idx[padding_symbol]
+
+#     return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
+
+
 def create_vocabulary(
     data: DataFrame,
-    tokenizer_type: str = "space",
-    lowercase: bool = True,
-    num_most_frequent: int = None,
-    vocab_file: str = None,
-    add_special_symbols: bool = True,
-    unknown_symbol: str = UNKNOWN_SYMBOL,
-    padding_symbol: str = PADDING_SYMBOL,
-    start_symbol: str = START_SYMBOL,
-    stop_symbol: str = STOP_SYMBOL,
-    pretrained_model_name_or_path: str = None,
+    num_most_frequent: int = -1,
     processor: str = PANDAS,
+    unknown_symbol: str = UNKNOWN_SYMBOL,
 ):
     """Computes a vocabulary over the provided data frame.
-
-    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data provided,
-    producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer', then a pre-trained
-    huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is used directly.
 
     The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
     STOP) are added if add_special_symbols=True.
 
     Args:
         data: DataFrame of string data.
-        tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
-        lowercase: Whether to lowercase all strings.
-        num_most_frequent: Upper limit on vocabulary size.,
-        add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
-            always added.
+        num_most_frequent: Upper limit on vocabulary size.
         unknown_symbol: String representation for the UNKNOWN symbol.
-        padding_symbol: String representation for the PADDING symbol.
-        start_symbol: String representation for the START symbol.
-        stop_symbol: String representation for the STOP symbol.
-        pretrained_model_name_or_path: Name/path to huggingface model.
         processor: Which processor to use to process data.
 
     Returns:
@@ -217,74 +316,17 @@ def create_vocabulary(
             vocab: List of strings representing the computed vocabulary.
             str2idx: Map of symbol to index.
             str2freq: Map of symbol to frequency.
-            max_line_length: (int) maximum sequence length.
-            pad_idx: Index to padding symbol.
-            padding_symbol: Actual padding symbol.
-            unknown_symbol: Actual unknown symbol.
 
     TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
     """
-    vocab = None
-
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
-        vocab_file=vocab_file,
-        pretrained_model_name_or_path=pretrained_model_name_or_path,
-    )
-
-    # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
-    if tokenizer_type == "hf_tokenizer":
-        try:
-            vocab = tokenizer.tokenizer.get_vocab()
-            vocab = list(vocab.keys())
-        except NotImplementedError:
-            vocab = []
-            for idx in range(tokenizer.tokenizer.vocab_size):
-                vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
-            vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
-
-        pad_token = tokenizer.tokenizer.pad_token
-        unk_token = tokenizer.tokenizer.unk_token
-
-        if unk_token is None:
-            vocab = [unknown_symbol] + vocab
-        else:
-            unknown_symbol = unk_token
-
-        if pad_token is None and add_special_symbols:
-            vocab = [padding_symbol] + vocab
-        else:
-            padding_symbol = pad_token
-
-    elif vocab_file is not None:
-        vocab = load_vocabulary(vocab_file)
-
-    processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
-    processed_counts = processed_lines.explode().value_counts(sort=False)
+    processed_counts = data.value_counts(sort=True)
     processed_counts = processor.compute(processed_counts)
-    unit_counts = Counter(dict(processed_counts))
-    max_line_length = processor.compute(processed_lines.map(len).max())
-
-    if vocab is None:
-        vocab = [unit for unit, count in unit_counts.most_common(num_most_frequent)]
-
-    vocab_set = set(vocab)
-
-    if tokenizer_type != "hf_tokenizer":
-        if add_special_symbols:
-            add_or_move_symbol(vocab, vocab_set, stop_symbol, SpecialSymbol.STOP.value)
-            add_or_move_symbol(vocab, vocab_set, start_symbol, SpecialSymbol.START.value)
-            add_or_move_symbol(vocab, vocab_set, padding_symbol, SpecialSymbol.PADDING.value)
-        # Always add the UNKNOWN symbol if we're using our own tokenizer.
-        add_or_move_symbol(vocab, vocab_set, unknown_symbol, SpecialSymbol.UNKNOWN.value)
-
+    vocab = processed_counts.index.tolist()[:num_most_frequent] + [unknown_symbol]
     str2idx = {unit: i for i, unit in enumerate(vocab)}
-    str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
+    str2freq = processed_counts.to_dict()
+    str2freq = {k: str2freq.get(k, 0) for k in vocab}
 
-    pad_idx = None
-    if padding_symbol in str2idx.keys():
-        pad_idx = str2idx[padding_symbol]
-
-    return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
+    return vocab, str2idx, str2freq
 
 
 def _get_sequence_vector(

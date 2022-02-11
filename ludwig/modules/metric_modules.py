@@ -122,7 +122,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
         return PREDICTIONS
 
 
-@register_metric(ROC_AUC, [BINARY])
+@register_metric(ROC_AUC, [])
 class ROCAUCMetric(AUROC, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
