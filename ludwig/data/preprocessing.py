@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+from time import time
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -1066,6 +1067,7 @@ def build_dataset(
         callback.on_build_data_end(dataset_df, mode)
 
     logger.debug("get split")
+    t = time()
     split = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters["force_split"],
@@ -1076,23 +1078,33 @@ def build_dataset(
     )
     if split is not None:
         proc_cols[SPLIT] = split
+    print(f"\n\n\nTime to get split: {time() - t}")
 
     # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
     #  conversion with Tensor columns. Can remove for 1.8.
     if backend.df_engine.partitioned:
+        t = time()
         for feature in features:
             name = feature[NAME]
             proc_column = feature[PROC_COLUMN]
             reshape = metadata[name].get("reshape")
             if reshape is not None:
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
+        print(f"\n\n\nTime to reshape: {time() - t}")
+
+    t = time()
 
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
+
+    print(f"\n\n\nTime to build df like dataset: {time() - t}")
 
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
+
+    t = time()
     dataset = dataset.dropna()
+    print(f"\n\n\nTime to drop na: {time() - t}")
 
     return dataset, metadata
 
@@ -1132,7 +1144,11 @@ def build_metadata(
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
 ) -> Dict[str, Any]:
+
     for feature_config in feature_configs:
+
+        t = time()
+
         if feature_config[NAME] in metadata:
             continue
 
@@ -1165,6 +1181,8 @@ def build_metadata(
 
         metadata[feature_config[NAME]][PREPROCESSING] = preprocessing_parameters
 
+        print(f"\n\n\nbuilt metadata for {feature_config[NAME]} in {time() - t:.3f} seconds")
+
     return metadata
 
 
@@ -1190,6 +1208,7 @@ def build_data(
     """
     proc_cols = {}
     for feature_config in feature_configs:
+        t = time()
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
         handle_missing_values(input_cols, feature_config, preprocessing_parameters)
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
@@ -1201,6 +1220,7 @@ def build_data(
             backend,
             skip_save_processed_input,
         )
+        print(f"\n\n\nbuilt data for {feature_config[NAME]} in {time() - t:.3f} seconds")
 
     return proc_cols
 
@@ -1361,6 +1381,9 @@ def preprocess_for_training(
     with file_lock(lock_path, lock_file=".lock_preprocessing"):
         # if training_set_metadata is a string, assume it's a path to load the json
         training_set_metadata = training_set_metadata or {}
+
+        print(f"\n\n\nTraining set metadata: {training_set_metadata}\n\n\n")
+
         if training_set_metadata and isinstance(training_set_metadata, str):
             training_set_metadata = load_metadata(training_set_metadata)
 
@@ -1427,28 +1450,38 @@ def preprocess_for_training(
                 random_seed=random_seed,
                 callbacks=callbacks,
             )
+            t = time()
             training_set, test_set, validation_set, training_set_metadata = processed
             replace_text_feature_level(features, [training_set, validation_set, test_set])
             processed = (training_set, test_set, validation_set, training_set_metadata)
+            print(f"Time to preprocess CKPT: {time() - t}")
 
             # cache the dataset
+            t = time()
             if backend.cache.can_cache(skip_save_processed_input):
                 logger.debug("cache processed data")
                 processed = cache.put(*processed)
             training_set, test_set, validation_set, training_set_metadata = processed
+            print(f"Time to cache CKPT: {time() - t}")
 
+        t = time()
         logger.debug("create training dataset")
         training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
+        print(f"Time to create training dataset: {time() - t}")
 
+        t = time()
         validation_dataset = None
         if validation_set is not None:
             logger.debug("create validation dataset")
             validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
+        print(f"Time to create validation dataset: {time() - t}")
 
+        t = time()
         test_dataset = None
         if test_set is not None:
             logger.debug("create test dataset")
             test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
+        print(f"Time to create test dataset: {time() - t}")
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 
@@ -1583,14 +1616,21 @@ def _preprocess_df_for_training(
     )
 
     logger.info("Building dataset: DONE")
+    print("Building dataset: DONE")
 
+    t = time()
     dataset = backend.df_engine.persist(dataset)
+    print("Persist dataset: DONE in %s seconds", time() - t)
+
+    t = time()
     if SPLIT in dataset.columns:
         logger.debug("split on split column")
         training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
     else:
         logger.debug("split randomly by partition")
         training_set, test_set, validation_set = dataset.random_split(preprocessing_params["split_probabilities"])
+
+    print("Split dataset: DONE in %s seconds", time() - t)
     return training_set, test_set, validation_set, training_set_metadata
 
 

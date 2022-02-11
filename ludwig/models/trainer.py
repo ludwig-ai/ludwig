@@ -56,6 +56,20 @@ from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
 
+try:
+    import wandb as _wandb
+except Exception as e:
+    logger.warning(f"import wandb failed with exception: {e}")
+    _wandb = None
+
+
+def _has_wandb():
+    if _wandb is None:
+        return False
+    if _wandb.run is None:
+        return False
+    return True
+
 
 class BaseTrainer(ABC):
     @abstractmethod
@@ -355,7 +369,7 @@ class Trainer(BaseTrainer):
         metrics,
         step,
     ):
-        if not summary_writer:
+        if not summary_writer and not _has_wandb():
             return
 
         for feature_name, output_feature in metrics.items():
@@ -364,6 +378,8 @@ class Trainer(BaseTrainer):
                 try:
                     metric_val = output_feature[metric][-1]
                     summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
+                    if _has_wandb():
+                        _wandb.log({metric_tag: metric_val}, step=step)
                 except IndexError:
                     logger.warning(f"Error computing metrics for {feature_name} {metric}.")
         summary_writer.flush()
@@ -940,15 +956,6 @@ class Trainer(BaseTrainer):
                 inputs,
                 targets,
             )
-
-            # Reintroduce for tensorboard graph
-            # if first_batch and self.is_coordinator() and not skip_save_log:
-            #     with train_summary_writer.as_default():
-            #         tf.summary.trace_export(
-            #             name="Model",
-            #             step=0,
-            #             profiler_outdir=tensorboard_log_dir
-            #         )
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
