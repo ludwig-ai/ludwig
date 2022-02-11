@@ -6,3 +6,6 @@ hyperopt:
       lower: 0.00002
       upper: 0.00005
       space: loguniform
+    trainer.batch_size:
+      space: choice
+      categories: [8, 16, 32, 64, 128]
