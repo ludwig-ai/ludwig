@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 
 from ludwig.modules.normalization_modules import GhostBatchNormalization
-from ludwig.utils.torch_utils import LudwigModule, Sparsemax
+from ludwig.utils.torch_utils import LudwigModule
+from entmax import sparsemax
 
 
 class TabNet(LudwigModule):
@@ -226,8 +227,6 @@ class AttentiveTransformer(LudwigModule):
             bn_virtual_bs=bn_virtual_bs,
             apply_glu=False,
         )
-        self.sparsemax = Sparsemax()
-        # self.sparsemax = CustomSparsemax()  # todo: tf implementation
 
     def forward(self, inputs, prior_scales):
         # shape notation
@@ -249,7 +248,7 @@ class AttentiveTransformer(LudwigModule):
         # to zero.
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
-        return self.sparsemax(hidden)  # [b_s, s]
+        return sparsemax(hidden)  # [b_s, s]
 
     @property
     def input_shape(self) -> torch.Size:

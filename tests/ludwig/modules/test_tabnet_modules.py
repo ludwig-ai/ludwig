@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
-from ludwig.utils.torch_utils import Sparsemax
+from entmax import sparsemax
 
 RANDOM_SEED = 67
 BATCH_SIZE = 16
@@ -20,7 +20,6 @@ BATCH_SIZE = 16
     ],
 )
 def test_sparsemax(input_tensor: torch.Tensor) -> None:
-    sparsemax = Sparsemax()
 
     output_tensor = sparsemax(input_tensor)
 
