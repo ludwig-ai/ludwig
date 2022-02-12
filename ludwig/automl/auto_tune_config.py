@@ -61,7 +61,7 @@ def get_machine_memory():
         @ray.remote(num_gpus=1)
         def get_remote_gpu():
             gpus = GPUtil.getGPUs()
-            total_mem_mb = gpus[0].memory_total
+            total_mem_mb = gpus[0].memoryTotal
             return total_mem_mb * BYTES_PER_MiB
 
         @ray.remote(num_cpus=1)
@@ -77,7 +77,7 @@ def get_machine_memory():
             machine_mem = ray.get(get_remote_cpu.remote())
     else:  # not using ray cluster
         if GPUtil.getGPUs():
-            machine_mem = GPUtil.getGPUs()[0].memory_total * BYTES_PER_MiB
+            machine_mem = GPUtil.getGPUs()[0].memoryTotal * BYTES_PER_MiB
         else:
             machine_mem = psutil.virtual_memory().total
 
@@ -91,7 +91,7 @@ def compute_memory_usage(config, training_set_metadata) -> int:
     total_size = 0
     batch_size = config[TRAINER][BATCH_SIZE]
     for tnsr in model_tensors:
-        total_size += tnsr[1].numpy().size * batch_size
+        total_size += tnsr[1].detach().numpy().size * batch_size
     total_bytes = total_size * 32  # assumes 32-bit precision
     return total_bytes
 
@@ -107,10 +107,11 @@ def sub_new_params(config: dict, new_param_vals: dict):
 
 def get_new_params(current_param_values, hyperparam_search_space, params_to_modify):
     for param, _ in params_to_modify.items():
-        if hyperparam_search_space[param][SPACE] == "choice":
-            current_param_values[param] = hyperparam_search_space[param]["categories"][-1]
-        else:
-            current_param_values[param] = hyperparam_search_space[param]["upper"]
+        if param in hyperparam_search_space:
+            if hyperparam_search_space[param][SPACE] == "choice":
+                current_param_values[param] = hyperparam_search_space[param]["categories"][-1]
+            else:
+                current_param_values[param] = hyperparam_search_space[param]["upper"]
     return current_param_values
 
 
@@ -124,7 +125,7 @@ def memory_tune_config(config, dataset):
     current_param_values = {}
     max_memory = get_machine_memory()
 
-    while param_list is not None:
+    while param_list is not None and len(param_list) > 0:
         # compute memory utilization
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
