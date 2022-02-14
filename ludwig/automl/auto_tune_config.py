@@ -121,12 +121,16 @@ def memory_tune_config(config, dataset):
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
     modified_hyperparam_search_space = copy.deepcopy(
         raw_config[HYPEROPT]['parameters'])
-    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[get_model_name(raw_config)]
-    param_list = list(params_to_modify.keys())
     current_param_values = {}
-    max_memory = get_machine_memory()
+    param_list = []
+    model_name = get_model_name(raw_config)
+    if model_name in RANKED_MODIFIABLE_PARAM_LIST:
+        params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_name]
+        if len(params_to_modify.keys()) > 0:
+            param_list = list(params_to_modify.keys())
+            max_memory = get_machine_memory()
 
-    while param_list is not None and len(param_list) > 0:
+    while param_list:
         # compute memory utilization
         current_param_values = get_new_params(
             current_param_values, modified_hyperparam_search_space, params_to_modify)
