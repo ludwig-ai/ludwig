@@ -92,7 +92,7 @@ def compute_memory_usage(config, training_set_metadata) -> int:
     batch_size = config[TRAINER][BATCH_SIZE]
     for tnsr in model_tensors:
         total_size += tnsr[1].detach().numpy().size * batch_size
-    total_bytes = total_size * 32  # assumes 32-bit precision
+    total_bytes = total_size * 4  # assumes 32-bit precision = 4 bytes
     return total_bytes
 
 
@@ -144,7 +144,7 @@ def memory_tune_config(config, dataset):
             if param_space == "choice":
                 if (
                     len(modified_hyperparam_search_space[param]["categories"]) > 2
-                    and modified_hyperparam_search_space[param]["categories"][-2] > min_value
+                    and modified_hyperparam_search_space[param]["categories"][-2] >= min_value
                 ):
                     modified_hyperparam_search_space[param]["categories"] = modified_hyperparam_search_space[param][
                         "categories"
