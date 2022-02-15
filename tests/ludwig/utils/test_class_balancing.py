@@ -8,7 +8,8 @@ import pandas as pd
 
 from ludwig.constants import OUTPUT_FLAG, SPLIT, NAME, PROC_COLUMN
 from ludwig.data.preprocessing import balance_data, build_dataset
-from ludwig.backend import RAY, create_ray_backend
+from ludwig.backend import create_ray_backend
+from ludwig.backend.ray import RayBackend
 from ludwig.backend.base import LocalBackend
 from ludwig.utils.defaults import default_random_seed
 from tests.integration_tests.utils import spawn
@@ -17,7 +18,8 @@ DFS = {
     "test_df_1": pd.DataFrame({"Index": np.arange(0, 200, 1),
                                "random_1": np.random.randint(0, 50, 200),
                                "random_2": np.random.choice(['Type A', 'Type B', 'Type C', 'Type D'], 200),
-                               "Label": np.random.choice(2, 200, p=[0.9, 0.1])})
+                               "Label": np.concatenate((np.zeros(180), np.ones(20))),
+                               "split": np.zeros(200)})
 }
 
 CONFIGS = {
@@ -52,7 +54,6 @@ def ray_start(num_cpus=2, num_gpus=None):
 @spawn
 def run_test_balance_data_ray(
         input_df,
-        input_columns,
         input_features,
         preprocessing_parameters,
         target,
@@ -60,43 +61,47 @@ def run_test_balance_data_ray(
         num_gpus=None, ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         backend = create_ray_backend()
-        test_proc_cols, test_df = balance_data(input_df,
-                                               input_columns,
-                                               input_features,
-                                               preprocessing_parameters,
-                                               backend)
+        input_df = backend.df_engine.from_pandas(input_df)
+        test_df = balance_data(input_df,
+                               input_features,
+                               preprocessing_parameters,
+                               backend)
 
-        balanced_train = test_df[test_df.split == 0]
-        new_class_balance = round(balanced_train[target].value_counts().compute()[
-                                      balanced_train[target].value_counts().compute().idxmin()] /
-                                  balanced_train[target].value_counts().compute()[
-                                      balanced_train[target].value_counts().compute().idxmax()], 1)
+        new_class_balance = round(test_df[target].value_counts().compute()[
+                                      test_df[target].value_counts().compute().idxmin()] /
+                                  test_df[target].value_counts().compute()[
+                                      test_df[target].value_counts().compute().idxmax()], 1)
 
-        assert len(test_proc_cols) == 5
+        assert input_df.compute().shape == (200, 6)
+        assert input_df[input_df['Label'] == 1].compute().shape == (20, 6)
+        assert input_df[input_df['Label'] == 0].compute().shape == (180, 6)
+        assert test_df.compute().shape == (270, 6)
+        assert isinstance(backend, RayBackend)
         assert new_class_balance == 0.5
 
 
 def run_test_balance_data_local(
         input_df,
-        input_cols,
         input_features,
         preprocessing_parameters,
         target,
         backend, ):
-    test_proc_cols, test_df = balance_data(input_df,
-                                           input_cols,
-                                           input_features,
-                                           preprocessing_parameters,
-                                           backend)
+    test_df = balance_data(input_df,
+                           input_features,
+                           preprocessing_parameters,
+                           backend)
 
-    balanced_train = test_df[test_df.split == 0]
-    new_class_balance = round(balanced_train[target].value_counts()[
-                                  balanced_train[target].value_counts().idxmin()] /
-                              balanced_train[target].value_counts()[
-                                  balanced_train[target].value_counts().idxmax()], 1)
+    new_class_balance = round(test_df[target].value_counts()[
+                                  test_df[target].value_counts().idxmin()] /
+                              test_df[target].value_counts()[
+                                  test_df[target].value_counts().idxmax()], 1)
 
-    assert len(test_proc_cols) == 5
+    assert input_df.shape == (200, 5)
+    assert input_df[input_df['Label'] == 1].shape == (20, 5)
+    assert input_df[input_df['Label'] == 0].shape == (180, 5)
+    assert test_df.shape == (270, 5)
     assert new_class_balance == 0.5
+    assert isinstance(backend, LocalBackend)
 
 
 @spawn
@@ -180,11 +185,6 @@ def test_balance_data_ray(balance):
     config = CONFIGS["test_config_1"].copy()
     config['preprocessing'][balance] = 0.5
     df = DFS['test_df_1'].copy()
-    columns = {}
-    for c in df.columns:
-        columns[c] = df[c]
-    columns[SPLIT] = np.random.choice(3, len(df), p=(0.7, 0.1, 0.2))
-    df[SPLIT] = columns[SPLIT]
     features = config['input_features'] + config['output_features']
     for feature in features:
         feature[PROC_COLUMN] = feature[NAME]
@@ -195,7 +195,6 @@ def test_balance_data_ray(balance):
             target = feature[NAME]
 
     run_test_balance_data_ray(df,
-                              columns,
                               features,
                               preprocessing_params,
                               target)
@@ -208,11 +207,6 @@ def test_balance_data_local(balance):
     config = CONFIGS["test_config_1"].copy()
     config['preprocessing'][balance] = 0.5
     df = DFS['test_df_1'].copy()
-    columns = {}
-    for c in df.columns:
-        columns[c] = df[c]
-    columns[SPLIT] = np.random.choice(3, len(df), p=(0.7, 0.1, 0.2))
-    df[SPLIT] = columns[SPLIT]
     features = config['input_features'] + config['output_features']
     for feature in features:
         feature[PROC_COLUMN] = feature[NAME]
@@ -224,7 +218,6 @@ def test_balance_data_local(balance):
             target = feature[NAME]
 
     run_test_balance_data_local(df,
-                                columns,
                                 features,
                                 preprocessing_params,
                                 target,
