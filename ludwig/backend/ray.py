@@ -131,6 +131,15 @@ def train_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
+
+    print("\n\n\ntrain_fn")
+    # Check if Cuda is available
+    import os
+
+    if torch.cuda.is_available():
+        print("CUDA is available")
+        print(f'CUDA VISIBLE DEVICES: {os.environ["CUDA_VISIBLE_DEVICES"]}')
+
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     initialize_pytorch(horovod=hvd)
@@ -185,8 +194,21 @@ class RayTrainerV2(BaseTrainer):
     def __init__(self, model, trainer_kwargs, executable_kwargs):
         self.model = model.cpu()
         self.executable_kwargs = executable_kwargs
-        self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
+
+        all_trainer_kwargs = {**get_trainer_kwargs(), **trainer_kwargs}
+        # self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
+        print(f"\n\n\nall_trainer_kwargs: {all_trainer_kwargs}")
+        self.trainer = Trainer(**all_trainer_kwargs)
         self.trainer.start()
+
+        # def foo():
+        #     import os
+
+        #     print(f'Torch.CUDA: {torch.cuda.is_available()}')
+        #     print(f'CUDA VISIBLE DEVICES: {os.environ["CUDA_VISIBLE_DEVICES"]}')
+
+        # self.trainer.run(foo)
+
         self._validation_field = None
         self._validation_metric = None
 
@@ -210,6 +232,14 @@ class RayTrainerV2(BaseTrainer):
             dataset["val"] = validation_set.pipeline(shuffle=False)
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False)
+
+        # See if CUDA IS available
+        import os
+
+        print("\n\n\nCUDA is available inside trainer")
+        if torch.cuda.is_available():
+            print("CUDA is available")
+            print(f'CUDA VISIBLE DEVICES: {os.environ["CUDA_VISIBLE_DEVICES"]}')
 
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),

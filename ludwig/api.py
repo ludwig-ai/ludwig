@@ -86,6 +86,11 @@ from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
+try:
+    import wandb as _wandb
+except ImportError:
+    _wandb = None
+
 
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
@@ -465,7 +470,9 @@ class LudwigModel:
                 logger.info("\nDataset sizes:")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
+            print("\n\nTraining Callbacks:")
             for callback in self.callbacks:
+                print(f"{callback.__class__.__name__}")
                 callback.on_train_init(
                     base_config=self.base_config,
                     experiment_directory=output_directory,
@@ -537,6 +544,7 @@ class LudwigModel:
                         validation_set=validation_set,
                         test_set=test_set,
                         save_path=model_dir,
+                        config=self.config,
                     )
 
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
