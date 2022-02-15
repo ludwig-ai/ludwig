@@ -1359,9 +1359,16 @@ class Trainer(BaseTrainer):
 
 
 class RemoteTrainer(Trainer):
-    def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+    def __init__(self, model_ref, pus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         horovod = initialize_horovod()
-        super().__init__(horovod=horovod, **kwargs)
+
+        import ray
+
+        model = ray.get(model_ref)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = model.to(device)
+
+        super().__init__(model=model, horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)

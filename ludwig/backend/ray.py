@@ -84,21 +84,21 @@ def get_trainer_kwargs(use_gpu=None):
 
     if use_gpu:
         num_workers = int(ray.cluster_resources().get("GPU", 0))
-        resources_per_worker = None
+        # resources_per_worker = None
     else:
         # Enforce one worker per node by requesting half the CPUs on the node
         # TODO: use placement groups
         node_resources = [node["Resources"] for node in ray.state.nodes()]
-        min_cpus = min(r["CPU"] for r in node_resources)
+        # min_cpus = min(r["CPU"] for r in node_resources)
         num_workers = len(node_resources)
-        resources_per_worker = {"CPU": min(min_cpus / 2 + 1, min_cpus)}
+        # resources_per_worker = {"CPU": min(min_cpus / 2 + 1, min_cpus)}
 
     return dict(
         # TODO travis: replace backend here once ray 1.8 released
         # backend='horovod',
         backend=HorovodConfig(),
         num_workers=num_workers,
-        resources_per_worker=resources_per_worker,
+        # resources_per_worker=resources_per_worker,
         use_gpu=use_gpu,
     )
 
@@ -241,7 +241,6 @@ class RayTrainerV2(BaseTrainer):
 
 def legacy_train_fn(
     trainer: RemoteTrainer = None,
-    remote_model: "LudwigModel" = None,  # noqa: F821
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     train_shards: List[DatasetPipeline] = None,
@@ -276,11 +275,18 @@ def legacy_train_fn(
         )
 
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+
+    if results is not None:
+        # only return the model state dict back to the head node.
+        trained_model, *args = results
+        results = (trained_model.cpu().state_dict(), *args)
+
+    torch.cuda.empty_cache()
     return results
 
 
 class RayLegacyTrainer(BaseTrainer):
-    def __init__(self, horovod_kwargs, executable_kwargs):
+    def __init__(self, model, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         if RayExecutor is None:
             logger.error(
@@ -289,10 +295,19 @@ class RayLegacyTrainer(BaseTrainer):
             return
         setting = RayExecutor.create_settings(timeout_s=30)
 
+        self.model = model.cpu()
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=executable_kwargs)
+        self.executor.start(
+            executable_cls=RemoteTrainer, executable_kwargs={"model_ref": ray.put(self.model), **executable_kwargs}
+        )
 
-    def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
+    def train(
+        self,
+        training_set: RayDataset,
+        validation_set: Optional[RayDataset] = None,
+        test_set: Optional[RayDataset] = None,
+        **kwargs,
+    ):
         workers = self.executor.driver.workers
         train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers, equal=True)
         val_shards = (
@@ -307,7 +322,6 @@ class RayLegacyTrainer(BaseTrainer):
         results = self.executor.execute(
             lambda trainer: legacy_train_fn(
                 trainer,
-                model,
                 training_set.training_set_metadata,
                 training_set.features,
                 train_shards,
@@ -315,7 +329,12 @@ class RayLegacyTrainer(BaseTrainer):
                 test_shards,
                 **kwargs,
             )
-        )
+        )[0]
+
+        # load state dict back into the model
+        state_dict, *args = results
+        self.model.load_state_dict(state_dict)
+        results = (self.model, *args)
 
         return results
 
@@ -471,11 +490,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        if not self._use_legacy:
-            return RayTrainerV2(model, self._horovod_kwargs, executable_kwargs)
-        else:
-            # TODO: deprecated 0.5
-            return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
+        # if not self._use_legacy:
+        # return RayTrainerV2(model, self._horovod_kwargs, executable_kwargs)
+        # else:
+        # TODO: deprecated 0.5
+        return RayLegacyTrainer(model, self._horovod_kwargs, executable_kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}

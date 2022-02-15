@@ -53,10 +53,11 @@ RAY_BACKEND_CONFIG = {
     "trainer": {
         "use_gpu": False,
         "num_workers": 2,
-        "resources_per_worker": {
-            "CPU": 0.1,
-            "GPU": 0,
-        },
+        "cpus_per_worker": 0.1,
+        # "resources_per_worker": {
+        #     "CPU": 0.1,
+        #     "GPU": 0,
+        # },
     },
 }
 
@@ -80,11 +81,11 @@ def run_api_experiment(config, data_parquet):
     kwargs = get_trainer_kwargs()
     if torch.cuda.device_count() > 0:
         assert kwargs.get("num_workers") == torch.cuda.device_count(), kwargs
-        assert kwargs.get("resources_per_worker") is None, kwargs
+        # assert kwargs.get("resources_per_worker") is None, kwargs
         assert kwargs.get("use_gpu"), kwargs
     else:
         assert kwargs.get("num_workers") == 1, kwargs
-        assert kwargs.get("resources_per_worker").get("CPU") == 2, kwargs
+        # assert kwargs.get("resources_per_worker").get("CPU") == 2, kwargs
         assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
