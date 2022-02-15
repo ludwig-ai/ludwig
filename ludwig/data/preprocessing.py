@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from ludwig.backend import Backend, LOCAL_BACKEND
+from ludwig.backend import Backend, LOCAL_BACKEND, _has_ray
 from ludwig.constants import (
     BACKFILL,
     BFILL,
@@ -1081,16 +1081,16 @@ def build_dataset(
     if split is not None:
         proc_cols[SPLIT] = split
 
-    if global_preprocessing_parameters['undersample_majority'] is not None \
-            or global_preprocessing_parameters['oversample_minority'] is not None:
-        logger.debug("balancing data")
-        proc_cols, dataset_df = balance_data(
-            dataset_df,
-            proc_cols,
-            feature_configs,
-            global_preprocessing_parameters,
-            backend,
-        )
+    # if global_preprocessing_parameters['undersample_majority'] is not None \
+    #         or global_preprocessing_parameters['oversample_minority'] is not None:
+    #     logger.debug("balancing data")
+    #     proc_cols, dataset_df = balance_data(
+    #         dataset_df,
+    #         proc_cols,
+    #         feature_configs,
+    #         global_preprocessing_parameters,
+    #         backend,
+    #     )
 
     # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
     #  conversion with Tensor columns. Can remove for 1.8.
@@ -1244,21 +1244,28 @@ def balance_data(
         minority_df = train_split[train_split[target] == minority_class]
 
         if preprocessing_parameters['oversample_minority']:
-            sample_size = int((len(majority_df) * preprocessing_parameters['oversample_minority']) - len(minority_df))
-            minority_df = pd.concat([minority_df, minority_df.sample(n=sample_size, replace=True)])
+            sample_fraction = (len(majority_df) * preprocessing_parameters['oversample_minority']) / len(minority_df)
+            minority_df = minority_df.sample(frac=sample_fraction, replace=True)
+            # minority_df = pd.concat([minority_df, minority_df.sample(frac=sample_fraction, replace=True)])
         elif preprocessing_parameters['undersample_majority']:
-            sample_size = int(len(minority_df) / preprocessing_parameters['undersample_majority'])
-            majority_df = majority_df.sample(n=sample_size, replace=False)
+            sample_fraction = int(len(minority_df) / preprocessing_parameters['undersample_majority']) / len(
+                majority_df)
+            majority_df = majority_df.sample(frac=sample_fraction, replace=False)
+            # majority_df = majority_df.sample(n=sample_fraction, replace=False)
 
-        balanced_train_split = pd.concat([minority_df, majority_df])
-        total_df = pd.concat([balanced_train_split, val_test_split])
+        if backend.df_engine.partitioned:
+            balanced_train_split = backend.df_engine.concatenate([minority_df, majority_df])
+            total_df = backend.df_engine.concatenate([balanced_train_split, val_test_split])
+        else:
+            balanced_train_split = pd.concat([minority_df, majority_df])
+            total_df = pd.concat([balanced_train_split, val_test_split])
 
         for column in input_cols.keys():
             proc_cols[column] = total_df[column]
 
         return proc_cols, total_df
     except KeyError as e:
-        logger.debug("No target column found, returning unbalanced DF", e)
+        logger.debug(e)
         return input_cols, dataset_df
 
 
@@ -1339,7 +1346,14 @@ def get_split(
             if backend.df_engine.partitioned:
                 # This approach is very inefficient for partitioned backends, which
                 # can split by partition
-                return None
+                # split_column = backend.df_engine.apply_objects(dataset_df,
+                #                                                lambda x: np.random.choice(3, 1, p=(0.7, 0.1, 0.2))[0])
+                # split = dataset_df.assign(split=split_column).split
+                # # training_set, test_set, validation_set = dataset_df.random_split((0.7, 0.1, 0.2))
+                # # split = backend.df_engine.from_array(np.random.choice(3, len(dataset_df), p=(0.7, 0.1, 0.2)))
+                # # dataset_df.set_index()
+                # return split
+                return
 
             split = (
                 dataset_df.index.to_series()
@@ -1599,6 +1613,8 @@ def _preprocess_file_for_training(
         logger.debug("split randomly by partition")
         training_data, test_data, validation_data = data.random_split(preprocessing_params["split_probabilities"])
 
+    training_set = balance_data(training_set, None, None, preprocessing_params, backend)
+
     return training_data, test_data, validation_data, training_set_metadata
 
 
@@ -1648,6 +1664,9 @@ def _preprocess_df_for_training(
     else:
         logger.debug("split randomly by partition")
         training_set, test_set, validation_set = dataset.random_split(preprocessing_params["split_probabilities"])
+
+    training_set = balance_data(training_set, None, None, preprocessing_params, backend)
+
     return training_set, test_set, validation_set, training_set_metadata
 
 
