@@ -16,6 +16,7 @@ import logging
 import os
 
 from ludwig.callbacks import Callback
+from ludwig.utils.misc_utils import get_file_names
 from ludwig.utils.package_utils import LazyLoader
 
 wandb = LazyLoader("wandb", globals(), "wandb")
@@ -36,10 +37,14 @@ class WandbCallback(Callback):
         resume,
     ):
         logger.info("wandb.on_train_init() called...")
+        print("\n\n\nwandb.on_train_init() called...\n\n")
+        _, _, model_dir = get_file_names(output_directory)
+        tensorboard_log_dir = os.path.join(model_dir, "logs")
+        wandb.tensorboard.patch(root_logdir=tensorboard_log_dir, tensorboardX=False, pytorch=True)
         wandb.init(
             project=os.getenv("WANDB_PROJECT", experiment_name),
             name=model_name,
-            sync_tensorboard=True,
+            # sync_tensorboard=True,
             dir=output_directory,
         )
         wandb.save(os.path.join(experiment_directory, "*"))

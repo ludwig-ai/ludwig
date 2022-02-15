@@ -56,19 +56,18 @@ from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
 
-try:
-    import wandb as _wandb
-except Exception as e:
-    logger.warning(f"import wandb failed with exception: {e}")
-    _wandb = None
+# try:
+#     import wandb as _wandb
+# except Exception as e:
+#     logger.warning(f"import wandb failed with exception: {e}")
+#     _wandb = None
 
 
 def _has_wandb():
-    if _wandb is None:
-        return False
-    if _wandb.run is None:
-        return False
-    return True
+    # if _wandb is None:
+    #     return False
+    # return True
+    return False
 
 
 class BaseTrainer(ABC):
@@ -368,6 +367,7 @@ class Trainer(BaseTrainer):
         summary_writer,
         metrics,
         step,
+        prefix="",
     ):
         if not summary_writer and not _has_wandb():
             return
@@ -378,8 +378,8 @@ class Trainer(BaseTrainer):
                 try:
                     metric_val = output_feature[metric][-1]
                     summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
-                    if _has_wandb():
-                        _wandb.log({metric_tag: metric_val}, step=step)
+                    # if _has_wandb():
+                    # _wandb.log({f'{prefix}/{metric_tag}': metric_val, 'epoch': step}, step=step)
                 except IndexError:
                     logger.warning(f"Error computing metrics for {feature_name} {metric}.")
         summary_writer.flush()
@@ -392,14 +392,20 @@ class Trainer(BaseTrainer):
         # combined loss
         loss_tag = "{}/step_training_loss".format("combined")
         train_summary_writer.add_scalar(loss_tag, combined_loss, global_step=step)
+        # if _has_wandb():
+        #     _wandb.log({loss_tag: combined_loss, 'step': step}, commit=False)
 
         # all other losses
         for feature_name, loss in all_losses.items():
             loss_tag = f"{feature_name}/step_training_loss"
             train_summary_writer.add_scalar(loss_tag, loss, global_step=step)
+            # if _has_wandb():
+            #     _wandb.log({loss_tag: loss, 'step': step}, commit=False)
 
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate", learning_rate, global_step=step)
+            # if _has_wandb():
+            #     _wandb.log({"combined/step_learning_rate": learning_rate, 'step': step}, commit=False)
 
         train_summary_writer.flush()
 
@@ -605,6 +611,7 @@ class Trainer(BaseTrainer):
         :param validation_set: The validation dataset
         :param test_set: The test dataset
         """
+
         # ====== General setup =======
         output_features = self.model.output_features
         digits_per_epochs = len(str(self.epochs))
@@ -686,6 +693,9 @@ class Trainer(BaseTrainer):
                 validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
             if test_set is not None and test_set.size > 0:
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+            # if _wandb is not None:
+            # config = kwargs.get("config", {})
+            # _wandb.init(config=config, project='benchmarking', entity='shreyar')
 
         # ================ Resume logic ================
         if self.resume:
@@ -793,6 +803,7 @@ class Trainer(BaseTrainer):
                     summary_writer=train_summary_writer,
                     metrics=progress_tracker.train_metrics,
                     step=progress_tracker.epoch,
+                    prefix="train",
                 )
 
                 if validation_set is not None:
@@ -811,6 +822,7 @@ class Trainer(BaseTrainer):
                         summary_writer=validation_summary_writer,
                         metrics=progress_tracker.vali_metrics,
                         step=progress_tracker.epoch,
+                        prefix="val",
                     )
 
                     self.callback(lambda c: c.on_validation_end(self, progress_tracker, save_path))
@@ -831,6 +843,7 @@ class Trainer(BaseTrainer):
                         summary_writer=test_summary_writer,
                         metrics=progress_tracker.test_metrics,
                         step=progress_tracker.epoch,
+                        prefix="test",
                     )
 
                     self.callback(lambda c: c.on_test_end(self, progress_tracker, save_path))
