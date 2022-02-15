@@ -239,8 +239,10 @@ class RayTrainerV2(BaseTrainer):
         self.trainer.shutdown()
 
 
+@ray.remote(num_gpus=1)
 def legacy_train_fn(
-    trainer: RemoteTrainer = None,
+    executable_kwargs: Dict[str, Any] = None,
+    model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     train_shards: List[DatasetPipeline] = None,
@@ -248,6 +250,9 @@ def legacy_train_fn(
     test_shards: List[DatasetPipeline] = None,
     **kwargs,
 ):
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA not available!!!")
+
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     initialize_pytorch(horovod=hvd)
@@ -274,6 +279,11 @@ def legacy_train_fn(
             training_set_metadata,
         )
 
+    model = ray.get(model_ref)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = model.to(device)
+
+    trainer = RemoteTrainer(model=model, **executable_kwargs)
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
     if results is not None:
@@ -293,13 +303,14 @@ class RayLegacyTrainer(BaseTrainer):
                 "RayLegacyTrainer failed to initialize: RayExecutor is None. Make sure horovod[ray] is installed."
             )
             return
-        setting = RayExecutor.create_settings(timeout_s=30)
+        # setting = RayExecutor.create_settings(timeout_s=30)
 
         self.model = model.cpu()
-        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(
-            executable_cls=RemoteTrainer, executable_kwargs={"model_ref": ray.put(self.model), **executable_kwargs}
-        )
+        self.executable_kwargs = executable_kwargs
+        # self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
+        # self.executor.start(
+        #     executable_cls=RemoteTrainer, executable_kwargs={"model_ref": ray.put(self.model), **executable_kwargs}
+        # )
 
     def train(
         self,
@@ -308,20 +319,15 @@ class RayLegacyTrainer(BaseTrainer):
         test_set: Optional[RayDataset] = None,
         **kwargs,
     ):
-        workers = self.executor.driver.workers
-        train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers, equal=True)
-        val_shards = (
-            validation_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers)
-            if validation_set
-            else None
-        )
-        test_shards = (
-            test_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers) if test_set else None
-        )
+        # workers = self.executor.driver.workers
+        train_shards = training_set.pipeline().split(n=1, equal=True)
+        val_shards = validation_set.pipeline(shuffle=False).split(n=1) if validation_set else None
+        test_shards = test_set.pipeline(shuffle=False).split(n=1) if test_set else None
 
-        results = self.executor.execute(
-            lambda trainer: legacy_train_fn(
-                trainer,
+        results = ray.get(
+            legacy_train_fn.remote(
+                self.executable_kwargs,
+                ray.put(self.model),
                 training_set.training_set_metadata,
                 training_set.features,
                 train_shards,
@@ -329,7 +335,7 @@ class RayLegacyTrainer(BaseTrainer):
                 test_shards,
                 **kwargs,
             )
-        )[0]
+        )
 
         # load state dict back into the model
         state_dict, *args = results
