@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+import os
 from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Dict, List, Optional
@@ -25,7 +26,8 @@ import pandas as pd
 import ray
 import torch
 from ray import ObjectRef
-from ray.data.dataset_pipeline import DatasetPipeline
+
+# from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
@@ -41,6 +43,8 @@ from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
 _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
+
+
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
@@ -131,14 +135,12 @@ def train_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
-
-    print("\n\n\ntrain_fn")
-    # Check if Cuda is available
-    import os
-
-    if torch.cuda.is_available():
-        print("CUDA is available")
-        print(f'CUDA VISIBLE DEVICES: {os.environ["CUDA_VISIBLE_DEVICES"]}')
+    # Check if GPU is available
+    use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
+    print(f"\n\n\nInside Train Fn, use_gpu={use_gpu}")
+    print(f"Ray cluster resources: {ray.cluster_resources()}")
+    print("Torch CUDA: ", torch.cuda.is_available())
+    print("CUDA VISIBLE DEVICES: ", os.environ.get("CUDA_VISIBLE_DEVICES"))
 
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
@@ -233,13 +235,12 @@ class RayTrainerV2(BaseTrainer):
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False)
 
-        # See if CUDA IS available
-        import os
-
-        print("\n\n\nCUDA is available inside trainer")
-        if torch.cuda.is_available():
-            print("CUDA is available")
-            print(f'CUDA VISIBLE DEVICES: {os.environ["CUDA_VISIBLE_DEVICES"]}')
+        # Check if GPU is available
+        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
+        print(f"\n\n\nInside RayTrainerV2, use_gpu={use_gpu}")
+        print(f"Ray cluster resources: {ray.cluster_resources()}")
+        print("Torch CUDA: ", torch.cuda.is_available())
+        print("CUDA VISIBLE DEVICES: ", os.environ.get("CUDA_VISIBLE_DEVICES"))
 
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
@@ -271,58 +272,69 @@ class RayTrainerV2(BaseTrainer):
 
 @ray.remote(num_gpus=1)
 def legacy_train_fn(
-    executable_kwargs: Dict[str, Any] = None,
-    model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
-    features: Dict[str, Dict] = None,
-    train_shards: List[DatasetPipeline] = None,
-    val_shards: List[DatasetPipeline] = None,
-    test_shards: List[DatasetPipeline] = None,
-    **kwargs,
+    # executable_kwargs: Dict[str, Any] = None,
+    # model_ref: ObjectRef = None,  # noqa: F821
+    # training_set_metadata: Dict[str, Any] = None,
+    # features: Dict[str, Dict] = None,
+    # train_shards: List[DatasetPipeline] = None,
+    # val_shards: List[DatasetPipeline] = None,
+    # test_shards: List[DatasetPipeline] = None,
+    # **kwargs,
 ):
+
+    # Check if GPU is available
+    use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
+    print(f"\n\n\nInside Train Fn, use_gpu={use_gpu}")
+    print(f"Ray cluster resources: {ray.cluster_resources()}")
+    print("Torch CUDA: ", torch.cuda.is_available())
+    print("CUDA VISIBLE DEVICES: ", os.environ.get("CUDA_VISIBLE_DEVICES"))
+
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA not available!!!")
 
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    initialize_pytorch(horovod=hvd)
+    print("\n\n\nHERE!!!!\n\n")
 
-    train_shard = RayDatasetShard(
-        train_shards[hvd.rank()],
-        features,
-        training_set_metadata,
-    )
+    # # Pin GPU before loading the model to prevent memory leaking onto other devices
+    # hvd = initialize_horovod()
+    # initialize_pytorch(horovod=hvd)
 
-    val_shard = val_shards[hvd.rank()] if val_shards else None
-    if val_shard is not None:
-        val_shard = RayDatasetShard(
-            val_shard,
-            features,
-            training_set_metadata,
-        )
+    # train_shard = RayDatasetShard(
+    #     train_shards[hvd.rank()],
+    #     features,
+    #     training_set_metadata,
+    # )
 
-    test_shard = test_shards[hvd.rank()] if test_shards else None
-    if test_shard is not None:
-        test_shard = RayDatasetShard(
-            test_shard,
-            features,
-            training_set_metadata,
-        )
+    # val_shard = val_shards[hvd.rank()] if val_shards else None
+    # if val_shard is not None:
+    #     val_shard = RayDatasetShard(
+    #         val_shard,
+    #         features,
+    #         training_set_metadata,
+    #     )
 
-    model = ray.get(model_ref)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.to(device)
+    # test_shard = test_shards[hvd.rank()] if test_shards else None
+    # if test_shard is not None:
+    #     test_shard = RayDatasetShard(
+    #         test_shard,
+    #         features,
+    #         training_set_metadata,
+    #     )
 
-    trainer = RemoteTrainer(model=model, **executable_kwargs)
-    results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+    # model = ray.get(model_ref)
+    # device = "cuda" if torch.cuda.is_available() else "cpu"
+    # model = model.to(device)
 
-    if results is not None:
-        # only return the model state dict back to the head node.
-        trained_model, *args = results
-        results = (trained_model.cpu().state_dict(), *args)
+    # trainer = RemoteTrainer(model=model, **executable_kwargs)
+    # results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
-    torch.cuda.empty_cache()
-    return results
+    # if results is not None:
+    #     # only return the model state dict back to the head node.
+    #     trained_model, *args = results
+    #     results = (trained_model.cpu().state_dict(), *args)
+
+    # torch.cuda.empty_cache()
+    # return results
+    return None
 
 
 class RayLegacyTrainer(BaseTrainer):
@@ -350,20 +362,27 @@ class RayLegacyTrainer(BaseTrainer):
         **kwargs,
     ):
         # workers = self.executor.driver.workers
-        train_shards = training_set.pipeline().split(n=1, equal=True)
-        val_shards = validation_set.pipeline(shuffle=False).split(n=1) if validation_set else None
-        test_shards = test_set.pipeline(shuffle=False).split(n=1) if test_set else None
+        # train_shards = training_set.pipeline().split(n=1, equal=True)
+        # val_shards = validation_set.pipeline(shuffle=False).split(n=1) if validation_set else None
+        # test_shards = test_set.pipeline(shuffle=False).split(n=1) if test_set else None
+
+        # Check if GPU is available
+        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
+        print(f"\n\n\nInside Legacy Trainer, use_gpu={use_gpu}")
+        print(f"Ray cluster resources: {ray.cluster_resources()}")
+        print("Torch CUDA: ", torch.cuda.is_available())
+        print("CUDA VISIBLE DEVICES: ", os.environ.get("CUDA_VISIBLE_DEVICES"))
 
         results = ray.get(
             legacy_train_fn.remote(
-                self.executable_kwargs,
-                ray.put(self.model),
-                training_set.training_set_metadata,
-                training_set.features,
-                train_shards,
-                val_shards,
-                test_shards,
-                **kwargs,
+                # self.executable_kwargs,
+                # ray.put(self.model),
+                # training_set.training_set_metadata,
+                # training_set.features,
+                # train_shards,
+                # val_shards,
+                # test_shards,
+                # **kwargs,
             )
         )
 
@@ -521,7 +540,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
-        initialize_pytorch(gpus=-1)
+        # initialize_pytorch(gpus=-1)
+        initialize_pytorch()
         self._pytorch_kwargs = kwargs
 
     def create_trainer(self, model: ECD, **kwargs):

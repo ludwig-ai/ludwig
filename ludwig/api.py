@@ -86,10 +86,10 @@ from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
-try:
-    import wandb as _wandb
-except ImportError:
-    _wandb = None
+# try:
+#     import wandb as _wandb
+# except ImportError:
+#     _wandb = None
 
 
 class LudwigModel:

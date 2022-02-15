@@ -350,6 +350,7 @@ def initialize_pytorch(
     if gpus and len(gpus) == 1 and gpus[0] == -1:
         # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        # pass
     elif torch.cuda.is_available():
         # Set visible devices so GPU utilization is isolated
         # (no GPU contention between workers).

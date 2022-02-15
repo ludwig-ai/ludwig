@@ -63,11 +63,11 @@ logger = logging.getLogger(__name__)
 #     _wandb = None
 
 
-def _has_wandb():
-    # if _wandb is None:
-    #     return False
-    # return True
-    return False
+# def _has_wandb():
+#     # if _wandb is None:
+#     #     return False
+#     # return True
+#     return False
 
 
 class BaseTrainer(ABC):
@@ -369,7 +369,9 @@ class Trainer(BaseTrainer):
         step,
         prefix="",
     ):
-        if not summary_writer and not _has_wandb():
+        # if not summary_writer and not _has_wandb():
+        #     return
+        if not summary_writer:
             return
 
         for feature_name, output_feature in metrics.items():
