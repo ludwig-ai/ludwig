@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import LudwigModule
-from entmax import sparsemax
+from entmax import sparsemax, entmax15
 
 
 class TabNet(LudwigModule):
@@ -22,6 +22,7 @@ class TabNet(LudwigModule):
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: Optional[int] = None,
         sparsity: float = 1e-5,
+        entmax: bool = True
     ):
         """TabNet Will output a vector of size output_dim.
 
@@ -42,14 +43,9 @@ class TabNet(LudwigModule):
         self.size = size
         self.output_size = output_size
         self.num_steps = num_steps
+        self.bn_virtual_bs = bn_virtual_bs
         self.relaxation_factor = relaxation_factor
         self.sparsity = torch.tensor(sparsity)
-
-        # needed by the attentive transformer in build()
-        self.num_steps = num_steps
-        self.bn_momentum = bn_momentum
-        self.bn_epsilon = bn_epsilon
-        self.bn_virtual_bs = bn_virtual_bs
 
         self.batch_norm = nn.BatchNorm1d(input_size, momentum=bn_momentum, eps=bn_epsilon)
 
@@ -79,7 +75,7 @@ class TabNet(LudwigModule):
             # of features that we determine by looking at the
             # last dimension of the input tensor
             self.attentive_transforms.append(
-                AttentiveTransformer(size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs)
+                AttentiveTransformer(size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs, entmax)
             )
         self.final_projection = nn.Linear(output_size, output_size)
 
@@ -214,10 +210,12 @@ class AttentiveTransformer(LudwigModule):
         bn_momentum: float = 0.9,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
+        entmax: bool = False
     ):
         super().__init__()
         self.input_size = input_size
         self.size = size
+        self.entmax = entmax
 
         self.feature_block = FeatureBlock(
             input_size,
@@ -248,7 +246,7 @@ class AttentiveTransformer(LudwigModule):
         # to zero.
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
-        return sparsemax(hidden)  # [b_s, s]
+        return entmax15(hidden) if self.entmax else sparsemax(hidden)  # [b_s, s]
 
     @property
     def input_shape(self) -> torch.Size:
