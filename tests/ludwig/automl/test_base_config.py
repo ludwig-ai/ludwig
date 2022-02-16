@@ -29,7 +29,10 @@ TARGET_NAME = "target"
         # Finite list of strings.
         (2, ["human", "bot"], 0, 0.0, CATEGORY),
         (10, [generate_string(5) for _ in range(10)], 0, 0.0, CATEGORY),
-        # Random strings.
+        (40, [generate_string(5) for _ in range(40)], 0, 0.0, CATEGORY),
+        # Mostly random strings.
+        (90, [generate_string(5) for _ in range(90)], 0, 0.0, TEXT),
+        # All random strings.
         (ROW_COUNT, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0.0, TEXT),
         # Images.
         (ROW_COUNT, [], ROW_COUNT, 0.0, IMAGE),
@@ -43,7 +46,7 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, missing_va
         distinct_values=distinct_values,
         image_values=img_values,
     )
-    assert infer_type(field, missing_vals) == expected
+    assert infer_type(field, missing_vals, ROW_COUNT) == expected
 
 
 @pytest.mark.parametrize(
