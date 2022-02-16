@@ -40,7 +40,8 @@ combiner_defaults = {
 
 encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.yaml")}}
 
-# The highest percentage of distinct values that we might still assign a CATEGORY type.
+# For a given feature, the highest percentage of distinct values out of the total number of rows that we might still
+# assign the CATEGORY type.
 CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF = 0.5
 
 # Cap for number of distinct values to return.
