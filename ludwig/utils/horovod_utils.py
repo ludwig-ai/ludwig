@@ -16,6 +16,7 @@ import os
 from typing import Any, List, Optional
 
 import torch
+from stopit import ThreadingTimeout
 
 try:
     import horovod.torch
@@ -96,6 +97,15 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
     # sync and gather all
     print(f"Input to allgather: {result}")
     gathered = _HVD.allgather(result)
+    handle = _HVD.allgather_async(result)
+    try:
+        with ThreadingTimeout(10.0, swallow_exc=False):
+            gathered = _HVD.synchronize(handle)
+    except Exception as e:
+        print(f"Timeout Error: {e}")
+        breakpoint()
+        gathered = _HVD.synchronize(handle)
+
     gathered_result = list(gathered.split(1, dim=0))
 
     if is_bool:
