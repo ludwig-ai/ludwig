@@ -73,6 +73,10 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
     :return: list with size equal to the process group where gathered_result[i]
              corresponds to result tensor from process i
     """
+
+    print("Gather all tensors.")
+    print(f"Result: {result}, Group: {group}")
+
     if group is not None:
         raise ValueError("Horovod does not support allgather using a subcommunicator at this time. " "Unset `group`.")
 
@@ -90,6 +94,7 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
         is_bool = True
 
     # sync and gather all
+    print(f"Input to allgather: {result}")
     gathered = _HVD.allgather(result)
     gathered_result = list(gathered.split(1, dim=0))
 
