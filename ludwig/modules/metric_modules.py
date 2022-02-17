@@ -122,12 +122,49 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
         return PREDICTIONS
 
 
-@register_metric(ROC_AUC, [BINARY])
-class ROCAUCMetric(AUROC, LudwigMetric):
-    def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+# @register_metric(ROC_AUC, [BINARY])
+# class ROCAUCMetric(AUROC, LudwigMetric):
+#     def __init__(self, **kwargs):
+#         super().__init__(dist_sync_fn=gather_all_tensors, compute_on_step=True)
 
-    """ Metric for area under ROC curve. """
+#     """ Metric for area under ROC curve. """
+
+#     def update(self, preds: Tensor, target: Tensor) -> None:
+#         # Currently only supported for binary tasks.
+#         if preds.ndim > 1 or target.ndim > 1:
+#             raise RuntimeError(
+#                 f"Only binary tasks supported, but received input of "
+#                 f"{max(preds.ndim, target.ndim)} dimensions while expecting"
+#                 f"1-dimensional input."
+#             )
+#         return super().update(preds, target)
+
+#     @classmethod
+#     def get_objective(cls):
+#         return MINIMIZE
+
+#     @classmethod
+#     def get_inputs(cls):
+#         return PROBABILITIES
+
+
+@register_metric(ROC_AUC, [BINARY])
+class ROCAUCMetric(LudwigMetric):
+    """Fast implementation of metric for area under ROC curve."""
+    def __init__(
+            self,
+            num_thresholds: int = 201,
+            epsilon: float = 1e-7,
+            compute_on_step: Optional[bool] = None,
+            dist_sync_on_step: bool = False,
+            process_group: Optional[Any] = None,
+            dist_sync_fn: Optional[Callable] = None) -> None:
+        super().__init__(compute_on_step, dist_sync_on_step, process_group, dist_sync_fn)
+        self.num_thresholds = num_thresholds
+        self.thresholds = torch.linspace(0, 1, num_thresholds)
+        self.thresholds[0] -= epsilon
+        self.thresholds[-1] += epsilon
+        self.add_state('summary_stats', torch.zeros(num_thresholds, 4))
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # Currently only supported for binary tasks.
@@ -137,7 +174,43 @@ class ROCAUCMetric(AUROC, LudwigMetric):
                 f"{max(preds.ndim, target.ndim)} dimensions while expecting"
                 f"1-dimensional input."
             )
-        return super().update(preds, target)
+
+        if torch.min(preds) < 0 or torch.max(preds) > 1:
+            raise RuntimeError(
+                f"Only binary tasks supported, but received predictions in range "
+                f"({torch.min(preds)}, {torch.max(preds)})."
+            )
+
+        target = target.to(bool).type(preds.dtype)
+        self.thresholds = self.thresholds.to(preds.dtype)
+
+        preds = preds.unsqueeze(1)
+        target = target.unsqueeze(1)
+
+        # Compute correct predictions.
+        correct_predictions = ((preds >= self.thresholds) == target).to(int)
+        # Compute true positives, false positives, true negatives, false negatives.
+        # overall_predictions is a tensor where each cell represents the type of prediction:
+        # 0: false positive
+        # 1: true negative
+        # 2: false negative
+        # 3: true positive
+        overall_predictions = correct_predictions + (2 * target)
+        # Sum up the number of true positives, false positives, true negatives, false negatives at each threshold.
+        self.summary_stats += torch.eye(4)[overall_predictions.T].sum(dim=1)
+
+    def compute(self) -> Tensor:
+        # Compute true positives, false positives, true negatives, false negatives.
+        false_positives = self.summary_stats[:, 0]
+        true_negatives = self.summary_stats[:, 1]
+        false_negatives = self.summary_stats[:, 2]
+        true_positives = self.summary_stats[:, 3]
+
+        true_positive_rate = true_positives / (true_positives + false_negatives)
+        false_positive_rate = false_positives / (false_positives + true_negatives)
+
+        # Compute area under ROC curve.
+        return torch.trapz(true_positive_rate, false_positive_rate)
 
     @classmethod
     def get_objective(cls):
