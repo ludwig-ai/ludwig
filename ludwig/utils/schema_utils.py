@@ -25,7 +25,7 @@ def load_config(cls, **kwargs):
 
 
 def load_config_with_kwargs(cls, kwargs):
-    """Takes a marshmallow class and dict of arguments and appropriately instantiantes the schema."""
+    """Takes a marshmallow class and dict of parameter values and appropriately instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     fields = schema.fields.keys()
@@ -202,72 +202,108 @@ def ReductionOptions(default: Union[None, str] = None):
     )
 
 
-def RegularizerOptions(nullable: bool = True):
-    return StringOptions(["l1", "l2", "l1_l2"], nullable=nullable)
+def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True):
+    return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable)
+
+
+def assert_is_a_string(s):
+    if not isinstance(s, str):
+        raise ValidationError(f"Expected string, instead received `{s}`")
 
 
 def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True):
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
-    if nullable:
-        options += [None] if None not in options else []
+    if len(options) <= 0:
+        raise ValidationError("Must provide non-empty list of options!")
+    if nullable and None not in options:
+        options += [None]
+    if default not in options:
+        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
     return field(
         metadata={
-            "marshmallow_field": fields.String(validate=validate.OneOf(options), allow_none=nullable, default=default)
-        },
-        default=default,
-    )
-
-
-def PositiveInteger(default: Union[None, int] = None):
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                validate=validate.Range(min=1), allow_none=default is None, default=default
+            "marshmallow_field": fields.String(
+                validate=validate.And(assert_is_a_string, validate.OneOf(options)),
+                allow_none=nullable,
+                default=default,
             )
         },
         default=default,
     )
 
 
+def assert_is_a_int(x):
+    if not isinstance(x, int):
+        raise ValidationError(f"Expected int, instead received `{x}`")
+
+
+def PositiveInteger(default: Union[None, int] = None):
+    val = validate.And(assert_is_a_int, validate.Range(min=1))
+    if default is not None:
+        try:
+            val(default)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={"marshmallow_field": fields.Integer(validate=val, allow_none=default is None, default=default)},
+        default=default,
+    )
+
+
 def NonNegativeInteger(default: Union[None, int] = None):
+    val = validate.And(assert_is_a_int, validate.Range(min=0))
+    if default is not None:
+        try:
+            val(default)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={
-            "marshmallow_field": fields.Integer(validate=validate.Range(min=0), allow_none=True, default=default)
+            "marshmallow_field": fields.Integer(strict=True, validate=val, allow_none=default is None, default=default)
         },
         default=default,
     )
 
 
 def IntegerRange(default: Union[None, int] = None, **kwargs):
+    val = validate.And(assert_is_a_int, validate.Range(**kwargs))
+    if default is not None:
+        try:
+            val(default)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={
-            "marshmallow_field": fields.Integer(
-                validate=validate.Range(**kwargs), allow_none=default is None, default=default
-            )
+            "marshmallow_field": fields.Integer(strict=True, validate=val, allow_none=default is None, default=default)
         },
         default=default,
     )
 
 
 def NonNegativeFloat(default: Union[None, float] = None, **kwargs):
+    val = validate.Range(min=0.0)
+    if default is not None:
+        try:
+            assert isinstance(default, float)
+            val(default)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={
-            "marshmallow_field": fields.Float(
-                validate=validate.Range(min=0.0), allow_none=default is None, default=default
-            )
-        },
+        metadata={"marshmallow_field": fields.Float(validate=val, allow_none=default is None, default=default)},
         default=default,
     )
 
 
 def FloatRange(default: Union[None, float] = None, **kwargs):
+    val = validate.Range(**kwargs)
+    if default is not None:
+        try:
+            assert isinstance(default, float)
+            val(default)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={
-            "marshmallow_field": fields.Float(
-                validate=validate.Range(**kwargs), allow_none=default is None, default=default
-            )
-        },
+        metadata={"marshmallow_field": fields.Float(validate=val, allow_none=default is None, default=default)},
         default=default,
     )
 

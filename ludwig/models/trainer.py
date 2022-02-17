@@ -114,7 +114,7 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
     "Strength of the $L2$ regularization (default: 0.0)."
 
-    regularization_type: Optional[str] = schema.RegularizerOptions()
+    regularization_type: Optional[str] = schema.RegularizerOptions(default="l2")
     "Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."
 
     should_shuffle: bool = True

@@ -100,9 +100,9 @@ class SGDOptimizer(BaseOptimizer):
     "(default: 0.001)"
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :
-    momentum: float = NonNegativeFloat(default=0)
-    weight_decay: float = NonNegativeFloat(default=0)
-    dampening: float = NonNegativeFloat(default=0)
+    momentum: float = NonNegativeFloat(default=0.0)
+    weight_decay: float = NonNegativeFloat(default=0.0)
+    dampening: float = NonNegativeFloat(default=0.0)
     nesterov: bool = False
 
 
@@ -126,7 +126,7 @@ class AdamOptimizer(BaseOptimizer):
     "(default: 1e-08)"
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    weight_decay: float = NonNegativeFloat(default=0)
+    weight_decay: float = NonNegativeFloat(default=0.0)
     amsgrad: bool = False
 
 
@@ -150,7 +150,7 @@ class AdadeltaOptimizer(BaseOptimizer):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :
     lr: float = FloatRange(default=1.0, min=0.0, max=1.0)
-    weight_decay: float = NonNegativeFloat(default=0)
+    weight_decay: float = NonNegativeFloat(default=0.0)
 
 
 @register_optimizer(name="adagrad")
@@ -192,7 +192,7 @@ class AdamaxOptimizer(BaseOptimizer):
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
     eps: float = NonNegativeFloat(default=1e-08)
-    weight_decay: float = NonNegativeFloat(default=0)
+    weight_decay: float = NonNegativeFloat(default=0.0)
 
 
 # NOTE: keep ftrl and nadam optimizers out of registry:
@@ -216,7 +216,7 @@ class NadamOptimizer(BaseOptimizer):
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
     eps: float = NonNegativeFloat(default=1e-08)
-    weight_decay: float = NonNegativeFloat(default=0)
+    weight_decay: float = NonNegativeFloat(default=0.0)
     momentum_decay: float = NonNegativeFloat(default=4e-3)
 
 
