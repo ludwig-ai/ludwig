@@ -20,7 +20,7 @@ import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import AUROC, IoU, MeanAbsoluteError
+from torchmetrics import IoU, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics import R2Score as _R2Score
