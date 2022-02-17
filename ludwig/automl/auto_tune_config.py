@@ -2,7 +2,6 @@ import copy
 from collections import OrderedDict
 
 import psutil
-import ray
 
 try:
     import GPUtil
