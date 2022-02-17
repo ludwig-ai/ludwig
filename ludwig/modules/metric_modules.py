@@ -122,32 +122,6 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
         return PREDICTIONS
 
 
-# @register_metric(ROC_AUC, [BINARY])
-# class ROCAUCMetric(AUROC, LudwigMetric):
-#     def __init__(self, **kwargs):
-#         super().__init__(dist_sync_fn=gather_all_tensors, compute_on_step=True)
-
-#     """ Metric for area under ROC curve. """
-
-#     def update(self, preds: Tensor, target: Tensor) -> None:
-#         # Currently only supported for binary tasks.
-#         if preds.ndim > 1 or target.ndim > 1:
-#             raise RuntimeError(
-#                 f"Only binary tasks supported, but received input of "
-#                 f"{max(preds.ndim, target.ndim)} dimensions while expecting"
-#                 f"1-dimensional input."
-#             )
-#         return super().update(preds, target)
-
-#     @classmethod
-#     def get_objective(cls):
-#         return MINIMIZE
-
-#     @classmethod
-#     def get_inputs(cls):
-#         return PROBABILITIES
-
-
 @register_metric(ROC_AUC, [BINARY])
 class ROCAUCMetric(LudwigMetric):
     """Fast implementation of metric for area under ROC curve."""
@@ -158,13 +132,17 @@ class ROCAUCMetric(LudwigMetric):
             compute_on_step: Optional[bool] = None,
             dist_sync_on_step: bool = False,
             process_group: Optional[Any] = None,
-            dist_sync_fn: Optional[Callable] = None) -> None:
+            dist_sync_fn: Optional[Callable] = None,
+            **kwargs,
+    ) -> None:
         super().__init__(compute_on_step, dist_sync_on_step, process_group, dist_sync_fn)
         self.num_thresholds = num_thresholds
-        self.thresholds = torch.linspace(0, 1, num_thresholds)
-        self.thresholds[0] -= epsilon
-        self.thresholds[-1] += epsilon
+        thresholds = torch.linspace(0, 1, num_thresholds)
+        thresholds[0] -= epsilon
+        thresholds[-1] += epsilon
+        self.add_state('thresholds', thresholds)
         self.add_state('summary_stats', torch.zeros(num_thresholds, 4))
+        self.add_state('identity', torch.eye(4))
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # Currently only supported for binary tasks.
@@ -197,10 +175,11 @@ class ROCAUCMetric(LudwigMetric):
         # 3: true positive
         overall_predictions = correct_predictions + (2 * target)
         # Sum up the number of true positives, false positives, true negatives, false negatives at each threshold.
-        self.summary_stats += torch.eye(4)[overall_predictions.T].sum(dim=1)
+        self.summary_stats += self.identity[overall_predictions.T.long()].sum(dim=1, keepdim=False)
 
     def compute(self) -> Tensor:
         # Compute true positives, false positives, true negatives, false negatives.
+        self.summary_stats = self.summary_stats.squeeze()
         false_positives = self.summary_stats[:, 0]
         true_negatives = self.summary_stats[:, 1]
         false_negatives = self.summary_stats[:, 2]
@@ -209,8 +188,8 @@ class ROCAUCMetric(LudwigMetric):
         true_positive_rate = true_positives / (true_positives + false_negatives)
         false_positive_rate = false_positives / (false_positives + true_negatives)
 
-        # Compute area under ROC curve.
-        return torch.trapz(true_positive_rate, false_positive_rate)
+        # Compute area under ROC curve. Multiply by -1 because tpr and fpr are computed from the opposite direction.
+        return -1 * torch.trapz(true_positive_rate, false_positive_rate)
 
     @classmethod
     def get_objective(cls):
