@@ -10,11 +10,12 @@ except ImportError:
     raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
-from ludwig.automl.utils import get_available_resources, get_model_name
+from ludwig.automl.utils import get_model_name
 from ludwig.constants import BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TRAINER
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.torch_utils import initialize_pytorch
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
@@ -54,46 +55,21 @@ def get_trainingset_metadata(config, dataset):
     return training_set_metadata
 
 
-def get_machine_memory():
-
-    if ray.is_initialized():  # using ray cluster
-
-        @ray.remote(num_gpus=1)
-        def get_remote_gpu():
-            gpus = GPUtil.getGPUs()
-            total_mem_mb = gpus[0].memoryTotal
-            return total_mem_mb * BYTES_PER_MiB
-
-        @ray.remote(num_cpus=1)
-        def get_remote_cpu():
-            total_mem = psutil.virtual_memory().total
-            return total_mem
-
-        resources = get_available_resources()  # check if cluster has GPUS
-
-        if resources["gpu"] > 0:
-            machine_mem = ray.get(get_remote_gpu.remote())
-        else:
-            machine_mem = ray.get(get_remote_cpu.remote())
-    else:  # not using ray cluster
-        if GPUtil.getGPUs():
-            machine_mem = GPUtil.getGPUs()[0].memoryTotal * BYTES_PER_MiB
-        else:
-            machine_mem = psutil.virtual_memory().total
-
+# Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
+def _get_machine_memory():
+    if GPUtil.getGPUs():
+        machine_mem = GPUtil.getGPUs()[0].memoryTotal * BYTES_PER_MiB
+    else:
+        machine_mem = psutil.virtual_memory().total
     return machine_mem
 
 
 def compute_memory_usage(config, training_set_metadata) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
-    model_tensors = lm.collect_weights()
-    total_size = 0
+    model_size = lm.get_model_size()
     batch_size = config[TRAINER][BATCH_SIZE]
-    for tnsr in model_tensors:
-        total_size += tnsr[1].detach().numpy().size * batch_size
-    total_bytes = total_size * 4  # assumes 32-bit precision = 4 bytes
-    return total_bytes
+    return model_size * batch_size
 
 
 def sub_new_params(config: dict, new_param_vals: dict):
@@ -115,6 +91,7 @@ def get_new_params(current_param_values, hyperparam_search_space, params_to_modi
     return current_param_values
 
 
+# Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
 def memory_tune_config(config, dataset):
     fits_in_memory = False
     raw_config = merge_with_defaults(config)
@@ -127,7 +104,8 @@ def memory_tune_config(config, dataset):
         params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_name]
         if len(params_to_modify.keys()) > 0:
             param_list = list(params_to_modify.keys())
-            max_memory = get_machine_memory()
+            max_memory = _get_machine_memory()
+            initialize_pytorch()
 
     while param_list:
         # compute memory utilization

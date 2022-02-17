@@ -20,7 +20,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
-from ludwig.automl.utils import _add_transfer_config, _ray_init, get_model_name
+from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_name
 from ludwig.constants import HYPEROPT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -137,9 +137,18 @@ def create_auto_config(
     model_config = _model_select(dataset, default_configs, user_config, use_reference_config)
     if tune_for_memory:
         if ray.is_initialized():
-            model_config, _ = ray.get(ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset))
+            resources = get_available_resources()  # check if cluster has GPUS
+            if resources["gpu"] > 0:
+                model_config, fits_in_memory = ray.get(ray.remote(num_gpus=1,num_cpus=1)(memory_tune_config).remote(model_config, dataset))
+            else:
+                model_config, fits_in_memory = ray.get(ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset))
         else:
-            model_config, _ = memory_tune_config(model_config, dataset)
+            model_config, fits_in_memory = memory_tune_config(model_config, dataset)
+        if not fits_in_memory:
+            warnings.warn(
+                "AutoML with tune_for_memory set True estimates model will not fit in memory. "
+                "Consider setting AutoML user_config to further reduce model memory footprint. "
+            )
     return model_config
 
 
