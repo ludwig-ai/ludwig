@@ -91,6 +91,14 @@ class ECD(tf.keras.Model):
         outputs = self.call(inputs)
         return tf.keras.Model(inputs=inputs, outputs=outputs)
 
+    def get_model_size(self) -> int:
+        model_tensors = self.collect_weights()
+        total_size = 0
+        for tnsr in model_tensors:
+            total_size += tnsr[1].numpy().size
+        total_bytes = total_size * 4  # assumes 32-bit precision = 4 bytes
+        return total_bytes
+
     def save_savedmodel(self, save_path):
         keras_model = self.get_connected_model(training=False)
         keras_model.save(save_path)
