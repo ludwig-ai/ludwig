@@ -125,16 +125,17 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
 @register_metric(ROC_AUC, [BINARY])
 class ROCAUCMetric(LudwigMetric):
     """Fast implementation of metric for area under ROC curve."""
+
     def __init__(
-            self,
-            num_thresholds: int = 201,
-            epsilon: float = 1e-7,
-            **kwargs,
+        self,
+        num_thresholds: int = 201,
+        epsilon: float = 1e-7,
+        **kwargs,
     ) -> None:
         super().__init__(dist_sync_fn=gather_all_tensors)
         self.num_thresholds = num_thresholds
         self.epsilon = epsilon
-        self.add_state('summary_stats', torch.zeros(num_thresholds, 4), dist_reduce_fx='sum')
+        self.add_state("summary_stats", torch.zeros(num_thresholds, 4), dist_reduce_fx="sum")
 
     def _get_thresholds(self, device, dtype) -> Tensor:
         thresholds = torch.linspace(0, 1, self.num_thresholds, device=device, dtype=dtype)
