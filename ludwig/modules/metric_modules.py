@@ -134,8 +134,7 @@ class ROCAUCMetric(LudwigMetric):
         super().__init__(dist_sync_fn=gather_all_tensors)
         self.num_thresholds = num_thresholds
         self.epsilon = epsilon
-        # Add an extra dimension to each state to make it compatible with Horovod all gather.
-        self.add_state('summary_stats', torch.zeros(num_thresholds, 4)[None], dist_reduce_fx='sum')
+        self.add_state('summary_stats', torch.zeros(num_thresholds, 4), dist_reduce_fx='sum')
 
     def _get_thresholds(self, device, dtype) -> Tensor:
         thresholds = torch.linspace(0, 1, self.num_thresholds, device=device, dtype=dtype)
