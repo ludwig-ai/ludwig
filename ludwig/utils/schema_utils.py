@@ -206,16 +206,13 @@ def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True):
     return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable)
 
 
-def assert_is_a_string(s):
-    if not isinstance(s, str):
-        raise ValidationError(f"Expected string, instead received `{s}`")
-
-
 def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True):
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
     if len(options) <= 0:
         raise ValidationError("Must provide non-empty list of options!")
+    if default is not None and not isinstance(default, str):
+        raise ValidationError(f"Provided default `{default}` should be a string!")
     if nullable and None not in options:
         options += [None]
     if default not in options:
@@ -223,7 +220,7 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                validate=validate.And(assert_is_a_string, validate.OneOf(options)),
+                validate=validate.OneOf(options),
                 allow_none=nullable,
                 default=default,
             )
@@ -232,28 +229,27 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
     )
 
 
-def assert_is_a_int(x):
-    if not isinstance(x, int):
-        raise ValidationError(f"Expected int, instead received `{x}`")
-
-
 def PositiveInteger(default: Union[None, int] = None):
-    val = validate.And(assert_is_a_int, validate.Range(min=1))
+    val = validate.Range(min=1)
     if default is not None:
         try:
+            assert isinstance(default, int)
             val(default)
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={"marshmallow_field": fields.Integer(validate=val, allow_none=default is None, default=default)},
+        metadata={
+            "marshmallow_field": fields.Integer(strict=True, validate=val, allow_none=default is None, default=default)
+        },
         default=default,
     )
 
 
 def NonNegativeInteger(default: Union[None, int] = None):
-    val = validate.And(assert_is_a_int, validate.Range(min=0))
+    val = validate.Range(min=0)
     if default is not None:
         try:
+            assert isinstance(default, int)
             val(default)
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
@@ -266,9 +262,10 @@ def NonNegativeInteger(default: Union[None, int] = None):
 
 
 def IntegerRange(default: Union[None, int] = None, **kwargs):
-    val = validate.And(assert_is_a_int, validate.Range(**kwargs))
+    val = validate.Range(**kwargs)
     if default is not None:
         try:
+            assert isinstance(default, int)
             val(default)
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
@@ -280,11 +277,11 @@ def IntegerRange(default: Union[None, int] = None, **kwargs):
     )
 
 
-def NonNegativeFloat(default: Union[None, float] = None, **kwargs):
+def NonNegativeFloat(default: Union[None, float] = None):
     val = validate.Range(min=0.0)
     if default is not None:
         try:
-            assert isinstance(default, float)
+            assert isinstance(default, float) or isinstance(default, int)
             val(default)
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
@@ -298,7 +295,7 @@ def FloatRange(default: Union[None, float] = None, **kwargs):
     val = validate.Range(**kwargs)
     if default is not None:
         try:
-            assert isinstance(default, float)
+            assert isinstance(default, float) or isinstance(default, int)
             val(default)
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
@@ -308,28 +305,104 @@ def FloatRange(default: Union[None, float] = None, **kwargs):
     )
 
 
-def DictList(default: Union[None, tDict] = None):
+def Dict(default: Union[None, tDict] = None):
+    if default is not None:
+        try:
+            assert isinstance(default, dict)
+            assert all([isinstance(k, str) for k in default.keys()])
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={"marshmallow_field": fields.List(fields.Dict(fields.String()), allow_none=True, default=default)},
-        default=default,
+        metadata={"marshmallow_field": fields.Dict(fields.String(), allow_none=True, default=default)},
+        default_factory=lambda: default,
     )
 
 
-def Dict(default: Union[None, tDict] = None):
+def DictList(default: Union[None, List[tDict]] = None):
+    if default is not None:
+        try:
+            assert isinstance(default, list)
+            assert all([isinstance(d, dict) for d in default])
+            for d in default:
+                assert all([isinstance(k, str) for k in d.keys()])
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+
     return field(
-        metadata={"marshmallow_field": fields.Dict(fields.String(), allow_none=True, default=default)},
-        default=default,
+        metadata={"marshmallow_field": fields.List(fields.Dict(fields.String()), allow_none=True, default=default)},
+        default_factory=lambda: default,
     )
 
 
 def Embed():
-    return field(metadata={"marshmallow_field": EmbedInputFeatureNameField(allow_none=True)}, default=None)
+    _embed_options = ["add"]
 
+    # TODO(ksbrar): Should the default choice here be null?
+    class EmbedInputFeatureNameField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if value is None:
+                return value
 
-_embed_options = ["add"]
+            if isinstance(value, str):
+                if value not in _embed_options:
+                    raise ValidationError(f"Expected one of: {_embed_options}, found: {value}")
+                return value
+
+            if isinstance(value, int):
+                return value
+
+            raise ValidationError("Field should be int or str")
+
+        def _jsonschema_type_mapping(self):
+            return {"oneOf": [{"type": "string", "enum": _embed_options}, {"type": "integer"}, {"type": "null"}]}
+
+    return field(
+        metadata={"marshmallow_field": EmbedInputFeatureNameField(allow_none=True, default=None)}, default=None
+    )
 
 
 def InitializerOrDict(default: str = "xavier_uniform"):
+    initializers = list(initializer_registry.keys())
+    if not isinstance(default, str) or default not in initializers:
+        raise ValidationError(f"Invalid default: `{default}`")
+
+    class InitializerOptionsOrCustomDictField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, str):
+                if value not in initializers:
+                    raise ValidationError(f"Expected one of: {initializers}, found: {value}")
+                return value
+
+            if isinstance(value, dict):
+                if "type" not in value:
+                    raise ValidationError("Dict must contain 'type'")
+                if value["type"] not in initializers:
+                    raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
+                return value
+
+            raise ValidationError("Field should be str or dict")
+
+        def _jsonschema_type_mapping(self):
+            initializers = list(initializer_registry.keys())
+            return {
+                "oneOf": [
+                    {
+                        "type": ["string", "null"],
+                        "enum": initializers,
+                        "default": self.default,
+                    },
+                    # Note: default not provided in the custom dict option:
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {"type": "string", "enum": initializers},
+                        },
+                        "required": ["type"],
+                        "additionalProperties": True,
+                    },
+                ]
+            }
+
     return field(
         metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=True, default=default)},
         default=default,
@@ -357,7 +430,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             }
 
     def validate_range(data: Tuple):
-        if isinstance(data, tuple) and list(map(type, data)) == [float] * N:
+        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
             if all(list(map(lambda b: min <= b <= max, data))):
                 return data
             raise ValidationError(
@@ -365,73 +438,19 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             )
         raise ValidationError(f'Received value should be of {N}-dimensional "Tuple[float]", instead received: {data}')
 
+    try:
+        validate_range(default)
+    except Exception:
+        raise ValidationError(f"Invalid default: `{default}`")
+
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * N, allow_none=default is None, validate=validate_range, default=default
+                tuple_fields=[fields.Float()] * N, allow_none=False, validate=validate_range, default=default
             )
         },
         default=default,
     )
-
-
-# TODO(ksbrar): Should the default choice here be null?
-class EmbedInputFeatureNameField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        if value is None:
-            return value
-
-        if isinstance(value, str):
-            if value not in _embed_options:
-                raise ValidationError(f"Expected one of: {_embed_options}, found: {value}")
-            return value
-
-        if isinstance(value, int):
-            return value
-
-        raise ValidationError("Field should be int or str")
-
-    def _jsonschema_type_mapping(self):
-        return {"oneOf": [{"type": "string", "enum": _embed_options}, {"type": "integer"}, {"type": "null"}]}
-
-
-class InitializerOptionsOrCustomDictField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        initializers = list(initializer_registry.keys())
-        if isinstance(value, str):
-            if value not in initializers:
-                raise ValidationError(f"Expected one of: {initializers}, found: {value}")
-            return value
-
-        if isinstance(value, dict):
-            if "type" not in value:
-                raise ValidationError("Dict must contain 'type'")
-            if value["type"] not in initializers:
-                raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
-            return value
-
-        raise ValidationError("Field should be str or dict")
-
-    def _jsonschema_type_mapping(self):
-        initializers = list(initializer_registry.keys())
-        return {
-            "oneOf": [
-                {
-                    "type": ["string", "null"],
-                    "enum": initializers,
-                    "default": self.default,
-                },
-                # Note: default not provided in the custom dict option:
-                {
-                    "type": "object",
-                    "properties": {
-                        "type": {"type": "string", "enum": initializers},
-                    },
-                    "required": ["type"],
-                    "additionalProperties": True,
-                },
-            ]
-        }
 
 
 def IntegerOrStringOptionsField(
