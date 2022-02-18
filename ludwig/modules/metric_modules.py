@@ -129,20 +129,19 @@ class ROCAUCMetric(LudwigMetric):
             self,
             num_thresholds: int = 201,
             epsilon: float = 1e-7,
-            compute_on_step: Optional[bool] = None,
-            dist_sync_on_step: bool = False,
-            process_group: Optional[Any] = None,
-            dist_sync_fn: Optional[Callable] = None,
             **kwargs,
     ) -> None:
-        super().__init__(compute_on_step, dist_sync_on_step, process_group, dist_sync_fn)
+        super().__init__(dist_sync_fn=gather_all_tensors)
         self.num_thresholds = num_thresholds
-        thresholds = torch.linspace(0, 1, num_thresholds)
-        thresholds[0] -= epsilon
-        thresholds[-1] += epsilon
-        self.add_state('thresholds', thresholds)
-        self.add_state('summary_stats', torch.zeros(num_thresholds, 4))
-        self.add_state('identity', torch.eye(4))
+        self.epsilon = epsilon
+        # Add an extra dimension to each state to make it compatible with Horovod all gather.
+        self.add_state('summary_stats', torch.zeros(num_thresholds, 4)[None], dist_reduce_fx='sum')
+
+    def _get_thresholds(self, device, dtype) -> Tensor:
+        thresholds = torch.linspace(0, 1, self.num_thresholds, device=device, dtype=dtype)
+        thresholds[0] -= self.epsilon
+        thresholds[-1] += self.epsilon
+        return thresholds
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # Currently only supported for binary tasks.
@@ -159,14 +158,15 @@ class ROCAUCMetric(LudwigMetric):
                 f"({torch.min(preds)}, {torch.max(preds)})."
             )
 
+        thresholds = self._get_thresholds(preds.device, preds.dtype)
         target = target.to(bool).type(preds.dtype)
-        self.thresholds = self.thresholds.to(preds.dtype)
 
         preds = preds.unsqueeze(1)
         target = target.unsqueeze(1)
 
-        # Compute correct predictions.
-        correct_predictions = ((preds >= self.thresholds) == target).to(int)
+        # Compute correct predictions at each threshold.
+        correct_predictions = ((preds >= thresholds) == target).to(int)
+
         # Compute true positives, false positives, true negatives, false negatives.
         # overall_predictions is a tensor where each cell represents the type of prediction:
         # 0: false positive
@@ -174,8 +174,9 @@ class ROCAUCMetric(LudwigMetric):
         # 2: false negative
         # 3: true positive
         overall_predictions = correct_predictions + (2 * target)
+
         # Sum up the number of true positives, false positives, true negatives, false negatives at each threshold.
-        self.summary_stats += self.identity[overall_predictions.T.long()].sum(dim=1, keepdim=False)
+        self.summary_stats += torch.eye(4, device=preds.device)[overall_predictions.T.long()].sum(dim=1, keepdim=False)
 
     def compute(self) -> Tensor:
         # Compute true positives, false positives, true negatives, false negatives.
