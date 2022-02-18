@@ -16,6 +16,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
+from ludwig.constants import TRAINER
 from ludwig.utils.schema import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
@@ -39,7 +40,7 @@ def test_config_tabnet():
             "use_keras_batch_norm": False,
             "bn_virtual_bs": 512,
         },
-        "training": {
+        TRAINER: {
             "batch_size": 16384,
             "eval_batch_size": 500000,
             "epochs": 1000,
