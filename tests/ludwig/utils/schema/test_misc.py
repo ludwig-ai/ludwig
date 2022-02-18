@@ -24,7 +24,7 @@ from ludwig.features.date_feature import DateFeatureMixin
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.h3_feature import H3FeatureMixin
 from ludwig.features.image_feature import ImageFeatureMixin
-from ludwig.features.numerical_feature import NumericalFeatureMixin
+from ludwig.features.number_feature import NumberFeatureMixin
 from ludwig.features.sequence_feature import SequenceFeatureMixin
 from ludwig.features.set_feature import SetFeatureMixin
 from ludwig.features.text_feature import TextFeatureMixin
@@ -197,7 +197,7 @@ def test_validate_with_preprocessing_defaults():
             date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults()),
             h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults()),
             image_feature("/tmp/destination_folder", preprocessing=ImageFeatureMixin.preprocessing_defaults()),
-            numerical_feature(preprocessing=NumericalFeatureMixin.preprocessing_defaults()),
+            numerical_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults()),
             sequence_feature(preprocessing=SequenceFeatureMixin.preprocessing_defaults()),
             set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults()),
             text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults()),
