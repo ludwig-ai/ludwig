@@ -272,14 +272,14 @@ class OptimizerMarshmallowField(fields.Field):
         if value is None:
             return None
         if isinstance(value, dict):
-            if "type" in value:
+            if "type" in value and value["type"] in optimizer_registry:
                 opt = optimizer_registry[value["type"].lower()][1]
                 try:
                     return opt.Schema().load(value)
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition. Error: {e}")
             raise ValidationError(
-                f"Invalid params for optimizer: {value}, expect dict with at least a `type` attribute."
+                f"Invalid params for optimizer: {value}, expect dict with at least a valid `type` attribute."
             )
         raise ValidationError("Field should be None or dict")
 
@@ -304,21 +304,22 @@ def OptimizerDataclassField(default={"type": "adam"}):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 
-    Does not allow `None`, sets default optimizer to 'adam'.
+    Sets default optimizer to 'adam'.
 
     :param default: Dict specifying an optimizer with a `type` field and its associated parameters. Will attempt to use
            `type` to load optimizer from registry with given params. (default: {"type": "adam"}).
     :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
+    if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
+        raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
-        if default["type"] not in optimizer_registry:
-            raise ValidationError
+
         return field(
             metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=True)},
             default_factory=lambda: opt.Schema().load(default),
         )
-    except (TypeError, ValidationError) as e:
+    except Exception as e:
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
@@ -419,6 +420,8 @@ def ClipperDataclassField(default={}, allow_none=True):
     :param default: dict that specifies clipper param values that will be loaded by its schema class (default: {}).
     :param allow_none: Whether this field can accept `None` as a value. (default: True)
     """
+    if not isinstance(default, dict):
+        raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
         default_factory=lambda: Clipper.Schema().load(default),
