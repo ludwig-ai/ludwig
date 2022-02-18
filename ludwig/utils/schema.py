@@ -156,7 +156,7 @@ def get_custom_definitions():
 
 
 def validate_config(config):
-    # Add support for tuples (watch this issue: https://github.com/Julian/jsonschema/issues/148)
+    # Add support for tuples (watch this issue: https://github.com/Julian/jsonschema/issues/148):
     def custom_is_array(checker, instance):
         return isinstance(instance, list) or isinstance(instance, tuple)
 
