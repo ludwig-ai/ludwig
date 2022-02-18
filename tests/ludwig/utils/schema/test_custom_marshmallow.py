@@ -112,7 +112,10 @@ def test_load_config_with_kwargs():
 
 
 # Tests for custom dataclass/marshmallow fields:
+
+
 def get_marshmallow_from_dataclass_field(dfield):
+    """Helper method for checking marshmallow metadata succinctly."""
     return dfield.metadata["marshmallow_field"]
 
 
@@ -226,10 +229,12 @@ def test_RegularizerOptions():
 
 
 def test_StringOptions():
+    # Test empty provided options:
     test_options = []
     with pytest.raises(MarshmallowValidationError):
         lusutils.StringOptions(test_options)
 
+    # Test cases of default conflicting with allowed options:
     test_options = ["one"]
     with pytest.raises(MarshmallowValidationError):
         lusutils.StringOptions(test_options, default="two")
@@ -238,11 +243,13 @@ def test_StringOptions():
     with pytest.raises(MarshmallowValidationError):
         lusutils.StringOptions(test_options, default=None, nullable=False)
 
+    # Test metadata matches expected defaults after field creation (null allowed):
     string_options = get_marshmallow_from_dataclass_field(lusutils.StringOptions(test_options))
     assert string_options.default is None
     assert string_options.allow_none is True
     assert string_options.validate.choices == ["one", None]
 
+    # Test metadata matches expected defaults after field creation (null disallowed):
     string_options = get_marshmallow_from_dataclass_field(
         lusutils.StringOptions(test_options, default="one", nullable=False)
     )
@@ -277,11 +284,13 @@ def test_StringOptions():
 
 
 def test_PositiveInteger():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_positive_integer = get_marshmallow_from_dataclass_field(lusutils.PositiveInteger())
     assert default_positive_integer.default is None
     assert default_positive_integer.allow_none is True
     assert default_positive_integer.validate.min == 1
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.PositiveInteger("test")
 
@@ -294,6 +303,7 @@ def test_PositiveInteger():
     with pytest.raises(MarshmallowValidationError):
         lusutils.PositiveInteger(1.1)
 
+    # Test metadata matches expected defaults after field creation (null disallowed):
     positive_integer = get_marshmallow_from_dataclass_field(lusutils.PositiveInteger(1))
     assert positive_integer.default == 1
     assert positive_integer.allow_none is False
@@ -326,11 +336,13 @@ def test_PositiveInteger():
 
 
 def test_NonNegativeInteger():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_nonnegative_integer = get_marshmallow_from_dataclass_field(lusutils.NonNegativeInteger())
     assert default_nonnegative_integer.default is None
     assert default_nonnegative_integer.allow_none is True
     assert default_nonnegative_integer.validate.min == 0
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.NonNegativeInteger("test")
 
@@ -343,6 +355,7 @@ def test_NonNegativeInteger():
     with pytest.raises(MarshmallowValidationError):
         lusutils.NonNegativeInteger(0.1)
 
+    # Test metadata matches expected defaults after field creation (null disallowed):
     nonnegative_integer = get_marshmallow_from_dataclass_field(lusutils.NonNegativeInteger(0))
     assert nonnegative_integer.default == 0
     assert nonnegative_integer.allow_none is False
@@ -372,6 +385,7 @@ def test_NonNegativeInteger():
 
 
 def test_IntegerRange():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_integer_range = get_marshmallow_from_dataclass_field(lusutils.IntegerRange())
     assert default_integer_range.default is None
     assert default_integer_range.allow_none is True
@@ -380,6 +394,7 @@ def test_IntegerRange():
     assert default_integer_range.validate.min_inclusive is True
     assert default_integer_range.validate.max_inclusive is True
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.IntegerRange("test")
 
@@ -389,6 +404,10 @@ def test_IntegerRange():
     with pytest.raises(MarshmallowValidationError):
         lusutils.IntegerRange(0.1)
 
+    with pytest.raises(MarshmallowValidationError):
+        lusutils.IntegerRange(0, min=0, max=1, min_inclusive=False)
+
+    # Test metadata matches expected defaults after field creation (null disallowed):
     integer_range = get_marshmallow_from_dataclass_field(lusutils.IntegerRange(0))
     assert integer_range.default == 0
     assert integer_range.allow_none is False
@@ -404,9 +423,6 @@ def test_IntegerRange():
     assert integer_range.validate.max == 1
     assert integer_range.validate.min_inclusive is True
     assert integer_range.validate.max_inclusive is True
-
-    with pytest.raises(MarshmallowValidationError):
-        lusutils.IntegerRange(0, min=0, max=1, min_inclusive=False)
 
     # Test creating a schema with null allowed:
     @dataclass
@@ -434,19 +450,23 @@ def test_IntegerRange():
 
 
 def test_NonNegativeFloat():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_nonnegative_float = get_marshmallow_from_dataclass_field(lusutils.NonNegativeFloat())
     assert default_nonnegative_float.default is None
     assert default_nonnegative_float.allow_none is True
     assert default_nonnegative_float.validate.min == 0
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.NonNegativeFloat("test")
 
     with pytest.raises(MarshmallowValidationError):
         lusutils.NonNegativeFloat(-1)
 
+    # Negative zero case:
     assert get_marshmallow_from_dataclass_field(lusutils.NonNegativeFloat(-0.0)).default == 0
 
+    # Test metadata matches expected defaults after field creation (null disallowed):
     nonnegative_float = get_marshmallow_from_dataclass_field(lusutils.NonNegativeInteger(0))
     assert nonnegative_float.default == 0
     assert nonnegative_float.allow_none is False
@@ -478,6 +498,7 @@ def test_NonNegativeFloat():
 
 
 def test_FloatRange():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_float_range = get_marshmallow_from_dataclass_field(lusutils.FloatRange())
     assert default_float_range.default is None
     assert default_float_range.allow_none is True
@@ -486,9 +507,14 @@ def test_FloatRange():
     assert default_float_range.validate.min_inclusive is True
     assert default_float_range.validate.max_inclusive is True
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.FloatRange("test")
 
+    with pytest.raises(MarshmallowValidationError):
+        lusutils.FloatRange(0, min=0, max=1, min_inclusive=False)
+
+    # Test metadata matches expected defaults after field creation (null disallowed):
     float_range = get_marshmallow_from_dataclass_field(lusutils.FloatRange(0))
     assert float_range.default == 0
     assert float_range.allow_none is False
@@ -504,9 +530,6 @@ def test_FloatRange():
     assert float_range.validate.max == 1
     assert float_range.validate.min_inclusive is True
     assert float_range.validate.max_inclusive is True
-
-    with pytest.raises(MarshmallowValidationError):
-        lusutils.FloatRange(0, min=0, max=1, min_inclusive=False)
 
     # Test creating a schema with null allowed:
     @dataclass
@@ -533,6 +556,7 @@ def test_FloatRange():
 
 
 def test_Dict():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_dict = get_marshmallow_from_dataclass_field(lusutils.Dict())
     assert default_dict.default is None
     assert default_dict.allow_none is True
@@ -541,6 +565,7 @@ def test_Dict():
     assert default_dict.default == {"a": "b"}
     assert default_dict.allow_none is True
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.Dict("test")
 
@@ -550,6 +575,7 @@ def test_Dict():
     with pytest.raises(MarshmallowValidationError):
         lusutils.Dict({1: "invalid", "2": "valid"})
 
+    # Test simple schema creation:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
         foo: Optional[Dict] = lusutils.Dict()
@@ -565,6 +591,7 @@ def test_Dict():
 
 
 def test_DictList():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_dictlist = get_marshmallow_from_dataclass_field(lusutils.DictList())
     assert default_dictlist.default is None
     assert default_dictlist.allow_none is True
@@ -573,6 +600,7 @@ def test_DictList():
     assert default_dictlist.default == [{"a": "b"}]
     assert default_dictlist.allow_none is True
 
+    # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
         lusutils.DictList("test")
 
@@ -585,6 +613,7 @@ def test_DictList():
     with pytest.raises(MarshmallowValidationError):
         lusutils.DictList([{1: "invalid", "2": "valid"}])
 
+    # Test simple schema creation:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
         foo: Optional[List] = lusutils.DictList()
@@ -600,17 +629,21 @@ def test_DictList():
 
 
 def test_Embed():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_embed = get_marshmallow_from_dataclass_field(lusutils.Embed())
     assert default_embed.default is None
     assert default_embed.allow_none is True
 
+    # Test simple schema creation:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
         foo: Union[None, str, int] = lusutils.Embed()
 
+    # Test null/empty loading cases:
     assert CustomTestSchema.Schema().load({}).foo is None
     assert CustomTestSchema.Schema().load({"foo": None}).foo is None
 
+    # Test valid strings/numbers:
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "not_add"})
 
@@ -620,6 +653,7 @@ def test_Embed():
     assert CustomTestSchema.Schema().load({"foo": "add"}).foo == "add"
     assert CustomTestSchema.Schema().load({"foo": 1}).foo == 1
 
+    # Test expected schema dump:
     raw_embed_schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": {
@@ -638,40 +672,48 @@ def test_Embed():
 
 
 def test_InitializerOrDict():
+    # Test metadata matches expected defaults after field creation (null allowed):
     default_initializerordict = get_marshmallow_from_dataclass_field(lusutils.InitializerOrDict())
     assert default_initializerordict.default == "xavier_uniform"
     assert default_initializerordict.allow_none is True
-
-    with pytest.raises(MarshmallowValidationError):
-        lusutils.InitializerOrDict("test")
 
     initializerordict = get_marshmallow_from_dataclass_field(lusutils.InitializerOrDict("zeros"))
     assert initializerordict.default == "zeros"
     assert initializerordict.allow_none is True
 
+    # Test default value validation:
+    with pytest.raises(MarshmallowValidationError):
+        lusutils.InitializerOrDict("test")
+
+    # Test simple schema creation:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
         foo: Union[None, str, Dict] = lusutils.InitializerOrDict()
 
+    # Test invalid non-dict loads:
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": 1})
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
 
+    # Test valid non-dict loads:
     assert CustomTestSchema.Schema().load({}).foo == "xavier_uniform"
     assert CustomTestSchema.Schema().load({"foo": None}).foo is None
     assert CustomTestSchema.Schema().load({"foo": "zeros"}).foo == "zeros"
 
+    # Test invalid dict loads:
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": {"a": "b"}})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": {"type": "invalid"}})
 
+    # Test valid dict loads:
     assert CustomTestSchema.Schema().load({"foo": {"type": None}}).foo == {"type": None}
     assert CustomTestSchema.Schema().load({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
     assert CustomTestSchema.Schema().load({"foo": {"type": None, "a": "b"}}).foo == {"type": None, "a": "b"}
 
+    # Test expected schema dump:
     initializers = list(initializer_registry.keys())
     raw_initializerordict_schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -706,18 +748,23 @@ def test_InitializerOrDict():
 
 
 def test_FloatRangeTupleDataclassField():
+    # Test metadata matches expected defaults after field creation (null not allowed):
     default_floatrange_tuple = get_marshmallow_from_dataclass_field(lusutils.FloatRangeTupleDataclassField())
     assert default_floatrange_tuple.default == (0.9, 0.999)
 
+    # Test dimensional mismatch:
     with pytest.raises(MarshmallowValidationError):
         lusutils.FloatRangeTupleDataclassField(N=3, default=(1, 1))
 
+    # Test default schema creation:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
         foo: Tuple[float, float] = lusutils.FloatRangeTupleDataclassField()
 
+    # Test empty load:
     assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)
 
+    # Test invalid loads (null, non-float values, wrong dimension):
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": None})
     with pytest.raises(MarshmallowValidationError):
@@ -725,6 +772,7 @@ def test_FloatRangeTupleDataclassField():
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": (1, 1, 1)})
 
+    # Test non-default schema (N=3, other custom metadata):
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
         foo: Tuple[float, float] = lusutils.FloatRangeTupleDataclassField(N=3, default=(1, 1, 1), min=-10, max=10)
@@ -733,6 +781,7 @@ def test_FloatRangeTupleDataclassField():
     assert CustomTestSchema.Schema().load({"foo": [2, 2, 2]}).foo == (2, 2, 2)
     assert CustomTestSchema.Schema().load({"foo": (2, 2, 2)}).foo == (2, 2, 2)
 
+    # Test expected schema dump:
     triple_tuple_schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": {
