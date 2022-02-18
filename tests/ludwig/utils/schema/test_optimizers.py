@@ -23,17 +23,6 @@ from marshmallow_jsonschema import JSONSchema as js
 import ludwig.modules.optimization_modules as lmo
 import ludwig.utils.schema_utils as lusutils
 
-# Tests for utility methods:
-
-
-def test_create_optimizer():
-    pass
-
-
-def test_create_optimizer_with_clipper():
-    pass
-
-
 # Tests for custom dataclass/marshmallow fields:
 
 
