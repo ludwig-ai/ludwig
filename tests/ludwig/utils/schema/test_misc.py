@@ -115,6 +115,44 @@ def test_config_encoders():
         validate_config(config)
 
 
+def test_config_tabnet():
+    config = {
+        "input_features": [
+            category_feature(vocab_size=2, reduce_input="sum"),
+            number_feature(),
+        ],
+        "output_features": [binary_feature(weight_regularization=None)],
+        "combiner": {
+            "type": "tabnet",
+            "size": 24,
+            "output_size": 26,
+            "sparsity": 0.000001,
+            "bn_virtual_divider": 32,
+            "bn_momentum": 0.6,
+            "num_steps": 5,
+            "relaxation_factor": 1.5,
+            "use_keras_batch_norm": False,
+            "bn_virtual_bs": 512,
+        },
+        "training": {
+            "batch_size": 16384,
+            "eval_batch_size": 500000,
+            "epochs": 1000,
+            "early_stop": 20,
+            "learning_rate": 0.02,
+            "optimizer": {"type": "adam"},
+            "decay": True,
+            "decay_steps": 20000,
+            "decay_rate": 0.9,
+            "staircase": True,
+            "regularization_lambda": 1,
+            "regularization_type": "l2",
+            "validation_field": "label",
+        },
+    }
+    validate_config(config)
+
+
 def test_config_bad_feature_type():
     config = {
         "input_features": [{"name": "foo", "type": "fake"}],
