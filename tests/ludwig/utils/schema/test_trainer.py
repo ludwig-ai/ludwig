@@ -16,11 +16,17 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
+from ludwig.constants import TRAINER
+from ludwig.models.trainer import TrainerConfig
+from ludwig.modules.optimization_modules import optimizer_registry
 from ludwig.utils.schema import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
+# Note: simple tests for now, but once we add dependent fields we can add tests for more complex relationships in this
+# file. Currently verifies that the nested fields work, as the others are covered by basic marshmallow validation:
 
-def test_config_bad_training():
+
+def test_config_trainer_empty_null_and_default():
     config = {
         "input_features": [
             category_feature(vocab_size=2, reduce_input="sum"),
@@ -30,116 +36,165 @@ def test_config_bad_training():
         "combiner": {
             "type": "tabnet",
         },
-        "training": {},
+        TRAINER: {},
     }
-
-    # config is valid at this point
     validate_config(config)
 
-    # combiner without type
-    del config["combiner"]["type"]
-    with pytest.raises(ValidationError, match=r"^'type' is a required .*"):
+    config[TRAINER] = None
+    with pytest.raises(ValidationError):
         validate_config(config)
 
-    # bad combiner type
-    config["combiner"]["type"] = "fake"
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
-        validate_config(config)
-
-    # bad combiner format (list instead of dict)
-    config["combiner"] = [{"type": "tabnet"}]
-    with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
-        validate_config(config)
-
-    # bad combiner parameter types
-    config["combiner"] = {
-        "type": "tabtransformer",
-        "num_layers": 10,
-        "dropout": False,
-    }
-    with pytest.raises(ValidationError, match=r"^False is not of type.*"):
-        validate_config(config)
-
-    # bad combiner parameter range
-    config["combiner"] = {
-        "type": "transformer",
-        "dropout": -1,
-    }
-    with pytest.raises(ValidationError, match=r"less than the minimum.*"):
-        validate_config(config)
+    config[TRAINER] = TrainerConfig.Schema().dump({})
+    validate_config(config)
 
 
-def test_config_bad_combiner_types_enums():
+def test_config_trainer_bad_optimizer():
     config = {
         "input_features": [
             category_feature(vocab_size=2, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
-        "combiner": {"type": "concat", "weights_initializer": "zeros"},
+        "combiner": {
+            "type": "tabnet",
+        },
+        TRAINER: {},
     }
-
-    # config is valid at this point
     validate_config(config)
 
-    # Test weights initializer:
-    config["combiner"]["weights_initializer"] = {"test": "fail"}
-    with pytest.raises(ValidationError, match=r"{'test': 'fail'} is not of*"):
-        validate_config(config)
-    config["combiner"]["weights_initializer"] = "fail"
-    with pytest.raises(ValidationError, match=r"'fail' is not of*"):
-        validate_config(config)
-    config["combiner"]["weights_initializer"] = {}
-    with pytest.raises(ValidationError, match=r"Failed validating 'type'"):
-        validate_config(config)
-    config["combiner"]["weights_initializer"] = {"type": "fail"}
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
-    config["combiner"]["weights_initializer"] = {"type": "normal", "stddev": 0}
+    # Test manually set-to-null optimizer vs unspecified:
+    config[TRAINER]["optimizer"] = None
     validate_config(config)
+    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer is None
+    assert TrainerConfig.Schema().load({}).optimizer is not None
 
-    # Test bias initializer:
-    del config["combiner"]["weights_initializer"]
-    config["combiner"]["bias_initializer"] = "kaiming_uniform"
-    validate_config(config)
-    config["combiner"]["bias_initializer"] = "fail"
-    with pytest.raises(ValidationError, match=r"'fail' is not of*"):
-        validate_config(config)
-    config["combiner"]["bias_initializer"] = {}
-    with pytest.raises(ValidationError, match=r"Failed validating 'type'"):
-        validate_config(config)
-    config["combiner"]["bias_initializer"] = {"type": "fail"}
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
-    config["combiner"]["bias_initializer"] = {"type": "zeros", "stddev": 0}
-    validate_config(config)
-
-    # Test norm:
-    del config["combiner"]["bias_initializer"]
-    config["combiner"]["norm"] = "batch"
-    validate_config(config)
-    config["combiner"]["norm"] = "fail"
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+    # Test all types in optimizer_registry supported:
+    for key in optimizer_registry.keys():
+        config[TRAINER]["optimizer"] = {"type": key}
         validate_config(config)
 
-    # Test activation:
-    del config["combiner"]["norm"]
-    config["combiner"]["activation"] = "relu"
-    validate_config(config)
-    config["combiner"]["activation"] = 123
-    with pytest.raises(ValidationError, match=r"123 is not of type*"):
+    # Test invalid optimizer type:
+    config[TRAINER]["optimizer"] = {"type": 0}
+    with pytest.raises(ValidationError):
+        validate_config(config)
+    config[TRAINER]["optimizer"] = {"type": {}}
+    with pytest.raises(ValidationError):
+        validate_config(config)
+    config[TRAINER]["optimizer"] = {"type": "invalid"}
+    with pytest.raises(ValidationError):
         validate_config(config)
 
-    # Test reduce_output:
-    del config["combiner"]["activation"]
-    config2 = {**config}
-    config2["combiner"]["type"] = "tabtransformer"
-    config2["combiner"]["reduce_output"] = "sum"
-    validate_config(config)
-    config2["combiner"]["reduce_output"] = "fail"
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config2)
 
-    # Test reduce_output = None:
-    config2["combiner"]["reduce_output"] = None
-    validate_config(config2)
+def test_optimizer_alias_cases():
+    config = {
+        "input_features": [
+            category_feature(vocab_size=2, reduce_input="sum"),
+            number_feature(),
+        ],
+        "output_features": [binary_feature(weight_regularization=None)],
+        "combiner": {
+            "type": "tabnet",
+        },
+        TRAINER: {},
+    }
+    validate_config(config)
+
+    # Test sgd aliases - should be valid against json schema check and should load properly:
+    sgd_aliases = ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"]
+    for alias in sgd_aliases:
+        config[TRAINER]["optimizer"] = {"type": alias}
+        validate_config(config)
+
+        assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.type == alias
+
+
+def test_optimizer_property_validation():
+    config = {
+        "input_features": [
+            category_feature(vocab_size=2, reduce_input="sum"),
+            number_feature(),
+        ],
+        "output_features": [binary_feature(weight_regularization=None)],
+        "combiner": {
+            "type": "tabnet",
+        },
+        TRAINER: {},
+    }
+    validate_config(config)
+
+    # Test that an optimizer's property types are enforced:
+    config[TRAINER]["optimizer"] = {"type": "rmsprop"}
+    validate_config(config)
+
+    config[TRAINER]["optimizer"]["momentum"] = "invalid"
+    with pytest.raises(ValidationError):
+        validate_config(config)
+
+    # Test extra keys are excluded and defaults are loaded appropriately:
+    config[TRAINER]["optimizer"]["momentum"] = 10
+    config[TRAINER]["optimizer"]["extra_key"] = "invalid"
+    validate_config(config)
+
+    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.type == "rmsprop"
+    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.momentum == 10
+    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.eps == 1e-10
+    assert not hasattr(TrainerConfig.Schema().load(config[TRAINER]).optimizer, "extra_key")
+
+    # Test bad parameter range:
+    config[TRAINER]["optimizer"] = {"type": "rmsprop", "eps": -1}
+    with pytest.raises(ValidationError):
+        validate_config(config)
+
+
+def test_clipper_property_validation():
+    config = {
+        "input_features": [
+            category_feature(vocab_size=2, reduce_input="sum"),
+            number_feature(),
+        ],
+        "output_features": [binary_feature(weight_regularization=None)],
+        "combiner": {
+            "type": "tabnet",
+        },
+        TRAINER: {},
+    }
+    validate_config(config)
+
+    # Test null/empty clipper:
+    assert TrainerConfig.Schema().load({}).gradient_clipping is not None
+
+    config[TRAINER]["gradient_clipping"] = None
+    validate_config(config)
+    assert TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping is None
+    config[TRAINER]["gradient_clipping"] = {}
+    validate_config(config)
+    assert (
+        TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping
+        == TrainerConfig.Schema().load({}).gradient_clipping
+    )
+
+    # Test invalid clipper type:
+    config[TRAINER]["gradient_clipping"] = 0
+    with pytest.raises(ValidationError):
+        validate_config(config)
+    config[TRAINER]["gradient_clipping"] = "invalid"
+    with pytest.raises(ValidationError):
+        validate_config(config)
+
+    # Test that an optimizer's property types are enforced:
+    config[TRAINER]["gradient_clipping"] = {"clipglobalnorm": None}
+    validate_config(config)
+    config[TRAINER]["gradient_clipping"] = {"clipglobalnorm": 1}
+    validate_config(config)
+    config[TRAINER]["gradient_clipping"] = {"clipglobalnorm": "invalid"}
+    with pytest.raises(ValidationError):
+        validate_config(config)
+
+    # Test extra keys are excluded and defaults are loaded appropriately:
+    config[TRAINER]["gradient_clipping"] = {"clipnorm": 1}
+    config[TRAINER]["gradient_clipping"]["extra_key"] = "invalid"
+    validate_config(config)
+
+    assert TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping.clipnorm == 1
+    assert TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping.clipglobalnorm == 0.5
+    assert not hasattr(TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping, "extra_key")

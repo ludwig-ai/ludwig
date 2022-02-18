@@ -257,7 +257,7 @@ def get_optimizer_conds():
         optimizer_cls = optimizer_registry[optimizer][1]
         preproc_cond = create_cond(
             {"type": optimizer},
-            get_custom_schema_from_marshmallow_class(optimizer_cls),
+            get_custom_schema_from_marshmallow_class(optimizer_cls)["properties"],
         )
         conds.append(preproc_cond)
     return conds
@@ -269,6 +269,8 @@ class OptimizerMarshmallowField(fields.Field):
     external usage."""
 
     def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return None
         if isinstance(value, dict):
             if "type" in value:
                 opt = optimizer_registry[value["type"].lower()][1]
@@ -279,10 +281,23 @@ class OptimizerMarshmallowField(fields.Field):
             raise ValidationError(
                 f"Invalid params for optimizer: {value}, expect dict with at least a `type` attribute."
             )
-        raise ValidationError("Field should be dict")
+        raise ValidationError("Field should be None or dict")
 
     def _jsonschema_type_mapping(self):
-        return {"anyOf": [{"type": "null"}, *list(get_all_optimizer_json_schemas().values())]}
+        # return {"anyOf": [{"type": "null"}, *list(get_all_optimizer_json_schemas().values())]}
+        return {
+            "oneOf": [
+                {"type": "null"},
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": {"type": "string", "enum": list(optimizer_registry.keys())},
+                    },
+                    "allOf": get_optimizer_conds(),
+                    "required": ["type"],
+                },
+            ]
+        }
 
 
 def OptimizerDataclassField(default={"type": "adam"}):
@@ -300,7 +315,7 @@ def OptimizerDataclassField(default={"type": "adam"}):
         if default["type"] not in optimizer_registry:
             raise ValidationError
         return field(
-            metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=False)},
+            metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=True)},
             default_factory=lambda: opt.Schema().load(default),
         )
     except (TypeError, ValidationError) as e:
@@ -385,12 +400,14 @@ class ClipperMarshmallowField(fields.Field):
     """
 
     def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return None
         if isinstance(value, dict):
             try:
                 return Clipper.Schema().load(value)
             except (TypeError, ValidationError):
                 raise ValidationError(f"Invalid params for clipper: {value}, see Clipper class.")
-        raise ValidationError("Field should be dict")
+        raise ValidationError("Field should be None or dict")
 
     def _jsonschema_type_mapping(self):
         return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(Clipper)]}
