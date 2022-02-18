@@ -145,6 +145,10 @@ def test_optimizer_property_validation():
     with pytest.raises(ValidationError):
         validate_config(config)
 
+    # Test config validation for tuple types:
+    config[TRAINER]["optimizer"] = {"type": "adam", "betas": (0.1, 0.1)}
+    validate_config(config)
+
 
 def test_clipper_property_validation():
     config = {
