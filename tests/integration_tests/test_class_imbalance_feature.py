@@ -9,8 +9,8 @@ import ray
 import numpy as np
 import pandas as pd
 
-from ludwig.constants import OUTPUT_FLAG, PROC_COLUMN, SPLIT
 from ludwig.backend.ray import RayBackend
+from ludwig.backend import LocalBackend
 from ludwig.api import LudwigModel
 from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import train_with_backend, create_data_set_to_use
@@ -97,12 +97,10 @@ def run_test_imbalance_ray(
                 # Remove results/intermediate data saved to disk
                 shutil.rmtree(output_dir, ignore_errors=True)
 
-            # train_with_backend(RAY_BACKEND_CONFIG, config, dataset=dataset_parquet, evaluate=False)
             input_train_set = input_df.sample(frac=0.7, replace=False)
             processed_len = output_dataset[0].ds.count()
-            processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
             processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
-            assert len(input_train_set) > processed_len
+            processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
             assert len(input_train_set) == 140
             assert 0.05 <= len(input_train_set[input_train_set['Label'] == 1]) / len(input_train_set) <= 0.15
             assert round(processed_target_pos / processed_target_neg, 1) == 0.5
@@ -110,10 +108,12 @@ def run_test_imbalance_ray(
             assert isinstance(model.backend, RayBackend)
 
         if balance == 'oversample_minority':
+            assert len(input_train_set) < processed_len
             assert 60 <= processed_target_pos <= 70
             assert 120 <= processed_target_neg <= 140
 
         if balance == 'undersample_majority':
+            assert len(input_train_set) > processed_len
             assert 7 <= processed_target_pos <= 17
             assert 14 <= processed_target_neg <= 34
 
@@ -123,35 +123,32 @@ def run_test_imbalance_local(
         config,
         balance, ):
     model = LudwigModel(config)
-    train_stats, processed_df, url = model.train(input_df,
-                                                 skip_save_model=True,
-                                                 skip_save_log=True,
-                                                 skip_save_progress=True,
-                                                 skip_save_processed_input=True,
-                                                 skip_save_training_description=True,
-                                                 skip_save_training_statistics=True)
+    _, output_dataset, output_dir = model.train(input_df,
+                                                skip_save_model=True,
+                                                skip_save_log=True,
+                                                skip_save_progress=True,
+                                                skip_save_processed_input=True,
+                                                skip_save_training_description=True,
+                                                skip_save_training_statistics=True)
+
+    input_train_set = input_df.sample(frac=0.7, replace=False)
+    processed_len = output_dataset[0].size
+    processed_target_pos = sum(output_dataset[0].dataset['Label_mZFLky'])
+    processed_target_neg = len(output_dataset[0].dataset['Label_mZFLky']) - processed_target_pos
+    assert len(input_train_set) == 140
+    assert 0.05 <= len(input_train_set[input_train_set['Label'] == 1]) / len(input_train_set) <= 0.15
+    assert round(processed_target_pos / processed_target_neg, 1) == 0.5
+    assert isinstance(model.backend, LocalBackend)
 
     if balance == 'oversample_minority':
-        input_train_set = input_df.sample(frac=0.7, replace=False)
-        processed_train_set = processed_df[0].dataset
-        assert len(input_train_set) < processed_df[0].size
-        assert len(input_train_set) == 140
-        assert 0.05 <= (len(input_train_set[input_train_set['Label'] == 1]) / len(input_train_set)) <= 0.15
-        assert round(sum(processed_train_set['Label_mZFLky']) /
-                     (len(processed_train_set['Label_mZFLky']) - sum(processed_train_set['Label_mZFLky'])), 1) == 0.5
-        assert 60 <= sum(processed_train_set['Label_mZFLky']) <= 70
-        assert 120 <= (len(processed_train_set['Label_mZFLky']) - sum(processed_train_set['Label_mZFLky'])) <= 140
+        assert len(input_train_set) < processed_len
+        assert 60 <= processed_target_pos <= 70
+        assert 120 <= processed_target_neg <= 140
 
     if balance == 'undersample_majority':
-        input_train_set = input_df.sample(frac=0.7, replace=False)
-        processed_train_set = processed_df[0].dataset
-        assert len(input_train_set) > processed_df[0].size
-        assert len(input_train_set) == 140
-        assert 0.05 <= len(input_train_set[input_train_set['Label'] == 1]) / len(input_train_set) <= 0.15
-        assert round(sum(processed_train_set['Label_mZFLky']) /
-                     (len(processed_train_set['Label_mZFLky']) - sum(processed_train_set['Label_mZFLky'])), 1) == 0.5
-        assert 7 <= sum(processed_train_set['Label_mZFLky']) <= 17
-        assert 14 <= (len(processed_train_set['Label_mZFLky']) - sum(processed_train_set['Label_mZFLky'])) <= 34
+        assert len(input_train_set) > processed_len
+        assert 7 <= processed_target_pos <= 17
+        assert 14 <= processed_target_neg <= 34
 
 
 @pytest.mark.parametrize(
