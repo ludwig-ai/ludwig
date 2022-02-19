@@ -150,8 +150,8 @@ def create_auto_config(
             model_config, fits_in_memory = memory_tune_config(model_config, dataset)
         if not fits_in_memory:
             warnings.warn(
-                "AutoML with tune_for_memory set True estimates model will not fit in memory. "
-                "Consider setting AutoML user_config to further reduce model memory footprint. "
+                "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
+                "If out-of-memory occurs, consider setting AutoML user_config to reduce model memory footprint. "
             )
     return model_config
 

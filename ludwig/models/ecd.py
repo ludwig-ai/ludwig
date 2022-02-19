@@ -77,13 +77,13 @@ class ECD(LudwigModule):
         }
         return inputs
 
+    # Return total number of parameters in model
     def get_model_size(self) -> int:
         model_tensors = self.collect_weights()
         total_size = 0
         for tnsr in model_tensors:
             total_size += tnsr[1].detach().numpy().size
-        total_bytes = total_size * 4  # assumes 32-bit precision = 4 bytes
-        return total_bytes
+        return total_size
 
     def to_torchscript(self):
         self.eval()

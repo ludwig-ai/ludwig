@@ -1,4 +1,5 @@
 import copy
+import logging
 from collections import OrderedDict
 
 import psutil
@@ -15,6 +16,8 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.torch_utils import initialize_pytorch
+
+logger = logging.getLogger(__name__)
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
@@ -41,10 +44,17 @@ RANKED_MODIFIABLE_PARAM_LIST = {
             "combiner.num_fc_layers": 1,
         }
     ),
+    "text": OrderedDict( # for single input feature text models e.g. bert and its variants
+        {
+            "trainer.batch_size": 8,
+        }
+    ),
 }
 
 
 BYTES_PER_MiB = 1048576
+BYTES_PER_WEIGHT = 4  # assumes 32-bit precision = 4 bytes
+BYTES_OPTIMIZER_PER_WEIGHT = 8 # for optimizer m and v vectors
 
 
 def get_trainingset_metadata(config, dataset):
@@ -66,9 +76,9 @@ def _get_machine_memory():
 def compute_memory_usage(config, training_set_metadata) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
-    model_size = lm.get_model_size()
+    model_size = lm.get_model_size() # number of parameters in model
     batch_size = config[TRAINER][BATCH_SIZE]
-    return model_size * batch_size
+    return model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
 
 
 def sub_new_params(config: dict, new_param_vals: dict):
@@ -98,9 +108,13 @@ def memory_tune_config(config, dataset):
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}
     param_list = []
-    model_name = get_model_name(raw_config)
-    if model_name in RANKED_MODIFIABLE_PARAM_LIST:
-        params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_name]
+    if ('input_features' in config and len(config['input_features']) == 1 and
+            'type' in config['input_features'][0] and config['input_features'][0]['type'] == 'text'):
+        model_type = 'text'
+    else:
+        model_type = get_model_name(raw_config)
+    if model_type in RANKED_MODIFIABLE_PARAM_LIST:
+        params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_type]
         if len(params_to_modify.keys()) > 0:
             param_list = list(params_to_modify.keys())
             max_memory = _get_machine_memory()
@@ -110,7 +124,9 @@ def memory_tune_config(config, dataset):
         # compute memory utilization
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
-        if compute_memory_usage(temp_config, training_set_metadata) < max_memory:
+        mem_use = compute_memory_usage(temp_config, training_set_metadata)
+        logger.info('Checking model mem use {} against memory size {}'.format(mem_use, max_memory))
+        if mem_use <= max_memory:
             fits_in_memory = True
             break
         # check if we have exhausted tuning of current param (e.g. we can no longer reduce the param value)
@@ -120,7 +136,7 @@ def memory_tune_config(config, dataset):
             param_space = modified_hyperparam_search_space[param]["space"]
             if param_space == "choice":
                 if (
-                    len(modified_hyperparam_search_space[param]["categories"]) > 2
+                    len(modified_hyperparam_search_space[param]["categories"]) >= 2
                     and modified_hyperparam_search_space[param]["categories"][-2] >= min_value
                 ):
                     modified_hyperparam_search_space[param]["categories"] = modified_hyperparam_search_space[param][
