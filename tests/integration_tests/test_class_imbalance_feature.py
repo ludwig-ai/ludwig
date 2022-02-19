@@ -1,23 +1,19 @@
 import contextlib
+import tempfile
+import os
+import shutil
 
 import pytest
 import ray
-import tempfile
-import os
 
 import numpy as np
 import pandas as pd
 
 from ludwig.constants import OUTPUT_FLAG, PROC_COLUMN, SPLIT
-from ludwig.data.preprocessing import balance_data, build_dataset, cast_columns, get_split
-from ludwig.backend import create_ray_backend
-from ludwig.backend.base import LocalBackend
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.backend.ray import RayBackend
 from ludwig.api import LudwigModel
 from tests.integration_tests.utils import spawn
-from tests.integration_tests.utils import create_data_set_to_use
-from ray.data import from_dask
-import dask.dataframe as dd
+from tests.integration_tests.utils import train_with_backend, create_data_set_to_use
 
 DFS = {
     "test_df_1": pd.DataFrame({"Index": np.arange(0, 200, 1),
@@ -35,8 +31,8 @@ CONFIGS = {
         "output_features": [
             {"name": "Label", "column": "Label", "type": "numerical", "output_flag": True}
         ],
-        "preprocessing": {
-        }
+        'trainer': {"epochs": 2, "batch_size": 8},
+        "preprocessing": {}
     }
 }
 
@@ -78,66 +74,48 @@ def run_test_imbalance_ray(
         num_cpus=2,
         num_gpus=None, ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
-        # with tempfile.TemporaryDirectory() as tmpdir:
-        #     csv_filename = os.path.join(tmpdir, "dataset.csv")
-        #     input_df.to_csv(csv_filename)
-        #     dataset_parquet = create_data_set_to_use("parquet", csv_filename)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            input_df.to_csv(csv_filename)
+            dataset_parquet = create_data_set_to_use("parquet", csv_filename)
 
-        backend = create_ray_backend()
-        model = LudwigModel(config, backend=backend)
-        # _, processed_data_file, _ = model.train(dataset=dataset_parquet,
-        #                                         skip_save_model=True,
-        #                                         skip_save_log=True,
-        #                                         skip_save_progress=True,
-        #                                         skip_save_processed_input=True,
-        #                                         skip_save_training_description=True,
-        #                                         skip_save_training_statistics=True)
+            model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
+            output_dir = None
 
-        _, processed_data_df, _ = model.train(input_df,
-                                              skip_save_model=True,
-                                              skip_save_log=True,
-                                              skip_save_progress=True,
-                                              skip_save_processed_input=True,
-                                              skip_save_training_description=True,
-                                              skip_save_training_statistics=True)
+            try:
+                _, output_dataset, output_dir = model.train(
+                    dataset=dataset_parquet,
+                    training_set=None,
+                    validation_set=None,
+                    test_set=None,
+                    skip_save_processed_input=True,
+                    skip_save_progress=True,
+                    skip_save_unprocessed_output=True,
+                    skip_save_log=True,
+                )
+            finally:
+                # Remove results/intermediate data saved to disk
+                shutil.rmtree(output_dir, ignore_errors=True)
 
-        if balance == 'oversample_minority':
+            # train_with_backend(RAY_BACKEND_CONFIG, config, dataset=dataset_parquet, evaluate=False)
             input_train_set = input_df.sample(frac=0.7, replace=False)
-            processed_train_set_df = processed_data_df[0].dataset
-            # processed_train_set_file = processed_data_file[0].dataset
-            assert len(input_train_set) < processed_data_df[0].size
-            # assert len(input_train_set) < processed_data_file[0].size
-            assert len(input_train_set) == 140
-            assert 0.05 <= (len(input_train_set[input_train_set['Label'] == 1]) / len(input_train_set)) <= 0.15
-            assert round(sum(processed_train_set_df['Label_mZFLky']) /
-                         (len(processed_train_set_df['Label_mZFLky']) - sum(processed_train_set_df['Label_mZFLky'])),
-                         1) == 0.5
-            # assert round(sum(processed_train_set_file['Label_mZFLky']) /
-            #              (len(processed_train_set_file['Label_mZFLky']) - sum(processed_train_set_file['Label_mZFLky'])),
-            #              1) == 0.5
-            assert 60 <= sum(processed_train_set_df['Label_mZFLky']) <= 70
-            # assert 60 <= sum(processed_train_set_file['Label_mZFLky']) <= 70
-            assert 120 <= (len(processed_train_set_df['Label_mZFLky']) - sum(processed_train_set_df['Label_mZFLky'])) <= 140
-            # assert 120 <= (len(processed_train_set_file['Label_mZFLky']) - sum(processed_train_set_file['Label_mZFLky'])) <= 140
-
-        if balance == 'undersample_majority':
-            input_train_set = input_df.sample(frac=0.7, replace=False)
-            processed_train_set_df = processed_data_df[0].dataset
-            # processed_train_set_file = processed_data_file[0].dataset
-            assert len(input_train_set) < processed_data_df[0].size
-            # assert len(input_train_set) < processed_data_file[0].size
+            processed_len = output_dataset[0].ds.count()
+            processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
+            processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
+            assert len(input_train_set) > processed_len
             assert len(input_train_set) == 140
             assert 0.05 <= len(input_train_set[input_train_set['Label'] == 1]) / len(input_train_set) <= 0.15
-            assert round(sum(processed_train_set_df['Label_mZFLky']) /
-                         (len(processed_train_set_df['Label_mZFLky']) - sum(processed_train_set_df['Label_mZFLky'])),
-                         1) == 0.5
-            # assert round(sum(processed_train_set_file['Label_mZFLky']) /
-            #              (len(processed_train_set_file['Label_mZFLky']) - sum(processed_train_set_file['Label_mZFLky'])),
-            #              1) == 0.5
-            assert 7 <= sum(processed_train_set_df['Label_mZFLky']) <= 17
-            # assert 7 <= sum(processed_train_set_file['Label_mZFLky']) <= 17
-            assert 14 <= (len(processed_train_set_df['Label_mZFLky']) - sum(processed_train_set_df['Label_mZFLky'])) <= 34
-            # assert 14 <= (len(processed_train_set_file['Label_mZFLky']) - sum(processed_train_set_file['Label_mZFLky'])) <= 34
+            assert round(processed_target_pos / processed_target_neg, 1) == 0.5
+            assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
+            assert isinstance(model.backend, RayBackend)
+
+        if balance == 'oversample_minority':
+            assert 60 <= processed_target_pos <= 70
+            assert 120 <= processed_target_neg <= 140
+
+        if balance == 'undersample_majority':
+            assert 7 <= processed_target_pos <= 17
+            assert 14 <= processed_target_neg <= 34
 
 
 def run_test_imbalance_local(
