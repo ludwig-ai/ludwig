@@ -1583,7 +1583,7 @@ def _preprocess_file_for_training(
         training_data, test_data, validation_data = data.random_split(preprocessing_params["split_probabilities"])
 
     if preprocessing_params['oversample_minority'] or preprocessing_params['undersample_majority']:
-        training_data = balance_data(training_set, features, preprocessing_params, backend)
+        training_data = balance_data(training_data, features, preprocessing_params, backend)
 
     return training_data, test_data, validation_data, training_set_metadata
 
