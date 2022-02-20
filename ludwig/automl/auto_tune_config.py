@@ -44,7 +44,7 @@ RANKED_MODIFIABLE_PARAM_LIST = {
             "combiner.num_fc_layers": 1,
         }
     ),
-    "text": OrderedDict( # for single input feature text models e.g. bert and its variants
+    "text": OrderedDict(  # for single input feature text models e.g. bert and its variants
         {
             "trainer.batch_size": 8,
         }
@@ -54,7 +54,7 @@ RANKED_MODIFIABLE_PARAM_LIST = {
 
 BYTES_PER_MiB = 1048576
 BYTES_PER_WEIGHT = 4  # assumes 32-bit precision = 4 bytes
-BYTES_OPTIMIZER_PER_WEIGHT = 8 # for optimizer m and v vectors
+BYTES_OPTIMIZER_PER_WEIGHT = 8  # for optimizer m and v vectors
 
 
 def get_trainingset_metadata(config, dataset):
@@ -76,7 +76,7 @@ def _get_machine_memory():
 def compute_memory_usage(config, training_set_metadata) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
-    model_size = lm.get_model_size() # number of parameters in model
+    model_size = lm.get_model_size()  # number of parameters in model
     batch_size = config[TRAINER][BATCH_SIZE]
     return model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
 
@@ -108,9 +108,13 @@ def memory_tune_config(config, dataset):
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}
     param_list = []
-    if ('input_features' in config and len(config['input_features']) == 1 and
-            'type' in config['input_features'][0] and config['input_features'][0]['type'] == 'text'):
-        model_type = 'text'
+    if (
+        "input_features" in config
+        and len(config["input_features"]) == 1
+        and "type" in config["input_features"][0]
+        and config["input_features"][0]["type"] == "text"
+    ):
+        model_type = "text"
     else:
         model_type = get_model_name(raw_config)
     if model_type in RANKED_MODIFIABLE_PARAM_LIST:
@@ -125,7 +129,7 @@ def memory_tune_config(config, dataset):
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
         mem_use = compute_memory_usage(temp_config, training_set_metadata)
-        logger.info('Checking model mem use {} against memory size {}'.format(mem_use, max_memory))
+        logger.info(f"Checking model mem use {mem_use} against memory size {max_memory}")
         if mem_use <= max_memory:
             fits_in_memory = True
             break
