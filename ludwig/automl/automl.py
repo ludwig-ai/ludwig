@@ -140,7 +140,7 @@ def create_auto_config(
             resources = get_available_resources()  # check if cluster has GPUS
             if resources["gpu"] > 0:
                 model_config, fits_in_memory = ray.get(
-                    ray.remote(num_gpus=1, num_cpus=1)(memory_tune_config).remote(model_config, dataset)
+                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(model_config, dataset)
                 )
             else:
                 model_config, fits_in_memory = ray.get(
