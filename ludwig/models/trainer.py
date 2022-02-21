@@ -48,9 +48,8 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import (
-    AdamOptimizer,
-    BaseOptimizer,
-    Clipper,
+    BaseOptimizerConfig,
+    ClipperConfig,
     ClipperDataclassField,
     create_optimizer_with_clipper,
     OptimizerDataclassField,
@@ -104,9 +103,9 @@ class BaseTrainer(ABC):
 class TrainerConfig(schema.BaseMarshmallowConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
-    optimizer: Optional[BaseOptimizer] = OptimizerDataclassField(default={"type": "adam"})
-    """Instance of `ludwig.modules.optimization_modules.BaseOptimizer` that specifies a torch-supported optimizer and
-       its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`)."""
+    optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
+    """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
+       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`)."""
 
     epochs: int = schema.PositiveInteger(default=100)
     "Number of epochs the algorithm is intended to be run over (default: 100)."
@@ -186,9 +185,9 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     staircase: bool = False
     """Decays the learning rate at discrete intervals (default: False)."""
 
-    gradient_clipping: Optional[Clipper] = ClipperDataclassField(default={})
-    """Instance of `ludwig.modules.optimization_modules.Clipper` that sets gradient clipping params.
-       (default: `ludwig.modules.optimization_modules.Clipper()`)"""
+    gradient_clipping: Optional[ClipperConfig] = ClipperDataclassField(default={})
+    """Instance of `ludwig.modules.optimization_modules.ClipperConfig` that sets gradient clipping params.
+       (default: `ludwig.modules.optimization_modules.ClipperConfig()`)"""
 
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = COMBINED
@@ -312,10 +311,10 @@ class Trainer(BaseTrainer):
         self.model = self.model.to(self.device)
 
         # ================ Optimizer ================
-        optimizer = config.optimizer if config.optimizer is not None else AdamOptimizer()
+        optimizer = config.optimizer
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
         optimizer.lr = base_learning_rate
-        clipper = config.gradient_clipping if config.gradient_clipping is not None else Clipper()
+        clipper = config.gradient_clipping if config.gradient_clipping is not None else ClipperConfig()
         self.optimizer, self.clipper = create_optimizer_with_clipper(
             model, horovod=horovod, optimizer=optimizer, clipper=clipper
         )

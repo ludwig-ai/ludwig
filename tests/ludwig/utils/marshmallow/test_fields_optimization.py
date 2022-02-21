@@ -32,7 +32,9 @@ def get_marshmallow_from_dataclass_field(dfield):
 
 
 def test_torch_description_pull():
-    example_empty_desc_prop = lusutils.get_custom_schema_from_marshmallow_class(lmo.AdamOptimizer)["properties"]["lr"]
+    example_empty_desc_prop = lusutils.get_custom_schema_from_marshmallow_class(lmo.AdamOptimizerConfig)["properties"][
+        "lr"
+    ]
     assert (
         isinstance(example_empty_desc_prop, dict)
         and "description" in example_empty_desc_prop
@@ -45,18 +47,18 @@ def test_OptimizerDataclassField():
     # Test default case:
     default_optimizer_field = lmo.OptimizerDataclassField()
     assert default_optimizer_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(default_optimizer_field).allow_none is True
-    assert default_optimizer_field.default_factory() == lmo.AdamOptimizer()
+    assert get_marshmallow_from_dataclass_field(default_optimizer_field).allow_none is False
+    assert default_optimizer_field.default_factory() == lmo.AdamOptimizerConfig()
 
     # Test normal cases:
     optimizer_field = lmo.OptimizerDataclassField({"type": "adamax"})
     assert optimizer_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is True
-    assert optimizer_field.default_factory() == lmo.AdamaxOptimizer()
+    assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is False
+    assert optimizer_field.default_factory() == lmo.AdamaxOptimizerConfig()
 
     optimizer_field = lmo.OptimizerDataclassField({"type": "adamax", "betas": (0.1, 0.1)})
     assert optimizer_field.default_factory is not None
-    assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is True
+    assert get_marshmallow_from_dataclass_field(optimizer_field).allow_none is False
     assert optimizer_field.default_factory().betas == (0.1, 0.1)
 
     # Test invalid default case:
@@ -72,30 +74,32 @@ def test_OptimizerDataclassField():
     # Test creating a schema with default options:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-        foo: Optional[lmo.BaseOptimizer] = lmo.OptimizerDataclassField()
+        foo: Optional[lmo.BaseOptimizerConfig] = lmo.OptimizerDataclassField()
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lmo.AdamOptimizer()
+    assert CustomTestSchema.Schema().load({}).foo == lmo.AdamOptimizerConfig()
 
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-        foo: Optional[lmo.BaseOptimizer] = lmo.OptimizerDataclassField({"type": "adamax", "betas": (0.1, 0.1)})
+        foo: Optional[lmo.BaseOptimizerConfig] = lmo.OptimizerDataclassField({"type": "adamax", "betas": (0.1, 0.1)})
 
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": None})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": {"type": "invalid", "betas": (0.2, 0.2)}})
 
-    assert CustomTestSchema.Schema().load({}).foo == lmo.AdamaxOptimizer(betas=(0.1, 0.1))
-    assert CustomTestSchema.Schema().load({"foo": {"type": "adamax", "betas": (0.2, 0.2)}}).foo == lmo.AdamaxOptimizer(
-        betas=(0.2, 0.2)
-    )
+    assert CustomTestSchema.Schema().load({}).foo == lmo.AdamaxOptimizerConfig(betas=(0.1, 0.1))
+    assert CustomTestSchema.Schema().load(
+        {"foo": {"type": "adamax", "betas": (0.2, 0.2)}}
+    ).foo == lmo.AdamaxOptimizerConfig(betas=(0.2, 0.2))
     assert CustomTestSchema.Schema().load(
         {"foo": {"type": "adamax", "betas": (0.2, 0.2), "extra_key": 1}}
-    ).foo == lmo.AdamaxOptimizer(betas=(0.2, 0.2))
+    ).foo == lmo.AdamaxOptimizerConfig(betas=(0.2, 0.2))
 
 
 def test_ClipperDataclassField():
@@ -103,18 +107,18 @@ def test_ClipperDataclassField():
     default_clipper_field = lmo.ClipperDataclassField()
     assert default_clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(default_clipper_field).allow_none is True
-    assert default_clipper_field.default_factory() == lmo.Clipper()
+    assert default_clipper_field.default_factory() == lmo.ClipperConfig()
 
     # Test normal cases:
     clipper_field = lmo.ClipperDataclassField({"clipglobalnorm": 0.1})
     assert clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
-    assert clipper_field.default_factory() == lmo.Clipper(clipglobalnorm=0.1)
+    assert clipper_field.default_factory() == lmo.ClipperConfig(clipglobalnorm=0.1)
 
     clipper_field = lmo.ClipperDataclassField({"clipglobalnorm": None})
     assert clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
-    assert clipper_field.default_factory() == lmo.Clipper(clipglobalnorm=None)
+    assert clipper_field.default_factory() == lmo.ClipperConfig(clipglobalnorm=None)
 
     # Test invalid default case:
     with pytest.raises(MarshmallowValidationError):
@@ -127,26 +131,26 @@ def test_ClipperDataclassField():
     # Test creating a schema with default options:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-        foo: Optional[lmo.Clipper] = lmo.Clipper()
+        foo: Optional[lmo.ClipperConfig] = lmo.ClipperConfig()
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lmo.Clipper()
+    assert CustomTestSchema.Schema().load({}).foo == lmo.ClipperConfig()
 
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-        foo: Optional[lmo.Clipper] = lmo.ClipperDataclassField({"clipglobalnorm": 0.1})
+        foo: Optional[lmo.ClipperConfig] = lmo.ClipperDataclassField({"clipglobalnorm": 0.1})
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": "invalid"}})
 
-    assert CustomTestSchema.Schema().load({}).foo == lmo.Clipper(clipglobalnorm=0.1)
-    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lmo.Clipper(clipglobalnorm=1)
-    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1, "extra_key": 1}}).foo == lmo.Clipper(
+    assert CustomTestSchema.Schema().load({}).foo == lmo.ClipperConfig(clipglobalnorm=0.1)
+    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lmo.ClipperConfig(clipglobalnorm=1)
+    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1, "extra_key": 1}}).foo == lmo.ClipperConfig(
         clipglobalnorm=1
     )
 
@@ -154,7 +158,7 @@ def test_ClipperDataclassField():
     raw_clipper_schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": {
-            "Clipper": {
+            "ClipperConfig": {
                 "type": "object",
                 "properties": {
                     "clipglobalnorm": {
@@ -169,43 +173,7 @@ def test_ClipperDataclassField():
                 "additionalProperties": False,
             }
         },
-        "$ref": "#/definitions/Clipper",
+        "$ref": "#/definitions/ClipperConfig",
     }
 
-    assert js().dump(lmo.Clipper.Schema()) == raw_clipper_schema
-
-    raw_clipper_dataclass_schema = {
-        "oneOf": [
-            {"type": "null"},
-            {
-                "type": "object",
-                "properties": {
-                    "clipglobalnorm": {
-                        "title": "clipglobalnorm",
-                        "type": ["number", "null"],
-                        "format": "float",
-                        "default": 0.5,
-                        "description": "(default: 0. 5).",
-                    },
-                    "clipnorm": {
-                        "title": "clipnorm",
-                        "type": ["number", "null"],
-                        "format": "float",
-                        "default": None,
-                        "description": "(default: None).",
-                    },
-                    "clipvalue": {
-                        "title": "clipvalue",
-                        "type": ["number", "null"],
-                        "format": "float",
-                        "default": None,
-                        "description": "(default: None).",
-                    },
-                },
-                "additionalProperties": True,
-                "description": "Dataclass that holds gradient clipping parameters.",
-            },
-        ]
-    }
-
-    assert lmo.ClipperMarshmallowField()._jsonschema_type_mapping() == raw_clipper_dataclass_schema
+    assert js().dump(lmo.ClipperConfig.Schema()) == raw_clipper_schema

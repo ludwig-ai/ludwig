@@ -36,7 +36,7 @@ optimizer_registry = Registry()
 
 
 def register_optimizer(name: str):
-    def wrap(cls: BaseOptimizer):
+    def wrap(cls: BaseOptimizerConfig):
         optimizer_registry[name] = (cls.torch_type, cls)
         return cls
 
@@ -44,7 +44,7 @@ def register_optimizer(name: str):
 
 
 @dataclass
-class BaseOptimizer(BaseMarshmallowConfig):
+class BaseOptimizerConfig(BaseMarshmallowConfig):
     """Base class for optimizers. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
@@ -84,7 +84,7 @@ class BaseOptimizer(BaseMarshmallowConfig):
 @register_optimizer(name="stochastic_gradient_descent")
 @register_optimizer(name="gradient_descent")
 @dataclass
-class SGDOptimizer(BaseOptimizer):
+class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
@@ -108,7 +108,7 @@ class SGDOptimizer(BaseOptimizer):
 
 @register_optimizer(name="adam")
 @dataclass
-class AdamOptimizer(BaseOptimizer):
+class AdamOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adam optimization."""
 
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
@@ -132,7 +132,7 @@ class AdamOptimizer(BaseOptimizer):
 
 @register_optimizer(name="adadelta")
 @dataclass
-class AdadeltaOptimizer(BaseOptimizer):
+class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adadelta optimization."""
 
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
@@ -155,7 +155,7 @@ class AdadeltaOptimizer(BaseOptimizer):
 
 @register_optimizer(name="adagrad")
 @dataclass
-class AdagradOptimizer(BaseOptimizer):
+class AdagradOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adagrad optimization."""
 
     # Example docstring
@@ -178,7 +178,7 @@ class AdagradOptimizer(BaseOptimizer):
 
 @register_optimizer(name="adamax")
 @dataclass
-class AdamaxOptimizer(BaseOptimizer):
+class AdamaxOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamax optimization."""
 
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
@@ -198,7 +198,7 @@ class AdamaxOptimizer(BaseOptimizer):
 # NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
 @dataclass
-class FtrlOptimizer(BaseOptimizer):
+class FtrlOptimizerConfig(BaseOptimizerConfig):
     # torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
     type: str = "ftrl"
     learning_rate_power: float = FloatRange(default=-0.5, max=0.0)
@@ -209,7 +209,7 @@ class FtrlOptimizer(BaseOptimizer):
 
 # @register_optimizer(name="nadam")
 @dataclass
-class NadamOptimizer(BaseOptimizer):
+class NadamOptimizerConfig(BaseOptimizerConfig):
     # torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
     type: str = "nadam"
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
@@ -222,7 +222,7 @@ class NadamOptimizer(BaseOptimizer):
 
 @register_optimizer(name="rmsprop")
 @dataclass
-class RMSPropOptimizer(BaseOptimizer):
+class RMSPropOptimizerConfig(BaseOptimizerConfig):
     """Parameters for rmsprop optimization."""
 
     torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
@@ -263,43 +263,6 @@ def get_optimizer_conds():
     return conds
 
 
-class OptimizerMarshmallowField(fields.Field):
-    """Custom marshmallow field that deserializes a dict to a valid optimizer from
-    `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema for
-    external usage."""
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        if value is None:
-            return None
-        if isinstance(value, dict):
-            if "type" in value and value["type"] in optimizer_registry:
-                opt = optimizer_registry[value["type"].lower()][1]
-                try:
-                    return opt.Schema().load(value)
-                except (TypeError, ValidationError) as e:
-                    raise ValidationError(f"Invalid params for optimizer: {value}, see `{opt}` definition. Error: {e}")
-            raise ValidationError(
-                f"Invalid params for optimizer: {value}, expect dict with at least a valid `type` attribute."
-            )
-        raise ValidationError("Field should be None or dict")
-
-    def _jsonschema_type_mapping(self):
-        # return {"anyOf": [{"type": "null"}, *list(get_all_optimizer_json_schemas().values())]}
-        return {
-            "oneOf": [
-                {"type": "null"},
-                {
-                    "type": "object",
-                    "properties": {
-                        "type": {"type": "string", "enum": list(optimizer_registry.keys())},
-                    },
-                    "allOf": get_optimizer_conds(),
-                    "required": ["type"],
-                },
-            ]
-        }
-
-
 def OptimizerDataclassField(default={"type": "adam"}):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
@@ -310,13 +273,47 @@ def OptimizerDataclassField(default={"type": "adam"}):
            `type` to load optimizer from registry with given params. (default: {"type": "adam"}).
     :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
+
+    class OptimizerMarshmallowField(fields.Field):
+        """Custom marshmallow field that deserializes a dict to a valid optimizer from
+        `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema
+        for external usage."""
+
+        def _deserialize(self, value, attr, data, **kwargs):
+            if value is None:
+                return None
+            if isinstance(value, dict):
+                if "type" in value and value["type"] in optimizer_registry:
+                    opt = optimizer_registry[value["type"].lower()][1]
+                    try:
+                        return opt.Schema().load(value)
+                    except (TypeError, ValidationError) as e:
+                        raise ValidationError(
+                            f"Invalid params for optimizer: {value}, see `{opt}` definition. Error: {e}"
+                        )
+                raise ValidationError(
+                    f"Invalid params for optimizer: {value}, expect dict with at least a valid `type` attribute."
+                )
+            raise ValidationError("Field should be None or dict")
+
+        def _jsonschema_type_mapping(self):
+            # return {"anyOf": [{"type": "null"}, *list(get_all_optimizer_json_schemas().values())]}
+            return {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string", "enum": list(optimizer_registry.keys())},
+                },
+                "allOf": get_optimizer_conds(),
+                "required": ["type"],
+            }
+
     if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
 
         return field(
-            metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=True)},
+            metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=False)},
             default_factory=lambda: opt.Schema().load(default),
         )
     except Exception as e:
@@ -333,7 +330,7 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
 
 
 @dataclass
-class Clipper(BaseMarshmallowConfig):
+class ClipperConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = 0.5
@@ -352,19 +349,58 @@ class Clipper(BaseMarshmallowConfig):
             torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
 
 
+def ClipperDataclassField(default={}, allow_none=True):
+    """Returns custom dataclass field for `ludwig.modules.optimization_modules.ClipperConfig`. Allows `None` by
+    default.
+
+    :param default: dict that specifies clipper param values that will be loaded by its schema class (default: {}).
+    :param allow_none: Whether this field can accept `None` as a value. (default: True)
+    """
+
+    class ClipperMarshmallowField(fields.Field):
+        """Custom marshmallow field class for gradient clipping.
+
+        Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.ClipperConfig` and creates a
+        corresponding JSON schema for external usage.
+        """
+
+        def _deserialize(self, value, attr, data, **kwargs):
+            if value is None:
+                return None
+            if isinstance(value, dict):
+                try:
+                    return ClipperConfig.Schema().load(value)
+                except (TypeError, ValidationError):
+                    raise ValidationError(f"Invalid params for clipper: {value}, see ClipperConfig class.")
+            raise ValidationError("Field should be None or dict")
+
+        def _jsonschema_type_mapping(self):
+            return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(ClipperConfig)]}
+
+    if not isinstance(default, dict):
+        raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
+        default_factory=lambda: ClipperConfig.Schema().load(default),
+    )
+
+
 def create_optimizer_with_clipper(
-    model, optimizer: BaseOptimizer = SGDOptimizer(), clipper: Clipper = Clipper(clipglobalnorm=5.0), horovod=None
+    model,
+    optimizer: BaseOptimizerConfig = SGDOptimizerConfig(),
+    clipper: ClipperConfig = ClipperConfig(clipglobalnorm=5.0),
+    horovod=None,
 ):
     """Returns a tuple of a ready-to-use torch optimizer and gradient clipping options.
 
-    Creates an appropriately distributed torch optimizer, returns it and a `ludwig.modules.optimization_modules.Clipper`
-    object for gradient clipping.
+    Creates an appropriately distributed torch optimizer, returns it and a
+    `ludwig.modules.optimization_modules.ClipperConfig` object for gradient clipping.
 
     :param model: Underlying Ludwig model
-    :param optimizer: Instance of `ludwig.modules.optimization_modules.BaseOptimizer` (default:
-           `ludwig.modules.optimization_modules.SGDOptimizer()`).
-    :param clipper: Instance of `ludwig.modules.optimization_modules.Clipper` (default:
-           `ludwig.modules.optimization_modules.Clipper(clipglobalnorm=5.0)`)
+    :param optimizer: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
+           `ludwig.modules.optimization_modules.SGDOptimizerConfig()`).
+    :param clipper: Instance of `ludwig.modules.optimization_modules.ClipperConfig` (default:
+           `ludwig.modules.optimization_modules.ClipperConfig(clipglobalnorm=5.0)`)
     """
     optimizer_cls = get_from_registry(optimizer.type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
     cls_kwargs = {k: optimizer.__dict__[k] for k in optimizer.__dict__ if k != "type"}
@@ -372,7 +408,7 @@ def create_optimizer_with_clipper(
     return torch_optimizer, clipper
 
 
-def create_optimizer(optimizer_cls: BaseOptimizer, model, horovod=None, **kwargs) -> torch.optim.Optimizer:
+def create_optimizer(optimizer_cls: BaseOptimizerConfig, model, horovod=None, **kwargs) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer.
 
     Takes a given `torch.optim.Optimizer` class and set of attributes via `kwargs` and constructs and returns a
@@ -391,38 +427,3 @@ def create_optimizer(optimizer_cls: BaseOptimizer, model, horovod=None, **kwargs
             named_parameters=model.named_parameters(),
         )
     return optimizer
-
-
-class ClipperMarshmallowField(fields.Field):
-    """Custom marshmallow field class for gradient clipping.
-
-    Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.Clipper` and creates a corresponding
-    JSON schema for external usage.
-    """
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        if value is None:
-            return None
-        if isinstance(value, dict):
-            try:
-                return Clipper.Schema().load(value)
-            except (TypeError, ValidationError):
-                raise ValidationError(f"Invalid params for clipper: {value}, see Clipper class.")
-        raise ValidationError("Field should be None or dict")
-
-    def _jsonschema_type_mapping(self):
-        return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(Clipper)]}
-
-
-def ClipperDataclassField(default={}, allow_none=True):
-    """Returns custom dataclass field for `ludwig.modules.optimization_modules.Clipper`. Allows `None` by default.
-
-    :param default: dict that specifies clipper param values that will be loaded by its schema class (default: {}).
-    :param allow_none: Whether this field can accept `None` as a value. (default: True)
-    """
-    if not isinstance(default, dict):
-        raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
-        default_factory=lambda: Clipper.Schema().load(default),
-    )

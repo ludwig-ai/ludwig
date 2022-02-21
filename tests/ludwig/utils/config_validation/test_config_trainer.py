@@ -64,8 +64,8 @@ def test_config_trainer_bad_optimizer():
 
     # Test manually set-to-null optimizer vs unspecified:
     config[TRAINER]["optimizer"] = None
-    validate_config(config)
-    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer is None
+    with pytest.raises(ValidationError):
+        validate_config(config)
     assert TrainerConfig.Schema().load({}).optimizer is not None
 
     # Test all types in optimizer_registry supported:
