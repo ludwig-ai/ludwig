@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.features.category_feature import CategoryFeatureMixin
 from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.utils import strings_utils
 
