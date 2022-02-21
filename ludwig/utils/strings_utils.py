@@ -16,9 +16,10 @@
 import logging
 import re
 import unicodedata
+
 from collections import Counter
 from enum import Enum
-from typing import List, Set, Union
+from typing import List, Set, Union, Optional
 
 import numpy as np
 
@@ -189,9 +190,14 @@ def create_vocabulary(
 ):
     """Computes a vocabulary over the provided data frame.
 
-    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data provided,
-    producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer', then a pre-trained
-    huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is used directly.
+    This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
+    items in a set feature, etc. If the feature only contains a single toke, use `create_vocabulary_single_token`
+    instead.
+
+    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data
+    provided, producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer',
+    then a pre-trained huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is
+    used directly.
 
     The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
     STOP) are added if add_special_symbols=True.
@@ -285,6 +291,43 @@ def create_vocabulary(
         pad_idx = str2idx[padding_symbol]
 
     return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
+
+
+def create_vocabulary_single_token(
+    data: DataFrame,
+    num_most_frequent: Optional[int] = None,
+    processor: str = PANDAS,
+    unknown_symbol: str = UNKNOWN_SYMBOL,
+):
+    """Computes a vocabulary over the provided data frame.
+
+    This function is used when the data consists of a single token within one example. E.g., categorical features. In
+    the case of a single token, this function removes some unnecessary tasks and is more efficient. If the feature
+    contains multiple tokens, use `create_vocabulary` instead.
+
+    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    STOP) are added if add_special_symbols=True.
+
+    Args:
+        data: DataFrame of string data.
+        num_most_frequent: Upper limit on vocabulary size.
+        unknown_symbol: String representation for the UNKNOWN symbol.
+        processor: Which processor to use to process data.
+
+    Returns:
+        Tuple of:
+            vocab: List of strings representing the computed vocabulary.
+            str2idx: Map of symbol to index.
+            str2freq: Map of symbol to frequency.
+    """
+    processed_counts = data.value_counts(sort=True)
+    processed_counts = processor.compute(processed_counts)
+    vocab = [unknown_symbol] + processed_counts.index.tolist()[:num_most_frequent]
+    str2idx = {unit: i for i, unit in enumerate(vocab)}
+    str2freq = processed_counts.to_dict()
+    str2freq = {k: str2freq.get(k, 0) for k in vocab}
+
+    return vocab, str2idx, str2freq
 
 
 def _get_sequence_vector(

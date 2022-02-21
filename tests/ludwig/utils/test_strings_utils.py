@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from ludwig.features.category_feature import CategoryFeatureMixin
 from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.utils import strings_utils
 
@@ -134,6 +135,18 @@ def test_create_vocabulary_from_hf():
     )
 
     assert len(vocabulary_output[0]) == 30000
+
+
+def test_create_vocabulary_single_token():
+    data = pd.DataFrame(["dog", "cat", "bird", "dog", "cat"])
+    column = data[0]
+
+    vocab, str2idx, str2freq = strings_utils.create_vocabulary_single_token(column)
+
+    assert len(vocab) == 4
+    assert set(vocab) == {"dog", "cat", "bird", strings_utils.UNKNOWN_SYMBOL}
+    assert str2freq == {"dog": 2, "cat": 2, "bird": 1, strings_utils.UNKNOWN_SYMBOL: 0}
+    assert str2idx[strings_utils.UNKNOWN_SYMBOL] == 0
 
 
 def test_build_sequence_matrix():
