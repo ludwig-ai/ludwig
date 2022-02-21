@@ -20,7 +20,7 @@ import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import AUROC, IoU, MeanAbsoluteError
+from torchmetrics import IoU, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics import R2Score as _R2Score
@@ -123,11 +123,25 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
 
 
 @register_metric(ROC_AUC, [BINARY])
-class ROCAUCMetric(AUROC, LudwigMetric):
-    def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+class ROCAUCMetric(LudwigMetric):
+    """Fast implementation of metric for area under ROC curve."""
 
-    """ Metric for area under ROC curve. """
+    def __init__(
+        self,
+        num_thresholds: int = 201,
+        epsilon: float = 1e-7,
+        **kwargs,
+    ) -> None:
+        super().__init__(dist_sync_fn=gather_all_tensors)
+        self.num_thresholds = num_thresholds
+        self.epsilon = epsilon
+        self.add_state("summary_stats", torch.zeros(num_thresholds, 4), dist_reduce_fx="sum")
+
+    def _get_thresholds(self, device, dtype) -> Tensor:
+        thresholds = torch.linspace(0, 1, self.num_thresholds, device=device, dtype=dtype)
+        thresholds[0] -= self.epsilon
+        thresholds[-1] += self.epsilon
+        return thresholds
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # Currently only supported for binary tasks.
@@ -137,7 +151,46 @@ class ROCAUCMetric(AUROC, LudwigMetric):
                 f"{max(preds.ndim, target.ndim)} dimensions while expecting"
                 f"1-dimensional input."
             )
-        return super().update(preds, target)
+
+        if torch.min(preds) < 0 or torch.max(preds) > 1:
+            raise RuntimeError(
+                f"Only binary tasks supported, but received predictions in range "
+                f"({torch.min(preds)}, {torch.max(preds)})."
+            )
+
+        thresholds = self._get_thresholds(preds.device, preds.dtype)
+        target = target.to(bool).type(preds.dtype)
+
+        preds = preds.unsqueeze(1)
+        target = target.unsqueeze(1)
+
+        # Compute correct predictions at each threshold.
+        correct_predictions = ((preds >= thresholds) == target).to(int)
+
+        # Compute true positives, false positives, true negatives, false negatives.
+        # overall_predictions is a tensor where each cell represents the type of prediction:
+        # 0: false positive
+        # 1: true negative
+        # 2: false negative
+        # 3: true positive
+        overall_predictions = correct_predictions + (2 * target)
+
+        # Sum up the number of true positives, false positives, true negatives, false negatives at each threshold.
+        self.summary_stats += torch.eye(4, device=preds.device)[overall_predictions.T.long()].sum(dim=1, keepdim=False)
+
+    def compute(self) -> Tensor:
+        # Compute true positives, false positives, true negatives, false negatives.
+        self.summary_stats = self.summary_stats.squeeze()
+        false_positives = self.summary_stats[:, 0]
+        true_negatives = self.summary_stats[:, 1]
+        false_negatives = self.summary_stats[:, 2]
+        true_positives = self.summary_stats[:, 3]
+
+        true_positive_rate = true_positives / (true_positives + false_negatives)
+        false_positive_rate = false_positives / (false_positives + true_negatives)
+
+        # Compute area under ROC curve. Multiply by -1 because tpr and fpr are computed from the opposite direction.
+        return -1 * torch.trapz(true_positive_rate, false_positive_rate)
 
     @classmethod
     def get_objective(cls):

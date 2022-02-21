@@ -89,6 +89,9 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
         result = result.int()
         is_bool = True
 
+    # Add extra dimension to the tensors to be gathered
+    result = result.unsqueeze(0)
+
     # sync and gather all
     gathered = _HVD.allgather(result)
     gathered_result = list(gathered.split(1, dim=0))
