@@ -132,7 +132,6 @@ class Trainer(BaseTrainer):
         callbacks=None,
         random_seed=default_random_seed,
         horovod=None,
-        debug=False,
         device=None,
         **kwargs,
     ):
@@ -233,9 +232,6 @@ class Trainer(BaseTrainer):
         :type: Float
         :param horovod: Horovod parameters
         :type horovod: dict
-        :param debug: Enables debugging mode, which prints out a lot of
-                information about the training process.
-        :type debug: Boolean
         :param device: The device to load the model on from a saved checkpoint.
         :type device: str
         """
@@ -278,7 +274,6 @@ class Trainer(BaseTrainer):
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
         self.horovod = horovod
-        self.debug = debug
         self.received_sigint = False
         self.callbacks = callbacks or []
         self.device = device
@@ -1043,7 +1038,7 @@ class Trainer(BaseTrainer):
         tables,
         batch_size=128,
     ):
-        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod, debug=self.debug)
+        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod)
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         self.append_metrics(dataset_name, metrics, metrics_log, tables)

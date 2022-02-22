@@ -64,10 +64,9 @@ class BasePredictor(ABC):
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
-    def __init__(self, model: ECD, batch_size=128, horovod=None, debug=False, **kwargs):
+    def __init__(self, model: ECD, batch_size=128, horovod=None, **kwargs):
         self._batch_size = batch_size
         self._horovod = horovod
-        self._debug = debug
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = model.to(self.device)

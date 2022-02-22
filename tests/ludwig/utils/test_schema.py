@@ -131,7 +131,6 @@ def test_config_tabnet():
             "bn_momentum": 0.6,
             "num_steps": 5,
             "relaxation_factor": 1.5,
-            "use_keras_batch_norm": False,
             "bn_virtual_bs": 512,
         },
         "trainer": {
