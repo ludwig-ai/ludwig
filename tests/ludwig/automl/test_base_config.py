@@ -32,6 +32,8 @@ TARGET_NAME = "target"
         (40, [generate_string(5) for _ in range(40)], 0, 0.0, CATEGORY),
         # Mostly random strings.
         (90, [generate_string(5) for _ in range(90)], 0, 0.0, TEXT),
+        # Mostly random strings with capped distinct values.
+        (90, [generate_string(5) for _ in range(10)], 0, 0.0, TEXT),
         # All random strings.
         (ROW_COUNT, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0.0, TEXT),
         # Images.

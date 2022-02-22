@@ -45,7 +45,7 @@ encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.
 CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF = 0.5
 
 # Cap for number of distinct values to return.
-MAX_DISTINCT_VALUES_TO_RETURN = 10000
+MAX_DISTINCT_VALUES_TO_RETURN = 10
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -321,18 +321,13 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
         return IMAGE
 
     # Use CATEGORY if:
-    # - The number of distinct values is less than absolute cap of number of distinct values to return.
     # - The number of distinct values is significantly less than the total number of examples.
     # - The distinct values are not all numerical.
     # - The distinct values are all numerical but comprise of a perfectly sequential list of integers that suggests the
     #   values represent categories.
-    if (
-        num_distinct_values < MAX_DISTINCT_VALUES_TO_RETURN
-        and num_distinct_values < row_count * CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF
-        and (
-            (not strings_utils.are_all_numericals(distinct_values))
-            or strings_utils.are_sequential_integers(distinct_values)
-        )
+    if num_distinct_values < row_count * CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF and (
+        (not strings_utils.are_all_numericals(distinct_values))
+        or strings_utils.are_sequential_integers(distinct_values)
     ):
         return CATEGORY
 
