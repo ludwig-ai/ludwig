@@ -1221,8 +1221,8 @@ def balance_data(
             target = feature[PROC_COLUMN]
 
     if backend.df_engine.partitioned:
-        majority_class = backend.df_engine.compute(dataset_df[target]).value_counts().idxmax()
-        minority_class = backend.df_engine.compute(dataset_df[target]).value_counts().idxmin()
+        majority_class = backend.df_engine.compute(dataset_df[target].value_counts()).idxmax()
+        minority_class = backend.df_engine.compute(dataset_df[target].value_counts()).idxmin()
     else:
         majority_class = dataset_df[target].value_counts().idxmax()
         minority_class = dataset_df[target].value_counts().idxmin()
