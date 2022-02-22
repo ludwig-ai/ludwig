@@ -67,10 +67,19 @@ def get_available_resources() -> dict:
     return resources
 
 
-def get_model_name(config: dict) -> str:
-    if COMBINER in config and TYPE in config[COMBINER]:
-        return config[COMBINER][TYPE]
-    return default_combiner_type
+def get_model_type(config: dict) -> str:
+    if (
+        "input_features" in config
+        and len(config["input_features"]) == 1
+        and "type" in config["input_features"][0]
+        and config["input_features"][0]["type"] == "text"
+    ):
+        model_type = "text"
+    elif COMBINER in config and TYPE in config[COMBINER]:
+        model_type = config[COMBINER][TYPE]
+    else:
+        model_type = default_combiner_type
+    return model_type
 
 
 def _ray_init():

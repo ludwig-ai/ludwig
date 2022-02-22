@@ -10,14 +10,12 @@ except ImportError:
     raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
-from ludwig.automl.utils import get_model_name
+from ludwig.automl.utils import get_model_type
 from ludwig.constants import BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TRAINER
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.torch_utils import initialize_pytorch
-
-logger = logging.getLogger(__name__)
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
@@ -108,15 +106,7 @@ def memory_tune_config(config, dataset):
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}
     param_list = []
-    if (
-        "input_features" in config
-        and len(config["input_features"]) == 1
-        and "type" in config["input_features"][0]
-        and config["input_features"][0]["type"] == "text"
-    ):
-        model_type = "text"
-    else:
-        model_type = get_model_name(raw_config)
+    model_type = get_model_type(raw_config)
     if model_type in RANKED_MODIFIABLE_PARAM_LIST:
         params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_type]
         if len(params_to_modify.keys()) > 0:
@@ -129,7 +119,7 @@ def memory_tune_config(config, dataset):
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
         mem_use = compute_memory_usage(temp_config, training_set_metadata)
-        logger.info(f"Checking model mem use {mem_use} against memory size {max_memory}")
+        logging.info(f"Checking model mem use {mem_use} against memory size {max_memory}")
         if mem_use <= max_memory:
             fits_in_memory = True
             break

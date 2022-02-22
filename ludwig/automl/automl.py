@@ -20,7 +20,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
-from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_name
+from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_type
 from ludwig.constants import HYPEROPT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -180,9 +180,9 @@ def train_with_config(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     _ray_init()
-    model_name = get_model_name(config)
+    model_type = get_model_type(config)
     hyperopt_results = _train(
-        config, dataset, output_directory=output_directory, model_name=model_name, random_seed=random_seed, **kwargs
+        config, dataset, output_directory=output_directory, model_name=model_type, random_seed=random_seed, **kwargs
     )
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
