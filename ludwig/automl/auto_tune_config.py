@@ -1,4 +1,5 @@
 import copy
+import logging
 from collections import OrderedDict
 
 import psutil
@@ -14,11 +15,14 @@ except ImportError:
     )
 
 from ludwig.api import LudwigModel
-from ludwig.automl.utils import get_available_resources, get_model_name
+from ludwig.automl.utils import get_model_name
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.tf_utils import initialize_tensorflow
 from ludwig.constants import COMBINER, HYPEROPT, BATCH_SIZE, TRAINING, TYPE, PREPROCESSING, SPACE
+
+logger = logging.getLogger(__name__)
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
@@ -40,10 +44,15 @@ RANKED_MODIFIABLE_PARAM_LIST = {
         'combiner.num_layers': 4,
         'combiner.num_fc_layers': 1,
     }),
+    'text': OrderedDict({ # for single input feature text models e.g. bert and its variants
+        'training.batch_size': 8,
+    }),
 }
 
 
 BYTES_PER_MiB = 1048576
+BYTES_PER_WEIGHT = 4  # assumes 32-bit precision = 4 bytes
+BYTES_OPTIMIZER_PER_WEIGHT = 8 # for optimizer m and v vectors
 
 
 def get_trainingset_metadata(config, dataset):
@@ -54,46 +63,21 @@ def get_trainingset_metadata(config, dataset):
     return training_set_metadata
 
 
-def get_machine_memory():
-
-    if ray.is_initialized():  # using ray cluster
-        @ray.remote(num_gpus=1)
-        def get_remote_gpu():
-            gpus = GPUtil.getGPUs()
-            total_mem_mb = gpus[0].memoryTotal
-            return total_mem_mb * BYTES_PER_MiB
-
-        @ray.remote(num_cpus=1)
-        def get_remote_cpu():
-            total_mem = psutil.virtual_memory().total
-            return total_mem
-
-        resources = get_available_resources()  # check if cluster has GPUS
-
-        if resources['gpu'] > 0:
-            machine_mem = ray.get(get_remote_gpu.remote())
-        else:
-            machine_mem = ray.get(get_remote_cpu.remote())
-    else:  # not using ray cluster
-        if GPUtil.getGPUs():
-            machine_mem = GPUtil.getGPUs()[0].memoryTotal * BYTES_PER_MiB
-        else:
-            machine_mem = psutil.virtual_memory().total
-
+# Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
+def _get_machine_memory():
+    if GPUtil.getGPUs():
+        machine_mem = GPUtil.getGPUs()[0].memoryTotal * BYTES_PER_MiB
+    else:
+        machine_mem = psutil.virtual_memory().total
     return machine_mem
 
 
 def compute_memory_usage(config, training_set_metadata) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
-    lm.get_connected_model()
-    model_tensors = lm.collect_weights()
-    total_size = 0
+    model_size = lm.get_model_size() # number of parameters in model
     batch_size = config[TRAINING][BATCH_SIZE]
-    for tnsr in model_tensors:
-        total_size += tnsr[1].numpy().size * batch_size
-    total_bytes = total_size * 4  # assumes 32-bit precision = 4 bytes
-    return total_bytes
+    return model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
 
 
 def sub_new_params(config: dict, new_param_vals: dict):
@@ -115,6 +99,7 @@ def get_new_params(current_param_values, hyperparam_search_space, params_to_modi
     return current_param_values
 
 
+# Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
 def memory_tune_config(config, dataset):
     fits_in_memory = False
     raw_config = merge_with_defaults(config)
@@ -123,19 +108,26 @@ def memory_tune_config(config, dataset):
         raw_config[HYPEROPT]['parameters'])
     current_param_values = {}
     param_list = []
-    model_name = get_model_name(raw_config)
-    if model_name in RANKED_MODIFIABLE_PARAM_LIST:
-        params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_name]
+    if ('input_features' in config and len(config['input_features']) == 1 and
+            'type' in config['input_features'][0] and config['input_features'][0]['type'] == 'text'):
+        model_type = 'text'
+    else:
+        model_type = get_model_name(raw_config)
+    if model_type in RANKED_MODIFIABLE_PARAM_LIST:
+        params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[model_type]
         if len(params_to_modify.keys()) > 0:
             param_list = list(params_to_modify.keys())
-            max_memory = get_machine_memory()
+            max_memory = _get_machine_memory()
+            initialize_tensorflow()
 
     while param_list:
         # compute memory utilization
         current_param_values = get_new_params(
             current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
-        if compute_memory_usage(temp_config, training_set_metadata) < max_memory:
+        mem_use = compute_memory_usage(temp_config, training_set_metadata)
+        logger.info('Checking model mem use {} against memory size {}'.format(mem_use, max_memory))
+        if mem_use <= max_memory:
             fits_in_memory = True
             break
         # check if we have exhausted tuning of current param (e.g. we can no longer reduce the param value)
@@ -144,7 +136,7 @@ def memory_tune_config(config, dataset):
         if param in modified_hyperparam_search_space.keys():
             param_space = modified_hyperparam_search_space[param]["space"]
             if param_space == "choice":
-                if len(modified_hyperparam_search_space[param]['categories']) > 2 and \
+                if len(modified_hyperparam_search_space[param]['categories']) >= 2 and \
                         modified_hyperparam_search_space[param]['categories'][-2] >= min_value:
                     modified_hyperparam_search_space[param][
                         'categories'] = modified_hyperparam_search_space[param]['categories'][:-1]

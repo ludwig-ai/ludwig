@@ -21,7 +21,7 @@ import copy
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, _get_reference_configs, infer_type
 from ludwig.automl.auto_tune_config import memory_tune_config
-from ludwig.automl.utils import _add_transfer_config, _ray_init, get_model_name
+from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_name
 from ludwig.constants import COMBINER, TYPE, HYPEROPT, NUMERICAL
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -153,11 +153,22 @@ def create_auto_config(
     )
     if tune_for_memory:
         if ray.is_initialized():
-            model_config, _ = ray.get(ray.remote(num_cpus=1)(
-                memory_tune_config
-            ).remote(model_config, dataset))
+            resources = get_available_resources()  # check if cluster has GPUS
+            if resources["gpu"] > 0:
+                model_config, fits_in_memory = ray.get(ray.remote(num_gpus=1,num_cpus=1,max_calls=1)(
+                    memory_tune_config
+                ).remote(model_config, dataset))
+            else:
+                model_config, fits_in_memory = ray.get(ray.remote(num_cpus=1)(
+                    memory_tune_config
+                ).remote(model_config, dataset))
         else:
-            model_config, _ = memory_tune_config(model_config, dataset)
+            model_config, fits_in_memory = memory_tune_config(model_config, dataset)
+        if not fits_in_memory:
+            warnings.warn(
+                "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
+                "If out-of-memory occurs, consider setting AutoML user_config to reduce model memory footprint. "
+            )
     return model_config
 
 
