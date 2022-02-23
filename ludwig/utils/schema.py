@@ -22,7 +22,7 @@ from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.models.trainer import TrainerConfig
-from ludwig.utils.schema_utils import create_cond, get_custom_schema_from_marshmallow_class
+from ludwig.utils.marshmallow_schema_utils import create_cond, get_custom_schema_from_marshmallow_class
 
 
 def get_schema():

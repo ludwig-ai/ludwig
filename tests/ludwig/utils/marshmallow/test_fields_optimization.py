@@ -21,7 +21,7 @@ from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 import ludwig.modules.optimization_modules as lmo
-import ludwig.utils.schema_utils as lusutils
+import ludwig.utils.marshmallow_schema_utils as lusutils
 
 # Tests for custom dataclass/marshmallow fields:
 

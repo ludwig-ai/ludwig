@@ -5,7 +5,7 @@ from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 import ludwig.combiners.combiners as lcc
-import ludwig.utils.schema_utils as lusutils
+import ludwig.utils.marshmallow_schema_utils as lusutils
 from ludwig.models.trainer import TrainerConfig
 
 

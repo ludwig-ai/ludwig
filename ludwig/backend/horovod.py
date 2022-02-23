@@ -22,7 +22,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.schema_utils import load_config_with_kwargs
+from ludwig.utils.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import initialize_pytorch
 
 

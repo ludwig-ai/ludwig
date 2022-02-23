@@ -102,7 +102,7 @@ class LocalTrainingMixin:
 
     def create_trainer(self, **kwargs):
         from ludwig.models.trainer import Trainer
-        from ludwig.utils.schema_utils import load_config_with_kwargs
+        from ludwig.utils.marshmallow_schema_utils import load_config_with_kwargs
 
         config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
         return Trainer(config=config, **kwargs)

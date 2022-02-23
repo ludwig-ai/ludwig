@@ -20,9 +20,7 @@ from marshmallow import fields, missing, ValidationError
 from marshmallow.decorators import validates
 from marshmallow_dataclass import dataclass
 
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.registry import Registry
-from ludwig.utils.schema_utils import (
+from ludwig.utils.marshmallow_schema_utils import (
     BaseMarshmallowConfig,
     create_cond,
     FloatRange,
@@ -31,6 +29,8 @@ from ludwig.utils.schema_utils import (
     NonNegativeFloat,
     StringOptions,
 )
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry
 
 optimizer_registry = Registry()
 
