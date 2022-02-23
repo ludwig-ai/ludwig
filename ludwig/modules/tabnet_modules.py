@@ -22,7 +22,7 @@ class TabNet(LudwigModule):
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: Optional[int] = None,
         sparsity: float = 1e-5,
-        entmax_mode: str = 'sparsemax',
+        entmax_mode: str = "sparsemax",
         entmax_alpha: float = 1.5
     ):
         """TabNet Will output a vector of size output_dim.
@@ -214,15 +214,15 @@ class AttentiveTransformer(LudwigModule):
         bn_momentum: float = 0.9,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
-        entmax_mode: str = 'sparsemax',
+        entmax_mode: str = "sparsemax",
         entmax_alpha: float = 1.5
     ):
         super().__init__()
         self.input_size = input_size
         self.size = size
         self.entmax_mode = entmax_mode
-        if entmax_mode == 'adaptive':
-            self.trainable_alpha = torch.tensor(entmax_alpha, requires_grad=True)
+        if entmax_mode == "adaptive":
+            self.register_buffer("trainable_alpha", torch.tensor(entmax_alpha, requires_grad=True))
         else:
             self.trainable_alpha = entmax_alpha
 
