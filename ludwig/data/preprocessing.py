@@ -20,10 +20,11 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 
-from ludwig.backend import Backend, LOCAL_BACKEND, _has_ray
+from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BACKFILL,
     BFILL,
+    BINARY,
     CHECKSUM,
     COLUMN,
     DROP_ROW,
@@ -1216,18 +1217,29 @@ def balance_data(
         backend
 ):
     target = None
+    target_count = 0
     for feature in features:
         if feature[OUTPUT_FLAG]:
-            target = feature[PROC_COLUMN]
+            target = feature
+            target_count += 1
+
+    if target_count > 1:
+        raise ValueError(
+            "Class balancing is only available for single target datasets"
+        )
+    if target[TYPE] != BINARY:
+        raise ValueError(
+            "Class balancing is only supported for binary output types"
+        )
 
     if backend.df_engine.partitioned:
-        majority_class = backend.df_engine.compute(dataset_df[target].value_counts()).idxmax()
-        minority_class = backend.df_engine.compute(dataset_df[target].value_counts()).idxmin()
+        majority_class = backend.df_engine.compute(dataset_df[target[PROC_COLUMN]].value_counts()).idxmax()
+        minority_class = backend.df_engine.compute(dataset_df[target[PROC_COLUMN]].value_counts()).idxmin()
     else:
-        majority_class = dataset_df[target].value_counts().idxmax()
-        minority_class = dataset_df[target].value_counts().idxmin()
-    majority_df = dataset_df[dataset_df[target] == majority_class]
-    minority_df = dataset_df[dataset_df[target] == minority_class]
+        majority_class = dataset_df[target[PROC_COLUMN]].value_counts().idxmax()
+        minority_class = dataset_df[target[PROC_COLUMN]].value_counts().idxmin()
+    majority_df = dataset_df[dataset_df[target[PROC_COLUMN]] == majority_class]
+    minority_df = dataset_df[dataset_df[target[PROC_COLUMN]] == minority_class]
 
     if preprocessing_parameters['oversample_minority']:
         sample_fraction = (len(majority_df) * preprocessing_parameters['oversample_minority']) / len(minority_df)
