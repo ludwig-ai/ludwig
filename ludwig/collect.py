@@ -47,7 +47,6 @@ def collect_activations(
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
-    debug: bool = False,
     **kwargs,
 ) -> List[str]:
     """Uses the pretrained model to collect the tensors corresponding to a datapoint in the dataset. Saves the
@@ -86,8 +85,6 @@ def collect_activations(
         Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
 
     # Return
 
@@ -111,7 +108,7 @@ def collect_activations(
     # collect activations
     print_boxed("COLLECT ACTIVATIONS")
     collected_tensors = model.collect_activations(
-        layers, dataset, data_format=data_format, split=split, batch_size=batch_size, debug=debug
+        layers, dataset, data_format=data_format, split=split, batch_size=batch_size
     )
 
     # saving
@@ -122,9 +119,7 @@ def collect_activations(
     return saved_filenames
 
 
-def collect_weights(
-    model_path: str, tensors: List[str], output_directory: str = "results", debug: bool = False, **kwargs
-) -> List[str]:
+def collect_weights(model_path: str, tensors: List[str], output_directory: str = "results", **kwargs) -> List[str]:
     """Loads a pretrained model and collects weights.
 
     # Inputs
@@ -133,8 +128,6 @@ def collect_weights(
         weights
     :param output_directory: (str, default: `'results'`) the directory where
         collected weights will be stored.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
 
     # Return
 
@@ -208,7 +201,6 @@ def cli_collect_activations(sys_argv):
     --bs: Batch size
     --g: Number of gpus that are to be used
     --gf: Fraction of each GPUs memory to use.
-    --dbg: Debug if the model is to be started with python debugger
     --v: Verbose: Defines the logging level that the user will be exposed to
     """
     parser = argparse.ArgumentParser(
@@ -291,7 +283,6 @@ def cli_collect_activations(sys_argv):
         "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
-    parser.add_argument("-dbg", "--debug", action="store_true", default=False, help="enables debugging mode")
     parser.add_argument(
         "-l",
         "--logging_level",
@@ -324,7 +315,6 @@ def cli_collect_weights(sys_argv):
          required *option*
     --t: Tensors to collect
     --od: Output directory of the model, defaults to results
-    --dbg: Debug if the model is to be started with python debugger
     --v: Verbose: Defines the logging level that the user will be exposed to
     """
     parser = argparse.ArgumentParser(
@@ -349,7 +339,6 @@ def cli_collect_weights(sys_argv):
     # ------------------
     # Runtime parameters
     # ------------------
-    parser.add_argument("-dbg", "--debug", action="store_true", default=False, help="enables debugging mode")
     parser.add_argument(
         "-l",
         "--logging_level",

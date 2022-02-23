@@ -59,7 +59,6 @@ def hyperopt_cli(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
-    debug: bool = False,
     **kwargs,
 ):
     """Searches for optimal hyperparameters.
@@ -151,9 +150,6 @@ def hyperopt_cli(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
-        **kwargs:
 
     # Return
     :return" (`None`)
@@ -187,7 +183,6 @@ def hyperopt_cli(
         callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
-        debug=debug,
         **kwargs,
     )
 
@@ -371,13 +366,6 @@ def cli(sys_argv):
         help="specifies backend to use for parallel / distributed execution, "
         "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
-    )
-    parser.add_argument(
-        "-dbg",
-        "--debug",
-        action="store_true",
-        default=False,
-        help="enables debugging mode",
     )
     parser.add_argument(
         "-l",

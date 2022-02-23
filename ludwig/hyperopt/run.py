@@ -56,7 +56,6 @@ def hyperopt(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
-    debug: bool = False,
     **kwargs,
 ) -> HyperoptResults:
     """This method performs an hyperparameter optimization.
@@ -149,8 +148,6 @@ def hyperopt(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
 
     # Return
 
@@ -327,7 +324,6 @@ def hyperopt(
         callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
-        debug=debug,
         **kwargs,
     )
 

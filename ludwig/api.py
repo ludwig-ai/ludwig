@@ -17,7 +17,6 @@
     File name: LudwigModel.py
     Author: Piero Molino
     Date created: 5/21/2019
-    Date last modified: 5/21/2019
     Python Version: 3+
 """
 import copy
@@ -241,7 +240,6 @@ class LudwigModel:
         skip_save_processed_input: bool = False,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
-        debug: bool = False,
         **kwargs,
     ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to perform a full training of the model on the specified dataset.
@@ -323,9 +321,6 @@ class LudwigModel:
         :param random_seed: (int, default: `42`) a random seed that will be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param debug: (bool, default: `False`)  if `True` turns on `tfdbg` with
-            `inf_or_nan` checks.
-
 
         # Return
 
@@ -440,7 +435,6 @@ class LudwigModel:
                         skip_save_processed_input=skip_save_processed_input,
                         output_directory=output_directory,
                         random_seed=random_seed,
-                        debug=debug,
                         **kwargs,
                     )
                     (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
@@ -495,7 +489,6 @@ class LudwigModel:
                 skip_save_log=skip_save_log,
                 callbacks=train_callbacks,
                 random_seed=random_seed,
-                debug=debug,
             ) as trainer:
                 for callback in self.callbacks:
                     callback.on_train_start(
@@ -600,7 +593,6 @@ class LudwigModel:
         training_set_metadata: Union[str, dict] = None,
         data_format: str = "auto",
         random_seed: int = default_random_seed,
-        debug: bool = False,
     ) -> None:
         """Performs one epoch of training of the model on `dataset`.
 
@@ -626,8 +618,6 @@ class LudwigModel:
         :param random_seed: (int, default: `42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
-                with `inf_or_nan` checks.
 
         # Return
 
@@ -655,7 +645,7 @@ class LudwigModel:
 
         if not self._online_trainer:
             self._online_trainer = self.backend.create_trainer(
-                **self.config[TRAINER], model=self.model, random_seed=random_seed, debug=debug
+                **self.config[TRAINER], model=self.model, random_seed=random_seed
             )
 
         self.model = self._online_trainer.train_online(training_dataset)
@@ -670,7 +660,6 @@ class LudwigModel:
         skip_save_predictions: bool = True,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
-        debug=False,
         **kwargs,
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
@@ -687,8 +676,7 @@ class LudwigModel:
             `'stata'`, `'tsv'`.
         :param: split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `
-            'validation'`, `'test'`.
+            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
@@ -704,8 +692,6 @@ class LudwigModel:
             model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format of the returned predictions.
-        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
-                with `inf_or_nan checks`.
 
         # Return
 
@@ -729,7 +715,7 @@ class LudwigModel:
         )
 
         logger.debug("Predicting")
-        with self.backend.create_predictor(self.model, batch_size=batch_size, debug=debug) as predictor:
+        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             predictions = predictor.batch_predict(
                 dataset,
             )
@@ -777,7 +763,6 @@ class LudwigModel:
         collect_overall_stats: bool = False,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
-        debug: bool = False,
         **kwargs,
     ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to predict the output variables given the input variables using the trained model
@@ -795,8 +780,7 @@ class LudwigModel:
             `'stata'`, `'tsv'`.
         :param: split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `
-            'validation'`, `'test'`.
+            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
@@ -818,9 +802,6 @@ class LudwigModel:
             model and the training progress files.
         :param return_type: (Union[str, dict, pd.DataFrame], default: pandas.DataFrame) indicates
             the format to of the returned predictions.
-        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
-                with `inf_or_nan` checks.
-
 
         # Return
         :return: (`evaluation_statistics`, `predictions`, `output_directory`)
@@ -848,7 +829,7 @@ class LudwigModel:
         )
 
         logger.debug("Predicting")
-        with self.backend.create_predictor(self.model, batch_size=batch_size, debug=debug) as predictor:
+        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             eval_stats, predictions = predictor.batch_evaluation(
                 dataset,
                 collect_predictions=collect_predictions or collect_overall_stats,
@@ -949,7 +930,6 @@ class LudwigModel:
         skip_collect_overall_stats: bool = False,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
-        debug: bool = False,
         **kwargs,
     ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
         """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
@@ -1041,8 +1021,6 @@ class LudwigModel:
             model and the training progress files.
         :param random_seed: (int: default: 42) random seed used for weights
             initialization, splits and any other random function.
-        :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-            `inf_or_nan` checks.
 
         # Return
         :return: (Tuple[dict, dict, tuple, str))
@@ -1076,7 +1054,6 @@ class LudwigModel:
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
             random_seed=random_seed,
-            debug=debug,
         )
 
         (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
@@ -1110,7 +1087,6 @@ class LudwigModel:
                     collect_predictions=not skip_collect_predictions,
                     collect_overall_stats=not skip_collect_overall_stats,
                     return_type="dict",
-                    debug=debug,
                 )
             except NotImplementedError:
                 logger.warning(
@@ -1166,12 +1142,9 @@ class LudwigModel:
             `'stata'`, `'tsv'`.
         :param: split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
-            to use. Possible values are `'full'`, `'training'`, `
-            'validation'`, `'test'`.
+            to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
-        :param debug: (bool, default: `False`) if `True` turns on `tfdbg`
-            with `inf_or_nan` checks.
 
         # Return
         :return: (list) list of collected tensors.
@@ -1190,7 +1163,7 @@ class LudwigModel:
         )
 
         logger.debug("Predicting")
-        with self.backend.create_predictor(self.model, batch_size=batch_size, debug=debug) as predictor:
+        with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             activations = predictor.batch_collect_activations(
                 layer_names,
                 dataset,
@@ -1208,7 +1181,6 @@ class LudwigModel:
         data_format: str = None,
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
-        debug: bool = False,
         **kwargs,
     ) -> Tuple[Dataset, Dataset, Dataset, dict]:
         """This function is used to preprocess data.
@@ -1250,9 +1222,6 @@ class LudwigModel:
         :param random_seed: (int, default: `42`) a random seed that will be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param debug: (bool, default: `False`)  if `True` turns on `tfdbg` with
-            `inf_or_nan` checks.
-
 
         # Return
 
@@ -1526,7 +1495,6 @@ def kfold_cross_validate(
     allow_parallel_threads: bool = True,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
-    debug: bool = False,
     **kwargs,
 ) -> Tuple[dict, dict]:
     """Performs k-fold cross validation and returns result data structures.
@@ -1600,8 +1568,6 @@ def kfold_cross_validate(
            to improve performance at the cost of determinism.
     :param backend: (Union[Backend, str]) `Backend` or string name
             of backend to use to execute preprocessing / training steps.
-    :param debug: (bool, default: `False`) If `True` turns on tfdbg
-            with `inf_or_nan` checks.
     :param logging_level: (int, default: INFO) log level to send to stderr.
 
 
@@ -1678,7 +1644,6 @@ def kfold_cross_validate(
                 skip_collect_overall_stats=skip_collect_overall_stats,
                 output_directory=os.path.join(temp_dir_name, "results"),
                 random_seed=random_seed,
-                debug=debug,
             )
 
             # augment the training statistics with scoring metric from
