@@ -13,7 +13,7 @@ from ludwig.backend.ray import RayBackend
 from ludwig.backend import LocalBackend
 from ludwig.api import LudwigModel
 from tests.integration_tests.utils import spawn
-from tests.integration_tests.utils import train_with_backend, create_data_set_to_use
+from tests.integration_tests.utils import create_data_set_to_use
 
 DFS = {
     "test_df_1": pd.DataFrame({"Index": np.arange(0, 200, 1),
@@ -29,7 +29,7 @@ CONFIGS = {
             {"name": "random_1", "column": "random_1", "type": "numerical", "output_flag": False},
             {"name": "random_2", "column": "random_2", "type": "numerical", "output_flag": False}],
         "output_features": [
-            {"name": "Label", "column": "Label", "type": "numerical", "output_flag": True}
+            {"name": "Label", "column": "Label", "type": "binary", "output_flag": True}
         ],
         'trainer': {"epochs": 2, "batch_size": 8},
         "preprocessing": {}

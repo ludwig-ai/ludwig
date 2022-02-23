@@ -28,7 +28,7 @@ CONFIGS = {
             {"name": "random_1", "column": "random_1", "type": "numerical", "output_flag": False},
             {"name": "random_2", "column": "random_2", "type": "numerical", "output_flag": False}],
         "output_features": [
-            {"name": "Label", "column": "Label", "type": "numerical", "output_flag": True}
+            {"name": "Label", "column": "Label", "type": "binary", "output_flag": True}
         ],
         "preprocessing": {
         }
@@ -148,3 +148,48 @@ def test_balance_data_local(balance):
                                 preprocessing_params,
                                 target,
                                 backend)
+
+
+def test_non_binary_failure():
+    config = CONFIGS["test_config_1"].copy()
+    config['preprocessing']["oversample_minority"] = 0.5
+    config["output_features"][0]["type"] = "numerical"
+    df = DFS['test_df_1'].copy()
+    features = config['input_features'] + config['output_features']
+    for feature in features:
+        feature[PROC_COLUMN] = feature[NAME]
+    preprocessing_params = config['preprocessing']
+    backend = LocalBackend()
+    target = None
+    for feature in features:
+        if feature[OUTPUT_FLAG]:
+            target = feature[NAME]
+    with pytest.raises(ValueError):
+        run_test_balance_data_local(df,
+                                    features,
+                                    preprocessing_params,
+                                    target,
+                                    backend)
+
+
+def test_multiple_class_failure():
+    config = CONFIGS["test_config_1"].copy()
+    config['preprocessing']["oversample_minority"] = 0.5
+    config["output_features"].append({"name": "Label2", "column": "Label2", "type": "binary", "output_flag": True})
+    df = DFS['test_df_1'].copy()
+    df['Label2'] = np.concatenate((np.zeros(180), np.ones(20)))
+    features = config['input_features'] + config['output_features']
+    for feature in features:
+        feature[PROC_COLUMN] = feature[NAME]
+    preprocessing_params = config['preprocessing']
+    backend = LocalBackend()
+    target = None
+    for feature in features:
+        if feature[OUTPUT_FLAG]:
+            target = feature[NAME]
+    with pytest.raises(ValueError):
+        run_test_balance_data_local(df,
+                                    features,
+                                    preprocessing_params,
+                                    target,
+                                    backend)

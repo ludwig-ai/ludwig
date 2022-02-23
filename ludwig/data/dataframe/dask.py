@@ -62,7 +62,7 @@ class DaskEngine(DataFrameEngine):
         return data.persist() if self._persist else data
 
     def concatenate(self, dfs):
-        return dd.multi.concat(dfs)
+        return self.df_lib.multi.concat(dfs)
 
     def compute(self, data):
         return data.compute()
@@ -70,9 +70,6 @@ class DaskEngine(DataFrameEngine):
     def from_pandas(self, df):
         parallelism = self._parallelism or 1
         return dd.from_pandas(df, npartitions=parallelism).reset_index()
-
-    def from_array(self, arr):
-        return dd.from_array(arr)
 
     def map_objects(self, series, map_fn, meta=None):
         meta = meta or ("data", "object")
