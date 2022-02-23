@@ -1,5 +1,6 @@
 import bisect
 import logging
+import os
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -85,6 +86,9 @@ def get_model_type(config: dict) -> str:
 def _ray_init():
     if ray.is_initialized():
         return
+
+    # Forcibly terminate trial requested to stop after this amount of time passes
+    os.environ.setdefault("TUNE_FORCE_TRIAL_CLEANUP_S", "120")
 
     try:
         ray.init("auto", ignore_reinit_error=True)
