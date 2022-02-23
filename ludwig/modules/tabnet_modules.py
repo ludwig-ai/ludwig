@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import LudwigModule
-from entmax import sparsemax, entmax15
+from entmax import sparsemax, entmax_bisect, entmax15
 
 
 class TabNet(LudwigModule):
@@ -22,7 +22,8 @@ class TabNet(LudwigModule):
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: Optional[int] = None,
         sparsity: float = 1e-5,
-        entmax: bool = True
+        entmax_mode: str = 'sparsemax',
+        entmax_alpha: float = 1.5
     ):
         """TabNet Will output a vector of size output_dim.
 
@@ -36,7 +37,11 @@ class TabNet(LudwigModule):
             relaxation_factor: >1 will allow features to be used more than once.
             bn_momentum: Batch normalization, momentum.
             bn_epsilon: Batch normalization, epsilon.
-            bn_virtual_bs: Virtual batch ize for ghost batch norm..
+            bn_virtual_bs: Virtual batch ize for ghost batch norm.
+            entmax_mode: Entmax is a sparse family of probability mapping which generalizes softmax and sparsemax.
+                         entmax_mode controls the sparsity.  One of {"sparsemax", "entmax15", "constant", "adaptive"}.
+            entmax_alpha: Must be a number between 1.0 and 2.0.  If entmax_mode is "adaptive", entmax_alpha is used
+                          as the initial value for the learnable parameter.
         """
         super().__init__()
         self.input_size = input_size
@@ -46,7 +51,6 @@ class TabNet(LudwigModule):
         self.bn_virtual_bs = bn_virtual_bs
         self.relaxation_factor = relaxation_factor
         self.sparsity = torch.tensor(sparsity)
-
         self.batch_norm = nn.BatchNorm1d(input_size, momentum=bn_momentum, eps=bn_epsilon)
 
         kargs = {
@@ -75,7 +79,7 @@ class TabNet(LudwigModule):
             # of features that we determine by looking at the
             # last dimension of the input tensor
             self.attentive_transforms.append(
-                AttentiveTransformer(size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs, entmax)
+                AttentiveTransformer(size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs, entmax_mode, entmax_alpha)
             )
         self.final_projection = nn.Linear(output_size, output_size)
 
@@ -210,12 +214,17 @@ class AttentiveTransformer(LudwigModule):
         bn_momentum: float = 0.9,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
-        entmax: bool = False
+        entmax_mode: str = 'sparsemax',
+        entmax_alpha: float = 1.5
     ):
         super().__init__()
         self.input_size = input_size
         self.size = size
-        self.entmax = entmax
+        self.entmax_mode = entmax_mode
+        if entmax_mode == 'adaptive':
+            self.trainable_alpha = torch.tensor(entmax_alpha, requires_grad=True)
+        else:
+            self.trainable_alpha = entmax_alpha
 
         self.feature_block = FeatureBlock(
             input_size,
@@ -246,7 +255,12 @@ class AttentiveTransformer(LudwigModule):
         # to zero.
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
-        return entmax15(hidden) if self.entmax else sparsemax(hidden)  # [b_s, s]
+        if self.entmax_mode == "sparsemax":
+            return sparsemax(hidden)
+        elif self.entmax_mode == "entmax15":
+            return entmax15(hidden)
+        else:
+            return entmax_bisect(hidden, self.trainable_alpha)
 
     @property
     def input_shape(self) -> torch.Size:
