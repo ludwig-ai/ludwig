@@ -373,7 +373,7 @@ class RayTuneExecutor(HyperoptExecutor):
             mod_path = analysis.get_best_checkpoint(trial_path.rstrip("/"))
         except Exception:
             logger.warning(
-                "Cannot get best model path for {trial_path} due to exception below:\n" f"{traceback.format_exc()}"
+                f"Cannot get best model path for {trial_path} due to exception below:\n{traceback.format_exc()}"
             )
         return mod_path
 
