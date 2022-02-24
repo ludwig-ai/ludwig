@@ -1211,11 +1211,23 @@ def build_data(
 
 
 def balance_data(
-        dataset_df,
-        features,
-        preprocessing_parameters,
-        backend
+        dataset_df: DataFrame,
+        features: List[Dict],
+        preprocessing_parameters: Dict,
+        backend: Backend
 ):
+    """
+    The purpose of this function is to balance the training dataset using either over-sampling or under-sampling.
+
+    Args:
+        dataset_df: Input dataframe to be over-sampled or under-sampled.
+        features: List of feature configs.
+        preprocessing_parameters: Dictionary of the global preprocessing parameters.
+        backend: Backend for data processing.
+
+    Returns: An over-sampled or under-sampled training dataset.
+
+    """
     target = None
     target_count = 0
     for feature in features:
@@ -1250,7 +1262,7 @@ def balance_data(
         majority_df = majority_df.sample(frac=sample_fraction, replace=False)
 
     if backend.df_engine.partitioned:
-        balanced_df = backend.df_engine.concatenate([minority_df, majority_df])
+        balanced_df = backend.df_engine.concat([minority_df, majority_df])
     else:
         balanced_df = pd.concat([minority_df, majority_df])
 
