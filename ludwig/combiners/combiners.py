@@ -460,7 +460,7 @@ class TabNetCombiner(Combiner):
             bn_virtual_bs=config.bn_virtual_bs,
             sparsity=config.sparsity,
             entmax_mode=config.entmax_mode,
-            entmax_alpha=config.entmax_alpha
+            entmax_alpha=config.entmax_alpha,
         )
 
         if config.dropout > 0:

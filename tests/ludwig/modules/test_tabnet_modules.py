@@ -2,9 +2,9 @@ from typing import Optional
 
 import pytest
 import torch
+from entmax import sparsemax
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
-from entmax import sparsemax
 
 RANDOM_SEED = 67
 BATCH_SIZE = 16
@@ -119,7 +119,7 @@ def test_attentive_transformer(
     assert attentive_transformer.input_shape[-1] == size
     assert attentive_transformer.output_shape[-1] == input_size
     assert attentive_transformer.input_dtype == torch.float32
-    if entmax_mode == 'adaptive':
+    if entmax_mode == "adaptive":
         assert isinstance(attentive_transformer.trainable_alpha, torch.Tensor)
 
 
@@ -136,7 +136,8 @@ def test_tabnet(
     input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
 
     tabnet = TabNet(
-        input_size, size, output_size, num_steps=3, num_total_blocks=4, num_shared_blocks=2, entmax_mode=entmax_mode)
+        input_size, size, output_size, num_steps=3, num_total_blocks=4, num_shared_blocks=2, entmax_mode=entmax_mode
+    )
 
     output = tabnet(input_tensor)
 

@@ -2,10 +2,10 @@ from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
+from entmax import entmax15, entmax_bisect, sparsemax
 
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import LudwigModule
-from entmax import sparsemax, entmax_bisect, entmax15
 
 
 class TabNet(LudwigModule):
@@ -23,7 +23,7 @@ class TabNet(LudwigModule):
         bn_virtual_bs: Optional[int] = None,
         sparsity: float = 1e-5,
         entmax_mode: str = "sparsemax",
-        entmax_alpha: float = 1.5
+        entmax_alpha: float = 1.5,
     ):
         """TabNet Will output a vector of size output_dim.
 
@@ -79,7 +79,9 @@ class TabNet(LudwigModule):
             # of features that we determine by looking at the
             # last dimension of the input tensor
             self.attentive_transforms.append(
-                AttentiveTransformer(size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs, entmax_mode, entmax_alpha)
+                AttentiveTransformer(
+                    size, input_size, bn_momentum, bn_epsilon, bn_virtual_bs, entmax_mode, entmax_alpha
+                )
             )
         self.final_projection = nn.Linear(output_size, output_size)
 
@@ -215,7 +217,7 @@ class AttentiveTransformer(LudwigModule):
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
         entmax_mode: str = "sparsemax",
-        entmax_alpha: float = 1.5
+        entmax_alpha: float = 1.5,
     ):
         super().__init__()
         self.input_size = input_size
