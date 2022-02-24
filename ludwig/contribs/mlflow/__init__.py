@@ -22,6 +22,7 @@ class MlflowCallback(Callback):
     def __init__(self, tracking_uri=None):
         self.experiment_id = None
         self.run = None
+        self.run_ended = False
         self.tracking_uri = tracking_uri
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
@@ -52,6 +53,7 @@ class MlflowCallback(Callback):
         _log_artifacts(output_directory)
         if self.run is not None:
             mlflow.end_run()
+            self.run_ended = True
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.epoch)
@@ -82,6 +84,8 @@ class MlflowCallback(Callback):
         self.__dict__ = d
         if self.tracking_uri:
             mlflow.set_tracking_uri(self.tracking_uri)
+        if self.run and not self.run_ended:
+            self.run = mlflow.start_run(run_id=self.run.info.run_id, experiment_id=self.run.info.experiment_id)
 
 
 def _log_artifacts(output_directory):
