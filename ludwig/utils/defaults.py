@@ -36,7 +36,6 @@ from ludwig.constants import (
     PROC_COLUMN,
     TRAINER,
     TYPE,
-    OUTPUT_FLAG,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
@@ -264,7 +263,6 @@ def merge_with_defaults(config):
     config = copy.deepcopy(config)
     _upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
-    _set_output_flag(config)
     _set_feature_column(config)
     _set_proc_column(config)
     _merge_hyperopt_with_trainer(config)

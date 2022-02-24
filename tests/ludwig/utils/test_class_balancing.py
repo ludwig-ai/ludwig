@@ -6,7 +6,7 @@ import ray
 import numpy as np
 import pandas as pd
 
-from ludwig.constants import OUTPUT_FLAG, NAME, PROC_COLUMN
+from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.preprocessing import balance_data
 from ludwig.backend import create_ray_backend
 from ludwig.backend.ray import RayBackend
@@ -84,11 +84,11 @@ def run_test_balance_data_local(
 @pytest.mark.distributed
 def test_balance_data_ray(method, balance):
     config = {"input_features": [
-                {"name": "Index", "proc_column": "Index", "type": "numerical", "output_flag": False},
-                {"name": "random_1", "proc_column": "random_1", "type": "numerical", "output_flag": False},
-                {"name": "random_2", "proc_column": "random_2", "type": "numerical", "output_flag": False},
+                {"name": "Index", "proc_column": "Index", "type": "numerical"},
+                {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+                {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
             ],
-                "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary", "output_flag": True}],
+                "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
                 "preprocessing": {"oversample_minority": None,
                                   "undersample_majority": None},
             }
@@ -123,11 +123,11 @@ def test_balance_data_ray(method, balance):
 )
 def test_balance_data_local(method, balance):
     config = {"input_features": [
-        {"name": "Index", "proc_column": "Index", "type": "numerical", "output_flag": False},
-        {"name": "random_1", "proc_column": "random_1", "type": "numerical", "output_flag": False},
-        {"name": "random_2", "proc_column": "random_2", "type": "numerical", "output_flag": False},
+        {"name": "Index", "proc_column": "Index", "type": "numerical"},
+        {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+        {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
     ],
-        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary", "output_flag": True}],
+        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
         "preprocessing": {"oversample_minority": None,
                           "undersample_majority": None},
     }
@@ -154,11 +154,11 @@ def test_balance_data_local(method, balance):
 
 def test_non_binary_failure():
     config = {"input_features": [
-        {"name": "Index", "proc_column": "Index", "type": "numerical", "output_flag": False},
-        {"name": "random_1", "proc_column": "random_1", "type": "numerical", "output_flag": False},
-        {"name": "random_2", "proc_column": "random_2", "type": "numerical", "output_flag": False},
+        {"name": "Index", "proc_column": "Index", "type": "numerical"},
+        {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+        {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
     ],
-        "output_features": [{"name": "Label", "proc_column": "Label", "type": "number", "output_flag": True}],
+        "output_features": [{"name": "Label", "proc_column": "Label", "type": "number"}],
         "preprocessing": {},
     }
     df = pd.DataFrame(
@@ -184,12 +184,12 @@ def test_non_binary_failure():
 
 def test_multiple_class_failure():
     config = {"input_features": [
-        {"name": "Index", "proc_column": "Index", "type": "numerical", "output_flag": False},
-        {"name": "random_1", "proc_column": "random_1", "type": "numerical", "output_flag": False},
-        {"name": "random_2", "proc_column": "random_2", "type": "numerical", "output_flag": False},
+        {"name": "Index", "proc_column": "Index", "type": "numerical"},
+        {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+        {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
     ],
-        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary", "output_flag": True},
-                            {"name": "Label2", "proc_column": "Label2", "type": "binary", "output_flag": True}],
+        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"},
+                            {"name": "Label2", "proc_column": "Label2", "type": "binary"}],
         "preprocessing": {},
     }
     df = pd.DataFrame(
