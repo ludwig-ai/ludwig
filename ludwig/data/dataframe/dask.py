@@ -61,7 +61,7 @@ class DaskEngine(DataFrameEngine):
     def persist(self, data):
         return data.persist() if self._persist else data
 
-    def concatenate(self, dfs):
+    def concat(self, dfs):
         return self.df_lib.multi.concat(dfs)
 
     def compute(self, data):
