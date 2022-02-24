@@ -7,7 +7,6 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import nn
-from torch.autograd import Function
 from torch.nn import Module, ModuleDict
 
 from ludwig.utils.strings_utils import SpecialSymbol
