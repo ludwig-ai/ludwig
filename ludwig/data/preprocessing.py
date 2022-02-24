@@ -107,6 +107,7 @@ class DataFormatPreprocessor(ABC):
     @staticmethod
     @abstractmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -146,6 +147,7 @@ class DataFormatPreprocessor(ABC):
 class DictPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -173,6 +175,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             test_set = df_engine.from_pandas(pd.DataFrame(test_set))
 
         return _preprocess_df_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -201,6 +204,7 @@ class DictPreprocessor(DataFormatPreprocessor):
 class DataFramePreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -221,6 +225,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             dataset = backend.df_engine.from_pandas(dataset)
 
         return _preprocess_df_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -250,6 +255,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
 class CSVPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -263,6 +269,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -296,6 +303,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
 class TSVPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -309,6 +317,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -342,6 +351,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
 class JSONPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -355,6 +365,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -388,6 +399,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
 class JSONLPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -401,6 +413,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -434,6 +447,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
 class ExcelPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -447,6 +461,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -480,6 +495,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
 class ParquetPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -493,6 +509,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -543,6 +560,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
 class PicklePreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -556,6 +574,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -589,6 +608,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
 class FatherPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -602,6 +622,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -635,6 +656,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
 class FWFPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -648,6 +670,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -681,6 +704,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
 class HTMLPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -694,6 +718,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -727,6 +752,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
 class ORCPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -740,6 +766,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -773,6 +800,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
 class SASPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -786,6 +814,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -819,6 +848,7 @@ class SASPreprocessor(DataFormatPreprocessor):
 class SPSSPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -832,6 +862,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -865,6 +896,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
 class StataPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -878,6 +910,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             callbacks=None,
     ):
         return _preprocess_file_for_training(
+            config,
             features,
             dataset,
             training_set,
@@ -911,6 +944,7 @@ class StataPreprocessor(DataFormatPreprocessor):
 class HDF5Preprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
+            config,
             features,
             dataset=None,
             training_set=None,
@@ -1212,7 +1246,7 @@ def build_data(
 
 def balance_data(
         dataset_df: DataFrame,
-        features: List[Dict],
+        output_features: List[Dict],
         preprocessing_parameters: Dict,
         backend: Backend
 ):
@@ -1221,37 +1255,33 @@ def balance_data(
 
     Args:
         dataset_df: Input dataframe to be over-sampled or under-sampled.
-        features: List of feature configs.
+        output_features: List of feature configs.
         preprocessing_parameters: Dictionary of the global preprocessing parameters.
         backend: Backend for data processing.
 
     Returns: An over-sampled or under-sampled training dataset.
 
     """
-    target = None
-    target_count = 0
-    for feature in features:
-        if feature[OUTPUT_FLAG]:
-            target = feature
-            target_count += 1
 
-    if target_count > 1:
+    if len(output_features) != 1:
         raise ValueError(
-            "Class balancing is only available for single target datasets"
+            "Class balancing is only available for datasets with a single output feature"
         )
-    if target[TYPE] != BINARY:
+    if output_features[0][TYPE] != BINARY:
         raise ValueError(
             "Class balancing is only supported for binary output types"
         )
 
+    target = output_features[0][PROC_COLUMN]
+
     if backend.df_engine.partitioned:
-        majority_class = backend.df_engine.compute(dataset_df[target[PROC_COLUMN]].value_counts()).idxmax()
-        minority_class = backend.df_engine.compute(dataset_df[target[PROC_COLUMN]].value_counts()).idxmin()
+        majority_class = backend.df_engine.compute(dataset_df[target].value_counts()).idxmax()
+        minority_class = backend.df_engine.compute(dataset_df[target].value_counts()).idxmin()
     else:
-        majority_class = dataset_df[target[PROC_COLUMN]].value_counts().idxmax()
-        minority_class = dataset_df[target[PROC_COLUMN]].value_counts().idxmin()
-    majority_df = dataset_df[dataset_df[target[PROC_COLUMN]] == majority_class]
-    minority_df = dataset_df[dataset_df[target[PROC_COLUMN]] == minority_class]
+        majority_class = dataset_df[target].value_counts().idxmax()
+        minority_class = dataset_df[target].value_counts().idxmin()
+    majority_df = dataset_df[dataset_df[target] == majority_class]
+    minority_df = dataset_df[dataset_df[target] == minority_class]
 
     if preprocessing_parameters['oversample_minority']:
         sample_fraction = (len(majority_df) * preprocessing_parameters['oversample_minority']) / len(minority_df)
@@ -1479,6 +1509,7 @@ def preprocess_for_training(
             training_set, test_set, validation_set, training_set_metadata = processed
         else:
             processed = data_format_processor.preprocess_for_training(
+                config,
                 features,
                 dataset=dataset,
                 training_set=training_set,
@@ -1518,6 +1549,7 @@ def preprocess_for_training(
 
 
 def _preprocess_file_for_training(
+        config,
         features,
         dataset=None,
         training_set=None,
@@ -1607,12 +1639,13 @@ def _preprocess_file_for_training(
         training_data, test_data, validation_data = data.random_split(preprocessing_params["split_probabilities"])
 
     if preprocessing_params['oversample_minority'] or preprocessing_params['undersample_majority']:
-        training_data = balance_data(training_data, features, preprocessing_params, backend)
+        training_data = balance_data(training_data, config['output_features'], preprocessing_params, backend)
 
     return training_data, test_data, validation_data, training_set_metadata
 
 
 def _preprocess_df_for_training(
+        config,
         features,
         dataset=None,
         training_set=None,
@@ -1660,7 +1693,7 @@ def _preprocess_df_for_training(
         training_set, test_set, validation_set = dataset.random_split(preprocessing_params["split_probabilities"])
 
     if preprocessing_params['oversample_minority'] or preprocessing_params['undersample_majority']:
-        training_set = balance_data(training_set, features, preprocessing_params, backend)
+        training_set = balance_data(training_set, config['output_features'], preprocessing_params, backend)
 
     return training_set, test_set, validation_set, training_set_metadata
 
