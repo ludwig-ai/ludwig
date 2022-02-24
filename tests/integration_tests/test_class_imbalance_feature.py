@@ -19,7 +19,7 @@ DFS = {
     "test_df_1": pd.DataFrame({"Index": np.arange(0, 200, 1),
                                "random_1": np.random.randint(0, 50, 200),
                                "random_2": np.random.choice(['Type A', 'Type B', 'Type C', 'Type D'], 200),
-                               "Label": np.random.choice(2, 200, p=[0.9, 0.1])})
+                               "Label": np.concatenate((np.zeros(180), np.ones(20)))})
 }
 
 CONFIGS = {
