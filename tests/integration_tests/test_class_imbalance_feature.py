@@ -15,26 +15,6 @@ from ludwig.api import LudwigModel
 from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import create_data_set_to_use
 
-DFS = {
-    "test_df_1": pd.DataFrame({"Index": np.arange(0, 200, 1),
-                               "random_1": np.random.randint(0, 50, 200),
-                               "random_2": np.random.choice(['Type A', 'Type B', 'Type C', 'Type D'], 200),
-                               "Label": np.concatenate((np.zeros(180), np.ones(20)))})
-}
-
-CONFIGS = {
-    "test_config_1": {
-        "input_features": [
-            {"name": "Index", "column": "Index", "type": "numerical", "output_flag": False},
-            {"name": "random_1", "column": "random_1", "type": "numerical", "output_flag": False},
-            {"name": "random_2", "column": "random_2", "type": "numerical", "output_flag": False}],
-        "output_features": [
-            {"name": "Label", "column": "Label", "type": "binary", "output_flag": True}
-        ],
-        'trainer': {"epochs": 2, "batch_size": 8},
-        "preprocessing": {}
-    }
-}
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -156,14 +136,22 @@ def run_test_imbalance_local(
 )
 @pytest.mark.distributed
 def test_imbalance_ray(balance):
-    df = DFS['test_df_1']
-    config = CONFIGS["test_config_1"].copy()
-    if balance == "oversample_minority":
-        config['preprocessing'][balance] = 0.5
-        config['preprocessing']["undersample_majority"] = None
-    else:
-        config['preprocessing'][balance] = 0.5
-        config['preprocessing']["oversample_minority"] = None
+    config = {
+        "input_features": [
+            {"name": "Index", "column": "Index", "type": "numerical"},
+            {"name": "random_1", "column": "random_1", "type": "numerical"},
+            {"name": "random_2", "column": "random_2", "type": "numerical"}],
+        "output_features": [
+            {"name": "Label", "column": "Label", "type": "binary"}],
+        'trainer': {"epochs": 2, "batch_size": 8},
+        "preprocessing": {}
+    }
+    df = pd.DataFrame({"Index": np.arange(0, 200, 1),
+                       "random_1": np.random.randint(0, 50, 200),
+                       "random_2": np.random.choice(['Type A', 'Type B', 'Type C', 'Type D'], 200),
+                       "Label": np.concatenate((np.zeros(180), np.ones(20)))})
+
+    config['preprocessing'][balance] = 0.5
     run_test_imbalance_ray(df, config, balance)
 
 
@@ -171,12 +159,20 @@ def test_imbalance_ray(balance):
     "balance", ["oversample_minority", "undersample_majority"],
 )
 def test_imbalance_local(balance):
-    df = DFS['test_df_1']
-    config = CONFIGS["test_config_1"].copy()
-    if balance == "oversample_minority":
-        config['preprocessing'][balance] = 0.5
-        config['preprocessing']["undersample_majority"] = None
-    else:
-        config['preprocessing'][balance] = 0.5
-        config['preprocessing']["oversample_minority"] = None
+    config = {
+        "input_features": [
+            {"name": "Index", "column": "Index", "type": "numerical"},
+            {"name": "random_1", "column": "random_1", "type": "numerical"},
+            {"name": "random_2", "column": "random_2", "type": "numerical"}],
+        "output_features": [
+            {"name": "Label", "column": "Label", "type": "binary"}],
+        'trainer': {"epochs": 2, "batch_size": 8},
+        "preprocessing": {}
+    }
+    df = pd.DataFrame({"Index": np.arange(0, 200, 1),
+                       "random_1": np.random.randint(0, 50, 200),
+                       "random_2": np.random.choice(['Type A', 'Type B', 'Type C', 'Type D'], 200),
+                       "Label": np.concatenate((np.zeros(180), np.ones(20)))})
+
+    config['preprocessing'][balance] = 0.5
     run_test_imbalance_local(df, config, balance)
