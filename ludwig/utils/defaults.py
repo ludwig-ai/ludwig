@@ -210,15 +210,6 @@ def _perform_sanity_checks(config):
         )
 
 
-def _set_output_flag(config: dict) -> None:
-    for feature in config['input_features']:
-        if OUTPUT_FLAG not in feature:
-            feature[OUTPUT_FLAG] = False
-    for feature in config['output_features']:
-        if OUTPUT_FLAG not in feature:
-            feature[OUTPUT_FLAG] = True
-
-
 def _set_feature_column(config: dict) -> None:
     for feature in config["input_features"] + config["output_features"]:
         if COLUMN not in feature:
