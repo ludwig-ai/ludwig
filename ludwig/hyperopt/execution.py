@@ -806,7 +806,15 @@ class RayTuneExecutor(HyperoptExecutor):
             sync_client.sync_down(remote_checkpoint_dir, trial_path)
             sync_client.wait()
         self._remove_partial_checkpoints(trial_path) # needed by get_best_checkpoint
-        return analysis.get_best_checkpoint(trial_path.rstrip('/'))
+        mod_path = None
+        try:
+            mod_path = analysis.get_best_checkpoint(trial_path.rstrip("/"))
+        except Exception:
+            logger.warning(
+                "Cannot get best model path for {trial_path} due to exception below:\n"
+                f"{traceback.format_exc()}"
+            )
+        return mod_path
 
     @staticmethod
     def _evaluate_best_model(
