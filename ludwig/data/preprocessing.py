@@ -46,7 +46,6 @@ from ludwig.constants import (
     TRAINING,
     TYPE,
     VALIDATION,
-    OUTPUT_FLAG,
 )
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files
 from ludwig.data.dataset.base import Dataset
