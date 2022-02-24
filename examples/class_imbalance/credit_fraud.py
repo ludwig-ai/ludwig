@@ -31,26 +31,41 @@ fraud_inputs = [
     {"name": "Amount", "type": "numerical", "output_flag": False},
 ]
 
-fraud_outputs = [
-    {"name": "Class", "type": "binary", "output_flag": True}
-]
+fraud_outputs = [{"name": "Class", "type": "binary", "output_flag": True}]
 
-COLS = {"df2_cols": {"V1": DFS["test_df_2"]["V1"], "V2": DFS["test_df_2"]["V2"],
-                     "V3": DFS["test_df_2"]["V3"], "V4": DFS["test_df_2"]["V4"],
-                     "V5": DFS["test_df_2"]["V5"], "V6": DFS["test_df_2"]["V6"],
-                     "V7": DFS["test_df_2"]["V7"], "V8": DFS["test_df_2"]["V8"],
-                     "V9": DFS["test_df_2"]["V9"], "V10": DFS["test_df_2"]["V10"],
-                     "V11": DFS["test_df_2"]["V11"], "V12": DFS["test_df_2"]["V12"],
-                     "V13": DFS["test_df_2"]["V13"], "V14": DFS["test_df_2"]["V14"],
-                     "V15": DFS["test_df_2"]["V15"], "V16": DFS["test_df_2"]["V16"],
-                     "V17": DFS["test_df_2"]["V17"], "V18": DFS["test_df_2"]["V18"],
-                     "V19": DFS["test_df_2"]["V19"], "V20": DFS["test_df_2"]["V20"],
-                     "V21": DFS["test_df_2"]["V21"], "V22": DFS["test_df_2"]["V22"],
-                     "V23": DFS["test_df_2"]["V23"], "V24": DFS["test_df_2"]["V24"],
-                     "V25": DFS["test_df_2"]["V25"], "V26": DFS["test_df_2"]["V26"],
-                     "V27": DFS["test_df_2"]["V27"], "V28": DFS["test_df_2"]["V28"],
-                     "Amount": DFS["test_df_2"]["Amount"], "Class": DFS["test_df_2"]["Class"],
-                     "Time": DFS["test_df_2"]["Time"],
-                     "split": pd.Series(np.random.choice(3, len(DFS["test_df_2"]), p=(0.7, 0.1, 0.2)))
-                     }
-        }
+COLS = {
+    "df2_cols": {
+        "V1": DFS["test_df_2"]["V1"],
+        "V2": DFS["test_df_2"]["V2"],
+        "V3": DFS["test_df_2"]["V3"],
+        "V4": DFS["test_df_2"]["V4"],
+        "V5": DFS["test_df_2"]["V5"],
+        "V6": DFS["test_df_2"]["V6"],
+        "V7": DFS["test_df_2"]["V7"],
+        "V8": DFS["test_df_2"]["V8"],
+        "V9": DFS["test_df_2"]["V9"],
+        "V10": DFS["test_df_2"]["V10"],
+        "V11": DFS["test_df_2"]["V11"],
+        "V12": DFS["test_df_2"]["V12"],
+        "V13": DFS["test_df_2"]["V13"],
+        "V14": DFS["test_df_2"]["V14"],
+        "V15": DFS["test_df_2"]["V15"],
+        "V16": DFS["test_df_2"]["V16"],
+        "V17": DFS["test_df_2"]["V17"],
+        "V18": DFS["test_df_2"]["V18"],
+        "V19": DFS["test_df_2"]["V19"],
+        "V20": DFS["test_df_2"]["V20"],
+        "V21": DFS["test_df_2"]["V21"],
+        "V22": DFS["test_df_2"]["V22"],
+        "V23": DFS["test_df_2"]["V23"],
+        "V24": DFS["test_df_2"]["V24"],
+        "V25": DFS["test_df_2"]["V25"],
+        "V26": DFS["test_df_2"]["V26"],
+        "V27": DFS["test_df_2"]["V27"],
+        "V28": DFS["test_df_2"]["V28"],
+        "Amount": DFS["test_df_2"]["Amount"],
+        "Class": DFS["test_df_2"]["Class"],
+        "Time": DFS["test_df_2"]["Time"],
+        "split": pd.Series(np.random.choice(3, len(DFS["test_df_2"]), p=(0.7, 0.1, 0.2))),
+    }
+}

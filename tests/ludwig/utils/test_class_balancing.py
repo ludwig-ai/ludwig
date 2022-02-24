@@ -1,16 +1,15 @@
 import contextlib
 
+import numpy as np
+import pandas as pd
 import pytest
 import ray
 
-import numpy as np
-import pandas as pd
-
+from ludwig.backend import create_ray_backend
+from ludwig.backend.base import LocalBackend
+from ludwig.backend.ray import RayBackend
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.preprocessing import balance_data
-from ludwig.backend import create_ray_backend
-from ludwig.backend.ray import RayBackend
-from ludwig.backend.base import LocalBackend
 from tests.integration_tests.utils import spawn
 
 
@@ -30,19 +29,17 @@ def ray_start(num_cpus=2, num_gpus=None):
 
 @spawn
 def run_test_balance_data_ray(
-        input_df,
-        config,
-        target,
-        target_balance,
-        num_cpus=2,
-        num_gpus=None, ):
+    input_df,
+    config,
+    target,
+    target_balance,
+    num_cpus=2,
+    num_gpus=None,
+):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         backend = create_ray_backend()
         input_df = backend.df_engine.from_pandas(input_df)
-        test_df = balance_data(input_df,
-                               config['output_features'],
-                               config['preprocessing'],
-                               backend)
+        test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
 
         majority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmax()]
         minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
@@ -53,15 +50,13 @@ def run_test_balance_data_ray(
 
 
 def run_test_balance_data_local(
-        input_df,
-        config,
-        target,
-        target_balance,
-        backend, ):
-    test_df = balance_data(input_df,
-                           config['output_features'],
-                           config['preprocessing'],
-                           backend)
+    input_df,
+    config,
+    target,
+    target_balance,
+    backend,
+):
+    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
 
     majority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmax()]
     minority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmin()]
@@ -72,26 +67,27 @@ def run_test_balance_data_local(
 
 
 @pytest.mark.parametrize(
-    "method, balance", [
+    "method, balance",
+    [
         ("oversample_minority", 0.25),
         ("oversample_minority", 0.5),
         ("oversample_minority", 0.75),
         ("undersample_majority", 0.25),
         ("undersample_majority", 0.5),
-        ("undersample_majority", 0.75)
-    ]
+        ("undersample_majority", 0.75),
+    ],
 )
 @pytest.mark.distributed
 def test_balance_data_ray(method, balance):
-    config = {"input_features": [
-                {"name": "Index", "proc_column": "Index", "type": "numerical"},
-                {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-                {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
-            ],
-                "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
-                "preprocessing": {"oversample_minority": None,
-                                  "undersample_majority": None},
-            }
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "numerical"},
+            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+        ],
+        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
+        "preprocessing": {"oversample_minority": None, "undersample_majority": None},
+    }
     df = pd.DataFrame(
         {
             "Index": np.arange(0, 200, 1),
@@ -103,33 +99,31 @@ def test_balance_data_ray(method, balance):
     )
 
     config["preprocessing"][method] = balance
-    target = config['output_features'][0][NAME]
+    target = config["output_features"][0][NAME]
 
-    run_test_balance_data_ray(df,
-                              config,
-                              target,
-                              balance)
+    run_test_balance_data_ray(df, config, target, balance)
 
 
 @pytest.mark.parametrize(
-    "method, balance", [
+    "method, balance",
+    [
         ("oversample_minority", 0.25),
         ("oversample_minority", 0.5),
         ("oversample_minority", 0.75),
         ("undersample_majority", 0.25),
         ("undersample_majority", 0.5),
-        ("undersample_majority", 0.75)
-    ]
+        ("undersample_majority", 0.75),
+    ],
 )
 def test_balance_data_local(method, balance):
-    config = {"input_features": [
-        {"name": "Index", "proc_column": "Index", "type": "numerical"},
-        {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-        {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
-    ],
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "numerical"},
+            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+        ],
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
-        "preprocessing": {"oversample_minority": None,
-                          "undersample_majority": None},
+        "preprocessing": {"oversample_minority": None, "undersample_majority": None},
     }
     df = pd.DataFrame(
         {
@@ -143,21 +137,18 @@ def test_balance_data_local(method, balance):
 
     config["preprocessing"][method] = balance
     backend = LocalBackend()
-    target = config['output_features'][0][NAME]
+    target = config["output_features"][0][NAME]
 
-    run_test_balance_data_local(df,
-                                config,
-                                target,
-                                balance,
-                                backend)
+    run_test_balance_data_local(df, config, target, balance, backend)
 
 
 def test_non_binary_failure():
-    config = {"input_features": [
-        {"name": "Index", "proc_column": "Index", "type": "numerical"},
-        {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-        {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
-    ],
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "numerical"},
+            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+        ],
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "number"}],
         "preprocessing": {},
     }
@@ -172,24 +163,23 @@ def test_non_binary_failure():
     )
 
     backend = LocalBackend()
-    target = config['output_features'][0][NAME]
+    target = config["output_features"][0][NAME]
 
     with pytest.raises(ValueError):
-        run_test_balance_data_local(df,
-                                    config,
-                                    target,
-                                    0.5,
-                                    backend)
+        run_test_balance_data_local(df, config, target, 0.5, backend)
 
 
 def test_multiple_class_failure():
-    config = {"input_features": [
-        {"name": "Index", "proc_column": "Index", "type": "numerical"},
-        {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-        {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
-    ],
-        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"},
-                            {"name": "Label2", "proc_column": "Label2", "type": "binary"}],
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "numerical"},
+            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+        ],
+        "output_features": [
+            {"name": "Label", "proc_column": "Label", "type": "binary"},
+            {"name": "Label2", "proc_column": "Label2", "type": "binary"},
+        ],
         "preprocessing": {},
     }
     df = pd.DataFrame(
@@ -204,11 +194,7 @@ def test_multiple_class_failure():
     )
 
     backend = LocalBackend()
-    target = config['output_features'][0][NAME]
+    target = config["output_features"][0][NAME]
 
     with pytest.raises(ValueError):
-        run_test_balance_data_local(df,
-                                    config,
-                                    target,
-                                    0.5,
-                                    backend)
+        run_test_balance_data_local(df, config, target, 0.5, backend)
