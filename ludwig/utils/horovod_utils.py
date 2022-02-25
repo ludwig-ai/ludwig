@@ -27,12 +27,6 @@ except (ModuleNotFoundError, ImportError):
 
 def initialize_horovod():
     if not _HVD:
-        """
-        raise ValueError("Horovod backend specified, "
-                         "but cannot import `horovod.tensorflow`. "
-                         "Install Horovod following the instructions at: "
-                         "https://github.com/horovod/horovod")
-        """
         raise ValueError(
             "Horovod backend specified, "
             "but cannot import `horovod.torch`. "
