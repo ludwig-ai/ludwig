@@ -133,52 +133,58 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    initialize_pytorch(horovod=hvd)
-
-    train_shard = RayDatasetShard(
-        rt.get_dataset_shard("train"),
-        features,
-        training_set_metadata,
-    )
-
     try:
-        val_shard = rt.get_dataset_shard("val")
-    except KeyError:
-        val_shard = None
+        initialize_pytorch(horovod=hvd)
 
-    if val_shard is not None:
-        val_shard = RayDatasetShard(
-            val_shard,
+        train_shard = RayDatasetShard(
+            rt.get_dataset_shard("train"),
             features,
             training_set_metadata,
         )
 
-    try:
-        test_shard = rt.get_dataset_shard("test")
-    except KeyError:
-        test_shard = None
+        try:
+            val_shard = rt.get_dataset_shard("val")
+        except KeyError:
+            val_shard = None
 
-    if test_shard is not None:
-        test_shard = RayDatasetShard(
-            test_shard,
-            features,
-            training_set_metadata,
-        )
+        if val_shard is not None:
+            val_shard = RayDatasetShard(
+                val_shard,
+                features,
+                training_set_metadata,
+            )
 
-    model = ray.get(model_ref)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.to(device)
+        try:
+            test_shard = rt.get_dataset_shard("test")
+        except KeyError:
+            test_shard = None
 
-    trainer = RemoteTrainer(model=model, **executable_kwargs)
-    results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+        if test_shard is not None:
+            test_shard = RayDatasetShard(
+                test_shard,
+                features,
+                training_set_metadata,
+            )
 
-    if results is not None:
-        # only return the model state dict back to the head node.
-        trained_model, *args = results
-        results = (trained_model.cpu().state_dict(), *args)
+        model = ray.get(model_ref)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = model.to(device)
 
-    torch.cuda.empty_cache()
-    return results, trainer.validation_field, trainer.validation_metric
+        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+
+        if results is not None:
+            # only return the model state dict back to the head node.
+            trained_model, *args = results
+            results = (trained_model.cpu().state_dict(), *args)
+
+        torch.cuda.empty_cache()
+
+        train_results = results, trainer.validation_field, trainer.validation_metric
+
+    finally:
+        hvd.shutdown()
+    return train_results
 
 
 class RayTrainerV2(BaseTrainer):
