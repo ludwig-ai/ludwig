@@ -1386,7 +1386,7 @@ def compare_classifiers_performance_from_prob(
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -1478,7 +1478,7 @@ def compare_classifiers_performance_from_pred(
     :param output_feature_name: (str) name of the output feature to visualize.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -1571,7 +1571,7 @@ def compare_classifiers_performance_subset(
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
@@ -1690,7 +1690,7 @@ def compare_classifiers_performance_changing_k(
     :param top_k: (int) number of elements in the ranklist to consider.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -1918,7 +1918,7 @@ def compare_classifiers_predictions(
     :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -2062,7 +2062,7 @@ def compare_classifiers_predictions_distribution(
     :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -2135,7 +2135,7 @@ def confidence_thresholding(
     :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -2229,7 +2229,7 @@ def confidence_thresholding_data_vs_acc(
     :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -2341,7 +2341,7 @@ def confidence_thresholding_data_vs_acc_subset(
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
@@ -2484,7 +2484,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         containing the number of top classes to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
@@ -2613,7 +2613,7 @@ def confidence_thresholding_2thresholds_2d(
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -2800,7 +2800,7 @@ def confidence_thresholding_2thresholds_3d(
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -3158,7 +3158,7 @@ def calibration_1_vs_all(
     :param top_n_classes: (list) List containing the number of classes to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (List[str], default: `None`) list of the names of the
         models to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -3275,7 +3275,7 @@ def calibration_multiclass(
     :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
-        `label_limit` are considered to be "rare" labels.
+        `labels_limit` are considered to be "rare" labels.
     :param model_names: (List[str], default: `None`) list of the names of the
         models to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
@@ -3746,7 +3746,7 @@ def cli(sys_argv):
         "-v",
         "--visualization",
         choices=sorted(list(visualizations_registry.keys())),
-        help="type of visualization",
+        help="type of visualization to generate",
         required=True,
     )
 
@@ -3776,7 +3776,8 @@ def cli(sys_argv):
         "--labels_limit",
         default=0,
         type=int,
-        help="maximum numbers of labels. " 'If labels in dataset are higher than this number, "rare" label',
+        help="maximum numbers of labels. Encoded numeric label values in dataset that are higher than "
+        'labels_limit are considered to be "rare" labels',
     )
     parser.add_argument(
         "-ss",
