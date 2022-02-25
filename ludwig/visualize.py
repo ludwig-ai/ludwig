@@ -3746,7 +3746,7 @@ def cli(sys_argv):
         "-v",
         "--visualization",
         choices=sorted(list(visualizations_registry.keys())),
-        help="type of visualization",
+        help="type of visualization to generate",
         required=True,
     )
 
