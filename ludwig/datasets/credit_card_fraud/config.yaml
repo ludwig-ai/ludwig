@@ -1,0 +1,3 @@
+version: 1.0
+archive_filename: creditcard.csv.zip
+csv_filename: creditcard.csv
