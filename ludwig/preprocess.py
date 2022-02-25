@@ -221,7 +221,7 @@ def cli(sys_argv):
         "Ignores --preprocessing_config."
         "Uses the same format of config, "
         "but ignores encoder specific parameters, "
-        "decoder specific paramters, combiner and training parameters",
+        "decoder specific parameters, combiner and training parameters",
     )
     preprocessing_def.add_argument(
         "-pcs",
@@ -230,7 +230,7 @@ def cli(sys_argv):
         help="preproceesing config. "
         "Uses the same format of config, "
         "but ignores encoder specific parameters, "
-        "decoder specific paramters, combiner and training parameters",
+        "decoder specific parameters, combiner and training parameters",
     )
 
     # ------------------

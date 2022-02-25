@@ -86,7 +86,7 @@ class Conv1DLayer(LudwigModule):
         if norm == "batch":
             self.layers.append(nn.BatchNorm1d(num_features=out_channels, **norm_params))
         elif norm == "layer":
-            # todo(jmt): confirm correct interpretation of LayerNorm paramters
+            # todo(jmt): confirm correct interpretation of LayerNorm parameters
             self.layers.append(nn.LayerNorm(normalized_shape=[out_channels, self.sequence_size], **norm_params))
 
         self.layers.append(get_activation(activation))

@@ -100,7 +100,7 @@ class LudwigModel:
         to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
     :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
         allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param allow_parallel_threads: (bool, default: `True`) allow Torch
         to use multithreading parallelism to improve performance at the
         cost of determinism.
 
@@ -178,7 +178,7 @@ class LudwigModel:
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
             allocate per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use multithreading parallelism to improve performance at the
             cost of determinism.
         :param callbacks: (list, default: `None`) a list of
@@ -1279,7 +1279,7 @@ class LudwigModel:
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
             allocate per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use
             multithreading parallelism to improve performance at the cost of
             determinism.
@@ -1299,7 +1299,7 @@ class LudwigModel:
         ```
         """
         # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
-        # TensorFlow with default parameters
+        # Torch with default parameters
         backend_param = backend
         backend = initialize_backend(backend)
         backend.initialize_pytorch(
@@ -1396,7 +1396,7 @@ class LudwigModel:
         save_json(training_set_metadata_path, self.training_set_metadata)
 
     def save_config(self, save_path: str) -> None:
-        """Save config to specoficed location.
+        """Save config to specified location.
 
         # Inputs
 
@@ -1515,7 +1515,7 @@ def kfold_cross_validate(
             `'fwf'`,
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.  Currenlty `hdf5` format is not supported for
+            `'stata'`, `'tsv'`.  Currently `hdf5` format is not supported for
             k_fold cross validation.
     :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
@@ -1563,7 +1563,7 @@ def kfold_cross_validate(
             for training.
     :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
             allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to
+    :param allow_parallel_threads: (bool, default: `True`) allow Torch to
             use multithreading parallelism
            to improve performance at the cost of determinism.
     :param backend: (Union[Backend, str]) `Backend` or string name

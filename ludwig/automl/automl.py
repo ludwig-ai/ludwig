@@ -3,7 +3,7 @@
 Driver script which:
 
 (1) Builds a base config by performing type inference and populating config
-    w/default combiner parameters, training paramers, and hyperopt search space
+    w/default combiner parameters, training parameters, and hyperopt search space
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """

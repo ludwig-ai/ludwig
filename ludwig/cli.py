@@ -20,21 +20,9 @@ import ludwig.contrib
 
 
 class CLI:
-    """CLI describes a command line interface for interacting with Ludwig, there are several different functions
-    that can be performed. These functions are:
+    """CLI describes a command line interface for interacting with Ludwig.
 
-    - experiment - run an experiment using ludwig
-    - predict - Given a list of $hat{y}$ values, compute $d(\\hat{y}, y) under a
-      specified metric
-    - train - trains a model on the input file specified to it
-    - visualize - Analysis of the results for the model on the dataset and
-      presents a variety of plots to understand and evaluate the results
-    - collect_weights - Collects the weights for a pretrained model as a tensor
-      representation
-    - collect_activations - For each datapoint, there exists a corresponding
-      tensor representation which are collected through this method
-    - hyperopt - Performs an hyper-parameter search
-      with a given strategy and parameters
+    Functions are described below.
     """
 
     def __init__(self):
@@ -123,10 +111,10 @@ Available sub-commands:
 
         collect.cli_collect_activations(sys.argv[2:])
 
-    def export_savedmodel(self):
+    def export_torchscript(self):
         from ludwig import export
 
-        export.cli_export_savedmodel(sys.argv[2:])
+        export.cli_export_torchscript(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export
