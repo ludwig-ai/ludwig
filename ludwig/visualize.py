@@ -69,8 +69,8 @@ def _vectorize_ground_truth(
         return np.vectorize(lambda x, y: x)(ground_truth, str2idx)
 
 
-def validate_conf_treshholds_and_probabilities_2d_3d(probabilities, treshhold_output_feature_names):
-    """Ensure probabilities and treshhold output_feature_names arrays have two members each.
+def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_output_feature_names):
+    """Ensure probabilities and threshold output_feature_names arrays have two members each.
 
     :param probabilities: List of probabilities per model
     :param threshhold_output_feature_names: List of threshhold output_feature_names per model
@@ -78,7 +78,7 @@ def validate_conf_treshholds_and_probabilities_2d_3d(probabilities, treshhold_ou
     """
     validation_mapping = {
         "probabilities": probabilities,
-        "treshhold_output_feature_names": treshhold_output_feature_names,
+        "threshold_output_feature_names": threshold_output_feature_names,
     }
     for item, value in validation_mapping.items():
         item_len = len(value)
@@ -137,7 +137,7 @@ def _validate_output_feature_name_from_train_stats(output_feature_name, train_st
             return [output_feature_name]
         else:
             return output_feature_names_set
-    # raised if output_feature_name is emtpy iterable (e.g. [] in set())
+    # raised if output_feature_name is empty iterable (e.g. [] in set())
     except TypeError:
         return output_feature_names_set
 
@@ -158,7 +158,7 @@ def _validate_output_feature_name_from_test_stats(output_feature_name, test_stat
             return [output_feature_name]
         else:
             return output_feature_names_set
-    # raised if output_feature_name is emtpy iterable (e.g. [] in set())
+    # raised if output_feature_name is empty iterable (e.g. [] in set())
     except TypeError:
         return output_feature_names_set
 
@@ -532,7 +532,7 @@ def compare_classifiers_predictions_cli(
 
     :param predictions: (List[str]) list of prediction results file names
         to extract predictions from.
-    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -578,7 +578,7 @@ def compare_classifiers_predictions_distribution_cli(
 
     :param predictions: (List[str]) list of prediction results file names
         to extract predictions from.
-    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -1949,7 +1949,7 @@ def compare_classifiers_predictions(
         pred_c1[pred_c1 > labels_limit] = labels_limit
         pred_c2[pred_c2 > labels_limit] = labels_limit
 
-    # DOTO all shadows built in name - come up with a more descriptive name
+    # TODO all shadows built in name - come up with a more descriptive name
     all = len(ground_truth)
     if all == 0:
         logger.error("No labels in the ground truth")
@@ -2194,7 +2194,7 @@ def confidence_thresholding(
         os.makedirs(output_directory, exist_ok=True)
         filename = os.path.join(output_directory, "confidence_thresholding." + file_format)
 
-    visualization_utils.confidence_fitlering_plot(
+    visualization_utils.confidence_filtering_plot(
         thresholds, accuracies, dataset_kept, model_names_list, title="Confidence_Thresholding", filename=filename
     )
 
@@ -2287,7 +2287,7 @@ def confidence_thresholding_data_vs_acc(
         os.makedirs(output_directory, exist_ok=True)
         filename = os.path.join(output_directory, "confidence_thresholding_data_vs_acc." + file_format)
 
-    visualization_utils.confidence_fitlering_data_vs_acc_plot(
+    visualization_utils.confidence_filtering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
         model_names_list,
@@ -2423,7 +2423,7 @@ def confidence_thresholding_data_vs_acc_subset(
         os.makedirs(output_directory, exist_ok=True)
         filename = os.path.join(output_directory, "confidence_thresholding_data_vs_acc_subset." + file_format)
 
-    visualization_utils.confidence_fitlering_data_vs_acc_plot(
+    visualization_utils.confidence_filtering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
         model_names_list,
@@ -2571,7 +2571,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             os.makedirs(output_directory, exist_ok=True)
             filename = filename_template_path.format(output_feature_name_name)
 
-        visualization_utils.confidence_fitlering_data_vs_acc_plot(
+        visualization_utils.confidence_filtering_data_vs_acc_plot(
             accuracies,
             dataset_kept,
             model_names_list,
@@ -2626,7 +2626,7 @@ def confidence_thresholding_2thresholds_2d(
     :return: (None)
     """
     try:
-        validate_conf_treshholds_and_probabilities_2d_3d(probabilities_per_model, threshold_output_feature_names)
+        validate_conf_thresholds_and_probabilities_2d_3d(probabilities_per_model, threshold_output_feature_names)
     except RuntimeError:
         return
     probs = probabilities_per_model
@@ -2718,7 +2718,7 @@ def confidence_thresholding_2thresholds_2d(
     if filename_template_path:
         os.makedirs(output_directory, exist_ok=True)
         filename = filename_template_path.format("multiline")
-    visualization_utils.confidence_fitlering_data_vs_acc_multiline_plot(
+    visualization_utils.confidence_filtering_data_vs_acc_multiline_plot(
         accuracies, dataset_kept, model_names_list, title="Coverage vs Accuracy, two thresholds", filename=filename
     )
 
@@ -2729,7 +2729,7 @@ def confidence_thresholding_2thresholds_2d(
     if filename_template_path:
         filename = filename_template_path.format("maxline")
     max_accuracies = np.amax(np.array(interps), 0)
-    visualization_utils.confidence_fitlering_data_vs_acc_plot(
+    visualization_utils.confidence_filtering_data_vs_acc_plot(
         [max_accuracies],
         [thresholds],
         model_names_list,
@@ -2760,7 +2760,7 @@ def confidence_thresholding_2thresholds_2d(
         os.makedirs(output_directory, exist_ok=True)
         filename = filename_template_path.format("maxline_with_thresholds")
 
-    visualization_utils.confidence_fitlering_data_vs_acc_plot(
+    visualization_utils.confidence_filtering_data_vs_acc_plot(
         [max_accuracies, t1_maxes, t2_maxes],
         [fixed_step_coverage, fixed_step_coverage, fixed_step_coverage],
         model_names=[model_name + " accuracy", name_t1, name_t2],
@@ -2811,7 +2811,7 @@ def confidence_thresholding_2thresholds_3d(
     :return: (None)
     """
     try:
-        validate_conf_treshholds_and_probabilities_2d_3d(probabilities_per_model, threshold_output_feature_names)
+        validate_conf_thresholds_and_probabilities_2d_3d(probabilities_per_model, threshold_output_feature_names)
     except RuntimeError:
         return
     probs = probabilities_per_model
@@ -2882,7 +2882,7 @@ def confidence_thresholding_2thresholds_3d(
         os.makedirs(output_directory, exist_ok=True)
         filename = os.path.join(output_directory, "confidence_thresholding_2thresholds_3d." + file_format)
 
-    visualization_utils.confidence_fitlering_3d_plot(
+    visualization_utils.confidence_filtering_3d_plot(
         np.array(thresholds),
         np.array(thresholds),
         np.array(accuracies),
@@ -3790,7 +3790,7 @@ def cli(sys_argv):
         "-n", "--normalize", action="store_true", default=False, help="normalize rows in confusion matrix"
     )
     parser.add_argument(
-        "-m", "--metrics", default=["f1"], nargs="+", type=str, help="metrics to dispay in threshold_vs_metric"
+        "-m", "--metrics", default=["f1"], nargs="+", type=str, help="metrics to display in threshold_vs_metric"
     )
     parser.add_argument(
         "-pl", "--positive_label", type=int, default=1, help="label of the positive class for the roc curve"

@@ -480,7 +480,7 @@ def donut(
         plt.show()
 
 
-def confidence_fitlering_plot(
+def confidence_filtering_plot(
     thresholds,
     accuracies,
     dataset_kepts,
@@ -545,7 +545,7 @@ def confidence_fitlering_plot(
         plt.show()
 
 
-def confidence_fitlering_data_vs_acc_plot(
+def confidence_filtering_data_vs_acc_plot(
     accuracies,
     dataset_kepts,
     model_names=None,
@@ -612,7 +612,7 @@ def confidence_fitlering_data_vs_acc_plot(
         plt.show()
 
 
-def confidence_fitlering_data_vs_acc_multiline_plot(
+def confidence_filtering_data_vs_acc_multiline_plot(
     accuracies,
     dataset_kepts,
     models_names,
@@ -666,7 +666,7 @@ def confidence_fitlering_data_vs_acc_multiline_plot(
         plt.show()
 
 
-def confidence_fitlering_3d_plot(
+def confidence_filtering_3d_plot(
     thresholds_1,
     thresholds_2,
     accuracies,

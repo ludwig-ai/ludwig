@@ -1019,8 +1019,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
-    treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
-    treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name, output_feature=1)
+    threshold_output_feature_name1 = get_output_feature_name(exp_dir_name)
+    threshold_output_feature_name2 = get_output_feature_name(exp_dir_name, output_feature=1)
     probability = os.path.join(exp_dir_name, PREDICTIONS_PARQUET_FILE_NAME)
     experiment_source_data_name = csv_filename.split(".")[0]
     ground_truth = experiment_source_data_name + ".csv"
@@ -1040,8 +1040,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
         "--probabilities",
         probability,
         "--threshold_output_feature_names",
-        treshhold_output_feature_name1,
-        treshhold_output_feature_name2,
+        threshold_output_feature_name1,
+        threshold_output_feature_name2,
         "--model_names",
         "Model1",
         "-od",
@@ -1085,8 +1085,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
-    treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
-    treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name, output_feature=1)
+    threshold_output_feature_name1 = get_output_feature_name(exp_dir_name)
+    threshold_output_feature_name2 = get_output_feature_name(exp_dir_name, output_feature=1)
     probability = os.path.join(exp_dir_name, PREDICTIONS_PARQUET_FILE_NAME)
     experiment_source_data_name = csv_filename.split(".")[0]
     ground_truth = experiment_source_data_name + ".csv"
@@ -1106,8 +1106,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
         "--probabilities",
         probability,
         "--threshold_output_feature_names",
-        treshhold_output_feature_name1,
-        treshhold_output_feature_name2,
+        threshold_output_feature_name1,
+        threshold_output_feature_name2,
         "-od",
         exp_dir_name,
     ]
