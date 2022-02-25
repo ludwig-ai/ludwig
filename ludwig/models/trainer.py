@@ -1144,7 +1144,7 @@ class Trainer(BaseTrainer):
                 )
 
         # ========== Early Stop logic ==========
-        should_early_stop = torch.Tensor([0 < early_stop <= progress_tracker.last_improvement])
+        should_early_stop = torch.Tensor([int(0 < early_stop <= progress_tracker.last_improvement)])
         if self.horovod:
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
@@ -1358,8 +1358,6 @@ class Trainer(BaseTrainer):
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        # horovod = initialize_horovod()
-        # super().__init__(horovod=horovod, **kwargs)
         super().__init__(**kwargs)
 
         # Only return results from rank 0 to reduce network overhead
