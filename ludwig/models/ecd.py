@@ -10,8 +10,7 @@ import torchmetrics
 from ludwig.combiners.combiners import Combiner, get_combiner_class
 from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.features.feature_registries import input_type_registry, \
-    output_type_registry
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -205,8 +204,7 @@ class ECD(LudwigModule):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_train_loss = of_obj.train_loss(targets[of_name], predictions,
-                                              of_name)
+            of_train_loss = of_obj.train_loss(targets[of_name], predictions, of_name)
             of_train_loss = torch.mean(of_train_loss)
             train_loss += of_obj.loss["weight"] * of_train_loss
             of_train_losses[of_name] = of_train_loss
@@ -224,15 +222,13 @@ class ECD(LudwigModule):
         eval_loss = 0
 
         for of_name, of_obj in self.output_features.items():
-            of_eval_loss = of_obj.eval_loss(targets[of_name],
-                                            predictions[of_name])
+            of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
             eval_loss += of_obj.loss["weight"] * of_eval_loss
 
         additional_losses = 0
         additional_losses_vals = self.losses()
         if additional_losses_vals:
-            additional_losses = torch.sum(
-                torch.stack(additional_losses_vals))  # other losses
+            additional_losses = torch.sum(torch.stack(additional_losses_vals))  # other losses
 
         return eval_loss, additional_losses
 
@@ -249,9 +245,8 @@ class ECD(LudwigModule):
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
         all_of_metrics[COMBINED] = {
-            LOSS: get_scalar_from_ludwig_metric(self.eval_loss_metric) +
-                  get_scalar_from_ludwig_metric(
-                      self.eval_additional_losses_metrics)
+            LOSS: get_scalar_from_ludwig_metric(self.eval_loss_metric)
+            + get_scalar_from_ludwig_metric(self.eval_additional_losses_metrics)
         }
         return all_of_metrics
 

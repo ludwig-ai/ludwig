@@ -20,12 +20,10 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, \
-    PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
+from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.features.feature_utils import compute_feature_hash, \
-    get_input_size_with_dependencies
+from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
@@ -282,15 +280,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
         prediction_key = loss_class.get_loss_inputs()
-        return self.eval_loss_metric.get_current_value(
-            predictions[prediction_key].detach(), targets)
+        return self.eval_loss_metric.get_current_value(predictions[prediction_key].detach(), targets)
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(
-            **loss_kwargs)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss[TYPE])(
-            **loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
