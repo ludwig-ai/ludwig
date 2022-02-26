@@ -209,5 +209,5 @@ class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
 
         # Reduce by sum along column dimension, mean along batch dimension.
         loss = torch.sum(element_loss, dim=1)
-        loss = torch.mean(loss)
+        # loss = torch.mean(loss)
         return loss
