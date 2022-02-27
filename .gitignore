@@ -141,3 +141,8 @@ tags
 # examples
 examples/*/data/
 examples/*/visualizations/
+/titanic/
+/bank/
+/insurance/
+!/.gitignore
+/yeo_inv1.py

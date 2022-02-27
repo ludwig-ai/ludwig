@@ -18,6 +18,7 @@ import logging
 import os
 
 import numpy as np
+from scipy import stats
 import tensorflow as tf
 from tensorflow.keras.metrics import (
     MeanAbsoluteError as MeanAbsoluteErrorMetric,
@@ -114,6 +115,45 @@ class Log1pTransformer:
         return {}
 
 
+class YeoJohnsonTransformer:
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.yeojohnson.html
+    def __init__(self, **kwargs):
+        self.lmbda = None  # lambda value for YeoJohnson transformation
+        pass
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        x, self.lmbda = stats.yeojohnson(x)
+        return x
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        """Returns `x`  transformed by the INVERSE Yeo-Johnson power transform with given
+        parameter `lmbda`.
+        """
+        out = np.zeros_like(x)
+        pos = x >= 0  # binary mask
+
+        # when x >= 0
+        if abs(self.lmbda) < np.spacing(1.):
+            out[pos] = np.exp(x[pos]) - 1
+
+        else:  # lmbda != 0
+            out[pos] = np.power((x[pos] + 1 / self.lmbda) * self.lmbda, 1 / self.lmbda) - 1
+
+        # when x < 0
+        if abs(self.lmbda - 2) > np.spacing(1.):
+            out[~pos] = 1 - np.power(((x[~pos] - 1 / (2 - self.lmbda)) * (-2 + self.lmbda)), 1 / (2 - self.lmbda))
+        else:  # lmbda == 2
+            out[~pos] = np.exp(-x[~pos]) * (np.exp(x[~pos]) - 1)
+
+        return out
+
+
+    @staticmethod
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+        # not sure if possible use: return {"lmbda": self.lmbda}
+        return {}
+
+
 class IdentityTransformer:
     def __init__(self, **kwargs):
         pass
@@ -126,6 +166,7 @@ class IdentityTransformer:
 
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+
         return {}
 
 
@@ -133,6 +174,7 @@ numeric_transformation_registry = {
     "minmax": MinMaxTransformer,
     "zscore": ZScoreTransformer,
     "log1p": Log1pTransformer,
+    "YeoJohnson": YeoJohnsonTransformer,
     None: IdentityTransformer,
 }
 
