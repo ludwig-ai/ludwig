@@ -469,3 +469,156 @@ class DateWave(DateEncoder):
         )
 
         return {'encoder_output': hidden}
+
+@register(name='circular')
+class DateCircular(DateEncoder):
+
+    def __init__(
+            self,
+            fc_layers=None,
+            num_fc_layers=0,
+            fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            activation='relu',
+            dropout=0,
+            **kwargs
+    ):
+        """
+            :param fc_layers: list of dictionaries containing the parameters of
+                    all the fully connected layers
+            :type fc_layers: List
+            :param num_fc_layers: Number of stacked fully connected layers
+            :type num_fc_layers: Integer
+            :param fc_size: Size of each layer
+            :type fc_size: Integer
+            :param use_bias: bool determines where to use a bias vector
+            :type use_bias: bool
+            :param weights_initializer: Initializer for the weights (aka kernel)
+                   matrix
+            :type weights_initializer: string
+            :param bias_initializer: Initializer for the bias vector
+            :type bias_initializer: string
+            :param weights_regularizer: regularizer applied to the weights
+                   (kernal) matrix
+            :type weights_regularizer: string
+            :param bias_regularizer: reguralizer function applied to biase vector.
+            :type bias_regularizer: string
+            :param activity_regularizer: Regularizer applied to the output of the
+                   layer (activation)
+            :type activity_regularizer: string
+            :param norm: type of normalization to use 'batch' or 'layer'
+            :type norm: string, default None
+            :param norm_params: parameters to pass to normalization function
+            :type norm_params: dictionary
+            :param activation: Activation function to use.
+            :type activation: string
+            :param dropout: determines if there should be a dropout layer before
+                   returning the encoder output.
+            :type dropout: float
+        """
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        logger.debug('  year FCStack')
+        self.year_fc = FCStack(
+            num_layers=1,
+            default_fc_size=1,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
+            default_norm=None,
+            default_norm_params=None,
+            default_activation=None,
+            default_dropout=dropout,
+        )
+
+        logger.debug('  FCStack')
+        self.fc_stack = FCStack(
+            layers=fc_layers,
+            num_layers=num_fc_layers,
+            default_fc_size=fc_size,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
+            default_norm=norm,
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout=dropout,
+        )
+
+    def call(
+            self,
+            inputs,
+            training=None,
+            mask=None
+    ):
+        """
+            :param input_vector: The input vector fed into the encoder.
+                   Shape: [batch x 19], type tf.int8
+            :type input_vector: Tensor
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool specifying masked values
+            :type mask: bool
+         """
+        # ================ Embeddings ================
+        input_vector = tf.cast(inputs, tf.float32)
+        scaled_year = self.year_fc(
+            input_vector[:, 0:1],
+            training=training,
+            mask=mask
+        )
+        circular_month_x = tf.cos(input_vector[:, 1:2] * (2 * math.pi / 12))
+        circular_month_y = tf.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
+        circular_day_x = tf.cos(input_vector[:, 2:3] * (2 * math.pi / 31))
+        circular_day_y = tf.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
+        circular_weekday_x = tf.cos(input_vector[:, 3:4] * (2 * math.pi / 7))
+        circular_weekday_y = tf.sin(input_vector[:, 3:4] * (2 * math.pi / 7))
+        circular_yearday_x = tf.cos(input_vector[:, 4:5] * (2 * math.pi / 366))
+        circular_yearday_y = tf.sin(input_vector[:, 4:5] * (2 * math.pi / 366))
+        circular_hour_x = tf.cos(input_vector[:, 5:6] * (2 * math.pi / 24))
+        circular_hour_y = tf.sin(input_vector[:, 5:6] * (2 * math.pi / 24))
+        circular_minute_x = tf.cos(input_vector[:, 6:7] * (2 * math.pi / 60))
+        circular_minute_y = tf.sin(input_vector[:, 6:7] * (2 * math.pi / 60))
+        circular_second_x = tf.cos(input_vector[:, 7:8] * (2 * math.pi / 60))
+        circular_second_y = tf.sin(input_vector[:, 7:8] * (2 * math.pi / 60))
+        circular_second_of_day_x = tf.cos(input_vector[:, 8:9] * (2 * math.pi / 86400))
+        circular_second_of_day_y = tf.sin(input_vector[:, 8:9] * (2 * math.pi / 86400))
+
+        hidden = tf.concat(
+            [scaled_year, circular_month_x,circular_month_y, circular_day_x,circular_day_y,
+             circular_weekday_x,circular_weekday_y, circular_yearday_x,circular_yearday_y,
+             circular_hour_x,circular_hour_y, circular_minute_x,circular_minute_y,
+             circular_second_x,circular_second_y,
+             circular_second_of_day_x,circular_second_of_day_y],
+            axis=1)
+
+        # ================ FC Stack ================
+        # logger.debug('  flatten hidden: {0}'.format(hidden))
+
+        hidden = self.fc_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
+
+        return {'encoder_output': hidden}
