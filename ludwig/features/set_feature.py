@@ -30,7 +30,6 @@ from ludwig.constants import (
     NAME,
     PREDICTIONS,
     PROBABILITIES,
-    PROBABILITY,
     PROC_COLUMN,
     SET,
     SIGMOID_CROSS_ENTROPY,
@@ -277,7 +276,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
-        prob_col = f"{self.feature_name}_{PROBABILITY}"
+        prob_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
             threshold = self.threshold
 
