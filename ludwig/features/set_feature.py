@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import torch
@@ -197,6 +197,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     def loss_kwargs(self):
         return self.loss
+
+    def metric_kwargs(self) -> Dict[str, Any]:
+        return {"threshold": self.threshold}
 
     def create_predict_module(self) -> PredictModule:
         return _SetPredict(self.threshold)
