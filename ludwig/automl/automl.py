@@ -43,6 +43,9 @@ except ImportError:
 
 
 OUTPUT_DIR = "."
+AUTOML_DEFAULT_TABULAR_MODEL = "tabnet"
+AUTOML_DEFAULT_TEXT_ENCODER = "bert"
+AUTOML_DEFAULT_IMAGE_ENCODER = "stacked_cnn"
 
 
 class AutoTrainResults:
@@ -242,7 +245,7 @@ def _model_select(
     # tabular dataset heuristics
     if len(fields) > 3:
         base_config = merge_dict(
-            base_config, default_configs["combiner"]["tabnet"])
+            base_config, default_configs["combiner"][AUTOML_DEFAULT_TABULAR_MODEL])
 
         # override combiner heuristic if explicitly provided by user
         if user_config is not None:
@@ -256,11 +259,15 @@ def _model_select(
             # default text encoder is bert
             # TODO (ASN): add more robust heuristics
             if input_feature["type"] == "text":
-                input_feature["encoder"] = "bert"
+                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
                 base_config = merge_dict(
-                    base_config, default_configs["text"]["bert"])
+                    base_config, default_configs["text"][AUTOML_DEFAULT_TEXT_ENCODER])
 
             # TODO (ASN): add image heuristics
+            if input_feature["type"] == "image":
+                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
+                base_config = merge_dict(
+                    base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:
