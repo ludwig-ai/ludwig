@@ -14,19 +14,25 @@
 # ==============================================================================
 import contextlib
 import os
+
 import sys
+import shutil
 import tempfile
 
 import pytest
 import ray
 import torch
+import pandas as pd
+import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LOCAL_BACKEND
+from ludwig.backend import LOCAL_BACKEND, create_ray_backend
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.constants import TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.utils.data_utils import read_parquet
+from ludwig.data.preprocessing import balance_data
+from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -133,6 +139,59 @@ def split(data_parquet):
     validation_df.to_parquet(val_fname)
     test_df.to_parquet(test_fname)
     return train_fname, val_fname, test_fname
+
+
+@spawn
+def run_test_ray_imbalance(
+    input_df,
+    config,
+    balance,
+    num_cpus=2,
+    num_gpus=None,
+):
+    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            input_df.to_csv(csv_filename)
+            dataset_parquet = create_data_set_to_use("parquet", csv_filename)
+
+            model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
+            output_dir = None
+
+            try:
+                _, output_dataset, output_dir = model.train(
+                    dataset=dataset_parquet,
+                    training_set=None,
+                    validation_set=None,
+                    test_set=None,
+                    skip_save_processed_input=True,
+                    skip_save_progress=True,
+                    skip_save_unprocessed_output=True,
+                    skip_save_log=True,
+                )
+            finally:
+                # Remove results/intermediate data saved to disk
+                shutil.rmtree(output_dir, ignore_errors=True)
+
+            input_train_set = input_df.sample(frac=0.7, replace=False)
+            processed_len = output_dataset[0].ds.count()
+            processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
+            processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
+            assert len(input_train_set) == 140
+            assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
+            assert round(processed_target_pos / processed_target_neg, 1) == 0.5
+            assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
+            assert isinstance(model.backend, RayBackend)
+
+        if balance == "oversample_minority":
+            assert len(input_train_set) < processed_len
+            assert 55 <= processed_target_pos <= 75
+            assert 110 <= processed_target_neg <= 150
+
+        if balance == "undersample_majority":
+            assert len(input_train_set) > processed_len
+            assert 7 <= processed_target_pos <= 20
+            assert 14 <= processed_target_neg <= 40
 
 
 @spawn
@@ -311,7 +370,97 @@ def test_train_gpu_load_cpu():
     run_test_parquet(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
-def _run_train_gpu_load_cpu(config, data_parquet, backend_config):
+@pytest.mark.parametrize(
+    "balance",
+    ["oversample_minority", "undersample_majority"],
+)
+@pytest.mark.distributed
+def test_ray_imbalance(balance):
+    config = {
+        "input_features": [
+            {"name": "Index", "column": "Index", "type": "numerical"},
+            {"name": "random_1", "column": "random_1", "type": "numerical"},
+            {"name": "random_2", "column": "random_2", "type": "numerical"},
+        ],
+        "output_features": [{"name": "Label", "column": "Label", "type": "binary"}],
+        "trainer": {"epochs": 2, "batch_size": 8},
+        "preprocessing": {},
+    }
+    df = pd.DataFrame(
+        {
+            "Index": np.arange(0, 200, 1),
+            "random_1": np.random.randint(0, 50, 200),
+            "random_2": np.random.choice(["Type A", "Type B", "Type C", "Type D"], 200),
+            "Label": np.concatenate((np.zeros(180), np.ones(20))),
+        }
+    )
+
+    config["preprocessing"][balance] = 0.5
+    run_test_ray_imbalance(df, config, balance)
+
+
+@pytest.mark.parametrize(
+    "method, balance",
+    [
+        ("oversample_minority", 0.25),
+        ("oversample_minority", 0.5),
+        ("oversample_minority", 0.75),
+        ("undersample_majority", 0.25),
+        ("undersample_majority", 0.5),
+        ("undersample_majority", 0.75),
+    ],
+)
+@pytest.mark.distributed
+def test_balance_data_ray(method, balance):
+    config = {
+        "input_features": [
+            {"name": "Index", "proc_column": "Index", "type": "numerical"},
+            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
+            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+        ],
+        "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
+        "preprocessing": {"oversample_minority": None, "undersample_majority": None},
+    }
+    df = pd.DataFrame(
+        {
+            "Index": np.arange(0, 200, 1),
+            "random_1": np.random.randint(0, 50, 200),
+            "random_2": np.random.choice(["Type A", "Type B", "Type C", "Type D"], 200),
+            "Label": np.concatenate((np.zeros(180), np.ones(20))),
+            "split": np.zeros(200),
+        }
+    )
+
+    config["preprocessing"][method] = balance
+    target = config["output_features"][0][NAME]
+
+    run_test_balance_data_ray(df, config, target, balance)
+
+
+@spawn
+def run_test_balance_data_ray(
+    input_df,
+    config,
+    target,
+    target_balance,
+    num_cpus=2,
+    num_gpus=None,
+):
+    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
+        backend = create_ray_backend()
+        input_df = backend.df_engine.from_pandas(input_df)
+        test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
+
+        majority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmax()]
+        minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
+        new_class_balance = round(minority_class / majority_class, 2)
+
+        assert (target_balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
+        assert (target_balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
+        assert isinstance(backend, RayBackend)
+
+
+def _run_train_gpu_load_cpu(config, data_parquet):
     with tempfile.TemporaryDirectory() as output_dir:
         model_dir = ray.get(train_gpu.remote(config, data_parquet, output_dir))
         ray.get(predict_cpu.remote(model_dir, data_parquet))
