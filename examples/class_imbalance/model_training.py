@@ -7,7 +7,7 @@
 import logging
 import shutil
 
-# ## Import required libraries
+# Import required libraries
 from ludwig.api import LudwigModel
 from ludwig.datasets import credit_card_fraud
 from ludwig.visualize import learning_curves
@@ -22,7 +22,7 @@ list_of_train_stats = []
 
 training_set, _, _ = credit_card_fraud.load()
 
-# ## Train models
+# Train models
 for model_id in list_of_model_ids:
     print(">>>> training: ", model_id)
 

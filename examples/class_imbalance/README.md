@@ -8,15 +8,8 @@ Create and download your [Kaggle API Credentials](https://github.com/Kaggle/kagg
 
 The Credit Card Fraud dataset is hosted by Kaggle, and as such Ludwig will need to authenticate you through the Kaggle API to download the dataset.
 
-### Examples
 
-| File                         | Description                                                                    |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| simple_model_training.py     | Demonstrates using Ludwig api for training a model.                            |
-| multiple_model_training.py   | Trains two models and generates a visualization for results of training.       |
-| model_training_results.ipynb | Example for extracting training statistics and generate custom visualizations. |
-
-Enter `python simple_model_training.py` will train a single model.  Results of model training will be stored in this location.
+Enter `python model_training.py` will train a single model.  Results of model training will be stored in this location.
 
 ```
 ./results/
