@@ -1,8 +1,12 @@
+import importlib.util
 import logging
 import os
 import shutil
+import tempfile
+from typing import Any, Dict
 
 import numpy as np
+import torch
 
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
@@ -25,6 +29,60 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_N
 from ludwig.utils.data_utils import load_json
 
 logger = logging.getLogger(__name__)
+
+
+INFERENCE_MODULE_TEMPLATE = """
+import torch
+from typing import Any, Dict, List, Union
+
+class GeneratedInferenceModule(torch.nn.Module):
+    def __init__(self, inference_module):
+        super().__init__()
+        self.inference_module = inference_module
+
+    def forward(self, {input_signature}):
+        inputs = {input_dict}
+        results = self.inference_module(inputs)
+        #postprocess_for_neuropod(predicted, self.ludwig_model.config)
+        return results
+"""
+
+
+def _get_input_signature(config: Dict[str, Any]) -> str:
+    args = []
+    for feature in config["input_features"]:
+        name = feature[NAME]
+        args.append(f"{name}: Union[List[str], torch.Tensor]")
+    return ", ".join(args)
+
+
+def _get_input_dict(config: Dict[str, Any]) -> str:
+    elems = []
+    for feature in config["input_features"]:
+        name = feature[NAME]
+        elems.append(f'"{name}": {name}')
+    return "{" + ", ".join(elems) + "}"
+
+
+def generate_neuropod_torchscript(model: LudwigModel):
+    config = model.config
+    inference_module = model.to_torchscript()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ts_path = os.path.join(tmpdir, "generated.py")
+        with open(ts_path, "w") as f:
+            f.write(
+                INFERENCE_MODULE_TEMPLATE.format(
+                    input_signature=_get_input_signature(config), input_dict=_get_input_dict(config)
+                )
+            )
+
+        spec = importlib.util.spec_from_file_location("generated.ts", ts_path)
+        gen_ts = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gen_ts)
+
+        gen_module = gen_ts.GeneratedInferenceModule(inference_module)
+        scripted_module = torch.jit.script(gen_module)
+    return scripted_module
 
 
 class LudwigNeuropodModelWrapper:

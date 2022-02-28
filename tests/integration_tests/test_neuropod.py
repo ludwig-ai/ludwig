@@ -16,14 +16,16 @@ import itertools
 import os
 import shutil
 import tempfile
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BINARY, SEQUENCE, SET, TEXT, TRAINER
-from ludwig.utils.neuropod_utils import export_neuropod
+from ludwig.constants import BINARY, LOGITS, NAME, PREDICTIONS, PROBABILITIES, SEQUENCE, SET, TEXT, TRAINER
+from ludwig.utils.neuropod_utils import export_neuropod, generate_neuropod_torchscript
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import (
     audio_feature,
@@ -191,3 +193,100 @@ def test_neuropod(csv_filename):
                 original_prob = original_predictions_df[output_feature_name + "_probabilities"].tolist()
 
                 assert np.allclose(neuropod_prob, original_prob)
+
+
+def test_neuropod_torchscript(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    # Configure features to be tested:
+    bin_str_feature = binary_feature()
+    input_features = [
+        bin_str_feature,
+        binary_feature(),
+        number_feature(),
+        category_feature(vocab_size=3),
+        # TODO: future support
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # vector_feature(),
+        # image_feature(image_dest_folder),
+        # audio_feature(audio_dest_folder),
+        # timeseries_feature(),
+        # date_feature(),
+        # h3_feature(),
+        # set_feature(vocab_size=3),
+        # bag_feature(vocab_size=3),
+    ]
+    output_features = [
+        bin_str_feature,
+        binary_feature(),
+        number_feature(),
+        category_feature(vocab_size=3),
+        # TODO: future support
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # set_feature(vocab_size=3),
+        # vector_feature()
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    # Convert bool values to strings, e.g., {'Yes', 'No'}
+    df = pd.read_csv(training_data_csv_path)
+    false_value, true_value = "No", "Yes"
+    df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
+    df.to_csv(training_data_csv_path)
+
+    # Train Ludwig (Pythonic) model:
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=training_data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+
+    # Obtain predictions from Python model
+    preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
+
+    # Create graph inference model (Torchscript) from trained Ludwig model.
+    neuropod_module = generate_neuropod_torchscript(ludwig_model)
+
+    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+        if s.dtype == "object":
+            return s.to_list()
+        return torch.from_numpy(s.to_numpy())
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
+    outputs = neuropod_module(inputs)
+
+    # TODO: these are the only outputs we provide from Torchscript for now
+    ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}
+
+    # Compare results from Python trained model against Torchscript
+    for feature_name, feature_outputs_expected in preds_dict.items():
+        assert feature_name in outputs
+
+        feature_outputs = outputs[feature_name]
+        for output_name, output_values_expected in feature_outputs_expected.items():
+            if output_name not in ts_outputs:
+                continue
+
+            assert output_name in feature_outputs
+            output_values = feature_outputs[output_name]
+            if isinstance(output_values, list):
+                # Strings should match exactly
+                assert np.all(
+                    output_values == output_values_expected
+                ), f"feature: {feature_name}, output: {output_name}"
+            else:
+                assert np.allclose(
+                    output_values, output_values_expected
+                ), f"feature: {feature_name}, output: {output_name}"
