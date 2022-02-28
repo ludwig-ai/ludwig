@@ -8,7 +8,7 @@ import ray
 from ludwig.backend import create_ray_backend
 from ludwig.backend.base import LocalBackend
 from ludwig.backend.ray import RayBackend
-from ludwig.constants import NAME, PROC_COLUMN
+from ludwig.constants import NAME, BALANCE_PERCENTAGE_TOLERANCE
 from ludwig.data.preprocessing import balance_data
 from tests.integration_tests.utils import spawn
 
@@ -45,7 +45,8 @@ def run_test_balance_data_ray(
         minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
         new_class_balance = round(minority_class / majority_class, 2)
 
-        assert (target_balance - 0.02) <= new_class_balance <= (target_balance + 0.02)
+        assert (target_balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
+        assert (target_balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
         assert isinstance(backend, RayBackend)
 
 
