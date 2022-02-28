@@ -23,7 +23,7 @@ def run_test_imbalance(
         skip_save_training_statistics=True,
     )
 
-    target = model.config['output_features'][0][PROC_COLUMN]
+    target = model.config["output_features"][0][PROC_COLUMN]
     input_train_set = input_df.sample(frac=0.7, replace=False)
     processed_len = output_dataset[0].size
     processed_target_pos = sum(output_dataset[0].dataset[target])

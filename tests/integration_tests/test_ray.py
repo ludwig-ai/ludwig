@@ -19,20 +19,24 @@ import sys
 import shutil
 import tempfile
 
+import numpy as np
+import pandas as pd
 import pytest
 import ray
 import torch
-import pandas as pd
-import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LOCAL_BACKEND, create_ray_backend
+from ludwig.backend import create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
+<<<<<<< HEAD
 from ludwig.constants import TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.utils.data_utils import read_parquet
+=======
+from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
+>>>>>>> e6b07a8a ([pre-commit.ci] auto fixes from pre-commit.com hooks)
 from ludwig.data.preprocessing import balance_data
-from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME
+from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,

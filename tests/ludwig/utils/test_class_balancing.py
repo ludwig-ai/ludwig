@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-
 from ludwig.backend.base import LocalBackend
-from ludwig.constants import NAME, BALANCE_PERCENTAGE_TOLERANCE
+from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME
 from ludwig.data.preprocessing import balance_data
 
 
@@ -21,7 +20,11 @@ def run_test_balance_data(
     minority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmin()]
     new_class_balance = round(minority_class / majority_class, 2)
 
-    assert (target_balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance <= (target_balance + BALANCE_PERCENTAGE_TOLERANCE)
+    assert (
+        (target_balance - BALANCE_PERCENTAGE_TOLERANCE)
+        <= new_class_balance
+        <= (target_balance + BALANCE_PERCENTAGE_TOLERANCE)
+    )
     assert isinstance(backend, LocalBackend)
 
 
