@@ -285,6 +285,12 @@ def legacy_train_fn(
     return results
 
 
+class HorovodRemoteTrainer(Trainer):
+    def __init__(self, **kwargs):
+        horovod = initialize_horovod()
+        super().__init__(horovod=horovod, **kwargs)
+
+
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
@@ -296,7 +302,7 @@ class RayLegacyTrainer(BaseTrainer):
         setting = RayExecutor.create_settings(timeout_s=30)
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=executable_kwargs)
+        self.executor.start(executable_cls=HorovodRemoteTrainer, executable_kwargs=executable_kwargs)
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers

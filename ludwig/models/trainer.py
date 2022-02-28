@@ -1144,7 +1144,7 @@ class Trainer(BaseTrainer):
                 )
 
         # ========== Early Stop logic ==========
-        should_early_stop = torch.Tensor([int(0 < early_stop <= progress_tracker.last_improvement)])
+        should_early_stop = torch.as_tensor([0 < early_stop <= progress_tracker.last_improvement], dtype=torch.int)
         if self.horovod:
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
