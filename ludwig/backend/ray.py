@@ -285,7 +285,7 @@ def legacy_train_fn(
     return results
 
 
-class HorovodRemoteTrainer(Trainer):
+class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
         horovod = initialize_horovod()
         super().__init__(horovod=horovod, **kwargs)
