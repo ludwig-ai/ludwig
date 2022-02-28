@@ -241,7 +241,6 @@ def _model_select(
                 input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
                 base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
-
     # override and constrain automl config based on user specified values
     if user_config is not None:
         base_config = merge_dict(base_config, user_config)
