@@ -162,12 +162,12 @@ class Conv1DStack(LudwigModule):
         if layers is None:
             if num_layers is None:
                 self.layers = [
-                    {"filter_size": 7, "pool_size": 3, "regularize": False},
-                    {"filter_size": 7, "pool_size": 3, "regularize": False},
-                    {"filter_size": 3, "pool_size": None, "regularize": False},
-                    {"filter_size": 3, "pool_size": None, "regularize": False},
-                    {"filter_size": 3, "pool_size": None, "regularize": True},
-                    {"filter_size": 3, "pool_size": 3, "regularize": True},
+                    {"filter_size": 7, "pool_size": 3},
+                    {"filter_size": 7, "pool_size": 3},
+                    {"filter_size": 3, "pool_size": None},
+                    {"filter_size": 3, "pool_size": None},
+                    {"filter_size": 3, "pool_size": None},
+                    {"filter_size": 3, "pool_size": 3},
                 ]
             else:
                 self.layers = []
