@@ -50,7 +50,7 @@ def run_experiment_with_visualization(input_features, output_features, dataset):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {"epochs": 2},
     }
 

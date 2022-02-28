@@ -195,7 +195,7 @@ def test_api_training_set(tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
     }
     model = LudwigModel(config)
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
@@ -214,7 +214,7 @@ def test_api_training_determinism(tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "fc_size": 14},
+        "combiner": {"type": "concat", "output_size": 14},
     }
 
     # Train the model 3 times:
