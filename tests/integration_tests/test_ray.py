@@ -378,9 +378,9 @@ def test_train_gpu_load_cpu():
 def test_ray_imbalance(balance):
     config = {
         "input_features": [
-            {"name": "Index", "column": "Index", "type": "numerical"},
-            {"name": "random_1", "column": "random_1", "type": "numerical"},
-            {"name": "random_2", "column": "random_2", "type": "numerical"},
+            {"name": "Index", "column": "Index", "type": "number"},
+            {"name": "random_1", "column": "random_1", "type": "number"},
+            {"name": "random_2", "column": "random_2", "type": "number"},
         ],
         "output_features": [{"name": "Label", "column": "Label", "type": "binary"}],
         "trainer": {"epochs": 2, "batch_size": 8},
@@ -414,9 +414,9 @@ def test_ray_imbalance(balance):
 def test_balance_data_ray(method, balance):
     config = {
         "input_features": [
-            {"name": "Index", "proc_column": "Index", "type": "numerical"},
-            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+            {"name": "Index", "proc_column": "Index", "type": "number"},
+            {"name": "random_1", "proc_column": "random_1", "type": "number"},
+            {"name": "random_2", "proc_column": "random_2", "type": "number"},
         ],
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
         "preprocessing": {"oversample_minority": None, "undersample_majority": None},

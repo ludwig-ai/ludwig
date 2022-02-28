@@ -1280,10 +1280,7 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
         sample_fraction = int(len(minority_df) / preprocessing_parameters["undersample_majority"]) / len(majority_df)
         majority_df = majority_df.sample(frac=sample_fraction, replace=False)
 
-    if backend.df_engine.partitioned:
-        balanced_df = backend.df_engine.concat([minority_df, majority_df])
-    else:
-        balanced_df = pd.concat([minority_df, majority_df])
+    balanced_df = backend.df_engine.concat([minority_df, majority_df])
 
     return balanced_df
 
@@ -1365,7 +1362,7 @@ def get_split(
             if backend.df_engine.partitioned:
                 # This approach is very inefficient for partitioned backends, which
                 # can split by partition
-                return
+                return None
 
             split = (
                 dataset_df.index.to_series()

@@ -39,9 +39,9 @@ def run_test_balance_data(
 def test_balance_data(method, balance):
     config = {
         "input_features": [
-            {"name": "Index", "proc_column": "Index", "type": "numerical"},
-            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+            {"name": "Index", "proc_column": "Index", "type": "number"},
+            {"name": "random_1", "proc_column": "random_1", "type": "number"},
+            {"name": "random_2", "proc_column": "random_2", "type": "number"},
         ],
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
         "preprocessing": {"oversample_minority": None, "undersample_majority": None},
@@ -66,9 +66,9 @@ def test_balance_data(method, balance):
 def test_non_binary_failure():
     config = {
         "input_features": [
-            {"name": "Index", "proc_column": "Index", "type": "numerical"},
-            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+            {"name": "Index", "proc_column": "Index", "type": "number"},
+            {"name": "random_1", "proc_column": "random_1", "type": "number"},
+            {"name": "random_2", "proc_column": "random_2", "type": "number"},
         ],
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "number"}],
         "preprocessing": {},
@@ -93,9 +93,9 @@ def test_non_binary_failure():
 def test_multiple_class_failure():
     config = {
         "input_features": [
-            {"name": "Index", "proc_column": "Index", "type": "numerical"},
-            {"name": "random_1", "proc_column": "random_1", "type": "numerical"},
-            {"name": "random_2", "proc_column": "random_2", "type": "numerical"},
+            {"name": "Index", "proc_column": "Index", "type": "number"},
+            {"name": "random_1", "proc_column": "random_1", "type": "number"},
+            {"name": "random_2", "proc_column": "random_2", "type": "number"},
         ],
         "output_features": [
             {"name": "Label", "proc_column": "Label", "type": "binary"},

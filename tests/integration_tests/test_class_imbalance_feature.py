@@ -4,6 +4,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
+from ludwig.constants import PROC_COLUMN
 
 
 def run_test_imbalance(
@@ -22,10 +23,11 @@ def run_test_imbalance(
         skip_save_training_statistics=True,
     )
 
+    target = model.config['output_features'][0][PROC_COLUMN]
     input_train_set = input_df.sample(frac=0.7, replace=False)
     processed_len = output_dataset[0].size
-    processed_target_pos = sum(output_dataset[0].dataset["Label_mZFLky"])
-    processed_target_neg = len(output_dataset[0].dataset["Label_mZFLky"]) - processed_target_pos
+    processed_target_pos = sum(output_dataset[0].dataset[target])
+    processed_target_neg = len(output_dataset[0].dataset[target]) - processed_target_pos
     assert len(input_train_set) == 140
     assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
     assert round(processed_target_pos / processed_target_neg, 1) == 0.5
@@ -49,11 +51,11 @@ def run_test_imbalance(
 def test_imbalance(balance):
     config = {
         "input_features": [
-            {"name": "Index", "column": "Index", "type": "numerical"},
-            {"name": "random_1", "column": "random_1", "type": "numerical"},
-            {"name": "random_2", "column": "random_2", "type": "numerical"},
+            {"name": "Index", "column": "Index", "type": "number"},
+            {"name": "random_1", "column": "random_1", "type": "number"},
+            {"name": "random_2", "column": "random_2", "type": "number"},
         ],
-        "output_features": [{"name": "Label", "column": "Label", "type": "binary"}],
+        "output_features": [{"name": "Label", "column": "Label", "proc_column": "Label_mZFLky", "type": "binary"}],
         "trainer": {"epochs": 2, "batch_size": 8},
         "preprocessing": {},
     }
