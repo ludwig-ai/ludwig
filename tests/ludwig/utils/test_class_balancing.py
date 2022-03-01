@@ -7,27 +7,6 @@ from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME
 from ludwig.data.preprocessing import balance_data
 
 
-def run_test_balance_data(
-    input_df,
-    config,
-    target,
-    target_balance,
-    backend,
-):
-    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
-
-    majority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmax()]
-    minority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmin()]
-    new_class_balance = round(minority_class / majority_class, 2)
-
-    assert (
-        (target_balance - BALANCE_PERCENTAGE_TOLERANCE)
-        <= new_class_balance
-        <= (target_balance + BALANCE_PERCENTAGE_TOLERANCE)
-    )
-    assert isinstance(backend, LocalBackend)
-
-
 @pytest.mark.parametrize(
     "method, balance",
     [
@@ -39,7 +18,7 @@ def run_test_balance_data(
         ("undersample_majority", 0.75),
     ],
 )
-def test_balance_data(method, balance):
+def test_balance(method, balance):
     config = {
         "input_features": [
             {"name": "Index", "proc_column": "Index", "type": "number"},
@@ -49,7 +28,7 @@ def test_balance_data(method, balance):
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
         "preprocessing": {"oversample_minority": None, "undersample_majority": None},
     }
-    df = pd.DataFrame(
+    input_df = pd.DataFrame(
         {
             "Index": np.arange(0, 200, 1),
             "random_1": np.random.randint(0, 50, 200),
@@ -61,9 +40,15 @@ def test_balance_data(method, balance):
 
     config["preprocessing"][method] = balance
     backend = LocalBackend()
-    target = config["output_features"][0][NAME]
 
-    run_test_balance_data(df, config, target, balance, backend)
+    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
+    target = config["output_features"][0][NAME]
+    majority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmax()]
+    minority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmin()]
+    new_class_balance = round(minority_class / majority_class, 2)
+
+    assert (balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
+    assert (balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
 
 
 def test_non_binary_failure():
@@ -76,7 +61,7 @@ def test_non_binary_failure():
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "number"}],
         "preprocessing": {},
     }
-    df = pd.DataFrame(
+    input_df = pd.DataFrame(
         {
             "Index": np.arange(0, 200, 1),
             "random_1": np.random.randint(0, 50, 200),
@@ -87,10 +72,9 @@ def test_non_binary_failure():
     )
 
     backend = LocalBackend()
-    target = config["output_features"][0][NAME]
 
     with pytest.raises(ValueError):
-        run_test_balance_data(df, config, target, 0.5, backend)
+        balance_data(input_df, config["output_features"], config["preprocessing"], backend)
 
 
 def test_multiple_class_failure():
@@ -106,7 +90,7 @@ def test_multiple_class_failure():
         ],
         "preprocessing": {},
     }
-    df = pd.DataFrame(
+    input_df = pd.DataFrame(
         {
             "Index": np.arange(0, 200, 1),
             "random_1": np.random.randint(0, 50, 200),
@@ -118,7 +102,6 @@ def test_multiple_class_failure():
     )
 
     backend = LocalBackend()
-    target = config["output_features"][0][NAME]
 
     with pytest.raises(ValueError):
-        run_test_balance_data(df, config, target, 0.5, backend)
+        balance_data(input_df, config["output_features"], config["preprocessing"], backend)

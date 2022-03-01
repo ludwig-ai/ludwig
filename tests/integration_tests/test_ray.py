@@ -14,9 +14,12 @@
 # ==============================================================================
 import contextlib
 import os
+<<<<<<< HEAD
 
 import sys
 import shutil
+=======
+>>>>>>> 26bb80ee (Consolidated tests to only test specific feature)
 import tempfile
 
 import numpy as np
@@ -146,60 +149,8 @@ def split(data_parquet):
 
 
 @spawn
-def run_test_ray_imbalance(
-    input_df,
-    config,
-    balance,
-    num_cpus=2,
-    num_gpus=None,
-):
-    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            csv_filename = os.path.join(tmpdir, "dataset.csv")
-            input_df.to_csv(csv_filename)
-            dataset_parquet = create_data_set_to_use("parquet", csv_filename)
-
-            model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
-            output_dir = None
-
-            try:
-                _, output_dataset, output_dir = model.train(
-                    dataset=dataset_parquet,
-                    training_set=None,
-                    validation_set=None,
-                    test_set=None,
-                    skip_save_processed_input=True,
-                    skip_save_progress=True,
-                    skip_save_unprocessed_output=True,
-                    skip_save_log=True,
-                )
-            finally:
-                # Remove results/intermediate data saved to disk
-                shutil.rmtree(output_dir, ignore_errors=True)
-
-            input_train_set = input_df.sample(frac=0.7, replace=False)
-            processed_len = output_dataset[0].ds.count()
-            processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
-            processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
-            assert len(input_train_set) == 140
-            assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
-            assert round(processed_target_pos / processed_target_neg, 1) == 0.5
-            assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
-            assert isinstance(model.backend, RayBackend)
-
-        if balance == "oversample_minority":
-            assert len(input_train_set) < processed_len
-            assert 55 <= processed_target_pos <= 75
-            assert 110 <= processed_target_neg <= 150
-
-        if balance == "undersample_majority":
-            assert len(input_train_set) > processed_len
-            assert 7 <= processed_target_pos <= 20
-            assert 14 <= processed_target_neg <= 40
-
-
-@spawn
 def run_test_parquet(
+<<<<<<< HEAD
     input_features,
     output_features,
     num_examples=100,
@@ -208,6 +159,15 @@ def run_test_parquet(
     num_cpus=2,
     num_gpus=None,
     df_engine=None,
+=======
+        input_features,
+        output_features,
+        num_examples=100,
+        run_fn=run_api_experiment,
+        expect_error=False,
+        num_cpus=2,
+        num_gpus=None,
+>>>>>>> 26bb80ee (Consolidated tests to only test specific feature)
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
@@ -374,35 +334,7 @@ def test_train_gpu_load_cpu():
     run_test_parquet(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
-@pytest.mark.parametrize(
-    "balance",
-    ["oversample_minority", "undersample_majority"],
-)
 @pytest.mark.distributed
-def test_ray_imbalance(balance):
-    config = {
-        "input_features": [
-            {"name": "Index", "column": "Index", "type": "number"},
-            {"name": "random_1", "column": "random_1", "type": "number"},
-            {"name": "random_2", "column": "random_2", "type": "number"},
-        ],
-        "output_features": [{"name": "Label", "column": "Label", "type": "binary"}],
-        "trainer": {"epochs": 2, "batch_size": 8},
-        "preprocessing": {},
-    }
-    df = pd.DataFrame(
-        {
-            "Index": np.arange(0, 200, 1),
-            "random_1": np.random.randint(0, 50, 200),
-            "random_2": np.random.choice(["Type A", "Type B", "Type C", "Type D"], 200),
-            "Label": np.concatenate((np.zeros(180), np.ones(20))),
-        }
-    )
-
-    config["preprocessing"][balance] = 0.5
-    run_test_ray_imbalance(df, config, balance)
-
-
 @pytest.mark.parametrize(
     "method, balance",
     [
@@ -414,8 +346,7 @@ def test_ray_imbalance(balance):
         ("undersample_majority", 0.75),
     ],
 )
-@pytest.mark.distributed
-def test_balance_data_ray(method, balance):
+def test_balance_ray(method, balance):
     config = {
         "input_features": [
             {"name": "Index", "proc_column": "Index", "type": "number"},
@@ -425,7 +356,7 @@ def test_balance_data_ray(method, balance):
         "output_features": [{"name": "Label", "proc_column": "Label", "type": "binary"}],
         "preprocessing": {"oversample_minority": None, "undersample_majority": None},
     }
-    df = pd.DataFrame(
+    input_df = pd.DataFrame(
         {
             "Index": np.arange(0, 200, 1),
             "random_1": np.random.randint(0, 50, 200),
@@ -434,23 +365,10 @@ def test_balance_data_ray(method, balance):
             "split": np.zeros(200),
         }
     )
-
     config["preprocessing"][method] = balance
     target = config["output_features"][0][NAME]
 
-    run_test_balance_data_ray(df, config, target, balance)
-
-
-@spawn
-def run_test_balance_data_ray(
-    input_df,
-    config,
-    target,
-    target_balance,
-    num_cpus=2,
-    num_gpus=None,
-):
-    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
+    with ray_start(num_cpus=2, num_gpus=None):
         backend = create_ray_backend()
         input_df = backend.df_engine.from_pandas(input_df)
         test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
@@ -459,9 +377,8 @@ def run_test_balance_data_ray(
         minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
         new_class_balance = round(minority_class / majority_class, 2)
 
-        assert (target_balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
-        assert (target_balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
-        assert isinstance(backend, RayBackend)
+        assert (balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
+        assert (balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
 
 
 def _run_train_gpu_load_cpu(config, data_parquet):
