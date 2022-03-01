@@ -16,10 +16,9 @@
 import logging
 import re
 import unicodedata
-
 from collections import Counter
 from enum import Enum
-from typing import List, Set, Union, Optional
+from typing import List, Optional, Set, Union
 
 import numpy as np
 
