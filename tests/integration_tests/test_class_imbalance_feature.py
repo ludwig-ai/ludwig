@@ -55,7 +55,7 @@ def test_imbalance(balance):
             {"name": "random_1", "column": "random_1", "type": "number"},
             {"name": "random_2", "column": "random_2", "type": "number"},
         ],
-        "output_features": [{"name": "Label", "column": "Label", "proc_column": "Label_mZFLky", "type": "binary"}],
+        "output_features": [{"name": "Label", "column": "Label", "type": "binary"}],
         "trainer": {"epochs": 2, "batch_size": 8},
         "preprocessing": {},
     }
