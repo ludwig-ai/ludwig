@@ -24,6 +24,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.constants import TRAINER
+from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
@@ -91,7 +92,8 @@ def run_api_experiment(config, data_parquet, backend_config):
     model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=False)
 
     assert isinstance(model.backend, RayBackend)
-    assert model.backend.df_engine.parallelism == backend_config["processor"]["parallelism"]
+    if isinstance(model.backend.df_engine, DaskEngine):
+        assert model.backend.df_engine.parallelism == backend_config["processor"]["parallelism"]
 
 
 def run_split_api_experiment(config, data_parquet, backend_config):
