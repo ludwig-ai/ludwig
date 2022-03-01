@@ -8,6 +8,7 @@ scikit-learn
 tqdm
 torch==1.9.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
 torch>=1.9.0 ; platform_system != "Windows"
+entmax==1.0
 PyYAML>=3.12
 absl-py
 kaggle

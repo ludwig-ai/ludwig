@@ -430,6 +430,8 @@ class TabNetCombinerConfig:
     # B_v from the paper
     bn_virtual_bs: Optional[int] = schema.PositiveInteger()
     sparsity: float = 1e-5  # lambda_sparse in the paper
+    entmax_mode: str = schema.StringOptions(["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax")
+    entmax_alpha: float = schema.FloatRange(default=1.5, min=1, max=2)  # 1 corresponds to softmax, 2 is sparsemax.
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
     class Meta:
@@ -457,6 +459,8 @@ class TabNetCombiner(Combiner):
             bn_momentum=config.bn_momentum,
             bn_virtual_bs=config.bn_virtual_bs,
             sparsity=config.sparsity,
+            entmax_mode=config.entmax_mode,
+            entmax_alpha=config.entmax_alpha,
         )
 
         if config.dropout > 0:
