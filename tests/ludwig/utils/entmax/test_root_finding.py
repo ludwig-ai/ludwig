@@ -1,13 +1,12 @@
-import pytest
-from itertools import product
 from functools import partial
+from itertools import product
 
+import pytest
 import torch
 from torch.autograd import gradcheck
 
-from ludwig.utils.entmax.root_finding import sparsemax_bisect, entmax_bisect
-from ludwig.utils.entmax.activations import sparsemax, entmax15
-
+from ludwig.utils.entmax.activations import entmax15, sparsemax
+from ludwig.utils.entmax.root_finding import entmax_bisect, sparsemax_bisect
 
 # @pytest.mark.parametrize("dim", (0, 1, 2))
 # def test_dim(dim, Map):
@@ -45,13 +44,10 @@ def test_entmax_grad(alpha):
 def test_entmax_correct_multiple_alphas():
     n = 4
     x = torch.randn(n, 6, dtype=torch.float64, requires_grad=True)
-    alpha = 0.05 + 2.5*torch.rand((n, 1), dtype=torch.float64, requires_grad=True)
+    alpha = 0.05 + 2.5 * torch.rand((n, 1), dtype=torch.float64, requires_grad=True)
 
     p1 = entmax_bisect(x, alpha)
-    p2_ = [
-        entmax_bisect(x[i].unsqueeze(0), alpha[i].item()).squeeze()
-        for i in range(n)
-    ]
+    p2_ = [entmax_bisect(x[i].unsqueeze(0), alpha[i].item()).squeeze() for i in range(n)]
     p2 = torch.stack(p2_)
 
     assert torch.allclose(p1, p2)
@@ -61,7 +57,7 @@ def test_entmax_grad_multiple_alphas():
 
     n = 4
     x = torch.randn(n, 6, dtype=torch.float64, requires_grad=True)
-    alpha = 0.05 + 2.5*torch.rand((n, 1), dtype=torch.float64, requires_grad=True)
+    alpha = 0.05 + 2.5 * torch.rand((n, 1), dtype=torch.float64, requires_grad=True)
     gradcheck(entmax_bisect, (x, alpha), eps=1e-5)
 
 
@@ -73,14 +69,11 @@ def test_arbitrary_dimension(dim):
     alpha_shape = shape
     alpha_shape[dim] = 1
 
-    alphas = 0.05 + 2.5*torch.rand(alpha_shape, dtype=torch.float64)
+    alphas = 0.05 + 2.5 * torch.rand(alpha_shape, dtype=torch.float64)
 
     P = entmax_bisect(X, alpha=alphas, dim=dim)
 
-    ranges = [
-        list(range(k)) if i != dim else [slice(None)]
-        for i, k in enumerate(shape)
-    ]
+    ranges = [list(range(k)) if i != dim else [slice(None)] for i, k in enumerate(shape)]
 
     for ix in product(*ranges):
         x = X[ix].unsqueeze(0)
@@ -99,7 +92,5 @@ def test_arbitrary_dimension_grad(dim):
     f = partial(entmax_bisect, dim=dim)
 
     X = torch.randn(*shape, dtype=torch.float64, requires_grad=True)
-    alphas = 0.05 + 2.5*torch.rand(
-        alpha_shape, dtype=torch.float64, requires_grad=True
-    )
+    alphas = 0.05 + 2.5 * torch.rand(alpha_shape, dtype=torch.float64, requires_grad=True)
     gradcheck(f, (X, alphas), eps=1e-5)

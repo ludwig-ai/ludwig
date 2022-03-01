@@ -2,12 +2,11 @@ import pytest
 import torch
 from torch.autograd import gradcheck
 
-
 from ludwig.utils.entmax.activations import (
-    _sparsemax_threshold_and_support,
     _entmax_threshold_and_support,
-    Sparsemax,
+    _sparsemax_threshold_and_support,
     Entmax15,
+    Sparsemax,
 )
 
 

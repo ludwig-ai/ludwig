@@ -1,7 +1,6 @@
-"""
-Bisection implementation of alpha-entmax (Peters et al., 2019).
-Backward pass wrt alpha per (Correia et al., 2019). See
-https://arxiv.org/pdf/1905.05702 for detailed description.
+"""Bisection implementation of alpha-entmax (Peters et al., 2019).
+
+Backward pass wrt alpha per (Correia et al., 2019). See https://arxiv.org/pdf/1905.05702 for detailed description.
 """
 # Author: Goncalo M Correia
 # Author: Ben Peters
@@ -70,7 +69,7 @@ class EntmaxBisectFunction(Function):
 
     @classmethod
     def backward(cls, ctx, dY):
-        Y, = ctx.saved_tensors
+        (Y,) = ctx.saved_tensors
 
         gppr = torch.where(Y > 0, Y ** (2 - ctx.alpha), Y.new_zeros(1))
 
@@ -117,13 +116,11 @@ class SparsemaxBisectFunction(EntmaxBisectFunction):
 
     @classmethod
     def forward(cls, ctx, X, dim=-1, n_iter=50, ensure_sum_one=True):
-        return super().forward(
-            ctx, X, alpha=2, dim=dim, n_iter=50, ensure_sum_one=True
-        )
+        return super().forward(ctx, X, alpha=2, dim=dim, n_iter=50, ensure_sum_one=True)
 
     @classmethod
     def backward(cls, ctx, dY):
-        Y, = ctx.saved_tensors
+        (Y,) = ctx.saved_tensors
         gppr = (Y > 0).to(dtype=dY.dtype)
         dX = dY * gppr
         q = dX.sum(ctx.dim) / gppr.sum(ctx.dim)
@@ -273,6 +270,4 @@ class EntmaxBisect(nn.Module):
         super().__init__()
 
     def forward(self, X):
-        return entmax_bisect(
-            X, alpha=self.alpha, dim=self.dim, n_iter=self.n_iter
-        )
+        return entmax_bisect(X, alpha=self.alpha, dim=self.dim, n_iter=self.n_iter)

@@ -1,9 +1,8 @@
-import torch
 import pytest
+import torch
 
-from ludwig.utils.entmax.activations import Sparsemax, Entmax15
-
-from ludwig.utils.entmax.root_finding import sparsemax_bisect, entmax_bisect
+from ludwig.utils.entmax.activations import Entmax15, Sparsemax
+from ludwig.utils.entmax.root_finding import entmax_bisect, sparsemax_bisect
 
 funcs = [
     Sparsemax(dim=1),

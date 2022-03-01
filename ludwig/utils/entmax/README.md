@@ -1,15 +1,16 @@
 # entmax
 
---------------------------------------------------------------------------------
+______________________________________________________________________
 
 This package provides a pytorch implementation of entmax and entmax losses:
 a sparse family of probability mappings and corresponding loss functions,
 generalizing softmax / cross-entropy.
 
 *Features:*
-  - Exact partial-sort algorithms for 1.5-entmax and 2-entmax (sparsemax).
-  - A bisection-based algorithm for generic alpha-entmax.
-  - Gradients w.r.t. alpha for adaptive, learned sparsity!
+
+- Exact partial-sort algorithms for 1.5-entmax and 2-entmax (sparsemax).
+- A bisection-based algorithm for generic alpha-entmax.
+- Gradients w.r.t. alpha for adaptive, learned sparsity!
 
 *Requirements:* python 3, pytorch >= 1.0 (and pytest for unit tests)
 
@@ -88,6 +89,6 @@ pip install entmax
 
 Further reading:
 
-  - Blondel, Martins, and Niculae, 2019. [Learning with Fenchel-Young Losses](https://arxiv.org/abs/1901.02324).
-  - Martins and Astudillo, 2016. [From Softmax to Sparsemax: A Sparse Model of Attention and Multi-Label Classification](https://arxiv.org/abs/1602.02068).
-  - Peters and Martins, 2019 [IT-IST at the SIGMORPHON 2019 Shared Task: Sparse Two-headed Models for Inflection](https://www.aclweb.org/anthology/W19-4207).
+- Blondel, Martins, and Niculae, 2019. [Learning with Fenchel-Young Losses](https://arxiv.org/abs/1901.02324).
+- Martins and Astudillo, 2016. [From Softmax to Sparsemax: A Sparse Model of Attention and Multi-Label Classification](https://arxiv.org/abs/1602.02068).
+- Peters and Martins, 2019 [IT-IST at the SIGMORPHON 2019 Shared Task: Sparse Two-headed Models for Inflection](https://www.aclweb.org/anthology/W19-4207).

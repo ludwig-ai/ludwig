@@ -1,9 +1,7 @@
-"""
-An implementation of entmax (Peters et al., 2019). See
-https://arxiv.org/pdf/1905.05702 for detailed description.
+"""An implementation of entmax (Peters et al., 2019). See https://arxiv.org/pdf/1905.05702 for detailed
+description.
 
-This builds on previous work with sparsemax (Martins & Astudillo, 2016).
-See https://arxiv.org/pdf/1602.02068.
+This builds on previous work with sparsemax (Martins & Astudillo, 2016). See https://arxiv.org/pdf/1602.02068.
 """
 
 # Author: Ben Peters
@@ -117,8 +115,8 @@ def _entmax_threshold_and_support(X, dim=-1, k=None):
 
     rho = _make_ix_like(Xsrt, dim)
     mean = Xsrt.cumsum(dim) / rho
-    mean_sq = (Xsrt ** 2).cumsum(dim) / rho
-    ss = rho * (mean_sq - mean ** 2)
+    mean_sq = (Xsrt**2).cumsum(dim) / rho
+    ss = rho * (mean_sq - mean**2)
     delta = (1 - ss) / rho
 
     # NOTE this is not exactly the same as in reference algo
@@ -183,7 +181,7 @@ class Entmax15Function(Function):
 
     @classmethod
     def backward(cls, ctx, dY):
-        Y, = ctx.saved_tensors
+        (Y,) = ctx.saved_tensors
         gppr = Y.sqrt()  # = 1 / g'' (Y)
         dX = dY * gppr
         q = dX.sum(ctx.dim) / gppr.sum(ctx.dim)
@@ -278,7 +276,7 @@ class Sparsemax(nn.Module):
         """
         self.dim = dim
         self.k = k
-        super(Sparsemax, self).__init__()
+        super().__init__()
 
     def forward(self, X):
         return sparsemax(X, dim=self.dim, k=self.k)
@@ -308,7 +306,7 @@ class Entmax15(nn.Module):
         """
         self.dim = dim
         self.k = k
-        super(Entmax15, self).__init__()
+        super().__init__()
 
     def forward(self, X):
         return entmax15(X, dim=self.dim, k=self.k)
