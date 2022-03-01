@@ -1,21 +1,13 @@
+from functools import partial
+
 import pytest
 import torch
 from torch.autograd import gradcheck
-from functools import partial
 
-from ludwig.utils.entmax.losses import (
-    SparsemaxLoss,
-    Entmax15Loss,
-    SparsemaxBisectLoss,
-    EntmaxBisectLoss,
-)
-
+from ludwig.utils.entmax.losses import Entmax15Loss, EntmaxBisectLoss, SparsemaxBisectLoss, SparsemaxLoss
 
 # make data
-Xs = [
-    torch.randn(4, 10, dtype=torch.float64, requires_grad=True)
-    for _ in range(5)
-]
+Xs = [torch.randn(4, 10, dtype=torch.float64, requires_grad=True) for _ in range(5)]
 
 ys = [torch.max(torch.randn_like(X), dim=1)[1] for X in Xs]
 
