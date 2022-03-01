@@ -1275,7 +1275,8 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
             "Cannot balance data if both oversampling an undersampling are specified in the config. "
             "Must specify only one method"
         )
-    elif preprocessing_parameters["oversample_minority"]:
+
+    if preprocessing_parameters["oversample_minority"]:
         sample_fraction = (len(majority_df) * preprocessing_parameters["oversample_minority"]) / len(minority_df)
         minority_df = minority_df.sample(frac=sample_fraction, replace=True)
     elif preprocessing_parameters["undersample_majority"]:
