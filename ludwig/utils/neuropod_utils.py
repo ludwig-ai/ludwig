@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 import tempfile
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -43,6 +43,10 @@ class GeneratedInferenceModule(torch.nn.Module):
     def forward(self, {input_signature}):
         inputs = {input_dict}
         results = self.inference_module(inputs)
+        #for name, preds in results.items():
+        #    for k, v in preds.items():
+        #        if v.dtype == torch.bool:
+        #            preds[k] = v.to(dtype=torch.int32)
         return {output_dicts}
 """
 
@@ -100,6 +104,46 @@ def generate_neuropod_torchscript(model: LudwigModel):
         gen_module = gen_ts.GeneratedInferenceModule(inference_module)
         scripted_module = torch.jit.script(gen_module)
     return scripted_module
+
+
+def _get_input_spec(model: LudwigModel) -> List[Dict[str, Any]]:
+    spec = []
+    for feature_name, feature in model.model.input_features.items():
+        metadata = model.training_set_metadata[feature_name]
+        spec.append(
+            {"name": feature.feature_name, "dtype": feature.get_preproc_input_dtype(metadata), "shape": ("batch_size",)}
+        )
+    return spec
+
+
+def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
+    spec = []
+    for feature_name, feature in model.model.output_features.items():
+        metadata = model.training_set_metadata[feature_name]
+        spec.append(
+            {
+                "name": feature.feature_name,
+                "dtype": feature.get_postproc_output_dtype(metadata),
+                "shape": ("batch_size",),
+            }
+        )
+    return spec
+
+
+def export_neuropod(model: LudwigModel, neuropod_path: str, neuropod_model_name="ludwig_model"):
+    try:
+        from neuropod.backends.torchscript.packager import create_torchscript_neuropod
+    except ImportError:
+        raise RuntimeError('The "neuropod" package is not installed in your environment.')
+
+    model_ts = generate_neuropod_torchscript(model)
+    create_torchscript_neuropod(
+        neuropod_path=neuropod_path,
+        model_name=neuropod_model_name,
+        module=model_ts,
+        input_spec=_get_input_spec(model),
+        output_spec=_get_output_spec(model),
+    )
 
 
 class LudwigNeuropodModelWrapper:
@@ -171,7 +215,7 @@ def postprocess_for_neuropod(predicted, config):
     return postprocessed
 
 
-def export_neuropod(
+def _export_neuropod(
     ludwig_model_path,
     neuropod_path,
     neuropod_model_name="ludwig_model",

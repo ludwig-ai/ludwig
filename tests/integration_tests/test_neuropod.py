@@ -25,7 +25,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, LOGITS, NAME, PREDICTIONS, PROBABILITIES, SEQUENCE, SET, TEXT, TRAINER
-from ludwig.utils.neuropod_utils import export_neuropod, generate_neuropod_torchscript
+from ludwig.utils.neuropod_utils import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import (
     audio_feature,
@@ -256,7 +256,12 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
-    neuropod_module = generate_neuropod_torchscript(ludwig_model)
+    neuropod_path = os.path.join(tmpdir, "neuropod")
+    export_neuropod(ludwig_model, neuropod_path)
+
+    from neuropod.loader import load_neuropod
+
+    neuropod_module = load_neuropod(neuropod_path)
 
     def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
         if s.dtype == "object":
