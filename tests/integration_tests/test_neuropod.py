@@ -24,7 +24,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import BINARY, NAME, SEQUENCE, SET, TEXT, TRAINER
+from ludwig.constants import BINARY, NAME, PREDICTIONS, SEQUENCE, SET, TEXT, TRAINER
 from ludwig.utils.neuropod_utils import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import (
@@ -271,28 +271,16 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
     df = pd.read_csv(training_data_csv_path)
     inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
     outputs = neuropod_module.infer(inputs)
-    print(outputs)
 
-    # # TODO: these are the only outputs we provide from Torchscript for now
-    # ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}
+    # Compare results from Python trained model against Neuropod
+    assert len(preds_dict) == len(outputs)
+    for feature_name, feature_outputs_expected in preds_dict.items():
+        assert feature_name in outputs
 
-    # # Compare results from Python trained model against Torchscript
-    # for feature_name, feature_outputs_expected in preds_dict.items():
-    #     assert feature_name in outputs
-
-    #     feature_outputs = outputs[feature_name]
-    #     for output_name, output_values_expected in feature_outputs_expected.items():
-    #         if output_name not in ts_outputs:
-    #             continue
-
-    #         assert output_name in feature_outputs
-    #         output_values = feature_outputs[output_name]
-    #         if isinstance(output_values, list):
-    #             # Strings should match exactly
-    #             assert np.all(
-    #                 output_values == output_values_expected
-    #             ), f"feature: {feature_name}, output: {output_name}"
-    #         else:
-    #             assert np.allclose(
-    #                 output_values, output_values_expected
-    #             ), f"feature: {feature_name}, output: {output_name}"
+        output_values_expected = feature_outputs_expected[PREDICTIONS]
+        output_values = outputs[feature_name]
+        if output_values.dtype.type in {np.string_, np.str_}:
+            # Strings should match exactly
+            assert np.all(output_values == output_values_expected), f"feature: {feature_name}, output: predictions"
+        else:
+            assert np.allclose(output_values, output_values_expected), f"feature: {feature_name}, output: predictions"
