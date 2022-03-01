@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from entmax import entmax15, entmax_bisect, sparsemax
+from ludwig.utils.entmax import entmax15, entmax_bisect, sparsemax
 
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import LudwigModule
