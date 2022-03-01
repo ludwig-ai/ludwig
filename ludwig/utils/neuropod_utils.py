@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 INFERENCE_MODULE_TEMPLATE = """
-import torch
 from typing import Any, Dict, List, Union
+import torch
 
 class GeneratedInferenceModule(torch.nn.Module):
     def __init__(self, inference_module):
@@ -43,8 +43,7 @@ class GeneratedInferenceModule(torch.nn.Module):
     def forward(self, {input_signature}):
         inputs = {input_dict}
         results = self.inference_module(inputs)
-        #postprocess_for_neuropod(predicted, self.ludwig_model.config)
-        return results
+        return {output_dicts}
 """
 
 
@@ -64,6 +63,14 @@ def _get_input_dict(config: Dict[str, Any]) -> str:
     return "{" + ", ".join(elems) + "}"
 
 
+def _get_output_dicts(config: Dict[str, Any]) -> str:
+    results = []
+    for feature in config["output_features"]:
+        name = feature[NAME]
+        results.append("{" + f'"{name}": results["{name}"]["predictions"]' + "}")
+    return ", ".join(results)
+
+
 def generate_neuropod_torchscript(model: LudwigModel):
     config = model.config
     inference_module = model.to_torchscript()
@@ -72,9 +79,19 @@ def generate_neuropod_torchscript(model: LudwigModel):
         with open(ts_path, "w") as f:
             f.write(
                 INFERENCE_MODULE_TEMPLATE.format(
-                    input_signature=_get_input_signature(config), input_dict=_get_input_dict(config)
+                    input_signature=_get_input_signature(config),
+                    input_dict=_get_input_dict(config),
+                    output_dicts=_get_output_dicts(config),
                 )
             )
+
+        print(
+            INFERENCE_MODULE_TEMPLATE.format(
+                input_signature=_get_input_signature(config),
+                input_dict=_get_input_dict(config),
+                output_dicts=_get_output_dicts(config),
+            )
+        )
 
         spec = importlib.util.spec_from_file_location("generated.ts", ts_path)
         gen_ts = importlib.util.module_from_spec(spec)

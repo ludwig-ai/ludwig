@@ -267,6 +267,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     df = pd.read_csv(training_data_csv_path)
     inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
     outputs = script_module(inputs)
+    print(outputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now
     ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}

@@ -202,7 +202,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
     bin_str_feature = binary_feature()
     input_features = [
         bin_str_feature,
-        binary_feature(),
+        # binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
@@ -219,7 +219,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
     ]
     output_features = [
         bin_str_feature,
-        binary_feature(),
+        # binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
@@ -265,7 +265,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
 
     df = pd.read_csv(training_data_csv_path)
     inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
-    outputs = neuropod_module(inputs)
+    outputs = neuropod_module(**inputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now
     ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}
