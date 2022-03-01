@@ -17,43 +17,44 @@ generalizing softmax / cross-entropy.
 ## Example
 
 ```python
-In [1]: import torch
+import torch
+from torch.nn.functional import softmax
 
-In [2]: from torch.nn.functional import softmax
+from entmax import sparsemax, entmax15
 
-In [2]: from entmax import sparsemax, entmax15, entmax_bisect
+x = torch.tensor([-2, 0, 0.5])
 
-In [4]: x = torch.tensor([-2, 0, 0.5])
+print(softmax(x, dim=0))
+# tensor([0.0486, 0.3592, 0.5922])
 
-In [5]: softmax(x, dim=0)
-Out[5]: tensor([0.0486, 0.3592, 0.5922])
+print(sparsemax(x, dim=0))
+# tensor([0.0000, 0.2500, 0.7500])
 
-In [6]: sparsemax(x, dim=0)
-Out[6]: tensor([0.0000, 0.2500, 0.7500])
-
-In [7]: entmax15(x, dim=0)
-Out[7]: tensor([0.0000, 0.3260, 0.6740])
+print(entmax15(x, dim=0))
+# tensor([0.0000, 0.3260, 0.6740])
 
 ```
 
 Gradients w.r.t. alpha (continued):
 
 ```python
-In [1]: from torch.autograd import grad
+import torch
+from torch.autograd import grad
 
-In [2]: x = torch.tensor([[-1, 0, 0.5], [1, 2, 3.5]])
+from entmax import entmax_bisect
 
-In [3]: alpha = torch.tensor(1.33, requires_grad=True)
+x = torch.tensor([[-1, 0, 0.5], [1, 2, 3.5]])
 
-In [4]: p = entmax_bisect(x, alpha)
+alpha = torch.tensor(1.33, requires_grad=True)
 
-In [5]: p
-Out[5]:
-tensor([[0.0460, 0.3276, 0.6264],
-        [0.0026, 0.1012, 0.8963]], grad_fn=<EntmaxBisectFunctionBackward>)
+p = entmax_bisect(x, alpha)
 
-In [6]: grad(p[0, 0], alpha)
-Out[6]: (tensor(-0.2562),)
+print(p)
+#tensor([[0.0460, 0.3276, 0.6264],
+#        [0.0026, 0.1012, 0.8963]], grad_fn=<EntmaxBisectFunctionBackward>)
+
+print(grad(p[0, 0], alpha))
+# (tensor(-0.2562),)
 ```
 
 ## Installation
