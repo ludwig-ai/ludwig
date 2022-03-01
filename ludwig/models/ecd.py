@@ -205,7 +205,6 @@ class ECD(LudwigModule):
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_train_loss = of_obj.train_loss(targets[of_name], predictions, of_name)
-            of_train_loss = torch.mean(of_train_loss)
             train_loss += of_obj.loss["weight"] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
@@ -220,7 +219,6 @@ class ECD(LudwigModule):
 
     def eval_loss(self, targets, predictions):
         eval_loss = 0
-
         for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
             eval_loss += of_obj.loss["weight"] * of_eval_loss

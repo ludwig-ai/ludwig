@@ -197,17 +197,12 @@ class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         """
         super().__init__()
         if class_weights:
-            self.loss_fn = nn.BCEWithLogitsLoss(reduction="none", pos_weight=torch.Tensor(class_weights))
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(class_weights))
         else:
-            self.loss_fn = nn.BCEWithLogitsLoss(reduction="none")
+            self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         if preds.ndim != 2:
             raise RuntimeError("SigmoidCrossEntropyLoss currently supported for 2D tensors.")
 
-        element_loss = self.loss_fn(preds.type(torch.float32), target.type(torch.float32))
-
-        # Reduce by sum along column dimension, mean along batch dimension.
-        loss = torch.sum(element_loss, dim=1)
-        # loss = torch.mean(loss)
-        return loss
+        return self.loss_fn(preds.type(torch.float32), target.type(torch.float32))

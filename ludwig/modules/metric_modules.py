@@ -51,7 +51,6 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     VECTOR,
 )
-from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
     SequenceSoftmaxCrossEntropyLoss,
