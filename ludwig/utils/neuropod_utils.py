@@ -110,9 +110,11 @@ def _get_input_spec(model: LudwigModel) -> List[Dict[str, Any]]:
     spec = []
     for feature_name, feature in model.model.input_features.items():
         metadata = model.training_set_metadata[feature_name]
+        print(feature, feature.get_preproc_input_dtype(metadata))
         spec.append(
             {"name": feature.feature_name, "dtype": feature.get_preproc_input_dtype(metadata), "shape": ("batch_size",)}
         )
+    print("INPUT SPEC", spec)
     return spec
 
 
@@ -127,6 +129,7 @@ def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
                 "shape": ("batch_size",),
             }
         )
+    print("OUTPUT SPEC", spec)
     return spec
 
 
