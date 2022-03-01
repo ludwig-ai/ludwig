@@ -4,3 +4,4 @@ tensorboardX<2.3
 GPUtil
 tblib
 awscli
+modin[ray]
