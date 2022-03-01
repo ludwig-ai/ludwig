@@ -92,6 +92,11 @@ class DaskEngine(DataFrameEngine):
                 schema="infer",
             )
 
+    def to_ray_dataset(self, df):
+        from ray.data import from_dask
+
+        return from_dask(df)
+
     @property
     def array_lib(self):
         return da

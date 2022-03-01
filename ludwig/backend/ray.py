@@ -32,6 +32,7 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
+from ludwig.data.dataframe.modin import ModinEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
@@ -105,6 +106,7 @@ def get_trainer_kwargs(use_gpu=None):
 
 _engine_registry = {
     "dask": DaskEngine,
+    "modin": ModinEngine,
     "pandas": PandasEngine,
 }
 

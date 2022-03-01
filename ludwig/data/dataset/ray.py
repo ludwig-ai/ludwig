@@ -24,10 +24,11 @@ from typing import Any, Dict, Iterator, Union
 import numpy as np
 import pandas as pd
 import ray
-from ray.data import from_dask, read_parquet
+from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
+from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
@@ -42,8 +43,14 @@ _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset."""
 
-    def __init__(self, df: Union[str, DataFrame], features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
-        self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
+    def __init__(
+        self,
+        df: Union[str, DataFrame],
+        features: Dict[str, Dict],
+        training_set_metadata: Dict[str, Any],
+        backend: Backend,
+    ):
+        self.ds = backend.to_ray_dataset(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
@@ -87,7 +94,7 @@ class RayDatasetManager(DatasetManager):
         self.backend = backend
 
     def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
-        return RayDataset(dataset, get_proc_features(config), training_set_metadata)
+        return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
 
     def save(
         self,
