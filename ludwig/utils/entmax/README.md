@@ -32,7 +32,6 @@ print(sparsemax(x, dim=0))
 
 print(entmax15(x, dim=0))
 # tensor([0.0000, 0.3260, 0.6740])
-
 ```
 
 Gradients w.r.t. alpha (continued):
@@ -50,7 +49,7 @@ alpha = torch.tensor(1.33, requires_grad=True)
 p = entmax_bisect(x, alpha)
 
 print(p)
-#tensor([[0.0460, 0.3276, 0.6264],
+# tensor([[0.0460, 0.3276, 0.6264],
 #        [0.0026, 0.1012, 0.8963]], grad_fn=<EntmaxBisectFunctionBackward>)
 
 print(grad(p[0, 0], alpha))
