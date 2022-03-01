@@ -4,4 +4,4 @@ tensorboardX<2.3
 GPUtil
 tblib
 awscli
-modin[ray]
+modin[ray]; python_version >= '3.7'

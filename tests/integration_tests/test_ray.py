@@ -14,6 +14,7 @@
 # ==============================================================================
 import contextlib
 import os
+import sys
 import tempfile
 
 import pytest
@@ -174,6 +175,9 @@ def run_test_parquet(
 @pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.distributed
 def test_ray_tabular(df_engine):
+    if df_engine == "modin" and sys.version_info < (3, 7):
+        pytest.skip("Modin is not supported with Python 3.6 at this time")
+
     input_features = [
         sequence_feature(reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
