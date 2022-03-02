@@ -5,6 +5,7 @@ from torch.autograd import Function
 from ludwig.utils.entmax.activations import entmax15, sparsemax
 from ludwig.utils.entmax.root_finding import entmax_bisect, sparsemax_bisect
 
+
 class _GenericLoss(nn.Module):
     def __init__(self, ignore_index=-100, reduction="elementwise_mean"):
         assert reduction in ["elementwise_mean", "sum", "none"]
