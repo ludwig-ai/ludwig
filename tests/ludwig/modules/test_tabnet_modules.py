@@ -2,9 +2,9 @@ from typing import Optional
 
 import pytest
 import torch
-from entmax import sparsemax
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
+from ludwig.utils.entmax import sparsemax
 
 RANDOM_SEED = 67
 BATCH_SIZE = 16

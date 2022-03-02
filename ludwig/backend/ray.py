@@ -31,8 +31,6 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
-from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
@@ -103,9 +101,28 @@ def get_trainer_kwargs(use_gpu=None):
     )
 
 
+def _create_dask_engine(**kwargs):
+    from ludwig.data.dataframe.dask import DaskEngine
+
+    return DaskEngine(**kwargs)
+
+
+def _create_modin_engine(**kwargs):
+    from ludwig.data.dataframe.modin import ModinEngine
+
+    return ModinEngine(**kwargs)
+
+
+def _create_pandas_engine(**kwargs):
+    from ludwig.data.dataframe.pandas import PandasEngine
+
+    return PandasEngine(**kwargs)
+
+
 _engine_registry = {
-    "dask": DaskEngine,
-    "pandas": PandasEngine,
+    "dask": _create_dask_engine,
+    "modin": _create_modin_engine,
+    "pandas": _create_pandas_engine,
 }
 
 
@@ -114,7 +131,7 @@ def _get_df_engine(processor):
     if processor is None:
         # TODO ray: find an informed way to set the parallelism, in practice
         #  it looks like Dask handles this well on its own most of the time
-        return DaskEngine()
+        return _create_dask_engine()
 
     processor_kwargs = processor.copy()
 
