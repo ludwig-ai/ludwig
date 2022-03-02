@@ -14,6 +14,7 @@
 # ==============================================================================
 import contextlib
 import os
+import sys
 import tempfile
 
 import pytest
@@ -24,6 +25,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.constants import TRAINER
+from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
@@ -75,7 +77,7 @@ def ray_start(num_cpus=2, num_gpus=None):
         ray.shutdown()
 
 
-def run_api_experiment(config, data_parquet):
+def run_api_experiment(config, data_parquet, backend_config):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
     if torch.cuda.device_count() > 0:
@@ -88,26 +90,27 @@ def run_api_experiment(config, data_parquet):
         assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
-    model = train_with_backend(RAY_BACKEND_CONFIG, config, dataset=data_parquet, evaluate=False)
+    model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=False)
 
     assert isinstance(model.backend, RayBackend)
-    assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
+    if isinstance(model.backend.df_engine, DaskEngine):
+        assert model.backend.df_engine.parallelism == backend_config["processor"]["parallelism"]
 
 
-def run_split_api_experiment(config, data_parquet):
+def run_split_api_experiment(config, data_parquet, backend_config):
     train_fname, val_fname, test_fname = split(data_parquet)
 
     # Train
-    train_with_backend(RAY_BACKEND_CONFIG, config, training_set=train_fname, evaluate=False, predict=False)
+    train_with_backend(backend_config, config, training_set=train_fname, evaluate=False, predict=False)
 
     # Train + Validation
     train_with_backend(
-        RAY_BACKEND_CONFIG, config, training_set=train_fname, validation_set=val_fname, evaluate=False, predict=False
+        backend_config, config, training_set=train_fname, validation_set=val_fname, evaluate=False, predict=False
     )
 
     # Train + Validation + Test
     train_with_backend(
-        RAY_BACKEND_CONFIG,
+        backend_config,
         config,
         training_set=train_fname,
         validation_set=val_fname,
@@ -143,6 +146,7 @@ def run_test_parquet(
     expect_error=False,
     num_cpus=2,
     num_gpus=None,
+    df_engine=None,
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
@@ -152,6 +156,10 @@ def run_test_parquet(
             TRAINER: {"epochs": 2, "batch_size": 8},
         }
 
+        backend_config = {**RAY_BACKEND_CONFIG}
+        if df_engine:
+            backend_config["processor"]["type"] = df_engine
+
         with tempfile.TemporaryDirectory() as tmpdir:
             csv_filename = os.path.join(tmpdir, "dataset.csv")
             dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
@@ -159,13 +167,17 @@ def run_test_parquet(
 
             if expect_error:
                 with pytest.raises(ValueError):
-                    run_fn(config, data_parquet=dataset_parquet)
+                    run_fn(config, data_parquet=dataset_parquet, backend_config=backend_config)
             else:
-                run_fn(config, data_parquet=dataset_parquet)
+                run_fn(config, data_parquet=dataset_parquet, backend_config=backend_config)
 
 
+@pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.distributed
-def test_ray_tabular():
+def test_ray_tabular(df_engine):
+    if df_engine == "modin" and sys.version_info < (3, 7):
+        pytest.skip("Modin is not supported with Python 3.6 at this time")
+
     input_features = [
         sequence_feature(reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -181,7 +193,7 @@ def test_ray_tabular():
         binary_feature(),
         number_feature(normalization="zscore"),
     ]
-    run_test_parquet(input_features, output_features)
+    run_test_parquet(input_features, output_features, df_engine=df_engine)
 
 
 @pytest.mark.skip(reason="TODO torch")
@@ -301,7 +313,7 @@ def test_train_gpu_load_cpu():
     run_test_parquet(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
-def _run_train_gpu_load_cpu(config, data_parquet):
+def _run_train_gpu_load_cpu(config, data_parquet, backend_config):
     with tempfile.TemporaryDirectory() as output_dir:
         model_dir = ray.get(train_gpu.remote(config, data_parquet, output_dir))
         ray.get(predict_cpu.remote(model_dir, data_parquet))

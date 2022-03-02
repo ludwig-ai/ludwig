@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2020 Uber Technologies, Inc.
+# Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+import modin.pandas as pd
 import numpy as np
-import pandas as pd
 
 from ludwig.data.dataframe.base import DataFrameEngine
 
 
-class PandasEngine(DataFrameEngine):
+class ModinEngine(DataFrameEngine):
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -55,9 +56,9 @@ class PandasEngine(DataFrameEngine):
         df.to_parquet(path, engine="pyarrow")
 
     def to_ray_dataset(self, df):
-        from ray.data import from_pandas
+        from ray.data import from_modin
 
-        return from_pandas(df)
+        return from_modin(df)
 
     @property
     def array_lib(self):
@@ -73,6 +74,3 @@ class PandasEngine(DataFrameEngine):
 
     def set_parallelism(self, parallelism):
         pass
-
-
-PANDAS = PandasEngine()

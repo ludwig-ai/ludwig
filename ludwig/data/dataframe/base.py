@@ -58,6 +58,10 @@ class DataFrameEngine(ABC):
     def to_parquet(self, df, path):
         raise NotImplementedError()
 
+    @abstractmethod
+    def to_ray_dataset(self, df):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def array_lib(self):

@@ -50,7 +50,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import initialize_horovod, return_first
+from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.misc_utils import set_random_seed
 
@@ -1144,7 +1144,10 @@ class Trainer(BaseTrainer):
                 )
 
         # ========== Early Stop logic ==========
-        if 0 < early_stop <= progress_tracker.last_improvement:
+        should_early_stop = torch.as_tensor([0 < early_stop <= progress_tracker.last_improvement], dtype=torch.int)
+        if self.horovod:
+            should_early_stop = self.horovod.allreduce(should_early_stop)
+        if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
                     "\nEARLY STOPPING due to lack of "
@@ -1355,8 +1358,7 @@ class Trainer(BaseTrainer):
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        horovod = initialize_horovod()
-        super().__init__(horovod=horovod, **kwargs)
+        super().__init__(**kwargs)
 
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)
