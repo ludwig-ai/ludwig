@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from jsonschema import Draft202012Validator, validate
+from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
 from ludwig.combiners.combiners import combiner_registry
@@ -160,6 +160,6 @@ def validate_config(config):
     def custom_is_array(checker, instance):
         return isinstance(instance, list) or isinstance(instance, tuple)
 
-    type_checker = Draft202012Validator.TYPE_CHECKER.redefine("array", custom_is_array)
-    CustomValidator = extend(Draft202012Validator, type_checker=type_checker)
+    type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
+    CustomValidator = extend(Draft7Validator, type_checker=type_checker)
     validate(instance=config, schema=get_schema(), cls=CustomValidator)
