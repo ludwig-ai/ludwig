@@ -52,10 +52,3 @@ def test_index_ignored(Loss):
     loss_noignore = Loss(reduction="sum", ignore_index=-100)
 
     assert loss_ignore(x, y) < loss_noignore(x, y)
-
-
-if __name__ == "__main__":
-    test_sparsemax_loss()
-    test_entmax_loss()
-    test_sparsemax_bisect_loss()
-    test_entmax_bisect_loss()
