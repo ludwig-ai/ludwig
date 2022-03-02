@@ -17,6 +17,8 @@ import os
 
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
+
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
@@ -40,16 +42,15 @@ class CreditCardFraud(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, kaggle_username=None, kaggle_key=None):
         self.kaggle_username = kaggle_username
         self.kaggle_key = kaggle_key
-        self.is_kaggle_competition = True
+        self.is_kaggle_competition = False
         super().__init__(dataset_name="credit_card_fraud", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         """The final method where we create a concatenated CSV file with both training ant dest data."""
-        train_file = self.config["split_filenames"]["train_file"]
-        test_file = self.config["split_filenames"]["test_file"]
+        train_file = self.config["csv_filename"]
 
-        train_df = pd.read_csv(os.path.join(self.raw_dataset_path, train_file))
-        test_df = pd.read_csv(os.path.join(self.raw_dataset_path, test_file))
+        df = pd.read_csv(os.path.join(self.raw_dataset_path, train_file))
+        train_df, test_df = train_test_split(df, test_size=0.1)
 
         train_df["split"] = 0
         test_df["split"] = 2

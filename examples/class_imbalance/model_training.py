@@ -20,14 +20,14 @@ shutil.rmtree("./visualizations", ignore_errors=True)
 list_of_model_ids = ["standard_model", "balanced_model"]
 list_of_train_stats = []
 
-training_set, _, _ = credit_card_fraud.load()
+training_set = credit_card_fraud.load()
 
 # Train models
 for model_id in list_of_model_ids:
     print(">>>> training: ", model_id)
 
     # Define Ludwig model object that drive model training
-    model = LudwigModel(config="./" + model_id + "_config.yaml", logging_level=logging.WARN)
+    model = LudwigModel(config="examples/class_imbalance/" + model_id + "_config.yaml", logging_level=logging.WARN)
 
     # initiate model training
     train_stats, _, _ = model.train(dataset=training_set, experiment_name="multiple_experiment", model_name=model_id)
