@@ -208,8 +208,7 @@ class ECD(LudwigModule):
             train_loss += of_obj.loss["weight"] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
-        for loss in self.losses():
-            train_loss += loss
+        train_loss += sum(self.losses())
 
         # Add regularization loss
         if regularization_type is not None and regularization_lambda != 0:
@@ -223,10 +222,7 @@ class ECD(LudwigModule):
             of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
             eval_loss += of_obj.loss["weight"] * of_eval_loss
 
-        additional_losses = 0
-        additional_losses_vals = self.losses()
-        if additional_losses_vals:
-            additional_losses = torch.sum(torch.stack(additional_losses_vals))  # other losses
+        additional_losses = sum(self.losses())
 
         return eval_loss, additional_losses
 
