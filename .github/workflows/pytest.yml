@@ -51,6 +51,7 @@ jobs:
         if: runner.os == 'linux'
         run: |
           sudo apt-get install -y cmake libsndfile1
+          printenv
 
       - name: Setup macOS
         if: runner.os == 'macOS'
