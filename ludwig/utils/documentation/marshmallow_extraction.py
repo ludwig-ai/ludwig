@@ -30,7 +30,8 @@ def all_subclasses(cls):
 
 
 def get_mclass_paths():
-    all_mclasses = all_subclasses(BaseMarshmallowConfig)
+    all_mclasses = list(all_subclasses(BaseMarshmallowConfig))
+    all_mclasses += [BaseMarshmallowConfig]
     return {cls.__name__: get_fully_qualified_class_name(cls) for cls in all_mclasses}
 
 

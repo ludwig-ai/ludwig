@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import field
 from typing import Dict as tDict
@@ -99,6 +100,24 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
         dstring = re.sub(r"((?<=[\.\?!]\s)(\w+)|(^\w+))", lambda m: m.group().capitalize(), dstring)
         return dstring
 
+    def load_pytkdocs_json(name: str, is_torch=False):
+        import os
+        from pathlib import Path
+
+        subfolder = "class_structures/" if not is_torch else "torch_structures/"
+        relative_path = os.path.join("documentation/", subfolder, name)
+        parent_dir = str(Path(__file__).parent)
+        full_path = os.path.join(parent_dir, relative_path) + ".json"
+        with open(full_path) as input:
+            return json.load(input)["objects"][0]
+
+    def get_attrs_dict(cls):
+        return {attr.split(".")[-1]: cls["children"][attr] for attr in cls["attributes"]}
+
+    def get_torch_attrs_dict(cls):
+        attrs_list = cls["docstring_sections"][1]["value"]
+        return {attr["name"]: attr for attr in attrs_list}
+
     def generate_extra_json_schema_props(schema_cls) -> Dict:
         """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema.
 
@@ -110,42 +129,52 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
 
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
         if schema_cls.__doc__ is not None:
-            parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
-            # parsed_documentation =
+            # parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
+            parsed_documentation = load_pytkdocs_json(schema_cls.__name__)
 
             # Parse parents as well in case some attrs. are inherited:
-            parsed_parents = [
-                restloader.get_object_documentation(get_fully_qualified_class_name(parent))
-                for parent in schema_cls.__bases__
-            ]
+            # parsed_parents = [
+            #     restloader.get_object_documentation(get_fully_qualified_class_name(parent))
+            #     for parent in schema_cls.__bases__
+            # ]
+            parsed_parents = [load_pytkdocs_json(parent.__name__) for parent in schema_cls.__bases__]
 
             # Add the top-level description to the schema if it exists:
-            if parsed_documentation.docstring is not None:
-                schema_dump["description"] = cleanup_python_comment(parsed_documentation.docstring)
+            if parsed_documentation["docstring"] is not None:
+                # schema_dump["description"] = cleanup_python_comment(parsed_documentation.docstring)
+                schema_dump["description"] = cleanup_python_comment(parsed_documentation["docstring"])
 
             # Create a dictionary of all attributes (including possible inherited ones):
-            parsed_attrs = {attr.name: attr for attr in parsed_documentation.attributes}
+            # parsed_attrs = {attr.name: attr for attr in parsed_documentation.attributes}
+            parsed_attrs = get_attrs_dict(parsed_documentation)
             parsed_parent_attrs = {}
             for parent in parsed_parents:
-                attrs = {attr.name: attr for attr in parent.attributes}
+                # attrs = {attr.name: attr for attr in parent.attributes}
+                attrs = get_attrs_dict(parent)
+
                 parsed_parent_attrs = {**parsed_parent_attrs, **attrs}
             parsed_attrs = {**parsed_parent_attrs, **parsed_attrs}
 
             # For each prop in the schema, set its description and default if they are not already set. If not already
             # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
             # (e.g. for optimizer parameters).
-            parsed_torch = (
-                {
-                    param.name: param
-                    for param in googleloader.get_object_documentation(
-                        get_fully_qualified_class_name(schema_cls.torch_type)
-                    )
-                    .docstring_sections[1]
-                    .value
-                }
-                if hasattr(schema_cls, "torch_type") and schema_cls.torch_type is not None
-                else None
-            )
+
+            # parsed_torch = (
+            #     {
+            #         param.name: param
+            #         for param in googleloader.get_object_documentation(
+            #             get_fully_qualified_class_name(schema_cls.torch_type)
+            #         )
+            #         .docstring_sections[1]
+            #         .value
+            #     }
+            #     if hasattr(schema_cls, "torch_type") and schema_cls.torch_type is not None
+            #     else None
+            # )
+            parsed_torch = None
+            if hasattr(schema_cls, "torch_type") and schema_cls.torch_type is not None:
+                parsed_torch = get_torch_attrs_dict(load_pytkdocs_json(schema_cls.torch_type.__name__, is_torch=True))
+
             for prop in schema_dump["properties"]:
                 schema_prop = schema_dump["properties"][prop]
 
@@ -153,7 +182,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                     # Handle descriptions:
 
                     # Get the particular attribute's docstring (if it has one), strip the default from the string:
-                    parsed_docstring = parsed_attrs[prop].docstring
+                    parsed_docstring = parsed_attrs[prop]["docstring"]
                     if parsed_docstring is None:
                         parsed_docstring = ""
 
@@ -168,16 +197,26 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
 
                     # If no description is provided, attempt to pull from torch if applicable (e.g. for optimizers):
                     desc = parsed_desc
+                    print("-" * 50)
+                    print(prop)
+                    print(desc)
+                    print(type(desc))
+                    print(parsed_default)
+                    print(type(parsed_default))
                     if (
                         desc == ""
                         and parsed_torch is not None
                         and prop in parsed_torch
-                        and (parsed_torch[prop].description is not None or parsed_torch[prop].description != "")
+                        and (parsed_torch[prop]["description"] is not None or parsed_torch[prop]["description"] != "")
                     ):
-                        desc_split = parsed_torch[prop].description.split("(default: ")
+                        desc_split = parsed_torch[prop]["description"].split("(default: ")
                         if parsed_default is None and len(desc_split) == 2:
                             parsed_default = desc_split[1]
-                        desc = parsed_torch[prop].description
+                        desc = cleanup_python_comment(desc_split[0])
+
+                    print(desc)
+                    print(parsed_default)
+                    print("-" * 50)
 
                     # Add parsed default back to string if it exists:
                     if parsed_default is not None:
