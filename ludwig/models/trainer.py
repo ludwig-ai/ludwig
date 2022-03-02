@@ -302,7 +302,7 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss and a dictionary of metrics.
         """
-        self.optimizer.zero_grad(set_to_none=True)
+        self.optimizer.zero_grad()
 
         # Obtain model predictions and loss
         model_outputs = self.model((inputs, targets))
