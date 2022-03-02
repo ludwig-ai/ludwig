@@ -36,6 +36,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
+from ludwig.utils.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import initialize_pytorch
 
 _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
@@ -305,7 +306,8 @@ def legacy_train_fn(
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
         horovod = initialize_horovod()
-        super().__init__(horovod=horovod, **kwargs)
+        config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
+        super().__init__(horovod=horovod, config=config, **kwargs)
 
 
 class RayLegacyTrainer(BaseTrainer):
