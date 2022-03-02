@@ -14,12 +14,8 @@
 # ==============================================================================
 import contextlib
 import os
-<<<<<<< HEAD
 
 import sys
-import shutil
-=======
->>>>>>> 26bb80ee (Consolidated tests to only test specific feature)
 import tempfile
 
 import numpy as np
@@ -31,13 +27,9 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-<<<<<<< HEAD
-from ludwig.constants import TRAINER
+
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.utils.data_utils import read_parquet
-=======
 from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
->>>>>>> e6b07a8a ([pre-commit.ci] auto fixes from pre-commit.com hooks)
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
@@ -150,7 +142,6 @@ def split(data_parquet):
 
 @spawn
 def run_test_parquet(
-<<<<<<< HEAD
     input_features,
     output_features,
     num_examples=100,
@@ -159,15 +150,6 @@ def run_test_parquet(
     num_cpus=2,
     num_gpus=None,
     df_engine=None,
-=======
-        input_features,
-        output_features,
-        num_examples=100,
-        run_fn=run_api_experiment,
-        expect_error=False,
-        num_cpus=2,
-        num_gpus=None,
->>>>>>> 26bb80ee (Consolidated tests to only test specific feature)
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
