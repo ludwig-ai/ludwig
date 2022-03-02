@@ -22,6 +22,7 @@ import subprocess
 import ludwig.combiners.combiners as lcc  # noqa: F401
 import ludwig.models.trainer as lmt  # noqa: F401
 import ludwig.modules.optimization_modules as lmo  # noqa: F401
+import ludwig.utils.test_classes as lut  # noqa: F401
 from ludwig.utils.marshmallow_schema_utils import BaseMarshmallowConfig, get_fully_qualified_class_name
 
 
@@ -31,7 +32,7 @@ def all_subclasses(cls):
 
 def get_mclass_paths():
     all_mclasses = list(all_subclasses(BaseMarshmallowConfig))
-    all_mclasses += [BaseMarshmallowConfig]
+    all_mclasses += [BaseMarshmallowConfig, lcc.CommonTransformerConfig]
     return {cls.__name__: get_fully_qualified_class_name(cls) for cls in all_mclasses}
 
 

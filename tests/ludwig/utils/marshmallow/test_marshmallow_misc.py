@@ -1,12 +1,12 @@
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow.utils import EXCLUDE
-from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 import ludwig.combiners.combiners as lcc
 import ludwig.utils.marshmallow_schema_utils as lusutils
 from ludwig.models.trainer import TrainerConfig
+from ludwig.utils.test_classes import CustomTestSchema
 
 
 def test_get_fully_qualified_class_name():
@@ -19,15 +19,6 @@ def test_assert_is_a_marshmallow_clas():
     lusutils.assert_is_a_marshmallow_class(TrainerConfig)
     with pytest.raises(AssertionError, match=r"^Expected marshmallow class.*"):
         lusutils.assert_is_a_marshmallow_class(lcc.ConcatCombiner)
-
-
-# Note: testing class declared outside of function scope here so that name resolution works properly:
-@dataclass
-class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-    """sample docstring."""
-
-    foo: int = 5
-    "foo (default: 5)"
 
 
 def test_custom_marshmallow_inheritance():
