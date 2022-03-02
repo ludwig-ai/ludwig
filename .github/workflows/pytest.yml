@@ -184,6 +184,8 @@ jobs:
         if: runner.os == 'linux'
         run: |
           sudo apt-get update && sudo apt-get install -y cmake libsndfile1 ccache build-essential g++-8 gcc-8
+          echo 'CMAKE VERSION IS'
+          cmake --version
 
       - name: Install CUDA drivers
         run: |
