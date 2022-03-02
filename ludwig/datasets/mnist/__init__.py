@@ -24,6 +24,7 @@ import torch
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs, rename
 
 NUM_LABELS = 10
@@ -34,6 +35,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
+@register_dataset(name="mnist")
 class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
     """The Mnist dataset.
 

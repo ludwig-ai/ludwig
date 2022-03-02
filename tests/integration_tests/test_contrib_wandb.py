@@ -17,7 +17,7 @@ def test_contrib_experiment(csv_filename, tmpdir):
     wandb_dir = os.path.join(tmpdir, "results")
     os.makedirs(wandb_dir, exist_ok=True)
     os.environ["WANDB_DIR"] = wandb_dir
-    subprocess.call(["chmod", "-R", "+w", os.environ["WANDB_DIR"]])
+    subprocess.call(["chmod", "-R", "a+w", os.environ["WANDB_DIR"]])
     cmdline = [sys.executable, TEST_SCRIPT, "--csv-filename", csv_filename]
     exit_code = subprocess.call(" ".join(cmdline), shell=True, env=os.environ.copy())
     assert exit_code == 0

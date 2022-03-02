@@ -31,8 +31,6 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
-from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
@@ -103,9 +101,28 @@ def get_trainer_kwargs(use_gpu=None):
     )
 
 
+def _create_dask_engine(**kwargs):
+    from ludwig.data.dataframe.dask import DaskEngine
+
+    return DaskEngine(**kwargs)
+
+
+def _create_modin_engine(**kwargs):
+    from ludwig.data.dataframe.modin import ModinEngine
+
+    return ModinEngine(**kwargs)
+
+
+def _create_pandas_engine(**kwargs):
+    from ludwig.data.dataframe.pandas import PandasEngine
+
+    return PandasEngine(**kwargs)
+
+
 _engine_registry = {
-    "dask": DaskEngine,
-    "pandas": PandasEngine,
+    "dask": _create_dask_engine,
+    "modin": _create_modin_engine,
+    "pandas": _create_pandas_engine,
 }
 
 
@@ -114,7 +131,7 @@ def _get_df_engine(processor):
     if processor is None:
         # TODO ray: find an informed way to set the parallelism, in practice
         #  it looks like Dask handles this well on its own most of the time
-        return DaskEngine()
+        return _create_dask_engine()
 
     processor_kwargs = processor.copy()
 
@@ -133,52 +150,58 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    initialize_pytorch(horovod=hvd)
-
-    train_shard = RayDatasetShard(
-        rt.get_dataset_shard("train"),
-        features,
-        training_set_metadata,
-    )
-
     try:
-        val_shard = rt.get_dataset_shard("val")
-    except KeyError:
-        val_shard = None
+        initialize_pytorch(horovod=hvd)
 
-    if val_shard is not None:
-        val_shard = RayDatasetShard(
-            val_shard,
+        train_shard = RayDatasetShard(
+            rt.get_dataset_shard("train"),
             features,
             training_set_metadata,
         )
 
-    try:
-        test_shard = rt.get_dataset_shard("test")
-    except KeyError:
-        test_shard = None
+        try:
+            val_shard = rt.get_dataset_shard("val")
+        except KeyError:
+            val_shard = None
 
-    if test_shard is not None:
-        test_shard = RayDatasetShard(
-            test_shard,
-            features,
-            training_set_metadata,
-        )
+        if val_shard is not None:
+            val_shard = RayDatasetShard(
+                val_shard,
+                features,
+                training_set_metadata,
+            )
 
-    model = ray.get(model_ref)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.to(device)
+        try:
+            test_shard = rt.get_dataset_shard("test")
+        except KeyError:
+            test_shard = None
 
-    trainer = RemoteTrainer(model=model, **executable_kwargs)
-    results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+        if test_shard is not None:
+            test_shard = RayDatasetShard(
+                test_shard,
+                features,
+                training_set_metadata,
+            )
 
-    if results is not None:
-        # only return the model state dict back to the head node.
-        trained_model, *args = results
-        results = (trained_model.cpu().state_dict(), *args)
+        model = ray.get(model_ref)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = model.to(device)
 
-    torch.cuda.empty_cache()
-    return results, trainer.validation_field, trainer.validation_metric
+        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
+
+        if results is not None:
+            # only return the model state dict back to the head node.
+            trained_model, *args = results
+            results = (trained_model.cpu().state_dict(), *args)
+
+        torch.cuda.empty_cache()
+
+        train_results = results, trainer.validation_field, trainer.validation_metric
+
+    finally:
+        hvd.shutdown()
+    return train_results
 
 
 class RayTrainerV2(BaseTrainer):
@@ -279,6 +302,12 @@ def legacy_train_fn(
     return results
 
 
+class HorovodRemoteTrainer(RemoteTrainer):
+    def __init__(self, **kwargs):
+        horovod = initialize_horovod()
+        super().__init__(horovod=horovod, **kwargs)
+
+
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
@@ -290,7 +319,7 @@ class RayLegacyTrainer(BaseTrainer):
         setting = RayExecutor.create_settings(timeout_s=30)
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=executable_kwargs)
+        self.executor.start(executable_cls=HorovodRemoteTrainer, executable_kwargs=executable_kwargs)
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers

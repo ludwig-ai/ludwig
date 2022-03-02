@@ -45,7 +45,6 @@ def preprocess_cli(
     logging_level: int = logging.INFO,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
-    debug: bool = False,
     **kwargs
 ) -> None:
     """*train* defines the entire training procedure used by Ludwig's
@@ -135,8 +134,6 @@ def preprocess_cli(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
     :param logging_level: (int) Log level that will be sent to stderr.
 
     # Return
@@ -158,7 +155,6 @@ def preprocess_cli(
         data_format=data_format,
         skip_save_processed_input=False,
         random_seed=random_seed,
-        debug=debug,
     )
 
 
@@ -225,7 +221,7 @@ def cli(sys_argv):
         "Ignores --preprocessing_config."
         "Uses the same format of config, "
         "but ignores encoder specific parameters, "
-        "decoder specific paramters, combiner and training parameters",
+        "decoder specific parameters, combiner and training parameters",
     )
     preprocessing_def.add_argument(
         "-pcs",
@@ -234,7 +230,7 @@ def cli(sys_argv):
         help="preproceesing config. "
         "Uses the same format of config, "
         "but ignores encoder specific parameters, "
-        "decoder specific paramters, combiner and training parameters",
+        "decoder specific parameters, combiner and training parameters",
     )
 
     # ------------------
@@ -256,7 +252,6 @@ def cli(sys_argv):
         "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
-    parser.add_argument("-dbg", "--debug", action="store_true", default=False, help="enables debugging mode")
     parser.add_argument(
         "-l",
         "--logging_level",

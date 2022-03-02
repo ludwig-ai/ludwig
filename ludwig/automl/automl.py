@@ -3,7 +3,7 @@
 Driver script which:
 
 (1) Builds a base config by performing type inference and populating config
-    w/default combiner parameters, training paramers, and hyperopt search space
+    w/default combiner parameters, training parameters, and hyperopt search space
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
@@ -20,7 +20,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
-from ludwig.automl.utils import _add_transfer_config, _ray_init, get_model_name
+from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_type
 from ludwig.constants import HYPEROPT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -38,6 +38,9 @@ except ImportError:
 
 
 OUTPUT_DIR = "."
+AUTOML_DEFAULT_TABULAR_MODEL = "tabnet"
+AUTOML_DEFAULT_TEXT_ENCODER = "bert"
+AUTOML_DEFAULT_IMAGE_ENCODER = "stacked_cnn"
 
 
 class AutoTrainResults:
@@ -137,9 +140,22 @@ def create_auto_config(
     model_config = _model_select(dataset, default_configs, user_config, use_reference_config)
     if tune_for_memory:
         if ray.is_initialized():
-            model_config, _ = ray.get(ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset))
+            resources = get_available_resources()  # check if cluster has GPUS
+            if resources["gpu"] > 0:
+                model_config, fits_in_memory = ray.get(
+                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(model_config, dataset)
+                )
+            else:
+                model_config, fits_in_memory = ray.get(
+                    ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset)
+                )
         else:
-            model_config, _ = memory_tune_config(model_config, dataset)
+            model_config, fits_in_memory = memory_tune_config(model_config, dataset)
+        if not fits_in_memory:
+            warnings.warn(
+                "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
+                "If out-of-memory occurs, consider setting AutoML user_config to reduce model memory footprint. "
+            )
     return model_config
 
 
@@ -167,9 +183,9 @@ def train_with_config(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     _ray_init()
-    model_name = get_model_name(config)
+    model_type = get_model_type(config)
     hyperopt_results = _train(
-        config, dataset, output_directory=output_directory, model_name=model_name, random_seed=random_seed, **kwargs
+        config, dataset, output_directory=output_directory, model_name=model_type, random_seed=random_seed, **kwargs
     )
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
@@ -204,7 +220,7 @@ def _model_select(
 
     # tabular dataset heuristics
     if len(fields) > 3:
-        base_config = merge_dict(base_config, default_configs["combiner"]["tabnet"])
+        base_config = merge_dict(base_config, default_configs["combiner"][AUTOML_DEFAULT_TABULAR_MODEL])
 
         # override combiner heuristic if explicitly provided by user
         if user_config is not None:
@@ -217,10 +233,13 @@ def _model_select(
             # default text encoder is bert
             # TODO (ASN): add more robust heuristics
             if input_feature["type"] == "text":
-                input_feature["encoder"] = "bert"
-                base_config = merge_dict(base_config, default_configs["text"]["bert"])
+                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
+                base_config = merge_dict(base_config, default_configs["text"][AUTOML_DEFAULT_TEXT_ENCODER])
 
             # TODO (ASN): add image heuristics
+            if input_feature["type"] == "image":
+                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
+                base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:

@@ -40,10 +40,12 @@ combiner_defaults = {
 
 encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.yaml")}}
 
-SMALL_DISTINCT_COUNT = 20
+# For a given feature, the highest percentage of distinct values out of the total number of rows that we might still
+# assign the CATEGORY type.
+CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF = 0.5
 
-# Set >= SMALL_DISTINCT_COUNT & >= MAX_DISTINCT_BOOL_PERMUTATIONS
-MAX_DISTINCT_VALUES_TO_RETURN = 100
+# Cap for number of distinct values to return.
+MAX_DISTINCT_VALUES_TO_RETURN = 10
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -267,7 +269,7 @@ def get_field_metadata(
     metadata = []
     for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
-        dtype = infer_type(field, missing_value_percent)
+        dtype = infer_type(field, missing_value_percent, row_count)
         metadata.append(
             FieldMetadata(
                 name=field.name,
@@ -295,15 +297,13 @@ def get_field_metadata(
     return metadata
 
 
-def infer_type(
-    field: FieldInfo,
-    missing_value_percent: float,
-) -> str:
+def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -> str:
     """Perform type inference on field.
 
     # Inputs
     :param field: (FieldInfo) object describing field
     :param missing_value_percent: (float) percent of missing values in the column
+    :param row_count: (int) total number of entries in original dataset
 
     # Return
     :return: (str) feature type
@@ -320,14 +320,15 @@ def infer_type(
     if field.image_values >= 3:
         return IMAGE
 
-    # Use CATEGORY if there are a small number of distinct values if they are either not all numerical or if they
-    # comprise of a perfectly sequential list of integers that suggests the values represent categories.
-    if num_distinct_values < SMALL_DISTINCT_COUNT and (
+    # Use CATEGORY if:
+    # - The number of distinct values is significantly less than the total number of examples.
+    # - The distinct values are not all numerical.
+    # - The distinct values are all numerical but comprise of a perfectly sequential list of integers that suggests the
+    #   values represent categories.
+    if num_distinct_values < row_count * CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF and (
         (not strings_utils.are_all_numericals(distinct_values))
         or strings_utils.are_sequential_integers(distinct_values)
     ):
-        # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
-        # NOTE (ASN): edge case -- there are less than SMALL_DISTINCT_COUNT samples in dataset
         return CATEGORY
 
     # Use numerical if all of the distinct values are numerical.

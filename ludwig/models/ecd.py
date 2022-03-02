@@ -77,6 +77,14 @@ class ECD(LudwigModule):
         }
         return inputs
 
+    # Return total number of parameters in model
+    def get_model_size(self) -> int:
+        model_tensors = self.collect_weights()
+        total_size = 0
+        for tnsr in model_tensors:
+            total_size += tnsr[1].detach().numpy().size
+        return total_size
+
     def to_torchscript(self):
         self.eval()
         model_inputs = self.get_model_inputs()
@@ -203,7 +211,7 @@ class ECD(LudwigModule):
             train_loss += loss
 
         # Add regularization loss
-        if regularization_type is not None:
+        if regularization_type is not None and regularization_lambda != 0:
             train_loss += reg_loss(self, regularization_type, l1=regularization_lambda, l2=regularization_lambda)
 
         return train_loss, of_train_losses

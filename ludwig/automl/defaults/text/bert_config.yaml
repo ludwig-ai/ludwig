@@ -2,7 +2,8 @@ hyperopt:
   # goal: maximize
   parameters:
     trainer.learning_rate:
-      type: float
-      lower: 0.00002
-      upper: 0.00005
-      space: loguniform
+      space: choice
+      categories: [0.00002, 0.00003, 0.00005]
+    trainer.batch_size:
+      space: choice
+      categories: [8, 16, 32, 64, 128]

@@ -1,5 +1,6 @@
 import bisect
 import logging
+import os
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -67,15 +68,27 @@ def get_available_resources() -> dict:
     return resources
 
 
-def get_model_name(config: dict) -> str:
-    if COMBINER in config and TYPE in config[COMBINER]:
-        return config[COMBINER][TYPE]
-    return default_combiner_type
+def get_model_type(config: dict) -> str:
+    if (
+        "input_features" in config
+        and len(config["input_features"]) == 1
+        and "type" in config["input_features"][0]
+        and config["input_features"][0]["type"] == "text"
+    ):
+        model_type = "text"
+    elif COMBINER in config and TYPE in config[COMBINER]:
+        model_type = config[COMBINER][TYPE]
+    else:
+        model_type = default_combiner_type
+    return model_type
 
 
 def _ray_init():
     if ray.is_initialized():
         return
+
+    # Forcibly terminate trial requested to stop after this amount of time passes
+    os.environ.setdefault("TUNE_FORCE_TRIAL_CLEANUP_S", "120")
 
     try:
         ray.init("auto", ignore_reinit_error=True)

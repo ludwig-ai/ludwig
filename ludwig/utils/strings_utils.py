@@ -31,8 +31,6 @@ from ludwig.utils.types import DataFrame
 
 BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
 BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
-# Update the following if BOOL_TRUE_STRS or BOOL_FALSE_STRS changes
-MAX_DISTINCT_BOOL_PERMUTATIONS = 70
 
 # Special symbols.
 STOP_SYMBOL = "<EOS>"

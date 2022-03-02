@@ -46,7 +46,6 @@ def predict_cli(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
-    debug: bool = False,
     **kwargs,
 ) -> None:
     """Loads pre-trained model to make predictions on the provided data set.
@@ -90,9 +89,6 @@ def predict_cli(
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param logging_level: (int) Log level that will be sent to stderr.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
-        **kwargs:
 
     # Returns
 
@@ -116,7 +112,6 @@ def predict_cli(
         skip_save_predictions=skip_save_predictions,
         output_directory=output_directory,
         return_type="dict",
-        debug=debug,
     )
 
 
@@ -210,7 +205,6 @@ def cli(sys_argv):
         "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
-    parser.add_argument("-dbg", "--debug", action="store_true", default=False, help="enables debugging mode")
     parser.add_argument(
         "-l",
         "--logging_level",

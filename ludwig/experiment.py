@@ -65,7 +65,6 @@ def experiment_cli(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
-    debug: bool = False,
     logging_level: int = logging.INFO,
     **kwargs,
 ):
@@ -173,8 +172,6 @@ def experiment_cli(
          of backend to use to execute preprocessing / training steps.
      :param random_seed: (int: default: 42) random seed used for weights
          initialization, splits and any other random function.
-     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-         `inf_or_nan` checks.
      :param logging_level: (int) Log level that will be sent to stderr.
 
      # Return
@@ -238,7 +235,6 @@ def experiment_cli(
         skip_collect_overall_stats=skip_collect_overall_stats,
         output_directory=output_directory,
         random_seed=random_seed,
-        debug=debug,
     )
 
     return model, eval_stats, train_stats, preprocessed_data, output_directory
@@ -439,7 +435,7 @@ def cli(sys_argv):
         help="disables saving model weights and hyperparameters each time "
         "the model improves. "
         "By default Ludwig saves model weights after each epoch "
-        "the validation metric imprvoes, but if the model is really big "
+        "the validation metric improves, but if the model is really big "
         "that can be time consuming. If you do not want to keep "
         "the weights and just find out what performance a model can get "
         "with a set of hyperparameters, use this parameter to skip it,"
@@ -497,7 +493,6 @@ def cli(sys_argv):
         "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
-    parser.add_argument("-dbg", "--debug", action="store_true", default=False, help="enables debugging mode")
     parser.add_argument(
         "-l",
         "--logging_level",

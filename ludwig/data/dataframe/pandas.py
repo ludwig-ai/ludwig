@@ -54,6 +54,11 @@ class PandasEngine(DataFrameEngine):
     def to_parquet(self, df, path):
         df.to_parquet(path, engine="pyarrow")
 
+    def to_ray_dataset(self, df):
+        from ray.data import from_pandas
+
+        return from_pandas(df)
+
     @property
     def array_lib(self):
         return np

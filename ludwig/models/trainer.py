@@ -58,7 +58,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import initialize_horovod, return_first
+from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.misc_utils import set_random_seed
 
@@ -218,7 +218,6 @@ class Trainer(BaseTrainer):
         callbacks: List = None,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
-        debug: bool = False,
         device: Optional[str] = None,
         config: Optional[TrainerConfig] = TrainerConfig(),
         **kwargs,
@@ -250,9 +249,6 @@ class Trainer(BaseTrainer):
         :type random_seed: Float
         :param horovod: Horovod parameters (default: None).
         :type horovod: dict
-        :param debug: Enables debugging mode, which prints out a lot of information about the training process (default:
-               False)
-        :type debug: Boolean
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
         :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
@@ -300,7 +296,6 @@ class Trainer(BaseTrainer):
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
         self.horovod = horovod
-        self.debug = debug
         self.received_sigint = False
         self.callbacks = callbacks or []
         self.device = device
@@ -328,7 +323,10 @@ class Trainer(BaseTrainer):
         :param targets: A dictionary of target data, from feature name to tensor.
         :return: A tuple of the loss and a dictionary of metrics.
         """
-        self.optimizer.zero_grad()
+
+        # Change to self.optimizer.zero_grad(set_to_none=True) once all ludwig platform on pytorch 1.7 or greater
+        for param in self.model.parameters():
+            param.grad = None
 
         # Obtain model predictions and loss
         model_outputs = self.model((inputs, targets))
@@ -1064,7 +1062,7 @@ class Trainer(BaseTrainer):
         tables,
         batch_size=128,
     ):
-        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod, debug=self.debug)
+        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod)
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         self.append_metrics(dataset_name, metrics, metrics_log, tables)
@@ -1170,7 +1168,10 @@ class Trainer(BaseTrainer):
                 )
 
         # ========== Early Stop logic ==========
-        if 0 < early_stop <= progress_tracker.last_improvement:
+        should_early_stop = torch.as_tensor([0 < early_stop <= progress_tracker.last_improvement], dtype=torch.int)
+        if self.horovod:
+            should_early_stop = self.horovod.allreduce(should_early_stop)
+        if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
                     "\nEARLY STOPPING due to lack of "
@@ -1381,9 +1382,8 @@ class Trainer(BaseTrainer):
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        horovod = initialize_horovod()
         config, kwargs = schema.load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
-        super().__init__(horovod=horovod, config=config, **kwargs)
+        super().__init__(config=config, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)

@@ -27,12 +27,6 @@ except (ModuleNotFoundError, ImportError):
 
 def initialize_horovod():
     if not _HVD:
-        """
-        raise ValueError("Horovod backend specified, "
-                         "but cannot import `horovod.tensorflow`. "
-                         "Install Horovod following the instructions at: "
-                         "https://github.com/horovod/horovod")
-        """
         raise ValueError(
             "Horovod backend specified, "
             "but cannot import `horovod.torch`. "
@@ -88,6 +82,9 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
         # need to convert to int due to Horovod limitation
         result = result.int()
         is_bool = True
+
+    # Add extra dimension to the tensors to be gathered
+    result = result.unsqueeze(0)
 
     # sync and gather all
     gathered = _HVD.allgather(result)

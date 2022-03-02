@@ -68,7 +68,6 @@ combiner:
   bn_momentum: 0.9 # m_B
   num_steps: 8 # N_steps
   relaxation_factor: 2 # gamma
-  use_keras_batch_norm: false
   bn_virtual_bs: 256 # B_v
 trainer:
   batch_size: 8192 # B
