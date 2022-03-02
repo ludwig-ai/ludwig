@@ -113,14 +113,15 @@ def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0
         Regularization loss for the model (float).
     """
 
-    l1_reg = l1 * sum(torch.abs(p).sum() for p in model.parameters())
-    l2_reg = l2 * sum(torch.square(p).sum() for p in model.parameters())
-
     if regularizer == "l1":
+        l1_reg = l1 * sum(torch.abs(p).sum() for p in model.parameters())
         return l1_reg
     if regularizer == "l2":
+        l2_reg = l2 * sum(torch.square(p).sum() for p in model.parameters())
         return l2_reg
     if regularizer == "l1_l2":
+        l1_reg = l1 * sum(torch.abs(p).sum() for p in model.parameters())
+        l2_reg = l2 * sum(torch.square(p).sum() for p in model.parameters())
         return l1_reg + l2_reg
 
 

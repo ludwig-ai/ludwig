@@ -211,7 +211,7 @@ class ECD(LudwigModule):
             train_loss += loss
 
         # Add regularization loss
-        if regularization_type is not None:
+        if regularization_type is not None and regularization_lambda != 0:
             train_loss += reg_loss(self, regularization_type, l1=regularization_lambda, l2=regularization_lambda)
 
         return train_loss, of_train_losses
