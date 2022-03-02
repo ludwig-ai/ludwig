@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 import torch
-from entmax import sparsemax
+from ludwig.utils.entmax import sparsemax
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
 
