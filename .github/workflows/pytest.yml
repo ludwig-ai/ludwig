@@ -238,7 +238,7 @@ jobs:
       - name: Install Neuropod backend
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v0.3.0-rc6/libneuropod-cpu-macos-v0.3.0-rc6-torchscript-1.10.2-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v0.3.0-rc6/libneuropod-cpu-linux-v0.3.0-rc6-torchscript-1.10.2-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Reinstall Horovod if necessary
