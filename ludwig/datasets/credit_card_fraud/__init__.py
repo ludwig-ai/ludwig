@@ -41,7 +41,7 @@ class CreditCardFraud(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
         self.kaggle_username = kaggle_username
         self.kaggle_key = kaggle_key
         self.is_kaggle_competition = True
-        super().__init__(dataset_name="creditcardfraud", cache_dir=cache_dir)
+        super().__init__(dataset_name="credit_card_fraud", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         """The final method where we create a concatenated CSV file with both training ant dest data."""
