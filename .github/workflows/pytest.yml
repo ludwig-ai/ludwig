@@ -162,15 +162,13 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7]
-        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
             pytorch-version: 1.10.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
-      MARKERS: ${{ matrix.test-markers }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, gpu
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, gpu
 
     timeout-minutes: 70
     steps:
@@ -252,13 +250,13 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+          pytest -v --timeout 300 --durations 10 --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+          name: Unit Test Results (Python ${{ matrix.python-version }} gpu
           path: pytest.xml
 
   event_file:
