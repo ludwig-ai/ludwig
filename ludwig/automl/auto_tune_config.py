@@ -44,7 +44,7 @@ RANKED_MODIFIABLE_PARAM_LIST = {
     ),
     "text": OrderedDict(  # for single input feature text models e.g. bert and its variants
         {
-            "trainer.batch_size": 8,
+            "trainer.batch_size": 16,
         }
     ),
 }
@@ -119,7 +119,7 @@ def memory_tune_config(config, dataset):
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
         mem_use = compute_memory_usage(temp_config, training_set_metadata)
-        logging.info(f"Checking model mem use {mem_use} against memory size {max_memory}")
+        logging.info(f"Checking model estimated mem use {mem_use} against memory size {max_memory}")
         if mem_use <= max_memory:
             fits_in_memory = True
             break
