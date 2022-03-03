@@ -9,27 +9,21 @@ Create and download your [Kaggle API Credentials](https://github.com/Kaggle/kagg
 The Credit Card Fraud dataset is hosted by Kaggle, and as such Ludwig will need to authenticate you through the Kaggle API to download the dataset.
 
 
-Enter `python model_training.py` will train a single model.  Results of model training will be stored in this location.
+Enter `python model_training.py` will train a standard model with no class balancing and a balanced model with class balancing applied.  Results of model training will be stored in these locations.
 
 ```
 ./results/
     simple_experiment_simple_model/
-```
-
-Enter `python multiple_model_training.py` will train two models and generate standard Ludwig visualizations comparing the
-two models.  Results will in the following directories:
-
-```
-./results/
-    multiple_model_model1/
-    multiple_model_model2/
+    
 ./visualizations/
-    learning_curves_Survived_accuracy.png
-    learning_curves_Survived_loss.png
+    learning_curves_class_imbalance_accuracy.png
+    learning_curves_class_imbalance_loss.png
 ```
 
 This is the standard Ludwig learning curve plot from training the two models
+
 ![](../images/learning_curves_Survived_accuracy.png)
 
 This is the custom visualization created by the Jupyter notebook `model_training_results.ipynb`.
+
 ![](../images/custom_learning_curve.png)
