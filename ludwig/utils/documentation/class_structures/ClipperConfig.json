@@ -1,1 +1,498 @@
-{"loading_errors": [], "parsing_errors": {}, "objects": [{"name": "ClipperConfig", "path": "ludwig.modules.optimization_modules.ClipperConfig", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass"], "parent_path": "ludwig.modules.optimization_modules", "has_contents": true, "docstring": "Dataclass that holds gradient clipping parameters.", "docstring_sections": [{"type": "markdown", "value": "Dataclass that holds gradient clipping parameters."}], "source": {"code": "class ClipperConfig(BaseMarshmallowConfig):\n    \"\"\"Dataclass that holds gradient clipping parameters.\"\"\"\n\n    clipglobalnorm: Optional[float] = 0.5\n    \"(default: 0.5)\"\n    clipnorm: Optional[float] = None\n    \"(default: None)\"\n    clipvalue: Optional[float] = None\n    \"(default: None)\"\n\n    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n", "line_start": 333}, "children": {"ludwig.modules.optimization_modules.ClipperConfig.Schema": {"name": "Schema", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-model"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": true, "docstring": "", "docstring_sections": [], "source": {}, "children": {"ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta": {"name": "Meta", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": true, "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.", "docstring_sections": [{"type": "markdown", "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."}], "source": {"code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n", "line_start": 49}, "children": {"ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta.unknown": {"name": "unknown", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta.unknown", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta", "has_contents": true, "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.", "docstring_sections": [{"type": "markdown", "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}}, "attributes": ["ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta.unknown"], "methods": [], "functions": [], "modules": [], "classes": [], "bases": ["object"]}, "ludwig.modules.optimization_modules.ClipperConfig.Schema._declared_fields": {"name": "_declared_fields", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema._declared_fields", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["private"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.ClipperConfig.Schema._hooks": {"name": "_hooks", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema._hooks", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["private"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.ClipperConfig.Schema.opts": {"name": "opts", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.opts", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipglobalnorm": {"name": "clipglobalnorm", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipglobalnorm", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipnorm": {"name": "clipnorm", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipnorm", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipvalue": {"name": "clipvalue", "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipvalue", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}}, "attributes": ["ludwig.modules.optimization_modules.ClipperConfig.Schema._declared_fields", "ludwig.modules.optimization_modules.ClipperConfig.Schema._hooks", "ludwig.modules.optimization_modules.ClipperConfig.Schema.opts", "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipglobalnorm", "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipnorm", "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipvalue"], "methods": [], "functions": [], "modules": [], "classes": ["ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta"], "bases": ["marshmallow_dataclass._base_schema.<locals>.BaseSchema"]}, "ludwig.modules.optimization_modules.ClipperConfig.__eq__": {"name": "__eq__", "path": "ludwig.modules.optimization_modules.ClipperConfig.__eq__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "other"}]}}, "ludwig.modules.optimization_modules.ClipperConfig.__init__": {"name": "__init__", "path": "ludwig.modules.optimization_modules.ClipperConfig.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "clipglobalnorm", "annotation": "Optional[float]", "default": "0.5"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "clipnorm", "annotation": "Optional[float]", "default": "None"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "clipvalue", "annotation": "Optional[float]", "default": "None"}], "return_annotation": "None"}}, "ludwig.modules.optimization_modules.ClipperConfig.__repr__": {"name": "__repr__", "path": "ludwig.modules.optimization_modules.ClipperConfig.__repr__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}]}}, "ludwig.modules.optimization_modules.ClipperConfig.clip_grads": {"name": "clip_grads", "path": "ludwig.modules.optimization_modules.ClipperConfig.clip_grads", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {"code": "    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n", "line_start": 343}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "variables", "annotation": "Iterable[torch.Tensor]"}]}}, "ludwig.modules.optimization_modules.ClipperConfig.clipglobalnorm": {"name": "clipglobalnorm", "path": "ludwig.modules.optimization_modules.ClipperConfig.clipglobalnorm", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": true, "docstring": "(default: 0.5)", "docstring_sections": [{"type": "markdown", "value": "(default: 0.5)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Optional[float]"}, "ludwig.modules.optimization_modules.ClipperConfig.clipnorm": {"name": "clipnorm", "path": "ludwig.modules.optimization_modules.ClipperConfig.clipnorm", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": true, "docstring": "(default: None)", "docstring_sections": [{"type": "markdown", "value": "(default: None)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Optional[float]"}, "ludwig.modules.optimization_modules.ClipperConfig.clipvalue": {"name": "clipvalue", "path": "ludwig.modules.optimization_modules.ClipperConfig.clipvalue", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.ClipperConfig", "has_contents": true, "docstring": "(default: None)", "docstring_sections": [{"type": "markdown", "value": "(default: None)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Optional[float]"}}, "attributes": ["ludwig.modules.optimization_modules.ClipperConfig.clipglobalnorm", "ludwig.modules.optimization_modules.ClipperConfig.clipnorm", "ludwig.modules.optimization_modules.ClipperConfig.clipvalue"], "methods": ["ludwig.modules.optimization_modules.ClipperConfig.__eq__", "ludwig.modules.optimization_modules.ClipperConfig.__init__", "ludwig.modules.optimization_modules.ClipperConfig.__repr__", "ludwig.modules.optimization_modules.ClipperConfig.clip_grads"], "functions": [], "modules": [], "classes": ["ludwig.modules.optimization_modules.ClipperConfig.Schema"], "bases": ["ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig"]}]}
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.ClipperConfig.clipglobalnorm",
+                "ludwig.modules.optimization_modules.ClipperConfig.clipnorm",
+                "ludwig.modules.optimization_modules.ClipperConfig.clipvalue"
+            ],
+            "bases": [
+                "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.ClipperConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipglobalnorm",
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipnorm",
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipvalue"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipglobalnorm": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "clipglobalnorm",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipglobalnorm",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipnorm": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "clipnorm",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipnorm",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipvalue": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "clipvalue",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.clipvalue",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.ClipperConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "Optional[float]",
+                                "default": "0.5",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "clipglobalnorm"
+                            },
+                            {
+                                "annotation": "Optional[float]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "clipnorm"
+                            },
+                            {
+                                "annotation": "Optional[float]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "clipvalue"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.clip_grads": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clip_grads",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.clip_grads",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "Iterable[torch.Tensor]",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "variables"
+                            }
+                        ]
+                    },
+                    "source": {
+                        "code": "    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
+                        "line_start": 343
+                    }
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.clipglobalnorm": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 0.5)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 0.5)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clipglobalnorm",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.clipglobalnorm",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Optional[float]"
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.clipnorm": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: None)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: None)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clipnorm",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.clipnorm",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Optional[float]"
+                },
+                "ludwig.modules.optimization_modules.ClipperConfig.clipvalue": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: None)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: None)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clipvalue",
+                    "parent_path": "ludwig.modules.optimization_modules.ClipperConfig",
+                    "path": "ludwig.modules.optimization_modules.ClipperConfig.clipvalue",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Optional[float]"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.ClipperConfig.Schema"
+            ],
+            "docstring": "Dataclass that holds gradient clipping parameters.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Dataclass that holds gradient clipping parameters."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.ClipperConfig.__eq__",
+                "ludwig.modules.optimization_modules.ClipperConfig.__init__",
+                "ludwig.modules.optimization_modules.ClipperConfig.__repr__",
+                "ludwig.modules.optimization_modules.ClipperConfig.clip_grads"
+            ],
+            "modules": [],
+            "name": "ClipperConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.ClipperConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class ClipperConfig(BaseMarshmallowConfig):\n    \"\"\"Dataclass that holds gradient clipping parameters.\"\"\"\n\n    clipglobalnorm: Optional[float] = 0.5\n    \"(default: 0.5)\"\n    clipnorm: Optional[float] = None\n    \"(default: None)\"\n    clipvalue: Optional[float] = None\n    \"(default: None)\"\n\n    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
+                "line_start": 333
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

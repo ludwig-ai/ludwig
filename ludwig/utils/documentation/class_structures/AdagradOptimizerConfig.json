@@ -1,1 +1,839 @@
-{"loading_errors": [], "parsing_errors": {}, "objects": [{"name": "AdagradOptimizerConfig", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass"], "parent_path": "ludwig.modules.optimization_modules", "has_contents": true, "docstring": "Parameters for adagrad optimization.", "docstring_sections": [{"type": "markdown", "value": "Parameters for adagrad optimization."}], "source": {"code": "class AdagradOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adagrad optimization.\"\"\"\n\n    # Example docstring\n    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad\n    \"Points to `torch.optim.Adagrad`.\"\n\n    type: str = \"adagrad\"\n    \"\"\"Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adagrad')\"\"\"\n\n    initial_accumulator_value: float = NonNegativeFloat(default=0.1)\n    \"(default: 0.1)\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :\n    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)\n    lr_decay: float = 0\n    weight_decay: float = 0\n    eps: float = 1e-10\n", "line_start": 158}, "children": {"ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema": {"name": "Schema", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-model"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": true, "docstring": "", "docstring_sections": [], "source": {}, "children": {"ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta": {"name": "Meta", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": true, "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.", "docstring_sections": [{"type": "markdown", "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."}], "source": {"code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n", "line_start": 49}, "children": {"ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta.unknown": {"name": "unknown", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta.unknown", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta", "has_contents": true, "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.", "docstring_sections": [{"type": "markdown", "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}}, "attributes": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta.unknown"], "methods": [], "functions": [], "modules": [], "classes": [], "bases": ["object"]}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._declared_fields": {"name": "_declared_fields", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._declared_fields", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["private"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._hooks": {"name": "_hooks", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._hooks", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["private"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.opts": {"name": "opts", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.opts", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.validate_type": {"name": "validate_type", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.validate_type", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": true, "docstring": "Workaround to enforce immutable `type` in defined optimizer classes.\n\n:param data: Any-typed object that should be a string correctly identifying the optimizer type.", "docstring_sections": [{"type": "markdown", "value": "Workaround to enforce immutable `type` in defined optimizer classes."}, {"type": "parameters", "value": [{"description": "Any-typed object that should be a string correctly identifying the optimizer type.", "annotation": "", "name": "data", "kind": "POSITIONAL_OR_KEYWORD", "default": "", "is_optional": false, "is_required": true, "is_args": false, "is_kwargs": false}]}], "source": {"code": "    @validates(\"type\")\n    def validate_type(self, data, **kwargs):\n        \"\"\"Workaround to enforce immutable `type` in defined optimizer classes.\n\n        :param data: Any-typed object that should be a string correctly identifying the optimizer type.\n        \"\"\"\n        if not isinstance(data, str):\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects type of field `type` to be `str`, instead received '{data}'\"\n            )\n        default = self.declared_fields[\"type\"].dump_default\n        if default is not missing and data != default:\n            # Handle aliases:\n            if optimizer_registry[default] == optimizer_registry[data]:\n                return\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'\"\n            )\n", "line_start": 62}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "data"}, {"kind": "VAR_KEYWORD", "name": "kwargs"}]}}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.type": {"name": "type", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.type", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "String"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.initial_accumulator_value": {"name": "initial_accumulator_value", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.initial_accumulator_value", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr": {"name": "lr", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr_decay": {"name": "lr_decay", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr_decay", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.weight_decay": {"name": "weight_decay", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.weight_decay", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.eps": {"name": "eps", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.eps", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}}, "attributes": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._declared_fields", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._hooks", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.opts", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.type", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.initial_accumulator_value", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr_decay", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.weight_decay", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.eps"], "methods": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.validate_type"], "functions": [], "modules": [], "classes": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta"], "bases": ["marshmallow_dataclass._base_schema.<locals>.BaseSchema"]}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__eq__": {"name": "__eq__", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__eq__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "other"}]}}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__init__": {"name": "__init__", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "type", "annotation": "str", "default": "'adagrad'"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "initial_accumulator_value", "annotation": "float", "default": "0.1"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "lr", "annotation": "float", "default": "0.01"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "lr_decay", "annotation": "float", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "weight_decay", "annotation": "float", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "eps", "annotation": "float", "default": "1e-10"}], "return_annotation": "None"}}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__repr__": {"name": "__repr__", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__repr__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}]}}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.eps": {"name": "eps", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.eps", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value": {"name": "initial_accumulator_value", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": true, "docstring": "(default: 0.1)", "docstring_sections": [{"type": "markdown", "value": "(default: 0.1)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr": {"name": "lr", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr_decay": {"name": "lr_decay", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr_decay", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type": {"name": "torch_type", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": true, "docstring": "Implements Adagrad algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n            \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n        &\\hspace{12mm}    \\tau \\text{ (initial accumulator value)}, \\: \\eta\\text{ (lr decay)}\\\\\n        &\\textbf{initialize} :  state\\_sum_0 \\leftarrow 0                             \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm} \\tilde{\\gamma}    \\leftarrow \\gamma / (1 +(t-1) \\eta)                  \\\\\n        &\\hspace{5mm} \\textbf{if} \\: \\lambda \\neq 0                                          \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda \\theta_{t-1}                             \\\\\n        &\\hspace{5mm}state\\_sum_t  \\leftarrow  state\\_sum_{t-1} + g^2_t                      \\\\\n        &\\hspace{5mm}\\theta_t \\leftarrow\n            \\theta_{t-1}- \\tilde{\\gamma} \\frac{g_t}{\\sqrt{state\\_sum_t}+\\epsilon}            \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adaptive Subgradient Methods for Online Learning\nand Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-2)\n    lr_decay (float, optional): learning rate decay (default: 0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-10)\n\n.. _Adaptive Subgradient Methods for Online Learning and Stochastic\n    Optimization: http://jmlr.org/papers/v12/duchi11a.html", "docstring_sections": [{"type": "markdown", "value": "Implements Adagrad algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n            \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n        &\\hspace{12mm}    \\tau \\text{ (initial accumulator value)}, \\: \\eta\\text{ (lr decay)}\\\\\n        &\\textbf{initialize} :  state\\_sum_0 \\leftarrow 0                             \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm} \\tilde{\\gamma}    \\leftarrow \\gamma / (1 +(t-1) \\eta)                  \\\\\n        &\\hspace{5mm} \\textbf{if} \\: \\lambda \\neq 0                                          \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda \\theta_{t-1}                             \\\\\n        &\\hspace{5mm}state\\_sum_t  \\leftarrow  state\\_sum_{t-1} + g^2_t                      \\\\\n        &\\hspace{5mm}\\theta_t \\leftarrow\n            \\theta_{t-1}- \\tilde{\\gamma} \\frac{g_t}{\\sqrt{state\\_sum_t}+\\epsilon}            \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adaptive Subgradient Methods for Online Learning\nand Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-2)\n    lr_decay (float, optional): learning rate decay (default: 0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-10)\n\n.. _Adaptive Subgradient Methods for Online Learning and Stochastic\n    Optimization: http://jmlr.org/papers/v12/duchi11a.html"}], "source": {"code": "class Adagrad(Optimizer):\n    r\"\"\"Implements Adagrad algorithm.\n\n    .. math::\n       \\begin{aligned}\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n                \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n            &\\hspace{12mm}    \\tau \\text{ (initial accumulator value)}, \\: \\eta\\text{ (lr decay)}\\\\\n            &\\textbf{initialize} :  state\\_sum_0 \\leftarrow 0                             \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n            &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n            &\\hspace{5mm} \\tilde{\\gamma}    \\leftarrow \\gamma / (1 +(t-1) \\eta)                  \\\\\n            &\\hspace{5mm} \\textbf{if} \\: \\lambda \\neq 0                                          \\\\\n            &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda \\theta_{t-1}                             \\\\\n            &\\hspace{5mm}state\\_sum_t  \\leftarrow  state\\_sum_{t-1} + g^2_t                      \\\\\n            &\\hspace{5mm}\\theta_t \\leftarrow\n                \\theta_{t-1}- \\tilde{\\gamma} \\frac{g_t}{\\sqrt{state\\_sum_t}+\\epsilon}            \\\\\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n            &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n       \\end{aligned}\n\n    For further details regarding the algorithm we refer to `Adaptive Subgradient Methods for Online Learning\n    and Stochastic Optimization`_.\n\n    Args:\n        params (iterable): iterable of parameters to optimize or dicts defining\n            parameter groups\n        lr (float, optional): learning rate (default: 1e-2)\n        lr_decay (float, optional): learning rate decay (default: 0)\n        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n        eps (float, optional): term added to the denominator to improve\n            numerical stability (default: 1e-10)\n\n    .. _Adaptive Subgradient Methods for Online Learning and Stochastic\n        Optimization: http://jmlr.org/papers/v12/duchi11a.html\n    \"\"\"\n\n    def __init__(self, params, lr=1e-2, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= lr_decay:\n            raise ValueError(\"Invalid lr_decay value: {}\".format(lr_decay))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        if not 0.0 <= initial_accumulator_value:\n            raise ValueError(\"Invalid initial_accumulator_value value: {}\".format(initial_accumulator_value))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n\n        defaults = dict(lr=lr, lr_decay=lr_decay, eps=eps, weight_decay=weight_decay,\n                        initial_accumulator_value=initial_accumulator_value)\n        super(Adagrad, self).__init__(params, defaults)\n\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['step'] = 0\n                state['sum'] = torch.full_like(p, initial_accumulator_value, memory_format=torch.preserve_format)\n\n    def share_memory(self):\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['sum'].share_memory_()\n\n    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            state_sums = []\n            state_steps = []\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    grads.append(p.grad)\n                    state = self.state[p]\n                    state_sums.append(state['sum'])\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adagrad(params_with_grad,\n                      grads,\n                      state_sums,\n                      state_steps,\n                      lr=group['lr'],\n                      weight_decay=group['weight_decay'],\n                      lr_decay=group['lr_decay'],\n                      eps=group['eps'])\n\n        return loss\n", "line_start": 6}, "children": {"ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.__init__": {"name": "__init__", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {"code": "    def __init__(self, params, lr=1e-2, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= lr_decay:\n            raise ValueError(\"Invalid lr_decay value: {}\".format(lr_decay))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        if not 0.0 <= initial_accumulator_value:\n            raise ValueError(\"Invalid initial_accumulator_value value: {}\".format(initial_accumulator_value))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n\n        defaults = dict(lr=lr, lr_decay=lr_decay, eps=eps, weight_decay=weight_decay,\n                        initial_accumulator_value=initial_accumulator_value)\n        super(Adagrad, self).__init__(params, defaults)\n\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['step'] = 0\n                state['sum'] = torch.full_like(p, initial_accumulator_value, memory_format=torch.preserve_format)\n", "line_start": 46}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "params"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "lr", "default": "0.01"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "lr_decay", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "weight_decay", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "initial_accumulator_value", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "eps", "default": "1e-10"}]}}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.share_memory": {"name": "share_memory", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.share_memory", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {"code": "    def share_memory(self):\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['sum'].share_memory_()\n", "line_start": 68}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}]}}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.step": {"name": "step", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.step", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type", "has_contents": true, "docstring": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss.", "docstring_sections": [{"type": "markdown", "value": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss."}], "source": {"code": "    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            state_sums = []\n            state_steps = []\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    grads.append(p.grad)\n                    state = self.state[p]\n                    state_sums.append(state['sum'])\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adagrad(params_with_grad,\n                      grads,\n                      state_sums,\n                      state_steps,\n                      lr=group['lr'],\n                      weight_decay=group['weight_decay'],\n                      lr_decay=group['lr_decay'],\n                      eps=group['eps'])\n\n        return loss\n", "line_start": 74}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "closure", "default": "None"}]}}}, "attributes": [], "methods": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.__init__", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.share_memory", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.step"], "functions": [], "modules": [], "classes": [], "bases": ["torch.optim.optimizer.Optimizer"]}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.type": {"name": "type", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.type", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": true, "docstring": "Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n(default: 'adagrad')", "docstring_sections": [{"type": "markdown", "value": "Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n(default: 'adagrad')"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "str"}, "ludwig.modules.optimization_modules.AdagradOptimizerConfig.weight_decay": {"name": "weight_decay", "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.weight_decay", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}}, "attributes": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.type", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr_decay", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.weight_decay", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.eps"], "methods": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.__eq__", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__init__", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__repr__"], "functions": [], "modules": [], "classes": ["ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema", "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type"], "bases": ["ludwig.modules.optimization_modules.BaseOptimizerConfig"]}]}
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.type",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr_decay",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.weight_decay",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.eps"
+            ],
+            "bases": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.type",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.initial_accumulator_value",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr_decay",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.weight_decay",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.eps"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.eps": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "eps",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.eps",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.initial_accumulator_value": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "initial_accumulator_value",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.initial_accumulator_value",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "lr",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr_decay": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "lr_decay",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.lr_decay",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.type": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "type",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.type",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "String"
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.validate_type": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "Workaround to enforce immutable `type` in defined optimizer classes.\n\n:param data: Any-typed object that should be a string correctly identifying the optimizer type.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Workaround to enforce immutable `type` in defined optimizer classes."
+                                },
+                                {
+                                    "type": "parameters",
+                                    "value": [
+                                        {
+                                            "annotation": "",
+                                            "default": "",
+                                            "description": "Any-typed object that should be a string correctly identifying the optimizer type.",
+                                            "is_args": false,
+                                            "is_kwargs": false,
+                                            "is_optional": false,
+                                            "is_required": true,
+                                            "kind": "POSITIONAL_OR_KEYWORD",
+                                            "name": "data"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "validate_type",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.validate_type",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "kind": "VAR_KEYWORD",
+                                        "name": "kwargs"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    @validates(\"type\")\n    def validate_type(self, data, **kwargs):\n        \"\"\"Workaround to enforce immutable `type` in defined optimizer classes.\n\n        :param data: Any-typed object that should be a string correctly identifying the optimizer type.\n        \"\"\"\n        if not isinstance(data, str):\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects type of field `type` to be `str`, instead received '{data}'\"\n            )\n        default = self.declared_fields[\"type\"].dump_default\n        if default is not missing and data != default:\n            # Handle aliases:\n            if optimizer_registry[default] == optimizer_registry[data]:\n                return\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'\"\n            )\n",
+                                "line_start": 62
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.weight_decay": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "weight_decay",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.weight_decay",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema.validate_type"
+                    ],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "str",
+                                "default": "'adagrad'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "type"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.1",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "initial_accumulator_value"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.01",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "lr"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "lr_decay"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "weight_decay"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "1e-10",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "eps"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.eps": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "eps",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.eps",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 0.1)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 0.1)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "initial_accumulator_value",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "lr",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr_decay": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "lr_decay",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.lr_decay",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type": {
+                    "attributes": [],
+                    "bases": [
+                        "torch.optim.optimizer.Optimizer"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.__init__": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "",
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "__init__",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.__init__",
+                            "properties": [
+                                "special"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "params"
+                                    },
+                                    {
+                                        "default": "0.01",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "lr"
+                                    },
+                                    {
+                                        "default": "0",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "lr_decay"
+                                    },
+                                    {
+                                        "default": "0",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "weight_decay"
+                                    },
+                                    {
+                                        "default": "0",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "initial_accumulator_value"
+                                    },
+                                    {
+                                        "default": "1e-10",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "eps"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    def __init__(self, params, lr=1e-2, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= lr_decay:\n            raise ValueError(\"Invalid lr_decay value: {}\".format(lr_decay))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        if not 0.0 <= initial_accumulator_value:\n            raise ValueError(\"Invalid initial_accumulator_value value: {}\".format(initial_accumulator_value))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n\n        defaults = dict(lr=lr, lr_decay=lr_decay, eps=eps, weight_decay=weight_decay,\n                        initial_accumulator_value=initial_accumulator_value)\n        super(Adagrad, self).__init__(params, defaults)\n\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['step'] = 0\n                state['sum'] = torch.full_like(p, initial_accumulator_value, memory_format=torch.preserve_format)\n",
+                                "line_start": 46
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.share_memory": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "share_memory",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.share_memory",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    def share_memory(self):\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['sum'].share_memory_()\n",
+                                "line_start": 68
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.step": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "step",
+                            "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type",
+                            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.step",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "default": "None",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "closure"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            state_sums = []\n            state_steps = []\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    grads.append(p.grad)\n                    state = self.state[p]\n                    state_sums.append(state['sum'])\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adagrad(params_with_grad,\n                      grads,\n                      state_sums,\n                      state_steps,\n                      lr=group['lr'],\n                      weight_decay=group['weight_decay'],\n                      lr_decay=group['lr_decay'],\n                      eps=group['eps'])\n\n        return loss\n",
+                                "line_start": 74
+                            }
+                        }
+                    },
+                    "classes": [],
+                    "docstring": "Implements Adagrad algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n            \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n        &\\hspace{12mm}    \\tau \\text{ (initial accumulator value)}, \\: \\eta\\text{ (lr decay)}\\\\\n        &\\textbf{initialize} :  state\\_sum_0 \\leftarrow 0                             \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm} \\tilde{\\gamma}    \\leftarrow \\gamma / (1 +(t-1) \\eta)                  \\\\\n        &\\hspace{5mm} \\textbf{if} \\: \\lambda \\neq 0                                          \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda \\theta_{t-1}                             \\\\\n        &\\hspace{5mm}state\\_sum_t  \\leftarrow  state\\_sum_{t-1} + g^2_t                      \\\\\n        &\\hspace{5mm}\\theta_t \\leftarrow\n            \\theta_{t-1}- \\tilde{\\gamma} \\frac{g_t}{\\sqrt{state\\_sum_t}+\\epsilon}            \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adaptive Subgradient Methods for Online Learning\nand Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-2)\n    lr_decay (float, optional): learning rate decay (default: 0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-10)\n\n.. _Adaptive Subgradient Methods for Online Learning and Stochastic\n    Optimization: http://jmlr.org/papers/v12/duchi11a.html",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Implements Adagrad algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n            \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n        &\\hspace{12mm}    \\tau \\text{ (initial accumulator value)}, \\: \\eta\\text{ (lr decay)}\\\\\n        &\\textbf{initialize} :  state\\_sum_0 \\leftarrow 0                             \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm} \\tilde{\\gamma}    \\leftarrow \\gamma / (1 +(t-1) \\eta)                  \\\\\n        &\\hspace{5mm} \\textbf{if} \\: \\lambda \\neq 0                                          \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda \\theta_{t-1}                             \\\\\n        &\\hspace{5mm}state\\_sum_t  \\leftarrow  state\\_sum_{t-1} + g^2_t                      \\\\\n        &\\hspace{5mm}\\theta_t \\leftarrow\n            \\theta_{t-1}- \\tilde{\\gamma} \\frac{g_t}{\\sqrt{state\\_sum_t}+\\epsilon}            \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adaptive Subgradient Methods for Online Learning\nand Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-2)\n    lr_decay (float, optional): learning rate decay (default: 0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-10)\n\n.. _Adaptive Subgradient Methods for Online Learning and Stochastic\n    Optimization: http://jmlr.org/papers/v12/duchi11a.html"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.__init__",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.share_memory",
+                        "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type.step"
+                    ],
+                    "modules": [],
+                    "name": "torch_type",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {
+                        "code": "class Adagrad(Optimizer):\n    r\"\"\"Implements Adagrad algorithm.\n\n    .. math::\n       \\begin{aligned}\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n                \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n            &\\hspace{12mm}    \\tau \\text{ (initial accumulator value)}, \\: \\eta\\text{ (lr decay)}\\\\\n            &\\textbf{initialize} :  state\\_sum_0 \\leftarrow 0                             \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n            &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n            &\\hspace{5mm} \\tilde{\\gamma}    \\leftarrow \\gamma / (1 +(t-1) \\eta)                  \\\\\n            &\\hspace{5mm} \\textbf{if} \\: \\lambda \\neq 0                                          \\\\\n            &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda \\theta_{t-1}                             \\\\\n            &\\hspace{5mm}state\\_sum_t  \\leftarrow  state\\_sum_{t-1} + g^2_t                      \\\\\n            &\\hspace{5mm}\\theta_t \\leftarrow\n                \\theta_{t-1}- \\tilde{\\gamma} \\frac{g_t}{\\sqrt{state\\_sum_t}+\\epsilon}            \\\\\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n            &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n       \\end{aligned}\n\n    For further details regarding the algorithm we refer to `Adaptive Subgradient Methods for Online Learning\n    and Stochastic Optimization`_.\n\n    Args:\n        params (iterable): iterable of parameters to optimize or dicts defining\n            parameter groups\n        lr (float, optional): learning rate (default: 1e-2)\n        lr_decay (float, optional): learning rate decay (default: 0)\n        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n        eps (float, optional): term added to the denominator to improve\n            numerical stability (default: 1e-10)\n\n    .. _Adaptive Subgradient Methods for Online Learning and Stochastic\n        Optimization: http://jmlr.org/papers/v12/duchi11a.html\n    \"\"\"\n\n    def __init__(self, params, lr=1e-2, lr_decay=0, weight_decay=0, initial_accumulator_value=0, eps=1e-10):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= lr_decay:\n            raise ValueError(\"Invalid lr_decay value: {}\".format(lr_decay))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        if not 0.0 <= initial_accumulator_value:\n            raise ValueError(\"Invalid initial_accumulator_value value: {}\".format(initial_accumulator_value))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n\n        defaults = dict(lr=lr, lr_decay=lr_decay, eps=eps, weight_decay=weight_decay,\n                        initial_accumulator_value=initial_accumulator_value)\n        super(Adagrad, self).__init__(params, defaults)\n\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['step'] = 0\n                state['sum'] = torch.full_like(p, initial_accumulator_value, memory_format=torch.preserve_format)\n\n    def share_memory(self):\n        for group in self.param_groups:\n            for p in group['params']:\n                state = self.state[p]\n                state['sum'].share_memory_()\n\n    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            state_sums = []\n            state_steps = []\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    grads.append(p.grad)\n                    state = self.state[p]\n                    state_sums.append(state['sum'])\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adagrad(params_with_grad,\n                      grads,\n                      state_sums,\n                      state_steps,\n                      lr=group['lr'],\n                      weight_decay=group['weight_decay'],\n                      lr_decay=group['lr_decay'],\n                      eps=group['eps'])\n\n        return loss\n",
+                        "line_start": 6
+                    }
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.type": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n(default: 'adagrad')",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n(default: 'adagrad')"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "type",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.type",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "str"
+                },
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.weight_decay": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "weight_decay",
+                    "parent_path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.weight_decay",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.Schema",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.torch_type"
+            ],
+            "docstring": "Parameters for adagrad optimization.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Parameters for adagrad optimization."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__eq__",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__init__",
+                "ludwig.modules.optimization_modules.AdagradOptimizerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "AdagradOptimizerConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class AdagradOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adagrad optimization.\"\"\"\n\n    # Example docstring\n    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad\n    \"Points to `torch.optim.Adagrad`.\"\n\n    type: str = \"adagrad\"\n    \"\"\"Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adagrad')\"\"\"\n\n    initial_accumulator_value: float = NonNegativeFloat(default=0.1)\n    \"(default: 0.1)\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :\n    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)\n    lr_decay: float = 0\n    weight_decay: float = 0\n    eps: float = 1e-10\n",
+                "line_start": 158
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

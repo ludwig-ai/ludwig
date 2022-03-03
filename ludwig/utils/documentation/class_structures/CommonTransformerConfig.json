@@ -1,1 +1,1143 @@
-{"loading_errors": [], "parsing_errors": {}, "objects": [{"name": "CommonTransformerConfig", "path": "ludwig.combiners.combiners.CommonTransformerConfig", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass"], "parent_path": "ludwig.combiners.combiners", "has_contents": true, "docstring": "Common transformer parameter values.", "docstring_sections": [{"type": "markdown", "value": "Common transformer parameter values."}], "source": {"code": "class CommonTransformerConfig:\n    \"\"\"Common transformer parameter values.\"\"\"\n\n    num_layers: int = schema.PositiveInteger(default=1)\n    \"\"\"TODO: Document parameters. (default: 1).\"\"\"\n\n    hidden_size: int = schema.NonNegativeInteger(default=256)\n    \"\"\"The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is\n       projected to before feeding to the TransformerStack (default: 256).\"\"\"\n\n    num_heads: int = schema.NonNegativeInteger(default=8)\n    \"\"\"Number of heads of the self attention in the transformer block (default: 8).\"\"\"\n\n    transformer_output_size: int = schema.NonNegativeInteger(default=256)\n    \"\"\"Size of the fully connected layer after self attention in the transformer block. This is usually the same as\n       `hidden_size` and `embedding_size` (default: 256).\"\"\"\n\n    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)\n    \"\"\"Dropout rate for the transformer block (default: 0.1).\"\"\"\n\n    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    # TODO(#1673): Add conditional logic for fields like this one:\n    num_fc_layers: int = schema.NonNegativeInteger(default=0)\n    \"\"\"The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0).\"\"\"\n\n    output_size: int = schema.PositiveInteger(default=256)\n    \"\"\"Output size of a fully connected layer (default: 256).\"\"\"\n\n    use_bias: bool = True\n    \"\"\"Whether the layer uses a bias vector (default: True).\"\"\"\n\n    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default=\"xavier_uniform\")\n    \"\"\"TODO: Document parameters. (default: 'xavier_uniform').\"\"\"\n\n    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default=\"zeros\")\n    \"\"\"TODO: Document parameters. (default: 'zeros').\"\"\"\n\n    norm: Optional[str] = schema.StringOptions([\"batch\", \"layer\"])\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    norm_params: Optional[dict] = schema.Dict()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    fc_activation: str = \"relu\"\n    \"\"\"TODO: Document parameters. (default: 'relu').\"\"\"\n\n    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)\n    \"\"\"TODO: Document parameters. (default: 0.0).\"\"\"\n\n    fc_residual: bool = False\n    \"\"\"TODO: Document parameters. (default: False).\"\"\"\n", "line_start": 583}, "children": {"ludwig.combiners.combiners.CommonTransformerConfig.Schema": {"name": "Schema", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-model"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {"ludwig.combiners.combiners.CommonTransformerConfig.Schema._declared_fields": {"name": "_declared_fields", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema._declared_fields", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["private"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema._hooks": {"name": "_hooks", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema._hooks", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["private"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.opts": {"name": "opts", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.opts", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": [], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_layers": {"name": "num_layers", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_layers", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.hidden_size": {"name": "hidden_size", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.hidden_size", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_heads": {"name": "num_heads", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_heads", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.transformer_output_size": {"name": "transformer_output_size", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.transformer_output_size", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.dropout": {"name": "dropout", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.dropout", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_layers": {"name": "fc_layers", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_layers", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "List"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_fc_layers": {"name": "num_fc_layers", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_fc_layers", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.output_size": {"name": "output_size", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.output_size", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.use_bias": {"name": "use_bias", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.use_bias", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Boolean"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.weights_initializer": {"name": "weights_initializer", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.weights_initializer", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "InitializerOptionsOrCustomDictField"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.bias_initializer": {"name": "bias_initializer", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.bias_initializer", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "InitializerOptionsOrCustomDictField"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm": {"name": "norm", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "String"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm_params": {"name": "norm_params", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm_params", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Dict"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_activation": {"name": "fc_activation", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_activation", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "String"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_dropout": {"name": "fc_dropout", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_dropout", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_residual": {"name": "fc_residual", "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_residual", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Boolean"}}, "attributes": ["ludwig.combiners.combiners.CommonTransformerConfig.Schema._declared_fields", "ludwig.combiners.combiners.CommonTransformerConfig.Schema._hooks", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.opts", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_layers", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.hidden_size", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_heads", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.transformer_output_size", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.dropout", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_layers", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_fc_layers", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.output_size", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.use_bias", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.weights_initializer", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.bias_initializer", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm_params", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_activation", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_dropout", "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_residual"], "methods": [], "functions": [], "modules": [], "classes": [], "bases": ["marshmallow_dataclass._base_schema.<locals>.BaseSchema"]}, "ludwig.combiners.combiners.CommonTransformerConfig.__eq__": {"name": "__eq__", "path": "ludwig.combiners.combiners.CommonTransformerConfig.__eq__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["special"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "other"}]}}, "ludwig.combiners.combiners.CommonTransformerConfig.__init__": {"name": "__init__", "path": "ludwig.combiners.combiners.CommonTransformerConfig.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["special"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "num_layers", "annotation": "int", "default": "1"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "hidden_size", "annotation": "int", "default": "256"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "num_heads", "annotation": "int", "default": "8"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "transformer_output_size", "annotation": "int", "default": "256"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "dropout", "annotation": "float", "default": "0.1"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "fc_layers", "annotation": "Optional[List[Dict[str, Any]]]", "default": "<factory>"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "num_fc_layers", "annotation": "int", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "output_size", "annotation": "int", "default": "256"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "use_bias", "annotation": "bool", "default": "True"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "weights_initializer", "annotation": "Union[str, Dict]", "default": "'xavier_uniform'"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "bias_initializer", "annotation": "Union[str, Dict]", "default": "'zeros'"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "norm", "annotation": "Optional[str]", "default": "None"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "norm_params", "annotation": "Optional[dict]", "default": "<factory>"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "fc_activation", "annotation": "str", "default": "'relu'"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "fc_dropout", "annotation": "float", "default": "0.0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "fc_residual", "annotation": "bool", "default": "False"}], "return_annotation": "None"}}, "ludwig.combiners.combiners.CommonTransformerConfig.__repr__": {"name": "__repr__", "path": "ludwig.combiners.combiners.CommonTransformerConfig.__repr__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["special"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}]}}, "ludwig.combiners.combiners.CommonTransformerConfig.bias_initializer": {"name": "bias_initializer", "path": "ludwig.combiners.combiners.CommonTransformerConfig.bias_initializer", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: 'zeros').", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: 'zeros')."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Union[str, Dict]"}, "ludwig.combiners.combiners.CommonTransformerConfig.dropout": {"name": "dropout", "path": "ludwig.combiners.combiners.CommonTransformerConfig.dropout", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "Dropout rate for the transformer block (default: 0.1).", "docstring_sections": [{"type": "markdown", "value": "Dropout rate for the transformer block (default: 0.1)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.combiners.combiners.CommonTransformerConfig.fc_activation": {"name": "fc_activation", "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_activation", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: 'relu').", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: 'relu')."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "str"}, "ludwig.combiners.combiners.CommonTransformerConfig.fc_dropout": {"name": "fc_dropout", "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_dropout", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: 0.0).", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: 0.0)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.combiners.combiners.CommonTransformerConfig.fc_residual": {"name": "fc_residual", "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_residual", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: False).", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: False)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "bool"}, "ludwig.combiners.combiners.CommonTransformerConfig.hidden_size": {"name": "hidden_size", "path": "ludwig.combiners.combiners.CommonTransformerConfig.hidden_size", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is\nprojected to before feeding to the TransformerStack (default: 256).", "docstring_sections": [{"type": "markdown", "value": "The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is\nprojected to before feeding to the TransformerStack (default: 256)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}, "ludwig.combiners.combiners.CommonTransformerConfig.norm": {"name": "norm", "path": "ludwig.combiners.combiners.CommonTransformerConfig.norm", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: None).", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: None)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Optional[str]"}, "ludwig.combiners.combiners.CommonTransformerConfig.num_fc_layers": {"name": "num_fc_layers", "path": "ludwig.combiners.combiners.CommonTransformerConfig.num_fc_layers", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0).", "docstring_sections": [{"type": "markdown", "value": "The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}, "ludwig.combiners.combiners.CommonTransformerConfig.num_heads": {"name": "num_heads", "path": "ludwig.combiners.combiners.CommonTransformerConfig.num_heads", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "Number of heads of the self attention in the transformer block (default: 8).", "docstring_sections": [{"type": "markdown", "value": "Number of heads of the self attention in the transformer block (default: 8)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}, "ludwig.combiners.combiners.CommonTransformerConfig.num_layers": {"name": "num_layers", "path": "ludwig.combiners.combiners.CommonTransformerConfig.num_layers", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: 1).", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: 1)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}, "ludwig.combiners.combiners.CommonTransformerConfig.output_size": {"name": "output_size", "path": "ludwig.combiners.combiners.CommonTransformerConfig.output_size", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "Output size of a fully connected layer (default: 256).", "docstring_sections": [{"type": "markdown", "value": "Output size of a fully connected layer (default: 256)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}, "ludwig.combiners.combiners.CommonTransformerConfig.transformer_output_size": {"name": "transformer_output_size", "path": "ludwig.combiners.combiners.CommonTransformerConfig.transformer_output_size", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "Size of the fully connected layer after self attention in the transformer block. This is usually the same as\n`hidden_size` and `embedding_size` (default: 256).", "docstring_sections": [{"type": "markdown", "value": "Size of the fully connected layer after self attention in the transformer block. This is usually the same as\n`hidden_size` and `embedding_size` (default: 256)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}, "ludwig.combiners.combiners.CommonTransformerConfig.use_bias": {"name": "use_bias", "path": "ludwig.combiners.combiners.CommonTransformerConfig.use_bias", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "Whether the layer uses a bias vector (default: True).", "docstring_sections": [{"type": "markdown", "value": "Whether the layer uses a bias vector (default: True)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "bool"}, "ludwig.combiners.combiners.CommonTransformerConfig.weights_initializer": {"name": "weights_initializer", "path": "ludwig.combiners.combiners.CommonTransformerConfig.weights_initializer", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: 'xavier_uniform').", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: 'xavier_uniform')."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Union[str, Dict]"}, "ludwig.combiners.combiners.CommonTransformerConfig.fc_layers": {"name": "fc_layers", "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_layers", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: None).", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: None)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Optional[List[Dict[str, Any]]]"}, "ludwig.combiners.combiners.CommonTransformerConfig.norm_params": {"name": "norm_params", "path": "ludwig.combiners.combiners.CommonTransformerConfig.norm_params", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py", "relative_file_path": "ludwig/combiners/combiners.py", "properties": ["dataclass-field"], "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig", "has_contents": true, "docstring": "TODO: Document parameters. (default: None).", "docstring_sections": [{"type": "markdown", "value": "TODO: Document parameters. (default: None)."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Optional[dict]"}}, "attributes": ["ludwig.combiners.combiners.CommonTransformerConfig.num_layers", "ludwig.combiners.combiners.CommonTransformerConfig.hidden_size", "ludwig.combiners.combiners.CommonTransformerConfig.num_heads", "ludwig.combiners.combiners.CommonTransformerConfig.transformer_output_size", "ludwig.combiners.combiners.CommonTransformerConfig.dropout", "ludwig.combiners.combiners.CommonTransformerConfig.fc_layers", "ludwig.combiners.combiners.CommonTransformerConfig.num_fc_layers", "ludwig.combiners.combiners.CommonTransformerConfig.output_size", "ludwig.combiners.combiners.CommonTransformerConfig.use_bias", "ludwig.combiners.combiners.CommonTransformerConfig.weights_initializer", "ludwig.combiners.combiners.CommonTransformerConfig.bias_initializer", "ludwig.combiners.combiners.CommonTransformerConfig.norm", "ludwig.combiners.combiners.CommonTransformerConfig.norm_params", "ludwig.combiners.combiners.CommonTransformerConfig.fc_activation", "ludwig.combiners.combiners.CommonTransformerConfig.fc_dropout", "ludwig.combiners.combiners.CommonTransformerConfig.fc_residual"], "methods": ["ludwig.combiners.combiners.CommonTransformerConfig.__eq__", "ludwig.combiners.combiners.CommonTransformerConfig.__init__", "ludwig.combiners.combiners.CommonTransformerConfig.__repr__"], "functions": [], "modules": [], "classes": ["ludwig.combiners.combiners.CommonTransformerConfig.Schema"], "bases": ["object"]}]}
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.combiners.combiners.CommonTransformerConfig.num_layers",
+                "ludwig.combiners.combiners.CommonTransformerConfig.hidden_size",
+                "ludwig.combiners.combiners.CommonTransformerConfig.num_heads",
+                "ludwig.combiners.combiners.CommonTransformerConfig.transformer_output_size",
+                "ludwig.combiners.combiners.CommonTransformerConfig.dropout",
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_layers",
+                "ludwig.combiners.combiners.CommonTransformerConfig.num_fc_layers",
+                "ludwig.combiners.combiners.CommonTransformerConfig.output_size",
+                "ludwig.combiners.combiners.CommonTransformerConfig.use_bias",
+                "ludwig.combiners.combiners.CommonTransformerConfig.weights_initializer",
+                "ludwig.combiners.combiners.CommonTransformerConfig.bias_initializer",
+                "ludwig.combiners.combiners.CommonTransformerConfig.norm",
+                "ludwig.combiners.combiners.CommonTransformerConfig.norm_params",
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_activation",
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_dropout",
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_residual"
+            ],
+            "bases": [
+                "object"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.combiners.combiners.CommonTransformerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema._declared_fields",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema._hooks",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.opts",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_layers",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.hidden_size",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_heads",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.transformer_output_size",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.dropout",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_layers",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_fc_layers",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.output_size",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.use_bias",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.weights_initializer",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.bias_initializer",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm_params",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_activation",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_dropout",
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_residual"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.bias_initializer": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "bias_initializer",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.bias_initializer",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "InitializerOptionsOrCustomDictField"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.dropout": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "dropout",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.dropout",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_activation": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "fc_activation",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_activation",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "String"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_dropout": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "fc_dropout",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_dropout",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_layers": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "fc_layers",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_layers",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "List"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_residual": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "fc_residual",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.fc_residual",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Boolean"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.hidden_size": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "hidden_size",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.hidden_size",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "norm",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "String"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm_params": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "norm_params",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.norm_params",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Dict"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_fc_layers": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "num_fc_layers",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_fc_layers",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_heads": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "num_heads",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_heads",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_layers": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "num_layers",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.num_layers",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.output_size": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "output_size",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.output_size",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.transformer_output_size": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "transformer_output_size",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.transformer_output_size",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.use_bias": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "use_bias",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.use_bias",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "Boolean"
+                        },
+                        "ludwig.combiners.combiners.CommonTransformerConfig.Schema.weights_initializer": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "weights_initializer",
+                            "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema.weights_initializer",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "InitializerOptionsOrCustomDictField"
+                        }
+                    },
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "1",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "num_layers"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "256",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "hidden_size"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "8",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "num_heads"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "256",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "transformer_output_size"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.1",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "dropout"
+                            },
+                            {
+                                "annotation": "Optional[List[Dict[str, Any]]]",
+                                "default": "<factory>",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "fc_layers"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "num_fc_layers"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "256",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "output_size"
+                            },
+                            {
+                                "annotation": "bool",
+                                "default": "True",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "use_bias"
+                            },
+                            {
+                                "annotation": "Union[str, Dict]",
+                                "default": "'xavier_uniform'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "weights_initializer"
+                            },
+                            {
+                                "annotation": "Union[str, Dict]",
+                                "default": "'zeros'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "bias_initializer"
+                            },
+                            {
+                                "annotation": "Optional[str]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "norm"
+                            },
+                            {
+                                "annotation": "Optional[dict]",
+                                "default": "<factory>",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "norm_params"
+                            },
+                            {
+                                "annotation": "str",
+                                "default": "'relu'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "fc_activation"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "fc_dropout"
+                            },
+                            {
+                                "annotation": "bool",
+                                "default": "False",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "fc_residual"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.bias_initializer": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: 'zeros').",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: 'zeros')."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "bias_initializer",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.bias_initializer",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Union[str, Dict]"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.dropout": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Dropout rate for the transformer block (default: 0.1).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Dropout rate for the transformer block (default: 0.1)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "dropout",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.dropout",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_activation": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: 'relu').",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: 'relu')."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "fc_activation",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_activation",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "str"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_dropout": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: 0.0).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: 0.0)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "fc_dropout",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_dropout",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_layers": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: None).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: None)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "fc_layers",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_layers",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Optional[List[Dict[str, Any]]]"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.fc_residual": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: False).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: False)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "fc_residual",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.fc_residual",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "bool"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.hidden_size": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is\nprojected to before feeding to the TransformerStack (default: 256).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is\nprojected to before feeding to the TransformerStack (default: 256)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "hidden_size",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.hidden_size",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "int"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.norm": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: None).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: None)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "norm",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.norm",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Optional[str]"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.norm_params": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: None).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: None)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "norm_params",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.norm_params",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Optional[dict]"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.num_fc_layers": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "num_fc_layers",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.num_fc_layers",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "int"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.num_heads": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Number of heads of the self attention in the transformer block (default: 8).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Number of heads of the self attention in the transformer block (default: 8)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "num_heads",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.num_heads",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "int"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.num_layers": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: 1).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: 1)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "num_layers",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.num_layers",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "int"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.output_size": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Output size of a fully connected layer (default: 256).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Output size of a fully connected layer (default: 256)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "output_size",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.output_size",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "int"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.transformer_output_size": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Size of the fully connected layer after self attention in the transformer block. This is usually the same as\n`hidden_size` and `embedding_size` (default: 256).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Size of the fully connected layer after self attention in the transformer block. This is usually the same as\n`hidden_size` and `embedding_size` (default: 256)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "transformer_output_size",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.transformer_output_size",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "int"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.use_bias": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Whether the layer uses a bias vector (default: True).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Whether the layer uses a bias vector (default: True)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "use_bias",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.use_bias",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "bool"
+                },
+                "ludwig.combiners.combiners.CommonTransformerConfig.weights_initializer": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: 'xavier_uniform').",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: 'xavier_uniform')."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "weights_initializer",
+                    "parent_path": "ludwig.combiners.combiners.CommonTransformerConfig",
+                    "path": "ludwig.combiners.combiners.CommonTransformerConfig.weights_initializer",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Union[str, Dict]"
+                }
+            },
+            "classes": [
+                "ludwig.combiners.combiners.CommonTransformerConfig.Schema"
+            ],
+            "docstring": "Common transformer parameter values.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Common transformer parameter values."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.combiners.combiners.CommonTransformerConfig.__eq__",
+                "ludwig.combiners.combiners.CommonTransformerConfig.__init__",
+                "ludwig.combiners.combiners.CommonTransformerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "CommonTransformerConfig",
+            "parent_path": "ludwig.combiners.combiners",
+            "path": "ludwig.combiners.combiners.CommonTransformerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/combiners/combiners.py",
+            "source": {
+                "code": "class CommonTransformerConfig:\n    \"\"\"Common transformer parameter values.\"\"\"\n\n    num_layers: int = schema.PositiveInteger(default=1)\n    \"\"\"TODO: Document parameters. (default: 1).\"\"\"\n\n    hidden_size: int = schema.NonNegativeInteger(default=256)\n    \"\"\"The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is\n       projected to before feeding to the TransformerStack (default: 256).\"\"\"\n\n    num_heads: int = schema.NonNegativeInteger(default=8)\n    \"\"\"Number of heads of the self attention in the transformer block (default: 8).\"\"\"\n\n    transformer_output_size: int = schema.NonNegativeInteger(default=256)\n    \"\"\"Size of the fully connected layer after self attention in the transformer block. This is usually the same as\n       `hidden_size` and `embedding_size` (default: 256).\"\"\"\n\n    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)\n    \"\"\"Dropout rate for the transformer block (default: 0.1).\"\"\"\n\n    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    # TODO(#1673): Add conditional logic for fields like this one:\n    num_fc_layers: int = schema.NonNegativeInteger(default=0)\n    \"\"\"The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0).\"\"\"\n\n    output_size: int = schema.PositiveInteger(default=256)\n    \"\"\"Output size of a fully connected layer (default: 256).\"\"\"\n\n    use_bias: bool = True\n    \"\"\"Whether the layer uses a bias vector (default: True).\"\"\"\n\n    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default=\"xavier_uniform\")\n    \"\"\"TODO: Document parameters. (default: 'xavier_uniform').\"\"\"\n\n    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default=\"zeros\")\n    \"\"\"TODO: Document parameters. (default: 'zeros').\"\"\"\n\n    norm: Optional[str] = schema.StringOptions([\"batch\", \"layer\"])\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    norm_params: Optional[dict] = schema.Dict()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    fc_activation: str = \"relu\"\n    \"\"\"TODO: Document parameters. (default: 'relu').\"\"\"\n\n    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)\n    \"\"\"TODO: Document parameters. (default: 0.0).\"\"\"\n\n    fc_residual: bool = False\n    \"\"\"TODO: Document parameters. (default: False).\"\"\"\n",
+                "line_start": 583
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

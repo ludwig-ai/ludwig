@@ -1,1 +1,348 @@
-{"loading_errors": [], "parsing_errors": {}, "objects": [{"name": "CustomTestSchema", "path": "ludwig.utils.test_classes.CustomTestSchema", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["dataclass"], "parent_path": "ludwig.utils.test_classes", "has_contents": true, "docstring": "sample docstring.", "docstring_sections": [{"type": "markdown", "value": "sample docstring."}], "source": {"code": "class CustomTestSchema(BaseMarshmallowConfig):\n    \"\"\"sample docstring.\"\"\"\n\n    foo: int = 5\n    \"foo (default: 5)\"\n", "line_start": 12}, "children": {"ludwig.utils.test_classes.CustomTestSchema.Schema": {"name": "Schema", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["marshmallow-model"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema", "has_contents": true, "docstring": "", "docstring_sections": [], "source": {}, "children": {"ludwig.utils.test_classes.CustomTestSchema.Schema.Meta": {"name": "Meta", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": [], "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema", "has_contents": true, "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.", "docstring_sections": [{"type": "markdown", "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."}], "source": {"code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n", "line_start": 49}, "children": {"ludwig.utils.test_classes.CustomTestSchema.Schema.Meta.unknown": {"name": "unknown", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta.unknown", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": [], "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta", "has_contents": true, "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.", "docstring_sections": [{"type": "markdown", "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}}, "attributes": ["ludwig.utils.test_classes.CustomTestSchema.Schema.Meta.unknown"], "methods": [], "functions": [], "modules": [], "classes": [], "bases": ["object"]}, "ludwig.utils.test_classes.CustomTestSchema.Schema._declared_fields": {"name": "_declared_fields", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema._declared_fields", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["private"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.utils.test_classes.CustomTestSchema.Schema._hooks": {"name": "_hooks", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema._hooks", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["private"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.utils.test_classes.CustomTestSchema.Schema.opts": {"name": "opts", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.opts", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": [], "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.utils.test_classes.CustomTestSchema.Schema.foo": {"name": "foo", "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.foo", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Integer"}}, "attributes": ["ludwig.utils.test_classes.CustomTestSchema.Schema._declared_fields", "ludwig.utils.test_classes.CustomTestSchema.Schema._hooks", "ludwig.utils.test_classes.CustomTestSchema.Schema.opts", "ludwig.utils.test_classes.CustomTestSchema.Schema.foo"], "methods": [], "functions": [], "modules": [], "classes": ["ludwig.utils.test_classes.CustomTestSchema.Schema.Meta"], "bases": ["marshmallow_dataclass._base_schema.<locals>.BaseSchema"]}, "ludwig.utils.test_classes.CustomTestSchema.__eq__": {"name": "__eq__", "path": "ludwig.utils.test_classes.CustomTestSchema.__eq__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["special"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "other"}]}}, "ludwig.utils.test_classes.CustomTestSchema.__init__": {"name": "__init__", "path": "ludwig.utils.test_classes.CustomTestSchema.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["special"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "foo", "annotation": "int", "default": "5"}], "return_annotation": "None"}}, "ludwig.utils.test_classes.CustomTestSchema.__repr__": {"name": "__repr__", "path": "ludwig.utils.test_classes.CustomTestSchema.__repr__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["special"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}]}}, "ludwig.utils.test_classes.CustomTestSchema.foo": {"name": "foo", "path": "ludwig.utils.test_classes.CustomTestSchema.foo", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py", "relative_file_path": "ludwig/utils/test_classes.py", "properties": ["dataclass-field"], "parent_path": "ludwig.utils.test_classes.CustomTestSchema", "has_contents": true, "docstring": "foo (default: 5)", "docstring_sections": [{"type": "markdown", "value": "foo (default: 5)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "int"}}, "attributes": ["ludwig.utils.test_classes.CustomTestSchema.foo"], "methods": ["ludwig.utils.test_classes.CustomTestSchema.__eq__", "ludwig.utils.test_classes.CustomTestSchema.__init__", "ludwig.utils.test_classes.CustomTestSchema.__repr__"], "functions": [], "modules": [], "classes": ["ludwig.utils.test_classes.CustomTestSchema.Schema"], "bases": ["ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig"]}]}
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.utils.test_classes.CustomTestSchema.foo"
+            ],
+            "bases": [
+                "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.utils.test_classes.CustomTestSchema.Schema": {
+                    "attributes": [
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema._declared_fields",
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema._hooks",
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema.opts",
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema.foo"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta",
+                                    "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/utils/test_classes.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema",
+                            "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/utils/test_classes.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema",
+                            "path": "ludwig.utils.test_classes.CustomTestSchema.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/utils/test_classes.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema",
+                            "path": "ludwig.utils.test_classes.CustomTestSchema.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/utils/test_classes.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema.foo": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "foo",
+                            "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema",
+                            "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.foo",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/utils/test_classes.py",
+                            "source": {},
+                            "type": "Integer"
+                        },
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.utils.test_classes.CustomTestSchema.Schema",
+                            "path": "ludwig.utils.test_classes.CustomTestSchema.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/utils/test_classes.py",
+                            "source": {},
+                            "type": ""
+                        }
+                    },
+                    "classes": [
+                        "ludwig.utils.test_classes.CustomTestSchema.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.utils.test_classes.CustomTestSchema",
+                    "path": "ludwig.utils.test_classes.CustomTestSchema.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/utils/test_classes.py",
+                    "source": {}
+                },
+                "ludwig.utils.test_classes.CustomTestSchema.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.utils.test_classes.CustomTestSchema",
+                    "path": "ludwig.utils.test_classes.CustomTestSchema.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/utils/test_classes.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.utils.test_classes.CustomTestSchema.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.utils.test_classes.CustomTestSchema",
+                    "path": "ludwig.utils.test_classes.CustomTestSchema.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/utils/test_classes.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "int",
+                                "default": "5",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "foo"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.utils.test_classes.CustomTestSchema.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.utils.test_classes.CustomTestSchema",
+                    "path": "ludwig.utils.test_classes.CustomTestSchema.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/utils/test_classes.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.utils.test_classes.CustomTestSchema.foo": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "foo (default: 5)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "foo (default: 5)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "foo",
+                    "parent_path": "ludwig.utils.test_classes.CustomTestSchema",
+                    "path": "ludwig.utils.test_classes.CustomTestSchema.foo",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/utils/test_classes.py",
+                    "source": {},
+                    "type": "int"
+                }
+            },
+            "classes": [
+                "ludwig.utils.test_classes.CustomTestSchema.Schema"
+            ],
+            "docstring": "sample docstring.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "sample docstring."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/test_classes.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.utils.test_classes.CustomTestSchema.__eq__",
+                "ludwig.utils.test_classes.CustomTestSchema.__init__",
+                "ludwig.utils.test_classes.CustomTestSchema.__repr__"
+            ],
+            "modules": [],
+            "name": "CustomTestSchema",
+            "parent_path": "ludwig.utils.test_classes",
+            "path": "ludwig.utils.test_classes.CustomTestSchema",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/utils/test_classes.py",
+            "source": {
+                "code": "class CustomTestSchema(BaseMarshmallowConfig):\n    \"\"\"sample docstring.\"\"\"\n\n    foo: int = 5\n    \"foo (default: 5)\"\n",
+                "line_start": 13
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

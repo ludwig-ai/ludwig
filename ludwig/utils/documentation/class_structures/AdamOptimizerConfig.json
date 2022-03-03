@@ -1,1 +1,855 @@
-{"loading_errors": [], "parsing_errors": {}, "objects": [{"name": "AdamOptimizerConfig", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass"], "parent_path": "ludwig.modules.optimization_modules", "has_contents": true, "docstring": "Parameters for adam optimization.", "docstring_sections": [{"type": "markdown", "value": "Parameters for adam optimization."}], "source": {"code": "class AdamOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adam optimization.\"\"\"\n\n    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam\n    \"Points to `torch.optim.Adam`.\"\n\n    type: str = \"adam\"\n\n    lr: float = FloatRange(default=0.001, min=0.0, max=1.0)\n    \"(default: 0.001)\"\n\n    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))\n    \"(default: (0.9, 0.999))\"\n\n    eps: float = NonNegativeFloat(default=1e-08)\n    \"(default: 1e-08)\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :\n    weight_decay: float = NonNegativeFloat(default=0.0)\n    amsgrad: bool = False\n", "line_start": 111}, "children": {"ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema": {"name": "Schema", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-model"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": true, "docstring": "", "docstring_sections": [], "source": {}, "children": {"ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta": {"name": "Meta", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": true, "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.", "docstring_sections": [{"type": "markdown", "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."}], "source": {"code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n", "line_start": 49}, "children": {"ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta.unknown": {"name": "unknown", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta.unknown", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta", "has_contents": true, "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.", "docstring_sections": [{"type": "markdown", "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}}, "attributes": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta.unknown"], "methods": [], "functions": [], "modules": [], "classes": [], "bases": ["object"]}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._declared_fields": {"name": "_declared_fields", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._declared_fields", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["private"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._hooks": {"name": "_hooks", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._hooks", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["private"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.opts": {"name": "opts", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.opts", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.validate_type": {"name": "validate_type", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.validate_type", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": true, "docstring": "Workaround to enforce immutable `type` in defined optimizer classes.\n\n:param data: Any-typed object that should be a string correctly identifying the optimizer type.", "docstring_sections": [{"type": "markdown", "value": "Workaround to enforce immutable `type` in defined optimizer classes."}, {"type": "parameters", "value": [{"description": "Any-typed object that should be a string correctly identifying the optimizer type.", "annotation": "", "name": "data", "kind": "POSITIONAL_OR_KEYWORD", "default": "", "is_optional": false, "is_required": true, "is_args": false, "is_kwargs": false}]}], "source": {"code": "    @validates(\"type\")\n    def validate_type(self, data, **kwargs):\n        \"\"\"Workaround to enforce immutable `type` in defined optimizer classes.\n\n        :param data: Any-typed object that should be a string correctly identifying the optimizer type.\n        \"\"\"\n        if not isinstance(data, str):\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects type of field `type` to be `str`, instead received '{data}'\"\n            )\n        default = self.declared_fields[\"type\"].dump_default\n        if default is not missing and data != default:\n            # Handle aliases:\n            if optimizer_registry[default] == optimizer_registry[data]:\n                return\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'\"\n            )\n", "line_start": 62}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "data"}, {"kind": "VAR_KEYWORD", "name": "kwargs"}]}}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.type": {"name": "type", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.type", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "String"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.lr": {"name": "lr", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.lr", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.betas": {"name": "betas", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.betas", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "FloatTupleMarshmallowField"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.eps": {"name": "eps", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.eps", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.weight_decay": {"name": "weight_decay", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.weight_decay", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Float"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.amsgrad": {"name": "amsgrad", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.amsgrad", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["marshmallow-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Boolean"}}, "attributes": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._declared_fields", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._hooks", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.opts", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.type", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.lr", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.betas", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.eps", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.weight_decay", "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.amsgrad"], "methods": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.validate_type"], "functions": [], "modules": [], "classes": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta"], "bases": ["marshmallow_dataclass._base_schema.<locals>.BaseSchema"]}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.__eq__": {"name": "__eq__", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.__eq__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "other"}]}}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.__init__": {"name": "__init__", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "type", "annotation": "str", "default": "'adam'"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "lr", "annotation": "float", "default": "0.001"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "betas", "annotation": "Tuple[float, float]", "default": "(0.9, 0.999)"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "eps", "annotation": "float", "default": "1e-08"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "weight_decay", "annotation": "float", "default": "0.0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "amsgrad", "annotation": "bool", "default": "False"}], "return_annotation": "None"}}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.__repr__": {"name": "__repr__", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.__repr__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}]}}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.amsgrad": {"name": "amsgrad", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.amsgrad", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "bool"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.betas": {"name": "betas", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.betas", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": true, "docstring": "(default: (0.9, 0.999))", "docstring_sections": [{"type": "markdown", "value": "(default: (0.9, 0.999))"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "Tuple[float, float]"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.eps": {"name": "eps", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.eps", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": true, "docstring": "(default: 1e-08)", "docstring_sections": [{"type": "markdown", "value": "(default: 1e-08)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.lr": {"name": "lr", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.lr", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": true, "docstring": "(default: 0.001)", "docstring_sections": [{"type": "markdown", "value": "(default: 0.001)"}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type": {"name": "torch_type", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": true, "docstring": "Implements Adam algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\beta_1, \\beta_2\n            \\text{ (betas)},\\theta_0 \\text{ (params)},f(\\theta) \\text{ (objective)}          \\\\\n        &\\hspace{13mm}      \\lambda \\text{ (weight decay)},  \\: amsgrad                      \\\\\n        &\\textbf{initialize} :  m_0 \\leftarrow 0 \\text{ ( first moment)},\n            v_0\\leftarrow 0 \\text{ (second moment)},\\: \\widehat{v_0}^{max}\\leftarrow 0\\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm}m_t           \\leftarrow   \\beta_1 m_{t-1} + (1 - \\beta_1) g_t          \\\\\n        &\\hspace{5mm}v_t           \\leftarrow   \\beta_2 v_{t-1} + (1-\\beta_2) g^2_t          \\\\\n        &\\hspace{5mm}\\widehat{m_t} \\leftarrow   m_t/\\big(1-\\beta_1^t \\big)                   \\\\\n        &\\hspace{5mm}\\widehat{v_t} \\leftarrow   v_t/\\big(1-\\beta_2^t \\big)                   \\\\\n        &\\hspace{5mm}\\textbf{if} \\: amsgrad                                                  \\\\\n        &\\hspace{10mm}\\widehat{v_t}^{max} \\leftarrow \\mathrm{max}(\\widehat{v_t}^{max},\n            \\widehat{v_t})                                                                   \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}^{max}} + \\epsilon \\big)                                 \\\\\n        &\\hspace{5mm}\\textbf{else}                                                           \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}} + \\epsilon \\big)                                       \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adam: A Method for Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-3)\n    betas (Tuple[float, float], optional): coefficients used for computing\n        running averages of gradient and its square (default: (0.9, 0.999))\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-8)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    amsgrad (boolean, optional): whether to use the AMSGrad variant of this\n        algorithm from the paper `On the Convergence of Adam and Beyond`_\n        (default: False)\n\n.. _Adam\\: A Method for Stochastic Optimization:\n    https://arxiv.org/abs/1412.6980\n.. _On the Convergence of Adam and Beyond:\n    https://openreview.net/forum?id=ryQu7f-RZ", "docstring_sections": [{"type": "markdown", "value": "Implements Adam algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\beta_1, \\beta_2\n            \\text{ (betas)},\\theta_0 \\text{ (params)},f(\\theta) \\text{ (objective)}          \\\\\n        &\\hspace{13mm}      \\lambda \\text{ (weight decay)},  \\: amsgrad                      \\\\\n        &\\textbf{initialize} :  m_0 \\leftarrow 0 \\text{ ( first moment)},\n            v_0\\leftarrow 0 \\text{ (second moment)},\\: \\widehat{v_0}^{max}\\leftarrow 0\\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm}m_t           \\leftarrow   \\beta_1 m_{t-1} + (1 - \\beta_1) g_t          \\\\\n        &\\hspace{5mm}v_t           \\leftarrow   \\beta_2 v_{t-1} + (1-\\beta_2) g^2_t          \\\\\n        &\\hspace{5mm}\\widehat{m_t} \\leftarrow   m_t/\\big(1-\\beta_1^t \\big)                   \\\\\n        &\\hspace{5mm}\\widehat{v_t} \\leftarrow   v_t/\\big(1-\\beta_2^t \\big)                   \\\\\n        &\\hspace{5mm}\\textbf{if} \\: amsgrad                                                  \\\\\n        &\\hspace{10mm}\\widehat{v_t}^{max} \\leftarrow \\mathrm{max}(\\widehat{v_t}^{max},\n            \\widehat{v_t})                                                                   \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}^{max}} + \\epsilon \\big)                                 \\\\\n        &\\hspace{5mm}\\textbf{else}                                                           \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}} + \\epsilon \\big)                                       \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adam: A Method for Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-3)\n    betas (Tuple[float, float], optional): coefficients used for computing\n        running averages of gradient and its square (default: (0.9, 0.999))\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-8)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    amsgrad (boolean, optional): whether to use the AMSGrad variant of this\n        algorithm from the paper `On the Convergence of Adam and Beyond`_\n        (default: False)\n\n.. _Adam\\: A Method for Stochastic Optimization:\n    https://arxiv.org/abs/1412.6980\n.. _On the Convergence of Adam and Beyond:\n    https://openreview.net/forum?id=ryQu7f-RZ"}], "source": {"code": "class Adam(Optimizer):\n    r\"\"\"Implements Adam algorithm.\n\n    .. math::\n       \\begin{aligned}\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{input}      : \\gamma \\text{ (lr)}, \\beta_1, \\beta_2\n                \\text{ (betas)},\\theta_0 \\text{ (params)},f(\\theta) \\text{ (objective)}          \\\\\n            &\\hspace{13mm}      \\lambda \\text{ (weight decay)},  \\: amsgrad                      \\\\\n            &\\textbf{initialize} :  m_0 \\leftarrow 0 \\text{ ( first moment)},\n                v_0\\leftarrow 0 \\text{ (second moment)},\\: \\widehat{v_0}^{max}\\leftarrow 0\\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n            &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n            &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n            &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n            &\\hspace{5mm}m_t           \\leftarrow   \\beta_1 m_{t-1} + (1 - \\beta_1) g_t          \\\\\n            &\\hspace{5mm}v_t           \\leftarrow   \\beta_2 v_{t-1} + (1-\\beta_2) g^2_t          \\\\\n            &\\hspace{5mm}\\widehat{m_t} \\leftarrow   m_t/\\big(1-\\beta_1^t \\big)                   \\\\\n            &\\hspace{5mm}\\widehat{v_t} \\leftarrow   v_t/\\big(1-\\beta_2^t \\big)                   \\\\\n            &\\hspace{5mm}\\textbf{if} \\: amsgrad                                                  \\\\\n            &\\hspace{10mm}\\widehat{v_t}^{max} \\leftarrow \\mathrm{max}(\\widehat{v_t}^{max},\n                \\widehat{v_t})                                                                   \\\\\n            &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n                \\big(\\sqrt{\\widehat{v_t}^{max}} + \\epsilon \\big)                                 \\\\\n            &\\hspace{5mm}\\textbf{else}                                                           \\\\\n            &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n                \\big(\\sqrt{\\widehat{v_t}} + \\epsilon \\big)                                       \\\\\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n            &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n       \\end{aligned}\n\n    For further details regarding the algorithm we refer to `Adam: A Method for Stochastic Optimization`_.\n\n    Args:\n        params (iterable): iterable of parameters to optimize or dicts defining\n            parameter groups\n        lr (float, optional): learning rate (default: 1e-3)\n        betas (Tuple[float, float], optional): coefficients used for computing\n            running averages of gradient and its square (default: (0.9, 0.999))\n        eps (float, optional): term added to the denominator to improve\n            numerical stability (default: 1e-8)\n        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n        amsgrad (boolean, optional): whether to use the AMSGrad variant of this\n            algorithm from the paper `On the Convergence of Adam and Beyond`_\n            (default: False)\n\n    .. _Adam\\: A Method for Stochastic Optimization:\n        https://arxiv.org/abs/1412.6980\n    .. _On the Convergence of Adam and Beyond:\n        https://openreview.net/forum?id=ryQu7f-RZ\n    \"\"\"\n\n    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,\n                 weight_decay=0, amsgrad=False):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n        if not 0.0 <= betas[0] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 0: {}\".format(betas[0]))\n        if not 0.0 <= betas[1] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 1: {}\".format(betas[1]))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        defaults = dict(lr=lr, betas=betas, eps=eps,\n                        weight_decay=weight_decay, amsgrad=amsgrad)\n        super(Adam, self).__init__(params, defaults)\n\n    def __setstate__(self, state):\n        super(Adam, self).__setstate__(state)\n        for group in self.param_groups:\n            group.setdefault('amsgrad', False)\n\n    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            exp_avgs = []\n            exp_avg_sqs = []\n            max_exp_avg_sqs = []\n            state_steps = []\n            beta1, beta2 = group['betas']\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    if p.grad.is_sparse:\n                        raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')\n                    grads.append(p.grad)\n\n                    state = self.state[p]\n                    # Lazy state initialization\n                    if len(state) == 0:\n                        state['step'] = 0\n                        # Exponential moving average of gradient values\n                        state['exp_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        # Exponential moving average of squared gradient values\n                        state['exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        if group['amsgrad']:\n                            # Maintains max of all exp. moving avg. of sq. grad. values\n                            state['max_exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n\n                    exp_avgs.append(state['exp_avg'])\n                    exp_avg_sqs.append(state['exp_avg_sq'])\n\n                    if group['amsgrad']:\n                        max_exp_avg_sqs.append(state['max_exp_avg_sq'])\n\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adam(params_with_grad,\n                   grads,\n                   exp_avgs,\n                   exp_avg_sqs,\n                   max_exp_avg_sqs,\n                   state_steps,\n                   amsgrad=group['amsgrad'],\n                   beta1=beta1,\n                   beta2=beta2,\n                   lr=group['lr'],\n                   weight_decay=group['weight_decay'],\n                   eps=group['eps'])\n        return loss\n", "line_start": 6}, "children": {"ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__init__": {"name": "__init__", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__init__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {"code": "    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,\n                 weight_decay=0, amsgrad=False):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n        if not 0.0 <= betas[0] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 0: {}\".format(betas[0]))\n        if not 0.0 <= betas[1] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 1: {}\".format(betas[1]))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        defaults = dict(lr=lr, betas=betas, eps=eps,\n                        weight_decay=weight_decay, amsgrad=amsgrad)\n        super(Adam, self).__init__(params, defaults)\n", "line_start": 60}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "params"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "lr", "default": "0.001"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "betas", "default": "(0.9, 0.999)"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "eps", "default": "1e-08"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "weight_decay", "default": "0"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "amsgrad", "default": "False"}]}}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__setstate__": {"name": "__setstate__", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__setstate__", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["special"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type", "has_contents": false, "docstring": "", "docstring_sections": [], "source": {"code": "    def __setstate__(self, state):\n        super(Adam, self).__setstate__(state)\n        for group in self.param_groups:\n            group.setdefault('amsgrad', False)\n", "line_start": 76}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "state"}]}}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.step": {"name": "step", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.step", "category": "method", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type", "has_contents": true, "docstring": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss.", "docstring_sections": [{"type": "markdown", "value": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss."}], "source": {"code": "    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            exp_avgs = []\n            exp_avg_sqs = []\n            max_exp_avg_sqs = []\n            state_steps = []\n            beta1, beta2 = group['betas']\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    if p.grad.is_sparse:\n                        raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')\n                    grads.append(p.grad)\n\n                    state = self.state[p]\n                    # Lazy state initialization\n                    if len(state) == 0:\n                        state['step'] = 0\n                        # Exponential moving average of gradient values\n                        state['exp_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        # Exponential moving average of squared gradient values\n                        state['exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        if group['amsgrad']:\n                            # Maintains max of all exp. moving avg. of sq. grad. values\n                            state['max_exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n\n                    exp_avgs.append(state['exp_avg'])\n                    exp_avg_sqs.append(state['exp_avg_sq'])\n\n                    if group['amsgrad']:\n                        max_exp_avg_sqs.append(state['max_exp_avg_sq'])\n\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adam(params_with_grad,\n                   grads,\n                   exp_avgs,\n                   exp_avg_sqs,\n                   max_exp_avg_sqs,\n                   state_steps,\n                   amsgrad=group['amsgrad'],\n                   beta1=beta1,\n                   beta2=beta2,\n                   lr=group['lr'],\n                   weight_decay=group['weight_decay'],\n                   eps=group['eps'])\n        return loss\n", "line_start": 81}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "signature": {"parameters": [{"kind": "POSITIONAL_OR_KEYWORD", "name": "self"}, {"kind": "POSITIONAL_OR_KEYWORD", "name": "closure", "default": "None"}]}}}, "attributes": [], "methods": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__init__", "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__setstate__", "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.step"], "functions": [], "modules": [], "classes": [], "bases": ["torch.optim.optimizer.Optimizer"]}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.type": {"name": "type", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.type", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": [], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": true, "docstring": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`.", "docstring_sections": [{"type": "markdown", "value": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "str"}, "ludwig.modules.optimization_modules.AdamOptimizerConfig.weight_decay": {"name": "weight_decay", "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.weight_decay", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py", "relative_file_path": "ludwig/modules/optimization_modules.py", "properties": ["dataclass-field"], "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig", "has_contents": false, "docstring": null, "docstring_sections": [], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": "float"}}, "attributes": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.type", "ludwig.modules.optimization_modules.AdamOptimizerConfig.lr", "ludwig.modules.optimization_modules.AdamOptimizerConfig.betas", "ludwig.modules.optimization_modules.AdamOptimizerConfig.eps", "ludwig.modules.optimization_modules.AdamOptimizerConfig.weight_decay", "ludwig.modules.optimization_modules.AdamOptimizerConfig.amsgrad"], "methods": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.__eq__", "ludwig.modules.optimization_modules.AdamOptimizerConfig.__init__", "ludwig.modules.optimization_modules.AdamOptimizerConfig.__repr__"], "functions": [], "modules": [], "classes": ["ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema", "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type"], "bases": ["ludwig.modules.optimization_modules.BaseOptimizerConfig"]}]}
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.type",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.lr",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.betas",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.eps",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.weight_decay",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.amsgrad"
+            ],
+            "bases": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.type",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.lr",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.betas",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.eps",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.weight_decay",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.amsgrad"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.amsgrad": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "amsgrad",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.amsgrad",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Boolean"
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.betas": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "betas",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.betas",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "FloatTupleMarshmallowField"
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.eps": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "eps",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.eps",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.lr": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "lr",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.lr",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.type": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "type",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.type",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "String"
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.validate_type": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "Workaround to enforce immutable `type` in defined optimizer classes.\n\n:param data: Any-typed object that should be a string correctly identifying the optimizer type.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Workaround to enforce immutable `type` in defined optimizer classes."
+                                },
+                                {
+                                    "type": "parameters",
+                                    "value": [
+                                        {
+                                            "annotation": "",
+                                            "default": "",
+                                            "description": "Any-typed object that should be a string correctly identifying the optimizer type.",
+                                            "is_args": false,
+                                            "is_kwargs": false,
+                                            "is_optional": false,
+                                            "is_required": true,
+                                            "kind": "POSITIONAL_OR_KEYWORD",
+                                            "name": "data"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "validate_type",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.validate_type",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "kind": "VAR_KEYWORD",
+                                        "name": "kwargs"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    @validates(\"type\")\n    def validate_type(self, data, **kwargs):\n        \"\"\"Workaround to enforce immutable `type` in defined optimizer classes.\n\n        :param data: Any-typed object that should be a string correctly identifying the optimizer type.\n        \"\"\"\n        if not isinstance(data, str):\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects type of field `type` to be `str`, instead received '{data}'\"\n            )\n        default = self.declared_fields[\"type\"].dump_default\n        if default is not missing and data != default:\n            # Handle aliases:\n            if optimizer_registry[default] == optimizer_registry[data]:\n                return\n            raise ValidationError(\n                f\"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'\"\n            )\n",
+                                "line_start": 62
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.weight_decay": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "weight_decay",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.weight_decay",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema.validate_type"
+                    ],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "str",
+                                "default": "'adam'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "type"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.001",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "lr"
+                            },
+                            {
+                                "annotation": "Tuple[float, float]",
+                                "default": "(0.9, 0.999)",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "betas"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "1e-08",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "eps"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "weight_decay"
+                            },
+                            {
+                                "annotation": "bool",
+                                "default": "False",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "amsgrad"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.amsgrad": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "amsgrad",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.amsgrad",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "bool"
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.betas": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: (0.9, 0.999))",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: (0.9, 0.999))"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "betas",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.betas",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Tuple[float, float]"
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.eps": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 1e-08)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 1e-08)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "eps",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.eps",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.lr": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 0.001)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 0.001)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "lr",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.lr",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type": {
+                    "attributes": [],
+                    "bases": [
+                        "torch.optim.optimizer.Optimizer"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__init__": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "",
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "__init__",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__init__",
+                            "properties": [
+                                "special"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "params"
+                                    },
+                                    {
+                                        "default": "0.001",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "lr"
+                                    },
+                                    {
+                                        "default": "(0.9, 0.999)",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "betas"
+                                    },
+                                    {
+                                        "default": "1e-08",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "eps"
+                                    },
+                                    {
+                                        "default": "0",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "weight_decay"
+                                    },
+                                    {
+                                        "default": "False",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "amsgrad"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,\n                 weight_decay=0, amsgrad=False):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n        if not 0.0 <= betas[0] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 0: {}\".format(betas[0]))\n        if not 0.0 <= betas[1] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 1: {}\".format(betas[1]))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        defaults = dict(lr=lr, betas=betas, eps=eps,\n                        weight_decay=weight_decay, amsgrad=amsgrad)\n        super(Adam, self).__init__(params, defaults)\n",
+                                "line_start": 60
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__setstate__": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "",
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "__setstate__",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__setstate__",
+                            "properties": [
+                                "special"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "state"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    def __setstate__(self, state):\n        super(Adam, self).__setstate__(state)\n        for group in self.param_groups:\n            group.setdefault('amsgrad', False)\n",
+                                "line_start": 76
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.step": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "step",
+                            "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type",
+                            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.step",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "default": "None",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "closure"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            exp_avgs = []\n            exp_avg_sqs = []\n            max_exp_avg_sqs = []\n            state_steps = []\n            beta1, beta2 = group['betas']\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    if p.grad.is_sparse:\n                        raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')\n                    grads.append(p.grad)\n\n                    state = self.state[p]\n                    # Lazy state initialization\n                    if len(state) == 0:\n                        state['step'] = 0\n                        # Exponential moving average of gradient values\n                        state['exp_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        # Exponential moving average of squared gradient values\n                        state['exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        if group['amsgrad']:\n                            # Maintains max of all exp. moving avg. of sq. grad. values\n                            state['max_exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n\n                    exp_avgs.append(state['exp_avg'])\n                    exp_avg_sqs.append(state['exp_avg_sq'])\n\n                    if group['amsgrad']:\n                        max_exp_avg_sqs.append(state['max_exp_avg_sq'])\n\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adam(params_with_grad,\n                   grads,\n                   exp_avgs,\n                   exp_avg_sqs,\n                   max_exp_avg_sqs,\n                   state_steps,\n                   amsgrad=group['amsgrad'],\n                   beta1=beta1,\n                   beta2=beta2,\n                   lr=group['lr'],\n                   weight_decay=group['weight_decay'],\n                   eps=group['eps'])\n        return loss\n",
+                                "line_start": 81
+                            }
+                        }
+                    },
+                    "classes": [],
+                    "docstring": "Implements Adam algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\beta_1, \\beta_2\n            \\text{ (betas)},\\theta_0 \\text{ (params)},f(\\theta) \\text{ (objective)}          \\\\\n        &\\hspace{13mm}      \\lambda \\text{ (weight decay)},  \\: amsgrad                      \\\\\n        &\\textbf{initialize} :  m_0 \\leftarrow 0 \\text{ ( first moment)},\n            v_0\\leftarrow 0 \\text{ (second moment)},\\: \\widehat{v_0}^{max}\\leftarrow 0\\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm}m_t           \\leftarrow   \\beta_1 m_{t-1} + (1 - \\beta_1) g_t          \\\\\n        &\\hspace{5mm}v_t           \\leftarrow   \\beta_2 v_{t-1} + (1-\\beta_2) g^2_t          \\\\\n        &\\hspace{5mm}\\widehat{m_t} \\leftarrow   m_t/\\big(1-\\beta_1^t \\big)                   \\\\\n        &\\hspace{5mm}\\widehat{v_t} \\leftarrow   v_t/\\big(1-\\beta_2^t \\big)                   \\\\\n        &\\hspace{5mm}\\textbf{if} \\: amsgrad                                                  \\\\\n        &\\hspace{10mm}\\widehat{v_t}^{max} \\leftarrow \\mathrm{max}(\\widehat{v_t}^{max},\n            \\widehat{v_t})                                                                   \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}^{max}} + \\epsilon \\big)                                 \\\\\n        &\\hspace{5mm}\\textbf{else}                                                           \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}} + \\epsilon \\big)                                       \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adam: A Method for Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-3)\n    betas (Tuple[float, float], optional): coefficients used for computing\n        running averages of gradient and its square (default: (0.9, 0.999))\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-8)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    amsgrad (boolean, optional): whether to use the AMSGrad variant of this\n        algorithm from the paper `On the Convergence of Adam and Beyond`_\n        (default: False)\n\n.. _Adam\\: A Method for Stochastic Optimization:\n    https://arxiv.org/abs/1412.6980\n.. _On the Convergence of Adam and Beyond:\n    https://openreview.net/forum?id=ryQu7f-RZ",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Implements Adam algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\beta_1, \\beta_2\n            \\text{ (betas)},\\theta_0 \\text{ (params)},f(\\theta) \\text{ (objective)}          \\\\\n        &\\hspace{13mm}      \\lambda \\text{ (weight decay)},  \\: amsgrad                      \\\\\n        &\\textbf{initialize} :  m_0 \\leftarrow 0 \\text{ ( first moment)},\n            v_0\\leftarrow 0 \\text{ (second moment)},\\: \\widehat{v_0}^{max}\\leftarrow 0\\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm}m_t           \\leftarrow   \\beta_1 m_{t-1} + (1 - \\beta_1) g_t          \\\\\n        &\\hspace{5mm}v_t           \\leftarrow   \\beta_2 v_{t-1} + (1-\\beta_2) g^2_t          \\\\\n        &\\hspace{5mm}\\widehat{m_t} \\leftarrow   m_t/\\big(1-\\beta_1^t \\big)                   \\\\\n        &\\hspace{5mm}\\widehat{v_t} \\leftarrow   v_t/\\big(1-\\beta_2^t \\big)                   \\\\\n        &\\hspace{5mm}\\textbf{if} \\: amsgrad                                                  \\\\\n        &\\hspace{10mm}\\widehat{v_t}^{max} \\leftarrow \\mathrm{max}(\\widehat{v_t}^{max},\n            \\widehat{v_t})                                                                   \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}^{max}} + \\epsilon \\big)                                 \\\\\n        &\\hspace{5mm}\\textbf{else}                                                           \\\\\n        &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n            \\big(\\sqrt{\\widehat{v_t}} + \\epsilon \\big)                                       \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `Adam: A Method for Stochastic Optimization`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float, optional): learning rate (default: 1e-3)\n    betas (Tuple[float, float], optional): coefficients used for computing\n        running averages of gradient and its square (default: (0.9, 0.999))\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-8)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    amsgrad (boolean, optional): whether to use the AMSGrad variant of this\n        algorithm from the paper `On the Convergence of Adam and Beyond`_\n        (default: False)\n\n.. _Adam\\: A Method for Stochastic Optimization:\n    https://arxiv.org/abs/1412.6980\n.. _On the Convergence of Adam and Beyond:\n    https://openreview.net/forum?id=ryQu7f-RZ"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__init__",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.__setstate__",
+                        "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type.step"
+                    ],
+                    "modules": [],
+                    "name": "torch_type",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {
+                        "code": "class Adam(Optimizer):\n    r\"\"\"Implements Adam algorithm.\n\n    .. math::\n       \\begin{aligned}\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{input}      : \\gamma \\text{ (lr)}, \\beta_1, \\beta_2\n                \\text{ (betas)},\\theta_0 \\text{ (params)},f(\\theta) \\text{ (objective)}          \\\\\n            &\\hspace{13mm}      \\lambda \\text{ (weight decay)},  \\: amsgrad                      \\\\\n            &\\textbf{initialize} :  m_0 \\leftarrow 0 \\text{ ( first moment)},\n                v_0\\leftarrow 0 \\text{ (second moment)},\\: \\widehat{v_0}^{max}\\leftarrow 0\\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n            &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n            &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n            &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n            &\\hspace{5mm}m_t           \\leftarrow   \\beta_1 m_{t-1} + (1 - \\beta_1) g_t          \\\\\n            &\\hspace{5mm}v_t           \\leftarrow   \\beta_2 v_{t-1} + (1-\\beta_2) g^2_t          \\\\\n            &\\hspace{5mm}\\widehat{m_t} \\leftarrow   m_t/\\big(1-\\beta_1^t \\big)                   \\\\\n            &\\hspace{5mm}\\widehat{v_t} \\leftarrow   v_t/\\big(1-\\beta_2^t \\big)                   \\\\\n            &\\hspace{5mm}\\textbf{if} \\: amsgrad                                                  \\\\\n            &\\hspace{10mm}\\widehat{v_t}^{max} \\leftarrow \\mathrm{max}(\\widehat{v_t}^{max},\n                \\widehat{v_t})                                                                   \\\\\n            &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n                \\big(\\sqrt{\\widehat{v_t}^{max}} + \\epsilon \\big)                                 \\\\\n            &\\hspace{5mm}\\textbf{else}                                                           \\\\\n            &\\hspace{10mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma \\widehat{m_t}/\n                \\big(\\sqrt{\\widehat{v_t}} + \\epsilon \\big)                                       \\\\\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n            &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n       \\end{aligned}\n\n    For further details regarding the algorithm we refer to `Adam: A Method for Stochastic Optimization`_.\n\n    Args:\n        params (iterable): iterable of parameters to optimize or dicts defining\n            parameter groups\n        lr (float, optional): learning rate (default: 1e-3)\n        betas (Tuple[float, float], optional): coefficients used for computing\n            running averages of gradient and its square (default: (0.9, 0.999))\n        eps (float, optional): term added to the denominator to improve\n            numerical stability (default: 1e-8)\n        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n        amsgrad (boolean, optional): whether to use the AMSGrad variant of this\n            algorithm from the paper `On the Convergence of Adam and Beyond`_\n            (default: False)\n\n    .. _Adam\\: A Method for Stochastic Optimization:\n        https://arxiv.org/abs/1412.6980\n    .. _On the Convergence of Adam and Beyond:\n        https://openreview.net/forum?id=ryQu7f-RZ\n    \"\"\"\n\n    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8,\n                 weight_decay=0, amsgrad=False):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n        if not 0.0 <= betas[0] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 0: {}\".format(betas[0]))\n        if not 0.0 <= betas[1] < 1.0:\n            raise ValueError(\"Invalid beta parameter at index 1: {}\".format(betas[1]))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n        defaults = dict(lr=lr, betas=betas, eps=eps,\n                        weight_decay=weight_decay, amsgrad=amsgrad)\n        super(Adam, self).__init__(params, defaults)\n\n    def __setstate__(self, state):\n        super(Adam, self).__setstate__(state)\n        for group in self.param_groups:\n            group.setdefault('amsgrad', False)\n\n    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            exp_avgs = []\n            exp_avg_sqs = []\n            max_exp_avg_sqs = []\n            state_steps = []\n            beta1, beta2 = group['betas']\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    if p.grad.is_sparse:\n                        raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')\n                    grads.append(p.grad)\n\n                    state = self.state[p]\n                    # Lazy state initialization\n                    if len(state) == 0:\n                        state['step'] = 0\n                        # Exponential moving average of gradient values\n                        state['exp_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        # Exponential moving average of squared gradient values\n                        state['exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                        if group['amsgrad']:\n                            # Maintains max of all exp. moving avg. of sq. grad. values\n                            state['max_exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n\n                    exp_avgs.append(state['exp_avg'])\n                    exp_avg_sqs.append(state['exp_avg_sq'])\n\n                    if group['amsgrad']:\n                        max_exp_avg_sqs.append(state['max_exp_avg_sq'])\n\n                    # update the steps for each param group update\n                    state['step'] += 1\n                    # record the step after step update\n                    state_steps.append(state['step'])\n\n            F.adam(params_with_grad,\n                   grads,\n                   exp_avgs,\n                   exp_avg_sqs,\n                   max_exp_avg_sqs,\n                   state_steps,\n                   amsgrad=group['amsgrad'],\n                   beta1=beta1,\n                   beta2=beta2,\n                   lr=group['lr'],\n                   weight_decay=group['weight_decay'],\n                   eps=group['eps'])\n        return loss\n",
+                        "line_start": 6
+                    }
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.type": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`.",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "type",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.type",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "str"
+                },
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.weight_decay": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "weight_decay",
+                    "parent_path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig.weight_decay",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.Schema",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.torch_type"
+            ],
+            "docstring": "Parameters for adam optimization.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Parameters for adam optimization."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.__eq__",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.__init__",
+                "ludwig.modules.optimization_modules.AdamOptimizerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "AdamOptimizerConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.AdamOptimizerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class AdamOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adam optimization.\"\"\"\n\n    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam\n    \"Points to `torch.optim.Adam`.\"\n\n    type: str = \"adam\"\n\n    lr: float = FloatRange(default=0.001, min=0.0, max=1.0)\n    \"(default: 0.001)\"\n\n    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))\n    \"(default: (0.9, 0.999))\"\n\n    eps: float = NonNegativeFloat(default=1e-08)\n    \"(default: 1e-08)\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :\n    weight_decay: float = NonNegativeFloat(default=0.0)\n    amsgrad: bool = False\n",
+                "line_start": 111
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

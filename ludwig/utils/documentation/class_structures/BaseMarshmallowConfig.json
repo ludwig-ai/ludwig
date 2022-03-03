@@ -1,1 +1,97 @@
-{"loading_errors": [], "parsing_errors": {}, "objects": [{"name": "BaseMarshmallowConfig", "path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/marshmallow_schema_utils.py", "relative_file_path": "ludwig/utils/marshmallow_schema_utils.py", "properties": [], "parent_path": "ludwig.utils.marshmallow_schema_utils", "has_contents": true, "docstring": "Base marshmallow class for common attributes and metadata.", "docstring_sections": [{"type": "markdown", "value": "Base marshmallow class for common attributes and metadata."}], "source": {"code": "class BaseMarshmallowConfig:\n    \"\"\"Base marshmallow class for common attributes and metadata.\"\"\"\n\n    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n", "line_start": 46}, "children": {"ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta": {"name": "Meta", "path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta", "category": "class", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/marshmallow_schema_utils.py", "relative_file_path": "ludwig/utils/marshmallow_schema_utils.py", "properties": [], "parent_path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig", "has_contents": true, "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.", "docstring_sections": [{"type": "markdown", "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."}], "source": {"code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n", "line_start": 49}, "children": {"ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta.unknown": {"name": "unknown", "path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta.unknown", "category": "attribute", "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/marshmallow_schema_utils.py", "relative_file_path": "ludwig/utils/marshmallow_schema_utils.py", "properties": [], "parent_path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta", "has_contents": true, "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.", "docstring_sections": [{"type": "markdown", "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."}], "source": {}, "children": {}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": [], "type": ""}}, "attributes": ["ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta.unknown"], "methods": [], "functions": [], "modules": [], "classes": [], "bases": ["object"]}}, "attributes": [], "methods": [], "functions": [], "modules": [], "classes": ["ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta"], "bases": ["object"]}]}
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [],
+            "bases": [
+                "object"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta": {
+                    "attributes": [
+                        "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta.unknown"
+                    ],
+                    "bases": [
+                        "object"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta.unknown": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/marshmallow_schema_utils.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "unknown",
+                            "parent_path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta",
+                            "path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta.unknown",
+                            "properties": [],
+                            "relative_file_path": "ludwig/utils/marshmallow_schema_utils.py",
+                            "source": {},
+                            "type": ""
+                        }
+                    },
+                    "classes": [],
+                    "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/marshmallow_schema_utils.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Meta",
+                    "parent_path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig",
+                    "path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta",
+                    "properties": [],
+                    "relative_file_path": "ludwig/utils/marshmallow_schema_utils.py",
+                    "source": {
+                        "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                        "line_start": 49
+                    }
+                }
+            },
+            "classes": [
+                "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig.Meta"
+            ],
+            "docstring": "Base marshmallow class for common attributes and metadata.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Base marshmallow class for common attributes and metadata."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/utils/marshmallow_schema_utils.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [],
+            "modules": [],
+            "name": "BaseMarshmallowConfig",
+            "parent_path": "ludwig.utils.marshmallow_schema_utils",
+            "path": "ludwig.utils.marshmallow_schema_utils.BaseMarshmallowConfig",
+            "properties": [],
+            "relative_file_path": "ludwig/utils/marshmallow_schema_utils.py",
+            "source": {
+                "code": "class BaseMarshmallowConfig:\n    \"\"\"Base marshmallow class for common attributes and metadata.\"\"\"\n\n    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                "line_start": 46
+            }
+        }
+    ],
+    "parsing_errors": {}
+}
