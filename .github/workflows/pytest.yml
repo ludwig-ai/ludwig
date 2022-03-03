@@ -75,11 +75,11 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
+          echo 'CMAKE VERSION IS'
+          cmake --version
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
             pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           else
             pip install torch==$PYTORCH
           fi
@@ -161,15 +161,13 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7]
-        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
             pytorch-version: 1.10.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
-      MARKERS: ${{ matrix.test-markers }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, gpu
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, gpu
 
     timeout-minutes: 70
     steps:
@@ -182,7 +180,8 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 ccache build-essential g++-8 gcc-8
+          sudo apt-get update && sudo apt-get install -y libsndfile1 ccache build-essential g++-8 gcc-8
+          cmake --version
 
       - name: Install CUDA drivers
         run: |
@@ -215,12 +214,12 @@ jobs:
           python -m pip install -U pip
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
             pip install --pre torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
             pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           else
             pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
           fi
+          cat requirements_horovod.txt | sed 's/\>=0.24.0/==0.23.0/g' > requirements-temp && mv requirements-temp requirements_horovod.txt
           pip install dulwich==0.20.26 # workaround for `/usr/bin/ld: cannot find -lpython3.7m`
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
@@ -248,13 +247,13 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+          pytest -v --timeout 300 --durations 10 --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+          name: Unit Test Results (Python ${{ matrix.python-version }} gpu
           path: pytest.xml
 
   event_file:
