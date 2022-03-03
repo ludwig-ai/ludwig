@@ -302,7 +302,10 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss and a dictionary of metrics.
         """
-        self.optimizer.zero_grad()
+
+        # Change to self.optimizer.zero_grad(set_to_none=True) once all ludwig platform on pytorch 1.7 or greater
+        for param in self.model.parameters():
+            param.grad = None
 
         # Obtain model predictions and loss
         model_outputs = self.model((inputs, targets))
