@@ -181,8 +181,9 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 ccache build-essential g++-8 gcc-8
+          sudo apt-get update && sudo apt-get install -y libsndfile1 ccache build-essential g++-8 gcc-8
           # sudo apt-get update && sudo apt-get install -y cmake libsndfile1
+          pip install cmake
           echo 'CMAKE VERSION IS'
           cmake --version
 
