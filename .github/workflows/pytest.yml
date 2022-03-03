@@ -204,6 +204,7 @@ jobs:
 
       - name: Install dependencies
         env:
+          HOROVOD_GPU_OPERATIONS: "NCCL"
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
           HOROVOD_WITHOUT_TENSORFLOW: 1
@@ -215,11 +216,10 @@ jobs:
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             pip install --pre torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
-            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           else
             pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
           fi
-          cat requirements_horovod.txt | sed 's/\>=0.24.0/==0.23.0/g' > requirements-temp && mv requirements-temp requirements_horovod.txt
+          pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           pip install dulwich==0.20.26 # workaround for `/usr/bin/ld: cannot find -lpython3.7m`
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
