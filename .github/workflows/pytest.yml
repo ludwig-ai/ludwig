@@ -215,7 +215,7 @@ jobs:
           python -m pip install -U pip
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
+            cat requirements_horovod.txt | sed 's/\>=0.24.0/==0.23.0/g' > requirements-temp && mv requirements-temp requirements_horovod.txt
             pip install --pre torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
             pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           else
