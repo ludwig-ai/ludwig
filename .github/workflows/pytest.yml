@@ -180,7 +180,7 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y libsndfile1 ccache build-essential g++-8 gcc-8
+          sudo apt-get update && sudo apt-get install -y libsndfile1 cmake ccache build-essential g++-8 gcc-8
           cmake --version
 
       - name: Install CUDA drivers
