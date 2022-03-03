@@ -25,6 +25,7 @@ optimizers_registry = {
     "gd": torch.optim.SGD,
     "gradient_descent": torch.optim.SGD,
     "adam": torch.optim.Adam,
+    "adamw": torch.optim.AdamW,
     "adadelta": torch.optim.Adadelta,
     "adagrad": torch.optim.Adagrad,
     "adamax": torch.optim.Adamax,

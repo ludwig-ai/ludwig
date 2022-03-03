@@ -103,6 +103,10 @@ default_optimizer_params_registry = {
         # 'epsilon': 1e-08
         "eps": 1e-08,
     },
+    "adamw": {
+        "betas": (0.9, 0.999),
+        "eps": 1e-08,
+    },
     "adadelta": {
         "rho": 0.95,
         "eps": 1e-08

@@ -29,7 +29,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     return dataset.load(split=split)
 
 
-@register_dataset(name="yelp_polarity")
+@register_dataset(name="yelp_review_polarity")
 class YelpPolarity(TarDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
     """
         The Yelp Polarity dataset
@@ -43,7 +43,7 @@ class YelpPolarity(TarDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, Ba
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="yelp_polarity", cache_dir=cache_dir)
+        super().__init__(dataset_name="yelp_review_polarity", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         super().process_downloaded_dataset(header=None)

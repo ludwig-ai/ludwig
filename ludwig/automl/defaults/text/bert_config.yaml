@@ -1,9 +1,14 @@
+trainer:
+  learning_rate_warmup_epochs: 0
+  optimizer:
+    type: adamw
+
 hyperopt:
   # goal: maximize
   parameters:
     trainer.learning_rate:
       space: choice
-      categories: [0.00002, 0.00003, 0.00005]
+      categories: [0.00002, 0.00003]
     trainer.batch_size:
       space: choice
-      categories: [8, 16, 32, 64, 128]
+      categories: [16, 32, 64]

@@ -82,11 +82,9 @@ def run_api_experiment(config, data_parquet, backend_config):
     kwargs = get_trainer_kwargs()
     if torch.cuda.device_count() > 0:
         assert kwargs.get("num_workers") == torch.cuda.device_count(), kwargs
-        assert kwargs.get("resources_per_worker") is None, kwargs
         assert kwargs.get("use_gpu"), kwargs
     else:
         assert kwargs.get("num_workers") == 1, kwargs
-        assert kwargs.get("resources_per_worker").get("CPU") == 2, kwargs
         assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
