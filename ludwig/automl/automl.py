@@ -278,6 +278,7 @@ def _train(
         model_name=model_name,
         random_seed=random_seed,
         backend="local",
+        skip_save_log=True, # avoid per-step log overhead by default
         **kwargs,
     )
     return hyperopt_results
