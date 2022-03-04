@@ -14,7 +14,6 @@
 # ==============================================================================
 import contextlib
 import os
-
 import sys
 import tempfile
 
@@ -27,9 +26,8 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-
-from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
+from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
