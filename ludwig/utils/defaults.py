@@ -52,11 +52,15 @@ default_random_seed = 42
 default_preprocessing_force_split = False
 default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
 default_preprocessing_stratify = None
+default_preprocessing_undersample_majority = None
+default_preprocessing_oversample_minority = None
 
 default_preprocessing_parameters = {
     "force_split": default_preprocessing_force_split,
     "split_probabilities": default_preprocessing_split_probabilities,
     "stratify": default_preprocessing_stratify,
+    "undersample_majority": default_preprocessing_undersample_majority,
+    "oversample_minority": default_preprocessing_oversample_minority,
 }
 default_preprocessing_parameters.update(
     {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}

@@ -147,3 +147,5 @@ AUTO = "auto"
 CONFIG = "config"
 
 COMBINER = "combiner"
+
+BALANCE_PERCENTAGE_TOLERANCE = 0.02
