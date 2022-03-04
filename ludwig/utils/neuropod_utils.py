@@ -24,10 +24,6 @@ class GeneratedInferenceModule(torch.nn.Module):
     def forward(self, {input_signature}):
         inputs = {input_dict}
         results = self.inference_module(inputs)
-        #for name, preds in results.items():
-        #    for k, v in preds.items():
-        #        if v.dtype == torch.bool:
-        #            preds[k] = v.to(dtype=torch.int32)
         return {output_dicts}
 """
 
