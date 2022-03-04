@@ -40,6 +40,7 @@ class MlflowCallback(Callback):
         # which case we don't want to create a new experiment / run, as
         # this should be handled by the executor.
         if self.experiment_id is None:
+            mlflow.end_run()
             self.experiment_id = _get_or_create_experiment_id(experiment_name)
             run_name = os.path.basename(output_directory)
             self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
@@ -85,6 +86,7 @@ class MlflowCallback(Callback):
         if self.tracking_uri:
             mlflow.set_tracking_uri(self.tracking_uri)
         if self.run and not self.run_ended:
+            mlflow.end_run()
             self.run = mlflow.start_run(run_id=self.run.info.run_id, experiment_id=self.run.info.experiment_id)
 
 
