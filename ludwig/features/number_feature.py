@@ -323,6 +323,10 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @classmethod
+    def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "float32"
+
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _NumberPreprocessing(metadata)
@@ -428,6 +432,10 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @classmethod
+    def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "float32"
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

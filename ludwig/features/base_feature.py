@@ -175,6 +175,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_encoder(self, encoder_parameters):
         return get_encoder_cls(self.type(), self.encoder)(**encoder_parameters)
 
+    @classmethod
+    def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "string"
+
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
@@ -447,6 +451,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         backend,
     ):
         raise NotImplementedError
+
+    @classmethod
+    def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "string"
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
