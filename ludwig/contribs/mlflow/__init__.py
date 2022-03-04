@@ -61,7 +61,8 @@ class MlflowCallback(Callback):
         _log_model(save_path)
 
     def on_trainer_train_teardown(self, trainer, progress_tracker):
-        mlflow.end_run()
+        if self.run is not None:
+            mlflow.end_run()
 
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure
