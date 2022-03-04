@@ -83,6 +83,10 @@ class Callback(ABC):
         """Called in EVERY trainer (rank) before training starts."""
         pass
 
+    def on_trainer_train_teardown(self, trainer, progress_tracker):
+        """Called in EVERY trainer (rank) after training completes."""
+        pass
+
     def on_batch_start(self, trainer, progress_tracker, save_path):
         pass
 

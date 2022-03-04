@@ -60,6 +60,9 @@ class MlflowCallback(Callback):
         mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.epoch)
         _log_model(save_path)
 
+    def on_trainer_train_teardown(self, trainer, progress_tracker):
+        mlflow.end_run()
+
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure
         # mlflow.log_figure(fig)
