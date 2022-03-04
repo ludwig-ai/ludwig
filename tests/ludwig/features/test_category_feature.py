@@ -22,8 +22,6 @@ def category_config():
         "pretrained_embeddings": None,
         "embeddings_trainable": True,
         "dropout": 0.0,
-        "initializer": None,
-        "regularizer": None,
         "vocab": ["a", "b", "c"],
         "embedding_initializer": None,
     }
