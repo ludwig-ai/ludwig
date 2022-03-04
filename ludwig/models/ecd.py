@@ -66,6 +66,7 @@ class ECD(LudwigModule):
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
+        self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
@@ -210,6 +211,10 @@ class ECD(LudwigModule):
         for loss in self.losses():
             train_loss += loss
 
+        additional_losses = self.losses()
+        if additional_losses:
+            train_loss += torch.sum(torch.stack(additional_losses))  # other losses
+
         # Add regularization loss
         if regularization_type is not None and regularization_lambda != 0:
             train_loss += reg_loss(self, regularization_type, l1=regularization_lambda, l2=regularization_lambda)
@@ -218,25 +223,33 @@ class ECD(LudwigModule):
 
     def eval_loss(self, targets, predictions):
         eval_loss = 0
-        of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
             eval_loss += of_obj.loss["weight"] * of_eval_loss
-            of_eval_losses[of_name] = of_eval_loss
-        eval_loss += sum(self.losses())  # regularization / other losses
-        return eval_loss, of_eval_losses
+
+        additional_loss = 0
+        additional_losses = self.losses()
+        if additional_losses:
+            additional_loss = torch.sum(torch.stack(additional_losses))  # other losses
+
+        return eval_loss, additional_loss
 
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
-        self.eval_loss_metric.update(self.eval_loss(targets, predictions)[0])
+        eval_loss, additional_losses = self.eval_loss(targets, predictions)
+        self.eval_loss_metric.update(eval_loss)
+        self.eval_additional_losses_metrics.update(additional_losses)
 
     def get_metrics(self):
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
-        all_of_metrics[COMBINED] = {LOSS: get_scalar_from_ludwig_metric(self.eval_loss_metric)}
+        all_of_metrics[COMBINED] = {
+            LOSS: get_scalar_from_ludwig_metric(self.eval_loss_metric)
+            + get_scalar_from_ludwig_metric(self.eval_additional_losses_metrics)
+        }
         return all_of_metrics
 
     def reset_metrics(self):
