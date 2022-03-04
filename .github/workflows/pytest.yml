@@ -204,7 +204,6 @@ jobs:
 
       - name: Install dependencies
         env:
-          HOROVOD_GPU_OPERATIONS: "NCCL"
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
           HOROVOD_WITHOUT_TENSORFLOW: 1
@@ -219,7 +218,7 @@ jobs:
           else
             pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
           fi
-          pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+          # pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           pip install dulwich==0.20.26 # workaround for `/usr/bin/ld: cannot find -lpython3.7m`
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
