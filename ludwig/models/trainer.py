@@ -865,6 +865,8 @@ class Trainer(BaseTrainer):
 
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
+        self.callback(lambda c: c.on_trainer_train_teardown(self, progress_tracker), coordinator_only=False)
+
         if train_summary_writer is not None:
             train_summary_writer.close()
         if validation_summary_writer is not None:
