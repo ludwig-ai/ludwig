@@ -27,16 +27,22 @@ jobs:
         include:
           - python-version: 3.6
             pytorch-version: 1.10.0
+            torchscript-version: 1.10.2
           - python-version: 3.7
             pytorch-version: 1.10.0
+            torchscript-version: 1.10.2
           - python-version: 3.8
             pytorch-version: 1.10.0
+            torchscript-version: 1.10.2
           - python-version: 3.9
             pytorch-version: nightly
+            torchscript-version: 1.10.2
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+      NEUROPOD_VERISON: "0.3.0-rc6"
+      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
@@ -76,7 +82,6 @@ jobs:
           python --version
           pip --version
           python -m pip install -U pip
-          echo 'CMAKE VERSION IS'
           cmake --version
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
@@ -92,7 +97,7 @@ jobs:
       - name: Install Neuropod backend
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
-          curl -L https://github.com/uber/neuropod/releases/download/v0.3.0-rc6/libneuropod-cpu-linux-v0.3.0-rc6-torchscript-1.10.2-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
         shell: bash
 
       - name: Reinstall Horovod if necessary
@@ -171,9 +176,12 @@ jobs:
   #       include:
   #         - python-version: 3.7
   #           pytorch-version: 1.10.0
+  #           torchscript-version: 1.10.2
   #   env:
   #     PYTORCH: ${{ matrix.pytorch-version }}
   #     NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
+  #     NEUROPOD_VERISON: "0.3.0-rc6"
+  #     TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
 
   #   name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, gpu
 
@@ -236,7 +244,7 @@ jobs:
   #     - name: Install Neuropod backend
   #       run: |
   #         sudo mkdir -p "$NEUROPOD_BASE_DIR"
-  #         curl -L https://github.com/uber/neuropod/releases/download/v0.3.0-rc6/libneuropod-cpu-linux-v0.3.0-rc6-torchscript-1.10.2-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
+  #         curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
   #       shell: bash
 
   #     - name: Reinstall Horovod if necessary
