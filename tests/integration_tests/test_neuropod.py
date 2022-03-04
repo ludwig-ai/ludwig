@@ -35,7 +35,7 @@ from tests.integration_tests.utils import (
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Neuropod is not supported on Windows")
-@pytest.mark.skipIf(sys.version_info >= (3, 9), reason="Neuropod does not support Python 3.9")
+@pytest.mark.skipif(sys.version_info >= (3, 9), reason="Neuropod does not support Python 3.9")
 def test_neuropod_torchscript(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
