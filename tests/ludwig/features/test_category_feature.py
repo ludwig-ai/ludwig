@@ -16,7 +16,7 @@ def category_config():
     return {
         "name": "category_column_name",
         "type": "category",
-        "tied_weights": None,
+        "tied": None,
         "embedding_size": 256,
         "embeddings_on_cpu": False,
         "pretrained_embeddings": None,

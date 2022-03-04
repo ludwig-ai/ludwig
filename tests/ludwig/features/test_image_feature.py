@@ -16,7 +16,7 @@ def image_config():
         "name": "image_column_name",
         "type": "image",
         "encoder": "stacked_cnn",
-        "tied_weights": None,
+        "tied": None,
         "conv_layers": None,
         "num_conv_layers": None,
         "filter_size": 3,

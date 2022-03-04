@@ -34,7 +34,7 @@ def set_config():
         "activation": "relu",
         "dropout": 0.0,
         "reduce_output": "sum",
-        "tied_weights": None,
+        "tied": None,
     }
 
 
