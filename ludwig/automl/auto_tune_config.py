@@ -108,7 +108,7 @@ def get_new_params(current_param_values, hyperparam_search_space, params_to_modi
 
 
 def _reduce_text_model_size(config, training_set_metadata):
-    logging.info(f"Text model may overflow memory; reducing model size and input sequence length")
+    logging.info("Text model may overflow memory; reducing model size and input sequence length")
     min_99ptile_len = float("inf")
     for feature in config["input_features"]:
         if feature["type"] == TEXT and feature["encoder"] == AUTOML_DEFAULT_TEXT_ENCODER:
