@@ -511,9 +511,7 @@ def test_experiment_tied_weights(csv_filename):
     # Single sequence input, single category output
     input_features = [
         text_feature(name="text_feature1", min_len=1, encoder="cnnrnn", reduce_output="sum"),
-        text_feature(
-            name="text_feature2", min_len=1, encoder="cnnrnn", reduce_output="sum", tied_weights="text_feature1"
-        ),
+        text_feature(name="text_feature2", min_len=1, encoder="cnnrnn", reduce_output="sum", tied="text_feature1"),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 

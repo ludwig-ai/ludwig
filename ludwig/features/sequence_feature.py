@@ -414,7 +414,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             LOSS,
             {
                 TYPE: "sequence_softmax_cross_entropy",
-                "labels_smoothing": 0,
                 "class_weights": 1,
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
