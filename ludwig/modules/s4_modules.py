@@ -18,7 +18,7 @@ class S4(LudwigModule):
     def __init__(
         self,
         model_size: int,
-        hidden_size: int,
+        hidden_size: int = 64,
         output_size: int = None,
         sequence_size: Optional[int] = 1,
         num_channels: int = 1,
@@ -31,6 +31,14 @@ class S4(LudwigModule):
         fc_norm=None,
         fc_norm_params=None,
     ):
+        """
+        hidden_size: the dimension of the state, also denoted by N
+        sequence_size: the maximum sequence length, also denoted by L
+          if this is not known at model creation, set l_max=1
+        num_channels: can be interpreted as a number of "heads"
+        bidirectional: bidirectional
+        dropout: standard dropout argument
+        """
         self.h = model_size
         self.n = hidden_size
         self.l_max = sequence_size

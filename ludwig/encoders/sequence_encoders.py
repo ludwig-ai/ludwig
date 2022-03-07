@@ -1966,6 +1966,7 @@ class S4Encoder(Encoder):
         activation="gelu",  # activation in between SS and FF
         dropout=0,
     ):
+        # todo: fix up docstring
         """
         d_state: the dimension of the state, also denoted by N
         l_max: the maximum sequence length, also denoted by L
@@ -2002,7 +2003,7 @@ class S4Encoder(Encoder):
         logger.debug("  S4")
         self.s4 = S4(
             in_channels,
-            d_state,
+            d_state=d_state,
             output_size=output_size,
             sequence_size=self.max_sequence_length,
             num_channels=num_channels,
@@ -2039,13 +2040,20 @@ class S4Encoder(Encoder):
                 default_dropout=fc_dropout,
             )
 
-    def forward(self, inputs, **kwargs):  # absorbs return_output and transformer src mask
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
-        u: (B H L) if self.transposed else (B L H)
-        state: (H N) never needed unless you know what you're doing
-        Returns: same shape as u
+        :param inputs: The input sequence fed into the encoder.
+               Shape: [batch x sequence length], type torch.int32
+        :param mask: Input mask (unused, not yet implemented)
         """
-        outputs = self.s4(inputs)
+        if self.should_embed:
+            embedded_sequence = self.embed_sequence(inputs)
+        else:
+            embedded_sequence = inputs
+            while len(embedded_sequence.shape) < 3:
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
+
+        outputs = self.s4(embedded_sequence)
         final_state = outputs[..., -1]
 
         if self.reduce_outputs is not None:
