@@ -12,6 +12,7 @@ from ludwig.encoders.sequence_encoders import (
     StackedParallelCNN,
     StackedRNN,
     StackedTransformer,
+    S4Encoder,
 )
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -32,7 +33,16 @@ def test_sequence_passthrough_encoder(reduce_output: str):
 
 @pytest.mark.parametrize(
     "encoder_type",
-    [SequenceEmbedEncoder, ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN, StackedTransformer],
+    [
+        SequenceEmbedEncoder,
+        ParallelCNN,
+        StackedCNN,
+        StackedParallelCNN,
+        StackedRNN,
+        StackedCNNRNN,
+        StackedTransformer,
+        S4Encoder,
+    ],
 )
 @pytest.mark.parametrize("reduce_output", ["mean", "avg", "max", "last", "concat", "attention", None])
 @pytest.mark.parametrize("vocab_size", [2, 1024])  # Uses vocabularies smaller than (and larger than) embedding size.
