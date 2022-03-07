@@ -28,8 +28,7 @@ from ludwig.modules.embedding_modules import EmbedSequence, TokenAndPositionEmbe
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.modules.s4_modules import S4, HippoSSKernel
-
+from ludwig.modules.s4_modules import HippoSSKernel, S4
 
 logger = logging.getLogger(__name__)
 

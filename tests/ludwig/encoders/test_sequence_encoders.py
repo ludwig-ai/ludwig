@@ -5,6 +5,7 @@ import torch
 
 from ludwig.encoders.sequence_encoders import (
     ParallelCNN,
+    S4Encoder,
     SequenceEmbedEncoder,
     SequencePassthroughEncoder,
     StackedCNN,
@@ -12,7 +13,6 @@ from ludwig.encoders.sequence_encoders import (
     StackedParallelCNN,
     StackedRNN,
     StackedTransformer,
-    S4Encoder,
 )
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

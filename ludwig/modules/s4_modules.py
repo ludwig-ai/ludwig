@@ -1,14 +1,14 @@
 import logging
+import math
 from typing import Optional
 
-from einops import rearrange, repeat
-import math
 import numpy as np
 import opt_einsum as oe
-from scipy import special as ss
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import rearrange, repeat
+from scipy import special as ss
 
 from ludwig.modules.fully_connected_modules import FCLayer
 from ludwig.utils.torch_utils import get_activation, LudwigModule
@@ -39,7 +39,7 @@ try:  # Try pykeops
     has_pykeops = True
 
     def cauchy_conj(v, z, w):
-        """Pykeops version"""
+        """Pykeops version."""
         expr_num = "z * ComplexReal(v) - Real2Complex(Sum(v * w))"
         expr_denom = "ComplexMult(z-w, z-Conj(w))"
 
@@ -82,7 +82,7 @@ except ImportError:
 
 
 def _broadcast_dims(*tensors):
-    max_dim = max([len(tensor.shape) for tensor in tensors])
+    max_dim = max(len(tensor.shape) for tensor in tensors)
     tensors = [tensor.view((1,) * (max_dim - len(tensor.shape)) + tensor.shape) for tensor in tensors]
     return tensors
 
@@ -193,11 +193,8 @@ class S4(LudwigModule):
 
 class HippoSSKernel(LudwigModule):
     """Wrapper around SSKernel that generates A, B, C, dt according to HiPPO arguments.
-    The SSKernel is expected to support the interface
-    forward()
-    default_state()
-    setup_step()
-    step()
+
+    The SSKernel is expected to support the interface forward() default_state() setup_step() step()
     """
 
     def __init__(
@@ -250,8 +247,8 @@ class HippoSSKernel(LudwigModule):
         )
 
     def _nplr(measure, N, rank=1, dtype=torch.float):
-        """
-        Return w, p, q, V, B such that
+        """Return w, p, q, V, B such that.
+
         (w - p q^*, B) is unitarily equivalent to the original HiPPO A, B by the matrix V
         i.e. A = V[w - p q^*]V^*, B = V B
         """
@@ -291,9 +288,10 @@ class HippoSSKernel(LudwigModule):
 
 
 class SSKernelNPLR(LudwigModule):
-    """Stores a representation of and computes the SSKernel function K_L(A^dt, B^dt, C) corresponding to a discretized
-    state space, where A is Normal + Low Rank (NPLR)
-    The class name stands for 'State-Space SSKernel for Normal Plus Low-Rank'.
+    """Stores a representation of and computes the SSKernel function K_L(A^dt, B^dt, C) corresponding to a
+    discretized state space, where A is Normal + Low Rank (NPLR) The class name stands for 'State-Space SSKernel
+    for Normal Plus Low-Rank'.
+
     The parameters of this function are as follows.
     A: (... N N) the state matrix
     B: (... N) input matrix
@@ -326,8 +324,8 @@ class SSKernelNPLR(LudwigModule):
             self._omega(self.L, dtype=C.dtype, device=C.device, cache=True)
 
     def _omega(self, L, dtype, device, cache=True):
-        """Calculate (and cache) FFT nodes and their "unprocessed" them with the bilinear transform
-        This should be called everytime the internal length self.L changes"""
+        """Calculate (and cache) FFT nodes and their "unprocessed" them with the bilinear transform This should be
+        called everytime the internal length self.L changes."""
         omega = torch.tensor(np.exp(-2j * np.pi / (L)), dtype=dtype, device=device)  # \omega_{2L}
         omega = omega ** torch.arange(0, L // 2 + 1, device=device)
         z = 2 * (1 - omega) / (1 + omega)
@@ -552,7 +550,7 @@ class SSKernelNPLR(LudwigModule):
         self._setup_C(double_length=True)
 
     def _setup_linear(self):
-        """Create parameters that allow fast linear stepping of state"""
+        """Create parameters that allow fast linear stepping of state."""
         w = self._w()
         B = _r2c(self.B)  # (H N)
         P = _r2c(self.P)
@@ -579,9 +577,9 @@ class SSKernelNPLR(LudwigModule):
         }
 
     def _step_state_linear(self, u=None, state=None):
-        """
-        Version of the step function that has time O(N) instead of O(N^2) per step, which takes advantage of the DPLR
-        form and bilinear discretization.
+        """Version of the step function that has time O(N) instead of O(N^2) per step, which takes advantage of the
+        DPLR form and bilinear discretization.
+
         Unfortunately, as currently implemented it's about 2x slower because it calls several sequential operations.
         Perhaps a fused CUDA kernel implementation would be much faster
         u: (H) input
@@ -622,7 +620,7 @@ class SSKernelNPLR(LudwigModule):
         return new_state
 
     def _setup_state(self):
-        """Construct dA and dB for discretized state equation"""
+        """Construct dA and dB for discretized state equation."""
 
         # Construct dA and dB by using the stepping
         self._setup_linear()
@@ -644,7 +642,7 @@ class SSKernelNPLR(LudwigModule):
         return next_state
 
     def setup_step(self, mode="dense"):
-        """Set up dA, dB, dC discretized parameters for stepping"""
+        """Set up dA, dB, dC discretized parameters for stepping."""
         self._setup_state()
 
         # Calculate original C
@@ -723,7 +721,7 @@ class SSKernelNPLR(LudwigModule):
         return state
 
     def step(self, u, state):
-        """Must have called self.setup_step() and created state with self.default_state() before calling this"""
+        """Must have called self.setup_step() and created state with self.default_state() before calling this."""
 
         if self._step_mode == "linear":
             new_state = self._step_state_linear(u, state)
@@ -733,7 +731,7 @@ class SSKernelNPLR(LudwigModule):
         return y, new_state
 
     def register(self, name, tensor, trainable=False, lr=None, wd=None):
-        """Utility method: register a tensor as a buffer or trainable parameter"""
+        """Utility method: register a tensor as a buffer or trainable parameter."""
 
         if trainable:
             self.register_parameter(name, nn.Parameter(tensor))
@@ -866,7 +864,7 @@ def transition(measure, N, **measure_args):
 
 
 def rank_correction(measure, N, rank=1, dtype=torch.float):
-    """Return low-rank matrix L such that A + L is normal"""
+    """Return low-rank matrix L such that A + L is normal."""
 
     if measure == "legs":
         assert rank >= 1
