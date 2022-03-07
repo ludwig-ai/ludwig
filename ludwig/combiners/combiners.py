@@ -69,7 +69,7 @@ def get_combiner_jsonschema():
             "properties": {
                 "type": {"type": "string", "enum": combiner_types},
             },
-            "allOf": get_combiner_conds(combiner_types),
+            "allOf": get_combiner_conds(),
             "required": ["type"],
         },
     )
