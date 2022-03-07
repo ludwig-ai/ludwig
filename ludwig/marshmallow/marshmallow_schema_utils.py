@@ -179,12 +179,6 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
 
                     # If no description is provided, attempt to pull from torch if applicable (e.g. for optimizers):
                     desc = parsed_desc
-                    print("-" * 50)
-                    print(prop)
-                    print(desc)
-                    print(type(desc))
-                    print(parsed_default)
-                    print(type(parsed_default))
                     if (
                         desc == ""
                         and parsed_torch is not None
@@ -195,10 +189,6 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
                         if parsed_default is None and len(desc_split) == 2:
                             parsed_default = desc_split[1]
                         desc = cleanup_python_comment(desc_split[0])
-
-                    print(desc)
-                    print(parsed_default)
-                    print("-" * 50)
 
                     # Add parsed default back to string if it exists:
                     if parsed_default is not None:
