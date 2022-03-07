@@ -163,17 +163,19 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
             #     {
             #         param.name: param
             #         for param in googleloader.get_object_documentation(
-            #             get_fully_qualified_class_name(schema_cls.torch_type)
+            #             get_fully_qualified_class_name(schema_cls.optimizer_class)
             #         )
             #         .docstring_sections[1]
             #         .value
             #     }
-            #     if hasattr(schema_cls, "torch_type") and schema_cls.torch_type is not None
+            #     if hasattr(schema_cls, "optimizer_class") and schema_cls.optimizer_class is not None
             #     else None
             # )
             parsed_torch = None
-            if hasattr(schema_cls, "torch_type") and schema_cls.torch_type is not None:
-                parsed_torch = get_torch_attrs_dict(load_pytkdocs_json(schema_cls.torch_type.__name__, is_torch=True))
+            if hasattr(schema_cls, "optimizer_class") and schema_cls.optimizer_class is not None:
+                parsed_torch = get_torch_attrs_dict(
+                    load_pytkdocs_json(schema_cls.optimizer_class.__name__, is_torch=True)
+                )
 
             for prop in schema_dump["properties"]:
                 schema_prop = schema_dump["properties"][prop]

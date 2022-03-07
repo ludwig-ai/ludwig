@@ -20,8 +20,8 @@ from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
+import ludwig.marshmallow.marshmallow_schema_utils as lusutils
 import ludwig.modules.optimization_modules as lmo
-import ludwig.utils.marshmallow_schema_utils as lusutils
 
 # Tests for custom dataclass/marshmallow fields:
 
@@ -104,61 +104,63 @@ def test_OptimizerDataclassField():
 
 def test_ClipperDataclassField():
     # Test default case:
-    default_clipper_field = lmo.ClipperDataclassField()
+    default_clipper_field = lmo.GradientClippingDataclassField()
     assert default_clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(default_clipper_field).allow_none is True
-    assert default_clipper_field.default_factory() == lmo.ClipperConfig()
+    assert default_clipper_field.default_factory() == lmo.GradientClippingConfig()
 
     # Test normal cases:
-    clipper_field = lmo.ClipperDataclassField({"clipglobalnorm": 0.1})
+    clipper_field = lmo.GradientClippingDataclassField({"clipglobalnorm": 0.1})
     assert clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
-    assert clipper_field.default_factory() == lmo.ClipperConfig(clipglobalnorm=0.1)
+    assert clipper_field.default_factory() == lmo.GradientClippingConfig(clipglobalnorm=0.1)
 
-    clipper_field = lmo.ClipperDataclassField({"clipglobalnorm": None})
+    clipper_field = lmo.GradientClippingDataclassField({"clipglobalnorm": None})
     assert clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
-    assert clipper_field.default_factory() == lmo.ClipperConfig(clipglobalnorm=None)
+    assert clipper_field.default_factory() == lmo.GradientClippingConfig(clipglobalnorm=None)
 
     # Test invalid default case:
     with pytest.raises(MarshmallowValidationError):
-        lmo.ClipperDataclassField("test")
+        lmo.GradientClippingDataclassField("test")
     with pytest.raises(MarshmallowValidationError):
-        lmo.ClipperDataclassField(None)
+        lmo.GradientClippingDataclassField(None)
     with pytest.raises(MarshmallowValidationError):
-        lmo.ClipperDataclassField(1)
+        lmo.GradientClippingDataclassField(1)
 
     # Test creating a schema with default options:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-        foo: Optional[lmo.ClipperConfig] = lmo.ClipperConfig()
+        foo: Optional[lmo.GradientClippingConfig] = lmo.GradientClippingConfig()
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
 
-    assert CustomTestSchema.Schema().load({}).foo == lmo.ClipperConfig()
+    assert CustomTestSchema.Schema().load({}).foo == lmo.GradientClippingConfig()
 
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(lusutils.BaseMarshmallowConfig):
-        foo: Optional[lmo.ClipperConfig] = lmo.ClipperDataclassField({"clipglobalnorm": 0.1})
+        foo: Optional[lmo.GradientClippingConfig] = lmo.GradientClippingDataclassField({"clipglobalnorm": 0.1})
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": "invalid"}})
 
-    assert CustomTestSchema.Schema().load({}).foo == lmo.ClipperConfig(clipglobalnorm=0.1)
-    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lmo.ClipperConfig(clipglobalnorm=1)
-    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1, "extra_key": 1}}).foo == lmo.ClipperConfig(
+    assert CustomTestSchema.Schema().load({}).foo == lmo.GradientClippingConfig(clipglobalnorm=0.1)
+    assert CustomTestSchema.Schema().load({"foo": {"clipglobalnorm": 1}}).foo == lmo.GradientClippingConfig(
         clipglobalnorm=1
     )
+    assert CustomTestSchema.Schema().load(
+        {"foo": {"clipglobalnorm": 1, "extra_key": 1}}
+    ).foo == lmo.GradientClippingConfig(clipglobalnorm=1)
 
     # Test expected schema dumps:
     raw_clipper_schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": {
-            "ClipperConfig": {
+            "GradientClippingConfig": {
                 "type": "object",
                 "properties": {
                     "clipglobalnorm": {
@@ -173,7 +175,7 @@ def test_ClipperDataclassField():
                 "additionalProperties": False,
             }
         },
-        "$ref": "#/definitions/ClipperConfig",
+        "$ref": "#/definitions/GradientClippingConfig",
     }
 
-    assert js().dump(lmo.ClipperConfig.Schema()) == raw_clipper_schema
+    assert js().dump(lmo.GradientClippingConfig.Schema()) == raw_clipper_schema

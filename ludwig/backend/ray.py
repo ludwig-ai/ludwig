@@ -32,11 +32,11 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import initialize_pytorch
 
 _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")

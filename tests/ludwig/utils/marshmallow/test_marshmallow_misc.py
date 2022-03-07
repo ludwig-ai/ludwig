@@ -4,9 +4,9 @@ from marshmallow.utils import EXCLUDE
 from marshmallow_jsonschema import JSONSchema as js
 
 import ludwig.combiners.combiners as lcc
-import ludwig.utils.marshmallow_schema_utils as lusutils
+import ludwig.marshmallow.marshmallow_schema_utils as lusutils
+from ludwig.marshmallow.test_classes import CustomTestSchema
 from ludwig.models.trainer import TrainerConfig
-from ludwig.utils.test_classes import CustomTestSchema
 
 
 def test_get_fully_qualified_class_name():

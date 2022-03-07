@@ -20,7 +20,7 @@ from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
-import ludwig.utils.marshmallow_schema_utils as lusutils
+import ludwig.marshmallow.marshmallow_schema_utils as lusutils
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
 

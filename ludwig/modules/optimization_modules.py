@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from dataclasses import field
+from abc import ABC
+from dataclasses import asdict, field
 from typing import ClassVar, Dict, Iterable, Optional, Tuple
 
 import torch
-from marshmallow import fields, missing, ValidationError
-from marshmallow.decorators import validates
+from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.utils.marshmallow_schema_utils import (
+from ludwig.marshmallow.marshmallow_schema_utils import (
     BaseMarshmallowConfig,
     create_cond,
     FloatRange,
@@ -36,15 +36,15 @@ optimizer_registry = Registry()
 
 
 def register_optimizer(name: str):
-    def wrap(cls: BaseOptimizerConfig):
-        optimizer_registry[name] = (cls.torch_type, cls)
-        return cls
+    def wrap(optimizer_config: BaseOptimizerConfig):
+        optimizer_registry[name] = (optimizer_config.optimizer_class, optimizer_config)
+        return optimizer_config
 
     return wrap
 
 
 @dataclass
-class BaseOptimizerConfig(BaseMarshmallowConfig):
+class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
@@ -52,31 +52,12 @@ class BaseOptimizerConfig(BaseMarshmallowConfig):
     different from the torch-specified defaults.
     """
 
-    torch_type: ClassVar[Optional[torch.optim.Optimizer]] = None
+    optimizer_class: ClassVar[Optional[torch.optim.Optimizer]] = None
     "Class variable pointing to the corresponding `torch.optim.Optimizer` class."
     type: str
     """Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
        Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
        result in a `ValidationError`."""
-
-    @validates("type")
-    def validate_type(self, data, **kwargs):
-        """Workaround to enforce immutable `type` in defined optimizer classes.
-
-        :param data: Any-typed object that should be a string correctly identifying the optimizer type.
-        """
-        if not isinstance(data, str):
-            raise ValidationError(
-                f"{self.__class__.__name__} expects type of field `type` to be `str`, instead received '{data}'"
-            )
-        default = self.declared_fields["type"].dump_default
-        if default is not missing and data != default:
-            # Handle aliases:
-            if optimizer_registry[default] == optimizer_registry[data]:
-                return
-            raise ValidationError(
-                f"{self.__class__.__name__} expects value of field `type` to be '{default}', instead received '{data}'"
-            )
 
 
 @register_optimizer(name="sgd")
@@ -87,8 +68,8 @@ class BaseOptimizerConfig(BaseMarshmallowConfig):
 class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
-    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
-    "Points to `torch.optim.SGD`."
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
+    """Points to `torch.optim.SGD`."""
 
     type: str = StringOptions(
         ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"], default="sgd", nullable=False
@@ -111,19 +92,20 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 class AdamOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adam optimization."""
 
-    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
-    "Points to `torch.optim.Adam`."
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
+    """Points to `torch.optim.Adam`."""
 
-    type: str = "adam"
+    type: str = StringOptions(["adam"], default="adam", nullable=False)
+    """Must be `adam`."""
 
     lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
-    "(default: 0.001)"
+    """(default: 0.001)"""
 
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
-    "(default: (0.9, 0.999))"
+    """(default: (0.9, 0.999))"""
 
     eps: float = NonNegativeFloat(default=1e-08)
-    "(default: 1e-08)"
+    """(default: 1e-08)"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
     weight_decay: float = NonNegativeFloat(default=0.0)
@@ -135,18 +117,18 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adadelta optimization."""
 
-    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
-    "Points to `torch.optim.Adadelta`."
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
+    """Points to `torch.optim.Adadelta`."""
 
     type: str = "adadelta"
     """Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adadelta')"""
 
     rho: float = FloatRange(default=0.95, min=0.0, max=1.0)
-    "(default: 0.95)"
+    """(default: 0.95)"""
 
     eps: float = NonNegativeFloat(default=1e-08)
-    "(default: 1e-08)"
+    """(default: 1e-08)"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :
     lr: float = FloatRange(default=1.0, min=0.0, max=1.0)
@@ -159,15 +141,15 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adagrad optimization."""
 
     # Example docstring
-    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
-    "Points to `torch.optim.Adagrad`."
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
+    """Points to `torch.optim.Adagrad`."""
 
     type: str = "adagrad"
     """Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adagrad')"""
 
     initial_accumulator_value: float = NonNegativeFloat(default=0.1)
-    "(default: 0.1)"
+    """(default: 0.1)"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
@@ -181,8 +163,8 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 class AdamaxOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamax optimization."""
 
-    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
-    "Points to `torch.optim.Adamax`."
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
+    """Points to `torch.optim.Adamax`."""
 
     type: str = "adamax"
     """Must be 'adamax' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
@@ -199,7 +181,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 # @register_optimizer(name="ftrl")
 @dataclass
 class FtrlOptimizerConfig(BaseOptimizerConfig):
-    # torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
+    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
     type: str = "ftrl"
     learning_rate_power: float = FloatRange(default=-0.5, max=0.0)
     initial_accumulator_value: float = NonNegativeFloat(default=0.1)
@@ -210,7 +192,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 # @register_optimizer(name="nadam")
 @dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
-    # torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
+    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
     type: str = "nadam"
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
@@ -225,24 +207,24 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
 class RMSPropOptimizerConfig(BaseOptimizerConfig):
     """Parameters for rmsprop optimization."""
 
-    torch_type: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
-    "Points to `torch.optim.RMSprop`."
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
+    """Points to `torch.optim.RMSprop`."""
 
     type: str = "rmsprop"
     """Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'rmsprop')"""
 
     weight_decay: float = NonNegativeFloat(default=0.9)
-    "(default: 0.9)"
+    """(default: 0.9)"""
 
     momentum: float = NonNegativeFloat(default=0.0)
-    "(default: 0.0)"
+    """(default: 0.0)"""
 
     eps: float = NonNegativeFloat(default=1e-10)
-    "(default: 1e-10)"
+    """(default: 1e-10)"""
 
     centered: bool = False
-    "(default: False)"
+    """(default: False)"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
@@ -297,12 +279,13 @@ def OptimizerDataclassField(default={"type": "adam"}):
             raise ValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
-            # return {"anyOf": [{"type": "null"}, *list(get_all_optimizer_json_schemas().values())]}
+            # Note that this uses the same conditional pattern as combiners:
             return {
                 "type": "object",
                 "properties": {
                     "type": {"type": "string", "enum": list(optimizer_registry.keys())},
                 },
+                #
                 "allOf": get_optimizer_conds(),
                 "required": ["type"],
             }
@@ -330,15 +313,15 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
 
 
 @dataclass
-class ClipperConfig(BaseMarshmallowConfig):
+class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = 0.5
-    "(default: 0.5)"
+    """(default: 0.5)"""
     clipnorm: Optional[float] = None
-    "(default: None)"
+    """(default: None)"""
     clipvalue: Optional[float] = None
-    "(default: None)"
+    """(default: None)"""
 
     def clip_grads(self, variables: Iterable[torch.Tensor]):
         if self.clipglobalnorm:
@@ -349,81 +332,67 @@ class ClipperConfig(BaseMarshmallowConfig):
             torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
 
 
-def ClipperDataclassField(default={}, allow_none=True):
-    """Returns custom dataclass field for `ludwig.modules.optimization_modules.ClipperConfig`. Allows `None` by
-    default.
+def GradientClippingDataclassField(default={}, allow_none=True):
+    """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
+    `None` by default.
 
-    :param default: dict that specifies clipper param values that will be loaded by its schema class (default: {}).
+    :param default: dict that specifies clipping param values that will be loaded by its schema class (default: {}).
     :param allow_none: Whether this field can accept `None` as a value. (default: True)
     """
 
     class ClipperMarshmallowField(fields.Field):
         """Custom marshmallow field class for gradient clipping.
 
-        Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.ClipperConfig` and creates a
-        corresponding JSON schema for external usage.
+        Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.GradientClippingConfig` and
+        creates a corresponding JSON schema for external usage.
         """
 
         def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
             if isinstance(value, dict):
                 try:
-                    return ClipperConfig.Schema().load(value)
+                    return GradientClippingConfig.Schema().load(value)
                 except (TypeError, ValidationError):
-                    raise ValidationError(f"Invalid params for clipper: {value}, see ClipperConfig class.")
-            raise ValidationError("Field should be None or dict")
+                    raise ValidationError(
+                        f"Invalid params for gradient clipping: {value}, see GradientClippingConfig class."
+                    )
+            raise ValidationError("Field should be dict")
 
         def _jsonschema_type_mapping(self):
-            return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(ClipperConfig)]}
+            return get_custom_schema_from_marshmallow_class(GradientClippingConfig)
 
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
-        default_factory=lambda: ClipperConfig.Schema().load(default),
+        default_factory=lambda: GradientClippingConfig.Schema().load(default),
     )
 
 
-def create_optimizer_with_clipper(
+def create_optimizer(
     model,
-    optimizer: BaseOptimizerConfig = SGDOptimizerConfig(),
-    clipper: ClipperConfig = ClipperConfig(clipglobalnorm=5.0),
+    optimizer_config: BaseOptimizerConfig = SGDOptimizerConfig(),
     horovod=None,
 ):
-    """Returns a tuple of a ready-to-use torch optimizer and gradient clipping options.
-
-    Creates an appropriately distributed torch optimizer, returns it and a
-    `ludwig.modules.optimization_modules.ClipperConfig` object for gradient clipping.
+    """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
     :param model: Underlying Ludwig model
-    :param optimizer: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
+    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
            `ludwig.modules.optimization_modules.SGDOptimizerConfig()`).
-    :param clipper: Instance of `ludwig.modules.optimization_modules.ClipperConfig` (default:
-           `ludwig.modules.optimization_modules.ClipperConfig(clipglobalnorm=5.0)`)
-    """
-    optimizer_cls = get_from_registry(optimizer.type.lower(), {k: v[0] for k, v in optimizer_registry.items()})
-    cls_kwargs = {k: optimizer.__dict__[k] for k in optimizer.__dict__ if k != "type"}
-    torch_optimizer: torch.optim.Optimizer = create_optimizer(optimizer_cls, model, horovod, **cls_kwargs)
-    return torch_optimizer, clipper
-
-
-def create_optimizer(optimizer_cls: BaseOptimizerConfig, model, horovod=None, **kwargs) -> torch.optim.Optimizer:
-    """Returns a ready-to-use torch optimizer instance based on the given optimizer.
-
-    Takes a given `torch.optim.Optimizer` class and set of attributes via `kwargs` and constructs and returns a
-    ready-to-use optimizer for training.
-
-    :param optimizer_cls: Reference to one of the optimizer classes defined in
-        `ludwig.modules.optimization_modules.optimizer_registry`.
-    :param model: Instance of `ludwig.api.LudwigModel.
     :param horovod: Horovod parameters (default: None).
     :return: Initialized instance of a torch optimizer.
     """
-    optimizer = optimizer_cls(params=model.parameters(), **kwargs)
+    # Get the corresponding torch optimizer class for the given config:
+    optimizer_cls = get_from_registry(optimizer_config.type.lower(), optimizer_registry)[0]
+
+    # Create a dict of parameters to be passed to torch (i.e. everything except `type`):
+    cls_kwargs = {field: value for field, value in asdict(optimizer_config).items() if field != "type"}
+
+    # Instantiate the optimizer:
+    torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
     if horovod:
-        optimizer = horovod.DistributedOptimizer(
-            optimizer,
+        torch_optimizer = horovod.DistributedOptimizer(
+            torch_optimizer,
             named_parameters=model.named_parameters(),
         )
-    return optimizer
+
+    return torch_optimizer

@@ -16,6 +16,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
+from ludwig.constants import TRAINER
 from ludwig.features.audio_feature import AudioFeatureMixin
 from ludwig.features.bag_feature import BagFeatureMixin
 from ludwig.features.binary_feature import BinaryFeatureMixin
@@ -133,7 +134,7 @@ def test_config_tabnet():
             "relaxation_factor": 1.5,
             "bn_virtual_bs": 512,
         },
-        "training": {
+        TRAINER: {
             "batch_size": 16384,
             "eval_batch_size": 500000,
             "epochs": 1000,

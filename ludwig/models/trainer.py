@@ -34,7 +34,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-import ludwig.utils.marshmallow_schema_utils as schema
+import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -49,9 +49,9 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import (
     BaseOptimizerConfig,
-    ClipperConfig,
-    ClipperDataclassField,
-    create_optimizer_with_clipper,
+    create_optimizer,
+    GradientClippingConfig,
+    GradientClippingDataclassField,
     OptimizerDataclassField,
 )
 from ludwig.utils import time_utils
@@ -97,6 +97,10 @@ class BaseTrainer(ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
+
+
+def get_trainer_jsonschema():
+    return schema.get_custom_schema_from_marshmallow_class(TrainerConfig)
 
 
 @dataclass
@@ -185,9 +189,9 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     staircase: bool = False
     """Decays the learning rate at discrete intervals (default: False)."""
 
-    gradient_clipping: Optional[ClipperConfig] = ClipperDataclassField(default={})
-    """Instance of `ludwig.modules.optimization_modules.ClipperConfig` that sets gradient clipping params.
-       (default: `ludwig.modules.optimization_modules.ClipperConfig()`)"""
+    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(default={})
+    """Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.
+       (default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)"""
 
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = COMBINED
@@ -305,14 +309,12 @@ class Trainer(BaseTrainer):
         self.model = model
         self.model = self.model.to(self.device)
 
-        # ================ Optimizer ================
-        optimizer = config.optimizer
+        # ================ Optimizer tuning ================
+        optimizer_config = config.optimizer
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
-        optimizer.lr = base_learning_rate
-        clipper = config.gradient_clipping if config.gradient_clipping is not None else ClipperConfig()
-        self.optimizer, self.clipper = create_optimizer_with_clipper(
-            model, horovod=horovod, optimizer=optimizer, clipper=clipper
-        )
+        optimizer_config.lr = base_learning_rate
+        self.gradient_clipping_config = config.gradient_clipping
+        self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
@@ -343,7 +345,7 @@ class Trainer(BaseTrainer):
             self.optimizer.synchronize()
 
         # Clip gradients
-        self.clipper.clip_grads(variables)
+        self.gradient_clipping_config.clip_grads(variables)
 
         # Apply gradient updates
         if self.horovod:

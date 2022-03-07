@@ -22,7 +22,7 @@ import torch
 from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
-import ludwig.utils.marshmallow_schema_utils as schema
+import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.sequence_encoders import ParallelCNN, StackedCNN, StackedCNNRNN, StackedParallelCNN, StackedRNN
 from ludwig.features.base_feature import InputFeature
@@ -57,6 +57,37 @@ def register_combiner(name: str):
         return cls
 
     return wrap
+
+
+def get_combiner_jsonschema():
+    """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
+    combiner's field constraints."""
+    combiner_types = sorted(list(combiner_registry.keys()))
+    return (
+        {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string", "enum": combiner_types},
+            },
+            "allOf": get_combiner_conds(combiner_types),
+            "required": ["type"],
+        },
+    )
+
+
+def get_combiner_conds():
+    """Returns a list of if-then JSON clauses for each combiner type in `combiner_registry` and its properties'
+    constraints."""
+    combiner_types = sorted(list(combiner_registry.keys()))
+    conds = []
+    for combiner_type in combiner_types:
+        combiner_cls = combiner_registry[combiner_type]
+        schema_cls = combiner_cls.get_schema_cls()
+        combiner_schema = schema.get_custom_schema_from_marshmallow_class(schema_cls)
+        combiner_props = combiner_schema["properties"]
+        combiner_cond = schema.create_cond({"type": combiner_type}, combiner_props)
+        conds.append(combiner_cond)
+    return conds
 
 
 # super class to house common properties

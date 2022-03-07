@@ -12,9 +12,9 @@ from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.marshmallow.test_classes import CustomTestCombinerConfig
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
-from ludwig.utils.test_classes import CustomTestCombinerConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
