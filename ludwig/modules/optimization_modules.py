@@ -99,16 +99,10 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     """Must be 'adam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adam')"""
 
-    lr: float = FloatRange(default=0.001, min=0.0, max=1.0)
-    """(default: 0.001)"""
-
-    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
-    """(default: (0.9, 0.999))"""
-
-    eps: float = NonNegativeFloat(default=1e-08)
-    """(default: 1e-08)"""
-
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
+    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
+    eps: float = NonNegativeFloat(default=1e-08)
     weight_decay: float = NonNegativeFloat(default=0.0)
     amsgrad: bool = False
 
