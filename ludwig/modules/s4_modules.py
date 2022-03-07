@@ -1,10 +1,17 @@
 from typing import Optional
-from einops import rearrange, contract
+
+from einops import rearrange, repeat
+import opt_einsum as oe
 import torch
 import torch.nn as nn
-from ludwig.modules.fully_connected_modules import FCLayer
+import torch.nn.functional as F
 
+from ludwig.modules.fully_connected_modules import FCLayer
 from ludwig.utils.torch_utils import get_activation, LudwigModule
+
+
+contract = oe.contract
+contract_expression = oe.contract_expression
 
 
 class S4(LudwigModule):
@@ -12,11 +19,18 @@ class S4(LudwigModule):
         self,
         model_size: int,
         hidden_size: int,
+        output_size: int = None,
         sequence_size: Optional[int] = 1,
         num_channels: int = 1,
         bidirectional: bool = False,
         activation: str = "gelu",
         dropout: float = 0,
+        fc_use_bias=True,
+        fc_weights_initializer="xavier_uniform",
+        fc_bias_initializer="zeros",
+        fc_norm=None,
+        fc_norm_params=None,
+        fc_activation="relu",
     ):
         self.h = model_size
         self.n = hidden_size
@@ -36,8 +50,28 @@ class S4(LudwigModule):
         self.activation = get_activation(activation)
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
 
-        # position-wise output transform to mix features
-        self.output_linear = FCLayer(self.h * self.channels, input_rank=3, output_size=self.h)
+        self.output_size = output_size if output_size is not None else self.h
+        self.output_linear = FCLayer(
+            self.h * self.channels,
+            input_rank=3,
+            output_size=self.output_size,
+            use_bias=fc_use_bias,
+            weights_initializer=fc_weights_initializer,
+            bias_initializer=fc_bias_initializer,
+            norm=fc_norm,
+            norm_params=fc_norm_params,
+            activation=fc_activation,
+        )
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.sequence_size:
+            return torch.Size([self.sequence_size, self.output_size])
+        return self.output_size
 
     def forward(self, u):
         # if not self.transposed:
@@ -62,8 +96,9 @@ class S4(LudwigModule):
         # Reshape to flatten channels
         y = rearrange(y, "... c h l -> ... (c h) l")
         y = self.dropout(self.activation(y))
-
         y = y.transpose(-1, -2)  # output shape (B L (C H))
+
+        # position-wise output transform to mix features
         y = self.output_linear(y.transpose(1, 2)).transpose(1, 2)
         return y
 

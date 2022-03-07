@@ -16,8 +16,6 @@
 import logging
 from typing import Optional
 
-from einops import rearrange, repeat
-import opt_einsum as oe
 import torch
 from torch import nn
 
@@ -32,9 +30,6 @@ from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.s4_modules import S4, HippoSSKernel
 
-
-contract = oe.contract
-contract_expression = oe.contract_expression
 
 logger = logging.getLogger(__name__)
 
@@ -1949,23 +1944,23 @@ class S4Encoder(Encoder):
         vocab=None,
         representation="dense",
         embedding_size=256,
-        max_sequence_length=None,
         embeddings_trainable=True,
         pretrained_embeddings=None,
         embeddings_on_cpu=False,
-        fc_layers=None,
-        num_fc_layers=None,
-        output_size=256,
+        max_sequence_length=None,
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
-        norm=None,
-        norm_params=None,
+        fc_layers=None,
+        num_fc_layers=None,
         fc_activation="relu",
         fc_dropout=0,
+        norm=None,
+        norm_params=None,
         reduce_output="last",
         # S4 args
         d_state=64,
+        output_size=256,
         num_channels=1,  # maps 1-dim to C-dim
         bidirectional=False,
         activation="gelu",  # activation in between SS and FF
@@ -2010,11 +2005,18 @@ class S4Encoder(Encoder):
         self.s4 = S4(
             in_channels,
             d_state,
+            output_size=output_size,
             sequence_size=self.max_sequence_length,
             num_channels=num_channels,
             bidirectional=bidirectional,
             activation=activation,
             dropout=dropout,
+            fc_use_bias=use_bias,
+            fc_weights_initializer=weights_initializer,
+            fc_bias_initializer=bias_initializer,
+            fc_norm=norm,
+            fc_norm_params=norm_params,
+            fc_activation=fc_activation,
         )
 
         self.reduce_output = reduce_output

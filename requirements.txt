@@ -24,6 +24,7 @@ torchmetrics>=0.6.0,<0.7
 torchinfo
 filelock
 einops
+opt_einsum
 
 # new data format support
 xlwt            # excel
