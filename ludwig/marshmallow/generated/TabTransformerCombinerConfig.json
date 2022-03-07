@@ -862,7 +862,7 @@
             "relative_file_path": "ludwig/combiners/combiners.py",
             "source": {
                 "code": "class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):\n    \"\"\"Parameters for tab transformer combiner.\"\"\"\n\n    embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    reduce_output: str = schema.ReductionOptions(default=\"concat\")\n    \"\"\"TODO: Document parameters. (default: 'concat').\"\"\"\n",
-                "line_start": 779
+                "line_start": 777
             }
         }
     ],

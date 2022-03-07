@@ -967,7 +967,7 @@
             "relative_file_path": "ludwig/combiners/combiners.py",
             "source": {
                 "code": "class ComparatorCombinerConfig(BaseCombinerConfig):\n    \"\"\"Parameters for comparator combiner.\"\"\"\n\n    entity_1: List[str]\n    \"\"\"TODO: Document parameters.\"\"\"\n\n    entity_2: List[str]\n    \"\"\"TODO: Document parameters.\"\"\"\n\n    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    num_fc_layers: int = schema.NonNegativeInteger(default=1)\n    \"\"\"TODO: Document parameters. (default: 1).\"\"\"\n\n    output_size: int = schema.PositiveInteger(default=256)\n    \"\"\"Output size of a fully connected layer (default: 256).\"\"\"\n\n    use_bias: bool = True\n    \"\"\"Whether the layer uses a bias vector (default: True).\"\"\"\n\n    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default=\"xavier_uniform\")\n    \"\"\"TODO: Document parameters. (default: 'xavier_uniform').\"\"\"\n\n    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default=\"zeros\")\n    \"\"\"TODO: Document parameters. (default: 'zeros').\"\"\"\n\n    norm: Optional[str] = schema.StringOptions([\"batch\", \"layer\"])\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    norm_params: Optional[dict] = schema.Dict()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    activation: str = \"relu\"\n    \"\"\"TODO: Document parameters. (default: 'relu').\"\"\"\n\n    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)\n    \"\"\"Dropout rate for the transformer block (default: 0.0).\"\"\"\n",
-                "line_start": 994
+                "line_start": 992
             }
         }
     ],

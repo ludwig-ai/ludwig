@@ -28,7 +28,7 @@
             "relative_file_path": "ludwig/combiners/combiners.py",
             "source": {
                 "code": "class BaseCombinerConfig(schema.BaseMarshmallowConfig):\n    \"\"\"Base combiner config class.\"\"\"\n\n    pass\n",
-                "line_start": 127
+                "line_start": 125
             }
         }
     ],

@@ -805,7 +805,7 @@
             "relative_file_path": "ludwig/combiners/combiners.py",
             "source": {
                 "code": "class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):\n    \"\"\"Parameters for transformer combiner.\"\"\"\n\n    reduce_output: Optional[str] = schema.ReductionOptions(default=\"mean\")\n    \"\"\"TODO: Document parameters. (default: 'mean').\"\"\"\n",
-                "line_start": 671
+                "line_start": 669
             }
         }
     ],

@@ -340,7 +340,7 @@ def GradientClippingDataclassField(default={}, allow_none=True):
     :param allow_none: Whether this field can accept `None` as a value. (default: True)
     """
 
-    class ClipperMarshmallowField(fields.Field):
+    class GradientClippingMarshmallowField(fields.Field):
         """Custom marshmallow field class for gradient clipping.
 
         Deserializes a dict to a valid instance of `ludwig.modules.optimization_modules.GradientClippingConfig` and
@@ -358,12 +358,12 @@ def GradientClippingDataclassField(default={}, allow_none=True):
             raise ValidationError("Field should be dict")
 
         def _jsonschema_type_mapping(self):
-            return get_custom_schema_from_marshmallow_class(GradientClippingConfig)
+            return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(GradientClippingConfig)]}
 
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={"marshmallow_field": ClipperMarshmallowField(allow_none=allow_none)},
+        metadata={"marshmallow_field": GradientClippingMarshmallowField(allow_none=allow_none)},
         default_factory=lambda: GradientClippingConfig.Schema().load(default),
     )
 

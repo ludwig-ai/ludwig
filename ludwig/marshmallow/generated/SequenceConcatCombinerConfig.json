@@ -397,7 +397,7 @@
             "relative_file_path": "ludwig/combiners/combiners.py",
             "source": {
                 "code": "class SequenceConcatCombinerConfig(BaseCombinerConfig):\n    \"\"\"Parameters for sequence concat combiner.\"\"\"\n\n    main_sequence_feature: Optional[str] = None\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    reduce_output: Optional[str] = schema.ReductionOptions()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n",
-                "line_start": 250
+                "line_start": 248
             }
         }
     ],

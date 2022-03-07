@@ -352,7 +352,7 @@
                             ],
                             "relative_file_path": "ludwig/models/trainer.py",
                             "source": {},
-                            "type": "ClipperMarshmallowField"
+                            "type": "GradientClippingMarshmallowField"
                         },
                         "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_metric": {
                             "attributes": [],

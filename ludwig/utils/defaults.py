@@ -91,7 +91,6 @@ default_training_params = {
     "gradient_clipping": None,
     "validation_field": COMBINED,
     "validation_metric": LOSS,
-    "bucketing_field": None,
     "learning_rate_warmup_epochs": 1,
 }
 

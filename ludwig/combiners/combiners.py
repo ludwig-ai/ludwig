@@ -63,16 +63,14 @@ def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
     combiner_types = sorted(list(combiner_registry.keys()))
-    return (
-        {
-            "type": "object",
-            "properties": {
-                "type": {"type": "string", "enum": combiner_types},
-            },
-            "allOf": get_combiner_conds(),
-            "required": ["type"],
+    return {
+        "type": "object",
+        "properties": {
+            "type": {"type": "string", "enum": combiner_types},
         },
-    )
+        "allOf": get_combiner_conds(),
+        "required": ["type"],
+    }
 
 
 def get_combiner_conds():

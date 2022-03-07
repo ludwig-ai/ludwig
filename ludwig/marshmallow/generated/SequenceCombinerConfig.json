@@ -454,7 +454,7 @@
             "relative_file_path": "ludwig/combiners/combiners.py",
             "source": {
                 "code": "class SequenceCombinerConfig(BaseCombinerConfig):\n    \"\"\"Parameters for sequence combiner.\"\"\"\n\n    main_sequence_feature: Optional[str] = None\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    reduce_output: Optional[str] = schema.ReductionOptions()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n",
-                "line_start": 407
+                "line_start": 405
             }
         }
     ],
