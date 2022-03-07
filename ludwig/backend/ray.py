@@ -83,21 +83,16 @@ def get_trainer_kwargs(use_gpu=None):
 
     if use_gpu:
         num_workers = int(ray.cluster_resources().get("GPU", 0))
-        resources_per_worker = None
     else:
-        # Enforce one worker per node by requesting half the CPUs on the node
-        # TODO: use placement groups
+        # TODO: use placement groups or otherwise spread across nodes
         node_resources = [node["Resources"] for node in ray.state.nodes()]
-        min_cpus = min(r["CPU"] for r in node_resources)
         num_workers = len(node_resources)
-        resources_per_worker = {"CPU": min(min_cpus / 2 + 1, min_cpus)}
 
     return dict(
         # TODO travis: replace backend here once ray 1.8 released
         # backend='horovod',
         backend=HorovodConfig(),
         num_workers=num_workers,
-        resources_per_worker=resources_per_worker,
         use_gpu=use_gpu,
     )
 

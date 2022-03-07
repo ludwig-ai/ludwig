@@ -243,6 +243,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def create_sample_input(self):
         return torch.Tensor([True, False])
 
+    @classmethod
+    def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "string" if metadata.get("str2bool") else "int32"
+
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _BinaryPreprocessing(metadata)
@@ -385,6 +389,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @classmethod
+    def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "string" if metadata.get("bool2str") else "int32"
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

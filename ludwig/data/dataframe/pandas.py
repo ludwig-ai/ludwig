@@ -36,6 +36,9 @@ class PandasEngine(DataFrameEngine):
     def compute(self, data):
         return data
 
+    def concat(self, dfs):
+        return pd.concat(dfs)
+
     def from_pandas(self, df):
         return df
 
