@@ -16,6 +16,8 @@
 import logging
 from typing import Optional
 
+from einops import rearrange, repeat
+import opt_einsum as oe
 import torch
 from torch import nn
 
@@ -28,6 +30,11 @@ from ludwig.modules.embedding_modules import EmbedSequence, TokenAndPositionEmbe
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.s4_modules import S4, HippoSSKernel
+
+
+contract = oe.contract
+contract_expression = oe.contract_expression
 
 logger = logging.getLogger(__name__)
 
@@ -1932,3 +1939,128 @@ class StackedTransformer(Encoder):
             hidden = self.fc_stack(hidden, mask=mask)
 
         return {"encoder_output": hidden}
+
+
+@register_encoder("s4", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class S4Encoder(Encoder):
+    def __init__(
+        self,
+        should_embed=True,
+        vocab=None,
+        representation="dense",
+        embedding_size=256,
+        max_sequence_length=None,
+        embeddings_trainable=True,
+        pretrained_embeddings=None,
+        embeddings_on_cpu=False,
+        fc_layers=None,
+        num_fc_layers=None,
+        output_size=256,
+        use_bias=True,
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
+        norm=None,
+        norm_params=None,
+        fc_activation="relu",
+        fc_dropout=0,
+        reduce_output="last",
+        # S4 args
+        d_state=64,
+        num_channels=1,  # maps 1-dim to C-dim
+        bidirectional=False,
+        activation="gelu",  # activation in between SS and FF
+        dropout=0,
+        # SSM Kernel arguments
+        **kernel_args,
+    ):
+        """
+        d_state: the dimension of the state, also denoted by N
+        l_max: the maximum sequence length, also denoted by L
+          if this is not known at model creation, set l_max=1
+        channels: can be interpreted as a number of "heads"
+        bidirectional: bidirectional
+        dropout: standard dropout argument
+        Other options are all experimental and should not need to be configured
+        """
+
+        super().__init__()
+
+        self.max_sequence_length = max_sequence_length
+        self.embedding_size = embedding_size
+
+        self.should_embed = should_embed
+        self.embed_sequence = None
+
+        if self.should_embed:
+            logger.debug("  EmbedSequence")
+            self.embed_sequence = EmbedSequence(
+                vocab,
+                embedding_size,
+                max_sequence_length=self.max_sequence_length,
+                representation=representation,
+                embeddings_trainable=embeddings_trainable,
+                pretrained_embeddings=pretrained_embeddings,
+                embeddings_on_cpu=embeddings_on_cpu,
+                dropout=dropout,
+                embedding_initializer=weights_initializer,
+            )
+
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
+        logger.debug("  S4")
+        self.s4 = S4(
+            in_channels,
+            d_state,
+            sequence_size=self.max_sequence_length,
+            num_channels=num_channels,
+            bidirectional=bidirectional,
+            activation=activation,
+            dropout=dropout,
+        )
+
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=self.s4.output_shape[-2],
+            encoding_size=self.s4.output_shape[-1],  # state_size
+        )
+
+        if self.reduce_output is not None:
+            logger.debug("  FCStack")
+            self.fc_stack = FCStack(
+                self.reduce_sequence.output_shape[-1],
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_output_size=output_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=fc_activation,
+                default_dropout=fc_dropout,
+            )
+
+    def forward(self, inputs, **kwargs):  # absorbs return_output and transformer src mask
+        """
+        u: (B H L) if self.transposed else (B L H)
+        state: (H N) never needed unless you know what you're doing
+        Returns: same shape as u
+        """
+        outputs = self.s4(inputs)
+        final_state = outputs[..., -1]
+
+        if self.reduce_outputs is not None:
+            outputs = self.reduce_sequence(outputs)
+            outputs = self.fc_stack(outputs)
+
+        return {"encoder_output": outputs, "encoder_output_state": final_state}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.s4.output_shape
