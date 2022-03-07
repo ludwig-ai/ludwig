@@ -1951,13 +1951,13 @@ class S4Encoder(Encoder):
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
+        norm=None,
+        norm_params=None,
+        reduce_output="last",
         fc_layers=None,
         num_fc_layers=None,
         fc_activation="relu",
         fc_dropout=0,
-        norm=None,
-        norm_params=None,
-        reduce_output="last",
         # S4 args
         d_state=64,
         output_size=256,
@@ -1965,8 +1965,6 @@ class S4Encoder(Encoder):
         bidirectional=False,
         activation="gelu",  # activation in between SS and FF
         dropout=0,
-        # SSM Kernel arguments
-        **kernel_args,
     ):
         """
         d_state: the dimension of the state, also denoted by N
@@ -2016,7 +2014,6 @@ class S4Encoder(Encoder):
             fc_bias_initializer=bias_initializer,
             fc_norm=norm,
             fc_norm_params=norm_params,
-            fc_activation=fc_activation,
         )
 
         self.reduce_output = reduce_output

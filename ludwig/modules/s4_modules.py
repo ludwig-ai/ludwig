@@ -30,7 +30,6 @@ class S4(LudwigModule):
         fc_bias_initializer="zeros",
         fc_norm=None,
         fc_norm_params=None,
-        fc_activation="relu",
     ):
         self.h = model_size
         self.n = hidden_size
@@ -44,12 +43,13 @@ class S4(LudwigModule):
             self.num_channels *= 2
 
         # SSM Kernel
-        self.kernel = HippoSSKernel(self.h, N=self.n, L=self.sequence_size, channels=self.num_channels)
+        self.kernel = HippoSSKernel(self.h, N=self.n, L=self.l_max, channels=self.num_channels)
 
         # Pointwise
         self.activation = get_activation(activation)
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
 
+        # position-wise output transform to mix features
         self.output_size = output_size if output_size is not None else self.h
         self.output_linear = FCLayer(
             self.h * self.channels,
@@ -60,7 +60,7 @@ class S4(LudwigModule):
             bias_initializer=fc_bias_initializer,
             norm=fc_norm,
             norm_params=fc_norm_params,
-            activation=fc_activation,
+            activation=None,
         )
 
     @property
@@ -69,8 +69,8 @@ class S4(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        if self.sequence_size:
-            return torch.Size([self.sequence_size, self.output_size])
+        if self.l_max:
+            return torch.Size([self.l_max, self.output_size])
         return self.output_size
 
     def forward(self, u):
@@ -97,9 +97,7 @@ class S4(LudwigModule):
         y = rearrange(y, "... c h l -> ... (c h) l")
         y = self.dropout(self.activation(y))
         y = y.transpose(-1, -2)  # output shape (B L (C H))
-
-        # position-wise output transform to mix features
-        y = self.output_linear(y.transpose(1, 2)).transpose(1, 2)
+        y = self.output_linear(y)  # output shape (B L H)
         return y
 
 
