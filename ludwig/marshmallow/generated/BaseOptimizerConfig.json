@@ -1,0 +1,377 @@
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.optimizer_class",
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.type"
+            ],
+            "bases": [
+                "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig",
+                "abc.ABC"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.type"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.type": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "type",
+                            "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.type",
+                            "properties": [
+                                "marshmallow-field",
+                                "required"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "String"
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "str",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "type"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.optimizer_class": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Class variable pointing to the corresponding `torch.optim.Optimizer` class.",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Class variable pointing to the corresponding `torch.optim.Optimizer` class."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "optimizer_class",
+                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.optimizer_class",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "ClassVar[Optional[torch.optim.optimizer.Optimizer]]"
+                },
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.type": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`.",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "type",
+                    "parent_path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig.type",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "str"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.Schema"
+            ],
+            "docstring": "Base class for optimizers. Not meant to be used directly.\n\nThe dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties\nfrom the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are\ndifferent from the torch-specified defaults.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Base class for optimizers. Not meant to be used directly.\n\nThe dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties\nfrom the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are\ndifferent from the torch-specified defaults."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.__eq__",
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.__init__",
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "BaseOptimizerConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.BaseOptimizerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):\n    \"\"\"Base class for optimizers. Not meant to be used directly.\n\n    The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties\n    from the corresponding `torch.optim.Optimizer` class are copied over: check each class to check which attributes are\n    different from the torch-specified defaults.\n    \"\"\"\n\n    optimizer_class: ClassVar[Optional[torch.optim.Optimizer]] = None\n    \"Class variable pointing to the corresponding `torch.optim.Optimizer` class.\"\n    type: str\n    \"\"\"Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\n       Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\n       result in a `ValidationError`.\"\"\"\n",
+                "line_start": 47
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

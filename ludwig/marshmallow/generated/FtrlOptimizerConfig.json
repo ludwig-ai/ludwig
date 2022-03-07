@@ -1,0 +1,554 @@
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.type",
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.learning_rate_power",
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.initial_accumulator_value",
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.l1_regularization_strength",
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.l2_regularization_strength"
+            ],
+            "bases": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.type",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.learning_rate_power",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.initial_accumulator_value",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.l1_regularization_strength",
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.l2_regularization_strength"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.initial_accumulator_value": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "initial_accumulator_value",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.initial_accumulator_value",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.l1_regularization_strength": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "l1_regularization_strength",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.l1_regularization_strength",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.l2_regularization_strength": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "l2_regularization_strength",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.l2_regularization_strength",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.learning_rate_power": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "learning_rate_power",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.learning_rate_power",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.type": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "type",
+                            "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.type",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "String"
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "str",
+                                "default": "'ftrl'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "type"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "-0.5",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "learning_rate_power"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.1",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "initial_accumulator_value"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "l1_regularization_strength"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "l2_regularization_strength"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.initial_accumulator_value": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "initial_accumulator_value",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.initial_accumulator_value",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.l1_regularization_strength": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "l1_regularization_strength",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.l1_regularization_strength",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.l2_regularization_strength": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "l2_regularization_strength",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.l2_regularization_strength",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.learning_rate_power": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "learning_rate_power",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.learning_rate_power",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.type": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`.",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.\nTechnically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will\nresult in a `ValidationError`."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "type",
+                    "parent_path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig.type",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "str"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.Schema"
+            ],
+            "docstring": "FtrlOptimizerConfig(type: str = 'ftrl', learning_rate_power: float = -0.5, initial_accumulator_value: float = 0.1, l1_regularization_strength: float = 0.0, l2_regularization_strength: float = 0.0)",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "FtrlOptimizerConfig(type: str = 'ftrl', learning_rate_power: float = -0.5, initial_accumulator_value: float = 0.1, l1_regularization_strength: float = 0.0, l2_regularization_strength: float = 0.0)"
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__eq__",
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__init__",
+                "ludwig.modules.optimization_modules.FtrlOptimizerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "FtrlOptimizerConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.FtrlOptimizerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class FtrlOptimizerConfig(BaseOptimizerConfig):\n    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl\n    type: str = \"ftrl\"\n    learning_rate_power: float = FloatRange(default=-0.5, max=0.0)\n    initial_accumulator_value: float = NonNegativeFloat(default=0.1)\n    l1_regularization_strength: float = NonNegativeFloat(default=0.0)\n    l2_regularization_strength: float = NonNegativeFloat(default=0.0)\n",
+                "line_start": 183
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

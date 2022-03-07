@@ -1,0 +1,695 @@
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.type",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.rho",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.eps",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.lr",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.weight_decay"
+            ],
+            "bases": [
+                "ludwig.modules.optimization_modules.BaseOptimizerConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.type",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.rho",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.eps",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.lr",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.weight_decay"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.eps": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "eps",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.eps",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.lr": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "lr",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.lr",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.rho": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "rho",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.rho",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.type": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "type",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.type",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "String"
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.weight_decay": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "weight_decay",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.weight_decay",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "str",
+                                "default": "'adadelta'",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "type"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.95",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "rho"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "1e-08",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "eps"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "1.0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "lr"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "0.0",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "weight_decay"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.eps": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 1e-08)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 1e-08)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "eps",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.eps",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.lr": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "lr",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.lr",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class": {
+                    "attributes": [],
+                    "bases": [
+                        "torch.optim.optimizer.Optimizer"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class.__init__": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "",
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "__init__",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class.__init__",
+                            "properties": [
+                                "special"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "params"
+                                    },
+                                    {
+                                        "default": "1.0",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "lr"
+                                    },
+                                    {
+                                        "default": "0.9",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "rho"
+                                    },
+                                    {
+                                        "default": "1e-06",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "eps"
+                                    },
+                                    {
+                                        "default": "0",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "weight_decay"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    def __init__(self, params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= rho <= 1.0:\n            raise ValueError(\"Invalid rho value: {}\".format(rho))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n\n        defaults = dict(lr=lr, rho=rho, eps=eps, weight_decay=weight_decay)\n        super(Adadelta, self).__init__(params, defaults)\n",
+                                "line_start": 51
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class.step": {
+                            "attributes": [],
+                            "category": "method",
+                            "children": {},
+                            "classes": [],
+                            "docstring": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "step",
+                            "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class",
+                            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class.step",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "signature": {
+                                "parameters": [
+                                    {
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "self"
+                                    },
+                                    {
+                                        "default": "None",
+                                        "kind": "POSITIONAL_OR_KEYWORD",
+                                        "name": "closure"
+                                    }
+                                ]
+                            },
+                            "source": {
+                                "code": "    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            square_avgs = []\n            acc_deltas = []\n            lr, rho, eps, weight_decay = group['lr'], group['rho'], group['eps'], group['weight_decay']\n\n            for p in group['params']:\n                if p.grad is None:\n                    continue\n                params_with_grad.append(p)\n                if p.grad.is_sparse:\n                    raise RuntimeError('Adadelta does not support sparse gradients')\n                grads.append(p.grad)\n\n                state = self.state[p]\n\n                # Lazy state initialization\n                if len(state) == 0:\n                    state['step'] = 0\n                    state['square_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                    state['acc_delta'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n\n                square_avgs.append(state['square_avg'])\n                acc_deltas.append(state['acc_delta'])\n\n                state['step'] += 1\n\n            F.adadelta(params_with_grad,\n                       grads,\n                       square_avgs,\n                       acc_deltas,\n                       lr=lr,\n                       rho=rho,\n                       eps=eps,\n                       weight_decay=weight_decay)\n\n        return loss\n",
+                                "line_start": 64
+                            }
+                        }
+                    },
+                    "classes": [],
+                    "docstring": "Implements Adadelta algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)},\n            \\: f(\\theta) \\text{ (objective)}, \\: \\rho \\text{ (decay)},\n            \\: \\lambda \\text{ (weight decay)}                                                \\\\\n        &\\textbf{initialize} :  v_0  \\leftarrow 0 \\: \\text{ (square avg)},\n            \\: u_0 \\leftarrow 0 \\: \\text{ (accumulate variables)}                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}if \\: \\lambda \\neq 0                                                    \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm} v_t      \\leftarrow v_{t-1} \\rho + g^2_t (1 - \\rho)                    \\\\\n        &\\hspace{5mm}\\Delta x_t    \\leftarrow   \\frac{\\sqrt{u_{t-1} +\n            \\epsilon }}{ \\sqrt{v_t + \\epsilon}  }g_t \\hspace{21mm}                           \\\\\n        &\\hspace{5mm} u_t  \\leftarrow   u_{t-1}  \\rho +\n             \\Delta x^2_t  (1 - \\rho)                                                        \\\\\n        &\\hspace{5mm}\\theta_t      \\leftarrow   \\theta_{t-1} - \\gamma  \\Delta x_t            \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `ADADELTA: An Adaptive Learning Rate Method`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    rho (float, optional): coefficient used for computing a running average\n        of squared gradients (default: 0.9)\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-6)\n    lr (float, optional): coefficient that scale delta before it is applied\n        to the parameters (default: 1.0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n\n.. _ADADELTA\\: An Adaptive Learning Rate Method:\n    https://arxiv.org/abs/1212.5701",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Implements Adadelta algorithm.\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)},\n            \\: f(\\theta) \\text{ (objective)}, \\: \\rho \\text{ (decay)},\n            \\: \\lambda \\text{ (weight decay)}                                                \\\\\n        &\\textbf{initialize} :  v_0  \\leftarrow 0 \\: \\text{ (square avg)},\n            \\: u_0 \\leftarrow 0 \\: \\text{ (accumulate variables)}                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}if \\: \\lambda \\neq 0                                                    \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm} v_t      \\leftarrow v_{t-1} \\rho + g^2_t (1 - \\rho)                    \\\\\n        &\\hspace{5mm}\\Delta x_t    \\leftarrow   \\frac{\\sqrt{u_{t-1} +\n            \\epsilon }}{ \\sqrt{v_t + \\epsilon}  }g_t \\hspace{21mm}                           \\\\\n        &\\hspace{5mm} u_t  \\leftarrow   u_{t-1}  \\rho +\n             \\Delta x^2_t  (1 - \\rho)                                                        \\\\\n        &\\hspace{5mm}\\theta_t      \\leftarrow   \\theta_{t-1} - \\gamma  \\Delta x_t            \\\\\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nFor further details regarding the algorithm we refer to `ADADELTA: An Adaptive Learning Rate Method`_.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    rho (float, optional): coefficient used for computing a running average\n        of squared gradients (default: 0.9)\n    eps (float, optional): term added to the denominator to improve\n        numerical stability (default: 1e-6)\n    lr (float, optional): coefficient that scale delta before it is applied\n        to the parameters (default: 1.0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n\n.. _ADADELTA\\: An Adaptive Learning Rate Method:\n    https://arxiv.org/abs/1212.5701"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class.__init__",
+                        "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class.step"
+                    ],
+                    "modules": [],
+                    "name": "optimizer_class",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {
+                        "code": "class Adadelta(Optimizer):\n    r\"\"\"Implements Adadelta algorithm.\n\n    .. math::\n       \\begin{aligned}\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)},\n                \\: f(\\theta) \\text{ (objective)}, \\: \\rho \\text{ (decay)},\n                \\: \\lambda \\text{ (weight decay)}                                                \\\\\n            &\\textbf{initialize} :  v_0  \\leftarrow 0 \\: \\text{ (square avg)},\n                \\: u_0 \\leftarrow 0 \\: \\text{ (accumulate variables)}                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n            &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n            &\\hspace{5mm}if \\: \\lambda \\neq 0                                                    \\\\\n            &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n            &\\hspace{5mm} v_t      \\leftarrow v_{t-1} \\rho + g^2_t (1 - \\rho)                    \\\\\n            &\\hspace{5mm}\\Delta x_t    \\leftarrow   \\frac{\\sqrt{u_{t-1} +\n                \\epsilon }}{ \\sqrt{v_t + \\epsilon}  }g_t \\hspace{21mm}                           \\\\\n            &\\hspace{5mm} u_t  \\leftarrow   u_{t-1}  \\rho +\n                 \\Delta x^2_t  (1 - \\rho)                                                        \\\\\n            &\\hspace{5mm}\\theta_t      \\leftarrow   \\theta_{t-1} - \\gamma  \\Delta x_t            \\\\\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n            &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n       \\end{aligned}\n\n    For further details regarding the algorithm we refer to `ADADELTA: An Adaptive Learning Rate Method`_.\n\n    Args:\n        params (iterable): iterable of parameters to optimize or dicts defining\n            parameter groups\n        rho (float, optional): coefficient used for computing a running average\n            of squared gradients (default: 0.9)\n        eps (float, optional): term added to the denominator to improve\n            numerical stability (default: 1e-6)\n        lr (float, optional): coefficient that scale delta before it is applied\n            to the parameters (default: 1.0)\n        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n\n    .. _ADADELTA\\: An Adaptive Learning Rate Method:\n        https://arxiv.org/abs/1212.5701\n    \"\"\"\n\n    def __init__(self, params, lr=1.0, rho=0.9, eps=1e-6, weight_decay=0):\n        if not 0.0 <= lr:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if not 0.0 <= rho <= 1.0:\n            raise ValueError(\"Invalid rho value: {}\".format(rho))\n        if not 0.0 <= eps:\n            raise ValueError(\"Invalid epsilon value: {}\".format(eps))\n        if not 0.0 <= weight_decay:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n\n        defaults = dict(lr=lr, rho=rho, eps=eps, weight_decay=weight_decay)\n        super(Adadelta, self).__init__(params, defaults)\n\n    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            grads = []\n            square_avgs = []\n            acc_deltas = []\n            lr, rho, eps, weight_decay = group['lr'], group['rho'], group['eps'], group['weight_decay']\n\n            for p in group['params']:\n                if p.grad is None:\n                    continue\n                params_with_grad.append(p)\n                if p.grad.is_sparse:\n                    raise RuntimeError('Adadelta does not support sparse gradients')\n                grads.append(p.grad)\n\n                state = self.state[p]\n\n                # Lazy state initialization\n                if len(state) == 0:\n                    state['step'] = 0\n                    state['square_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n                    state['acc_delta'] = torch.zeros_like(p, memory_format=torch.preserve_format)\n\n                square_avgs.append(state['square_avg'])\n                acc_deltas.append(state['acc_delta'])\n\n                state['step'] += 1\n\n            F.adadelta(params_with_grad,\n                       grads,\n                       square_avgs,\n                       acc_deltas,\n                       lr=lr,\n                       rho=rho,\n                       eps=eps,\n                       weight_decay=weight_decay)\n\n        return loss\n",
+                        "line_start": 7
+                    }
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.rho": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 0.95)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 0.95)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "rho",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.rho",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.type": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n(default: 'adadelta')",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n(default: 'adadelta')"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "type",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.type",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "str"
+                },
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.weight_decay": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "weight_decay",
+                    "parent_path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+                    "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.weight_decay",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "float"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.Schema",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.optimizer_class"
+            ],
+            "docstring": "Parameters for adadelta optimization.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Parameters for adadelta optimization."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__eq__",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__init__",
+                "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "AdadeltaOptimizerConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.AdadeltaOptimizerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class AdadeltaOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adadelta optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta\n    \"\"\"Points to `torch.optim.Adadelta`.\"\"\"\n\n    type: str = \"adadelta\"\n    \"\"\"Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adadelta')\"\"\"\n\n    rho: float = FloatRange(default=0.95, min=0.0, max=1.0)\n    \"\"\"(default: 0.95)\"\"\"\n\n    eps: float = NonNegativeFloat(default=1e-08)\n    \"\"\"(default: 1e-08)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :\n    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n",
+                "line_start": 117
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

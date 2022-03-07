@@ -1,0 +1,405 @@
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.main_sequence_feature",
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.reduce_output"
+            ],
+            "bases": [
+                "ludwig.combiners.combiners.BaseCombinerConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema": {
+                    "attributes": [
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema._declared_fields",
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema._hooks",
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.opts",
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.main_sequence_feature",
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.reduce_output"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta",
+                                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/combiners/combiners.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.main_sequence_feature": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "main_sequence_feature",
+                            "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.main_sequence_feature",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "String"
+                        },
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.reduce_output": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "reduce_output",
+                            "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.reduce_output",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/combiners/combiners.py",
+                            "source": {},
+                            "type": "String"
+                        }
+                    },
+                    "classes": [
+                        "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "Optional[str]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "main_sequence_feature"
+                            },
+                            {
+                                "annotation": "Optional[str]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "reduce_output"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.main_sequence_feature": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: None).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: None)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "main_sequence_feature",
+                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.main_sequence_feature",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Optional[str]"
+                },
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.reduce_output": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "TODO: Document parameters. (default: None).",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "TODO: Document parameters. (default: None)."
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "reduce_output",
+                    "parent_path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+                    "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig.reduce_output",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/combiners/combiners.py",
+                    "source": {},
+                    "type": "Optional[str]"
+                }
+            },
+            "classes": [
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.Schema"
+            ],
+            "docstring": "Parameters for sequence concat combiner.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Parameters for sequence concat combiner."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__eq__",
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__init__",
+                "ludwig.combiners.combiners.SequenceConcatCombinerConfig.__repr__"
+            ],
+            "modules": [],
+            "name": "SequenceConcatCombinerConfig",
+            "parent_path": "ludwig.combiners.combiners",
+            "path": "ludwig.combiners.combiners.SequenceConcatCombinerConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/combiners/combiners.py",
+            "source": {
+                "code": "class SequenceConcatCombinerConfig(BaseCombinerConfig):\n    \"\"\"Parameters for sequence concat combiner.\"\"\"\n\n    main_sequence_feature: Optional[str] = None\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n\n    reduce_output: Optional[str] = schema.ReductionOptions()\n    \"\"\"TODO: Document parameters. (default: None).\"\"\"\n",
+                "line_start": 250
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

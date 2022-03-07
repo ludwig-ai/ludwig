@@ -1,0 +1,498 @@
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clipglobalnorm",
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clipnorm",
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clipvalue"
+            ],
+            "bases": [
+                "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig"
+            ],
+            "category": "class",
+            "children": {
+                "ludwig.modules.optimization_modules.GradientClippingConfig.Schema": {
+                    "attributes": [
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema._declared_fields",
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema._hooks",
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.opts",
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipglobalnorm",
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipnorm",
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipvalue"
+                    ],
+                    "bases": [
+                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
+                    ],
+                    "category": "class",
+                    "children": {
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta": {
+                            "attributes": [
+                                "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta.unknown"
+                            ],
+                            "bases": [
+                                "object"
+                            ],
+                            "category": "class",
+                            "children": {
+                                "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta.unknown": {
+                                    "attributes": [],
+                                    "category": "attribute",
+                                    "children": {},
+                                    "classes": [],
+                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
+                                    "docstring_sections": [
+                                        {
+                                            "type": "markdown",
+                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+                                        }
+                                    ],
+                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                                    "functions": [],
+                                    "has_contents": true,
+                                    "methods": [],
+                                    "modules": [],
+                                    "name": "unknown",
+                                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta",
+                                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta.unknown",
+                                    "properties": [],
+                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                                    "source": {},
+                                    "type": ""
+                                }
+                            },
+                            "classes": [],
+                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
+                            "docstring_sections": [
+                                {
+                                    "type": "markdown",
+                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
+                                }
+                            ],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": true,
+                            "methods": [],
+                            "modules": [],
+                            "name": "Meta",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {
+                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
+                                "line_start": 49
+                            }
+                        },
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema._declared_fields": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_declared_fields",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema._declared_fields",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema._hooks": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "_hooks",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema._hooks",
+                            "properties": [
+                                "private"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        },
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipglobalnorm": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "clipglobalnorm",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipglobalnorm",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipnorm": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "clipnorm",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipnorm",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipvalue": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "clipvalue",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.clipvalue",
+                            "properties": [
+                                "marshmallow-field"
+                            ],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": "Float"
+                        },
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.opts": {
+                            "attributes": [],
+                            "category": "attribute",
+                            "children": {},
+                            "classes": [],
+                            "docstring": null,
+                            "docstring_sections": [],
+                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                            "functions": [],
+                            "has_contents": false,
+                            "methods": [],
+                            "modules": [],
+                            "name": "opts",
+                            "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                            "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.opts",
+                            "properties": [],
+                            "relative_file_path": "ludwig/modules/optimization_modules.py",
+                            "source": {},
+                            "type": ""
+                        }
+                    },
+                    "classes": [
+                        "ludwig.modules.optimization_modules.GradientClippingConfig.Schema.Meta"
+                    ],
+                    "docstring": "",
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "Schema",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.Schema",
+                    "properties": [
+                        "marshmallow-model"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__eq__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__eq__",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.__eq__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "other"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__init__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__init__",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.__init__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "Optional[float]",
+                                "default": "0.5",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "clipglobalnorm"
+                            },
+                            {
+                                "annotation": "Optional[float]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "clipnorm"
+                            },
+                            {
+                                "annotation": "Optional[float]",
+                                "default": "None",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "clipvalue"
+                            }
+                        ],
+                        "return_annotation": "None"
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__repr__": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "__repr__",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.__repr__",
+                    "properties": [
+                        "special"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            }
+                        ]
+                    },
+                    "source": {}
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clip_grads": {
+                    "attributes": [],
+                    "category": "method",
+                    "children": {},
+                    "classes": [],
+                    "docstring": null,
+                    "docstring_sections": [],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": false,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clip_grads",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.clip_grads",
+                    "properties": [],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "signature": {
+                        "parameters": [
+                            {
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "self"
+                            },
+                            {
+                                "annotation": "Iterable[torch.Tensor]",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "variables"
+                            }
+                        ]
+                    },
+                    "source": {
+                        "code": "    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
+                        "line_start": 326
+                    }
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clipglobalnorm": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: 0.5)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: 0.5)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clipglobalnorm",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.clipglobalnorm",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Optional[float]"
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clipnorm": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: None)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: None)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clipnorm",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.clipnorm",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Optional[float]"
+                },
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clipvalue": {
+                    "attributes": [],
+                    "category": "attribute",
+                    "children": {},
+                    "classes": [],
+                    "docstring": "(default: None)",
+                    "docstring_sections": [
+                        {
+                            "type": "markdown",
+                            "value": "(default: None)"
+                        }
+                    ],
+                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+                    "functions": [],
+                    "has_contents": true,
+                    "methods": [],
+                    "modules": [],
+                    "name": "clipvalue",
+                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.clipvalue",
+                    "properties": [
+                        "dataclass-field"
+                    ],
+                    "relative_file_path": "ludwig/modules/optimization_modules.py",
+                    "source": {},
+                    "type": "Optional[float]"
+                }
+            },
+            "classes": [
+                "ludwig.modules.optimization_modules.GradientClippingConfig.Schema"
+            ],
+            "docstring": "Dataclass that holds gradient clipping parameters.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Dataclass that holds gradient clipping parameters."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__eq__",
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__init__",
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__repr__",
+                "ludwig.modules.optimization_modules.GradientClippingConfig.clip_grads"
+            ],
+            "modules": [],
+            "name": "GradientClippingConfig",
+            "parent_path": "ludwig.modules.optimization_modules",
+            "path": "ludwig.modules.optimization_modules.GradientClippingConfig",
+            "properties": [
+                "dataclass"
+            ],
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "source": {
+                "code": "class GradientClippingConfig(BaseMarshmallowConfig):\n    \"\"\"Dataclass that holds gradient clipping parameters.\"\"\"\n\n    clipglobalnorm: Optional[float] = 0.5\n    \"\"\"(default: 0.5)\"\"\"\n    clipnorm: Optional[float] = None\n    \"\"\"(default: None)\"\"\"\n    clipvalue: Optional[float] = None\n    \"\"\"(default: None)\"\"\"\n\n    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
+                "line_start": 316
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

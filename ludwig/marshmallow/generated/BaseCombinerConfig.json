@@ -1,0 +1,36 @@
+{
+    "loading_errors": [],
+    "objects": [
+        {
+            "attributes": [],
+            "bases": [
+                "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig"
+            ],
+            "category": "class",
+            "children": {},
+            "classes": [],
+            "docstring": "Base combiner config class.",
+            "docstring_sections": [
+                {
+                    "type": "markdown",
+                    "value": "Base combiner config class."
+                }
+            ],
+            "file_path": "/home/ksbrar/work/ludwig/ludwig/combiners/combiners.py",
+            "functions": [],
+            "has_contents": true,
+            "methods": [],
+            "modules": [],
+            "name": "BaseCombinerConfig",
+            "parent_path": "ludwig.combiners.combiners",
+            "path": "ludwig.combiners.combiners.BaseCombinerConfig",
+            "properties": [],
+            "relative_file_path": "ludwig/combiners/combiners.py",
+            "source": {
+                "code": "class BaseCombinerConfig(schema.BaseMarshmallowConfig):\n    \"\"\"Base combiner config class.\"\"\"\n\n    pass\n",
+                "line_start": 127
+            }
+        }
+    ],
+    "parsing_errors": {}
+}

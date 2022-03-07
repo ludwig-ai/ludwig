@@ -104,8 +104,8 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
         import os
         from pathlib import Path
 
-        subfolder = "class_structures/" if not is_torch else "torch_structures/"
-        relative_path = os.path.join("documentation/", subfolder, name)
+        subfolder = "" if not is_torch else "torch/"
+        relative_path = os.path.join("generated/", subfolder, name)
         parent_dir = str(Path(__file__).parent)
         full_path = os.path.join(parent_dir, relative_path) + ".json"
         with open(full_path) as input:
