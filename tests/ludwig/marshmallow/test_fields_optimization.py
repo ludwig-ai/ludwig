@@ -18,7 +18,6 @@ from typing import Optional
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
-from marshmallow_jsonschema import JSONSchema as js
 
 import ludwig.marshmallow.marshmallow_schema_utils as lusutils
 import ludwig.modules.optimization_modules as lmo
@@ -155,27 +154,3 @@ def test_ClipperDataclassField():
     assert CustomTestSchema.Schema().load(
         {"foo": {"clipglobalnorm": 1, "extra_key": 1}}
     ).foo == lmo.GradientClippingConfig(clipglobalnorm=1)
-
-    # Test expected schema dumps:
-    raw_clipper_schema = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "definitions": {
-            "GradientClippingConfig": {
-                "type": "object",
-                "properties": {
-                    "clipglobalnorm": {
-                        "title": "clipglobalnorm",
-                        "type": ["number", "null"],
-                        "format": "float",
-                        "default": 0.5,
-                    },
-                    "clipnorm": {"title": "clipnorm", "type": ["number", "null"], "format": "float", "default": None},
-                    "clipvalue": {"title": "clipvalue", "type": ["number", "null"], "format": "float", "default": None},
-                },
-                "additionalProperties": False,
-            }
-        },
-        "$ref": "#/definitions/GradientClippingConfig",
-    }
-
-    assert js().dump(lmo.GradientClippingConfig.Schema()) == raw_clipper_schema
