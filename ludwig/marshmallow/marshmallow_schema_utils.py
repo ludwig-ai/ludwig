@@ -129,14 +129,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
 
         schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
         if schema_cls.__doc__ is not None:
-            # parsed_documentation = restloader.get_object_documentation(get_fully_qualified_class_name(schema_cls))
             parsed_documentation = load_pytkdocs_json(schema_cls.__name__)
-
-            # Parse parents as well in case some attrs. are inherited:
-            # parsed_parents = [
-            #     restloader.get_object_documentation(get_fully_qualified_class_name(parent))
-            #     for parent in schema_cls.__bases__
-            # ]
             parsed_parents = [load_pytkdocs_json(parent.__name__) for parent in schema_cls.__bases__]
 
             # Add the top-level description to the schema if it exists:
@@ -158,19 +151,6 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
             # For each prop in the schema, set its description and default if they are not already set. If not already
             # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
             # (e.g. for optimizer parameters).
-
-            # parsed_torch = (
-            #     {
-            #         param.name: param
-            #         for param in googleloader.get_object_documentation(
-            #             get_fully_qualified_class_name(schema_cls.optimizer_class)
-            #         )
-            #         .docstring_sections[1]
-            #         .value
-            #     }
-            #     if hasattr(schema_cls, "optimizer_class") and schema_cls.optimizer_class is not None
-            #     else None
-            # )
             parsed_torch = None
             if hasattr(schema_cls, "optimizer_class") and schema_cls.optimizer_class is not None:
                 parsed_torch = get_torch_attrs_dict(
@@ -233,10 +213,12 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
 
 
 def InitializerOptions(default: Union[None, str] = None):
+    """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
     return StringOptions(list(initializer_registry.keys()), default=default, nullable=True)
 
 
 def ReductionOptions(default: Union[None, str] = None):
+    """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
     return StringOptions(
         list(reduce_mode_registry.keys()),
         default=default,
@@ -245,10 +227,15 @@ def ReductionOptions(default: Union[None, str] = None):
 
 
 def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True):
+    """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
     return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable)
 
 
 def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True):
+    """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
+
+    By default, None is allowed (and automatically appended) to the allowed list of options.
+    """
     # If None should be allowed for an enum field, it also has to be defined as a valid
     # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
     if len(options) <= 0:
@@ -272,6 +259,8 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
 
 
 def PositiveInteger(default: Union[None, int] = None):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
+    positive."""
     val = validate.Range(min=1)
     if default is not None:
         try:
@@ -288,6 +277,8 @@ def PositiveInteger(default: Union[None, int] = None):
 
 
 def NonNegativeInteger(default: Union[None, int] = None):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
+    nonnegative."""
     val = validate.Range(min=0)
     if default is not None:
         try:
@@ -304,6 +295,8 @@ def NonNegativeInteger(default: Union[None, int] = None):
 
 
 def IntegerRange(default: Union[None, int] = None, **kwargs):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
+    set by relevant keyword args."""
     val = validate.Range(**kwargs)
     if default is not None:
         try:
@@ -320,6 +313,7 @@ def IntegerRange(default: Union[None, int] = None, **kwargs):
 
 
 def NonNegativeFloat(default: Union[None, float] = None):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
     if default is not None:
         try:
@@ -334,6 +328,8 @@ def NonNegativeFloat(default: Union[None, float] = None):
 
 
 def FloatRange(default: Union[None, float] = None, **kwargs):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
+    relevant keyword args."""
     val = validate.Range(**kwargs)
     if default is not None:
         try:
@@ -348,6 +344,7 @@ def FloatRange(default: Union[None, float] = None, **kwargs):
 
 
 def Dict(default: Union[None, tDict] = None):
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
             assert isinstance(default, dict)
@@ -361,6 +358,7 @@ def Dict(default: Union[None, tDict] = None):
 
 
 def DictList(default: Union[None, List[tDict]] = None):
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
         try:
             assert isinstance(default, list)
@@ -377,6 +375,12 @@ def DictList(default: Union[None, List[tDict]] = None):
 
 
 def Embed():
+    """Returns a dataclass field with marshmallow metadata enforcing valid values for embedding input feature
+    names.
+
+    In particular, int and str values are allowed, and in the latter case the value must be one of the allowed
+    `_embed_options`.
+    """
     _embed_options = ["add"]
 
     # TODO(ksbrar): Should the default choice here be null?
@@ -404,6 +408,12 @@ def Embed():
 
 
 def InitializerOrDict(default: str = "xavier_uniform"):
+    """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
+
+    In particular, allows str or dict types; in the former case the field is equivalent to `InitializerOptions` while in
+    the latter case a dict can be defined with the `type` field enforced to be one of `initializer_registry` as usual
+    while additional properties are unrestricted.
+    """
     initializers = list(initializer_registry.keys())
     if not isinstance(default, str) or default not in initializers:
         raise ValidationError(f"Invalid default: `{default}`")
@@ -452,6 +462,12 @@ def InitializerOrDict(default: str = "xavier_uniform"):
 
 
 def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1):
+    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
+    range.
+
+    In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
+    The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
+    """
     if N != len(default):
         raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
 
@@ -507,6 +523,7 @@ def IntegerOrStringOptionsField(
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
 ):
+    """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
     is_integer = True
     return NumericOrStringOptionsField(**locals())
 
@@ -523,6 +540,12 @@ def NumericOrStringOptionsField(
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
 ):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
+
+    In particular, numeric values can be constrained to a range through the other arguments, both inclusive and
+    exclusive. Strings must conform to the given set of options (and None/null must be set to be allowed or not).
+    """
+
     class IntegerOrStringOptionsField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
             msg_type = "integer" if is_integer else "numeric"
