@@ -11,7 +11,16 @@ except ImportError:
 
 from ludwig.api import LudwigModel
 from ludwig.automl.utils import get_model_type
-from ludwig.constants import AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER, BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TEXT, TRAINER
+from ludwig.constants import (
+    AUTOML_DEFAULT_TEXT_ENCODER,
+    AUTOML_SMALLER_TEXT_ENCODER,
+    BATCH_SIZE,
+    HYPEROPT,
+    PREPROCESSING,
+    SPACE,
+    TEXT,
+    TRAINER,
+)
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
@@ -104,17 +113,19 @@ def _reduce_text_model_size(config, training_set_metadata):
     for feature in config["input_features"]:
         if feature["type"] == TEXT and feature["encoder"] == AUTOML_DEFAULT_TEXT_ENCODER:
             feature["encoder"] = AUTOML_SMALLER_TEXT_ENCODER
-            feature_99ptile_len = training_set_metadata[feature['name']]['word_99ptile_max_sequence_length']
+            feature_99ptile_len = training_set_metadata[feature["name"]]["word_99ptile_max_sequence_length"]
             if feature_99ptile_len < min_99ptile_len:
                 min_99ptile_len = feature_99ptile_len
     if min_99ptile_len < float("inf"):
-        seq_len_limit = {'word_sequence_length_limit': round(min_99ptile_len)}
-        if 'preprocessing' not in config:
-            config['preprocessing'] = {TEXT: seq_len_limit}
-        elif ((TEXT not in config['preprocessing']) or
-                ('word_sequence_length_limit' not in config['preprocessing'][TEXT]) or
-                (min_99ptile_len < float(config['preprocessing'][TEXT]['word_sequence_length_limit']))):
-            config['preprocessing'][TEXT] = seq_len_limit
+        seq_len_limit = {"word_sequence_length_limit": round(min_99ptile_len)}
+        if "preprocessing" not in config:
+            config["preprocessing"] = {TEXT: seq_len_limit}
+        elif (
+            (TEXT not in config["preprocessing"])
+            or ("word_sequence_length_limit" not in config["preprocessing"][TEXT])
+            or (min_99ptile_len < float(config["preprocessing"][TEXT]["word_sequence_length_limit"]))
+        ):
+            config["preprocessing"][TEXT] = seq_len_limit
 
 
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available

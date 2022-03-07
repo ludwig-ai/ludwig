@@ -21,7 +21,15 @@ from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
 from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_type
-from ludwig.constants import AUTOML_DEFAULT_TABULAR_MODEL, AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_DEFAULT_IMAGE_ENCODER, HYPEROPT, IMAGE, TABULAR, TEXT
+from ludwig.constants import (
+    AUTOML_DEFAULT_IMAGE_ENCODER,
+    AUTOML_DEFAULT_TABULAR_MODEL,
+    AUTOML_DEFAULT_TEXT_ENCODER,
+    HYPEROPT,
+    IMAGE,
+    TABULAR,
+    TEXT,
+)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
@@ -140,7 +148,9 @@ def create_auto_config(
             resources = get_available_resources()  # check if cluster has GPUS
             if resources["gpu"] > 0:
                 model_config, fits_in_memory = ray.get(
-                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(model_config, dataset, model_category)
+                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(
+                        model_config, dataset, model_category
+                    )
                 )
             else:
                 model_config, fits_in_memory = ray.get(
