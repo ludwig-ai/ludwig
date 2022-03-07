@@ -348,6 +348,8 @@ def GradientClippingDataclassField(default={}, allow_none=True):
         """
 
         def _deserialize(self, value, attr, data, **kwargs):
+            if value is None:
+                return value
             if isinstance(value, dict):
                 try:
                     return GradientClippingConfig.Schema().load(value)
@@ -355,7 +357,7 @@ def GradientClippingDataclassField(default={}, allow_none=True):
                     raise ValidationError(
                         f"Invalid params for gradient clipping: {value}, see GradientClippingConfig class."
                     )
-            raise ValidationError("Field should be dict")
+            raise ValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
             return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(GradientClippingConfig)]}
@@ -366,6 +368,14 @@ def GradientClippingDataclassField(default={}, allow_none=True):
         metadata={"marshmallow_field": GradientClippingMarshmallowField(allow_none=allow_none)},
         default_factory=lambda: GradientClippingConfig.Schema().load(default),
     )
+
+
+def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
+    """Utility function that will convert a None-type gradient clipping config to the correct form."""
+    if type(gradient_clipping_config) is type(GradientClippingConfig):
+        return gradient_clipping_config
+    none_dict = dict.fromkeys(asdict(GradientClippingConfig()), None)
+    return GradientClippingConfig.Schema().load(none_dict)
 
 
 def create_optimizer(

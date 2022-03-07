@@ -49,6 +49,7 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import (
     BaseOptimizerConfig,
+    create_clipper,
     create_optimizer,
     GradientClippingConfig,
     GradientClippingDataclassField,
@@ -313,7 +314,7 @@ class Trainer(BaseTrainer):
         optimizer_config = config.optimizer
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
         optimizer_config.lr = base_learning_rate
-        self.gradient_clipping_config = config.gradient_clipping
+        self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
 
     def train_step(
