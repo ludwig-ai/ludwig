@@ -1,7 +1,11 @@
+import logging
 from typing import Optional
 
 from einops import rearrange, repeat
+import math
+import numpy as np
 import opt_einsum as oe
+from scipy import special as ss
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,9 +13,87 @@ import torch.nn.functional as F
 from ludwig.modules.fully_connected_modules import FCLayer
 from ludwig.utils.torch_utils import get_activation, LudwigModule
 
+logger = logging.getLogger(__name__)
 
 contract = oe.contract
 contract_expression = oe.contract_expression
+
+
+""" Cauchy kernel """
+
+
+try:  # Try CUDA extension
+    from extensions.cauchy.cauchy import cauchy_mult
+
+    has_cauchy_extension = True
+except:
+    logger.warn(
+        "CUDA extension for cauchy multiplication not found. Install by going to extensions/cauchy/ and running `python setup.py install`. This should speed up end-to-end training by 10-50%"
+    )
+    has_cauchy_extension = False
+
+try:  # Try pykeops
+    import pykeops
+    from pykeops.torch import Genred
+
+    has_pykeops = True
+
+    def cauchy_conj(v, z, w):
+        """Pykeops version"""
+        expr_num = "z * ComplexReal(v) - Real2Complex(Sum(v * w))"
+        expr_denom = "ComplexMult(z-w, z-Conj(w))"
+
+        cauchy_mult = Genred(
+            f"ComplexDivide({expr_num}, {expr_denom})",
+            # expr_num,
+            # expr_denom,
+            [
+                "v = Vj(2)",
+                "z = Vi(2)",
+                "w = Vj(2)",
+            ],
+            reduction_op="Sum",
+            axis=1,
+            dtype="float32" if v.dtype == torch.cfloat else "float64",
+        )
+
+        v, z, w = _broadcast_dims(v, z, w)
+        v = _c2r(v)
+        z = _c2r(z)
+        w = _c2r(w)
+
+        r = 2 * cauchy_mult(v, z, w, backend="GPU")
+        return _r2c(r)
+
+except ImportError:
+    has_pykeops = False
+    if not has_cauchy_extension:
+        logger.error(
+            "Falling back on slow Cauchy kernel. Install at least one of pykeops or the CUDA extension for efficiency."
+        )
+
+        def cauchy_conj_slow(v, z, w):
+            z = z.unsqueeze(-1)
+            v = v.unsqueeze(-2)
+            w = w.unsqueeze(-2)
+            r = (z * v.real - (v * w.conj()).real) / ((z - w.real) ** 2 + w.imag**2)
+            # r =  ((z-w.real)**2 + w.imag**2)
+            return 2 * torch.sum(r, dim=-1)
+
+
+def _broadcast_dims(*tensors):
+    max_dim = max([len(tensor.shape) for tensor in tensors])
+    tensors = [tensor.view((1,) * (max_dim - len(tensor.shape)) + tensor.shape) for tensor in tensors]
+    return tensors
+
+
+_c2r = torch.view_as_real
+_r2c = torch.view_as_complex
+_conj = lambda x: torch.cat([x, x.conj()], dim=-1)
+if torch.__version__.startswith("1.10"):
+    _resolve_conj = lambda x: x.conj().resolve_conj()
+else:
+    _resolve_conj = lambda x: x.conj()
 
 
 class S4(LudwigModule):
@@ -209,7 +291,8 @@ class HippoSSKernel(LudwigModule):
 
 
 class SSKernelNPLR(LudwigModule):
-    """Stores a representation of and computes the SSKernel function K_L(A^dt, B^dt, C) corresponding to a discretized state space, where A is Normal + Low Rank (NPLR)
+    """Stores a representation of and computes the SSKernel function K_L(A^dt, B^dt, C) corresponding to a discretized
+    state space, where A is Normal + Low Rank (NPLR)
     The class name stands for 'State-Space SSKernel for Normal Plus Low-Rank'.
     The parameters of this function are as follows.
     A: (... N N) the state matrix
@@ -281,7 +364,8 @@ class SSKernelNPLR(LudwigModule):
         trainable: toggle which of the parameters is trainable
         lr: add hook to set lr of hippo parameters specially (everything besides C)
         tie_state: tie all state parameters across the H hidden features
-        length_correction: multiply C by (I - dA^L) - can be turned off when L is large for slight speedup at initialization (only relevant when N large as well)
+        length_correction: multiply C by (I - dA^L) - can be turned off when L is large for slight speedup at
+            initialization (only relevant when N large as well)
         Note: tensor shape N here denotes half the true state size, because of conjugate symmetry
         """
 
@@ -315,9 +399,9 @@ class SSKernelNPLR(LudwigModule):
         train = False
         if trainable is None:
             trainable = {}
-        if trainable == False:
+        if not trainable:
             trainable = {}
-        if trainable == True:
+        if trainable:
             trainable, train = {}, True
         self.register("log_dt", log_dt, trainable.get("dt", train), lr, 0.0)
         self.register("B", _c2r(B), trainable.get("B", train), lr, 0.0)
@@ -354,7 +438,8 @@ class SSKernelNPLR(LudwigModule):
         returns: (..., c+s, L)
         """
         # Handle sampling rate logic
-        # The idea is that this kernel's length (in continuous units) is self.L, while we are asked to provide a kernel of length L at (relative) sampling rate rate
+        # The idea is that this kernel's length (in continuous units) is self.L, while we are asked to provide a kernel
+        # of length L at (relative) sampling rate rate
         # If either are not passed in, assume we're not asked to change the scale of our kernel
         assert not (rate is None and L is None)
         if rate is None:
@@ -389,7 +474,8 @@ class SSKernelNPLR(LudwigModule):
             # Have to "unbilinear" the state to put it into the same "type" as B
             # Compute 1/dt * (I + dt/2 A) @ state
 
-            # Can do this without expanding (maybe minor speedup using conj symmetry in theory), but it's easier to read this way
+            # Can do this without expanding (maybe minor speedup using conj symmetry in theory), but it's easier to
+            # read this way
             s = _conj(state) if state.size(-1) == self.N else state  # (B H N)
             sA = s * _conj(w) - contract("bhm, rhm, rhn -> bhn", s, _conj(Q), _conj(P))  # (B H N)
             s = s / dt.unsqueeze(-1) + sA / 2
@@ -462,7 +548,7 @@ class SSKernelNPLR(LudwigModule):
     @torch.no_grad()
     def double_length(self):
         if self.verbose:
-            log.info(f"S4: Doubling length from L = {self.L} to {2*self.L}")
+            logger.info(f"S4: Doubling length from L = {self.L} to {2*self.L}")
         self._setup_C(double_length=True)
 
     def _setup_linear(self):
@@ -494,8 +580,10 @@ class SSKernelNPLR(LudwigModule):
 
     def _step_state_linear(self, u=None, state=None):
         """
-        Version of the step function that has time O(N) instead of O(N^2) per step, which takes advantage of the DPLR form and bilinear discretization.
-        Unfortunately, as currently implemented it's about 2x slower because it calls several sequential operations. Perhaps a fused CUDA kernel implementation would be much faster
+        Version of the step function that has time O(N) instead of O(N^2) per step, which takes advantage of the DPLR
+        form and bilinear discretization.
+        Unfortunately, as currently implemented it's about 2x slower because it calls several sequential operations.
+        Perhaps a fused CUDA kernel implementation would be much faster
         u: (H) input
         state: (H, N/2) state with conjugate pairs
           Optionally, the state can have last dimension N
@@ -517,7 +605,8 @@ class SSKernelNPLR(LudwigModule):
         else:
             assert state.size(-1) == 2 * self.N
             step_params = {k: _conj(v) for k, v in step_params.items()}
-            # TODO worth setting up a contract_expression in default_state if we want to use this at inference time for stepping
+            # TODO worth setting up a contract_expression in default_state if we want to use this at inference time for
+            # stepping
             contract_fn = lambda p, x, y: contract("r h n, r h m, ... h m -> ... h n", p, x, y)  # inner outer product
         D = step_params["D"]  # (H N)
         E = step_params["E"]  # (H N)
@@ -658,3 +747,152 @@ class SSKernelNPLR(LudwigModule):
             optim["weight_decay"] = wd
         if len(optim) > 0:
             setattr(getattr(self, name), "_optim", optim)
+
+
+def power(L, A, v=None):
+    """Compute A^L and the scan sum_i A^i v_i
+    A: (..., N, N)
+    v: (..., N, L)
+    """
+
+    I = torch.eye(A.shape[-1]).to(A)  # , dtype=A.dtype, device=A.device)
+
+    powers = [A]
+    l = 1
+    while True:
+        if L % 2 == 1:
+            I = powers[-1] @ I
+        L //= 2
+        if L == 0:
+            break
+        l *= 2
+        powers.append(powers[-1] @ powers[-1])
+
+    if v is None:
+        return I
+
+    # Invariants:
+    # powers[-1] := A^l
+    # l := largest po2 at most L
+
+    # Note that an alternative divide and conquer to compute the reduction is possible and can be embedded into the
+    # above loop without caching intermediate powers of A
+    # We do this reverse divide-and-conquer for efficiency reasons:
+    # 1) it involves fewer padding steps for non-po2 L
+    # 2) it involves more contiguous arrays
+
+    # Take care of edge case for non-po2 arrays
+    # Note that this initial step is a no-op for the case of power of 2 (l == L)
+    k = v.size(-1) - l
+    v_ = powers.pop() @ v[..., l:]
+    v = v[..., :l]
+    v[..., :k] = v[..., :k] + v_
+
+    # Handle reduction for power of 2
+    while v.size(-1) > 1:
+        v = rearrange(v, "... (z l) -> ... z l", z=2)
+        v = v[..., 0, :] + powers.pop() @ v[..., 1, :]
+    return I, v.squeeze(-1)
+
+
+""" HiPPO utilities """
+
+
+def embed_c2r(A):
+    A = rearrange(A, "... m n -> ... m () n ()")
+    A = np.pad(A, ((0, 0), (0, 1), (0, 0), (0, 1))) + np.pad(A, ((0, 0), (1, 0), (0, 0), (1, 0)))
+    return rearrange(A, "m x n y -> (m x) (n y)")
+
+
+def transition(measure, N, **measure_args):
+    """A, B transition matrices for different measures
+    measure: the type of measure
+      legt - Legendre (translated)
+      legs - Legendre (scaled)
+      glagt - generalized Laguerre (translated)
+      lagt, tlagt - previous versions of (tilted) Laguerre with slightly different normalization
+    """
+    # Laguerre (translated)
+    if measure == "lagt":
+        b = measure_args.get("beta", 1.0)
+        A = np.eye(N) / 2 - np.tril(np.ones((N, N)))
+        B = b * np.ones((N, 1))
+    # Generalized Laguerre
+    # alpha 0, beta small is most stable (limits to the 'lagt' measure)
+    # alpha 0, beta 1 has transition matrix A = [lower triangular 1]
+    elif measure == "glagt":
+        alpha = measure_args.get("alpha", 0.0)
+        beta = measure_args.get("beta", 0.01)
+        A = -np.eye(N) * (1 + beta) / 2 - np.tril(np.ones((N, N)), -1)
+        B = ss.binom(alpha + np.arange(N), np.arange(N))[:, None]
+
+        L = np.exp(0.5 * (ss.gammaln(np.arange(N) + alpha + 1) - ss.gammaln(np.arange(N) + 1)))
+        A = (1.0 / L[:, None]) * A * L[None, :]
+        B = (1.0 / L[:, None]) * B * np.exp(-0.5 * ss.gammaln(1 - alpha)) * beta ** ((1 - alpha) / 2)
+    # Legendre (translated)
+    elif measure == "legt":
+        Q = np.arange(N, dtype=np.float64)
+        R = (2 * Q + 1) ** 0.5
+        j, i = np.meshgrid(Q, Q)
+        A = R[:, None] * np.where(i < j, (-1.0) ** (i - j), 1) * R[None, :]
+        B = R[:, None]
+        A = -A
+    # Legendre (scaled)
+    elif measure == "legs":
+        q = np.arange(N, dtype=np.float64)
+        col, row = np.meshgrid(q, q)
+        r = 2 * q + 1
+        M = -(np.where(row >= col, r, 0) - np.diag(q))
+        T = np.sqrt(np.diag(2 * q + 1))
+        A = T @ M @ np.linalg.inv(T)
+        B = np.diag(T)[:, None]
+        B = B.copy()  # Otherwise "UserWarning: given NumPY array is not writeable..." after torch.as_tensor(B)
+    elif measure == "fourier":
+        freqs = np.arange(N // 2)
+        d = np.stack([freqs, np.zeros(N // 2)], axis=-1).reshape(-1)[:-1]
+        A = 2 * np.pi * (np.diag(d, 1) - np.diag(d, -1))
+        A = A - embed_c2r(np.ones((N // 2, N // 2)))
+        B = embed_c2r(np.ones((N // 2, 1)))[..., :1]
+    elif measure == "random":
+        A = np.random.randn(N, N) / N
+        B = np.random.randn(N, 1)
+    elif measure == "diagonal":
+        A = -np.diag(np.exp(np.random.randn(N)))
+        B = np.random.randn(N, 1)
+    else:
+        raise NotImplementedError
+
+    return A, B
+
+
+def rank_correction(measure, N, rank=1, dtype=torch.float):
+    """Return low-rank matrix L such that A + L is normal"""
+
+    if measure == "legs":
+        assert rank >= 1
+        P = torch.sqrt(0.5 + torch.arange(N, dtype=dtype)).unsqueeze(0)  # (1 N)
+    elif measure == "legt":
+        assert rank >= 2
+        P = torch.sqrt(1 + 2 * torch.arange(N, dtype=dtype))  # (N)
+        P0 = P.clone()
+        P0[0::2] = 0.0
+        P1 = P.clone()
+        P1[1::2] = 0.0
+        P = torch.stack([P0, P1], dim=0)  # (2 N)
+    elif measure == "lagt":
+        assert rank >= 1
+        P = 0.5**0.5 * torch.ones(1, N, dtype=dtype)
+    elif measure == "fourier":
+        P = torch.ones(N, dtype=dtype)  # (N)
+        P0 = P.clone()
+        P0[0::2] = 0.0
+        P1 = P.clone()
+        P1[1::2] = 0.0
+        P = torch.stack([P0, P1], dim=0)  # (2 N)
+    else:
+        raise NotImplementedError
+
+    d = P.size(0)
+    if rank > d:
+        P = torch.cat([P, torch.zeros(rank - d, N, dtype=dtype)], dim=0)  # (rank N)
+    return P
