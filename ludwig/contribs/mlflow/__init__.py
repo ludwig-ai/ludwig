@@ -1,9 +1,11 @@
 import logging
 import os
+from typing import Any, Dict
 
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.data.dataset.base import Dataset
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
 
@@ -25,9 +27,15 @@ class MlflowCallback(Callback):
         self.run = None
         self.run_ended = False
         self.tracking_uri = tracking_uri
+        self.training_set_metadata = None
         self.config = None
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
+
+    def on_preprocess_end(
+        self, training_set: Dataset, validation_set: Dataset, test_set: Dataset, training_set_metadata: Dict[str, Any]
+    ):
+        self.training_set_metadata = training_set_metadata
 
     def on_hyperopt_init(self, experiment_name):
         self.experiment_id = _get_or_create_experiment_id(experiment_name)
@@ -59,16 +67,26 @@ class MlflowCallback(Callback):
             mlflow.end_run()
             self.run_ended = True
 
-    def on_epoch_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.epoch)
+    def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
+        if not is_coordinator:
+            return
+
+        # When running on a remote worker, the model metadata files will only have been
+        # saved to the driver process, so re-save it here before uploading.
+        training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
+        if not os.path.exists(training_set_metadata_path):
+            save_json(training_set_metadata_path, self.training_set_metadata)
+
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         if not os.path.exists(model_hyperparameters_path):
-            # When running on a remote worker, the model hyperparameters will only have been
-            # saved to the driver process, so re-save it here before uploading.
             save_json(model_hyperparameters_path, self.config)
+
+    def on_epoch_end(self, trainer, progress_tracker, save_path):
+        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.epoch)
+
         _log_model(save_path)
 
-    def on_trainer_train_teardown(self, trainer, progress_tracker):
+    def on_trainer_train_teardown(self, trainer, progress_tracker, is_coordinator):
         if self.run is not None:
             mlflow.end_run()
 
