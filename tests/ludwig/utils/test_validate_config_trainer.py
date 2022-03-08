@@ -111,10 +111,6 @@ def test_optimizer_property_validation():
     config[TRAINER]["optimizer"]["momentum"] = 10
     config[TRAINER]["optimizer"]["extra_key"] = "invalid"
     validate_config(config)
-
-    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.type == "rmsprop"
-    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.momentum == 10
-    assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.eps == 1e-10
     assert not hasattr(TrainerConfig.Schema().load(config[TRAINER]).optimizer, "extra_key")
 
     # Test bad parameter range:
@@ -142,11 +138,8 @@ def test_clipper_property_validation():
     validate_config(config)
 
     # Test null/empty clipper:
-    assert TrainerConfig.Schema().load({}).gradient_clipping is not None
-
     config[TRAINER]["gradient_clipping"] = None
     validate_config(config)
-    assert TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping is None
     config[TRAINER]["gradient_clipping"] = {}
     validate_config(config)
     assert (
@@ -175,7 +168,4 @@ def test_clipper_property_validation():
     config[TRAINER]["gradient_clipping"] = {"clipnorm": 1}
     config[TRAINER]["gradient_clipping"]["extra_key"] = "invalid"
     validate_config(config)
-
-    assert TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping.clipnorm == 1
-    assert TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping.clipglobalnorm == 0.5
     assert not hasattr(TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping, "extra_key")
