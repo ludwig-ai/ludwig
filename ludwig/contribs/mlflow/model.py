@@ -294,7 +294,7 @@ def log_saved_model(lpath):
 
 
 class _CopyModel:
-    """Get model data with requiring us to read the model weights into memory."""
+    """Get model data without requiring us to read the model weights into memory."""
 
     def __init__(self, lpath):
         self.lpath = lpath

@@ -79,11 +79,11 @@ class Callback(ABC):
     def on_train_end(self, output_directory):
         pass
 
-    def on_trainer_train_setup(self, trainer, save_path):
+    def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
         """Called in EVERY trainer (rank) before training starts."""
         pass
 
-    def on_trainer_train_teardown(self, trainer, progress_tracker):
+    def on_trainer_train_teardown(self, trainer, progress_tracker, is_coordinator):
         """Called in EVERY trainer (rank) after training completes."""
         pass
 

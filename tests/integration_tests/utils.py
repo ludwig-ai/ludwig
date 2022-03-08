@@ -35,6 +35,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.models.trainer import Trainer
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,22 @@ class LocalTestBackend(LocalBackend):
     @property
     def supports_multiprocessing(self):
         return False
+
+
+# Simulates running training on a separate node from the driver process
+class FakeRemoteBackend(LocalBackend):
+    def create_trainer(self, **kwargs):
+        return FakeRemoteTrainer(**kwargs)
+
+    @property
+    def supports_multiprocessing(self):
+        return False
+
+
+class FakeRemoteTrainer(Trainer):
+    def train(self, *args, save_path="model", **kwargs):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            return super().train(*args, save_path=tmpdir, **kwargs)
 
 
 def parse_flag_from_env(key, default=False):

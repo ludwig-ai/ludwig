@@ -649,7 +649,9 @@ class Trainer(BaseTrainer):
         if save_path:
             training_progress_tracker_path = os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME)
 
-        self.callback(lambda c: c.on_trainer_train_setup(self, save_path), coordinator_only=False)
+        self.callback(
+            lambda c: c.on_trainer_train_setup(self, save_path, self.is_coordinator()), coordinator_only=False
+        )
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
@@ -865,7 +867,9 @@ class Trainer(BaseTrainer):
 
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-        self.callback(lambda c: c.on_trainer_train_teardown(self, progress_tracker), coordinator_only=False)
+        self.callback(
+            lambda c: c.on_trainer_train_teardown(self, progress_tracker, self.is_coordinator()), coordinator_only=False
+        )
 
         if train_summary_writer is not None:
             train_summary_writer.close()
@@ -873,6 +877,10 @@ class Trainer(BaseTrainer):
             validation_summary_writer.close()
         if test_summary_writer is not None:
             test_summary_writer.close()
+
+        # Load the best weights from saved checkpoint
+        if self.is_coordinator() and not self.skip_save_model:
+            self.model.load_state_dict(torch.load(model_weights_path))
 
         return (
             self.model,
