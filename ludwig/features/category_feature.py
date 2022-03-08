@@ -415,7 +415,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             output_feature[LOSS],
             {
                 TYPE: "softmax_cross_entropy",
-                "labels_smoothing": 0,
                 "class_weights": 1,
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
