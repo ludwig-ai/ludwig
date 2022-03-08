@@ -4,7 +4,8 @@ import pytest
 
 from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, NUMBER, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.preprocessing import merge_preprocessing
-from ludwig.utils.defaults import default_training_params, merge_with_defaults
+from ludwig.models.trainer import TrainerConfig
+from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -40,7 +41,7 @@ HYPEROPT_CONFIG = {
 
 SCHEDULER = {"type": "async_hyperband", "time_attr": "time_total_s"}
 
-default_early_stop = default_training_params["early_stop"]
+default_early_stop = TrainerConfig().early_stop
 
 
 @pytest.mark.parametrize(
