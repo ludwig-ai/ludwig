@@ -490,13 +490,6 @@ class LudwigModel:
                 callbacks=train_callbacks,
                 random_seed=random_seed,
             ) as trainer:
-                for callback in self.callbacks:
-                    callback.on_train_start(
-                        model=self.model,
-                        config=self.config,
-                        config_fp=self.config_fp,
-                    )
-
                 # auto tune batch size
                 if self.config[TRAINER][BATCH_SIZE] == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
@@ -523,6 +516,13 @@ class LudwigModel:
                     print_boxed("TRAINING")
                     if not skip_save_model:
                         self.save_config(model_dir)
+
+                for callback in self.callbacks:
+                    callback.on_train_start(
+                        model=self.model,
+                        config=self.config,
+                        config_fp=self.config_fp,
+                    )
 
                 try:
                     train_stats = trainer.train(
