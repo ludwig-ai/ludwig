@@ -376,7 +376,7 @@
                     },
                     "source": {
                         "code": "    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
-                        "line_start": 326
+                        "line_start": 343
                     }
                 },
                 "ludwig.modules.optimization_modules.GradientClippingConfig.clipglobalnorm": {
@@ -490,7 +490,7 @@
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
                 "code": "class GradientClippingConfig(BaseMarshmallowConfig):\n    \"\"\"Dataclass that holds gradient clipping parameters.\"\"\"\n\n    clipglobalnorm: Optional[float] = 0.5\n    \"\"\"(default: 0.5)\"\"\"\n    clipnorm: Optional[float] = None\n    \"\"\"(default: None)\"\"\"\n    clipvalue: Optional[float] = None\n    \"\"\"(default: None)\"\"\"\n\n    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
-                "line_start": 316
+                "line_start": 333
             }
         }
     ],

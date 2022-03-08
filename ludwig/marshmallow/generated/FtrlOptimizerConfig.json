@@ -545,8 +545,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class FtrlOptimizerConfig(BaseOptimizerConfig):\n    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl\n    type: str = \"ftrl\"\n    learning_rate_power: float = FloatRange(default=-0.5, max=0.0)\n    initial_accumulator_value: float = NonNegativeFloat(default=0.1)\n    l1_regularization_strength: float = NonNegativeFloat(default=0.0)\n    l2_regularization_strength: float = NonNegativeFloat(default=0.0)\n",
-                "line_start": 183
+                "code": "class FtrlOptimizerConfig(BaseOptimizerConfig):\n    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl\n    type: str = StringOptions([\"ftrl\"], default=\"ftrl\", nullable=False)\n    learning_rate_power: float = FloatRange(default=-0.5, max=0.0)\n    initial_accumulator_value: float = NonNegativeFloat(default=0.1)\n    l1_regularization_strength: float = NonNegativeFloat(default=0.0)\n    l2_regularization_strength: float = NonNegativeFloat(default=0.0)\n",
+                "line_start": 198
             }
         }
     ],

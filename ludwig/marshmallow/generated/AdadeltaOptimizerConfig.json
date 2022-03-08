@@ -686,8 +686,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class AdadeltaOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adadelta optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta\n    \"\"\"Points to `torch.optim.Adadelta`.\"\"\"\n\n    type: str = \"adadelta\"\n    \"\"\"Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adadelta')\"\"\"\n\n    rho: float = FloatRange(default=0.95, min=0.0, max=1.0)\n    \"\"\"(default: 0.95)\"\"\"\n\n    eps: float = NonNegativeFloat(default=1e-08)\n    \"\"\"(default: 1e-08)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :\n    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n",
-                "line_start": 117
+                "code": "class AdadeltaOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adadelta optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta\n    \"\"\"Points to `torch.optim.Adadelta`.\"\"\"\n\n    type: str = StringOptions([\"adadelta\"], default=\"adadelta\", nullable=False)\n    \"\"\"Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adadelta')\"\"\"\n\n    rho: float = FloatRange(default=0.95, min=0.0, max=1.0)\n    \"\"\"(default: 0.95)\"\"\"\n\n    eps: float = NonNegativeFloat(default=1e-08)\n    \"\"\"(default: 1e-08)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :\n    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n",
+                "line_start": 132
             }
         }
     ],
