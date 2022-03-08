@@ -771,7 +771,7 @@
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
                 "code": "class AdamWOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adamw optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.AdamW\n    \"\"\"Points to `torch.optim.AdamW`.\"\"\"\n\n    type: str = StringOptions([\"adamw\"], default=\"adamw\", nullable=False)\n    \"\"\"Must be 'adamw' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adamw')\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :\n    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)\n    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))\n    eps: float = NonNegativeFloat(default=1e-08)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n    amsgrad: bool = False\n",
-                "line_start": 112
+                "line_start": 107
             }
         }
     ],

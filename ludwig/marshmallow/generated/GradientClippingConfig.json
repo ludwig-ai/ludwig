@@ -344,51 +344,16 @@
                     },
                     "source": {}
                 },
-                "ludwig.modules.optimization_modules.GradientClippingConfig.clip_grads": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "clip_grads",
-                    "parent_path": "ludwig.modules.optimization_modules.GradientClippingConfig",
-                    "path": "ludwig.modules.optimization_modules.GradientClippingConfig.clip_grads",
-                    "properties": [],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            },
-                            {
-                                "annotation": "Iterable[torch.Tensor]",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "variables"
-                            }
-                        ]
-                    },
-                    "source": {
-                        "code": "    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
-                        "line_start": 343
-                    }
-                },
                 "ludwig.modules.optimization_modules.GradientClippingConfig.clipglobalnorm": {
                     "attributes": [],
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 0.5)",
+                    "docstring": "TODO: Document parameters. (default: 0.5)",
                     "docstring_sections": [
                         {
                             "type": "markdown",
-                            "value": "(default: 0.5)"
+                            "value": "TODO: Document parameters. (default: 0.5)"
                         }
                     ],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
@@ -411,11 +376,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: None)",
+                    "docstring": "TODO: Document parameters. (default: None)",
                     "docstring_sections": [
                         {
                             "type": "markdown",
-                            "value": "(default: None)"
+                            "value": "TODO: Document parameters. (default: None)"
                         }
                     ],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
@@ -438,11 +403,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: None)",
+                    "docstring": "TODO: Document parameters. (default: None)",
                     "docstring_sections": [
                         {
                             "type": "markdown",
-                            "value": "(default: None)"
+                            "value": "TODO: Document parameters. (default: None)"
                         }
                     ],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
@@ -477,8 +442,7 @@
             "methods": [
                 "ludwig.modules.optimization_modules.GradientClippingConfig.__eq__",
                 "ludwig.modules.optimization_modules.GradientClippingConfig.__init__",
-                "ludwig.modules.optimization_modules.GradientClippingConfig.__repr__",
-                "ludwig.modules.optimization_modules.GradientClippingConfig.clip_grads"
+                "ludwig.modules.optimization_modules.GradientClippingConfig.__repr__"
             ],
             "modules": [],
             "name": "GradientClippingConfig",
@@ -489,8 +453,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class GradientClippingConfig(BaseMarshmallowConfig):\n    \"\"\"Dataclass that holds gradient clipping parameters.\"\"\"\n\n    clipglobalnorm: Optional[float] = 0.5\n    \"\"\"(default: 0.5)\"\"\"\n    clipnorm: Optional[float] = None\n    \"\"\"(default: None)\"\"\"\n    clipvalue: Optional[float] = None\n    \"\"\"(default: None)\"\"\"\n\n    def clip_grads(self, variables: Iterable[torch.Tensor]):\n        if self.clipglobalnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipnorm:\n            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)\n        if self.clipvalue:\n            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)\n",
-                "line_start": 333
+                "code": "class GradientClippingConfig(BaseMarshmallowConfig):\n    \"\"\"Dataclass that holds gradient clipping parameters.\"\"\"\n\n    clipglobalnorm: Optional[float] = 0.5\n    \"\"\"TODO: Document parameters. (default: 0.5)\"\"\"\n    clipnorm: Optional[float] = None\n    \"\"\"TODO: Document parameters. (default: None)\"\"\"\n    clipvalue: Optional[float] = None\n    \"\"\"TODO: Document parameters. (default: None)\"\"\"\n",
+                "line_start": 314
             }
         }
     ],

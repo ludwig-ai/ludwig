@@ -372,7 +372,7 @@
                             },
                             {
                                 "annotation": "float",
-                                "default": "0.1",
+                                "default": "0",
                                 "kind": "POSITIONAL_OR_KEYWORD",
                                 "name": "initial_accumulator_value"
                             },
@@ -461,16 +461,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 0.1)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 0.1)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "initial_accumulator_value",
@@ -769,8 +764,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class AdagradOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adagrad optimization.\"\"\"\n\n    # Example docstring\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad\n    \"\"\"Points to `torch.optim.Adagrad`.\"\"\"\n\n    type: str = StringOptions([\"adagrad\"], default=\"adagrad\", nullable=False)\n    \"\"\"Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adagrad')\"\"\"\n\n    initial_accumulator_value: float = NonNegativeFloat(default=0.1)\n    \"\"\"(default: 0.1)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :\n    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)\n    lr_decay: float = 0\n    weight_decay: float = 0\n    eps: float = 1e-10\n",
-                "line_start": 155
+                "code": "class AdagradOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adagrad optimization.\"\"\"\n\n    # Example docstring\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad\n    \"\"\"Points to `torch.optim.Adagrad`.\"\"\"\n\n    type: str = StringOptions([\"adagrad\"], default=\"adagrad\", nullable=False)\n    \"\"\"Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adagrad')\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :\n    initial_accumulator_value: float = NonNegativeFloat(default=0)\n    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)\n    lr_decay: float = 0\n    weight_decay: float = 0\n    eps: float = 1e-10\n",
+                "line_start": 146
             }
         }
     ],

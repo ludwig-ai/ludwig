@@ -4,12 +4,12 @@
         {
             "attributes": [
                 "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.type",
-                "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.weight_decay",
+                "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.lr",
                 "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.momentum",
+                "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.alpha",
                 "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.eps",
                 "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.centered",
-                "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.lr",
-                "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.alpha"
+                "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.weight_decay"
             ],
             "bases": [
                 "ludwig.modules.optimization_modules.BaseOptimizerConfig"
@@ -22,12 +22,12 @@
                         "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema._hooks",
                         "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.opts",
                         "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.type",
-                        "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.weight_decay",
+                        "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.lr",
                         "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.momentum",
+                        "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.alpha",
                         "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.eps",
                         "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.centered",
-                        "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.lr",
-                        "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.alpha"
+                        "ludwig.modules.optimization_modules.RMSPropOptimizerConfig.Schema.weight_decay"
                     ],
                     "bases": [
                         "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
@@ -396,9 +396,9 @@
                             },
                             {
                                 "annotation": "float",
-                                "default": "0.9",
+                                "default": "0.01",
                                 "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "weight_decay"
+                                "name": "lr"
                             },
                             {
                                 "annotation": "float",
@@ -408,7 +408,13 @@
                             },
                             {
                                 "annotation": "float",
-                                "default": "1e-10",
+                                "default": "0.99",
+                                "kind": "POSITIONAL_OR_KEYWORD",
+                                "name": "alpha"
+                            },
+                            {
+                                "annotation": "float",
+                                "default": "1e-08",
                                 "kind": "POSITIONAL_OR_KEYWORD",
                                 "name": "eps"
                             },
@@ -420,15 +426,9 @@
                             },
                             {
                                 "annotation": "float",
-                                "default": "0.01",
+                                "default": "0.0",
                                 "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "lr"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.99",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "alpha"
+                                "name": "weight_decay"
                             }
                         ],
                         "return_annotation": "None"
@@ -491,16 +491,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: False)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: False)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "centered",
@@ -518,16 +513,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 1e-10)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 1e-10)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "eps",
@@ -567,16 +557,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 0.0)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 0.0)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "momentum",
@@ -796,16 +781,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 0.9)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 0.9)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "weight_decay",
@@ -847,8 +827,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class RMSPropOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for rmsprop optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop\n    \"\"\"Points to `torch.optim.RMSprop`.\"\"\"\n\n    type: str = StringOptions([\"rmsprop\"], default=\"rmsprop\", nullable=False)\n    \"\"\"Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'rmsprop')\"\"\"\n\n    weight_decay: float = NonNegativeFloat(default=0.9)\n    \"\"\"(default: 0.9)\"\"\"\n\n    momentum: float = NonNegativeFloat(default=0.0)\n    \"\"\"(default: 0.0)\"\"\"\n\n    eps: float = NonNegativeFloat(default=1e-10)\n    \"\"\"(default: 1e-10)\"\"\"\n\n    centered: bool = False\n    \"\"\"(default: False)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:\n    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)\n    alpha: float = NonNegativeFloat(default=0.99)\n",
-                "line_start": 222
+                "code": "class RMSPropOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for rmsprop optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop\n    \"\"\"Points to `torch.optim.RMSprop`.\"\"\"\n\n    type: str = StringOptions([\"rmsprop\"], default=\"rmsprop\", nullable=False)\n    \"\"\"Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'rmsprop')\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:\n    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)\n    momentum: float = NonNegativeFloat(default=0.0)\n    alpha: float = NonNegativeFloat(default=0.99)\n    eps: float = NonNegativeFloat(default=1e-08)\n    centered: bool = False\n    weight_decay: float = NonNegativeFloat(default=0.0)\n",
+                "line_start": 211
             }
         }
     ],

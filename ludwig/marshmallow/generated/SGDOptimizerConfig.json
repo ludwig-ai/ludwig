@@ -704,11 +704,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "Must be one of ['sgd', 'gd', 'stochastic_gradient_descent', 'gradient_descent']  - corresponds to names\nin `ludwig.modules.optimization_modules.optimizer_registry` (default: 'sgd')",
+                    "docstring": "Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n'sgd')",
                     "docstring_sections": [
                         {
                             "type": "markdown",
-                            "value": "Must be one of ['sgd', 'gd', 'stochastic_gradient_descent', 'gradient_descent']  - corresponds to names\nin `ludwig.modules.optimization_modules.optimizer_registry` (default: 'sgd')"
+                            "value": "Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n'sgd')"
                         }
                     ],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
@@ -775,8 +775,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class SGDOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for stochastic gradient descent.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD\n    \"\"\"Points to `torch.optim.SGD`.\"\"\"\n\n    type: str = StringOptions(\n        [\"sgd\", \"gd\", \"stochastic_gradient_descent\", \"gradient_descent\"], default=\"sgd\", nullable=False\n    )\n    \"\"\"Must be one of ['sgd', 'gd', 'stochastic_gradient_descent', 'gradient_descent']  - corresponds to names\n       in `ludwig.modules.optimization_modules.optimizer_registry` (default: 'sgd')\"\"\"\n\n    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)\n    \"\"\"(default: 0.001)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :\n    momentum: float = NonNegativeFloat(default=0.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n    dampening: float = NonNegativeFloat(default=0.0)\n    nesterov: bool = False\n",
-                "line_start": 68
+                "code": "class SGDOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for stochastic gradient descent.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD\n    \"\"\"Points to `torch.optim.SGD`.\"\"\"\n\n    type: str = StringOptions([\"sgd\"], default=\"sgd\", nullable=False)\n    \"\"\"Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n       'sgd')\"\"\"\n\n    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)\n    \"\"\"(default: 0.001)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :\n    momentum: float = NonNegativeFloat(default=0.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n    dampening: float = NonNegativeFloat(default=0.0)\n    nesterov: bool = False\n",
+                "line_start": 65
             }
         }
     ],

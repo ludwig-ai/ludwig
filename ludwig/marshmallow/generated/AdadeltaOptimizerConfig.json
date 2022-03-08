@@ -348,13 +348,13 @@
                             },
                             {
                                 "annotation": "float",
-                                "default": "0.95",
+                                "default": "0.9",
                                 "kind": "POSITIONAL_OR_KEYWORD",
                                 "name": "rho"
                             },
                             {
                                 "annotation": "float",
-                                "default": "1e-08",
+                                "default": "1e-06",
                                 "kind": "POSITIONAL_OR_KEYWORD",
                                 "name": "eps"
                             },
@@ -409,16 +409,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 1e-08)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 1e-08)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "eps",
@@ -588,16 +583,11 @@
                     "category": "attribute",
                     "children": {},
                     "classes": [],
-                    "docstring": "(default: 0.95)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 0.95)"
-                        }
-                    ],
+                    "docstring": null,
+                    "docstring_sections": [],
                     "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
                     "functions": [],
-                    "has_contents": true,
+                    "has_contents": false,
                     "methods": [],
                     "modules": [],
                     "name": "rho",
@@ -686,8 +676,8 @@
             ],
             "relative_file_path": "ludwig/modules/optimization_modules.py",
             "source": {
-                "code": "class AdadeltaOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adadelta optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta\n    \"\"\"Points to `torch.optim.Adadelta`.\"\"\"\n\n    type: str = StringOptions([\"adadelta\"], default=\"adadelta\", nullable=False)\n    \"\"\"Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adadelta')\"\"\"\n\n    rho: float = FloatRange(default=0.95, min=0.0, max=1.0)\n    \"\"\"(default: 0.95)\"\"\"\n\n    eps: float = NonNegativeFloat(default=1e-08)\n    \"\"\"(default: 1e-08)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :\n    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n",
-                "line_start": 132
+                "code": "class AdadeltaOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for adadelta optimization.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta\n    \"\"\"Points to `torch.optim.Adadelta`.\"\"\"\n\n    type: str = StringOptions([\"adadelta\"], default=\"adadelta\", nullable=False)\n    \"\"\"Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`\n       (default: 'adadelta')\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :\n    rho: float = FloatRange(default=0.9, min=0.0, max=1.0)\n    eps: float = NonNegativeFloat(default=1e-06)\n    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n",
+                "line_start": 127
             }
         }
     ],
