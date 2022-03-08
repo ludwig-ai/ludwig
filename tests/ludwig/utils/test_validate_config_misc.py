@@ -243,7 +243,7 @@ def test_validate_with_preprocessing_defaults():
             vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults()),
         ],
         "output_features": [{"name": "target", "type": "category"}],
-        "training": {
+        TRAINER: {
             "decay": True,
             "learning_rate": 0.001,
             "validation_field": "target",

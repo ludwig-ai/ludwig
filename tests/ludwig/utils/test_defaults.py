@@ -113,7 +113,7 @@ def test_deprecated_field_aliases():
     config = {
         "input_features": [{"name": "num_in", "type": "numerical"}],
         "output_features": [{"name": "num_out", "type": "numerical"}],
-        "training": {
+        TRAINER: {
             "epochs": 2,
         },
         "hyperopt": {
