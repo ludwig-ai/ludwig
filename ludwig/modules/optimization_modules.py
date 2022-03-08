@@ -107,6 +107,26 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     amsgrad: bool = False
 
 
+@register_optimizer(name="adamw")
+@dataclass
+class AdamWOptimizerConfig(BaseOptimizerConfig):
+    """Parameters for adamw optimization."""
+
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.AdamW
+    """Points to `torch.optim.AdamW`."""
+
+    type: str = StringOptions(["adamw"], default="adamw", nullable=False)
+    """Must be 'adamw' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
+       (default: 'adamw')"""
+
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
+    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
+    eps: float = NonNegativeFloat(default=1e-08)
+    weight_decay: float = NonNegativeFloat(default=0.0)
+    amsgrad: bool = False
+
+
 @register_optimizer(name="adadelta")
 @dataclass
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
