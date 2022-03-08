@@ -134,15 +134,14 @@ def _reduce_text_model_mem(config, training_set_metadata):
     input_features = config["input_features"]
     _update_text_encoder(input_features, AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
 
-    seq_len_limit = {
-        "word_sequence_length_limit": _get_text_feature_min_usable_length(input_features, training_set_metadata)
-    }
+    min_usable_length = _get_text_feature_min_usable_length(input_features, training_set_metadata)
+    seq_len_limit = {"word_sequence_length_limit": min_usable_length}
     if "preprocessing" not in config:
         config["preprocessing"] = {TEXT: seq_len_limit}
     elif (
         (TEXT not in config["preprocessing"])
         or ("word_sequence_length_limit" not in config["preprocessing"][TEXT])
-        or (min_99ptile_len < float(config["preprocessing"][TEXT]["word_sequence_length_limit"]))
+        or (min_usable_length < float(config["preprocessing"][TEXT]["word_sequence_length_limit"]))
     ):
         config["preprocessing"][TEXT] = seq_len_limit
 
