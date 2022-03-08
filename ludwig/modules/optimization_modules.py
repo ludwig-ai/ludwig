@@ -134,13 +134,9 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     """Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adadelta')"""
 
-    rho: float = FloatRange(default=0.95, min=0.0, max=1.0)
-    """(default: 0.95)"""
-
-    eps: float = NonNegativeFloat(default=1e-08)
-    """(default: 1e-08)"""
-
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :
+    rho: float = FloatRange(default=0.9, min=0.0, max=1.0)
+    eps: float = NonNegativeFloat(default=1e-06)
     lr: float = FloatRange(default=1.0, min=0.0, max=1.0)
     weight_decay: float = NonNegativeFloat(default=0.0)
 
@@ -158,10 +154,8 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     """Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adagrad')"""
 
-    initial_accumulator_value: float = NonNegativeFloat(default=0.1)
-    """(default: 0.1)"""
-
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
+    initial_accumulator_value: float = NonNegativeFloat(default=0)
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
     lr_decay: float = 0
     weight_decay: float = 0
@@ -224,21 +218,13 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     """Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'rmsprop')"""
 
-    weight_decay: float = NonNegativeFloat(default=0.9)
-    """(default: 0.9)"""
-
-    momentum: float = NonNegativeFloat(default=0.0)
-    """(default: 0.0)"""
-
-    eps: float = NonNegativeFloat(default=1e-10)
-    """(default: 1e-10)"""
-
-    centered: bool = False
-    """(default: False)"""
-
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
+    momentum: float = NonNegativeFloat(default=0.0)
     alpha: float = NonNegativeFloat(default=0.99)
+    eps: float = NonNegativeFloat(default=1e-08)
+    centered: bool = False
+    weight_decay: float = NonNegativeFloat(default=0.0)
 
 
 def get_optimizer_conds():
