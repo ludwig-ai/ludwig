@@ -61,9 +61,6 @@ class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
 
 
 @register_optimizer(name="sgd")
-@register_optimizer(name="gd")
-@register_optimizer(name="stochastic_gradient_descent")
-@register_optimizer(name="gradient_descent")
 @dataclass
 class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
@@ -71,11 +68,9 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
     """Points to `torch.optim.SGD`."""
 
-    type: str = StringOptions(
-        ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"], default="sgd", nullable=False
-    )
-    """Must be one of ['sgd', 'gd', 'stochastic_gradient_descent', 'gradient_descent']  - corresponds to names
-       in `ludwig.modules.optimization_modules.optimizer_registry` (default: 'sgd')"""
+    type: str = StringOptions(["sgd"], default="sgd", nullable=False)
+    """Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
+       'sgd')"""
 
     lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)
     """(default: 0.001)"""

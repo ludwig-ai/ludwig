@@ -85,29 +85,6 @@ def test_config_trainer_bad_optimizer():
         validate_config(config)
 
 
-def test_optimizer_alias_cases():
-    config = {
-        "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
-            number_feature(),
-        ],
-        "output_features": [binary_feature(weight_regularization=None)],
-        "combiner": {
-            "type": "tabnet",
-        },
-        TRAINER: {},
-    }
-    validate_config(config)
-
-    # Test sgd aliases - should be valid against json schema check and should load properly:
-    sgd_aliases = ["sgd", "gd", "stochastic_gradient_descent", "gradient_descent"]
-    for alias in sgd_aliases:
-        config[TRAINER]["optimizer"] = {"type": alias}
-        validate_config(config)
-
-        assert TrainerConfig.Schema().load(config[TRAINER]).optimizer.type == alias
-
-
 def test_optimizer_property_validation():
     config = {
         "input_features": [
