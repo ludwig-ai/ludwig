@@ -26,10 +26,8 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
-    COMBINED,
     DROP_ROW,
     HYPEROPT,
-    LOSS,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -67,81 +65,6 @@ default_preprocessing_parameters.update(
 )
 
 default_combiner_type = "concat"
-
-default_training_params = {
-    "optimizer": {TYPE: "adam"},
-    "epochs": 100,
-    "regularization_lambda": 0,
-    "regularization_type": "l2",
-    "learning_rate": 0.001,
-    "batch_size": 128,
-    "eval_batch_size": None,
-    "early_stop": 5,
-    "reduce_learning_rate_on_plateau": 0,
-    "reduce_learning_rate_on_plateau_patience": 5,
-    "reduce_learning_rate_on_plateau_rate": 0.5,
-    "increase_batch_size_on_plateau": 0,
-    "increase_batch_size_on_plateau_patience": 5,
-    "increase_batch_size_on_plateau_rate": 2,
-    "increase_batch_size_on_plateau_max": 512,
-    "decay": False,
-    "decay_steps": 10000,
-    "decay_rate": 0.96,
-    "staircase": False,
-    "gradient_clipping": None,
-    "validation_field": COMBINED,
-    "validation_metric": LOSS,
-    "learning_rate_warmup_epochs": 1,
-}
-
-default_optimizer_params_registry = {
-    "sgd": {},
-    "stochastic_gradient_descent": {},
-    "gd": {},
-    "gradient_descent": {},
-    "adam": {
-        "betas": (0.9, 0.999),
-        # 'beta_1': 0.9,
-        # 'beta_2': 0.999,
-        # 'epsilon': 1e-08
-        "eps": 1e-08,
-    },
-    "adamw": {
-        "betas": (0.9, 0.999),
-        "eps": 1e-08,
-    },
-    "adadelta": {
-        "rho": 0.95,
-        "eps": 1e-08
-        # 'epsilon': 1e-08
-    },
-    "adagrad": {"initial_accumulator_value": 0.1},
-    "adamax": {},
-    "ftrl": {
-        "learning_rate_power": -0.5,
-        "initial_accumulator_value": 0.1,
-        "l1_regularization_strength": 0.0,
-        "l2_regularization_strength": 0.0,
-    },
-    "nadam": {},
-    "rmsprop": {
-        "weight_decay": 0.9,
-        "momentum": 0.0,
-        # 'epsilon': 1e-10,
-        "eps": 1e-10,
-        "centered": False,
-    },
-}
-default_optimizer_params_registry["stochastic_gradient_descent"] = default_optimizer_params_registry["sgd"]
-default_optimizer_params_registry["gd"] = default_optimizer_params_registry["sgd"]
-default_optimizer_params_registry["gradient_descent"] = default_optimizer_params_registry["sgd"]
-
-
-def get_default_optimizer_params(optimizer_type):
-    if optimizer_type in default_optimizer_params_registry:
-        return default_optimizer_params_registry[optimizer_type]
-    else:
-        raise ValueError("Incorrect optimizer type: " + optimizer_type)
 
 
 def _upgrade_deprecated_fields(config: Dict[str, Any]):
@@ -283,22 +206,11 @@ def merge_with_defaults(config):
             raise ValueError("Stratify feature must be binary or category")
 
     # ===== Training =====
-    set_default_value(config, TRAINER, default_training_params)
-
-    for param, value in default_training_params.items():
-        set_default_value(config[TRAINER], param, value)
-
     set_default_value(
         config[TRAINER],
         "validation_metric",
         output_type_registry[config["output_features"][0][TYPE]].default_validation_metric,
     )
-
-    # ===== Training Optimizer =====
-    optimizer = config[TRAINER]["optimizer"]
-    default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
-    for param in default_optimizer_params:
-        set_default_value(optimizer, param, default_optimizer_params[param])
 
     # ===== Input Features =====
     for input_feature in config["input_features"]:
