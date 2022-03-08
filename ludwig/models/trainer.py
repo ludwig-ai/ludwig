@@ -158,7 +158,7 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     """TODO: Document parameters. (default: `ludwig.constants.LOSS`)."""
 
     reduce_learning_rate_eval_split: str = TRAINING
-    """TODO (default: `ludwig.constants.TRAINING`)."""
+    """TODO: Document parameters. (default: `ludwig.constants.TRAINING`)."""
 
     increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
     """Number to increase the batch size by on a plateau (default: 0)."""
@@ -279,7 +279,6 @@ class Trainer(BaseTrainer):
         self.batch_size = config.batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
-        # self.bucketing_field = config.bucketing_field
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.early_stop = config.early_stop
@@ -346,7 +345,7 @@ class Trainer(BaseTrainer):
             self.optimizer.synchronize()
 
         # Clip gradients
-        self.gradient_clipping_config.clip_grads(variables)
+        self.clip_grads(variables)
 
         # Apply gradient updates
         if self.horovod:
@@ -357,6 +356,15 @@ class Trainer(BaseTrainer):
             self.optimizer.step()
 
         return loss, all_losses
+
+    def clip_grads(self, variables):
+        """Applies gradient clipping."""
+        if self.gradient_clipping_config.clipglobalnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
+        if self.gradient_clipping_config.clipnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
+        if self.gradient_clipping_config.clipvalue:
+            torch.nn.utils.clip_grad_value_(variables, self.gradient_clipping_config.clipvalue)
 
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""

@@ -14,7 +14,7 @@
 # ==============================================================================
 from abc import ABC
 from dataclasses import asdict, field
-from typing import ClassVar, Dict, Iterable, Optional, Tuple
+from typing import ClassVar, Dict, Optional, Tuple
 
 import torch
 from marshmallow import fields, ValidationError
@@ -315,19 +315,11 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = 0.5
-    """(default: 0.5)"""
+    """TODO: Document parameters. (default: 0.5)"""
     clipnorm: Optional[float] = None
-    """(default: None)"""
+    """TODO: Document parameters. (default: None)"""
     clipvalue: Optional[float] = None
-    """(default: None)"""
-
-    def clip_grads(self, variables: Iterable[torch.Tensor]):
-        if self.clipglobalnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-        if self.clipnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-        if self.clipvalue:
-            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
+    """TODO: Document parameters. (default: None)"""
 
 
 def GradientClippingDataclassField(default={}, allow_none=True):
@@ -372,8 +364,7 @@ def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
     """Utility function that will convert a None-type gradient clipping config to the correct form."""
     if isinstance(gradient_clipping_config, GradientClippingConfig):
         return gradient_clipping_config
-    # none_dict = dict.fromkeys(asdict(GradientClippingConfig()), None)
-    # return GradientClippingConfig.Schema().load(none_dict)
+    # Return default config if provided value is None:
     return GradientClippingConfig()
 
 
