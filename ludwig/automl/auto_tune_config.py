@@ -126,7 +126,7 @@ def _get_text_feature_min_usable_length(input_features: List, training_set_metad
     return round(min_usable_length)
 
 
-def _reduce_text_model_mem(config, training_set_metadata):
+def reduce_text_model_mem(config, training_set_metadata):
     """Update config to reduce text model memory use via smaller pre-trained model and shorter max sequence
     length."""
     logging.info("Text model may overflow mem; choosing smaller pre-trained model and shorter max input sequence len")
@@ -202,7 +202,7 @@ def memory_tune_config(config, dataset, model_category):
             param_list.pop(0)  # param not in hyperopt search space
 
     if not fits_in_memory and model_category == TEXT:
-        _reduce_text_model_mem(config, training_set_metadata)
+        reduce_text_model_mem(config, training_set_metadata)
 
     modified_config = copy.deepcopy(config)
 
