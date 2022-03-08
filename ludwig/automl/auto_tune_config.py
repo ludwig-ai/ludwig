@@ -127,13 +127,16 @@ def _get_text_feature_min_usable_length(input_features: List, training_set_metad
 
 
 def _reduce_text_model_mem(config, training_set_metadata):
-    """Update config to reduce text model memory use via smaller pre-trained model and shorter max sequence length"""
+    """Update config to reduce text model memory use via smaller pre-trained model and shorter max sequence
+    length."""
     logging.info("Text model may overflow mem; choosing smaller pre-trained model and shorter max input sequence len")
 
     input_features = config["input_features"]
     _update_text_encoder(input_features, AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
 
-    seq_len_limit = {"word_sequence_length_limit": _get_text_feature_min_usable_length(input_features, training_set_metadata)}
+    seq_len_limit = {
+        "word_sequence_length_limit": _get_text_feature_min_usable_length(input_features, training_set_metadata)
+    }
     if "preprocessing" not in config:
         config["preprocessing"] = {TEXT: seq_len_limit}
     elif (
