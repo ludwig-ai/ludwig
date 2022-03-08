@@ -1,5 +1,3 @@
-import pytest
-
 from ludwig.automl.auto_tune_config import reduce_text_model_mem
 
 
