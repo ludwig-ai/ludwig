@@ -128,8 +128,11 @@ def _get_text_feature_min_usable_length(input_features: List, training_set_metad
 
 
 def reduce_text_model_mem(config, training_set_metadata, row_count):
-    """Called when text model is estimated to not fit in memory.  Considers: a) reducing max sequence length, when viable,
-    to control its quadratic time impact, and b) switching to smaller pre-trained model encoder for large datasets."""
+    """Called when text model is estimated to not fit in memory.
+
+    Considers: a) reducing max sequence length, when viable,
+    to control its quadratic time impact, and b) switching to smaller pre-trained model encoder for large datasets.
+    """
     logging.info("Text model may overflow mem; may choose smaller pre-trained model and shorter max input sequence len")
 
     input_features = config["input_features"]
