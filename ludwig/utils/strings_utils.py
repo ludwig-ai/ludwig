@@ -215,7 +215,8 @@ def create_vocabulary(
             vocab: List of strings representing the computed vocabulary.
             str2idx: Map of symbol to index.
             str2freq: Map of symbol to frequency.
-            max_line_length: (int) maximum sequence length.
+            line_length_max: (int) maximum sequence length.
+            line_length_99ptile: (float) 99th percentile of maximum sequence length.
             pad_idx: Index to padding symbol.
             padding_symbol: Actual padding symbol.
             unknown_symbol: Actual unknown symbol.
@@ -260,7 +261,8 @@ def create_vocabulary(
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
-    max_line_length = processor.compute(processed_lines.map(len).max())
+    line_length_max = processor.compute(processed_lines.map(len).max())
+    line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
     if vocab is None:
         vocab = [unit for unit, count in unit_counts.most_common(num_most_frequent)]
@@ -282,7 +284,7 @@ def create_vocabulary(
     if padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
 
-    return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
+    return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
 
 
 def _get_sequence_vector(

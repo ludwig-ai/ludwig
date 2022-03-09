@@ -1,6 +1,7 @@
 import copy
 import logging
 from collections import OrderedDict
+from typing import List
 
 import psutil
 
@@ -11,7 +12,17 @@ except ImportError:
 
 from ludwig.api import LudwigModel
 from ludwig.automl.utils import get_model_type
-from ludwig.constants import BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TRAINER
+from ludwig.constants import (
+    AUTOML_DEFAULT_TEXT_ENCODER,
+    AUTOML_SMALLER_TEXT_ENCODER,
+    AUTOML_SMALLER_TEXT_LENGTH,
+    BATCH_SIZE,
+    HYPEROPT,
+    PREPROCESSING,
+    SPACE,
+    TEXT,
+    TRAINER,
+)
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
@@ -98,8 +109,45 @@ def get_new_params(current_param_values, hyperparam_search_space, params_to_modi
     return current_param_values
 
 
+def _update_text_encoder(input_features: List, old_text_encoder: str, new_text_encoder: str) -> None:
+    for feature in input_features:
+        if feature["type"] == TEXT and feature["encoder"] == old_text_encoder:
+            feature["encoder"] = new_text_encoder
+
+
+def _get_text_feature_min_usable_length(input_features: List, training_set_metadata) -> int:
+    """Returns min of AUTOML_SMALLER_TEXT_LENGTH and lowest 99th percentile sequence length over text features."""
+    min_usable_length = AUTOML_SMALLER_TEXT_LENGTH
+    for feature in input_features:
+        if feature["type"] == TEXT:
+            feature_99ptile_len = training_set_metadata[feature["name"]]["word_99ptile_max_sequence_length"]
+            if feature_99ptile_len < min_usable_length:
+                min_usable_length = feature_99ptile_len
+    return round(min_usable_length)
+
+
+def reduce_text_model_mem(config, training_set_metadata):
+    """Update config to reduce text model memory use via smaller pre-trained model and shorter max sequence
+    length."""
+    logging.info("Text model may overflow mem; choosing smaller pre-trained model and shorter max input sequence len")
+
+    input_features = config["input_features"]
+    _update_text_encoder(input_features, AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
+
+    min_usable_length = _get_text_feature_min_usable_length(input_features, training_set_metadata)
+    seq_len_limit = {"word_sequence_length_limit": min_usable_length}
+    if "preprocessing" not in config:
+        config["preprocessing"] = {TEXT: seq_len_limit}
+    elif (
+        (TEXT not in config["preprocessing"])
+        or ("word_sequence_length_limit" not in config["preprocessing"][TEXT])
+        or (min_usable_length < float(config["preprocessing"][TEXT]["word_sequence_length_limit"]))
+    ):
+        config["preprocessing"][TEXT] = seq_len_limit
+
+
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
-def memory_tune_config(config, dataset):
+def memory_tune_config(config, dataset, model_category):
     fits_in_memory = False
     raw_config = merge_with_defaults(config)
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
@@ -152,6 +200,9 @@ def memory_tune_config(config, dataset):
                     param_list.pop(0)  # exhausted reduction of this parameter
         else:
             param_list.pop(0)  # param not in hyperopt search space
+
+    if not fits_in_memory and model_category == TEXT:
+        reduce_text_model_mem(config, training_set_metadata)
 
     modified_config = copy.deepcopy(config)
 
