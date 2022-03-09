@@ -4,22 +4,24 @@ from ludwig.automl.auto_tune_config import reduce_text_model_mem
 def test_reduce_text_model_mem_99ptile():
     config = {"input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}]}
     training_set_metadata = {"description": {"word_99ptile_max_sequence_length": 117.0}}
+    row_count = 598000
     config_upd = {
         "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "distilbert"}],
         "preprocessing": {"text": {"word_sequence_length_limit": 117}},
     }
-    reduce_text_model_mem(config, training_set_metadata)
+    reduce_text_model_mem(config, training_set_metadata, row_count)
     assert config == config_upd
 
 
 def test_reduce_text_model_mem_128():
     config = {"input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}]}
     training_set_metadata = {"description": {"word_99ptile_max_sequence_length": 512.0}}
+    row_count = 598000
     config_upd = {
         "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "distilbert"}],
         "preprocessing": {"text": {"word_sequence_length_limit": 128}},
     }
-    reduce_text_model_mem(config, training_set_metadata)
+    reduce_text_model_mem(config, training_set_metadata, row_count)
     assert config == config_upd
 
 
@@ -29,11 +31,12 @@ def test_reduce_text_model_mem_override():
         "preprocessing": {"text": {"word_sequence_length_limit": 256}},
     }
     training_set_metadata = {"description": {"word_99ptile_max_sequence_length": 117.0}}
+    row_count = 5980
     config_upd = {
-        "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "distilbert"}],
+        "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}],
         "preprocessing": {"text": {"word_sequence_length_limit": 117}},
     }
-    reduce_text_model_mem(config, training_set_metadata)
+    reduce_text_model_mem(config, training_set_metadata, row_count)
     assert config == config_upd
 
 
@@ -43,9 +46,10 @@ def test_reduce_text_model_mem_respect():
         "preprocessing": {"text": {"word_sequence_length_limit": 56}},
     }
     training_set_metadata = {"description": {"word_99ptile_max_sequence_length": 117.0}}
+    row_count = 5980
     config_upd = {
-        "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "distilbert"}],
+        "input_features": [{"name": "description", "column": "description", "type": "text", "encoder": "bert"}],
         "preprocessing": {"text": {"word_sequence_length_limit": 56}},
     }
-    reduce_text_model_mem(config, training_set_metadata)
+    reduce_text_model_mem(config, training_set_metadata, row_count)
     assert config == config_upd
