@@ -592,7 +592,12 @@ class Trainer(BaseTrainer):
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
-        Returns whether the trainer should early stop.
+        Also:
+        - Prints results, saves results to the progress tracker.
+        - Saves the model if the validation score is the best so far
+        - If there is no validation set, the model is always saved.
+
+        Returns whether the trainer should early stop, based on validation metrics history.
         """
         start_time = time.time()
         if self.is_coordinator():

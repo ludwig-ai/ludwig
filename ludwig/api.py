@@ -560,7 +560,7 @@ class LudwigModel:
                             best_vali_metric,
                         ) = best_function(
                             enumerate(validation_field_result[validation_metric]),
-                            key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
+                            key=lambda index_epoch_step_value: index_epoch_step_value[1].value,
                         )
                         logger.info(
                             f"Best validation model step: {step_best_vali_metric}, epoch: {epoch_best_vali_metric + 1}"
@@ -572,7 +572,7 @@ class LudwigModel:
                         if test_set is not None:
                             best_vali_metric_epoch_test_metric = train_testset_stats[validation_field][
                                 validation_metric
-                            ][best_vali_index][-1]
+                            ][best_vali_index].value
 
                             logger.info(
                                 f"Best validation model {validation_metric} on test set {validation_field}: "

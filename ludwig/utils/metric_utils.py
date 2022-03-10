@@ -66,4 +66,5 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
     return metric.compute().detach().cpu().numpy().item()
 
 
+# Data for training and evaluation metrics.
 TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
