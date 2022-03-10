@@ -550,27 +550,33 @@ class LudwigModel:
                     validation_field_result = train_valiset_stats[validation_field]
 
                     best_function = get_best_function(validation_metric)
+
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
-                        epoch_best_vali_metric, best_vali_metric = best_function(
-                            enumerate(validation_field_result[validation_metric]), key=lambda pair: pair[1]
+                        best_vali_index, (
+                            epoch_best_vali_metric,
+                            step_best_vali_metric,
+                            best_vali_metric,
+                        ) = best_function(
+                            enumerate(validation_field_result[validation_metric]),
+                            key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
                         )
-                        logger.info(f"Best validation model epoch: {epoch_best_vali_metric + 1}")
                         logger.info(
-                            "Best validation model {} on validation set {}: {}".format(
-                                validation_metric, validation_field, best_vali_metric
-                            )
+                            f"Best validation model step: {step_best_vali_metric}, epoch: {epoch_best_vali_metric + 1}"
+                        )
+                        logger.info(
+                            f"Best validation model {validation_metric} on validation set {validation_field}: "
+                            f"{best_vali_metric}"
                         )
                         if test_set is not None:
                             best_vali_metric_epoch_test_metric = train_testset_stats[validation_field][
                                 validation_metric
-                            ][epoch_best_vali_metric]
+                            ][best_vali_index][-1]
 
                             logger.info(
-                                "Best validation model {} on test set {}: {}".format(
-                                    validation_metric, validation_field, best_vali_metric_epoch_test_metric
-                                )
+                                f"Best validation model {validation_metric} on test set {validation_field}: "
+                                f"{best_vali_metric_epoch_test_metric}"
                             )
                         logger.info(f"\nFinished: {experiment_name}_{model_name}")
                         logger.info(f"Saved to: {output_directory}")

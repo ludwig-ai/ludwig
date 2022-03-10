@@ -169,6 +169,7 @@ class Predictor(BasePredictor):
                         total=batcher.steps_per_epoch,
                         file=sys.stdout,
                         disable=is_progressbar_disabled(),
+                        position=0,
                     )
 
                 predictions = defaultdict(list)
@@ -204,8 +205,8 @@ class Predictor(BasePredictor):
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
 
-                if self.is_coordinator():
-                    progress_bar.close()
+            if self.is_coordinator():
+                progress_bar.close()
 
             # consolidate predictions from each batch to a single tensor
             if collect_predictions:

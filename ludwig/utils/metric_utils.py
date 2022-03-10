@@ -1,3 +1,4 @@
+from collections import namedtuple
 from typing import List, Optional
 
 import torch
@@ -63,3 +64,6 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
         float: scalar value of the metric
     """
     return metric.compute().detach().cpu().numpy().item()
+
+
+TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
