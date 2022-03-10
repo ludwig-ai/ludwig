@@ -34,6 +34,7 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
+    ROC_AUC,
     SUM,
     TIED,
     TYPE,
@@ -255,7 +256,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
-    metric_functions = {LOSS: None, ACCURACY: None}
+    metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ACCURACY
     threshold = 0.5
 
