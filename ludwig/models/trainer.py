@@ -100,7 +100,7 @@ class Trainer(BaseTrainer):
         model: ECD,
         optimizer=None,
         epochs=100,
-        save_every_n_steps=200,
+        save_every_n_steps=0,
         regularization_lambda=0.0,
         regularization_type=None,
         learning_rate=0.001,
@@ -834,6 +834,14 @@ class Trainer(BaseTrainer):
         ) as batcher:
             # ================ Training Loop ================
             total_steps = self.epochs * batcher.steps_per_epoch
+
+            # Adjust save every n steps.
+            if self.save_every_n_steps == 0 or self.save_every_n_steps > batcher.steps_per_epoch:
+                logging.info(
+                    f"Note: save_every_n_steps (was {self.save_every_n_steps}) is now set to the number of steps per "
+                    f"epoch: {batcher.steps_per_epoch}.\n"
+                )
+                self.save_every_n_steps = batcher.steps_per_epoch
 
             logger.info(
                 f"Training for {total_steps} step(s), approximately "
