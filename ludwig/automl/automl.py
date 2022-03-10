@@ -142,22 +142,22 @@ def create_auto_config(
     :return: (dict) selected model configuration
     """
     default_configs = _create_default_config(dataset, target, time_limit_s, random_seed)
-    model_config, model_category = _model_select(dataset, default_configs, user_config, use_reference_config)
+    model_config, model_category, row_count = _model_select(dataset, default_configs, user_config, use_reference_config)
     if tune_for_memory:
         if ray.is_initialized():
             resources = get_available_resources()  # check if cluster has GPUS
             if resources["gpu"] > 0:
                 model_config, fits_in_memory = ray.get(
                     ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(
-                        model_config, dataset, model_category
+                        model_config, dataset, model_category, row_count
                     )
                 )
             else:
                 model_config, fits_in_memory = ray.get(
-                    ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset, model_category)
+                    ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset, model_category, row_count)
                 )
         else:
-            model_config, fits_in_memory = memory_tune_config(model_config, dataset, model_category)
+            model_config, fits_in_memory = memory_tune_config(model_config, dataset, model_category, row_count)
         if not fits_in_memory:
             warnings.warn(
                 "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
@@ -217,7 +217,7 @@ def _model_select(
 ):
     """Performs model selection based on dataset or user specified model.
 
-    Note: Current implementation returns tabnet by default.
+    Note: Current implementation returns tabnet by default for tabular datasets.
     """
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
@@ -271,7 +271,7 @@ def _model_select(
         ref_configs = _get_reference_configs()
         base_config = _add_transfer_config(base_config, ref_configs)
 
-    return base_config, model_category
+    return base_config, model_category, dataset_info.row_count
 
 
 def _train(

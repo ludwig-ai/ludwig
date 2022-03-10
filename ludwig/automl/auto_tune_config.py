@@ -14,6 +14,7 @@ from ludwig.api import LudwigModel
 from ludwig.automl.utils import get_model_type
 from ludwig.constants import (
     AUTOML_DEFAULT_TEXT_ENCODER,
+    AUTOML_LARGE_TEXT_DATASET,
     AUTOML_SMALLER_TEXT_ENCODER,
     AUTOML_SMALLER_TEXT_LENGTH,
     BATCH_SIZE,
@@ -126,14 +127,15 @@ def _get_text_feature_min_usable_length(input_features: List, training_set_metad
     return round(min_usable_length)
 
 
-def reduce_text_model_mem(config, training_set_metadata):
-    """Update config to reduce text model memory use via smaller pre-trained model and shorter max sequence
-    length."""
-    logging.info("Text model may overflow mem; choosing smaller pre-trained model and shorter max input sequence len")
+def reduce_text_model_mem(config, training_set_metadata, row_count):
+    """Called when text model is estimated to not fit in memory.
+
+    Considers: a) reducing max sequence length, when viable,
+    to control its quadratic time impact, and b) switching to smaller pre-trained model encoder for large datasets.
+    """
+    logging.info("Text model may overflow mem; may choose smaller pre-trained model and shorter max input sequence len")
 
     input_features = config["input_features"]
-    _update_text_encoder(input_features, AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
-
     min_usable_length = _get_text_feature_min_usable_length(input_features, training_set_metadata)
     seq_len_limit = {"word_sequence_length_limit": min_usable_length}
     if "preprocessing" not in config:
@@ -145,9 +147,12 @@ def reduce_text_model_mem(config, training_set_metadata):
     ):
         config["preprocessing"][TEXT] = seq_len_limit
 
+    if row_count > AUTOML_LARGE_TEXT_DATASET:
+        _update_text_encoder(input_features, AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
+
 
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
-def memory_tune_config(config, dataset, model_category):
+def memory_tune_config(config, dataset, model_category, row_count):
     fits_in_memory = False
     raw_config = merge_with_defaults(config)
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
@@ -202,7 +207,7 @@ def memory_tune_config(config, dataset, model_category):
             param_list.pop(0)  # param not in hyperopt search space
 
     if not fits_in_memory and model_category == TEXT:
-        reduce_text_model_mem(config, training_set_metadata)
+        reduce_text_model_mem(config, training_set_metadata, row_count)
 
     modified_config = copy.deepcopy(config)
 
