@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def print_hyperopt_results(hyperopt_results: HyperoptResults):
     print_boxed("HYPEROPT RESULTS", print_fun=logger.info)
     for trial_results in hyperopt_results.ordered_trials:
-        logger.info(f"score: {trial_results.metric_score:.6f} | parameters: {trial_results.parameters}")
+        logger.info(f"score: {trial_results.metric_score.value:.6f} | parameters: {trial_results.parameters}")
     logger.info("")
 
 

@@ -3684,7 +3684,7 @@ def hyperopt_hiplot(hyperopt_stats_path, output_directory=None, **kwargs):
 
 
 def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric):
-    df = pd.DataFrame([{metric: res["metric_score"], **res["parameters"]} for res in hyperopt_results])
+    df = pd.DataFrame([{metric: res["metric_score"][-1], **res["parameters"]} for res in hyperopt_results])
     df = df.astype({hp_name: hp_params[TYPE] for hp_name, hp_params in hyperopt_parameters.items()})
     return df
 

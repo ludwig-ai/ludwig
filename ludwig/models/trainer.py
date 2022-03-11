@@ -359,7 +359,7 @@ class Trainer(BaseTrainer):
         for feature_name, output_feature in metrics.items():
             for metric in output_feature:
                 metric_tag = f"{feature_name}/epoch_{metric}"
-                metric_val = output_feature[metric][-1].value
+                metric_val = output_feature[metric][-1][-1]
                 summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
         summary_writer.flush()
 
@@ -835,7 +835,7 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Adjust save every n steps.
+            # Check save_every_n_steps and adjust if needed.
             if self.save_every_n_steps == 0 or self.save_every_n_steps > batcher.steps_per_epoch:
                 logging.info(
                     f"Note: save_every_n_steps (was {self.save_every_n_steps}) is now set to the number of steps per "
@@ -847,6 +847,7 @@ class Trainer(BaseTrainer):
                 f"Training for {total_steps} step(s), approximately "
                 f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
             )
+            logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
             progress_bar = None
             if self.is_coordinator():
@@ -899,6 +900,9 @@ class Trainer(BaseTrainer):
                         f"Epoch {progress_tracker.epoch} took: "
                         f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                     )
+                    if self.is_coordinator():
+                        checkpoint_manager.save(progress_tracker.steps)
+                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
@@ -1016,7 +1020,7 @@ class Trainer(BaseTrainer):
             progress_tracker.steps += 1
             if self.is_coordinator():
                 progress_bar.update(1)
-                logger.debug(
+                logger.info(
                     f"training: completed batch {progress_bar.n} "
                     f"memory used: "
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
@@ -1027,6 +1031,10 @@ class Trainer(BaseTrainer):
                 if self.is_coordinator():
                     checkpoint_manager.save(progress_tracker.steps)
                     progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                # Save the model.
+                # TODO(Justin): Write to a separate to_evaluate/ directory, with the step number in path.
+                torch.save(self.model.state_dict(), model_weights_path)
 
                 should_break = self.run_evaluation(
                     training_set,
@@ -1156,11 +1164,11 @@ class Trainer(BaseTrainer):
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
         vali_metric = progress_tracker.vali_metrics[validation_output_feature_name]
-        if improved(vali_metric[validation_metric][-1].value, progress_tracker.best_eval_metric):
+        if improved(vali_metric[validation_metric][-1][-1], progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[validation_output_feature_name][
                 validation_metric
-            ][-1].value
+            ][-1][-1]
             if self.is_coordinator() and not skip_save_model:
                 torch.save(self.model.state_dict(), model_weights_path)
                 logger.info(
@@ -1505,32 +1513,26 @@ class ProgressTracker:
         loaded = load_json(filepath)
         return ProgressTracker(**loaded)
 
-    def log_metrics(self, idx=-1):
-        log_metrics = {}
-        for item_name in [
-            "batch_size",
-            "epoch",
-            "steps",
-            "last_improvement_steps",
-            "learning_rate",
-            "best_valid_metric",
-            "num_reductions_lr",
-            "num_increases_bs",
+    def log_metrics(self):
+        log_metrics = {
+            "batch_size": self.batch_size,
+            "epoch": self.epoch,
+            "steps": self.steps,
+            "last_improvement_steps": self.last_improvement_steps,
+            "learning_rate": self.learning_rate,
+            "best_valid_metric": self.best_eval_metric,
+            "num_reductions_lr": self.num_reductions_learning_rate,
+            "num_increases_bs": self.num_increases_batch_size,
+        }
+        for metrics_dict_name in [
             "train_metrics",
             "vali_metrics",
             "test_metrics",
         ]:
-            try:
-                item = getattr(self, item_name)
-                if isinstance(item, dict):
-                    for key in item:
-                        if isinstance(item[key], dict):
-                            for key2 in item[key]:
-                                log_metrics[item_name + "." + key + "." + key2] = item[key][key2][idx]
-                        else:
-                            log_metrics[item_name + "." + key] = item[key][idx]
-                elif item is not None:
-                    log_metrics[item_name] = item
-            except Exception:
-                logger.info(f"skip logging '{item_name}'")
+            metrics_dict = getattr(self, metrics_dict_name)
+            for feature_name in metrics_dict:
+                for metric_name, metrics_tuple in metrics_dict[feature_name].items():
+                    # For logging, get the latest metrics.
+                    log_metrics[f"{metrics_dict_name}.{feature_name}.{metric_name}"] = metrics_tuple[-1][-1]
+
         return log_metrics
