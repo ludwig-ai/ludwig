@@ -394,5 +394,4 @@ def create_optimizer(
             torch_optimizer,
             named_parameters=model.named_parameters(),
         )
-    print(torch_optimizer)
     return torch_optimizer

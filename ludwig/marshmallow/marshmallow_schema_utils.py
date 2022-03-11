@@ -111,7 +111,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
         return {attr.split(".")[-1]: cls["children"][attr] for attr in cls["attributes"]}
 
     def get_torch_attrs_dict(cls):
-        attrs_list = cls["docstring_sections"][1]["value"]
+        attrs_list = cls["docstring_sections"][0]["value"]
         return {attr["name"]: attr for attr in attrs_list}
 
     def generate_extra_json_schema_props(schema_cls) -> Dict:
