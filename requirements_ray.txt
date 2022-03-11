@@ -1,4 +1,4 @@
-ray[default,tune]>=1.8.0,!=1.10
+ray[default,data,serve,tune]>=1.8.0,!=1.10
 pickle5; python_version <= '3.7'
 tensorboardX<2.3
 GPUtil
