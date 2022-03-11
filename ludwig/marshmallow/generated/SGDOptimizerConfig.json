@@ -1,784 +1,111 @@
 {
-    "loading_errors": [],
-    "objects": [
-        {
-            "attributes": [
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.type",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.lr",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.momentum",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.weight_decay",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.dampening",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.nesterov"
-            ],
-            "bases": [
-                "ludwig.modules.optimization_modules.BaseOptimizerConfig"
-            ],
-            "category": "class",
-            "children": {
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema": {
-                    "attributes": [
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema._declared_fields",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema._hooks",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.opts",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.type",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.lr",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.momentum",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.weight_decay",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.dampening",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.nesterov"
-                    ],
-                    "bases": [
-                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
-                    ],
-                    "category": "class",
-                    "children": {
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta": {
-                            "attributes": [
-                                "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta.unknown"
-                            ],
-                            "bases": [
-                                "object"
-                            ],
-                            "category": "class",
-                            "children": {
-                                "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta.unknown": {
-                                    "attributes": [],
-                                    "category": "attribute",
-                                    "children": {},
-                                    "classes": [],
-                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
-                                    "docstring_sections": [
-                                        {
-                                            "type": "markdown",
-                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
-                                        }
-                                    ],
-                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                                    "functions": [],
-                                    "has_contents": true,
-                                    "methods": [],
-                                    "modules": [],
-                                    "name": "unknown",
-                                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta",
-                                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta.unknown",
-                                    "properties": [],
-                                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                                    "source": {},
-                                    "type": ""
-                                }
-                            },
-                            "classes": [],
-                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
-                            "docstring_sections": [
-                                {
-                                    "type": "markdown",
-                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
-                                }
-                            ],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": true,
-                            "methods": [],
-                            "modules": [],
-                            "name": "Meta",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta",
-                            "properties": [],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {
-                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
-                                "line_start": 49
-                            }
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema._declared_fields": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "_declared_fields",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema._declared_fields",
-                            "properties": [
-                                "private"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": ""
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema._hooks": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "_hooks",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema._hooks",
-                            "properties": [
-                                "private"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": ""
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.dampening": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "dampening",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.dampening",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.lr": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "lr",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.lr",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.momentum": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "momentum",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.momentum",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.nesterov": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "nesterov",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.nesterov",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": "Boolean"
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.opts": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "opts",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.opts",
-                            "properties": [],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": ""
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.type": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "type",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.type",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.weight_decay": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "weight_decay",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.weight_decay",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "source": {},
-                            "type": "Float"
-                        }
-                    },
-                    "classes": [
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema.Meta"
-                    ],
-                    "docstring": "",
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "Schema",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                    "properties": [
-                        "marshmallow-model"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {}
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.__eq__": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "",
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "__eq__",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.__eq__",
-                    "properties": [
-                        "special"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            },
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "other"
-                            }
-                        ]
-                    },
-                    "source": {}
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.__init__": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "",
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "__init__",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.__init__",
-                    "properties": [
-                        "special"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'sgd'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "type"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.001",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "lr"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "momentum"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "weight_decay"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "dampening"
-                            },
-                            {
-                                "annotation": "bool",
-                                "default": "False",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "nesterov"
-                            }
-                        ],
-                        "return_annotation": "None"
-                    },
-                    "source": {}
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.__repr__": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "",
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "__repr__",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.__repr__",
-                    "properties": [
-                        "special"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            }
-                        ]
-                    },
-                    "source": {}
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.dampening": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "dampening",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.dampening",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.lr": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "(default: 0.001)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "(default: 0.001)"
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "lr",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.lr",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.momentum": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "momentum",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.momentum",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.nesterov": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "nesterov",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.nesterov",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {},
-                    "type": "bool"
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class": {
-                    "attributes": [],
-                    "bases": [
-                        "torch.optim.optimizer.Optimizer"
-                    ],
-                    "category": "class",
-                    "children": {
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.__init__": {
-                            "attributes": [],
-                            "category": "method",
-                            "children": {},
-                            "classes": [],
-                            "docstring": "",
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "__init__",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.__init__",
-                            "properties": [
-                                "special"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "signature": {
-                                "parameters": [
-                                    {
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "self"
-                                    },
-                                    {
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "params"
-                                    },
-                                    {
-                                        "default": "<required parameter>",
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "lr"
-                                    },
-                                    {
-                                        "default": "0",
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "momentum"
-                                    },
-                                    {
-                                        "default": "0",
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "dampening"
-                                    },
-                                    {
-                                        "default": "0",
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "weight_decay"
-                                    },
-                                    {
-                                        "default": "False",
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "nesterov"
-                                    }
-                                ]
-                            },
-                            "source": {
-                                "code": "    def __init__(self, params, lr=required, momentum=0, dampening=0,\n                 weight_decay=0, nesterov=False):\n        if lr is not required and lr < 0.0:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if momentum < 0.0:\n            raise ValueError(\"Invalid momentum value: {}\".format(momentum))\n        if weight_decay < 0.0:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n\n        defaults = dict(lr=lr, momentum=momentum, dampening=dampening,\n                        weight_decay=weight_decay, nesterov=nesterov)\n        if nesterov and (momentum <= 0 or dampening != 0):\n            raise ValueError(\"Nesterov momentum requires a momentum and zero dampening\")\n        super(SGD, self).__init__(params, defaults)\n",
-                                "line_start": 82
-                            }
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.__setstate__": {
-                            "attributes": [],
-                            "category": "method",
-                            "children": {},
-                            "classes": [],
-                            "docstring": "",
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "__setstate__",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.__setstate__",
-                            "properties": [
-                                "special"
-                            ],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "signature": {
-                                "parameters": [
-                                    {
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "self"
-                                    },
-                                    {
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "state"
-                                    }
-                                ]
-                            },
-                            "source": {
-                                "code": "    def __setstate__(self, state):\n        super(SGD, self).__setstate__(state)\n        for group in self.param_groups:\n            group.setdefault('nesterov', False)\n",
-                                "line_start": 97
-                            }
-                        },
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.step": {
-                            "attributes": [],
-                            "category": "method",
-                            "children": {},
-                            "classes": [],
-                            "docstring": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss.",
-                            "docstring_sections": [
-                                {
-                                    "type": "markdown",
-                                    "value": "Performs a single optimization step.\n\nArgs:\n    closure (callable, optional): A closure that reevaluates the model\n        and returns the loss."
-                                }
-                            ],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                            "functions": [],
-                            "has_contents": true,
-                            "methods": [],
-                            "modules": [],
-                            "name": "step",
-                            "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class",
-                            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.step",
-                            "properties": [],
-                            "relative_file_path": "ludwig/modules/optimization_modules.py",
-                            "signature": {
-                                "parameters": [
-                                    {
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "self"
-                                    },
-                                    {
-                                        "default": "None",
-                                        "kind": "POSITIONAL_OR_KEYWORD",
-                                        "name": "closure"
-                                    }
-                                ]
-                            },
-                            "source": {
-                                "code": "    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            d_p_list = []\n            momentum_buffer_list = []\n            weight_decay = group['weight_decay']\n            momentum = group['momentum']\n            dampening = group['dampening']\n            nesterov = group['nesterov']\n            lr = group['lr']\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    d_p_list.append(p.grad)\n\n                    state = self.state[p]\n                    if 'momentum_buffer' not in state:\n                        momentum_buffer_list.append(None)\n                    else:\n                        momentum_buffer_list.append(state['momentum_buffer'])\n\n            F.sgd(params_with_grad,\n                  d_p_list,\n                  momentum_buffer_list,\n                  weight_decay=weight_decay,\n                  momentum=momentum,\n                  lr=lr,\n                  dampening=dampening,\n                  nesterov=nesterov)\n\n            # update momentum_buffers in state\n            for p, momentum_buffer in zip(params_with_grad, momentum_buffer_list):\n                state = self.state[p]\n                state['momentum_buffer'] = momentum_buffer\n\n        return loss\n",
-                                "line_start": 102
-                            }
-                        }
-                    },
-                    "classes": [],
-                    "docstring": "Implements stochastic gradient descent (optionally with momentum).\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n            \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n        &\\hspace{13mm} \\:\\mu \\text{ (momentum)}, \\:\\tau \\text{ (dampening)},\\:nesterov\\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\mu \\neq 0                                               \\\\\n        &\\hspace{10mm}\\textbf{if} \\: t > 1                                                   \\\\\n        &\\hspace{15mm} \\textbf{b}_t \\leftarrow \\mu \\textbf{b}_{t-1} + (1-\\tau) g_t           \\\\\n        &\\hspace{10mm}\\textbf{else}                                                          \\\\\n        &\\hspace{15mm} \\textbf{b}_t \\leftarrow g_t                                           \\\\\n        &\\hspace{10mm}\\textbf{if} \\: nesterov                                                \\\\\n        &\\hspace{15mm} g_t \\leftarrow g_{t-1} + \\mu \\textbf{b}_t                             \\\\\n        &\\hspace{10mm}\\textbf{else}                                                   \\\\[-1.ex]\n        &\\hspace{15mm} g_t  \\leftarrow  \\textbf{b}_t                                         \\\\\n        &\\hspace{5mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma g_t                    \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nNesterov momentum is based on the formula from\n`On the importance of initialization and momentum in deep learning`__.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float): learning rate\n    momentum (float, optional): momentum factor (default: 0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    dampening (float, optional): dampening for momentum (default: 0)\n    nesterov (bool, optional): enables Nesterov momentum (default: False)\n\nExample:\n    >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)\n    >>> optimizer.zero_grad()\n    >>> loss_fn(model(input), target).backward()\n    >>> optimizer.step()\n\n__ http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf\n\n.. note::\n    The implementation of SGD with Momentum/Nesterov subtly differs from\n    Sutskever et. al. and implementations in some other frameworks.\n\n    Considering the specific case of Momentum, the update can be written as\n\n    .. math::\n        \\begin{aligned}\n            v_{t+1} & = \\mu * v_{t} + g_{t+1}, \\\\\n            p_{t+1} & = p_{t} - \\text{lr} * v_{t+1},\n        \\end{aligned}\n\n    where :math:`p`, :math:`g`, :math:`v` and :math:`\\mu` denote the\n    parameters, gradient, velocity, and momentum respectively.\n\n    This is in contrast to Sutskever et. al. and\n    other frameworks which employ an update of the form\n\n    .. math::\n        \\begin{aligned}\n            v_{t+1} & = \\mu * v_{t} + \\text{lr} * g_{t+1}, \\\\\n            p_{t+1} & = p_{t} - v_{t+1}.\n        \\end{aligned}\n\n    The Nesterov version is analogously modified.",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Implements stochastic gradient descent (optionally with momentum).\n\n.. math::\n   \\begin{aligned}\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n            \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n        &\\hspace{13mm} \\:\\mu \\text{ (momentum)}, \\:\\tau \\text{ (dampening)},\\:nesterov\\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                                 \\\\\n        &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n        &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n        &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n        &\\hspace{5mm}\\textbf{if} \\: \\mu \\neq 0                                               \\\\\n        &\\hspace{10mm}\\textbf{if} \\: t > 1                                                   \\\\\n        &\\hspace{15mm} \\textbf{b}_t \\leftarrow \\mu \\textbf{b}_{t-1} + (1-\\tau) g_t           \\\\\n        &\\hspace{10mm}\\textbf{else}                                                          \\\\\n        &\\hspace{15mm} \\textbf{b}_t \\leftarrow g_t                                           \\\\\n        &\\hspace{10mm}\\textbf{if} \\: nesterov                                                \\\\\n        &\\hspace{15mm} g_t \\leftarrow g_{t-1} + \\mu \\textbf{b}_t                             \\\\\n        &\\hspace{10mm}\\textbf{else}                                                   \\\\[-1.ex]\n        &\\hspace{15mm} g_t  \\leftarrow  \\textbf{b}_t                                         \\\\\n        &\\hspace{5mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma g_t                    \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n        &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n        &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n   \\end{aligned}\n\nNesterov momentum is based on the formula from\n`On the importance of initialization and momentum in deep learning`__.\n\nArgs:\n    params (iterable): iterable of parameters to optimize or dicts defining\n        parameter groups\n    lr (float): learning rate\n    momentum (float, optional): momentum factor (default: 0)\n    weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n    dampening (float, optional): dampening for momentum (default: 0)\n    nesterov (bool, optional): enables Nesterov momentum (default: False)\n\nExample:\n    >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)\n    >>> optimizer.zero_grad()\n    >>> loss_fn(model(input), target).backward()\n    >>> optimizer.step()\n\n__ http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf\n\n.. note::\n    The implementation of SGD with Momentum/Nesterov subtly differs from\n    Sutskever et. al. and implementations in some other frameworks.\n\n    Considering the specific case of Momentum, the update can be written as\n\n    .. math::\n        \\begin{aligned}\n            v_{t+1} & = \\mu * v_{t} + g_{t+1}, \\\\\n            p_{t+1} & = p_{t} - \\text{lr} * v_{t+1},\n        \\end{aligned}\n\n    where :math:`p`, :math:`g`, :math:`v` and :math:`\\mu` denote the\n    parameters, gradient, velocity, and momentum respectively.\n\n    This is in contrast to Sutskever et. al. and\n    other frameworks which employ an update of the form\n\n    .. math::\n        \\begin{aligned}\n            v_{t+1} & = \\mu * v_{t} + \\text{lr} * g_{t+1}, \\\\\n            p_{t+1} & = p_{t} - v_{t+1}.\n        \\end{aligned}\n\n    The Nesterov version is analogously modified."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.__init__",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.__setstate__",
-                        "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class.step"
-                    ],
-                    "modules": [],
-                    "name": "optimizer_class",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class",
-                    "properties": [],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {
-                        "code": "class SGD(Optimizer):\n    r\"\"\"Implements stochastic gradient descent (optionally with momentum).\n\n    .. math::\n       \\begin{aligned}\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{input}      : \\gamma \\text{ (lr)}, \\: \\theta_0 \\text{ (params)}, \\: f(\\theta)\n                \\text{ (objective)}, \\: \\lambda \\text{ (weight decay)},                          \\\\\n            &\\hspace{13mm} \\:\\mu \\text{ (momentum)}, \\:\\tau \\text{ (dampening)},\\:nesterov\\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                                 \\\\\n            &\\textbf{for} \\: t=1 \\: \\textbf{to} \\: \\ldots \\: \\textbf{do}                         \\\\\n            &\\hspace{5mm}g_t           \\leftarrow   \\nabla_{\\theta} f_t (\\theta_{t-1})           \\\\\n            &\\hspace{5mm}\\textbf{if} \\: \\lambda \\neq 0                                           \\\\\n            &\\hspace{10mm} g_t \\leftarrow g_t + \\lambda  \\theta_{t-1}                            \\\\\n            &\\hspace{5mm}\\textbf{if} \\: \\mu \\neq 0                                               \\\\\n            &\\hspace{10mm}\\textbf{if} \\: t > 1                                                   \\\\\n            &\\hspace{15mm} \\textbf{b}_t \\leftarrow \\mu \\textbf{b}_{t-1} + (1-\\tau) g_t           \\\\\n            &\\hspace{10mm}\\textbf{else}                                                          \\\\\n            &\\hspace{15mm} \\textbf{b}_t \\leftarrow g_t                                           \\\\\n            &\\hspace{10mm}\\textbf{if} \\: nesterov                                                \\\\\n            &\\hspace{15mm} g_t \\leftarrow g_{t-1} + \\mu \\textbf{b}_t                             \\\\\n            &\\hspace{10mm}\\textbf{else}                                                   \\\\[-1.ex]\n            &\\hspace{15mm} g_t  \\leftarrow  \\textbf{b}_t                                         \\\\\n            &\\hspace{5mm}\\theta_t \\leftarrow \\theta_{t-1} - \\gamma g_t                    \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n            &\\bf{return} \\:  \\theta_t                                                     \\\\[-1.ex]\n            &\\rule{110mm}{0.4pt}                                                          \\\\[-1.ex]\n       \\end{aligned}\n\n    Nesterov momentum is based on the formula from\n    `On the importance of initialization and momentum in deep learning`__.\n\n    Args:\n        params (iterable): iterable of parameters to optimize or dicts defining\n            parameter groups\n        lr (float): learning rate\n        momentum (float, optional): momentum factor (default: 0)\n        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)\n        dampening (float, optional): dampening for momentum (default: 0)\n        nesterov (bool, optional): enables Nesterov momentum (default: False)\n\n    Example:\n        >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)\n        >>> optimizer.zero_grad()\n        >>> loss_fn(model(input), target).backward()\n        >>> optimizer.step()\n\n    __ http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf\n\n    .. note::\n        The implementation of SGD with Momentum/Nesterov subtly differs from\n        Sutskever et. al. and implementations in some other frameworks.\n\n        Considering the specific case of Momentum, the update can be written as\n\n        .. math::\n            \\begin{aligned}\n                v_{t+1} & = \\mu * v_{t} + g_{t+1}, \\\\\n                p_{t+1} & = p_{t} - \\text{lr} * v_{t+1},\n            \\end{aligned}\n\n        where :math:`p`, :math:`g`, :math:`v` and :math:`\\mu` denote the\n        parameters, gradient, velocity, and momentum respectively.\n\n        This is in contrast to Sutskever et. al. and\n        other frameworks which employ an update of the form\n\n        .. math::\n            \\begin{aligned}\n                v_{t+1} & = \\mu * v_{t} + \\text{lr} * g_{t+1}, \\\\\n                p_{t+1} & = p_{t} - v_{t+1}.\n            \\end{aligned}\n\n        The Nesterov version is analogously modified.\n    \"\"\"\n\n    def __init__(self, params, lr=required, momentum=0, dampening=0,\n                 weight_decay=0, nesterov=False):\n        if lr is not required and lr < 0.0:\n            raise ValueError(\"Invalid learning rate: {}\".format(lr))\n        if momentum < 0.0:\n            raise ValueError(\"Invalid momentum value: {}\".format(momentum))\n        if weight_decay < 0.0:\n            raise ValueError(\"Invalid weight_decay value: {}\".format(weight_decay))\n\n        defaults = dict(lr=lr, momentum=momentum, dampening=dampening,\n                        weight_decay=weight_decay, nesterov=nesterov)\n        if nesterov and (momentum <= 0 or dampening != 0):\n            raise ValueError(\"Nesterov momentum requires a momentum and zero dampening\")\n        super(SGD, self).__init__(params, defaults)\n\n    def __setstate__(self, state):\n        super(SGD, self).__setstate__(state)\n        for group in self.param_groups:\n            group.setdefault('nesterov', False)\n\n    @torch.no_grad()\n    def step(self, closure=None):\n        \"\"\"Performs a single optimization step.\n\n        Args:\n            closure (callable, optional): A closure that reevaluates the model\n                and returns the loss.\n        \"\"\"\n        loss = None\n        if closure is not None:\n            with torch.enable_grad():\n                loss = closure()\n\n        for group in self.param_groups:\n            params_with_grad = []\n            d_p_list = []\n            momentum_buffer_list = []\n            weight_decay = group['weight_decay']\n            momentum = group['momentum']\n            dampening = group['dampening']\n            nesterov = group['nesterov']\n            lr = group['lr']\n\n            for p in group['params']:\n                if p.grad is not None:\n                    params_with_grad.append(p)\n                    d_p_list.append(p.grad)\n\n                    state = self.state[p]\n                    if 'momentum_buffer' not in state:\n                        momentum_buffer_list.append(None)\n                    else:\n                        momentum_buffer_list.append(state['momentum_buffer'])\n\n            F.sgd(params_with_grad,\n                  d_p_list,\n                  momentum_buffer_list,\n                  weight_decay=weight_decay,\n                  momentum=momentum,\n                  lr=lr,\n                  dampening=dampening,\n                  nesterov=nesterov)\n\n            # update momentum_buffers in state\n            for p, momentum_buffer in zip(params_with_grad, momentum_buffer_list):\n                state = self.state[p]\n                state['momentum_buffer'] = momentum_buffer\n\n        return loss\n",
-                        "line_start": 6
-                    }
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.type": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n'sgd')",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n'sgd')"
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "type",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.type",
-                    "properties": [],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {},
-                    "type": "str"
-                },
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.weight_decay": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "weight_decay",
-                    "parent_path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-                    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.weight_decay",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/modules/optimization_modules.py",
-                    "source": {},
-                    "type": "float"
-                }
-            },
-            "classes": [
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.Schema",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.optimizer_class"
-            ],
-            "docstring": "Parameters for stochastic gradient descent.",
-            "docstring_sections": [
-                {
-                    "type": "markdown",
-                    "value": "Parameters for stochastic gradient descent."
-                }
-            ],
-            "file_path": "/home/ksbrar/work/ludwig/ludwig/modules/optimization_modules.py",
-            "functions": [],
-            "has_contents": true,
-            "methods": [
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.__eq__",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.__init__",
-                "ludwig.modules.optimization_modules.SGDOptimizerConfig.__repr__"
-            ],
-            "modules": [],
-            "name": "SGDOptimizerConfig",
-            "parent_path": "ludwig.modules.optimization_modules",
-            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig",
-            "properties": [
-                "dataclass"
-            ],
-            "relative_file_path": "ludwig/modules/optimization_modules.py",
-            "source": {
-                "code": "class SGDOptimizerConfig(BaseOptimizerConfig):\n    \"\"\"Parameters for stochastic gradient descent.\"\"\"\n\n    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD\n    \"\"\"Points to `torch.optim.SGD`.\"\"\"\n\n    type: str = StringOptions([\"sgd\"], default=\"sgd\", nullable=False)\n    \"\"\"Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n       'sgd')\"\"\"\n\n    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)\n    \"\"\"(default: 0.001)\"\"\"\n\n    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :\n    momentum: float = NonNegativeFloat(default=0.0)\n    weight_decay: float = NonNegativeFloat(default=0.0)\n    dampening: float = NonNegativeFloat(default=0.0)\n    nesterov: bool = False\n",
-                "line_start": 65
-            }
-        }
+    "attributes": [
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.type",
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.lr",
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.momentum",
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.weight_decay",
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.dampening",
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.nesterov"
     ],
-    "parsing_errors": {}
+    "bases": [
+        "ludwig.modules.optimization_modules.BaseOptimizerConfig"
+    ],
+    "children": {
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.__init__": {
+            "docstring": "",
+            "name": "__init__",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.__init__",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "signature": {
+                "parameters": [
+                    {
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "self"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'sgd'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "type"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.001",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "lr"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "momentum"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "weight_decay"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "dampening"
+                    },
+                    {
+                        "annotation": "bool",
+                        "default": "False",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "nesterov"
+                    }
+                ],
+                "return_annotation": "None"
+            }
+        },
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.dampening": {
+            "docstring": null,
+            "name": "dampening",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.dampening",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "type": "float"
+        },
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.lr": {
+            "docstring": "(default: 0.001)",
+            "name": "lr",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.lr",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "type": "float"
+        },
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.momentum": {
+            "docstring": null,
+            "name": "momentum",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.momentum",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "type": "float"
+        },
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.nesterov": {
+            "docstring": null,
+            "name": "nesterov",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.nesterov",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "type": "bool"
+        },
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.type": {
+            "docstring": "Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:\n'sgd')",
+            "name": "type",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.type",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "type": "str"
+        },
+        "ludwig.modules.optimization_modules.SGDOptimizerConfig.weight_decay": {
+            "docstring": null,
+            "name": "weight_decay",
+            "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig.weight_decay",
+            "relative_file_path": "ludwig/modules/optimization_modules.py",
+            "type": "float"
+        }
+    },
+    "docstring": "Parameters for stochastic gradient descent.",
+    "name": "SGDOptimizerConfig",
+    "path": "ludwig.modules.optimization_modules.SGDOptimizerConfig"
 }

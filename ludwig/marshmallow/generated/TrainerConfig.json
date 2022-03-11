@@ -1,1887 +1,419 @@
 {
-    "loading_errors": [],
-    "objects": [
-        {
-            "attributes": [
-                "ludwig.models.trainer.TrainerConfig.optimizer",
-                "ludwig.models.trainer.TrainerConfig.epochs",
-                "ludwig.models.trainer.TrainerConfig.regularization_lambda",
-                "ludwig.models.trainer.TrainerConfig.regularization_type",
-                "ludwig.models.trainer.TrainerConfig.should_shuffle",
-                "ludwig.models.trainer.TrainerConfig.learning_rate",
-                "ludwig.models.trainer.TrainerConfig.batch_size",
-                "ludwig.models.trainer.TrainerConfig.eval_batch_size",
-                "ludwig.models.trainer.TrainerConfig.early_stop",
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_metric",
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_split",
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau",
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_patience",
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_rate",
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_max",
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_metric",
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_split",
-                "ludwig.models.trainer.TrainerConfig.decay",
-                "ludwig.models.trainer.TrainerConfig.decay_steps",
-                "ludwig.models.trainer.TrainerConfig.decay_rate",
-                "ludwig.models.trainer.TrainerConfig.staircase",
-                "ludwig.models.trainer.TrainerConfig.gradient_clipping",
-                "ludwig.models.trainer.TrainerConfig.validation_field",
-                "ludwig.models.trainer.TrainerConfig.validation_metric",
-                "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs"
-            ],
-            "bases": [
-                "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig"
-            ],
-            "category": "class",
-            "children": {
-                "ludwig.models.trainer.TrainerConfig.Schema": {
-                    "attributes": [
-                        "ludwig.models.trainer.TrainerConfig.Schema._declared_fields",
-                        "ludwig.models.trainer.TrainerConfig.Schema._hooks",
-                        "ludwig.models.trainer.TrainerConfig.Schema.opts",
-                        "ludwig.models.trainer.TrainerConfig.Schema.optimizer",
-                        "ludwig.models.trainer.TrainerConfig.Schema.epochs",
-                        "ludwig.models.trainer.TrainerConfig.Schema.regularization_lambda",
-                        "ludwig.models.trainer.TrainerConfig.Schema.regularization_type",
-                        "ludwig.models.trainer.TrainerConfig.Schema.should_shuffle",
-                        "ludwig.models.trainer.TrainerConfig.Schema.learning_rate",
-                        "ludwig.models.trainer.TrainerConfig.Schema.batch_size",
-                        "ludwig.models.trainer.TrainerConfig.Schema.eval_batch_size",
-                        "ludwig.models.trainer.TrainerConfig.Schema.early_stop",
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau",
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau_patience",
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau_rate",
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_eval_metric",
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_eval_split",
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau",
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_patience",
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_rate",
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_max",
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_metric",
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_split",
-                        "ludwig.models.trainer.TrainerConfig.Schema.decay",
-                        "ludwig.models.trainer.TrainerConfig.Schema.decay_steps",
-                        "ludwig.models.trainer.TrainerConfig.Schema.decay_rate",
-                        "ludwig.models.trainer.TrainerConfig.Schema.staircase",
-                        "ludwig.models.trainer.TrainerConfig.Schema.gradient_clipping",
-                        "ludwig.models.trainer.TrainerConfig.Schema.validation_field",
-                        "ludwig.models.trainer.TrainerConfig.Schema.validation_metric",
-                        "ludwig.models.trainer.TrainerConfig.Schema.learning_rate_warmup_epochs"
-                    ],
-                    "bases": [
-                        "marshmallow_dataclass._base_schema.<locals>.BaseSchema"
-                    ],
-                    "category": "class",
-                    "children": {
-                        "ludwig.models.trainer.TrainerConfig.Schema.Meta": {
-                            "attributes": [
-                                "ludwig.models.trainer.TrainerConfig.Schema.Meta.unknown"
-                            ],
-                            "bases": [
-                                "object"
-                            ],
-                            "category": "class",
-                            "children": {
-                                "ludwig.models.trainer.TrainerConfig.Schema.Meta.unknown": {
-                                    "attributes": [],
-                                    "category": "attribute",
-                                    "children": {},
-                                    "classes": [],
-                                    "docstring": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.",
-                                    "docstring_sections": [
-                                        {
-                                            "type": "markdown",
-                                            "value": "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
-                                        }
-                                    ],
-                                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                                    "functions": [],
-                                    "has_contents": true,
-                                    "methods": [],
-                                    "modules": [],
-                                    "name": "unknown",
-                                    "parent_path": "ludwig.models.trainer.TrainerConfig.Schema.Meta",
-                                    "path": "ludwig.models.trainer.TrainerConfig.Schema.Meta.unknown",
-                                    "properties": [],
-                                    "relative_file_path": "ludwig/models/trainer.py",
-                                    "source": {},
-                                    "type": ""
-                                }
-                            },
-                            "classes": [],
-                            "docstring": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary.",
-                            "docstring_sections": [
-                                {
-                                    "type": "markdown",
-                                    "value": "Sub-class specifying meta information for Marshmallow.\n\nCurrently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\nexcluded from `load` calls so that the marshmallow_dataclass package can be used but\n`get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\nto True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\nfilled in as necessary."
-                                }
-                            ],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": true,
-                            "methods": [],
-                            "modules": [],
-                            "name": "Meta",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.Meta",
-                            "properties": [],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {
-                                "code": "    class Meta:\n        \"\"\"Sub-class specifying meta information for Marshmallow.\n\n        Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are\n        excluded from `load` calls so that the marshmallow_dataclass package can be used but\n        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.\n        to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and\n        filled in as necessary.\n        \"\"\"\n\n        unknown = EXCLUDE\n        \"Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter.\"\n",
-                                "line_start": 49
-                            }
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema._declared_fields": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "_declared_fields",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema._declared_fields",
-                            "properties": [
-                                "private"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": ""
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema._hooks": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "_hooks",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema._hooks",
-                            "properties": [
-                                "private"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": ""
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.batch_size": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "batch_size",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.batch_size",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "IntegerOrStringOptionsField"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.decay": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "decay",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.decay",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Boolean"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.decay_rate": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "decay_rate",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.decay_rate",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.decay_steps": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "decay_steps",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.decay_steps",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.early_stop": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "early_stop",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.early_stop",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.epochs": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "epochs",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.epochs",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.eval_batch_size": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "eval_batch_size",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.eval_batch_size",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "IntegerOrStringOptionsField"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.gradient_clipping": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "gradient_clipping",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.gradient_clipping",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "GradientClippingMarshmallowField"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_metric": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "increase_batch_size_eval_metric",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_metric",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_split": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "increase_batch_size_eval_split",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_eval_split",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "increase_batch_size_on_plateau",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_max": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "increase_batch_size_on_plateau_max",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_max",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_patience": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "increase_batch_size_on_plateau_patience",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_patience",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_rate": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "increase_batch_size_on_plateau_rate",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.increase_batch_size_on_plateau_rate",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.learning_rate": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "learning_rate",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.learning_rate",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "IntegerOrStringOptionsField"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.learning_rate_warmup_epochs": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "learning_rate_warmup_epochs",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.learning_rate_warmup_epochs",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.optimizer": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "optimizer",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.optimizer",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "OptimizerMarshmallowField"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.opts": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "opts",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.opts",
-                            "properties": [],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": ""
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_eval_metric": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "reduce_learning_rate_eval_metric",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_eval_metric",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_eval_split": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "reduce_learning_rate_eval_split",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_eval_split",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "reduce_learning_rate_on_plateau",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau_patience": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "reduce_learning_rate_on_plateau_patience",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau_patience",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Integer"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau_rate": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "reduce_learning_rate_on_plateau_rate",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.reduce_learning_rate_on_plateau_rate",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.regularization_lambda": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "regularization_lambda",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.regularization_lambda",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Float"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.regularization_type": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "regularization_type",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.regularization_type",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.should_shuffle": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "should_shuffle",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.should_shuffle",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Boolean"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.staircase": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "staircase",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.staircase",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "Boolean"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.validation_field": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "validation_field",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.validation_field",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        },
-                        "ludwig.models.trainer.TrainerConfig.Schema.validation_metric": {
-                            "attributes": [],
-                            "category": "attribute",
-                            "children": {},
-                            "classes": [],
-                            "docstring": null,
-                            "docstring_sections": [],
-                            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                            "functions": [],
-                            "has_contents": false,
-                            "methods": [],
-                            "modules": [],
-                            "name": "validation_metric",
-                            "parent_path": "ludwig.models.trainer.TrainerConfig.Schema",
-                            "path": "ludwig.models.trainer.TrainerConfig.Schema.validation_metric",
-                            "properties": [
-                                "marshmallow-field"
-                            ],
-                            "relative_file_path": "ludwig/models/trainer.py",
-                            "source": {},
-                            "type": "String"
-                        }
-                    },
-                    "classes": [
-                        "ludwig.models.trainer.TrainerConfig.Schema.Meta"
-                    ],
-                    "docstring": "",
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "Schema",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.Schema",
-                    "properties": [
-                        "marshmallow-model"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {}
-                },
-                "ludwig.models.trainer.TrainerConfig.__eq__": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "__eq__",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.__eq__",
-                    "properties": [
-                        "special"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            },
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "other"
-                            }
-                        ]
-                    },
-                    "source": {}
-                },
-                "ludwig.models.trainer.TrainerConfig.__init__": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "__init__",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.__init__",
-                    "properties": [
-                        "special"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            },
-                            {
-                                "annotation": "BaseOptimizerConfig",
-                                "default": "<factory>",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "optimizer"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "100",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "epochs"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "regularization_lambda"
-                            },
-                            {
-                                "annotation": "Optional[str]",
-                                "default": "'l2'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "regularization_type"
-                            },
-                            {
-                                "annotation": "bool",
-                                "default": "True",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "should_shuffle"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.001",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "learning_rate"
-                            },
-                            {
-                                "annotation": "Union[int, str]",
-                                "default": "128",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "batch_size"
-                            },
-                            {
-                                "annotation": "Union[NoneType, int, str]",
-                                "default": "None",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "eval_batch_size"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "5",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "early_stop"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "reduce_learning_rate_on_plateau"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "5",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "reduce_learning_rate_on_plateau_patience"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.5",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "reduce_learning_rate_on_plateau_rate"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'loss'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "reduce_learning_rate_eval_metric"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'training'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "reduce_learning_rate_eval_split"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "increase_batch_size_on_plateau"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "5",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "increase_batch_size_on_plateau_patience"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "2.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "increase_batch_size_on_plateau_rate"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "512",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "increase_batch_size_on_plateau_max"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'loss'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "increase_batch_size_eval_metric"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'training'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "increase_batch_size_eval_split"
-                            },
-                            {
-                                "annotation": "bool",
-                                "default": "False",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "decay"
-                            },
-                            {
-                                "annotation": "int",
-                                "default": "10000",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "decay_steps"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "0.96",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "decay_rate"
-                            },
-                            {
-                                "annotation": "bool",
-                                "default": "False",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "staircase"
-                            },
-                            {
-                                "annotation": "Optional[ludwig.modules.optimization_modules.GradientClippingConfig]",
-                                "default": "<factory>",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "gradient_clipping"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'combined'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "validation_field"
-                            },
-                            {
-                                "annotation": "str",
-                                "default": "'loss'",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "validation_metric"
-                            },
-                            {
-                                "annotation": "float",
-                                "default": "1.0",
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "learning_rate_warmup_epochs"
-                            }
-                        ],
-                        "return_annotation": "None"
-                    },
-                    "source": {}
-                },
-                "ludwig.models.trainer.TrainerConfig.__repr__": {
-                    "attributes": [],
-                    "category": "method",
-                    "children": {},
-                    "classes": [],
-                    "docstring": null,
-                    "docstring_sections": [],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": false,
-                    "methods": [],
-                    "modules": [],
-                    "name": "__repr__",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.__repr__",
-                    "properties": [
-                        "special"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "signature": {
-                        "parameters": [
-                            {
-                                "kind": "POSITIONAL_OR_KEYWORD",
-                                "name": "self"
-                            }
-                        ]
-                    },
-                    "source": {}
-                },
-                "ludwig.models.trainer.TrainerConfig.batch_size": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Size of batch to pass to the model for training (default: 128).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Size of batch to pass to the model for training (default: 128)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "batch_size",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.batch_size",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "Union[int, str]"
-                },
-                "ludwig.models.trainer.TrainerConfig.decay": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Turn on exponential decay of the learning rate (default: False).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Turn on exponential decay of the learning rate (default: False)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "decay",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.decay",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "bool"
-                },
-                "ludwig.models.trainer.TrainerConfig.decay_rate": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "TODO: Document parameters. (default: 0.96).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "TODO: Document parameters. (default: 0.96)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "decay_rate",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.decay_rate",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.decay_steps": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "TODO: Document parameters. (default: 10000).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "TODO: Document parameters. (default: 10000)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "decay_steps",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.decay_steps",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.early_stop": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to\n-1, which disables early_stop (default: 5).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to\n-1, which disables early_stop (default: 5)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "early_stop",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.early_stop",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.epochs": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Number of epochs the algorithm is intended to be run over (default: 100).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Number of epochs the algorithm is intended to be run over (default: 100)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "epochs",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.epochs",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.eval_batch_size": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Size of batch to pass to the model for evaluation (default: 'auto').",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Size of batch to pass to the model for evaluation (default: 'auto')."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "eval_batch_size",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.eval_batch_size",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "Union[NoneType, int, str]"
-                },
-                "ludwig.models.trainer.TrainerConfig.gradient_clipping": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.\n(default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.\n(default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)"
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "gradient_clipping",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.gradient_clipping",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "Optional[ludwig.modules.optimization_modules.GradientClippingConfig]"
-                },
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_metric": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "TODO: Document parameters. (default: 'loss').",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "TODO: Document parameters. (default: 'loss')."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "increase_batch_size_eval_metric",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_metric",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "str"
-                },
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_split": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "TODO: Document parameters. (default: 'training').",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "TODO: Document parameters. (default: 'training')."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "increase_batch_size_eval_split",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_split",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "str"
-                },
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Number to increase the batch size by on a plateau (default: 0).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Number to increase the batch size by on a plateau (default: 0)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "increase_batch_size_on_plateau",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_max": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Maximum size of the batch (default: 512).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Maximum size of the batch (default: 512)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "increase_batch_size_on_plateau_max",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_max",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_patience": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "How many epochs to wait for before increasing the batch size (default: 5).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "How many epochs to wait for before increasing the batch size (default: 5)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "increase_batch_size_on_plateau_patience",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_patience",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_rate": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Rate at which the batch size increases (default: 2.0).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Rate at which the batch size increases (default: 2.0)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "increase_batch_size_on_plateau_rate",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_rate",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.learning_rate": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',\n`tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',\n`tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "learning_rate",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.learning_rate",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Number of epochs to warmup the learning rate for (default: 1.0).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Number of epochs to warmup the learning rate for (default: 1.0)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "learning_rate_warmup_epochs",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.optimizer": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "optimizer",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.optimizer",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "BaseOptimizerConfig"
-                },
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_metric": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "TODO: Document parameters. (default: `ludwig.constants.LOSS`).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "TODO: Document parameters. (default: `ludwig.constants.LOSS`)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "reduce_learning_rate_eval_metric",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_metric",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "str"
-                },
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_split": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "TODO: Document parameters. (default: `ludwig.constants.TRAINING`).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "TODO: Document parameters. (default: `ludwig.constants.TRAINING`)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "reduce_learning_rate_eval_split",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_split",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "str"
-                },
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not\nimprove). (default: 0.0).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not\nimprove). (default: 0.0)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "reduce_learning_rate_on_plateau",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "How many epochs have to pass before the learning rate reduces (default: 5).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "How many epochs have to pass before the learning rate reduces (default: 5)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "reduce_learning_rate_on_plateau_patience",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "int"
-                },
-                "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Rate at which we reduce the learning rate (default: 0.5).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Rate at which we reduce the learning rate (default: 0.5)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "reduce_learning_rate_on_plateau_rate",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.regularization_lambda": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Strength of the $L2$ regularization (default: 0.0).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Strength of the $L2$ regularization (default: 0.0)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "regularization_lambda",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.regularization_lambda",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "float"
-                },
-                "ludwig.models.trainer.TrainerConfig.regularization_type": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2').",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "regularization_type",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.regularization_type",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "Optional[str]"
-                },
-                "ludwig.models.trainer.TrainerConfig.should_shuffle": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Whether to shuffle batches during training when true (default: True).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Whether to shuffle batches during training when true (default: True)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "should_shuffle",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.should_shuffle",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "bool"
-                },
-                "ludwig.models.trainer.TrainerConfig.staircase": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Decays the learning rate at discrete intervals (default: False).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Decays the learning rate at discrete intervals (default: False)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "staircase",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.staircase",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "bool"
-                },
-                "ludwig.models.trainer.TrainerConfig.validation_field": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "First output feature, by default it is set as the same field of the first output feature (default:\n`ludwig.constants.COMBINED`).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "First output feature, by default it is set as the same field of the first output feature (default:\n`ludwig.constants.COMBINED`)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "validation_field",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.validation_field",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "str"
-                },
-                "ludwig.models.trainer.TrainerConfig.validation_metric": {
-                    "attributes": [],
-                    "category": "attribute",
-                    "children": {},
-                    "classes": [],
-                    "docstring": "Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`).",
-                    "docstring_sections": [
-                        {
-                            "type": "markdown",
-                            "value": "Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`)."
-                        }
-                    ],
-                    "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-                    "functions": [],
-                    "has_contents": true,
-                    "methods": [],
-                    "modules": [],
-                    "name": "validation_metric",
-                    "parent_path": "ludwig.models.trainer.TrainerConfig",
-                    "path": "ludwig.models.trainer.TrainerConfig.validation_metric",
-                    "properties": [
-                        "dataclass-field"
-                    ],
-                    "relative_file_path": "ludwig/models/trainer.py",
-                    "source": {},
-                    "type": "str"
-                }
-            },
-            "classes": [
-                "ludwig.models.trainer.TrainerConfig.Schema"
-            ],
-            "docstring": "TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.",
-            "docstring_sections": [
-                {
-                    "type": "markdown",
-                    "value": "TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."
-                }
-            ],
-            "file_path": "/home/ksbrar/work/ludwig/ludwig/models/trainer.py",
-            "functions": [],
-            "has_contents": true,
-            "methods": [
-                "ludwig.models.trainer.TrainerConfig.__eq__",
-                "ludwig.models.trainer.TrainerConfig.__init__",
-                "ludwig.models.trainer.TrainerConfig.__repr__"
-            ],
-            "modules": [],
-            "name": "TrainerConfig",
-            "parent_path": "ludwig.models.trainer",
-            "path": "ludwig.models.trainer.TrainerConfig",
-            "properties": [
-                "dataclass"
-            ],
-            "relative_file_path": "ludwig/models/trainer.py",
-            "source": {
-                "code": "class TrainerConfig(schema.BaseMarshmallowConfig):\n    \"\"\"TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.\"\"\"\n\n    optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={\"type\": \"adam\"})\n    \"\"\"Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\n       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`).\"\"\"\n\n    epochs: int = schema.PositiveInteger(default=100)\n    \"Number of epochs the algorithm is intended to be run over (default: 100).\"\n\n    regularization_lambda: float = schema.FloatRange(default=0.0, min=0)\n    \"Strength of the $L2$ regularization (default: 0.0).\"\n\n    regularization_type: Optional[str] = schema.RegularizerOptions(default=\"l2\")\n    \"Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2').\"\n\n    should_shuffle: bool = True\n    \"Whether to shuffle batches during training when true (default: True).\"\n\n    learning_rate: float = schema.NumericOrStringOptionsField(\n        default=0.001, min=0.0, max=1.0, options=[\"auto\"], nullable=False\n    )\n    \"\"\"Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',\n       `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001).\"\"\"\n\n    batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(\n        default=128, options=[\"auto\"], nullable=False, min_exclusive=0\n    )\n    \"Size of batch to pass to the model for training (default: 128).\"\n\n    eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(\n        default=None, options=[\"auto\"], nullable=True, min_exclusive=0\n    )\n    \"\"\"Size of batch to pass to the model for evaluation (default: 'auto').\"\"\"\n\n    early_stop: int = schema.IntegerRange(default=5, min=-1)\n    \"\"\"How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to\n       -1, which disables early_stop (default: 5).\"\"\"\n\n    reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)\n    \"\"\"Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not\n       improve). (default: 0.0).\"\"\"\n\n    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(default=5)\n    \"\"\"How many epochs have to pass before the learning rate reduces (default: 5).\"\"\"\n\n    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)\n    \"\"\"Rate at which we reduce the learning rate (default: 0.5).\"\"\"\n\n    reduce_learning_rate_eval_metric: str = LOSS\n    \"\"\"TODO: Document parameters. (default: `ludwig.constants.LOSS`).\"\"\"\n\n    reduce_learning_rate_eval_split: str = TRAINING\n    \"\"\"TODO: Document parameters. (default: `ludwig.constants.TRAINING`).\"\"\"\n\n    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)\n    \"\"\"Number to increase the batch size by on a plateau (default: 0).\"\"\"\n\n    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)\n    \"How many epochs to wait for before increasing the batch size (default: 5).\"\n\n    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(default=2.0)\n    \"Rate at which the batch size increases (default: 2.0).\"\n\n    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)\n    \"Maximum size of the batch (default: 512).\"\n\n    increase_batch_size_eval_metric: str = LOSS\n    \"\"\"TODO: Document parameters. (default: 'loss').\"\"\"\n\n    increase_batch_size_eval_split: str = TRAINING\n    \"\"\"TODO: Document parameters. (default: 'training').\"\"\"\n\n    decay: bool = False\n    \"\"\"Turn on exponential decay of the learning rate (default: False).\"\"\"\n\n    decay_steps: int = schema.PositiveInteger(default=10000)\n    \"\"\"TODO: Document parameters. (default: 10000).\"\"\"\n\n    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)\n    \"\"\"TODO: Document parameters. (default: 0.96).\"\"\"\n\n    staircase: bool = False\n    \"\"\"Decays the learning rate at discrete intervals (default: False).\"\"\"\n\n    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(default={})\n    \"\"\"Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.\n       (default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)\"\"\"\n\n    # TODO(#1673): Need some more logic here for validating against output features\n    validation_field: str = COMBINED\n    \"\"\"First output feature, by default it is set as the same field of the first output feature (default:\n       `ludwig.constants.COMBINED`).\"\"\"\n\n    validation_metric: str = LOSS\n    \"\"\"Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`).\"\"\"\n\n    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)\n    \"\"\"Number of epochs to warmup the learning rate for (default: 1.0).\"\"\"\n",
-                "line_start": 108
-            }
-        }
+    "attributes": [
+        "ludwig.models.trainer.TrainerConfig.optimizer",
+        "ludwig.models.trainer.TrainerConfig.epochs",
+        "ludwig.models.trainer.TrainerConfig.regularization_lambda",
+        "ludwig.models.trainer.TrainerConfig.regularization_type",
+        "ludwig.models.trainer.TrainerConfig.should_shuffle",
+        "ludwig.models.trainer.TrainerConfig.learning_rate",
+        "ludwig.models.trainer.TrainerConfig.batch_size",
+        "ludwig.models.trainer.TrainerConfig.eval_batch_size",
+        "ludwig.models.trainer.TrainerConfig.early_stop",
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_metric",
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_split",
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau",
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_patience",
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_rate",
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_max",
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_metric",
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_split",
+        "ludwig.models.trainer.TrainerConfig.decay",
+        "ludwig.models.trainer.TrainerConfig.decay_steps",
+        "ludwig.models.trainer.TrainerConfig.decay_rate",
+        "ludwig.models.trainer.TrainerConfig.staircase",
+        "ludwig.models.trainer.TrainerConfig.gradient_clipping",
+        "ludwig.models.trainer.TrainerConfig.validation_field",
+        "ludwig.models.trainer.TrainerConfig.validation_metric",
+        "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs"
     ],
-    "parsing_errors": {}
+    "bases": [
+        "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig"
+    ],
+    "children": {
+        "ludwig.models.trainer.TrainerConfig.__init__": {
+            "docstring": null,
+            "name": "__init__",
+            "path": "ludwig.models.trainer.TrainerConfig.__init__",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "signature": {
+                "parameters": [
+                    {
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "self"
+                    },
+                    {
+                        "annotation": "BaseOptimizerConfig",
+                        "default": "<factory>",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "optimizer"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "100",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "epochs"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "regularization_lambda"
+                    },
+                    {
+                        "annotation": "Optional[str]",
+                        "default": "'l2'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "regularization_type"
+                    },
+                    {
+                        "annotation": "bool",
+                        "default": "True",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "should_shuffle"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.001",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "learning_rate"
+                    },
+                    {
+                        "annotation": "Union[int, str]",
+                        "default": "128",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "batch_size"
+                    },
+                    {
+                        "annotation": "Union[NoneType, int, str]",
+                        "default": "None",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "eval_batch_size"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "5",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "early_stop"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "reduce_learning_rate_on_plateau"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "5",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "reduce_learning_rate_on_plateau_patience"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.5",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "reduce_learning_rate_on_plateau_rate"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'loss'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "reduce_learning_rate_eval_metric"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'training'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "reduce_learning_rate_eval_split"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "increase_batch_size_on_plateau"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "5",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "increase_batch_size_on_plateau_patience"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "2.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "increase_batch_size_on_plateau_rate"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "512",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "increase_batch_size_on_plateau_max"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'loss'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "increase_batch_size_eval_metric"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'training'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "increase_batch_size_eval_split"
+                    },
+                    {
+                        "annotation": "bool",
+                        "default": "False",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "decay"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "10000",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "decay_steps"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "0.96",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "decay_rate"
+                    },
+                    {
+                        "annotation": "bool",
+                        "default": "False",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "staircase"
+                    },
+                    {
+                        "annotation": "Optional[ludwig.modules.optimization_modules.GradientClippingConfig]",
+                        "default": "<factory>",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "gradient_clipping"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'combined'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "validation_field"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'loss'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "validation_metric"
+                    },
+                    {
+                        "annotation": "float",
+                        "default": "1.0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "learning_rate_warmup_epochs"
+                    }
+                ],
+                "return_annotation": "None"
+            }
+        },
+        "ludwig.models.trainer.TrainerConfig.batch_size": {
+            "docstring": "Size of batch to pass to the model for training (default: 128).",
+            "name": "batch_size",
+            "path": "ludwig.models.trainer.TrainerConfig.batch_size",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "Union[int, str]"
+        },
+        "ludwig.models.trainer.TrainerConfig.decay": {
+            "docstring": "Turn on exponential decay of the learning rate (default: False).",
+            "name": "decay",
+            "path": "ludwig.models.trainer.TrainerConfig.decay",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "bool"
+        },
+        "ludwig.models.trainer.TrainerConfig.decay_rate": {
+            "docstring": "TODO: Document parameters. (default: 0.96).",
+            "name": "decay_rate",
+            "path": "ludwig.models.trainer.TrainerConfig.decay_rate",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.decay_steps": {
+            "docstring": "TODO: Document parameters. (default: 10000).",
+            "name": "decay_steps",
+            "path": "ludwig.models.trainer.TrainerConfig.decay_steps",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.early_stop": {
+            "docstring": "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to\n-1, which disables early_stop (default: 5).",
+            "name": "early_stop",
+            "path": "ludwig.models.trainer.TrainerConfig.early_stop",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.epochs": {
+            "docstring": "Number of epochs the algorithm is intended to be run over (default: 100).",
+            "name": "epochs",
+            "path": "ludwig.models.trainer.TrainerConfig.epochs",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.eval_batch_size": {
+            "docstring": "Size of batch to pass to the model for evaluation (default: 'auto').",
+            "name": "eval_batch_size",
+            "path": "ludwig.models.trainer.TrainerConfig.eval_batch_size",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "Union[NoneType, int, str]"
+        },
+        "ludwig.models.trainer.TrainerConfig.gradient_clipping": {
+            "docstring": "Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.\n(default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)",
+            "name": "gradient_clipping",
+            "path": "ludwig.models.trainer.TrainerConfig.gradient_clipping",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "Optional[ludwig.modules.optimization_modules.GradientClippingConfig]"
+        },
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_metric": {
+            "docstring": "TODO: Document parameters. (default: 'loss').",
+            "name": "increase_batch_size_eval_metric",
+            "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_metric",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
+        },
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_split": {
+            "docstring": "TODO: Document parameters. (default: 'training').",
+            "name": "increase_batch_size_eval_split",
+            "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_eval_split",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
+        },
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau": {
+            "docstring": "Number to increase the batch size by on a plateau (default: 0).",
+            "name": "increase_batch_size_on_plateau",
+            "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_max": {
+            "docstring": "Maximum size of the batch (default: 512).",
+            "name": "increase_batch_size_on_plateau_max",
+            "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_max",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_patience": {
+            "docstring": "How many epochs to wait for before increasing the batch size (default: 5).",
+            "name": "increase_batch_size_on_plateau_patience",
+            "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_patience",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_rate": {
+            "docstring": "Rate at which the batch size increases (default: 2.0).",
+            "name": "increase_batch_size_on_plateau_rate",
+            "path": "ludwig.models.trainer.TrainerConfig.increase_batch_size_on_plateau_rate",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.learning_rate": {
+            "docstring": "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',\n`tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001).",
+            "name": "learning_rate",
+            "path": "ludwig.models.trainer.TrainerConfig.learning_rate",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs": {
+            "docstring": "Number of epochs to warmup the learning rate for (default: 1.0).",
+            "name": "learning_rate_warmup_epochs",
+            "path": "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.optimizer": {
+            "docstring": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`).",
+            "name": "optimizer",
+            "path": "ludwig.models.trainer.TrainerConfig.optimizer",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "BaseOptimizerConfig"
+        },
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_metric": {
+            "docstring": "TODO: Document parameters. (default: `ludwig.constants.LOSS`).",
+            "name": "reduce_learning_rate_eval_metric",
+            "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_metric",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
+        },
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_split": {
+            "docstring": "TODO: Document parameters. (default: `ludwig.constants.TRAINING`).",
+            "name": "reduce_learning_rate_eval_split",
+            "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_eval_split",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
+        },
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau": {
+            "docstring": "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not\nimprove). (default: 0.0).",
+            "name": "reduce_learning_rate_on_plateau",
+            "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience": {
+            "docstring": "How many epochs have to pass before the learning rate reduces (default: 5).",
+            "name": "reduce_learning_rate_on_plateau_patience",
+            "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
+        },
+        "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate": {
+            "docstring": "Rate at which we reduce the learning rate (default: 0.5).",
+            "name": "reduce_learning_rate_on_plateau_rate",
+            "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.regularization_lambda": {
+            "docstring": "Strength of the $L2$ regularization (default: 0.0).",
+            "name": "regularization_lambda",
+            "path": "ludwig.models.trainer.TrainerConfig.regularization_lambda",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.regularization_type": {
+            "docstring": "Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2').",
+            "name": "regularization_type",
+            "path": "ludwig.models.trainer.TrainerConfig.regularization_type",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "Optional[str]"
+        },
+        "ludwig.models.trainer.TrainerConfig.should_shuffle": {
+            "docstring": "Whether to shuffle batches during training when true (default: True).",
+            "name": "should_shuffle",
+            "path": "ludwig.models.trainer.TrainerConfig.should_shuffle",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "bool"
+        },
+        "ludwig.models.trainer.TrainerConfig.staircase": {
+            "docstring": "Decays the learning rate at discrete intervals (default: False).",
+            "name": "staircase",
+            "path": "ludwig.models.trainer.TrainerConfig.staircase",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "bool"
+        },
+        "ludwig.models.trainer.TrainerConfig.validation_field": {
+            "docstring": "First output feature, by default it is set as the same field of the first output feature (default:\n`ludwig.constants.COMBINED`).",
+            "name": "validation_field",
+            "path": "ludwig.models.trainer.TrainerConfig.validation_field",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
+        },
+        "ludwig.models.trainer.TrainerConfig.validation_metric": {
+            "docstring": "Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`).",
+            "name": "validation_metric",
+            "path": "ludwig.models.trainer.TrainerConfig.validation_metric",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
+        }
+    },
+    "docstring": "TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.",
+    "name": "TrainerConfig",
+    "path": "ludwig.models.trainer.TrainerConfig"
 }

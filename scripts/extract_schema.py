@@ -11,6 +11,8 @@ import ludwig.models.trainer as lmt  # noqa: F401
 import ludwig.modules.optimization_modules as lmo  # noqa: F401
 from ludwig.marshmallow.marshmallow_schema_utils import BaseMarshmallowConfig, get_fully_qualified_class_name
 
+# Helper methods:
+
 
 def all_subclasses(cls):
     """Returns recursively-generated list of all children classes inheriting from given `cls`."""
@@ -25,6 +27,13 @@ def get_mclass_paths():
     return {cls.__name__: get_fully_qualified_class_name(cls) for cls in all_mclasses}
 
 
+def prune_dict_except(d, safe_keys):
+    """Helper method to delete all keys except `safe_keys` from dict `d`."""
+    for key in list(d.keys()):
+        if key not in safe_keys:
+            del d[key]
+
+
 def get_pytkdocs_structure_for_path(path: str, docstring_style="restructured-text"):
     """Runs pytkdocs in a subprocess and returns the parsed structure of the object at the given path with the
     given documentation style."""
@@ -36,35 +45,81 @@ def get_pytkdocs_structure_for_path(path: str, docstring_style="restructured-tex
     return json.loads(pytkdocs_output.decode())
 
 
+# Extraction methods:
+
+
+def prune_pytorch_structures(opt_struct):
+    """Prunes the given torch optimizer struct of unnecessary information."""
+    torch_keywords = ["name", "path", "relative_path", "docstring", "docstring_sections"]
+    prune_dict_except(opt_struct, torch_keywords)
+    # Prune docstring_sections:
+    sections = opt_struct["docstring_sections"]
+    save_index = list(map(lambda s: "type" in s and s["type"] == "parameters", sections)).index(True)
+    opt_struct["docstring_sections"] = [sections[save_index]]
+
+
 def extract_pytorch_structures():
     """Extracts and saves the parsed structure of all pytorch classes referenced in
     `ludwig.modules.optimization_modules.optimizer_registry` as JSON files under
     `ludwig/marshmallow/generated/torch/`."""
-    torch_structures = {}
     for opt in lmo.optimizer_registry:
+        # Get the torch class:
         optimizer_class = lmo.optimizer_registry[opt][0]
+
+        # Parse and clean the class structure:
         path = get_fully_qualified_class_name(optimizer_class)
-        torch_structures[opt] = get_pytkdocs_structure_for_path(path, "google")
+        opt_struct = get_pytkdocs_structure_for_path(path, "google")["objects"][0]
+        prune_pytorch_structures(opt_struct)
+
+        # Write it to a file:
         parent_dir = str(Path(__file__).parent.parent)
         filename = os.path.join(parent_dir, "ludwig/marshmallow/generated/torch/", optimizer_class.__name__) + ".json"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as outfile:
-            json.dump(get_pytkdocs_structure_for_path(path, "google"), outfile)
+            json.dump(
+                opt_struct,
+                outfile,
+                indent=4,
+                sort_keys=True,
+                separators=(",", ": "),
+            )
             outfile.write("\n")
+
+
+def prune_ludwig_structures(opt_struct):
+    """Prunes the given Ludwig class struct of unnecessary information."""
+    # Prune top-level:
+    toplevel_keywords = ["name", "docstring", "attributes", "bases", "relative_path", "path", "children"]
+    prune_dict_except(opt_struct, toplevel_keywords)
+
+    # Prune children to just the (non-class/method) attributes and init:
+    init_name = ".".join([opt_struct["path"], "__init__"])
+    attrs = opt_struct["attributes"] + [init_name]
+    children = opt_struct["children"]
+    prune_dict_except(children, attrs)
+
+    # Prune each attribute of unnecessary information:
+    attr_keywords = ["docstring", "name", "path", "relative_file_path", "type", "signature"]
+    for a in attrs:
+        if a in children:
+            prune_dict_except(children[a], attr_keywords)
 
 
 def extract_marshmallow_structures():
     """Extracts and saves the parsed structure of all known marshmallow dataclasses referenced throughout Ludwig as
     JSON files under `ludwig/marshmallow/generated/`."""
     mclass_paths = get_mclass_paths()
-    mclass_structures = {}
     for cls_name, path in mclass_paths.items():
-        mclass_structures[cls_name] = get_pytkdocs_structure_for_path(path)
+        # Parse and clean the class structure:
+        mclass = get_pytkdocs_structure_for_path(path)["objects"][0]
+        prune_ludwig_structures(mclass)
+
+        # Write it to a file:
         parent_dir = str(Path(__file__).parent.parent)
         filename = os.path.join(parent_dir, "ludwig/marshmallow/generated/", cls_name) + ".json"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as outfile:
-            json.dump(get_pytkdocs_structure_for_path(path), outfile, indent=4, sort_keys=True, separators=(",", ": "))
+            json.dump(mclass, outfile, indent=4, sort_keys=True, separators=(",", ": "))
             outfile.write("\n")
 
 

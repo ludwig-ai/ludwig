@@ -6,13 +6,9 @@ from typing import List, Tuple, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
-from pytkdocs import loader as pytkloader
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
-
-restloader = pytkloader.Loader(docstring_style="restructured-text")
-googleloader = pytkloader.Loader(docstring_style="google")
 
 
 def load_config(cls, **kwargs):
@@ -109,7 +105,7 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
         parent_dir = str(Path(__file__).parent)
         full_path = os.path.join(parent_dir, relative_path) + ".json"
         with open(full_path) as input:
-            return json.load(input)["objects"][0]
+            return json.load(input)
 
     def get_attrs_dict(cls):
         return {attr.split(".")[-1]: cls["children"][attr] for attr in cls["attributes"]}
