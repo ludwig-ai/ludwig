@@ -198,9 +198,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 "to be provided. "
                 "Additional information: "
                 "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/image_features"
-                "#image-features-preprocessing".format(
-                    [img_height, img_width, num_channels], img.shape
-                )
+                "#image-features-preprocessing".format([img_height, img_width, num_channels], img.shape)
             )
 
         return img.numpy()
