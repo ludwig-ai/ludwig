@@ -1034,7 +1034,8 @@ class Trainer(BaseTrainer):
 
                 # Save the model.
                 # TODO(Justin): Write to a separate to_evaluate/ directory, with the step number in path.
-                torch.save(self.model.state_dict(), model_weights_path)
+                if not self.skip_save_model:
+                    torch.save(self.model.state_dict(), model_weights_path)
 
                 should_break = self.run_evaluation(
                     training_set,
