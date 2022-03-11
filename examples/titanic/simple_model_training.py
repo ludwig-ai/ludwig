@@ -3,7 +3,7 @@
 # # Simple Model Training Example
 #
 # This example is the API example for this Ludwig command line example
-# (https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors).
+# (https://ludwig-ai.github.io/ludwig-docs/latest/examples/titanic/).
 
 # Import required libraries
 import logging

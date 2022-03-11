@@ -92,7 +92,7 @@ class Experiment:
         self.ground_truth = test_df[self.output_feature_name]
         # probabilities need to be list of lists containing each row data
         # from the probability columns
-        # ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        # ref: https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel#evaluate - Return
         self.probability = predictions[self.output_feature_name][PROBABILITY]
         self.probabilities = predictions[self.output_feature_name][PROBABILITIES]
         self.predictions = predictions[self.output_feature_name][PREDICTIONS]
@@ -525,7 +525,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
         ]
 
         # probabilities need to be list of lists containing each row data from the
-        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel#evaluate - Return
         probability1 = predictions.loc[:, feature1_cols].values
         probability2 = predictions.loc[:, feature2_cols].values
 
@@ -599,7 +599,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
         ]
 
         # probabilities need to be list of lists containing each row data from the
-        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel#evaluate - Return
         probability1 = predictions.loc[:, feature1_cols].values
         probability2 = predictions.loc[:, feature2_cols].values
 
