@@ -15,6 +15,7 @@ RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
     cmake
+RUN pip install -U pip
 
 WORKDIR /ludwig
 
