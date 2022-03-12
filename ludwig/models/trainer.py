@@ -1395,8 +1395,7 @@ class Trainer(BaseTrainer):
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        config, kwargs = schema.load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
-        super().__init__(config=config, **kwargs)
+        super().__init__(**kwargs)
 
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)

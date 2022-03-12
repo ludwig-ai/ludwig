@@ -32,7 +32,6 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
@@ -301,8 +300,7 @@ def legacy_train_fn(
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
         horovod = initialize_horovod()
-        config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
-        super().__init__(horovod=horovod, config=config, **kwargs)
+        super().__init__(horovod=horovod, **kwargs)
 
 
 class RayLegacyTrainer(BaseTrainer):

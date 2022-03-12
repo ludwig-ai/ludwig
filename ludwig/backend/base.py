@@ -101,11 +101,9 @@ class LocalTrainingMixin:
         initialize_pytorch(*args, **kwargs)
 
     def create_trainer(self, **kwargs):
-        from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
         from ludwig.models.trainer import Trainer
 
-        config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
-        return Trainer(config=config, **kwargs)
+        return Trainer(**kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
         from ludwig.models.predictor import Predictor

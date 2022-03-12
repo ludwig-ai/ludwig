@@ -18,7 +18,6 @@ import time
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
@@ -38,8 +37,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         initialize_pytorch(*args, horovod=self._horovod, **kwargs)
 
     def create_trainer(self, **kwargs):
-        config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
-        return Trainer(horovod=self._horovod, config=config, **kwargs)
+        return Trainer(horovod=self._horovod, **kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
         return Predictor(model, horovod=self._horovod, **kwargs)
