@@ -26,13 +26,13 @@ jobs:
         test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.6
-            pytorch-version: 1.10.0
+            pytorch-version: 1.10.2
             torchscript-version: 1.10.2
           - python-version: 3.7
-            pytorch-version: 1.10.0
+            pytorch-version: 1.10.2
             torchscript-version: 1.10.2
           - python-version: 3.8
-            pytorch-version: 1.10.0
+            pytorch-version: 1.11.0
             torchscript-version: 1.10.2
           - python-version: 3.9
             pytorch-version: nightly
