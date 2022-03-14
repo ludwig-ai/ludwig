@@ -1,0 +1,4 @@
+version: 1.0
+split_filenames:
+  train_file: aug_train.csv
+  test_file: aug_test.csv

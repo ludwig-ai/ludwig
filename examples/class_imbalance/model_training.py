@@ -9,7 +9,7 @@ import shutil
 
 # Import required libraries
 from ludwig.api import LudwigModel
-from ludwig.datasets import credit_card_fraud
+from ludwig.datasets import imbalanced_insurance
 from ludwig.visualize import learning_curves
 
 # clean out old results
@@ -20,7 +20,7 @@ shutil.rmtree("./visualizations", ignore_errors=True)
 list_of_model_ids = ["standard_model", "balanced_model"]
 list_of_train_stats = []
 
-training_set = credit_card_fraud.load()
+training_set = imbalanced_insurance.load()
 
 config = {
     "type": "local",
