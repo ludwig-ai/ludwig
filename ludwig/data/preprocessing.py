@@ -239,6 +239,9 @@ class DataFramePreprocessor(DataFormatPreprocessor):
 
     @staticmethod
     def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
+        if isinstance(dataset, pd.DataFrame):
+            dataset = backend.df_engine.from_pandas(dataset)
+
         dataset, training_set_metadata = build_dataset(
             dataset,
             features,
