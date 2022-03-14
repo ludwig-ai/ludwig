@@ -68,3 +68,11 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
 
 # Data for training and evaluation metrics.
 TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
+
+
+def flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics):
+    return {
+        feature_name: {metric_name: trainer_metric[-1]}
+        for feature_name, trainer_metric_dict in dict_dict_trainer_metrics.items()
+        for metric_name, trainer_metric in trainer_metric_dict.items()
+    }

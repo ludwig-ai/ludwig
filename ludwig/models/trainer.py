@@ -357,10 +357,11 @@ class Trainer(BaseTrainer):
             return
 
         for feature_name, output_feature in metrics.items():
-            for metric in output_feature:
-                metric_tag = f"{feature_name}/epoch_{metric}"
-                metric_val = output_feature[metric][-1][-1]
-                summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
+            for metric_name, metrics in output_feature.items():
+                if metrics:
+                    metric_tag = f"{feature_name}/epoch_{metric_name}"
+                    metric_val = metrics[-1][-1]
+                    summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
         summary_writer.flush()
 
     @classmethod
@@ -1020,7 +1021,7 @@ class Trainer(BaseTrainer):
             progress_tracker.steps += 1
             if self.is_coordinator():
                 progress_bar.update(1)
-                logger.info(
+                logger.debug(
                     f"training: completed batch {progress_bar.n} "
                     f"memory used: "
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
@@ -1034,7 +1035,7 @@ class Trainer(BaseTrainer):
 
                 # Save the model.
                 # TODO(Justin): Write to a separate to_evaluate/ directory, with the step number in path.
-                if not self.skip_save_model:
+                if self.is_coordinator() and not self.skip_save_model:
                     torch.save(self.model.state_dict(), model_weights_path)
 
                 should_break = self.run_evaluation(

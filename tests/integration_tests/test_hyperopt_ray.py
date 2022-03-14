@@ -119,6 +119,8 @@ def run_hyperopt_executor(
     validate_output_feature=False,
     validation_metric=None,
 ):
+    print("Called run_hyperopt_executor.")
+
     config = _get_config(sampler, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
@@ -126,12 +128,16 @@ def run_hyperopt_executor(
 
     hyperopt_config = config["hyperopt"]
 
+    print(f"hyperopt_config: {hyperopt_config}")
+
     if validate_output_feature:
         hyperopt_config["output_feature"] = config["output_features"][0]["name"]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
     update_hyperopt_params_with_defaults(hyperopt_config)
+
+    print(f"hyperopt_config after update_hyperopt_params_with_defaults: {hyperopt_config}")
 
     parameters = hyperopt_config["parameters"]
     if sampler.get("search_alg", {}).get("type", "") == "bohb":
@@ -166,14 +172,14 @@ def test_hyperopt_executor(sampler, executor, csv_filename):
 
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
-    with ray_start_4_cpus():
-        run_hyperopt_executor(
-            {"type": "ray", "num_samples": 2},
-            {"type": "ray"},
-            csv_filename,
-            validate_output_feature=True,
-            validation_metric=ACCURACY,
-        )
+    # with ray_start_4_cpus():
+    run_hyperopt_executor(
+        {"type": "ray", "num_samples": 2},
+        {"type": "ray"},
+        csv_filename,
+        validate_output_feature=True,
+        validation_metric=ACCURACY,
+    )
 
 
 @pytest.mark.distributed

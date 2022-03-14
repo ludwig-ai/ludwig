@@ -21,6 +21,7 @@ from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResult
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
@@ -264,7 +265,9 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                metric_score = self.get_metric_score(train_stats)
+                metric_score = self.get_metric_score(train_stats)[
+                    -1
+                ]  # -1 points to the `value` of the TrainerMetric tuple.
                 metric_scores.append(metric_score)
 
                 trial_results.append(
@@ -467,9 +470,9 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def report(progress_tracker):
             train_stats = {
-                TRAINING: progress_tracker.train_metrics,
-                VALIDATION: progress_tracker.vali_metrics,
-                TEST: progress_tracker.test_metrics,
+                TRAINING: metric_utils.flatten_dict_dict_trainer_metrics(progress_tracker.train_metrics),
+                VALIDATION: metric_utils.flatten_dict_dict_trainer_metrics(progress_tracker.vali_metrics),
+                TEST: metric_utils.flatten_dict_dict_trainer_metrics(progress_tracker.test_metrics),
             }
 
             metric_score = tune_executor.get_metric_score(train_stats)
@@ -502,6 +505,7 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
+                print("Called on_epoch_end!")
                 if is_using_ray_backend:
                     save_path = Path(save_path)
                     if trial_location != ray.util.get_node_ip_address():
@@ -543,6 +547,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 model_resume_path=checkpoint_dir,
                 parameters=config,
             )
+            print(f"train_stats: {train_stats}")
+            print(f"eval_stats: {eval_stats}")
             stats.append((train_stats, eval_stats))
 
         sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)

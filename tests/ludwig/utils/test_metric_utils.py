@@ -41,3 +41,11 @@ def test_masked_correct_predictions():
     assert torch.equal(
         result, torch.Tensor([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     )
+
+
+def test_flatten_dict_dict_trainer_metrics():
+    dict_dict_trainer_metrics = {"feature_name": {"metric_name": metric_utils.TrainerMetric(epoch=1, step=2, value=10)}}
+
+    result = metric_utils.flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
+
+    assert result == {"feature_name": {"metric_name": 10}}
