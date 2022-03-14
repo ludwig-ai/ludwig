@@ -265,9 +265,7 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                metric_score = self.get_metric_score(train_stats)[
-                    -1
-                ]  # -1 points to the `value` of the TrainerMetric tuple.
+                metric_score = self.get_metric_score(train_stats)
                 metric_scores.append(metric_score)
 
                 trial_results.append(
@@ -505,7 +503,6 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
-                print("Called on_epoch_end!")
                 if is_using_ray_backend:
                     save_path = Path(save_path)
                     if trial_location != ray.util.get_node_ip_address():
@@ -547,8 +544,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 model_resume_path=checkpoint_dir,
                 parameters=config,
             )
-            print(f"train_stats: {train_stats}")
-            print(f"eval_stats: {eval_stats}")
+            train_stats = metric_utils.flatten_dict_dict_dict_trainer_metrics(train_stats)
             stats.append((train_stats, eval_stats))
 
         sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)
@@ -743,27 +739,31 @@ class RayTuneExecutor(HyperoptExecutor):
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
 
-        analysis = tune.run(
-            f"trainable_func_f{hash_dict(config).decode('ascii')}",
-            config={
-                **self.search_space,
-                **tune_config,
-            },
-            scheduler=self.scheduler,
-            search_alg=search_alg,
-            num_samples=self.num_samples,
-            keep_checkpoints_num=1,
-            max_failures=1,  # retry a trial failure once
-            resources_per_trial=resources_per_trial,
-            time_budget_s=self.time_budget_s,
-            sync_config=self.sync_config,
-            local_dir=output_directory,
-            metric=metric,
-            mode=mode,
-            trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
-            trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
-            callbacks=tune_callbacks,
-        )
+        try:
+            analysis = tune.run(
+                f"trainable_func_f{hash_dict(config).decode('ascii')}",
+                config={
+                    **self.search_space,
+                    **tune_config,
+                },
+                scheduler=self.scheduler,
+                search_alg=search_alg,
+                num_samples=self.num_samples,
+                keep_checkpoints_num=1,
+                max_failures=1,  # retry a trial failure once
+                resources_per_trial=resources_per_trial,
+                time_budget_s=self.time_budget_s,
+                sync_config=self.sync_config,
+                local_dir=output_directory,
+                metric=metric,
+                mode=mode,
+                trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
+                trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
+                callbacks=tune_callbacks,
+            )
+        except Exception as e:
+            # Explicitly raise errors encountered during Ray trials.
+            raise ValueError(f"Encountered Ray Tune error: {e}")
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)

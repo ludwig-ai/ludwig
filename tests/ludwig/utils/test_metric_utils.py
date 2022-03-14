@@ -1,6 +1,9 @@
+from collections import OrderedDict
+
 import torch
 
 from ludwig.utils import metric_utils
+from ludwig.utils.metric_utils import TrainerMetric
 
 
 def test_dynamic_partition():
@@ -44,8 +47,149 @@ def test_masked_correct_predictions():
 
 
 def test_flatten_dict_dict_trainer_metrics():
-    dict_dict_trainer_metrics = {"feature_name": {"metric_name": metric_utils.TrainerMetric(epoch=1, step=2, value=10)}}
+    dict_dict_trainer_metrics = {
+        "feature_name": {"metric_name": [metric_utils.TrainerMetric(epoch=1, step=2, value=10)]}
+    }
 
     result = metric_utils.flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
 
-    assert result == {"feature_name": {"metric_name": 10}}
+    assert result == {"feature_name": {"metric_name": [10]}}
+
+
+def test_flatten_dict_dict_trainer_metrics_ordered_dict():
+    dict_dict_trainer_metrics = OrderedDict(
+        [
+            (
+                "category_5B6BF",
+                OrderedDict(
+                    [
+                        ("loss", [TrainerMetric(epoch=0, step=1, value=0.0)]),
+                        ("accuracy", [TrainerMetric(epoch=0, step=1, value=1.0)]),
+                    ]
+                ),
+            ),
+            ("combined", {"loss": [TrainerMetric(epoch=0, step=1, value=0.0)]}),
+        ]
+    )
+
+    result = metric_utils.flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
+
+    assert result == {"category_5B6BF": {"accuracy": [1.0], "loss": [0.0]}, "combined": {"loss": [0.0]}}
+
+
+def test_flatten_dict_dict_dict_trainer_metrics():
+    dict_dict_dict_trainer_metrics = {
+        "training": OrderedDict(
+            [
+                (
+                    "category_0332B",
+                    OrderedDict(
+                        [
+                            (
+                                "loss",
+                                [
+                                    TrainerMetric(epoch=0, step=1, value=0.7684777975082397),
+                                    TrainerMetric(epoch=1, step=2, value=0.7212297320365906),
+                                ],
+                            ),
+                            (
+                                "accuracy",
+                                [
+                                    TrainerMetric(epoch=0, step=1, value=0.5789473652839661),
+                                    TrainerMetric(epoch=1, step=2, value=0.5789473652839661),
+                                ],
+                            ),
+                        ]
+                    ),
+                ),
+                (
+                    "combined",
+                    {
+                        "loss": [
+                            TrainerMetric(epoch=0, step=1, value=0.7684777975082397),
+                            TrainerMetric(epoch=1, step=2, value=0.7212297320365906),
+                        ]
+                    },
+                ),
+            ]
+        ),
+        "validation": OrderedDict(
+            [
+                (
+                    "category_0332B",
+                    OrderedDict(
+                        [
+                            (
+                                "loss",
+                                [
+                                    TrainerMetric(epoch=0, step=1, value=0.7937145829200745),
+                                    TrainerMetric(epoch=1, step=2, value=0.8264390826225281),
+                                ],
+                            ),
+                            (
+                                "accuracy",
+                                [TrainerMetric(epoch=0, step=1, value=0.5), TrainerMetric(epoch=1, step=2, value=0.5)],
+                            ),
+                        ]
+                    ),
+                ),
+                (
+                    "combined",
+                    {
+                        "loss": [
+                            TrainerMetric(epoch=0, step=1, value=0.7937145829200745),
+                            TrainerMetric(epoch=1, step=2, value=0.8264390826225281),
+                        ]
+                    },
+                ),
+            ]
+        ),
+        "test": OrderedDict(
+            [
+                (
+                    "category_0332B",
+                    OrderedDict(
+                        [
+                            (
+                                "loss",
+                                [
+                                    TrainerMetric(epoch=0, step=1, value=0.7290916442871094),
+                                    TrainerMetric(epoch=1, step=2, value=0.3303828239440918),
+                                ],
+                            ),
+                            (
+                                "accuracy",
+                                [TrainerMetric(epoch=0, step=1, value=1.0), TrainerMetric(epoch=1, step=2, value=1.0)],
+                            ),
+                        ]
+                    ),
+                ),
+                (
+                    "combined",
+                    {
+                        "loss": [
+                            TrainerMetric(epoch=0, step=1, value=0.7290916442871094),
+                            TrainerMetric(epoch=1, step=2, value=0.3303828239440918),
+                        ]
+                    },
+                ),
+            ]
+        ),
+    }
+
+    result = metric_utils.flatten_dict_dict_dict_trainer_metrics(dict_dict_dict_trainer_metrics)
+
+    assert result == {
+        "test": {
+            "category_0332B": {"accuracy": [1.0, 1.0]},
+            "combined": {"loss": [0.7290916442871094, 0.3303828239440918]},
+        },
+        "training": {
+            "category_0332B": {"accuracy": [0.5789473652839661, 0.5789473652839661]},
+            "combined": {"loss": [0.7684777975082397, 0.7212297320365906]},
+        },
+        "validation": {
+            "category_0332B": {"accuracy": [0.5, 0.5]},
+            "combined": {"loss": [0.7937145829200745, 0.8264390826225281]},
+        },
+    }
