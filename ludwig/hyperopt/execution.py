@@ -544,7 +544,6 @@ class RayTuneExecutor(HyperoptExecutor):
                 model_resume_path=checkpoint_dir,
                 parameters=config,
             )
-            train_stats = metric_utils.flatten_dict_dict_dict_trainer_metrics(train_stats)
             stats.append((train_stats, eval_stats))
 
         sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)

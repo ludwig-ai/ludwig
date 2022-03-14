@@ -1486,6 +1486,7 @@ class ProgressTracker:
         last_learning_rate_reduction,
         last_increase_batch_size,
     ):
+        """JSON-serializable holder object that stores information related to training progress."""
         self.batch_size = batch_size
         self.epoch = epoch
         self.steps = steps

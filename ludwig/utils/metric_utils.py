@@ -73,7 +73,7 @@ TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
 def flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics):
     """feature_name -> metric_name -> TrainerMetric.
 
-    Used for flattening the results returned by trainer.py::train().
+    Used for flattening the results returned by trainer.py::train(), which come from ProgressTracker.
     """
     flattened_dict = defaultdict(lambda: defaultdict(list))
     for feature_name, trainer_metric_dict in dict_dict_trainer_metrics.items():
@@ -81,14 +81,3 @@ def flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics):
             for trainer_metric in trainer_metrics:
                 flattened_dict[feature_name][metric_name].append(trainer_metric[-1])
     return flattened_dict
-
-
-def flatten_dict_dict_dict_trainer_metrics(dict_dict_dict_trainer_metrics):
-    """Dataset -> feature_name -> metric_name -> TrainerMetric.
-
-    Used for flattening the results returned by api.py::experiment().
-    """
-    return {
-        dataset: flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
-        for dataset, dict_dict_trainer_metrics in dict_dict_dict_trainer_metrics.items()
-    }
