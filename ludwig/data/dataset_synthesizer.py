@@ -206,8 +206,9 @@ def generate_number(feature):
 
 
 def generate_binary(feature):
+    choices = feature.get("bool2str", [False, True])
     p = feature["prob"] if "prob" in feature else 0.5
-    return np.random.choice([True, False], p=[p, 1 - p])
+    return np.random.choice(choices, p=[1 - p, p])
 
 
 def generate_sequence(feature):

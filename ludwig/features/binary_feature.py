@@ -181,7 +181,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         proc_df: Dict[str, DataFrame],
         metadata: Dict[str, Any],
         preprocessing_parameters: Dict[str, Any],
-        backend,  # Union[Backend, str]
+        backend,
         skip_save_processed_input: bool,
     ) -> None:
         column = input_df[feature_config[COLUMN]]
@@ -189,10 +189,10 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         if column.dtype == object:
             metadata = metadata[feature_config[NAME]]
             if "str2bool" in metadata:
-                column = column.map(lambda x: metadata["str2bool"][str(x)])
+                column = backend.df_engine.map_objects(column, lambda x: metadata["str2bool"][str(x)])
             else:
                 # No predefined mapping from string to bool, so compute it directly
-                column = column.map(strings_utils.str2bool)
+                column = backend.df_engine.map_objects(column, strings_utils.str2bool)
 
         proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_)
         return proc_df
