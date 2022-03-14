@@ -63,7 +63,7 @@ setup(
     license="Apache 2.0",
     keywords="ludwig deep learning deep_learning machine machine_learning natural language processing computer vision",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     include_package_data=True,
     package_data={"ludwig": ["etc/*", "examples/*.py"]},
     install_requires=requirements,
