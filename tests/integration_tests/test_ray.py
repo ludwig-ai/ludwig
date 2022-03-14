@@ -191,6 +191,7 @@ def test_ray_tabular(df_engine):
         date_feature(),
     ]
     output_features = [
+        binary_feature(bool2str=["No", "Yes"]),
         binary_feature(),
         number_feature(normalization="zscore"),
     ]
