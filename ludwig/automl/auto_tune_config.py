@@ -15,9 +15,9 @@ from ludwig.automl.utils import get_model_type
 from ludwig.constants import (
     AUTOML_DEFAULT_TEXT_ENCODER,
     AUTOML_LARGE_TEXT_DATASET,
-    AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
     AUTOML_SMALLER_TEXT_ENCODER,
     AUTOML_SMALLER_TEXT_LENGTH,
+    AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
     BATCH_SIZE,
     HYPEROPT,
     PREPROCESSING,
@@ -99,8 +99,8 @@ def _get_text_feature_max_length(config, training_set_metadata) -> int:
     ):
         limit = config["preprocessing"][TEXT]["word_sequence_length_limit"]
     else:
-        limit = 256 # Preprocessing default word_sequence_length_limit = 256
-    if max_length > limit + 2: # For start and stop symbols.
+        limit = 256  # Preprocessing default word_sequence_length_limit = 256
+    if max_length > limit + 2:  # For start and stop symbols.
         max_length = limit + 2
     return max_length
 
@@ -201,7 +201,7 @@ def memory_tune_config(config, dataset, model_category, row_count):
         mem_use = compute_memory_usage(temp_config, training_set_metadata, model_category)
         if mem_use > max_memory and model_category == TEXT and not tried_reduce_seq_len:
             tried_reduce_seq_len = True
-            if (reduce_text_feature_max_length(config, training_set_metadata)):
+            if reduce_text_feature_max_length(config, training_set_metadata):
                 reduce_text_feature_max_length(temp_config, training_set_metadata)
                 mem_use = compute_memory_usage(temp_config, training_set_metadata, model_category)
         logging.info(f"Checking model estimated mem use {mem_use} against memory size {max_memory}")
