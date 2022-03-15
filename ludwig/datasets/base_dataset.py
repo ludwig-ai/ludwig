@@ -33,7 +33,7 @@ def read_config(dataset_name):
 class BaseDataset:
     """Base class that defines the public interface for the ludwig dataset API.
 
-    This includes the download, transform and converting the final transformed API into a resultant dataframe.
+    This includes the download, transform, and converting the final transformed API into a resultant dataframe.
     """
 
     def __init__(self, dataset_name, cache_dir):
@@ -44,25 +44,17 @@ class BaseDataset:
         self.version = self.config["version"]
 
     def download(self) -> None:
-        """Download the file from config url that represents the raw unprocessed training data.
-
-        The workflow for this involves unzipping the file and renaming it to raw.csv, which means keep trying to
-        download the file till successful.
-        """
+        """Download the file from config.download_urls and save the file(s) as raw_dataset_path."""
         self.download_raw_dataset()
 
     def process(self) -> None:
-        """Process the dataset to get it ready to be plugged into a dataframe.
-
-        Converts into a format to be used by the ludwig training API. To do this we create a new dictionary that
-        contains the KV pairs in the format that we need.
-        """
+        """Process the dataset into a dataframe and save it as processed_dataset_path."""
         if not self.is_downloaded():
             self.download()
         self.process_downloaded_dataset()
 
     def load(self, split=False) -> pd.DataFrame:
-        """Loads the processed data into a Pandas DataFrame.
+        """Loads the processed data from processed_dataset_path into a Pandas DataFrame in memory.
 
         :param split: Splits dataset along 'split' column if present.
         """
@@ -72,34 +64,45 @@ class BaseDataset:
 
     @property
     def raw_dataset_path(self):
+        """Save path for raw data downloaded from the web."""
         return os.path.join(self.download_dir, "raw")
 
     @property
     def raw_temp_path(self):
+        """Save path for temp data downloaded from the web."""
         return os.path.join(self.download_dir, "_raw")
 
     @property
     def processed_dataset_path(self):
+        """Save path for processed data."""
         return os.path.join(self.download_dir, "processed")
 
     @property
     def processed_temp_path(self):
+        """Save path for processed temp data."""
         return os.path.join(self.download_dir, "_processed")
 
     @property
     def download_dir(self):
+        """Directory where all dataset artifacts are saved."""
         return os.path.join(self.cache_dir, f"{self.name}_{self.version}")
 
     @abc.abstractmethod
     def download_raw_dataset(self):
+        """Download the file from config.download_urls and save the file(s) as self.raw_dataset_path."""
         raise NotImplementedError()
 
     @abc.abstractmethod
     def process_downloaded_dataset(self):
+        """Process the dataset into a dataframe and save it as processed_dataset_path."""
         raise NotImplementedError()
 
     @abc.abstractmethod
     def load_processed_dataset(self, split):
+        """Loads the processed data from processed_dataset_path into a Pandas DataFrame in memory.
+
+        :param split: Splits dataset along 'split' column if present.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
