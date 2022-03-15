@@ -1486,7 +1486,14 @@ class ProgressTracker:
         last_learning_rate_reduction,
         last_increase_batch_size,
     ):
-        """JSON-serializable holder object that stores information related to training progress."""
+        """JSON-serializable holder object that stores information related to training progress.
+
+        [train/vali/test]_metrics is a nested dictionary of TrainerMetrics: feature_name -> metric_name ->
+        List[TrainerMetrics], with one entry per training checkpoint.
+
+        Note that when a model resumes training from a checkpoint, the progress tracker is deserialized from JSON, which
+        automatically converts TrainerMetrics namedtuples into regular (epoch, steps, value) tuples.
+        """
         self.batch_size = batch_size
         self.epoch = epoch
         self.steps = steps
@@ -1535,7 +1542,8 @@ class ProgressTracker:
             metrics_dict = getattr(self, metrics_dict_name)
             for feature_name in metrics_dict:
                 for metric_name, metrics_tuple in metrics_dict[feature_name].items():
-                    # For logging, get the latest metrics.
+                    # For logging, get the latest metrics. The second "-1" indexes into the TrainerMetric namedtuple.
+                    # The last element of the TrainerMetric namedtuple is the actual metric value.
                     log_metrics[f"{metrics_dict_name}.{feature_name}.{metric_name}"] = metrics_tuple[-1][-1]
 
         return log_metrics

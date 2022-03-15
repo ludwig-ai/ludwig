@@ -70,7 +70,7 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
 TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
 
 
-def flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics):
+def reduce_dict_dict_trainer_metrics(dict_dict_trainer_metrics):
     """feature_name -> metric_name -> TrainerMetric.
 
     Used for flattening the results returned by trainer.py::train(), which come from ProgressTracker.

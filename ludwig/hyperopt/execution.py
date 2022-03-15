@@ -467,10 +467,13 @@ class RayTuneExecutor(HyperoptExecutor):
                         shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
+            # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
+            # List[TrainerMetric], with one entry per training checkpoint, according to save_every_n_steps.
+            # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
-                TRAINING: metric_utils.flatten_dict_dict_trainer_metrics(progress_tracker.train_metrics),
-                VALIDATION: metric_utils.flatten_dict_dict_trainer_metrics(progress_tracker.vali_metrics),
-                TEST: metric_utils.flatten_dict_dict_trainer_metrics(progress_tracker.test_metrics),
+                TRAINING: metric_utils.reduce_dict_dict_trainer_metrics(progress_tracker.train_metrics),
+                VALIDATION: metric_utils.reduce_dict_dict_trainer_metrics(progress_tracker.vali_metrics),
+                TEST: metric_utils.reduce_dict_dict_trainer_metrics(progress_tracker.test_metrics),
             }
 
             metric_score = tune_executor.get_metric_score(train_stats)
@@ -761,7 +764,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 callbacks=tune_callbacks,
             )
         except Exception as e:
-            # Explicitly raise errors encountered during Ray trials.
+            # Explicitly raise a ValueError if an error is encountered during a Ray trial. Otherwise, unit tests
+            # with failed trials silently hang forever.
             raise ValueError(f"Encountered Ray Tune error: {e}")
 
         if "metric_score" in analysis.results_df.columns:

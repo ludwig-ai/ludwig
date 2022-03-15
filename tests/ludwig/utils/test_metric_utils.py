@@ -46,17 +46,17 @@ def test_masked_correct_predictions():
     )
 
 
-def test_flatten_dict_dict_trainer_metrics():
+def test_reduce_dict_dict_trainer_metrics():
     dict_dict_trainer_metrics = {
         "feature_name": {"metric_name": [metric_utils.TrainerMetric(epoch=1, step=2, value=10)]}
     }
 
-    result = metric_utils.flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
+    result = metric_utils.reduce_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
 
     assert result == {"feature_name": {"metric_name": [10]}}
 
 
-def test_flatten_dict_dict_trainer_metrics_ordered_dict():
+def test_reduce_dict_dict_trainer_metrics_ordered_dict():
     dict_dict_trainer_metrics = OrderedDict(
         [
             (
@@ -72,6 +72,6 @@ def test_flatten_dict_dict_trainer_metrics_ordered_dict():
         ]
     )
 
-    result = metric_utils.flatten_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
+    result = metric_utils.reduce_dict_dict_trainer_metrics(dict_dict_trainer_metrics)
 
     assert result == {"category_5B6BF": {"accuracy": [1.0], "loss": [0.0]}, "combined": {"loss": [0.0]}}
