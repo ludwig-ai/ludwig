@@ -71,7 +71,7 @@ jobs:
 
       - name: Install dependencies
         env:
-          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
           HOROVOD_WITHOUT_TENSORFLOW: 1
           HOROVOD_WITHOUT_MXNET: 1
@@ -99,6 +99,7 @@ jobs:
         shell: bash
 
       - name: Reinstall Horovod if necessary
+        if: runner.os == 'linux'
         env:
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
