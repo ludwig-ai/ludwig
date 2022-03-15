@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8, 3.9]
         test-markers: ["not distributed", "distributed"]
         include:
@@ -92,6 +92,7 @@ jobs:
         shell: bash
 
       - name: Install Neuropod backend
+        if: runner.os == 'linux'
         run: |
           sudo mkdir -p "$NEUROPOD_BASE_DIR"
           curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
