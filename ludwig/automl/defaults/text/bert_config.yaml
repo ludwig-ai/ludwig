@@ -1,4 +1,5 @@
 trainer:
+  epochs: 5
   learning_rate_warmup_epochs: 0
   optimizer:
     type: adamw
@@ -11,4 +12,4 @@ hyperopt:
       categories: [0.00002, 0.00003]
     trainer.batch_size:
       space: choice
-      categories: [16, 32, 64]
+      categories: [16, 32, 64, 128]
