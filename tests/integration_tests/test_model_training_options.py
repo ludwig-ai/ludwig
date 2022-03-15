@@ -87,7 +87,7 @@ def generated_data_for_optimizer():
     return GeneratedData(train, validation, test)
 
 
-@pytest.mark.parametrize("early_stop", [109, 175])
+@pytest.mark.parametrize("early_stop", [105, 168])
 def test_early_stopping(early_stop, generated_data, tmp_path):
     input_features, output_features = get_feature_configs()
 
@@ -97,6 +97,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         "combiner": {"type": "concat"},
         TRAINER: {"epochs": 30, "early_stop": early_stop, "batch_size": 16},
     }
+    steps_per_epoch = 21  # (NUMBER_OBSERVATIONS * 0.7) / batch_size
 
     # create sub-directory to store results
     results_dir = tmp_path / "results"
@@ -133,12 +134,12 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
 
     # retrieve validation losses
     vald_losses_data = train_stats["validation"]["combined"]["loss"]
-    vald_losses = [metric[-1] for metric in vald_losses_data]
 
-    last_steps = vald_losses_data[-1][1]
-    best_steps = vald_losses_data[np.argmin(vald_losses)][1]
+    last_steps = (len(vald_losses_data) - 1) * steps_per_epoch
+    best_steps = np.argmin(vald_losses_data) * steps_per_epoch
+    steps_interval = last_steps - best_steps
 
-    assert (last_steps - best_steps - 1) == early_stop_value
+    assert steps_interval == early_stop_value
 
 
 @pytest.mark.parametrize("skip_save_progress", [False])
@@ -278,7 +279,7 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     last_entry = len(train_losses)
 
     # ensure train loss for last entry is less than first entry
-    assert train_losses[last_entry - 1].value < train_losses[0].value
+    assert train_losses[last_entry - 1] < train_losses[0]
 
 
 def test_regularization(generated_data, tmp_path):
@@ -334,8 +335,8 @@ def test_regularization(generated_data, tmp_path):
             train_stats = json.load(f)
 
         # retrieve training losses for all epochs
-        epoch_step_train_losses = train_stats[TRAINING]["combined"]["loss"]
-        regularization_losses.append(epoch_step_train_losses[0][-1])
+        train_losses = train_stats[TRAINING]["combined"]["loss"]
+        regularization_losses.append(train_losses[0])
 
     # create a set of losses
     regularization_losses_set = set(regularization_losses)
