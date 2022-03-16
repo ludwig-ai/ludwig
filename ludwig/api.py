@@ -539,9 +539,9 @@ class LudwigModel:
                     # Tune.
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = {
-                        TRAINING: metric_utils.reduce_dict_dict_trainer_metrics(train_trainset_stats),
-                        VALIDATION: metric_utils.reduce_dict_dict_trainer_metrics(train_valiset_stats),
-                        TEST: metric_utils.reduce_dict_dict_trainer_metrics(train_testset_stats),
+                        TRAINING: metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
+                        VALIDATION: metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
+                        TEST: metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
                     }
 
                     # save training statistics
@@ -1118,7 +1118,7 @@ class LudwigModel:
             logger.warning(f"The evaluation set {eval_set} was not provided. " f"Skipping evaluation")
             eval_stats = None
 
-        return (eval_stats, train_stats, preprocessed_data, output_directory)
+        return eval_stats, train_stats, preprocessed_data, output_directory
 
     def collect_weights(self, tensor_names: List[str] = None, **kwargs) -> list:
         """Load a pre-trained model and collect the tensors with a specific name.

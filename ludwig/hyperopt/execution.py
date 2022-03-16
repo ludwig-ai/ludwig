@@ -471,9 +471,9 @@ class RayTuneExecutor(HyperoptExecutor):
             # List[TrainerMetric], with one entry per training checkpoint, according to save_every_n_steps.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
-                TRAINING: metric_utils.reduce_dict_dict_trainer_metrics(progress_tracker.train_metrics),
-                VALIDATION: metric_utils.reduce_dict_dict_trainer_metrics(progress_tracker.vali_metrics),
-                TEST: metric_utils.reduce_dict_dict_trainer_metrics(progress_tracker.test_metrics),
+                TRAINING: metric_utils.reduce_trainer_metrics_dict(progress_tracker.train_metrics),
+                VALIDATION: metric_utils.reduce_trainer_metrics_dict(progress_tracker.vali_metrics),
+                TEST: metric_utils.reduce_trainer_metrics_dict(progress_tracker.test_metrics),
             }
 
             metric_score = tune_executor.get_metric_score(train_stats)

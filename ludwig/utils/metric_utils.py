@@ -1,5 +1,5 @@
 from collections import defaultdict, namedtuple
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import torch
 from torch import Tensor
@@ -70,8 +70,11 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
 TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
 
 
-def reduce_dict_dict_trainer_metrics(dict_dict_trainer_metrics):
-    """feature_name -> metric_name -> TrainerMetric.
+def reduce_trainer_metrics_dict(
+    dict_dict_trainer_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
+) -> Dict[str, Dict[str, List[float]]]:
+    """Reduces Dict[feature_name, Dict[metric_name, List[TrainerMetric]]] to Dict[feature_name, Dict[metric_name,
+    List[float]]].
 
     Used for flattening the results returned by trainer.py::train(), which come from ProgressTracker.
     """
