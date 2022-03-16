@@ -315,7 +315,10 @@ class Callback(ABC):
         pass
 
     def on_ludwig_end(self):
-        """Convenience method for any cleanup. Not yet implemented."""
+        """Convenience method for any cleanup.
+
+        Not yet implemented.
+        """
         pass
 
     def prepare_ray_tune(self, train_fn: Callable, tune_config: Dict[str, Any], tune_callbacks: List[Callable]):
