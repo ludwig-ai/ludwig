@@ -15,7 +15,7 @@
 # ==============================================================================
 
 from abc import ABC
-from typing import Any, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 
 
 class Callback(ABC):
@@ -313,12 +313,14 @@ class Callback(ABC):
         """Not implemented."""
         pass
 
-    def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks: List):
-        """Configures Ray Tune to properly use this callback in each trial.
+    def prepare_ray_tune(self, train_fn: Callable, tune_config: Dict[str, Any], tune_callbacks: List[Callable]):
+        """Configures Ray Tune callback and config.
 
-        :param train_fn:
-        :param tune_config:
-        :param tune_callbacks:
+        :param train_fn: The function which runs the experiment trial.
+        :param tune_config: The ray tune configuration dictionary.
+        :param tune_callbacks: List of callbacks (not used yet).
+
+        :returns: Tuple[Callable, Dict] The train_fn and tune_config, which will be passed to ray tune.
         """
         return train_fn, tune_config
 
