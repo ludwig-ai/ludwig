@@ -94,14 +94,18 @@ class BaseDataset:
 
     @abc.abstractmethod
     def process_downloaded_dataset(self):
-        """Process the dataset into a dataframe and save it as processed_dataset_path."""
+        """Process the dataset into a dataframe and save it at self.processed_dataset_path."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def load_processed_dataset(self, split):
+    def load_processed_dataset(self, split: bool):
         """Loads the processed data from processed_dataset_path into a Pandas DataFrame in memory.
 
-        :param split: Splits dataset along 'split' column if present.
+        Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
+        3-tuple of train, val, test if split=True.
+
+        :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
+        0: train, 1: validation, 2: test.
         """
         raise NotImplementedError()
 
