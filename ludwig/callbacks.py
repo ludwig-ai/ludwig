@@ -326,7 +326,7 @@ class Callback(ABC):
         """Will always be called when Ludwig CLI is invoked, preload gives the callback an opportunity to import or
         create any shared resources.
 
-        Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be
-        called before any other callback method, and will only be called once per process.
+        Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be called
+        before any other callback method, and will only be called once per process.
         """
         pass
