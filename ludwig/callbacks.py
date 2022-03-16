@@ -50,7 +50,7 @@ class Callback(ABC):
         pass
 
     def on_hyperopt_init(self, experiment_name: str):
-        """Called to initialize state before a hyperparameter optimization run begins.
+        """Called to initialize state before hyperparameter optimization begins.
 
         :param experiment_name: The name of the current experiment.
         """
@@ -64,7 +64,7 @@ class Callback(ABC):
         pass
 
     def on_hyperopt_preprocessing_end(self, experiment_name: str):
-        """Called after data preprocessing for hyperparameter optimization in completed.
+        """Called after data preprocessing for hyperparameter optimization is completed.
 
         :param experiment_name: The name of the current experiment.
         """
@@ -326,7 +326,7 @@ class Callback(ABC):
         """Will always be called when Ludwig CLI is invoked, preload gives the callback an opportunity to import or
         create any shared resources.
 
-        Importing required 3rd-party libraries should be done here, i.e. import wandb. preload is guaranteed to be
+        Importing required 3rd-party libraries should be done here i.e. import wandb. preload is guaranteed to be
         called before any other callback method, and will only be called once per process.
         """
         pass
