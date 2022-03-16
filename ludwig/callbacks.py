@@ -323,7 +323,7 @@ class Callback(ABC):
 
     @staticmethod
     def preload():
-        """Will always be called when Ludwig CLI is invoked, and gives the callback an opportunity to import or
+        """Will always be called when Ludwig CLI is invoked, preload gives the callback an opportunity to import or
         create any shared resources.
 
         Importing required 3rd-party libraries should be done here, i.e. import wandb. preload is guaranteed to be
