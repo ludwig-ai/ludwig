@@ -1156,8 +1156,16 @@ class Trainer(BaseTrainer):
                     f"{progress_tracker.last_increase_batch_size_eval_metric_improvement} epoch(s) ago."
                 )
 
+        # If any early stopping condition is satisfied, then trigger early stopping behavior
+        early_stop_bool = 0 < early_stop <= progress_tracker.last_improvement
+        if not early_stop_bool:
+            for callback in self.callbacks:
+                if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
+                    early_stop_bool = True
+                    break
+
         # ========== Early Stop logic ==========
-        should_early_stop = torch.as_tensor([0 < early_stop <= progress_tracker.last_improvement], dtype=torch.int)
+        should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
         if self.horovod:
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
