@@ -257,6 +257,10 @@ class Callback(ABC):
         """
         pass
 
+    def should_early_stop(self, trainer, progress_tracker, is_coordinator):
+        # Triggers early stopping if any callback on any worker returns True
+        return False
+
     def on_build_metadata_start(self, df, mode: str):
         """Called before building metadata for dataset.
 
