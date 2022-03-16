@@ -34,9 +34,7 @@ class Callback(ABC):
         """
         pass
 
-    def on_preprocess_end(
-        self, training_set, validation_set, test_set, training_set_metadata: Dict[str, Any]
-    ):
+    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: Dict[str, Any]):
         """Called after preprocessing ends.
 
         :param training_set: The training set.
@@ -87,7 +85,10 @@ class Callback(ABC):
         pass
 
     def on_hyperopt_finish(self, experiment_name: str):
-        """Deprecated. Use on_hyperopt_end instead."""
+        """Deprecated.
+
+        Use on_hyperopt_end instead.
+        """
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
         pass
 
@@ -326,7 +327,10 @@ class Callback(ABC):
 
     @staticmethod
     def preload():
-        """Will always be called when Ludwig CLI is invoked, and gives the callback an opportunity to import or create
-        any shared resources. Importing required 3rd-party libraries should be done here, i.e. import wandb. preload is
-        guaranteed to be called before any other callback method, and will only be called once per process."""
+        """Will always be called when Ludwig CLI is invoked, and gives the callback an opportunity to import or
+        create any shared resources.
+
+        Importing required 3rd-party libraries should be done here, i.e. import wandb. preload is guaranteed to be
+        called before any other callback method, and will only be called once per process.
+        """
         pass
