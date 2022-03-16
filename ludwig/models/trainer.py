@@ -215,6 +215,7 @@ class Trainer(BaseTrainer):
 
     def __init__(
         self,
+        config: TrainerConfig,
         model: ECD,
         resume: float = False,
         skip_save_model: bool = False,
@@ -224,7 +225,6 @@ class Trainer(BaseTrainer):
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
-        config: Optional[TrainerConfig] = TrainerConfig(),
         **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
@@ -259,8 +259,6 @@ class Trainer(BaseTrainer):
         :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
                `ludwig.models.trainer.TrainerConfig()`).
         """
-        if config is None:
-            config = TrainerConfig()
 
         self.epochs = config.epochs
         self.regularization_lambda = config.regularization_lambda
