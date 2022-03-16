@@ -341,7 +341,7 @@ def generate_datetime(feature):
     elif "preprocessing" in feature and "datetime_format" in feature["preprocessing"]:
         datetime_generation_format = DATETIME_FORMATS[feature["preprocessing"]["datetime_format"]]
     else:
-        datetime_generation_format = next(iter(DATETIME_FORMATS))
+        datetime_generation_format = DATETIME_FORMATS[next(iter(DATETIME_FORMATS))]
 
     y = random.randint(1, 99)
     Y = random.randint(1, 9999)
