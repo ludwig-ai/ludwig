@@ -838,7 +838,7 @@ class Trainer(BaseTrainer):
 
             # Check save_every_n_steps and adjust if needed.
             if self.save_every_n_steps == 0 or self.save_every_n_steps > batcher.steps_per_epoch:
-                logging.info(
+                logger.info(
                     f"Note: save_every_n_steps (was {self.save_every_n_steps}) is now set to the number of steps per "
                     f"epoch: {batcher.steps_per_epoch}.\n"
                 )
@@ -894,6 +894,7 @@ class Trainer(BaseTrainer):
 
                 # ================ Post Training Epoch ================
                 progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
@@ -904,8 +905,6 @@ class Trainer(BaseTrainer):
                     if self.is_coordinator():
                         checkpoint_manager.save(progress_tracker.steps)
                         progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                 # Early stop if needed.
                 if should_break:
@@ -954,6 +953,7 @@ class Trainer(BaseTrainer):
         checkpoint_manager,
     ) -> bool:
         """Completes one epoch through the data."""
+        print("Called _train_loop.")
         while not batcher.last_batch():
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -1053,9 +1053,12 @@ class Trainer(BaseTrainer):
                     save_path,
                 )
                 if should_break:
+                    print("Breaking early.")
                     return should_break
 
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
+        print(f"Finished _train_loop with steps: {progress_tracker.steps}.")
 
         return False
 
@@ -1241,14 +1244,17 @@ class Trainer(BaseTrainer):
 
         # If any early stopping condition is satisfied, then trigger early stopping behavior
         early_stop_bool = 0 < early_stop <= progress_tracker.last_improvement
+        print(f"early_stop_bool: {early_stop_bool}")
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
+                    print("callback for should_early_stop was true")
                     early_stop_bool = True
                     break
 
         # ========== Early Stop logic ==========
         should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
+        print(f"should_early_stop: {should_early_stop}")
         if self.horovod:
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
