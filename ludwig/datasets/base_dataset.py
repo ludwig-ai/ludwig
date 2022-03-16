@@ -44,11 +44,11 @@ class BaseDataset:
         self.version = self.config["version"]
 
     def download(self) -> None:
-        """Download the file from config.download_urls and save the file(s) as raw_dataset_path."""
+        """Download the file from config.download_urls and save the file(s) at self.raw_dataset_path."""
         self.download_raw_dataset()
 
     def process(self) -> None:
-        """Process the dataset into a dataframe and save it as processed_dataset_path."""
+        """Process the dataset into a dataframe and save it at self.processed_dataset_path."""
         if not self.is_downloaded():
             self.download()
         self.process_downloaded_dataset()
@@ -56,7 +56,11 @@ class BaseDataset:
     def load(self, split=False) -> pd.DataFrame:
         """Loads the processed data from processed_dataset_path into a Pandas DataFrame in memory.
 
-        :param split: Splits dataset along 'split' column if present.
+        Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
+        3-tuple of train, val, test if split=True.
+
+        :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
+        0: train, 1: validation, 2: test.
         """
         if not self.is_processed():
             self.process()
@@ -89,7 +93,7 @@ class BaseDataset:
 
     @abc.abstractmethod
     def download_raw_dataset(self):
-        """Download the file from config.download_urls and save the file(s) as self.raw_dataset_path."""
+        """Download the file from config.download_urls and save the file(s) at self.raw_dataset_path."""
         raise NotImplementedError()
 
     @abc.abstractmethod
