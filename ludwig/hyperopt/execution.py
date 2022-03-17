@@ -468,7 +468,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def report(progress_tracker):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
-            # List[TrainerMetric], with one entry per training checkpoint, according to save_every_n_steps.
+            # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_save.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
                 TRAINING: metric_utils.reduce_trainer_metrics_dict(progress_tracker.train_metrics),
@@ -766,7 +766,7 @@ class RayTuneExecutor(HyperoptExecutor):
         except Exception as e:
             # Explicitly raise a ValueError if an error is encountered during a Ray trial. Otherwise, unit tests
             # with failed trials silently hang forever.
-            raise ValueError(f"Encountered Ray Tune error: {e}")
+            raise RuntimeError("Encountered Ray Tune error") from e
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)

@@ -169,7 +169,7 @@ class Predictor(BasePredictor):
                         total=batcher.steps_per_epoch,
                         file=sys.stdout,
                         disable=is_progressbar_disabled(),
-                        position=0,
+                        position=0,  # Necessary to disable extra new line artifacts in training logs.
                     )
 
                 predictions = defaultdict(list)

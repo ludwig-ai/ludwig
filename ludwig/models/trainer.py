@@ -100,7 +100,7 @@ class Trainer(BaseTrainer):
         model: ECD,
         optimizer=None,
         epochs=100,
-        save_every_n_steps=0,
+        steps_per_save=0,
         regularization_lambda=0.0,
         regularization_type=None,
         learning_rate=0.001,
@@ -258,7 +258,7 @@ class Trainer(BaseTrainer):
         self._validation_field = validation_field
         self._validation_metric = validation_metric
         self.early_stop = early_stop
-        self.save_every_n_steps = save_every_n_steps
+        self.steps_per_save = steps_per_save
         self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
         self.reduce_learning_rate_on_plateau_rate = reduce_learning_rate_on_plateau_rate
@@ -305,7 +305,7 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss and a dictionary of metrics.
         """
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
 
         # Obtain model predictions and loss
         model_outputs = self.model((inputs, targets))
@@ -836,13 +836,14 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Check save_every_n_steps and adjust if needed.
-            if self.save_every_n_steps == 0 or self.save_every_n_steps > batcher.steps_per_epoch:
-                logger.info(
-                    f"Note: save_every_n_steps (was {self.save_every_n_steps}) is now set to the number of steps per "
-                    f"epoch: {batcher.steps_per_epoch}.\n"
-                )
-                self.save_every_n_steps = batcher.steps_per_epoch
+            # Check steps_per_save and adjust if needed.
+            if self.steps_per_save == 0 or self.steps_per_save > batcher.steps_per_epoch:
+                self.steps_per_save = batcher.steps_per_epoch
+                if self.is_coordinator():
+                    logger.info(
+                        f"Note: steps_per_save (was {self.steps_per_save}) is now set to the number of "
+                        f"steps per epoch: {batcher.steps_per_epoch}.\n"
+                    )
 
             logger.info(
                 f"Training for {total_steps} step(s), approximately "
@@ -953,7 +954,6 @@ class Trainer(BaseTrainer):
         checkpoint_manager,
     ) -> bool:
         """Completes one epoch through the data."""
-        print("Called _train_loop.")
         while not batcher.last_batch():
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -1027,7 +1027,7 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
-            if progress_tracker.steps % self.save_every_n_steps == 0:
+            if progress_tracker.steps % self.steps_per_save == 0:
                 # Checkpoint the model.
                 if self.is_coordinator():
                     checkpoint_manager.save(progress_tracker.steps)
@@ -1053,12 +1053,9 @@ class Trainer(BaseTrainer):
                     save_path,
                 )
                 if should_break:
-                    print("Breaking early.")
                     return should_break
 
             self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
-
-        print(f"Finished _train_loop with steps: {progress_tracker.steps}.")
 
         return False
 
@@ -1242,19 +1239,17 @@ class Trainer(BaseTrainer):
                     f"{progress_tracker.last_increase_batch_size_eval_metric_improvement} epoch(s) ago."
                 )
 
-        # If any early stopping condition is satisfied, then trigger early stopping behavior
+        # ========== Early Stop logic ==========
+        # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
+        # any worker, then trigger early stopping.
         early_stop_bool = 0 < early_stop <= progress_tracker.last_improvement
-        print(f"early_stop_bool: {early_stop_bool}")
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
-                    print("callback for should_early_stop was true")
                     early_stop_bool = True
                     break
 
-        # ========== Early Stop logic ==========
         should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
-        print(f"should_early_stop: {should_early_stop}")
         if self.horovod:
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
