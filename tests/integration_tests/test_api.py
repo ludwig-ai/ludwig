@@ -423,6 +423,7 @@ def test_api_skip_parameters_evaluate(
 
 def test_api_callbacks(csv_filename):
     mock_callback = mock.Mock()
+    mock_callback.should_early_stop.return_value = False
 
     epochs = 2
     batch_size = 8
@@ -451,6 +452,7 @@ def test_api_callbacks(csv_filename):
     assert mock_callback.on_epoch_start.call_count == epochs
     assert mock_callback.on_epoch_end.call_count == epochs
 
+    assert mock_callback.should_early_stop.call_count == epochs
     assert mock_callback.on_validation_start.call_count == epochs
     assert mock_callback.on_validation_end.call_count == epochs
 
