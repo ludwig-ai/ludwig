@@ -100,7 +100,7 @@ class Trainer(BaseTrainer):
         model: ECD,
         optimizer=None,
         epochs=100,
-        steps_per_save=0,
+        steps_per_checkpoint=0,
         regularization_lambda=0.0,
         regularization_type=None,
         learning_rate=0.001,
@@ -258,7 +258,7 @@ class Trainer(BaseTrainer):
         self._validation_field = validation_field
         self._validation_metric = validation_metric
         self.early_stop = early_stop
-        self.steps_per_save = steps_per_save
+        self.steps_per_checkpoint = steps_per_checkpoint
         self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
         self.reduce_learning_rate_on_plateau_rate = reduce_learning_rate_on_plateau_rate
@@ -836,12 +836,12 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Check steps_per_save and adjust if needed.
-            if self.steps_per_save == 0 or self.steps_per_save > batcher.steps_per_epoch:
-                self.steps_per_save = batcher.steps_per_epoch
+            # Check steps_per_checkpoint and adjust if needed.
+            if self.steps_per_checkpoint == 0 or self.steps_per_checkpoint > batcher.steps_per_epoch:
+                self.steps_per_checkpoint = batcher.steps_per_epoch
                 if self.is_coordinator():
                     logger.info(
-                        f"Note: steps_per_save (was {self.steps_per_save}) is now set to the number of "
+                        f"Note: steps_per_checkpoint (was {self.steps_per_checkpoint}) is now set to the number of "
                         f"steps per epoch: {batcher.steps_per_epoch}.\n"
                     )
 
@@ -1027,16 +1027,11 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
-            if progress_tracker.steps % self.steps_per_save == 0:
+            if progress_tracker.steps % self.steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator():
                     checkpoint_manager.save(progress_tracker.steps)
                     progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                # Save the model.
-                # TODO(Justin): Write to a separate to_evaluate/ directory, with the step number in path.
-                if self.is_coordinator() and not self.skip_save_model:
-                    torch.save(self.model.state_dict(), model_weights_path)
 
                 should_break = self.run_evaluation(
                     training_set,

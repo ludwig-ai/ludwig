@@ -468,7 +468,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def report(progress_tracker):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
-            # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_save.
+            # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
                 TRAINING: metric_utils.reduce_trainer_metrics_dict(progress_tracker.train_metrics),

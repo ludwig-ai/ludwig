@@ -77,7 +77,7 @@ default_training_params = {
     "batch_size": 128,
     "eval_batch_size": None,
     "early_stop": 1000,
-    "steps_per_save": 0,
+    "steps_per_checkpoint": 0,
     "reduce_learning_rate_on_plateau": 0,
     "reduce_learning_rate_on_plateau_patience": 5,
     "reduce_learning_rate_on_plateau_rate": 0.5,
