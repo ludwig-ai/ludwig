@@ -125,7 +125,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         column = column.astype(str)
-        idx2str, str2idx, str2freq, _, _, _, _ = create_vocabulary(
+        idx2str, str2idx, str2freq, _, _, _, _, _ = create_vocabulary(
             column,
             "stripped",
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -415,7 +415,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             output_feature[LOSS],
             {
                 TYPE: "softmax_cross_entropy",
-                "labels_smoothing": 0,
                 "class_weights": 1,
                 "robust_lambda": 0,
                 "confidence_penalty": 0,

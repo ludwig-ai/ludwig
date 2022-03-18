@@ -237,6 +237,9 @@ class RayDatasetBatcher(Batcher):
                 # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
                 if features[c][TYPE] not in _SCALAR_TYPES:
                     df[c] = df[c].astype(TensorDtype())
+                elif features[c][TYPE] == BINARY:
+                    # TODO(travis): figure out why Ray is converting these into object types by default
+                    df[c] = df[c].astype(np.bool_)
             return df
 
         return to_tensors

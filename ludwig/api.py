@@ -80,7 +80,7 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
+from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
@@ -493,13 +493,6 @@ class LudwigModel:
                 callbacks=train_callbacks,
                 random_seed=random_seed,
             ) as trainer:
-                for callback in self.callbacks:
-                    callback.on_train_start(
-                        model=self.model,
-                        config=self.config,
-                        config_fp=self.config_fp,
-                    )
-
                 # auto tune batch size
                 if self.config[TRAINER][BATCH_SIZE] == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
@@ -526,6 +519,13 @@ class LudwigModel:
                     print_boxed("TRAINING")
                     if not skip_save_model:
                         self.save_config(model_dir)
+
+                for callback in self.callbacks:
+                    callback.on_train_start(
+                        model=self.model,
+                        config=self.config,
+                        config_fp=self.config_fp,
+                    )
 
                 try:
                     train_stats = trainer.train(
@@ -583,9 +583,15 @@ class LudwigModel:
 
                 self.training_set_metadata = training_set_metadata
 
-                if not skip_save_model:
-                    # Load the best weights from saved checkpoint
-                    self.load_weights(model_dir)
+                # Ensure model weights are saved to the driver if training was done remotely
+                if self.backend.is_coordinator() and not skip_save_model:
+                    weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
+                    if not path_exists(weights_save_path):
+                        with open_file(weights_save_path, "wb") as f:
+                            torch.save(self.model.state_dict(), f)
+
+                # Synchronize model weights between workers
+                self.backend.sync_model(self.model)
 
                 print_boxed("FINISHED")
                 return train_stats, preprocessed_data, output_url

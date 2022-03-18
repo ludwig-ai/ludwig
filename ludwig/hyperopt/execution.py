@@ -487,7 +487,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
-            def on_trainer_train_setup(self, trainer, save_path):
+            def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
                     save_path = Path(save_path)
 

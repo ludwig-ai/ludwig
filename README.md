@@ -134,7 +134,7 @@ By choosing different datatype for inputs and outputs, users can solve many diff
 - timeseries input + number output = forecasting model
 - category, number and binary inputs + binary output = fraud detection
 
-take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several more tasks.
+take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples/) to see how you can use Ludwig for several more tasks.
 
 The config can contain additional information, in particular how to preprocess each column in the data, which encoder and decoder to use for each one, architectural  and training parameters, hyperparameters to optimize.
 This allows ease of use for novices and flexibility for experts.
@@ -179,10 +179,9 @@ If you prefer to use an RNN encoder and increase the number of epochs to train f
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/user_guide_intro/) to find out all the
-options available to you in the config and take a look at
-the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different
-tasks.
+Refer to [Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/) to find out all the
+options available to you in the config and take a look at [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples/)
+to see how you can use Ludwig for several example tasks.
 
 After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and
 summary statistics of the training process. You can visualize them using one of the several visualization options
@@ -197,13 +196,13 @@ This command will display a graph like the following, where you can see loss and
 ![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
 Several more visualizations are available, please refer
-to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/visualizations/) for more details.
+to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/visualizations/) for more details.
 
 ## Distributed Training
 
 You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows
 training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs. Refer to
-the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/distributed_execution_backends/) for full details.
+the [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training/) for full details.
 
 ## Prediction and Evaluation
 
@@ -253,8 +252,8 @@ predictions = model.predict(test_data)
 ```
 
 `config` containing the same information of the YAML file provided to the command line interface. More details are
-provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/user_guide_intro/) and in
-the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
+provided in the [configuration documentation](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/) and in
+the [API documentation](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel/).
 
 ## Extensibility
 
@@ -267,12 +266,12 @@ Furthermore, new models, with their own specific hyperparameters, can be easily
 added by implementing a class that accepts tensors (of a specific rank,
 depending on the datatype) as inputs and provides tensors as output. This
 encourages reuse and sharing new models with the community. Refer to
-the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/developer_guide_intro/)
+the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide/)
 for further details.
 
 ## Full documentation
 
-You can find the full documentation [here](https://ludwig-ai.github.io/ludwig-docs).
+You can find the full documentation [here](https://ludwig-ai.github.io/ludwig-docs/).
 
 ## License
 

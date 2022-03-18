@@ -52,7 +52,7 @@ with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
 
 setup(
     name="ludwig",
-    version="0.5rc1",
+    version="0.5rc2",
     description="Data-centric declarative deep learning framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -63,7 +63,7 @@ setup(
     license="Apache 2.0",
     keywords="ludwig deep learning deep_learning machine machine_learning natural language processing computer vision",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     include_package_data=True,
     package_data={"ludwig": ["etc/*", "examples/*.py"]},
     install_requires=requirements,

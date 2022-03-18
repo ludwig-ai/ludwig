@@ -17,6 +17,7 @@ RUN apt-get -y update && apt-get -y install \
     build-essential \
     g++ \
     cmake
+RUN pip install -U pip
 
 WORKDIR /ludwig
 

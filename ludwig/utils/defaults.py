@@ -242,24 +242,23 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         )
     trainer["early_stop"] = -1
 
-    # At most one of max_t and epochs may be specified by the user, and we set them to be equal to
-    # ensure that Ludwig does not stop training before the scheduler has finished the trial, unless
-    # max_t is in time_total_s, in which case we set epochs very high to continue train until stopped.
     max_t = scheduler.get("max_t")
     time_attr = scheduler.get("time_attr")
     epochs = trainer.get("epochs")
-    if max_t is not None and epochs is not None and max_t != epochs and time_attr != "time_total_s":
-        raise ValueError(
-            "Cannot set trainer parameter `epochs` when using a hyperopt scheduler with `max_t`. "
-            "Unset one of these parameters in your config."
-        )
-    elif max_t is not None:
+    if max_t is not None:
         if time_attr == "time_total_s":
-            trainer["epochs"] = sys.maxsize  # essentially continue training until stopped
+            if epochs is None:
+                trainer["epochs"] = sys.maxsize  # continue training until time limit hit
+            # else continue training until either time or trainer epochs limit hit
+        elif epochs is not None and epochs != max_t:
+            raise ValueError(
+                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                "Unset one of these parameters in your config or make sure their values match."
+            )
         else:
-            trainer["epochs"] = max_t
+            trainer["epochs"] = max_t  # run trainer until scheduler epochs limit hit
     elif epochs is not None:
-        scheduler["max_t"] = epochs
+        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
 def merge_with_defaults(config):
