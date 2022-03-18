@@ -20,7 +20,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
-from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_type
+from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_type, set_output_feature_metric
 from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
@@ -264,6 +264,10 @@ def _model_select(
             if config_section in user_config.keys():
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
+
+    # if single output feature, set relevant metric and goal if not already set
+    if len(base_config["output_features"]) == 1:
+        base_config = set_output_feature_metric(base_config)
 
     # add as initial trial in the automl search the hyperparameter settings from
     # the best model for a similar dataset and matching model type, if any.

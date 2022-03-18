@@ -7,8 +7,11 @@ from typing import Dict, List
 from dataclasses_json import dataclass_json, LetterCase
 from pandas import Series
 
-from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
+from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NAME, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
+from ludwig.features.feature_registries import output_type_registry
+from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
+
 
 try:
     import ray
@@ -150,3 +153,18 @@ def _add_option_to_evaluate(
             if option_val not in hyperopt_params[option_param]["categories"]:
                 bisect.insort(hyperopt_params[option_param]["categories"], option_val)
     return point_to_evaluate
+
+# Set trainer and hyperopt metric and goal for first output feature if not already set
+def set_output_feature_metric(base_config):
+    output_name = base_config["output_features"][0][NAME]
+    output_type = base_config["output_features"][0][TYPE]
+    output_metric = output_type_registry[output_type].default_validation_metric
+    output_goal = metric_registry[output_metric].get_objective()
+    if "validation_field" not in base_config[TRAINER] and "validation_metric" not in base_config[TRAINER]:
+        base_config[TRAINER]["validation_field"] = output_name
+        base_config[TRAINER]["validation_metric"] = output_metric
+    if "output_feature" not in base_config[HYPEROPT] and "metric" not in base_config[HYPEROPT] and "goal" not in base_config[HYPEROPT]:
+        base_config[HYPEROPT]["output_feature"] = output_name
+        base_config[HYPEROPT]["metric"] = output_metric
+        base_config[HYPEROPT]["goal"] = output_goal
+    return base_config
