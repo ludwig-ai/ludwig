@@ -12,7 +12,6 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
 
-
 try:
     import ray
 except ImportError:
@@ -154,6 +153,7 @@ def _add_option_to_evaluate(
                 bisect.insort(hyperopt_params[option_param]["categories"], option_val)
     return point_to_evaluate
 
+
 # Set trainer and hyperopt metric and goal for first output feature if not already set
 def set_output_feature_metric(base_config):
     output_name = base_config["output_features"][0][NAME]
@@ -163,7 +163,11 @@ def set_output_feature_metric(base_config):
     if "validation_field" not in base_config[TRAINER] and "validation_metric" not in base_config[TRAINER]:
         base_config[TRAINER]["validation_field"] = output_name
         base_config[TRAINER]["validation_metric"] = output_metric
-    if "output_feature" not in base_config[HYPEROPT] and "metric" not in base_config[HYPEROPT] and "goal" not in base_config[HYPEROPT]:
+    if (
+        "output_feature" not in base_config[HYPEROPT]
+        and "metric" not in base_config[HYPEROPT]
+        and "goal" not in base_config[HYPEROPT]
+    ):
         base_config[HYPEROPT]["output_feature"] = output_name
         base_config[HYPEROPT]["metric"] = output_metric
         base_config[HYPEROPT]["goal"] = output_goal
