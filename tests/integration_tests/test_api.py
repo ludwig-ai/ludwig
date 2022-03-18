@@ -21,6 +21,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -422,7 +423,7 @@ def test_api_skip_parameters_evaluate(
 
 
 def test_api_callbacks(csv_filename):
-    mock_callback = mock.Mock()
+    mock_callback = mock.Mock(wraps=Callback())
 
     epochs = 2
     batch_size = 8
