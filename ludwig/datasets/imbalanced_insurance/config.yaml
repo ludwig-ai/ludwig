@@ -1,4 +1,7 @@
 version: 1.0
+competition: arashnic/imbalanced-data-practice
+archive_filename: imbalanced-data-practice.zip
+csv_filename: imbalanced_insurance.csv
 split_filenames:
   train_file: aug_train.csv
   test_file: aug_test.csv

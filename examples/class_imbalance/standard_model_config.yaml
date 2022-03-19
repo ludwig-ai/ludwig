@@ -1,35 +1,31 @@
 input_features:
   - name: Gender
     type: category
-    column: Gender
   - name: Age
     type: number
-    column: Age
   - name: Driving_License
     type: binary
-    column: Driving_License
   - name: Region_Code
     type: number
-    column: Region_Code
   - name: Previously_Insured
     type: binary
-    column: Previously_Insured
   - name: Vehicle_Age
     type: category
-    column: Vehicle_Age
   - name: Vehicle_Damage
     type: category
-    column: Vehicle_Damage
   - name: Annual_Premium
     type: number
-    column: Annual_Premium
   - name: Policy_Sales_Channel
     type: number
-    column: Policy_Sales_Channel
   - name: Vintage
     type: number
-    column: Vintage
 output_features:
   - name: Response
     type: binary
-    column: Response
+trainer:
+  learning_rate: 0.0001
+  decay: True
+  decay_rate: 0.9
+  decay_steps: 30000
+  staircase: True
+  epochs: 50

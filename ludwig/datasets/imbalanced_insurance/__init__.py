@@ -16,22 +16,24 @@
 import os
 
 import pandas as pd
+import numpy as np
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs, rename
+from ludwig.constants import SPLIT
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True, kaggle_username=None, kaggle_key=None):
     dataset = ImbalancedInsurance(cache_dir=cache_dir, kaggle_username=kaggle_username, kaggle_key=kaggle_key)
     return dataset.load(split=split)
 
 
 @register_dataset(name="Imbalanced_Insurance")
 class ImbalancedInsurance(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
-    """The Credit Card Fraud dataset.
+    """The Cross-sell Prediction dataset.
 
     This pulls in an array of mixins for different types of functionality which belongs in the workflow for ingesting
     and transforming training data into a destination dataframe that can be loaded by Ludwig's training API.
@@ -41,20 +43,14 @@ class ImbalancedInsurance(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
         self.kaggle_username = kaggle_username
         self.kaggle_key = kaggle_key
         self.is_kaggle_competition = False
-        super().__init__(dataset_name="imbalanced-data-practice", cache_dir=cache_dir)
+        super().__init__(dataset_name="imbalanced_insurance", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         """The final method where we create a concatenated CSV file with both training ant dest data."""
         train_file = self.config["split_filenames"]["train_file"]
-        test_file = self.config["split_filenames"]["test_file"]
 
-        train_df = pd.read_csv(os.path.join(self.raw_dataset_path, train_file))
-        test_df = pd.read_csv(os.path.join(self.raw_dataset_path, test_file))
-
-        train_df["split"] = 0
-        test_df["split"] = 2
-
-        df = pd.concat([train_df, test_df])
+        df = pd.read_csv(os.path.join(self.raw_dataset_path, train_file))
+        df[SPLIT] = df.index.to_series().map(lambda x: np.random.choice(3, 1, p=(0.7, 0.1, 0.2))).astype(np.int8)
 
         makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename), index=False)

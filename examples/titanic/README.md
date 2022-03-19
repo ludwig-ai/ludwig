@@ -11,7 +11,7 @@ The Titanic dataset is hosted by Kaggle, and as such Ludwig will need to authent
 ### Examples
 
 | File                         | Description                                                                    |
-| ---------------------------- | ------------------------------------------------------------------------------ |
+|------------------------------|--------------------------------------------------------------------------------|
 | simple_model_training.py     | Demonstrates using Ludwig api for training a model.                            |
 | multiple_model_training.py   | Trains two models and generates a visualization for results of training.       |
 | model_training_results.ipynb | Example for extracting training statistics and generate custom visualizations. |
@@ -28,8 +28,8 @@ two models.  Results will in the following directories:
 
 ```
 ./results/
-    multiple_model_model1/
-    multiple_model_model2/
+    multiple_model_experiment_model1/
+    multiple_model_experiment_model2/
 ./visualizations/
     learning_curves_Survived_accuracy.png
     learning_curves_Survived_loss.png
