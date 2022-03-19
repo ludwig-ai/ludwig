@@ -8,7 +8,7 @@ from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
-from ludwig.utils.torch_utils import initializer_registry
+from ludwig.utils.torch_utils import activations, initializer_registry
 
 
 def load_config(cls, **kwargs):
@@ -198,9 +198,14 @@ def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
     return generate_extra_json_schema_props(mclass)
 
 
-def InitializerOptions(default: Union[None, str] = None):
+def InitializerOptions(default: str = "xavier_uniform"):
     """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
-    return StringOptions(list(initializer_registry.keys()), default=default, nullable=True)
+    return StringOptions(list(initializer_registry.keys()), default=default, nullable=False)
+
+
+def ActivationOptions(default: str = "relu"):
+    """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
+    return StringOptions(list(activations.keys()), default=default, nullable=True)
 
 
 def ReductionOptions(default: Union[None, str] = None):
@@ -230,6 +235,8 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
         raise ValidationError(f"Provided default `{default}` should be a string!")
     if nullable and None not in options:
         options += [None]
+    if not nullable and None in options:
+        options.remove(None)
     if default not in options:
         raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
     return field(

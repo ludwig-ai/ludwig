@@ -156,7 +156,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     norm_params: Optional[dict] = schema.Dict()
     """TODO: Document parameters. (default: None)."""
 
-    activation: str = "relu"
+    activation: str = schema.ActivationOptions(default="relu")
     """TODO: Document parameters. (default: 'relu')."""
 
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
@@ -654,7 +654,7 @@ class CommonTransformerConfig:
     norm_params: Optional[dict] = schema.Dict()
     """TODO: Document parameters. (default: None)."""
 
-    fc_activation: str = "relu"
+    fc_activation: str = schema.ActivationOptions(default="relu")
     """TODO: Document parameters. (default: 'relu')."""
 
     fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
@@ -1022,7 +1022,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     norm_params: Optional[dict] = schema.Dict()
     """TODO: Document parameters. (default: None)."""
 
-    activation: str = "relu"
+    activation: str = schema.ActivationOptions(default="relu")
     """TODO: Document parameters. (default: 'relu')."""
 
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
