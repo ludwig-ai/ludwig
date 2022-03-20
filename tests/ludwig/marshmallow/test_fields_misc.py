@@ -87,12 +87,13 @@ def test_InitializerOrDict():
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})
 
-    # Test valid non-dict loads:
+    # Test valid loads:
     assert CustomTestSchema.Schema().load({}).foo == "xavier_uniform"
-    assert CustomTestSchema.Schema().load({"foo": None}).foo is None
     assert CustomTestSchema.Schema().load({"foo": "zeros"}).foo == "zeros"
 
     # Test invalid dict loads:
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": None})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": {"a": "b"}})
     with pytest.raises(MarshmallowValidationError):

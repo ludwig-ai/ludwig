@@ -7,12 +7,12 @@ DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 def test_get_initializer():
-    """Currently only checks for when the parameters are None."""
+    """Currently only checks for when the parameters are default case."""
     tensor_size = (2, 3)
 
-    # Test for when the parameters are None
+    # Test for when the parameters are default
     torch.random.manual_seed(0)
-    initialized_tensor = get_initializer(None)(*tensor_size, device=DEVICE)
+    initialized_tensor = get_initializer("xavier_uniform")(*tensor_size, device=DEVICE)
 
     # Check that the tensor using the expected initialization and the same seed is identical
     default_initializer = nn.init.xavier_uniform_
