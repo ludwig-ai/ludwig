@@ -432,7 +432,7 @@ def InitializerOrDict(default: str = "xavier_uniform"):
             return {
                 "oneOf": [
                     {
-                        "type": ["string", "null"],
+                        "type": "string",
                         "enum": initializers,
                         "default": self.default,
                     },
@@ -449,7 +449,7 @@ def InitializerOrDict(default: str = "xavier_uniform"):
             }
 
     return field(
-        metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=True, default=default)},
+        metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=False, default=default)},
         default=default,
     )
 
