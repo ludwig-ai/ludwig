@@ -146,6 +146,7 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
        -1, which disables early_stop (default: 5)."""
 
     steps_per_checkpoint: int = schema.NonNegativeInteger(default=0)
+    """TODO: Document parameters (default: 0)."""
 
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
