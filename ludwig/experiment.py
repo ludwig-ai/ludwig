@@ -180,9 +180,8 @@ def experiment_cli(
          `model` LudwigModel instance
          `evaluation_statistics` dictionary with evaluation performance
              statistics on the test_set,
-         `training_statistics` is a dictionary of training statistics for
-             each output
-         feature containing loss and metrics values for each epoch,
+         `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+                Each metric corresponds to each training checkpoint.
          `preprocessed_data` tuple containing preprocessed
          `(training_set, validation_set, test_set)`, `output_directory`
          filepath string to where results are stored.

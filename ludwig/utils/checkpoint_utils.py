@@ -96,7 +96,7 @@ class Checkpoint:
         # it is POSIX compliant according to docs
         # https://docs.python.org/3/library/os.html#os.rename
         os.rename(tmp_path, save_path)
-        logging.info(f"Saved checkpoint at {save_path}.")
+        logging.debug(f"Saved checkpoint at {save_path}.")
 
         # restore SIGINT handler
         if orig_handler is not None:

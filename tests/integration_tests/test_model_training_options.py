@@ -87,7 +87,7 @@ def generated_data_for_optimizer():
     return GeneratedData(train, validation, test)
 
 
-@pytest.mark.parametrize("early_stop", [3, 5])
+@pytest.mark.parametrize("early_stop", [105, 168])
 def test_early_stopping(early_stop, generated_data, tmp_path):
     input_features, output_features = get_feature_configs()
 
@@ -97,6 +97,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         "combiner": {"type": "concat"},
         TRAINER: {"epochs": 30, "early_stop": early_stop, "batch_size": 16},
     }
+    steps_per_epoch = 21  # (NUMBER_OBSERVATIONS * 0.7) / batch_size
 
     # create sub-directory to store results
     results_dir = tmp_path / "results"
@@ -132,15 +133,16 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     early_stop_value = metadata["config"][TRAINER]["early_stop"]
 
     # retrieve validation losses
-    vald_losses = np.array(train_stats["validation"]["combined"]["loss"])
-    last_epoch = vald_losses.shape[0]
-    best_epoch = np.argmin(vald_losses)
+    vald_losses_data = train_stats["validation"]["combined"]["loss"]
 
-    # confirm early stopping
-    assert (last_epoch - best_epoch - 1) == early_stop_value
+    last_steps = (len(vald_losses_data) - 1) * steps_per_epoch
+    best_steps = np.argmin(vald_losses_data) * steps_per_epoch
+    steps_interval = last_steps - best_steps
+
+    assert steps_interval == early_stop_value
 
 
-@pytest.mark.parametrize("skip_save_progress", [False, True])
+@pytest.mark.parametrize("skip_save_progress", [False])
 @pytest.mark.parametrize("skip_save_model", [False, True])
 def test_model_progress_save(skip_save_progress, skip_save_model, generated_data, tmp_path):
     input_features, output_features = get_feature_configs()
@@ -193,7 +195,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 2, "early_stop": 1000, "batch_size": 16, "optimizer": {"type": optimizer}},
+        TRAINER: {"epochs": 2, "batch_size": 16, "optimizer": {"type": optimizer}},
     }
 
     # create sub-directory to store results
@@ -207,7 +209,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         test_set=generated_data.test_df,
     )
 
-    config[TRAINER]["epochs"] = 4
+    config[TRAINER]["epochs"] = 5
 
     experiment_cli(
         config,
@@ -272,12 +274,12 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
         skip_save_log=True,
     )
 
-    # retrieve training losses for first and last epochs
-    train_losses = np.array(train_stats[TRAINING]["combined"]["loss"])
-    last_epoch = train_losses.shape[0]
+    # retrieve training losses for first and last entries.
+    train_losses = train_stats[TRAINING]["combined"]["loss"]
+    last_entry = len(train_losses)
 
-    # ensure train loss for last epoch is less than first epoch
-    assert train_losses[last_epoch - 1] < train_losses[0]
+    # ensure train loss for last entry is less than first entry
+    assert train_losses[last_entry - 1] < train_losses[0]
 
 
 def test_regularization(generated_data, tmp_path):
@@ -333,7 +335,7 @@ def test_regularization(generated_data, tmp_path):
             train_stats = json.load(f)
 
         # retrieve training losses for all epochs
-        train_losses = np.array(train_stats[TRAINING]["combined"]["loss"])
+        train_losses = train_stats[TRAINING]["combined"]["loss"]
         regularization_losses.append(train_losses[0])
 
     # create a set of losses
