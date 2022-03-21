@@ -393,7 +393,14 @@ def Embed():
             raise ValidationError("Field should be int or str")
 
         def _jsonschema_type_mapping(self):
-            return {"oneOf": [{"type": "string", "enum": _embed_options}, {"type": "integer"}, {"type": "null"}]}
+            return {
+                "oneOf": [
+                    {"type": "string", "enum": _embed_options, "default": "add", "title": "embed_string_option"},
+                    {"type": "integer", "title": "embed_integer_option"},
+                    {"type": "null", "title": "embed_null_option"},
+                ],
+                "title": self.name,
+            }
 
     return field(
         metadata={"marshmallow_field": EmbedInputFeatureNameField(allow_none=True, default=None)}, default=None
@@ -435,6 +442,7 @@ def InitializerOrDict(default: str = "xavier_uniform"):
                         "type": "string",
                         "enum": initializers,
                         "default": self.default,
+                        "title": "initializer_preconfigured_option",
                     },
                     # Note: default not provided in the custom dict option:
                     {
@@ -443,9 +451,11 @@ def InitializerOrDict(default: str = "xavier_uniform"):
                             "type": {"type": "string", "enum": initializers},
                         },
                         "required": ["type"],
+                        "title": "initializer_custom_option",
                         "additionalProperties": True,
                     },
-                ]
+                ],
+                "title": self.name,
             }
 
     return field(
@@ -575,7 +585,7 @@ def NumericOrStringOptionsField(
 
             # Prepare numeric option:
             numeric_type = "integer" if is_integer else "number"
-            numeric_option = {"type": numeric_type}  # , "default": default_numeric}
+            numeric_option = {"type": numeric_type, "title": numeric_type + "_option"}  # , "default": default_numeric}
             if min is not None:
                 numeric_option["minimum"] = min
             if min_exclusive is not None:
@@ -592,6 +602,7 @@ def NumericOrStringOptionsField(
                 "type": "string",
                 "enum": options,
                 # "default": default_option,
+                "title": "preconfigured_option",
             }
             oneof_list = [
                 numeric_option,
@@ -599,9 +610,9 @@ def NumericOrStringOptionsField(
             ]
 
             # Add null as an option if applicable:
-            oneof_list += [{"type": "null"}] if nullable else []
+            oneof_list += [{"type": "null", "title": "null_option"}] if nullable else []
 
-            return {"oneOf": oneof_list}
+            return {"oneOf": oneof_list, "title": self.name}
 
     return field(
         metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable, default=default)},

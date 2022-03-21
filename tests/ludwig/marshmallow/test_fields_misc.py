@@ -65,11 +65,9 @@ def test_InitializerOrDict():
     # Test metadata matches expected defaults after field creation (null allowed):
     default_initializerordict = get_marshmallow_from_dataclass_field(lusutils.InitializerOrDict())
     assert default_initializerordict.default == "xavier_uniform"
-    assert default_initializerordict.allow_none is True
 
     initializerordict = get_marshmallow_from_dataclass_field(lusutils.InitializerOrDict("zeros"))
     assert initializerordict.default == "zeros"
-    assert initializerordict.allow_none is True
 
     # Test default value validation:
     with pytest.raises(MarshmallowValidationError):
