@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import uuid
 from pathlib import Path
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
@@ -109,9 +108,6 @@ class CacheManager:
             return DatasetCache(config, key, cache_map, self._dataset_manager)
 
     def get_cache_key(self, dataset, config):
-        if not isinstance(dataset, str):
-            # TODO(travis): could try hashing the in-memory dataset, but this is tricky for Dask
-            return str(uuid.uuid1())
         return calculate_checksum(dataset, config)
 
     def get_cache_path(self, dataset, key, tag, ext=None):
