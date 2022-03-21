@@ -452,6 +452,8 @@ def test_api_callbacks(csv_filename):
     assert mock_callback.on_epoch_start.call_count == epochs
     assert mock_callback.on_epoch_end.call_count == epochs
 
+    assert mock_callback.should_early_stop.call_count == epochs
+
     assert mock_callback.on_validation_start.call_count == epochs
     assert mock_callback.on_validation_end.call_count == epochs
 
