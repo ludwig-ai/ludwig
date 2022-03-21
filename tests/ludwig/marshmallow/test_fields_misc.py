@@ -98,9 +98,7 @@ def test_InitializerOrDict():
         CustomTestSchema.Schema().load({"foo": {"type": "invalid"}})
 
     # Test valid dict loads:
-    assert CustomTestSchema.Schema().load({"foo": {"type": None}}).foo == {"type": None}
     assert CustomTestSchema.Schema().load({"foo": {"type": "zeros"}}).foo == {"type": "zeros"}
-    assert CustomTestSchema.Schema().load({"foo": {"type": None, "a": "b"}}).foo == {"type": None, "a": "b"}
 
 
 def test_FloatRangeTupleDataclassField():
