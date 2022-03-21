@@ -23,10 +23,15 @@ import fsspec
 import h5py
 from filelock import FileLock
 from fsspec.core import split_protocol
+from urllib.parse import unquote, urlparse
 
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
+    # Parse the url to get only the escaped url path
+    path = unquote(urlparse(path).path)
+    # Create a windows compatible path from url path
+    path = os.fspath(pathlib.PurePosixPath(path))
     fs = fsspec.filesystem(protocol)
     return fs, path
 
