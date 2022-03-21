@@ -154,8 +154,12 @@ def _add_option_to_evaluate(
     return point_to_evaluate
 
 
-# Set trainer and hyperopt metric and goal for first output feature if not already set
 def set_output_feature_metric(base_config):
+    """ If single output feature, set trainer and hyperopt metric and goal for that feature if not set """
+    if len(base_config["output_features"]) != 1:
+        # If multiple output features, ludwig uses the goal of minimizing combined loss;
+        # this could be revisited/refined in the future.
+        return base_config
     output_name = base_config["output_features"][0][NAME]
     output_type = base_config["output_features"][0][TYPE]
     output_metric = output_type_registry[output_type].default_validation_metric

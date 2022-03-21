@@ -272,8 +272,7 @@ def _model_select(
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
 
     # if single output feature, set relevant metric and goal if not already set
-    if len(base_config["output_features"]) == 1:
-        base_config = set_output_feature_metric(base_config)
+    base_config = set_output_feature_metric(base_config)
 
     # add as initial trial in the automl search the hyperparameter settings from
     # the best model for a similar dataset and matching model type, if any.
