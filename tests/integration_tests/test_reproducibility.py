@@ -1,39 +1,33 @@
 import logging
+import os
+import random
+import tempfile
 from typing import Union
 
-import os
 import numpy as np
 import pandas as pd
 import pytest
 import torch
-import tempfile
-import random
 
-from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 from ludwig.api import LudwigModel
+from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 
 RANDOM_SEED = 1919
 
 INPUT_FEATURES = [
-    {'name': 'num_1', 'type': 'number'},
-    {'name': 'num_2', 'type': 'number'},
+    {"name": "num_1", "type": "number"},
+    {"name": "num_2", "type": "number"},
 ]
 
-OUTPUT_FEATURES = [
-    {'name': 'y', 'type': 'number'}
-]
+OUTPUT_FEATURES = [{"name": "y", "type": "number"}]
 
-CONFIG = {
-    'input_features': INPUT_FEATURES,
-    'output_features': OUTPUT_FEATURES,
-    'trainer': {'epochs': 10}
-}
+CONFIG = {"input_features": INPUT_FEATURES, "output_features": OUTPUT_FEATURES, "trainer": {"epochs": 10}}
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def raw_dataset_fp():
     with tempfile.TemporaryDirectory() as tmpdir:
-        raw_fp = os.path.join(tmpdir, 'raw_data.csv')
+        raw_fp = os.path.join(tmpdir, "raw_data.csv")
         random.seed(RANDOM_SEED)
         cli_synthesize_dataset(100, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
         yield raw_fp
@@ -64,13 +58,11 @@ def test_experiment(raw_dataset_fp):
     model = LudwigModel(config=CONFIG, logging_level=logging.WARN)
 
     evaluation_statistics1, training_statistics1, preprocessed_data1, _ = model.experiment(
-        dataset=raw_dataset_fp,
-        random_seed=RANDOM_SEED
+        dataset=raw_dataset_fp, random_seed=RANDOM_SEED
     )
 
     evaluation_statistics2, training_statistics2, preprocessed_data2, _ = model.experiment(
-        dataset=raw_dataset_fp,
-        random_seed=RANDOM_SEED
+        dataset=raw_dataset_fp, random_seed=RANDOM_SEED
     )
 
     # training data set split
@@ -83,4 +75,4 @@ def test_experiment(raw_dataset_fp):
     assert np.all(pd.DataFrame(preprocessed_data1[2].dataset) == pd.DataFrame(preprocessed_data2[2].dataset))
 
     # check for equality of training statistics
-    assert training_statistics1['training'] == training_statistics2['training']
+    assert training_statistics1["training"] == training_statistics2["training"]
