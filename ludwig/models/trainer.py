@@ -601,9 +601,10 @@ class Trainer(BaseTrainer):
         Returns whether the trainer should early stop, based on validation metrics history.
         """
         start_time = time.time()
+        self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
+
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
-            self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
         # ================ Eval ================
         # init tables
@@ -658,11 +659,11 @@ class Trainer(BaseTrainer):
 
         elapsed_time = (time.time() - start_time) * 1000.0
 
+        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
         if self.is_coordinator():
             logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
-            self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
         # ================ Validation Logic ================
         if validation_set is not None and validation_set.size > 0:
@@ -870,8 +871,7 @@ class Trainer(BaseTrainer):
                 self.model.train()  # Sets model to training mode.
                 self.model.reset_metrics()
 
-                if self.is_coordinator():
-                    self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                 # Trains over a full epoch of data.
                 should_break = self._train_loop(
@@ -895,10 +895,9 @@ class Trainer(BaseTrainer):
 
                 # ================ Post Training Epoch ================
                 progress_tracker.epoch += 1
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                 if self.is_coordinator():
-                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
-
                     # ========== Save training progress ==========
                     logging.debug(
                         f"Epoch {progress_tracker.epoch} took: "
