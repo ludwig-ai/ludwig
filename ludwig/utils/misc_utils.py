@@ -22,6 +22,7 @@ import random
 from collections import OrderedDict
 from collections.abc import Mapping
 from typing import Union
+import torch
 
 import numpy
 
@@ -33,6 +34,7 @@ def set_random_seed(random_seed):
     os.environ["PYTHONHASHSEED"] = str(random_seed)
     random.seed(random_seed)
     numpy.random.seed(random_seed)
+    torch.manual_seed(random_seed)
 
 
 def merge_dict(dct, merge_dct):
