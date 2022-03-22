@@ -35,6 +35,8 @@ def set_random_seed(random_seed):
     random.seed(random_seed)
     numpy.random.seed(random_seed)
     torch.manual_seed(random_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(random_seed)
 
 
 def merge_dict(dct, merge_dct):
