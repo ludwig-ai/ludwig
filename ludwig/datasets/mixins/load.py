@@ -45,8 +45,8 @@ class CSVLoadMixin:
     def load_processed_dataset(self, split) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed CSV into a dataframe.
 
-        :param split: Splits along 'split' column if present
-        :returns: A pandas dataframe
+        :param split: Splits along 'split' column if present.
+        :returns: The preprocessed dataset, or a tuple of (train, validation, test) datasets.
         """
         data_df = pd.read_csv(self.dataset_path)
         return _split(data_df, split)
@@ -70,7 +70,7 @@ class ParquetLoadMixin:
         """Loads the processed Parquet into a dataframe.
 
         :param split: Splits along 'split' column if present
-        :returns: A pandas dataframe
+        :returns: The preprocessed dataset, or a tuple of (train, validation, test) datasets.
         """
         dataset_path = os.path.join(self.processed_dataset_path, self.parquet_filename)
         data_df = pd.read_parquet(dataset_path)
