@@ -451,7 +451,7 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+            with tune.checkpoint_dir(step=progress_tracker.steps) as checkpoint_dir:
                 checkpoint_model = os.path.join(checkpoint_dir, "model")
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
@@ -491,8 +491,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
-            def _checkpoint_and_report_progress(self, trainer, progress_tracker, save_path) -> None:
-                """Checkpoints the model and reports progress."""
+            def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
+                """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
                     save_path = Path(save_path)
                     if trial_location != ray.util.get_node_ip_address():
@@ -503,9 +503,7 @@ class RayTuneExecutor(HyperoptExecutor):
                             sync_client.wait()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
-
                 checkpoint(progress_tracker, save_path)
-                report(progress_tracker)
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
@@ -522,10 +520,13 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.wait()
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
-                self._checkpoint_and_report_progress(trainer, progress_tracker, save_path)
+                self._checkpoint_progress(trainer, progress_tracker, save_path)
+                # Note: Calling tune.report in both on_eval_end() and on_epoch_end() can cause multiprocessing issues
+                # for some ray samplers if evaluation happens precisely every epoch.
+                report(progress_tracker)
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
-                self._checkpoint_and_report_progress(trainer, progress_tracker, save_path)
+                self._checkpoint_progress(trainer, progress_tracker, save_path)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
@@ -771,9 +772,9 @@ class RayTuneExecutor(HyperoptExecutor):
                 callbacks=tune_callbacks,
             )
         except Exception as e:
-            # Explicitly raise a ValueError if an error is encountered during a Ray trial. Otherwise, unit tests
-            # with failed trials silently hang forever.
-            raise RuntimeError("Encountered Ray Tune error") from e
+            # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
+            # NOTE: Cascading the exception with "raise _ from e" still results in hanging.
+            raise RuntimeError(f"Encountered Ray Tune error: {e}")
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)

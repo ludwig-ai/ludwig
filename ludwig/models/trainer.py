@@ -870,7 +870,8 @@ class Trainer(BaseTrainer):
                 self.model.train()  # Sets model to training mode.
                 self.model.reset_metrics()
 
-                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+                if self.is_coordinator():
+                    self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                 # Trains over a full epoch of data.
                 should_break = self._train_loop(
@@ -894,6 +895,7 @@ class Trainer(BaseTrainer):
 
                 # ================ Post Training Epoch ================
                 progress_tracker.epoch += 1
+
                 if self.is_coordinator():
                     self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
