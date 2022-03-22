@@ -22,9 +22,9 @@ import random
 from collections import OrderedDict
 from collections.abc import Mapping
 from typing import Union
-import torch
 
 import numpy
+import torch
 
 from ludwig.constants import PROC_COLUMN
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
