@@ -270,7 +270,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
     ):
         def normalize(series: pd.Series) -> pd.Series:
             numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
-            series.update(numeric_transformer.transform(series.values))
+            series.copy().update(numeric_transformer.transform(series.values))
             return series
 
         input_series = input_df[feature_config[COLUMN]].astype(np.float32)
