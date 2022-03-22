@@ -491,6 +491,22 @@ class RayTuneExecutor(HyperoptExecutor):
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
+            def _checkpoint_and_report_progress(self, trainer, progress_tracker, save_path) -> None:
+                """Checkpoints the model and reports progress."""
+                if is_using_ray_backend:
+                    save_path = Path(save_path)
+                    if trial_location != ray.util.get_node_ip_address():
+                        sync_info = self._get_sync_client_and_remote_checkpoint_dir()
+                        if sync_info is not None:
+                            sync_client, remote_checkpoint_dir = sync_info
+                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                            sync_client.wait()
+                    ray_queue.put((progress_tracker, str(save_path)))
+                    return
+
+                checkpoint(progress_tracker, save_path)
+                report(progress_tracker)
+
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
                     save_path = Path(save_path)
@@ -505,20 +521,11 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
                         sync_client.wait()
 
-            def on_epoch_end(self, trainer, progress_tracker, save_path):
-                if is_using_ray_backend:
-                    save_path = Path(save_path)
-                    if trial_location != ray.util.get_node_ip_address():
-                        sync_info = self._get_sync_client_and_remote_checkpoint_dir()
-                        if sync_info is not None:
-                            sync_client, remote_checkpoint_dir = sync_info
-                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                            sync_client.wait()
-                    ray_queue.put((progress_tracker, str(save_path)))
-                    return
+            def on_eval_end(self, trainer, progress_tracker, save_path):
+                self._checkpoint_and_report_progress(trainer, progress_tracker, save_path)
 
-                checkpoint(progress_tracker, save_path)
-                report(progress_tracker)
+            def on_epoch_end(self, trainer, progress_tracker, save_path):
+                self._checkpoint_and_report_progress(trainer, progress_tracker, save_path)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]

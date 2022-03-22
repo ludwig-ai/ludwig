@@ -191,6 +191,28 @@ class Callback(ABC):
         """
         pass
 
+    def on_eval_start(self, trainer, progress_tracker, save_path: str):
+        """Called on coordinator at the start of evaluation.
+
+        :param trainer: The trainer instance.
+        :type trainer: ludwig.models.trainer.Trainer
+        :param progress_tracker: An object which tracks training progress.
+        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :param save_path: The path to the directory model is saved in.
+        """
+        pass
+
+    def on_eval_end(self, trainer, progress_tracker, save_path: str):
+        """Called on coordinator at the end of evaluation.
+
+        :param trainer: The trainer instance.
+        :type trainer: ludwig.models.trainer.Trainer
+        :param progress_tracker: An object which tracks training progress.
+        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :param save_path: The path to the directory model is saved in.
+        """
+        pass
+
     def on_epoch_start(self, trainer, progress_tracker, save_path: str):
         """Called on coordinator only before the start of each epoch.
 

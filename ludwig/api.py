@@ -366,6 +366,9 @@ class LudwigModel:
                 # Upload output files (checkpoints, etc.) to remote storage at the end of
                 # each epoch, in case of failure in the middle of training.
                 class UploadOnEpochEndCallback(Callback):
+                    def on_eval_end(self, trainer, progress_tracker, save_path):
+                        upload_fn()
+
                     def on_epoch_end(self, trainer, progress_tracker, save_path):
                         upload_fn()
 
