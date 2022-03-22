@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import collections
+import collections.abc
 import csv
 import functools
 import json
@@ -209,7 +209,7 @@ def save_csv(data_fp, data):
     with open_file(data_fp, "w", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
         for row in data:
-            if not isinstance(row, collections.Iterable) or isinstance(row, str):
+            if not isinstance(row, collections.abc.Iterable) or isinstance(row, str):
                 row = [row]
             writer.writerow(row)
 
@@ -265,7 +265,7 @@ def flatten_dict(d, parent_key="", sep="."):
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
 
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, collections.abc.MutableMapping):
             items.extend(flatten_dict(v, new_key, sep=sep).items())
         elif isinstance(v, list):
             list_mapping = {str(i): item for i, item in enumerate(v)}
