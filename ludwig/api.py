@@ -334,11 +334,6 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        if HYPEROPT in self.config:
-            logger.info("You are running the ludwig train command but there’s a hyperopt section present in your "
-                        "config. It will be ignored. If you want to run hyperopt you should use the following command: "
-                        "ludwig hyperopt")
-
         # setup directories and file names
         if model_resume_path is not None:
             if path_exists(model_resume_path):
