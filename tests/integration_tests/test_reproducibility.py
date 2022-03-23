@@ -84,7 +84,8 @@ def test_train(raw_dataset_fp):
 
     # check for equality of training statistics
     assert np.all(
-        np.isclose(training_statistics1["training"]["y"]["loss"], training_statistics2["training"]["y"]["loss"]))
+        np.isclose(training_statistics1["training"]["y"]["loss"], training_statistics2["training"]["y"]["loss"])
+    )
 
 
 def test_experiment(raw_dataset_fp):
