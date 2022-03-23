@@ -6,6 +6,7 @@ import logging
 import os
 import os.path as osp
 import signal
+import re
 from glob import glob
 
 import numpy as np
@@ -29,7 +30,9 @@ def get_files(d, pattern, sort=True):
     files = glob(osp.join(d, pattern))
     files = [f for f in files if osp.isfile(f)]
     if sort:
-        files.sort(key=lambda x: int(os.path.basename(x).split(".")[0]))
+        def filter_nonnumeric(s):
+            return re.sub("[^0-9]", "", s)
+        files.sort(key=lambda x: int(filter_nonnumeric(os.path.basename(x).split(".")[0])))
     return files
 
 
