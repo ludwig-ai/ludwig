@@ -159,6 +159,8 @@ AUTOML_SMALLER_TEXT_LENGTH = 128
 AUTOML_LARGE_TEXT_DATASET = 100000
 AUTOML_DEFAULT_IMAGE_ENCODER = "stacked_cnn"
 
-HYPEROPT_WARNING = "You are running the ludwig train command but there’s a hyperopt section present in your config. " \
-                   "It will be ignored. If you want to run hyperopt you should use the following command: ludwig " \
-                   "hyperopt\n\n Do you want to continue? "
+HYPEROPT_WARNING = (
+    "You are running the ludwig train command but there’s a hyperopt section present in your config. "
+    "It will be ignored. If you want to run hyperopt you should use the following command: ludwig "
+    "hyperopt\n\n Do you want to continue? "
+)

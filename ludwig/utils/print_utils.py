@@ -61,15 +61,13 @@ def repr_ordered_dict(d: OrderedDict):
 
 
 def query_yes_no(question: str, default="yes"):
-    """
-    Ask a yes/no question via raw_input() and return their answer.
+    """Ask a yes/no question via raw_input() and return their answer.
 
     Args:
         question: String presented to the user
         default: The presumed answer from the user. Must be "yes", "no", or None (Answer is required)
 
     Returns: Boolean based on prompt response
-
     """
     valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
     if default is None:
