@@ -95,7 +95,11 @@ class Checkpoint:
         # rename is an atomic operation in python
         # it is POSIX compliant according to docs
         # https://docs.python.org/3/library/os.html#os.rename
-        os.rename(tmp_path, save_path)
+        try:
+            os.rename(tmp_path, save_path)
+        except FileExistsError:
+            # On UNIX filesystems, os.rename will silently replace. On @indows it will throw an exception.
+            logging.debug(f"Checkpoint at {save_path} already exists.")
         logging.debug(f"Saved checkpoint at {save_path}.")
 
         # restore SIGINT handler
