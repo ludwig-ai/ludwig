@@ -48,7 +48,6 @@ from ludwig.constants import (
     TRAINER,
     TRAINING,
     VALIDATION,
-    HYPEROPT,
 )
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
