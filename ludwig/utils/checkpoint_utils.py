@@ -11,6 +11,8 @@ from glob import glob
 import numpy as np
 import torch
 
+logger = logging.getLogger(__name__)
+
 
 def mkdir(s):
     """Create a directory if it doesn't already exist."""
@@ -55,7 +57,7 @@ class Checkpoint:
                 self.model.load_state_dict(state["model_weights"])
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
-                logging.info(f"Successfully loaded model weights from {save_path}.")
+                logger.info(f"Successfully loaded model weights from {save_path}.")
                 return True
             except Exception as e:
                 # there was an issue loading the state which means
@@ -66,7 +68,7 @@ class Checkpoint:
                 # rather than allowing the program to proceed.
                 raise e
         except FileNotFoundError as e:
-            logging.error(e)
+            logger.error(e)
             return False
 
     def save(self, save_path):
@@ -96,7 +98,7 @@ class Checkpoint:
         # it is POSIX compliant according to docs
         # https://docs.python.org/3/library/os.html#os.rename
         os.rename(tmp_path, save_path)
-        logging.info(f"Saved checkpoint at {save_path}.")
+        logger.info(f"Saved checkpoint at {save_path}.")
 
         # restore SIGINT handler
         if orig_handler is not None:
@@ -142,7 +144,7 @@ class CheckpointManager:
             last_ckpt = ckpts[-1]
             status = self.checkpoint.restore(last_ckpt, self.device)
             if not status:
-                logging.info("Could not restore latest checkpoint file.")
+                logger.info("Could not restore latest checkpoint file.")
                 return 0
             self.latest_checkpoint = last_ckpt
             return int(osp.basename(last_ckpt).split(".")[0])
@@ -180,4 +182,4 @@ class CheckpointManager:
             last_ckpt = ckpts[-1]
             checkpoint.restore(last_ckpt, device)
         else:
-            logging.error(f"No checkpoints found in {directory}.")
+            logger.error(f"No checkpoints found in {directory}.")
