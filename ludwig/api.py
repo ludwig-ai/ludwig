@@ -42,7 +42,6 @@ from ludwig.constants import (
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
     FULL,
-    HYPEROPT,
     LEARNING_RATE,
     PREPROCESSING,
     TEST,
