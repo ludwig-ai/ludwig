@@ -102,7 +102,7 @@ def _ray_init():
 # ref_configs comes from a file storing the config for a high-performing model per reference dataset.
 # If the automl model type matches that of any reference models, set the initial point_to_evaluate
 # in the automl hyperparameter search to the config of the reference model with the closest-matching
-# input numerical columns ratio.  This model config "transfer learning" can improve the automl search.
+# input number columns ratio.  This model config "transfer learning" can improve the automl search.
 def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
     base_model_type = base_config[COMBINER][TYPE]
     base_model_numeric_ratio = _get_ratio_numeric_input_features(base_config["input_features"])

@@ -26,14 +26,14 @@ class WithTimer:
         self.quiet = quiet
 
     def elapsed(self):
-        return time.time() - self.wall, time.clock() - self.proc
+        return time.time() - self.wall, time.process_time() - self.proc
 
     def enter(self):
         """Manually trigger enter."""
         self.__enter__()
 
     def __enter__(self):
-        self.proc = time.clock()
+        self.proc = time.process_time()
         self.wall = time.time()
         return self
 
@@ -48,7 +48,7 @@ class Timer:
         self.reset()
 
     def reset(self):
-        self._proc = time.clock()
+        self._proc = time.process_time()
         self._wall = time.time()
 
     def elapsed(self):
@@ -61,7 +61,7 @@ class Timer:
         return time.time() - self._wall
 
     def proc(self):
-        return time.clock() - self._proc
+        return time.process_time() - self._proc
 
     def tic(self):
         """Like Matlab tic/toc for wall time and processor time."""

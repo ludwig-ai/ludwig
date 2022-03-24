@@ -43,14 +43,15 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
 
 
 def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
-    """Returns a boolean mask.
+    """Returns a mask of shape (batch_size x maxlen), where mask[i] is True for each element up to lengths[i],
+    otherwise False i.e. if maxlen=5 and lengths[i] = 3, mask[i] = [True, True True, False False].
 
     :param lengths: (torch.Tensor) A 1d integer tensor of shape [batch size].
     :param maxlen: (Optional[int]) The maximum sequence length.  If not specified, the max(lengths) is used.
     :param dtype: (type) The type to output.
 
     # Return
-    :returns: (torch.Tensor) A mask which .
+    :returns: (torch.Tensor) A sequence mask tensor of shape (batch_size x maxlen).
     """
     if maxlen is None:
         maxlen = lengths.max()

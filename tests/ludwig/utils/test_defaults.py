@@ -111,8 +111,8 @@ def test_missing_outputs_drop_rows():
 
 def test_deprecated_field_aliases():
     config = {
-        "input_features": [{"name": "num_in", "type": "numerical"}],
-        "output_features": [{"name": "num_out", "type": "numerical"}],
+        "input_features": [{"name": "num_in", "type": "number"}],
+        "output_features": [{"name": "num_out", "type": "number"}],
         TRAINER: {
             "epochs": 2,
         },

@@ -45,7 +45,7 @@ from ludwig.utils import output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -125,14 +125,12 @@ class CategoryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         column = column.astype(str)
-        idx2str, str2idx, str2freq, _, _, _, _, _ = create_vocabulary(
+        idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
-            "stripped",
             num_most_frequent=preprocessing_parameters["most_common"],
-            lowercase=preprocessing_parameters["lowercase"],
-            add_special_symbols=False,
             processor=backend.df_engine,
         )
+
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": len(str2idx)}
 
     @staticmethod
