@@ -24,7 +24,7 @@ OUTPUT_FEATURES = [{"name": "y", "type": "number"}]
 CONFIG = {
     "input_features": INPUT_FEATURES,
     "output_features": OUTPUT_FEATURES,
-    "trainer": {"epochs": 2, "batch_size": 8}
+    "trainer": {"epochs": 2, "batch_size": 8},
 }
 
 
