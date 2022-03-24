@@ -1,4 +1,5 @@
-from typing import List, Optional
+from collections import defaultdict, namedtuple
+from typing import Dict, List, Optional
 
 import torch
 from torch import Tensor
@@ -63,3 +64,23 @@ def get_scalar_from_ludwig_metric(metric: Metric) -> float:
         float: scalar value of the metric
     """
     return metric.compute().detach().cpu().numpy().item()
+
+
+# Data for training and evaluation metrics.
+TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
+
+
+def reduce_trainer_metrics_dict(
+    dict_dict_trainer_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
+) -> Dict[str, Dict[str, List[float]]]:
+    """Reduces Dict[feature_name, Dict[metric_name, List[TrainerMetric]]] to Dict[feature_name, Dict[metric_name,
+    List[float]]].
+
+    Used for flattening the results returned by trainer.py::train(), which come from ProgressTracker.
+    """
+    flattened_dict = defaultdict(lambda: defaultdict(list))
+    for feature_name, trainer_metric_dict in dict_dict_trainer_metrics.items():
+        for metric_name, trainer_metrics in trainer_metric_dict.items():
+            for trainer_metric in trainer_metrics:
+                flattened_dict[feature_name][metric_name].append(trainer_metric[-1])
+    return flattened_dict

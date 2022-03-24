@@ -69,6 +69,7 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
     generate_kfold_splits,
@@ -324,11 +325,10 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
+        :return: (Tuple[Dict, Union[Dict, pd.DataFrame], str]) tuple containing
             `(training_statistics, preprocessed_data, output_directory)`.
-            `training_statistics` is a dictionary of training statistics
-            for each output feature containing loss and metrics values
-            for each epoch.
+            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+                Each metric corresponds to each training checkpoint.
             `preprocessed_data` is the tuple containing these three data sets
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
@@ -532,11 +532,16 @@ class LudwigModel:
                         save_path=model_dir,
                     )
 
+                    # Unpack train()'s return.
+                    # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
+                    # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
+                    # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
+                    # Tune.
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = {
-                        TRAINING: train_trainset_stats,
-                        VALIDATION: train_valiset_stats,
-                        TEST: train_testset_stats,
+                        TRAINING: metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
+                        VALIDATION: metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
+                        TEST: metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
                     }
 
                     # save training statistics
@@ -550,27 +555,36 @@ class LudwigModel:
                     validation_field_result = train_valiset_stats[validation_field]
 
                     best_function = get_best_function(validation_metric)
+
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
-                        epoch_best_vali_metric, best_vali_metric = best_function(
-                            enumerate(validation_field_result[validation_metric]), key=lambda pair: pair[1]
+                        best_vali_index, (
+                            epoch_best_vali_metric,
+                            step_best_vali_metric,
+                            best_vali_metric,
+                        ) = best_function(
+                            enumerate(validation_field_result[validation_metric]),
+                            # -1 for the last element of the TrainerMetric namedtuple.
+                            key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
                         )
-                        logger.info(f"Best validation model epoch: {epoch_best_vali_metric + 1}")
                         logger.info(
-                            "Best validation model {} on validation set {}: {}".format(
-                                validation_metric, validation_field, best_vali_metric
-                            )
+                            f"Best validation model step: {step_best_vali_metric}, epoch: {epoch_best_vali_metric + 1}"
+                        )
+                        logger.info(
+                            f"Best validation model {validation_metric} on validation set {validation_field}: "
+                            f"{best_vali_metric}"
                         )
                         if test_set is not None:
-                            best_vali_metric_epoch_test_metric = train_testset_stats[validation_field][
+                            validation_selected_test_metric_score = train_testset_stats[validation_field][
                                 validation_metric
-                            ][epoch_best_vali_metric]
+                            ][best_vali_index][
+                                -1
+                            ]  # -1 for the last element of the TrainerMetric namedtuple.
 
                             logger.info(
-                                "Best validation model {} on test set {}: {}".format(
-                                    validation_metric, validation_field, best_vali_metric_epoch_test_metric
-                                )
+                                f"Best validation model {validation_metric} on test set {validation_field}: "
+                                f"{validation_selected_test_metric_score}"
                             )
                         logger.info(f"\nFinished: {experiment_name}_{model_name}")
                         logger.info(f"Saved to: {output_directory}")
@@ -1033,9 +1047,8 @@ class LudwigModel:
             `(evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
             `evaluation_statistics` dictionary with evaluation performance
                 statistics on the test_set,
-            `training_statistics` is a dictionary of training statistics for
-                each output
-            feature containing loss and metrics values for each epoch,
+            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+                Each metric corresponds to each training checkpoint.
             `preprocessed_data` tuple containing preprocessed
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
@@ -1231,14 +1244,8 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
-            `(training_statistics, preprocessed_data, output_directory)`.
-            `training_statistics` is a dictionary of training statistics
-            for each output feature containing loss and metrics values
-            for each epoch.
-            `preprocessed_data` is the tuple containing these three data sets
-            `(training_set, validation_set, test_set)`.
-            `output_directory` filepath to where training results are stored.
+        :return: (Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict]) tuple containing
+            `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
         preprocessed_data = preprocess_for_training(

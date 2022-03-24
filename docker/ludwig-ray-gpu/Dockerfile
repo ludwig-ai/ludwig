@@ -34,3 +34,6 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     pip install --no-cache-dir '.[full]' -f https://download.pytorch.org/whl/cu111/torch_stable.html && \
     horovodrun --check-build && \
     python -c "import horovod.torch; horovod.torch.init()"
+
+# Temporary workaround until Ray 1.12
+RUN pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/991a62dd4782e17a519ce29495b6e837f37f19f3/ray-2.0.0.dev0-cp37-cp37m-manylinux2014_x86_64.whl
