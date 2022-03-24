@@ -95,14 +95,10 @@ class Checkpoint:
         save_dir = osp.dirname(save_path)
         tmp_path = osp.join(save_dir, f"tmp-{np.random.randint(1e9)}.ckpt")
         torch.save(state, tmp_path)
-        # rename is an atomic operation in python
+        # replace is an atomic operation in python
         # it is POSIX compliant according to docs
-        # https://docs.python.org/3/library/os.html#os.rename
-        try:
-            os.rename(tmp_path, save_path)
-        except FileExistsError:
-            # On UNIX filesystems, os.rename will silently replace. On @indows it will throw an exception.
-            logging.debug(f"Checkpoint at {save_path} already exists.")
+        # https://docs.python.org/3/library/os.html#os.replace
+        os.replace(tmp_path, save_path)
         logging.debug(f"Saved checkpoint at {save_path}.")
 
         # restore SIGINT handler
