@@ -15,15 +15,15 @@
 # ==============================================================================
 import os
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
+from ludwig.constants import SPLIT
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.registry import register_dataset
 from ludwig.utils.fs_utils import makedirs, rename
-from ludwig.constants import SPLIT
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True, kaggle_username=None, kaggle_key=None):

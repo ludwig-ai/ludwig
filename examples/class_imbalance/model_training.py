@@ -27,16 +27,17 @@ for model_id in list_of_model_ids:
     print(">>>> training: ", model_id)
 
     # Define Ludwig model object that drive model training
-    model = LudwigModel(config=model_id + "_config.yaml",
-                        logging_level=logging.WARN)
+    model = LudwigModel(config=model_id + "_config.yaml", logging_level=logging.WARN)
 
     # initiate model training
-    train_stats, _, _ = model.train(training_set=training_set,
-                                    validation_set=val_set,
-                                    test_set=test_set,
-                                    experiment_name="balance_example",
-                                    model_name=model_id,
-                                    skip_save_model=True)
+    train_stats, _, _ = model.train(
+        training_set=training_set,
+        validation_set=val_set,
+        test_set=test_set,
+        experiment_name="balance_example",
+        model_name=model_id,
+        skip_save_model=True,
+    )
 
     # evaluate model on test_set
     eval_stats, _, _ = model.evaluate(test_set)

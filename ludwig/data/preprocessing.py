@@ -129,16 +129,16 @@ class DataFormatPreprocessor(ABC):
     @staticmethod
     @abstractmethod
     def prepare_processed_data(
-            features,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            skip_save_processed_input=False,
-            preprocessing_params=default_preprocessing_parameters,
-            backend=LOCAL_BACKEND,
-            random_seed=default_random_seed,
+        features,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
+        random_seed=default_random_seed,
     ):
         pass
 
@@ -543,16 +543,16 @@ class ParquetPreprocessor(DataFormatPreprocessor):
 
     @staticmethod
     def prepare_processed_data(
-            features,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            skip_save_processed_input=False,
-            preprocessing_params=default_preprocessing_parameters,
-            backend=LOCAL_BACKEND,
-            random_seed=default_random_seed,
+        features,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
+        random_seed=default_random_seed,
     ):
         test_set = test_set if test_set and path_exists(test_set) else None
         validation_set = validation_set if validation_set and path_exists(validation_set) else None
@@ -980,16 +980,16 @@ class HDF5Preprocessor(DataFormatPreprocessor):
 
     @staticmethod
     def prepare_processed_data(
-            features,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            skip_save_processed_input=False,
-            preprocessing_params=default_preprocessing_parameters,
-            backend=LOCAL_BACKEND,
-            random_seed=default_random_seed,
+        features,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
+        random_seed=default_random_seed,
     ):
         if dataset is None and training_set is None:
             raise ValueError("One of `dataset` or `training_set` must be not None")
@@ -1053,15 +1053,15 @@ data_format_preprocessor_registry = {
 
 
 def build_dataset(
-        dataset_df,
-        features,
-        global_preprocessing_parameters,
-        metadata=None,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        skip_save_processed_input=False,
-        callbacks=None,
-        mode=None,
+    dataset_df,
+    features,
+    global_preprocessing_parameters,
+    metadata=None,
+    backend=LOCAL_BACKEND,
+    random_seed=default_random_seed,
+    skip_save_processed_input=False,
+    callbacks=None,
+    mode=None,
 ):
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
@@ -1106,13 +1106,11 @@ def build_dataset(
     logger.debug("get split")
     split = get_split(
         dataset_df,
-        force_split=global_preprocessing_parameters['force_split'],
-        split_probabilities=global_preprocessing_parameters[
-            'split_probabilities'
-        ],
-        stratify=global_preprocessing_parameters['stratify'],
+        force_split=global_preprocessing_parameters["force_split"],
+        split_probabilities=global_preprocessing_parameters["split_probabilities"],
+        stratify=global_preprocessing_parameters["stratify"],
         backend=backend,
-        random_seed=random_seed
+        random_seed=random_seed,
     )
 
     if split is not None:
@@ -1158,7 +1156,7 @@ def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
 
 
 def merge_preprocessing(
-        feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
+    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
 ) -> Dict[str, Any]:
     if PREPROCESSING not in feature_config:
         return global_preprocessing_parameters[feature_config[TYPE]]
@@ -1167,11 +1165,11 @@ def merge_preprocessing(
 
 
 def build_metadata(
-        metadata: Dict[str, Any],
-        dataset_cols: Dict[str, Column],
-        feature_configs: List[Dict[str, Any]],
-        global_preprocessing_parameters: Dict[str, Any],
-        backend: Backend,
+    metadata: Dict[str, Any],
+    dataset_cols: Dict[str, Column],
+    feature_configs: List[Dict[str, Any]],
+    global_preprocessing_parameters: Dict[str, Any],
+    backend: Backend,
 ) -> Dict[str, Any]:
     for feature_config in feature_configs:
         if feature_config[NAME] in metadata:
@@ -1210,11 +1208,11 @@ def build_metadata(
 
 
 def build_data(
-        input_cols: DataFrame,
-        feature_configs: List[Dict],
-        training_set_metadata: Dict,
-        backend: Backend,
-        skip_save_processed_input: bool,
+    input_cols: DataFrame,
+    feature_configs: List[Dict],
+    training_set_metadata: Dict,
+    backend: Backend,
+    skip_save_processed_input: bool,
 ) -> Dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
@@ -1246,14 +1244,9 @@ def build_data(
     return proc_cols
 
 
-def balance_data(
-        dataset_df: DataFrame,
-        output_features: List[Dict],
-        preprocessing_parameters: Dict,
-        backend: Backend
-):
-    """
-    The purpose of this function is to balance the training dataset using either over-sampling or under-sampling.
+def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessing_parameters: Dict, backend: Backend):
+    """The purpose of this function is to balance the training dataset using either over-sampling or under-
+    sampling.
 
     Args:
         dataset_df: Input dataframe to be over-sampled or under-sampled.
@@ -1262,17 +1255,12 @@ def balance_data(
         backend: Backend for data processing.
 
     Returns: An over-sampled or under-sampled training dataset.
-
     """
 
     if len(output_features) != 1:
-        raise ValueError(
-            "Class balancing is only available for datasets with a single output feature"
-        )
+        raise ValueError("Class balancing is only available for datasets with a single output feature")
     if output_features[0][TYPE] != BINARY:
-        raise ValueError(
-            "Class balancing is only supported for binary output types"
-        )
+        raise ValueError("Class balancing is only supported for binary output types")
 
     target = output_features[0][PROC_COLUMN]
 
@@ -1365,12 +1353,12 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
 
 
 def get_split(
-        dataset_df,
-        force_split=False,
-        split_probabilities=(0.7, 0.1, 0.2),
-        stratify=None,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
+    dataset_df,
+    force_split=False,
+    split_probabilities=(0.7, 0.1, 0.2),
+    stratify=None,
+    backend=LOCAL_BACKEND,
+    random_seed=default_random_seed,
 ):
     if SPLIT in dataset_df and not force_split:
         split = dataset_df[SPLIT]
@@ -1384,8 +1372,8 @@ def get_split(
 
             split = (
                 dataset_df.index.to_series()
-                    .map(lambda x: np.random.choice(3, 1, p=split_probabilities))
-                    .astype(np.int8)
+                .map(lambda x: np.random.choice(3, 1, p=split_probabilities))
+                .astype(np.int8)
             )
         else:
             split = np.zeros(len(dataset_df))
@@ -1429,18 +1417,18 @@ def load_metadata(metadata_file_path):
 
 
 def preprocess_for_training(
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        skip_save_processed_input=False,
-        preprocessing_params=default_preprocessing_parameters,
-        backend=LOCAL_BACKEND,
-        random_seed=default_random_seed,
-        callbacks=None,
+    config,
+    dataset=None,
+    training_set=None,
+    validation_set=None,
+    test_set=None,
+    training_set_metadata=None,
+    data_format=None,
+    skip_save_processed_input=False,
+    preprocessing_params=default_preprocessing_parameters,
+    backend=LOCAL_BACKEND,
+    random_seed=default_random_seed,
+    callbacks=None,
 ) -> Tuple[Dataset, Dataset, Dataset, Dict[str, Any]]:
     """Returns training, val and test datasets with training set metadata."""
 
@@ -1703,14 +1691,14 @@ def _preprocess_df_for_training(
 
 
 def preprocess_for_prediction(
-        config,
-        dataset,
-        training_set_metadata=None,
-        data_format=None,
-        split=FULL,
-        include_outputs=True,
-        backend=LOCAL_BACKEND,
-        callbacks=None,
+    config,
+    dataset,
+    training_set_metadata=None,
+    data_format=None,
+    split=FULL,
+    include_outputs=True,
+    backend=LOCAL_BACKEND,
+    callbacks=None,
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 

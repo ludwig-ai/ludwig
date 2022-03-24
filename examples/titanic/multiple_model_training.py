@@ -30,7 +30,9 @@ for model_id in list_of_model_ids:
     model = LudwigModel(config="./" + model_id + "_config.yaml", logging_level=logging.WARN)
 
     # initiate model training
-    train_stats, _, _ = model.train(dataset=training_set, experiment_name="multiple_model_experiment", model_name=model_id)
+    train_stats, _, _ = model.train(
+        dataset=training_set, experiment_name="multiple_model_experiment", model_name=model_id
+    )
 
     # save training stats for later use
     list_of_train_stats.append(train_stats)
