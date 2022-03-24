@@ -49,7 +49,7 @@ class ConfusionMatrix:
         #     if conditions.dtype.char == 'S':  # it's an array of strings
         #         self.labels_dict = {str(label): idx for idx, label in
         #                             enumerate(np.unique([predictions, conditions]))}
-        #     else:  # numerical
+        #     else:  # number
         #         max_label = np.concatenate([predictions, conditions]).max()
         #         self.labels_dict = {str(i): i for i in range(max_label + 1)}
         #         labels = [str(i) for i in range(max_label + 1)]

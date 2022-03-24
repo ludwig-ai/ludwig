@@ -97,8 +97,8 @@ def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
     return True
 
 
-def is_numerical(s: Union[str, int, float]):
-    """Returns whether specified value is numerical."""
+def is_number(s: Union[str, int, float]):
+    """Returns whether specified value is number."""
     if isinstance(s, str) and s.lower() == "nan":
         return True
     try:
@@ -108,10 +108,10 @@ def is_numerical(s: Union[str, int, float]):
         return False
 
 
-def are_all_numericals(values: List[Union[str, int, float]]):
+def are_all_numbers(values: List[Union[str, int, float]]):
     """Returns whether all values are numbers."""
     for value in values:
-        if not is_numerical(value):
+        if not is_number(value):
             return False
     return True
 
@@ -132,7 +132,7 @@ def are_sequential_integers(values: List[Union[str, int, float]]):
     for value in values:
         if not is_integer(value):
             return False
-        int_list.append(int(value))
+        int_list.append(int(float(value)))
     return (max(int_list) - min(int_list) + 1) == len(int_list)
 
 

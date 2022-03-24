@@ -6,15 +6,23 @@ from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.utils import strings_utils
 
 
-def test_is_numerical():
-    assert strings_utils.is_numerical("1.1")
-    assert strings_utils.is_numerical("1.000001")
-    assert strings_utils.is_numerical("1000001")
-    assert strings_utils.is_numerical("Nan")
-    assert strings_utils.is_numerical("NaN")
-    assert strings_utils.is_numerical(1)
-    assert strings_utils.is_numerical(1.1)
-    assert not strings_utils.is_numerical("NaNaaa")
+def test_is_number():
+    assert strings_utils.is_number("1.1")
+    assert strings_utils.is_number("1.000001")
+    assert strings_utils.is_number("1000001")
+    assert strings_utils.is_number("Nan")
+    assert strings_utils.is_number("NaN")
+    assert strings_utils.is_number(1)
+    assert strings_utils.is_number(1.1)
+    assert not strings_utils.is_number("NaNaaa")
+
+
+def test_are_sequential_integers():
+    assert strings_utils.are_sequential_integers(["1.0", "2", "3"])
+    assert strings_utils.are_sequential_integers(["1", "2", "3"])
+    assert not strings_utils.are_sequential_integers(["1", "2", "4"])
+    assert not strings_utils.are_sequential_integers(["1.1", "2", "3"])
+    assert not strings_utils.are_sequential_integers(["a", "2", "3"])
 
 
 def test_str_to_bool():

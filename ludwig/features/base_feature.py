@@ -419,7 +419,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         logits = self.logits(logits_input, target=target)
 
-        # For binary and numerical features, self.logits() is a tensor.
+        # For binary and number features, self.logits() is a tensor.
         # There are two special cases where self.logits() is a dict:
         #   categorical
         #       keys: logits, projection_input
