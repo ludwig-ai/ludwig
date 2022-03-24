@@ -28,8 +28,8 @@ two models.  Results will in the following directories:
 
 ```
 ./results/
-    multiple_model_model1/
-    multiple_model_model2/
+    multiple_model_experiment_model1/
+    multiple_model_experiment_model2/
 ./visualizations/
     learning_curves_Survived_accuracy.png
     learning_curves_Survived_loss.png

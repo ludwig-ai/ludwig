@@ -1368,7 +1368,7 @@ def get_split(
             if backend.df_engine.partitioned:
                 # This approach is very inefficient for partitioned backends, which
                 # can split by partition
-                return None
+                return
 
             split = (
                 dataset_df.index.to_series()
