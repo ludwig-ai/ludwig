@@ -137,14 +137,13 @@ def test_create_vocabulary_from_hf():
 
 
 def test_create_vocabulary_single_token():
-    data = pd.DataFrame(["dog", "cat", "bird", "dog", "cat"])
+    data = pd.DataFrame(["dog", "cat", "bird", "dog", "cat", "super cat"])
     column = data[0]
 
     vocab, str2idx, str2freq = strings_utils.create_vocabulary_single_token(column)
 
-    assert len(vocab) == 4
-    assert set(vocab) == {"dog", "cat", "bird", strings_utils.UNKNOWN_SYMBOL}
-    assert str2freq == {"dog": 2, "cat": 2, "bird": 1, strings_utils.UNKNOWN_SYMBOL: 0}
+    assert set(vocab) == {"dog", "cat", "bird", "super cat", strings_utils.UNKNOWN_SYMBOL}
+    assert str2freq == {"dog": 2, "cat": 2, "bird": 1, "super cat": 1, strings_utils.UNKNOWN_SYMBOL: 0}
     assert str2idx[strings_utils.UNKNOWN_SYMBOL] == 0
 
 

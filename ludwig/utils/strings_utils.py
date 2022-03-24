@@ -300,11 +300,13 @@ def create_vocabulary_single_token(
 ):
     """Computes a vocabulary over the provided data frame.
 
-    This function is used when the data consists of a single token within one example. E.g., categorical features. In
-    the case of a single token, this function removes some unnecessary tasks and is more efficient. If the feature
-    contains multiple tokens, use `create_vocabulary` instead.
+    This function should be used iff the values in each row of data should be considered as a single token, e.g.,
+    category features ("interested", "not interested", "somewhat interested").
 
-    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    This assumption allows us to be more efficient than `create_vocabulary()` as we can skip tokenization and
+    computing the maximum sequence length, which are unnecessary for category features.
+
+    The `UNKNOWN` special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
     STOP) are added if add_special_symbols=True.
 
     Args:
@@ -325,7 +327,6 @@ def create_vocabulary_single_token(
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = processed_counts.to_dict()
     str2freq = {k: str2freq.get(k, 0) for k in vocab}
-
     return vocab, str2idx, str2freq
 
 
