@@ -54,7 +54,7 @@ def test_softmax_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, o
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
-@pytest.mark.parametrize("output", [torch.tensor(-42.9311).float()])
+@pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
 def test_sigmoid_cross_entropy_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     loss = loss_modules.SigmoidCrossEntropyLoss()
     assert torch.isclose(loss(preds, target), output)

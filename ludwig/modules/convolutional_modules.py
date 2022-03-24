@@ -86,7 +86,7 @@ class Conv1DLayer(LudwigModule):
         if norm == "batch":
             self.layers.append(nn.BatchNorm1d(num_features=out_channels, **norm_params))
         elif norm == "layer":
-            # todo(jmt): confirm correct interpretation of LayerNorm paramters
+            # todo(jmt): confirm correct interpretation of LayerNorm parameters
             self.layers.append(nn.LayerNorm(normalized_shape=[out_channels, self.sequence_size], **norm_params))
 
         self.layers.append(get_activation(activation))
@@ -162,12 +162,12 @@ class Conv1DStack(LudwigModule):
         if layers is None:
             if num_layers is None:
                 self.layers = [
-                    {"filter_size": 7, "pool_size": 3, "regularize": False},
-                    {"filter_size": 7, "pool_size": 3, "regularize": False},
-                    {"filter_size": 3, "pool_size": None, "regularize": False},
-                    {"filter_size": 3, "pool_size": None, "regularize": False},
-                    {"filter_size": 3, "pool_size": None, "regularize": True},
-                    {"filter_size": 3, "pool_size": 3, "regularize": True},
+                    {"filter_size": 7, "pool_size": 3},
+                    {"filter_size": 7, "pool_size": 3},
+                    {"filter_size": 3, "pool_size": None},
+                    {"filter_size": 3, "pool_size": None},
+                    {"filter_size": 3, "pool_size": None},
+                    {"filter_size": 3, "pool_size": 3},
                 ]
             else:
                 self.layers = []

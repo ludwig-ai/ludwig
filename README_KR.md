@@ -116,7 +116,7 @@ config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야
 - timeseries input + number output = forecasting model
 - category, number and binary inputs + binary output = fraud detection
 
-[예시](https://ludwig-ai.github.io/ludwig-docs/examples/)를 참고하여 Ludwig을 통해 어떤 작업을 실행하는지 확인하세요.
+[예시](https://ludwig-ai.github.io/ludwig-docs/latest/examples/)를 참고하여 Ludwig을 통해 어떤 작업을 실행하는지 확인하세요.
 
 Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이터를 사전 처리하는 방법, 최적화할 아키텍처 및 학습 매개변수, 하이퍼 파라미터 등의 추가 정보를 저장합니다. 이를 통해 초보자는 쉽게 사용할 수 있고, 전문가도 유연하게 사용할 수 있습니다.
 
@@ -160,7 +160,7 @@ Ludwig은 다음과 같은 동작을 합니다:
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-사용자가 config파일에서 사용 가능한 명령어들을 확인하고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/)를 참고하고, [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/)을 통해 여러 가지 다른 작업에 Ludwig을 사용하는 방법을 확인하세요.
+사용자가 config파일에서 사용 가능한 명령어들을 확인하고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/)를 참고하고, [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples/)을 통해 여러 가지 다른 작업에 Ludwig을 사용하는 방법을 확인하세요.
 
 학습 후, Ludwig는 학습된 모델과 hyperparameter, 학습 과정의 통계 요약이 포함된 `results`폴더를 생성할 것입니다.
 사용자들은 시각화 방법들 중 하나인 도구를 사용하여 시각화를 할 수 있습니다. 예를 들어:
@@ -173,11 +173,11 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 ![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
-시각화하는 더 다양한 방법을 알고 싶으시다면 [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations)에서 확인해 주시기 바랍니다.
+시각화하는 더 다양한 방법을 알고 싶으시다면 [Visualizations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/visualizations)에서 확인해 주시기 바랍니다.
 
 ## Distributed Training
 
-사용자는 [Horovod](https://github.com/horovod/horovod)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training)를 확인해 주시기 바랍니다.
+사용자는 [Horovod](https://github.com/horovod/horovod)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training/)를 확인해 주시기 바랍니다.
 
 ## Prediction and Evaluation
 
@@ -226,7 +226,7 @@ model = LudwigModel.load(model_path)
 predictions = model.predict(test_data)
 ```
 
-YAML 파일에 대한 같은 정보를 포함하고 있는 `config`는 CLI(Command Line Interface)에 제공됩니다. 더 자세한 정보는 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/)과 [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/)에서 제공됩니다.
+YAML 파일에 대한 같은 정보를 포함하고 있는 `config`는 CLI(Command Line Interface)에 제공됩니다. 더 자세한 정보는 [Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/)과 [API documentation](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel/)에서 제공됩니다.
 
 ## Extensibility
 
@@ -235,7 +235,7 @@ Ludwig는 처음부터 확장성을 염두에 두고 제작되었습니다.
 
 나아가 자체적인 특정 hyperparameters가 있는 새로운 모델들은 (데이터 타입에 따라, 특정 등급의) tensor들을 입력으로 받아들이고 tensor들을 출력으로 제공하는 클래스를 구현함으로써 쉽게 추가할 수 있습니다.
 이것은 모델의 재사용과 커뮤니티와의 공유를 장려합니다.
-자세한 내용은 [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/)를 참조하십시오.
+자세한 내용은 [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide/)를 참조하십시오.
 
 ## Full documentation
 

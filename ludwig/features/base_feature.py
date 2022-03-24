@@ -26,6 +26,7 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.metric_modules import MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
@@ -175,6 +176,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_encoder(self, encoder_parameters):
         return get_encoder_cls(self.type(), self.encoder)(**encoder_parameters)
 
+    @classmethod
+    def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "string"
+
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
@@ -280,17 +285,22 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
         prediction_key = loss_class.get_loss_inputs()
-        return self.eval_loss_function(predictions[prediction_key].detach(), targets)
+        if isinstance(self.eval_loss_metric, MeanMetric):
+            # MeanMetric's forward() implicitly updates the running average.
+            # For MeanMetrics, we use get_current_value() to compute the loss without changing the state. All metrics
+            # are updated at the ECD level as part of update_metrics().
+            return self.eval_loss_metric.get_current_value(predictions[prediction_key].detach(), targets)
+        return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
         self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_function = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
         self.metric_functions = {
-            LOSS: self.eval_loss_function,
+            LOSS: self.eval_loss_metric,
             **{
                 name: cls(**self.loss_kwargs(), **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type()).items()
@@ -409,7 +419,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         logits = self.logits(logits_input, target=target)
 
-        # For binary and numerical features, self.logits() is a tensor.
+        # For binary and number features, self.logits() is a tensor.
         # There are two special cases where self.logits() is a dict:
         #   categorical
         #       keys: logits, projection_input
@@ -447,6 +457,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         backend,
     ):
         raise NotImplementedError
+
+    @classmethod
+    def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
+        return "string"
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

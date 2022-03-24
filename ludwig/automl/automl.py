@@ -3,7 +3,7 @@
 Driver script which:
 
 (1) Builds a base config by performing type inference and populating config
-    w/default combiner parameters, training paramers, and hyperopt search space
+    w/default combiner parameters, training parameters, and hyperopt search space
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
@@ -20,8 +20,22 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
-from ludwig.automl.utils import _add_transfer_config, _ray_init, get_available_resources, get_model_type
-from ludwig.constants import HYPEROPT
+from ludwig.automl.utils import (
+    _add_transfer_config,
+    _ray_init,
+    get_available_resources,
+    get_model_type,
+    set_output_feature_metric,
+)
+from ludwig.constants import (
+    AUTOML_DEFAULT_IMAGE_ENCODER,
+    AUTOML_DEFAULT_TABULAR_MODEL,
+    AUTOML_DEFAULT_TEXT_ENCODER,
+    HYPEROPT,
+    IMAGE,
+    TABULAR,
+    TEXT,
+)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
@@ -134,20 +148,22 @@ def create_auto_config(
     :return: (dict) selected model configuration
     """
     default_configs = _create_default_config(dataset, target, time_limit_s, random_seed)
-    model_config = _model_select(dataset, default_configs, user_config, use_reference_config)
+    model_config, model_category, row_count = _model_select(dataset, default_configs, user_config, use_reference_config)
     if tune_for_memory:
         if ray.is_initialized():
             resources = get_available_resources()  # check if cluster has GPUS
             if resources["gpu"] > 0:
                 model_config, fits_in_memory = ray.get(
-                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(model_config, dataset)
+                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(
+                        model_config, dataset, model_category, row_count
+                    )
                 )
             else:
                 model_config, fits_in_memory = ray.get(
-                    ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset)
+                    ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset, model_category, row_count)
                 )
         else:
-            model_config, fits_in_memory = memory_tune_config(model_config, dataset)
+            model_config, fits_in_memory = memory_tune_config(model_config, dataset, model_category, row_count)
         if not fits_in_memory:
             warnings.warn(
                 "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
@@ -207,17 +223,19 @@ def _model_select(
 ):
     """Performs model selection based on dataset or user specified model.
 
-    Note: Current implementation returns tabnet by default.
+    Note: Current implementation returns tabnet by default for tabular datasets.
     """
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
     fields = dataset_info.fields
 
     base_config = default_configs["base_config"]
+    model_category = None
 
     # tabular dataset heuristics
     if len(fields) > 3:
-        base_config = merge_dict(base_config, default_configs["combiner"]["tabnet"])
+        model_category = TABULAR
+        base_config = merge_dict(base_config, default_configs["combiner"][AUTOML_DEFAULT_TABULAR_MODEL])
 
         # override combiner heuristic if explicitly provided by user
         if user_config is not None:
@@ -228,12 +246,17 @@ def _model_select(
         # text heuristics
         for input_feature in base_config["input_features"]:
             # default text encoder is bert
-            # TODO (ASN): add more robust heuristics
-            if input_feature["type"] == "text":
-                input_feature["encoder"] = "bert"
-                base_config = merge_dict(base_config, default_configs["text"]["bert"])
+            if input_feature["type"] == TEXT:
+                model_category = TEXT
+                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
+                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+                base_config[HYPEROPT]["sampler"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
+            if input_feature["type"] == IMAGE:
+                model_category = IMAGE
+                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
+                base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:
@@ -248,13 +271,16 @@ def _model_select(
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
 
+    # if single output feature, set relevant metric and goal if not already set
+    base_config = set_output_feature_metric(base_config)
+
     # add as initial trial in the automl search the hyperparameter settings from
     # the best model for a similar dataset and matching model type, if any.
     if use_reference_config:
         ref_configs = _get_reference_configs()
         base_config = _add_transfer_config(base_config, ref_configs)
 
-    return base_config
+    return base_config, model_category, dataset_info.row_count
 
 
 def _train(
@@ -272,6 +298,7 @@ def _train(
         model_name=model_name,
         random_seed=random_seed,
         backend="local",
+        skip_save_log=True,  # avoid per-step log overhead by default
         **kwargs,
     )
     return hyperopt_results

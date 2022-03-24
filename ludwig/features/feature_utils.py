@@ -78,6 +78,18 @@ def get_input_size_with_dependencies(
     return input_size_with_dependencies
 
 
+def get_module_dict_key_from_name(name):
+    """Returns a key that's guaranteed to be compatible with torch."""
+    key = name.replace(".", "__ludwig_punct_period__")
+    return key + FEATURE_NAME_SUFFIX
+
+
+def get_name_from_module_dict_key(key):
+    """Reverse of get_module_dict_key_from_name."""
+    name = key.replace("__ludwig_punct_period__", ".")
+    return name[:-FEATURE_NAME_SUFFIX_LENGTH]
+
+
 class LudwigFeatureDict(torch.nn.Module):
     """Torch ModuleDict wrapper that permits keys with any name.
 
@@ -95,12 +107,15 @@ class LudwigFeatureDict(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.module_dict = torch.nn.ModuleDict()
+        self.internal_key_to_original_name_map = {}
 
     def __getitem__(self, key) -> torch.nn.Module:
-        return self.module_dict[key + FEATURE_NAME_SUFFIX]
+        return self.module_dict[get_module_dict_key_from_name(key)]
 
     def __setitem__(self, key: str, module: torch.nn.Module) -> None:
-        self.module_dict[key + FEATURE_NAME_SUFFIX] = module
+        module_dict_key_name = get_module_dict_key_from_name(key)
+        self.internal_key_to_original_name_map[module_dict_key_name] = key
+        self.module_dict[module_dict_key_name] = module
 
     def __len__(self) -> int:
         return len(self.module_dict)
@@ -112,16 +127,19 @@ class LudwigFeatureDict(torch.nn.Module):
         return iter(self.keys())
 
     def keys(self) -> List[str]:
-        return [feature_name[:-FEATURE_NAME_SUFFIX_LENGTH] for feature_name in self.module_dict.keys()]
+        return [
+            get_name_from_module_dict_key(feature_name)
+            for feature_name in self.internal_key_to_original_name_map.keys()
+        ]
 
     def values(self) -> List[torch.nn.Module]:
         return [module for _, module in self.module_dict.items()]
 
     def items(self) -> List[Tuple[str, torch.nn.Module]]:
         return [
-            (feature_name[:-FEATURE_NAME_SUFFIX_LENGTH], module) for feature_name, module in self.module_dict.items()
+            (get_name_from_module_dict_key(feature_name), module) for feature_name, module in self.module_dict.items()
         ]
 
     def update(self, modules: Dict[str, torch.nn.Module]) -> None:
         for feature_name, module in modules.items():
-            self[feature_name] = module
+            self.__setitem__(feature_name, module)

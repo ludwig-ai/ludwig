@@ -9,7 +9,7 @@ from mlflow.tracking import MlflowClient
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs import MlflowCallback
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
+from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
 
 
 def test_mlflow_callback(tmpdir):
@@ -40,7 +40,7 @@ def test_mlflow_callback(tmpdir):
     exp_name = "mlflow_test"
     callback = MlflowCallback()
 
-    model = LudwigModel(config, callbacks=[callback])
+    model = LudwigModel(config, callbacks=[callback], backend=FakeRemoteBackend())
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, experiment_name=exp_name)
     expected_df, _ = model.predict(test_csv)
 

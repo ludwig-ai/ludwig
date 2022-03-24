@@ -116,7 +116,7 @@ class HyperoptSampler(ABC):
     @abstractmethod
     def sample(self) -> Dict[str, Any]:
         # Yields a set of parameters names and their values.
-        # Define `build_hyperopt_strategy` which would take paramters as inputs
+        # Define `build_hyperopt_strategy` which would take parameters as inputs
         pass
 
     def sample_batch(self, batch_size: int = None) -> List[Dict[str, Any]]:
@@ -200,8 +200,8 @@ class RandomSampler(HyperoptSampler):
     def _determine_samples(self):
         samples = []
         for _ in range(self.num_samples):
-            bnds = self.space.get_bounds()
-            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(1, len(self.space.get_bounds()))
+            bounds = self.space.get_bounds()
+            x = bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * np.random.rand(1, len(self.space.get_bounds()))
             sample = self.space.unwarp(x)[0]
             samples.append(sample)
         return samples

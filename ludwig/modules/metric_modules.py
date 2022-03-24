@@ -20,7 +20,7 @@ import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import IoU, MeanAbsoluteError
+from torchmetrics import MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics import R2Score as _R2Score
@@ -51,7 +51,6 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     VECTOR,
 )
-from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
     SequenceSoftmaxCrossEntropyLoss,
@@ -446,13 +445,22 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 
 @register_metric(JACCARD, [SET])
 class JaccardMetric(MeanMetric):
-    def __init__(self, **kwargs):
+    def __init__(self, threshold: float = 0.5, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
-        self.jaccard_metric = IoU(num_classes=2, reduction="sum")
+        self.threshold = threshold
         self.add_state(name="loss", default=[], dist_reduce_fx="mean")
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
-        return self.jaccard_metric(preds.type(torch.bool), target.type(torch.bool))
+        # notation: b is batch size and nc is number of unique elements in the set
+        # preds: shape [b, nc] probabilities for each class
+        # target: shape [b, nc] bit-mapped set representation
+        preds = torch.greater_equal(preds, self.threshold)  # now bit-mapped set
+        target = target.type(torch.bool)
+
+        intersection = torch.sum(torch.logical_and(target, preds).type(torch.float32), dim=-1)
+        union = torch.sum(torch.logical_or(target, preds).type(torch.float32), dim=-1)
+
+        return intersection / union  # shape [b]
 
     @classmethod
     def get_objective(cls):
@@ -460,7 +468,7 @@ class JaccardMetric(MeanMetric):
 
     @classmethod
     def get_inputs(cls):
-        return PREDICTIONS
+        return PROBABILITIES
 
 
 def get_improved_fun(metric: str) -> Callable:

@@ -20,6 +20,7 @@ RUN apt-get -y update && apt-get -y install \
     libcudnn7=7.6.5.32-1+cuda10.1 \
     libnccl2=2.7.8-1+cuda10.1 \
     libnccl-dev=2.7.8-1+cuda10.1
+RUN pip install -U pip
 
 WORKDIR /ludwig
 

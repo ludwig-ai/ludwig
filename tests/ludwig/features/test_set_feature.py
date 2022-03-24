@@ -29,15 +29,12 @@ def set_config():
         "use_bias": True,
         "weights_initializer": "uniform",
         "bias_initializer": "zeros",
-        "weights_regularizer": None,
-        "bias_regularizer": None,
-        "activity_regularizer": None,
         "norm": None,
         "norm_params": None,
         "activation": "relu",
         "dropout": 0.0,
         "reduce_output": "sum",
-        "tied_weights": None,
+        "tied": None,
     }
 
 

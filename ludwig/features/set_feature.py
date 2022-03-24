@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import torch
@@ -30,7 +30,6 @@ from ludwig.constants import (
     NAME,
     PREDICTIONS,
     PROBABILITIES,
-    PROBABILITY,
     PROC_COLUMN,
     SET,
     SIGMOID_CROSS_ENTROPY,
@@ -95,7 +94,7 @@ class SetFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         column = column.astype(str)
-        idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
+        idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -198,6 +197,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def loss_kwargs(self):
         return self.loss
 
+    def metric_kwargs(self) -> Dict[str, Any]:
+        return {"threshold": self.threshold}
+
     def create_predict_module(self) -> PredictModule:
         return _SetPredict(self.threshold)
 
@@ -274,14 +276,13 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
-        prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probabilities_col in result:
             threshold = self.threshold
 
             def get_prob(prob_set):
                 return [prob for prob in prob_set if prob >= threshold]
 
-            result[prob_col] = backend.df_engine.map_objects(
+            result[probabilities_col] = backend.df_engine.map_objects(
                 result[probabilities_col],
                 get_prob,
             )

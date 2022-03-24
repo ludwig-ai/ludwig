@@ -114,7 +114,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         column = column.astype(str)
-        idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
+        idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
             lowercase=preprocessing_parameters["lowercase"],
@@ -414,7 +414,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             LOSS,
             {
                 TYPE: "sequence_softmax_cross_entropy",
-                "labels_smoothing": 0,
                 "class_weights": 1,
                 "robust_lambda": 0,
                 "confidence_penalty": 0,

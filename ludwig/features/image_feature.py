@@ -197,9 +197,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 "or explicit image width and height are expected "
                 "to be provided. "
                 "Additional information: "
-                "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing".format(
-                    [img_height, img_width, num_channels], img.shape
-                )
+                "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/image_features"
+                "#image-features-preprocessing".format([img_height, img_width, num_channels], img.shape)
             )
 
         return img.numpy()

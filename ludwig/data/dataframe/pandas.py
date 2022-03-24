@@ -36,6 +36,9 @@ class PandasEngine(DataFrameEngine):
     def compute(self, data):
         return data
 
+    def concat(self, dfs):
+        return pd.concat(dfs)
+
     def from_pandas(self, df):
         return df
 
@@ -53,6 +56,11 @@ class PandasEngine(DataFrameEngine):
 
     def to_parquet(self, df, path):
         df.to_parquet(path, engine="pyarrow")
+
+    def to_ray_dataset(self, df):
+        from ray.data import from_pandas
+
+        return from_pandas(df)
 
     @property
     def array_lib(self):

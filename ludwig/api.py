@@ -69,6 +69,7 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
     generate_kfold_splits,
@@ -78,7 +79,7 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
+from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
@@ -100,7 +101,7 @@ class LudwigModel:
         to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
     :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
         allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param allow_parallel_threads: (bool, default: `True`) allow Torch
         to use multithreading parallelism to improve performance at the
         cost of determinism.
 
@@ -178,7 +179,7 @@ class LudwigModel:
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
             allocate per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use multithreading parallelism to improve performance at the
             cost of determinism.
         :param callbacks: (list, default: `None`) a list of
@@ -324,11 +325,10 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
+        :return: (Tuple[Dict, Union[Dict, pd.DataFrame], str]) tuple containing
             `(training_statistics, preprocessed_data, output_directory)`.
-            `training_statistics` is a dictionary of training statistics
-            for each output feature containing loss and metrics values
-            for each epoch.
+            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+                Each metric corresponds to each training checkpoint.
             `preprocessed_data` is the tuple containing these three data sets
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
@@ -490,13 +490,6 @@ class LudwigModel:
                 callbacks=train_callbacks,
                 random_seed=random_seed,
             ) as trainer:
-                for callback in self.callbacks:
-                    callback.on_train_start(
-                        model=self.model,
-                        config=self.config,
-                        config_fp=self.config_fp,
-                    )
-
                 # auto tune batch size
                 if self.config[TRAINER][BATCH_SIZE] == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
@@ -524,6 +517,13 @@ class LudwigModel:
                     if not skip_save_model:
                         self.save_config(model_dir)
 
+                for callback in self.callbacks:
+                    callback.on_train_start(
+                        model=self.model,
+                        config=self.config,
+                        config_fp=self.config_fp,
+                    )
+
                 try:
                     train_stats = trainer.train(
                         training_set,
@@ -532,11 +532,16 @@ class LudwigModel:
                         save_path=model_dir,
                     )
 
+                    # Unpack train()'s return.
+                    # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
+                    # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
+                    # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
+                    # Tune.
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
                     train_stats = {
-                        TRAINING: train_trainset_stats,
-                        VALIDATION: train_valiset_stats,
-                        TEST: train_testset_stats,
+                        TRAINING: metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
+                        VALIDATION: metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
+                        TEST: metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
                     }
 
                     # save training statistics
@@ -550,27 +555,36 @@ class LudwigModel:
                     validation_field_result = train_valiset_stats[validation_field]
 
                     best_function = get_best_function(validation_metric)
+
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
-                        epoch_best_vali_metric, best_vali_metric = best_function(
-                            enumerate(validation_field_result[validation_metric]), key=lambda pair: pair[1]
+                        best_vali_index, (
+                            epoch_best_vali_metric,
+                            step_best_vali_metric,
+                            best_vali_metric,
+                        ) = best_function(
+                            enumerate(validation_field_result[validation_metric]),
+                            # -1 for the last element of the TrainerMetric namedtuple.
+                            key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
                         )
-                        logger.info(f"Best validation model epoch: {epoch_best_vali_metric + 1}")
                         logger.info(
-                            "Best validation model {} on validation set {}: {}".format(
-                                validation_metric, validation_field, best_vali_metric
-                            )
+                            f"Best validation model step: {step_best_vali_metric}, epoch: {epoch_best_vali_metric + 1}"
+                        )
+                        logger.info(
+                            f"Best validation model {validation_metric} on validation set {validation_field}: "
+                            f"{best_vali_metric}"
                         )
                         if test_set is not None:
-                            best_vali_metric_epoch_test_metric = train_testset_stats[validation_field][
+                            validation_selected_test_metric_score = train_testset_stats[validation_field][
                                 validation_metric
-                            ][epoch_best_vali_metric]
+                            ][best_vali_index][
+                                -1
+                            ]  # -1 for the last element of the TrainerMetric namedtuple.
 
                             logger.info(
-                                "Best validation model {} on test set {}: {}".format(
-                                    validation_metric, validation_field, best_vali_metric_epoch_test_metric
-                                )
+                                f"Best validation model {validation_metric} on test set {validation_field}: "
+                                f"{validation_selected_test_metric_score}"
                             )
                         logger.info(f"\nFinished: {experiment_name}_{model_name}")
                         logger.info(f"Saved to: {output_directory}")
@@ -580,9 +594,15 @@ class LudwigModel:
 
                 self.training_set_metadata = training_set_metadata
 
-                if not skip_save_model:
-                    # Load the best weights from saved checkpoint
-                    self.load_weights(model_dir)
+                # Ensure model weights are saved to the driver if training was done remotely
+                if self.backend.is_coordinator() and not skip_save_model:
+                    weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
+                    if not path_exists(weights_save_path):
+                        with open_file(weights_save_path, "wb") as f:
+                            torch.save(self.model.state_dict(), f)
+
+                # Synchronize model weights between workers
+                self.backend.sync_model(self.model)
 
                 print_boxed("FINISHED")
                 return train_stats, preprocessed_data, output_url
@@ -1027,9 +1047,8 @@ class LudwigModel:
             `(evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
             `evaluation_statistics` dictionary with evaluation performance
                 statistics on the test_set,
-            `training_statistics` is a dictionary of training statistics for
-                each output
-            feature containing loss and metrics values for each epoch,
+            `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+                Each metric corresponds to each training checkpoint.
             `preprocessed_data` tuple containing preprocessed
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
@@ -1225,14 +1244,8 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
-            `(training_statistics, preprocessed_data, output_directory)`.
-            `training_statistics` is a dictionary of training statistics
-            for each output feature containing loss and metrics values
-            for each epoch.
-            `preprocessed_data` is the tuple containing these three data sets
-            `(training_set, validation_set, test_set)`.
-            `output_directory` filepath to where training results are stored.
+        :return: (Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict]) tuple containing
+            `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
         preprocessed_data = preprocess_for_training(
@@ -1279,7 +1292,7 @@ class LudwigModel:
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
             allocate per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use
             multithreading parallelism to improve performance at the cost of
             determinism.
@@ -1299,7 +1312,7 @@ class LudwigModel:
         ```
         """
         # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
-        # TensorFlow with default parameters
+        # Torch with default parameters
         backend_param = backend
         backend = initialize_backend(backend)
         backend.initialize_pytorch(
@@ -1396,7 +1409,7 @@ class LudwigModel:
         save_json(training_set_metadata_path, self.training_set_metadata)
 
     def save_config(self, save_path: str) -> None:
-        """Save config to specoficed location.
+        """Save config to specified location.
 
         # Inputs
 
@@ -1515,7 +1528,7 @@ def kfold_cross_validate(
             `'fwf'`,
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.  Currenlty `hdf5` format is not supported for
+            `'stata'`, `'tsv'`.  Currently `hdf5` format is not supported for
             k_fold cross validation.
     :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
@@ -1563,7 +1576,7 @@ def kfold_cross_validate(
             for training.
     :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
             allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to
+    :param allow_parallel_threads: (bool, default: `True`) allow Torch to
             use multithreading parallelism
            to improve performance at the cost of determinism.
     :param backend: (Union[Backend, str]) `Backend` or string name

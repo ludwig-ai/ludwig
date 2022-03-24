@@ -180,9 +180,8 @@ def experiment_cli(
          `model` LudwigModel instance
          `evaluation_statistics` dictionary with evaluation performance
              statistics on the test_set,
-         `training_statistics` is a dictionary of training statistics for
-             each output
-         feature containing loss and metrics values for each epoch,
+         `training_statistics` is a nested dictionary of dataset -> feature_name -> metric_name -> List of metrics.
+                Each metric corresponds to each training checkpoint.
          `preprocessed_data` tuple containing preprocessed
          `(training_set, validation_set, test_set)`, `output_directory`
          filepath string to where results are stored.
@@ -435,7 +434,7 @@ def cli(sys_argv):
         help="disables saving model weights and hyperparameters each time "
         "the model improves. "
         "By default Ludwig saves model weights after each epoch "
-        "the validation metric imprvoes, but if the model is really big "
+        "the validation metric improves, but if the model is really big "
         "that can be time consuming. If you do not want to keep "
         "the weights and just find out what performance a model can get "
         "with a set of hyperparameters, use this parameter to skip it,"

@@ -430,6 +430,8 @@ class TabNetCombinerConfig:
     # B_v from the paper
     bn_virtual_bs: Optional[int] = schema.PositiveInteger()
     sparsity: float = 1e-5  # lambda_sparse in the paper
+    entmax_mode: str = schema.StringOptions(["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax")
+    entmax_alpha: float = schema.FloatRange(default=1.5, min=1, max=2)  # 1 corresponds to softmax, 2 is sparsemax.
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
     class Meta:
@@ -457,6 +459,8 @@ class TabNetCombiner(Combiner):
             bn_momentum=config.bn_momentum,
             bn_virtual_bs=config.bn_virtual_bs,
             sparsity=config.sparsity,
+            entmax_mode=config.entmax_mode,
+            entmax_alpha=config.entmax_alpha,
         )
 
         if config.dropout > 0:
@@ -731,7 +735,7 @@ class TabTransformerCombiner(Combiner):
             self.projectors.append(Linear(flatten_size[0], projector_size))
 
         # input to layer_norm are the encoder outputs for unembeddable features,
-        # which are numerical or binary features.  These should be 2-dim
+        # which are number or binary features.  These should be 2-dim
         # tensors.  Size should be concatenation of these tensors.
         concatenated_unembeddable_encoders_size = 0
         for i_f in self.unembeddable_features:

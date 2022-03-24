@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
-from ludwig.utils.torch_utils import Sparsemax
+from ludwig.utils.entmax import sparsemax
 
 RANDOM_SEED = 67
 BATCH_SIZE = 16
@@ -20,7 +20,6 @@ BATCH_SIZE = 16
     ],
 )
 def test_sparsemax(input_tensor: torch.Tensor) -> None:
-    sparsemax = Sparsemax()
 
     output_tensor = sparsemax(input_tensor)
 
@@ -94,39 +93,51 @@ def test_feature_transformer(
 @pytest.mark.parametrize("output_size", [10, 12])
 @pytest.mark.parametrize("size", [4, 8])
 @pytest.mark.parametrize("input_size", [2, 6])
-def test_attentive_transformer(input_size: int, size: int, output_size: int, virtual_batch_size: Optional[int]) -> None:
+@pytest.mark.parametrize("entmax_mode", [None, "entmax15", "adaptive", "constant"])
+def test_attentive_transformer(
+    entmax_mode: Optional[str], input_size: int, size: int, output_size: int, virtual_batch_size: Optional[int]
+) -> None:
     # setup synthetic tensors
     torch.manual_seed(RANDOM_SEED)
     input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
     prior_scales = torch.ones([BATCH_SIZE, input_size])
 
-    # setup required trasnformers for test
+    # setup required transformers for test
     feature_transformer = FeatureTransformer(input_size, size + output_size, bn_virtual_bs=virtual_batch_size)
-    attentive_transformer = AttentiveTransformer(size, input_size, bn_virtual_bs=virtual_batch_size)
+    attentive_transformer = AttentiveTransformer(
+        size, input_size, bn_virtual_bs=virtual_batch_size, entmax_mode=entmax_mode
+    )
 
     # process synthetic tensor through transformers
     x = feature_transformer(input_tensor)
     output_tensor = attentive_transformer(x[:, output_size:], prior_scales)
 
-    # check for expected shape and properities
+    # check for expected shape and properties
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, input_size)
 
     assert attentive_transformer.input_shape[-1] == size
     assert attentive_transformer.output_shape[-1] == input_size
     assert attentive_transformer.input_dtype == torch.float32
+    if entmax_mode == "adaptive":
+        assert isinstance(attentive_transformer.trainable_alpha, torch.Tensor)
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
 @pytest.mark.parametrize("size", [2, 4, 8])
 @pytest.mark.parametrize("output_size", [2, 4, 12])
 @pytest.mark.parametrize("input_size", [2])
-def test_tabnet(input_size: int, output_size: int, size: int, virtual_batch_size: Optional[int]) -> None:
+@pytest.mark.parametrize("entmax_mode", [None, "entmax15", "adaptive", "constant"])
+def test_tabnet(
+    entmax_mode: Optional[str], input_size: int, output_size: int, size: int, virtual_batch_size: Optional[int]
+) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
     input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
 
-    tabnet = TabNet(input_size, size, output_size, num_steps=3, num_total_blocks=4, num_shared_blocks=2)
+    tabnet = TabNet(
+        input_size, size, output_size, num_steps=3, num_total_blocks=4, num_shared_blocks=2, entmax_mode=entmax_mode
+    )
 
     output = tabnet(input_tensor)
 

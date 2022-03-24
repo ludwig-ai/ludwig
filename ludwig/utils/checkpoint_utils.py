@@ -5,6 +5,7 @@ https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 import logging
 import os
 import os.path as osp
+import re
 import signal
 from glob import glob
 
@@ -24,12 +25,16 @@ def get_files(d, pattern, sort=True):
     Args:
       d (str): The path to the directory.
       pattern (str): The wildcard to filter files with.
-      sort (bool): Whether to sort the returned list.
+      sort (bool): Whether to sort the returned list. Assumes filenames contain a number value to sort by (tmp-001).
     """
     files = glob(osp.join(d, pattern))
     files = [f for f in files if osp.isfile(f)]
     if sort:
-        files.sort(key=lambda x: int(os.path.basename(x).split(".")[0]))
+
+        def filter_numeric(s):
+            return re.sub("[^0-9]", "", s)
+
+        files.sort(key=lambda x: int(filter_numeric(os.path.basename(x).split(".")[0])))
     return files
 
 
@@ -92,11 +97,11 @@ class Checkpoint:
         save_dir = osp.dirname(save_path)
         tmp_path = osp.join(save_dir, f"tmp-{np.random.randint(1e9)}.ckpt")
         torch.save(state, tmp_path)
-        # rename is an atomic operation in python
+        # replace is an atomic operation in python
         # it is POSIX compliant according to docs
-        # https://docs.python.org/3/library/os.html#os.rename
-        os.rename(tmp_path, save_path)
-        logging.info(f"Saved checkpoint at {save_path}.")
+        # https://docs.python.org/3/library/os.html#os.replace
+        os.replace(tmp_path, save_path)
+        logging.debug(f"Saved checkpoint at {save_path}.")
 
         # restore SIGINT handler
         if orig_handler is not None:

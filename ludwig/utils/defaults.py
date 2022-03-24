@@ -60,7 +60,7 @@ default_preprocessing_parameters = {
     "split_probabilities": default_preprocessing_split_probabilities,
     "stratify": default_preprocessing_stratify,
     "undersample_majority": default_preprocessing_undersample_majority,
-    "oversample_minority": default_preprocessing_oversample_minority
+    "oversample_minority": default_preprocessing_oversample_minority,
 }
 default_preprocessing_parameters.update(
     {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
@@ -76,7 +76,8 @@ default_training_params = {
     "learning_rate": 0.001,
     "batch_size": 128,
     "eval_batch_size": None,
-    "early_stop": 5,
+    "early_stop": 1000,
+    "steps_per_checkpoint": 0,
     "reduce_learning_rate_on_plateau": 0,
     "reduce_learning_rate_on_plateau_patience": 5,
     "reduce_learning_rate_on_plateau_rate": 0.5,
@@ -105,6 +106,10 @@ default_optimizer_params_registry = {
         # 'beta_1': 0.9,
         # 'beta_2': 0.999,
         # 'epsilon': 1e-08
+        "eps": 1e-08,
+    },
+    "adamw": {
+        "betas": (0.9, 0.999),
         "eps": 1e-08,
     },
     "adadelta": {
@@ -239,24 +244,23 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         )
     trainer["early_stop"] = -1
 
-    # At most one of max_t and epochs may be specified by the user, and we set them to be equal to
-    # ensure that Ludwig does not stop training before the scheduler has finished the trial, unless
-    # max_t is in time_total_s, in which case we set epochs very high to continue train until stopped.
     max_t = scheduler.get("max_t")
     time_attr = scheduler.get("time_attr")
     epochs = trainer.get("epochs")
-    if max_t is not None and epochs is not None and max_t != epochs and time_attr != "time_total_s":
-        raise ValueError(
-            "Cannot set trainer parameter `epochs` when using a hyperopt scheduler with `max_t`. "
-            "Unset one of these parameters in your config."
-        )
-    elif max_t is not None:
+    if max_t is not None:
         if time_attr == "time_total_s":
-            trainer["epochs"] = sys.maxsize  # essentially continue training until stopped
+            if epochs is None:
+                trainer["epochs"] = sys.maxsize  # continue training until time limit hit
+            # else continue training until either time or trainer epochs limit hit
+        elif epochs is not None and epochs != max_t:
+            raise ValueError(
+                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                "Unset one of these parameters in your config or make sure their values match."
+            )
         else:
-            trainer["epochs"] = max_t
+            trainer["epochs"] = max_t  # run trainer until scheduler epochs limit hit
     elif epochs is not None:
-        scheduler["max_t"] = epochs
+        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
 def merge_with_defaults(config):
