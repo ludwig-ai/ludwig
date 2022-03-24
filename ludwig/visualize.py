@@ -3189,7 +3189,7 @@ def calibration_1_vs_all(
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
             probs[i] = prob_limit
 
-    num_classes = max(ground_truth) + 1
+    num_classes = len(metadata[output_feature_name]["str2idx"])
 
     brier_scores = []
 
