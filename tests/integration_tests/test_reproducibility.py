@@ -21,7 +21,11 @@ INPUT_FEATURES = [
 
 OUTPUT_FEATURES = [{"name": "y", "type": "number"}]
 
-CONFIG = {"input_features": INPUT_FEATURES, "output_features": OUTPUT_FEATURES, "trainer": {"epochs": 3}}
+CONFIG = {
+    "input_features": INPUT_FEATURES,
+    "output_features": OUTPUT_FEATURES,
+    "trainer": {"epochs": 2, "batch_size": 8}
+}
 
 
 @pytest.fixture(scope="module")
@@ -29,7 +33,7 @@ def raw_dataset_fp():
     with tempfile.TemporaryDirectory() as tmpdir:
         raw_fp = os.path.join(tmpdir, "raw_data.csv")
         random.seed(RANDOM_SEED)
-        cli_synthesize_dataset(100, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
+        cli_synthesize_dataset(20, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
         yield raw_fp
 
 
@@ -57,20 +61,18 @@ def test_preprocess(raw_dataset_fp):
 
 def test_train(raw_dataset_fp):
     # define Ludwig model
-    model = LudwigModel(config=CONFIG, logging_level=logging.WARN)
-
-    # rng_state1 = torch.get_rng_state()
-    # print(f"rng state: {rng_state1}")
-    training_statistics1, preprocessed_data1, _ = model.train(
-        dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_progress=True
+    model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+    training_statistics1, preprocessed_data1, _ = model1.train(
+        dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_progress=True, skip_save_processed_input=True
     )
 
-    # rng_state2 = torch.get_rng_state()
-    model = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+    # invoke torch random functions
+    torch.manual_seed(RANDOM_SEED + 1)
+    torch.rand((5,))
 
-    # print(f"match {np.all(rng_state1.numpy() == rng_state2.numpy())}, rng state: {rng_state2}")
-    training_statistics2, preprocessed_data2, _ = model.train(
-        dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_progress=True
+    model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+    training_statistics2, preprocessed_data2, _ = model2.train(
+        dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_progress=True, skip_save_processed_input=True
     )
 
     # training data set split
@@ -83,8 +85,7 @@ def test_train(raw_dataset_fp):
     assert np.all(pd.DataFrame(preprocessed_data1[2].dataset) == pd.DataFrame(preprocessed_data2[2].dataset))
 
     # check for equality of training statistics
-    assert np.all(
-        np.isclose(training_statistics1["training"]["y"]["loss"], training_statistics2["training"]["y"]["loss"]))
+    assert training_statistics1 == training_statistics2
 
 
 def test_experiment(raw_dataset_fp):
@@ -92,12 +93,16 @@ def test_experiment(raw_dataset_fp):
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
 
     evaluation_statistics1, training_statistics1, preprocessed_data1, _ = model1.experiment(
-        dataset=raw_dataset_fp, random_seed=RANDOM_SEED
+        dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_processed_input=True
     )
+
+    # invoke torch random functions
+    torch.manual_seed(RANDOM_SEED + 1)
+    torch.rand((5,))
 
     model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
     evaluation_statistics2, training_statistics2, preprocessed_data2, _ = model2.experiment(
-        dataset=raw_dataset_fp, random_seed=RANDOM_SEED
+        dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_processed_input=True
     )
 
     # training data set split
@@ -110,4 +115,5 @@ def test_experiment(raw_dataset_fp):
     assert np.all(pd.DataFrame(preprocessed_data1[2].dataset) == pd.DataFrame(preprocessed_data2[2].dataset))
 
     # check for equality of training statistics
-    assert training_statistics1["training"]["y"]["loss"] == training_statistics2["training"]["y"]["loss"]
+    assert training_statistics1 == training_statistics2
+    assert evaluation_statistics1 == evaluation_statistics2
