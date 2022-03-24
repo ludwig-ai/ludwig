@@ -601,6 +601,8 @@ class Trainer(BaseTrainer):
         Returns whether the trainer should early stop, based on validation metrics history.
         """
         start_time = time.time()
+        self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
+
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
@@ -657,11 +659,9 @@ class Trainer(BaseTrainer):
 
         elapsed_time = (time.time() - start_time) * 1000.0
 
+        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
         if self.is_coordinator():
             logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-
-        # metric prints
-        if self.is_coordinator():
             for output_feature, table in tables.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
@@ -897,15 +897,14 @@ class Trainer(BaseTrainer):
                 progress_tracker.epoch += 1
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-                # ========== Save training progress ==========
                 if self.is_coordinator():
+                    # ========== Save training progress ==========
                     logging.debug(
                         f"Epoch {progress_tracker.epoch} took: "
                         f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                     )
-                    if self.is_coordinator():
-                        checkpoint_manager.save(progress_tracker.steps)
-                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                    checkpoint_manager.save(progress_tracker.steps)
+                    progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                 # Early stop if needed.
                 if should_break:
