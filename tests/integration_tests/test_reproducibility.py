@@ -2,7 +2,6 @@ import logging
 import os
 import random
 import tempfile
-from typing import Union
 
 import numpy as np
 import pandas as pd
