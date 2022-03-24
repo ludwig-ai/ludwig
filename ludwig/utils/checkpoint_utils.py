@@ -25,14 +25,14 @@ def get_files(d, pattern, sort=True):
     Args:
       d (str): The path to the directory.
       pattern (str): The wildcard to filter files with.
-      sort (bool): Whether to sort the returned list.
+      sort (bool): Whether to sort the returned list. Assumes filenames contain a number value to sort by (tmp-001).
     """
     files = glob(osp.join(d, pattern))
     files = [f for f in files if osp.isfile(f)]
     if sort:
-        def filter_nonnumeric(s):
+        def filter_numeric(s):
             return re.sub("[^0-9]", "", s)
-        files.sort(key=lambda x: int(filter_nonnumeric(os.path.basename(x).split(".")[0])))
+        files.sort(key=lambda x: int(filter_numeric(os.path.basename(x).split(".")[0])))
     return files
 
 
