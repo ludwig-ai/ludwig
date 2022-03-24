@@ -5,8 +5,8 @@ https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 import logging
 import os
 import os.path as osp
-import signal
 import re
+import signal
 from glob import glob
 
 import numpy as np
