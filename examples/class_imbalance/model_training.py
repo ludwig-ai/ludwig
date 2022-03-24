@@ -18,7 +18,6 @@ shutil.rmtree("./visualizations", ignore_errors=True)
 
 # list models to train
 list_of_model_ids = ["standard_model", "balanced_model"]
-list_of_train_stats = []
 list_of_eval_stats = []
 
 training_set, val_set, test_set = imbalanced_insurance.load()
