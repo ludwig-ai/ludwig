@@ -5,8 +5,8 @@ https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 import logging
 import os
 import os.path as osp
-import signal
 import re
+import signal
 from glob import glob
 
 import numpy as np
@@ -30,8 +30,10 @@ def get_files(d, pattern, sort=True):
     files = glob(osp.join(d, pattern))
     files = [f for f in files if osp.isfile(f)]
     if sort:
+
         def filter_nonnumeric(s):
             return re.sub("[^0-9]", "", s)
+
         files.sort(key=lambda x: int(filter_nonnumeric(os.path.basename(x).split(".")[0])))
     return files
 
