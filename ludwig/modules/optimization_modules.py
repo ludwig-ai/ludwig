@@ -156,6 +156,8 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
     initial_accumulator_value: float = NonNegativeFloat(default=0)
+    """TODO: Document parameters (default: 0)."""
+
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
     lr_decay: float = 0
     weight_decay: float = 0
@@ -283,7 +285,7 @@ def OptimizerDataclassField(default={"type": "adam"}):
                 "properties": {
                     "type": {"type": "string", "enum": list(optimizer_registry.keys())},
                 },
-                #
+                "title": "optimizer_options",
                 "allOf": get_optimizer_conds(),
                 "required": ["type"],
             }
@@ -350,7 +352,13 @@ def GradientClippingDataclassField(default={}, allow_none=True):
             raise ValidationError("Field should be None or dict")
 
         def _jsonschema_type_mapping(self):
-            return {"oneOf": [{"type": "null"}, get_custom_schema_from_marshmallow_class(GradientClippingConfig)]}
+            return {
+                "oneOf": [
+                    {"type": "null", "title": "disabled"},
+                    {**get_custom_schema_from_marshmallow_class(GradientClippingConfig), "title": "enabled_options"},
+                ],
+                "title": "gradient_clipping_options",
+            }
 
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
