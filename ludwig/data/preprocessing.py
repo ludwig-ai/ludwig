@@ -1301,7 +1301,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
         if feature[TYPE] != NUMBER:
             raise ValueError(
                 f"Filling missing values with mean is supported "
-                f"only for numerical types, not for type {feature[TYPE]}.",
+                f"only for number types, not for type {feature[TYPE]}.",
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
     elif missing_value_strategy == FILL_WITH_FALSE:

@@ -61,7 +61,7 @@ print("Preparing Ludwig config")
 num_features = ["X" + str(i) for i in range(1, 31)]
 input_features = []
 
-# setup input features for numerical variables
+# setup input features for number variables
 for p in num_features:
     a_feature = {
         "name": p,
