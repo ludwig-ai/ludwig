@@ -1,6 +1,9 @@
+from collections import OrderedDict
+
 import torch
 
 from ludwig.utils import metric_utils
+from ludwig.utils.metric_utils import TrainerMetric
 
 
 def test_dynamic_partition():
@@ -41,3 +44,34 @@ def test_masked_correct_predictions():
     assert torch.equal(
         result, torch.Tensor([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     )
+
+
+def test_reduce_trainer_metrics_dict():
+    dict_dict_trainer_metrics = {
+        "feature_name": {"metric_name": [metric_utils.TrainerMetric(epoch=1, step=2, value=10)]}
+    }
+
+    result = metric_utils.reduce_trainer_metrics_dict(dict_dict_trainer_metrics)
+
+    assert result == {"feature_name": {"metric_name": [10]}}
+
+
+def test_reduce_trainer_metrics_dict_ordered_dict():
+    dict_dict_trainer_metrics = OrderedDict(
+        [
+            (
+                "category_5B6BF",
+                OrderedDict(
+                    [
+                        ("loss", [TrainerMetric(epoch=0, step=1, value=0.0)]),
+                        ("accuracy", [TrainerMetric(epoch=0, step=1, value=1.0)]),
+                    ]
+                ),
+            ),
+            ("combined", {"loss": [TrainerMetric(epoch=0, step=1, value=0.0)]}),
+        ]
+    )
+
+    result = metric_utils.reduce_trainer_metrics_dict(dict_dict_trainer_metrics)
+
+    assert result == {"category_5B6BF": {"accuracy": [1.0], "loss": [0.0]}, "combined": {"loss": [0.0]}}

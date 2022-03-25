@@ -7,7 +7,9 @@ from typing import Dict, List
 from dataclasses_json import dataclass_json, LetterCase
 from pandas import Series
 
-from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
+from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NAME, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
+from ludwig.features.feature_registries import output_type_registry
+from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
 
 try:
@@ -100,7 +102,7 @@ def _ray_init():
 # ref_configs comes from a file storing the config for a high-performing model per reference dataset.
 # If the automl model type matches that of any reference models, set the initial point_to_evaluate
 # in the automl hyperparameter search to the config of the reference model with the closest-matching
-# input numerical columns ratio.  This model config "transfer learning" can improve the automl search.
+# input number columns ratio.  This model config "transfer learning" can improve the automl search.
 def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
     base_model_type = base_config[COMBINER][TYPE]
     base_model_numeric_ratio = _get_ratio_numeric_input_features(base_config["input_features"])
@@ -150,3 +152,27 @@ def _add_option_to_evaluate(
             if option_val not in hyperopt_params[option_param]["categories"]:
                 bisect.insort(hyperopt_params[option_param]["categories"], option_val)
     return point_to_evaluate
+
+
+def set_output_feature_metric(base_config):
+    """If single output feature, set trainer and hyperopt metric and goal for that feature if not set."""
+    if len(base_config["output_features"]) != 1:
+        # If multiple output features, ludwig uses the goal of minimizing combined loss;
+        # this could be revisited/refined in the future.
+        return base_config
+    output_name = base_config["output_features"][0][NAME]
+    output_type = base_config["output_features"][0][TYPE]
+    output_metric = output_type_registry[output_type].default_validation_metric
+    output_goal = metric_registry[output_metric].get_objective()
+    if "validation_field" not in base_config[TRAINER] and "validation_metric" not in base_config[TRAINER]:
+        base_config[TRAINER]["validation_field"] = output_name
+        base_config[TRAINER]["validation_metric"] = output_metric
+    if (
+        "output_feature" not in base_config[HYPEROPT]
+        and "metric" not in base_config[HYPEROPT]
+        and "goal" not in base_config[HYPEROPT]
+    ):
+        base_config[HYPEROPT]["output_feature"] = output_name
+        base_config[HYPEROPT]["metric"] = output_metric
+        base_config[HYPEROPT]["goal"] = output_goal
+    return base_config

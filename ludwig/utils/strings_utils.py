@@ -18,7 +18,7 @@ import re
 import unicodedata
 from collections import Counter
 from enum import Enum
-from typing import List, Set, Union
+from typing import List, Optional, Set, Union
 
 import numpy as np
 
@@ -97,8 +97,8 @@ def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
     return True
 
 
-def is_numerical(s: Union[str, int, float]):
-    """Returns whether specified value is numerical."""
+def is_number(s: Union[str, int, float]):
+    """Returns whether specified value is number."""
     if isinstance(s, str) and s.lower() == "nan":
         return True
     try:
@@ -108,10 +108,10 @@ def is_numerical(s: Union[str, int, float]):
         return False
 
 
-def are_all_numericals(values: List[Union[str, int, float]]):
+def are_all_numbers(values: List[Union[str, int, float]]):
     """Returns whether all values are numbers."""
     for value in values:
-        if not is_numerical(value):
+        if not is_number(value):
             return False
     return True
 
@@ -132,7 +132,7 @@ def are_sequential_integers(values: List[Union[str, int, float]]):
     for value in values:
         if not is_integer(value):
             return False
-        int_list.append(int(value))
+        int_list.append(int(float(value)))
     return (max(int_list) - min(int_list) + 1) == len(int_list)
 
 
@@ -189,9 +189,14 @@ def create_vocabulary(
 ):
     """Computes a vocabulary over the provided data frame.
 
-    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data provided,
-    producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer', then a pre-trained
-    huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is used directly.
+    This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
+    items in a set feature, etc. If the feature only contains a single toke, use `create_vocabulary_single_token`
+    instead.
+
+    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data
+    provided, producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer',
+    then a pre-trained huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is
+    used directly.
 
     The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
     STOP) are added if add_special_symbols=True.
@@ -285,6 +290,44 @@ def create_vocabulary(
         pad_idx = str2idx[padding_symbol]
 
     return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
+
+
+def create_vocabulary_single_token(
+    data: DataFrame,
+    num_most_frequent: Optional[int] = None,
+    processor: str = PANDAS,
+    unknown_symbol: str = UNKNOWN_SYMBOL,
+):
+    """Computes a vocabulary over the provided data frame.
+
+    This function should be used iff the values in each row of data should be considered as a single token, e.g.,
+    category features ("interested", "not interested", "somewhat interested").
+
+    This assumption allows us to be more efficient than `create_vocabulary()` as we can skip tokenization and
+    computing the maximum sequence length, which are unnecessary for category features.
+
+    The `UNKNOWN` special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    STOP) are added if add_special_symbols=True.
+
+    Args:
+        data: DataFrame of string data.
+        num_most_frequent: Upper limit on vocabulary size.
+        unknown_symbol: String representation for the UNKNOWN symbol.
+        processor: Which processor to use to process data.
+
+    Returns:
+        Tuple of:
+            vocab: List of strings representing the computed vocabulary.
+            str2idx: Map of symbol to index.
+            str2freq: Map of symbol to frequency.
+    """
+    processed_counts = data.value_counts(sort=True)
+    processed_counts = processor.compute(processed_counts)
+    vocab = [unknown_symbol] + processed_counts.index.tolist()[:num_most_frequent]
+    str2idx = {unit: i for i, unit in enumerate(vocab)}
+    str2freq = processed_counts.to_dict()
+    str2freq = {k: str2freq.get(k, 0) for k in vocab}
+    return vocab, str2idx, str2freq
 
 
 def _get_sequence_vector(

@@ -21,6 +21,7 @@ from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResult
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
@@ -450,7 +451,7 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+            with tune.checkpoint_dir(step=progress_tracker.steps) as checkpoint_dir:
                 checkpoint_model = os.path.join(checkpoint_dir, "model")
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
@@ -466,10 +467,13 @@ class RayTuneExecutor(HyperoptExecutor):
                         shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
+            # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
+            # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
+            # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
-                TRAINING: progress_tracker.train_metrics,
-                VALIDATION: progress_tracker.vali_metrics,
-                TEST: progress_tracker.test_metrics,
+                TRAINING: metric_utils.reduce_trainer_metrics_dict(progress_tracker.train_metrics),
+                VALIDATION: metric_utils.reduce_trainer_metrics_dict(progress_tracker.vali_metrics),
+                TEST: metric_utils.reduce_trainer_metrics_dict(progress_tracker.test_metrics),
             }
 
             metric_score = tune_executor.get_metric_score(train_stats)
@@ -487,6 +491,20 @@ class RayTuneExecutor(HyperoptExecutor):
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
+            def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
+                """Checkpoints the progress tracker."""
+                if is_using_ray_backend:
+                    save_path = Path(save_path)
+                    if trial_location != ray.util.get_node_ip_address():
+                        sync_info = self._get_sync_client_and_remote_checkpoint_dir()
+                        if sync_info is not None:
+                            sync_client, remote_checkpoint_dir = sync_info
+                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                            sync_client.wait()
+                    ray_queue.put((progress_tracker, str(save_path)))
+                    return
+                checkpoint(progress_tracker, save_path)
+
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
                 if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
                     save_path = Path(save_path)
@@ -501,20 +519,14 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
                         sync_client.wait()
 
-            def on_epoch_end(self, trainer, progress_tracker, save_path):
-                if is_using_ray_backend:
-                    save_path = Path(save_path)
-                    if trial_location != ray.util.get_node_ip_address():
-                        sync_info = self._get_sync_client_and_remote_checkpoint_dir()
-                        if sync_info is not None:
-                            sync_client, remote_checkpoint_dir = sync_info
-                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                            sync_client.wait()
-                    ray_queue.put((progress_tracker, str(save_path)))
-                    return
-
-                checkpoint(progress_tracker, save_path)
+            def on_eval_end(self, trainer, progress_tracker, save_path):
+                self._checkpoint_progress(trainer, progress_tracker, save_path)
+                # Note: Calling tune.report in both on_eval_end() and on_epoch_end() can cause multiprocessing issues
+                # for some ray samplers if evaluation happens precisely every epoch.
                 report(progress_tracker)
+
+            def on_epoch_end(self, trainer, progress_tracker, save_path):
+                self._checkpoint_progress(trainer, progress_tracker, save_path)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
@@ -737,27 +749,32 @@ class RayTuneExecutor(HyperoptExecutor):
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
 
-        analysis = tune.run(
-            f"trainable_func_f{hash_dict(config).decode('ascii')}",
-            config={
-                **self.search_space,
-                **tune_config,
-            },
-            scheduler=self.scheduler,
-            search_alg=search_alg,
-            num_samples=self.num_samples,
-            keep_checkpoints_num=1,
-            max_failures=1,  # retry a trial failure once
-            resources_per_trial=resources_per_trial,
-            time_budget_s=self.time_budget_s,
-            sync_config=self.sync_config,
-            local_dir=output_directory,
-            metric=metric,
-            mode=mode,
-            trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
-            trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
-            callbacks=tune_callbacks,
-        )
+        try:
+            analysis = tune.run(
+                f"trainable_func_f{hash_dict(config).decode('ascii')}",
+                config={
+                    **self.search_space,
+                    **tune_config,
+                },
+                scheduler=self.scheduler,
+                search_alg=search_alg,
+                num_samples=self.num_samples,
+                keep_checkpoints_num=1,
+                max_failures=1,  # retry a trial failure once
+                resources_per_trial=resources_per_trial,
+                time_budget_s=self.time_budget_s,
+                sync_config=self.sync_config,
+                local_dir=output_directory,
+                metric=metric,
+                mode=mode,
+                trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
+                trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
+                callbacks=tune_callbacks,
+            )
+        except Exception as e:
+            # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
+            # NOTE: Cascading the exception with "raise _ from e" still results in hanging.
+            raise RuntimeError(f"Encountered Ray Tune error: {e}")
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)

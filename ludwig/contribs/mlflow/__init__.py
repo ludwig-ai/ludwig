@@ -81,8 +81,13 @@ class MlflowCallback(Callback):
         if not os.path.exists(model_hyperparameters_path):
             save_json(model_hyperparameters_path, self.config)
 
+    def on_eval_end(self, trainer, progress_tracker, save_path):
+        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.steps)
+
+        _log_model(save_path)
+
     def on_epoch_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.epoch)
+        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.steps)
 
         _log_model(save_path)
 
