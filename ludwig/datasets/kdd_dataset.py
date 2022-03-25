@@ -43,7 +43,7 @@ class KDDCup2009Dataset(BinaryFileDownloadMixin, MultifileJoinProcessMixin, CSVL
         train_df = pd.read_csv(zip_file.open("orange_small_train.data"), sep="\t")
 
         train_df = process_categorical_features(train_df, categorical_features)
-        train_df = process_numerical_features(train_df, categorical_features)
+        train_df = process_number_features(train_df, categorical_features)
 
         targets = (
             pd.read_csv(
@@ -90,7 +90,7 @@ def process_categorical_features(df, categorical_features):
     return df
 
 
-def process_numerical_features(df, categorical_features):
+def process_number_features(df, categorical_features):
     for i, column in enumerate(df.columns):
         if i not in categorical_features:
             df[column].astype(float, copy=False)

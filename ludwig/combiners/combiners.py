@@ -735,7 +735,7 @@ class TabTransformerCombiner(Combiner):
             self.projectors.append(Linear(flatten_size[0], projector_size))
 
         # input to layer_norm are the encoder outputs for unembeddable features,
-        # which are numerical or binary features.  These should be 2-dim
+        # which are number or binary features.  These should be 2-dim
         # tensors.  Size should be concatenation of these tensors.
         concatenated_unembeddable_encoders_size = 0
         for i_f in self.unembeddable_features:

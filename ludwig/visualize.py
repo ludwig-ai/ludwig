@@ -229,7 +229,7 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
         pred_df = pd.read_parquet(predictions_path)
         pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
         for col in cols:
-            # Convert categorical features back to numerical indices
+            # Convert categorical features back to indices
             if col.endswith(_PREDICTIONS_SUFFIX):
                 feature_name = col[: -len(_PREDICTIONS_SUFFIX)]
                 feature_metadata = metadata[feature_name]
@@ -3189,7 +3189,7 @@ def calibration_1_vs_all(
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
             probs[i] = prob_limit
 
-    num_classes = max(ground_truth) + 1
+    num_classes = len(metadata[output_feature_name]["str2idx"])
 
     brier_scores = []
 

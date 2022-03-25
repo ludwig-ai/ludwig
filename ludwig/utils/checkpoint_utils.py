@@ -5,13 +5,12 @@ https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 import logging
 import os
 import os.path as osp
+import re
 import signal
 from glob import glob
 
 import numpy as np
 import torch
-
-logger = logging.getLogger(__name__)
 
 
 def mkdir(s):
@@ -26,12 +25,16 @@ def get_files(d, pattern, sort=True):
     Args:
       d (str): The path to the directory.
       pattern (str): The wildcard to filter files with.
-      sort (bool): Whether to sort the returned list.
+      sort (bool): Whether to sort the returned list. Assumes filenames contain a number value to sort by (tmp-001).
     """
     files = glob(osp.join(d, pattern))
     files = [f for f in files if osp.isfile(f)]
     if sort:
-        files.sort(key=lambda x: int(os.path.basename(x).split(".")[0]))
+
+        def filter_numeric(s):
+            return re.sub("[^0-9]", "", s)
+
+        files.sort(key=lambda x: int(filter_numeric(os.path.basename(x).split(".")[0])))
     return files
 
 
@@ -57,7 +60,7 @@ class Checkpoint:
                 self.model.load_state_dict(state["model_weights"])
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
-                logger.info(f"Successfully loaded model weights from {save_path}.")
+                logging.info(f"Successfully loaded model weights from {save_path}.")
                 return True
             except Exception as e:
                 # there was an issue loading the state which means
@@ -68,7 +71,7 @@ class Checkpoint:
                 # rather than allowing the program to proceed.
                 raise e
         except FileNotFoundError as e:
-            logger.error(e)
+            logging.error(e)
             return False
 
     def save(self, save_path):
@@ -94,11 +97,11 @@ class Checkpoint:
         save_dir = osp.dirname(save_path)
         tmp_path = osp.join(save_dir, f"tmp-{np.random.randint(1e9)}.ckpt")
         torch.save(state, tmp_path)
-        # rename is an atomic operation in python
+        # replace is an atomic operation in python
         # it is POSIX compliant according to docs
-        # https://docs.python.org/3/library/os.html#os.rename
-        os.rename(tmp_path, save_path)
-        logger.info(f"Saved checkpoint at {save_path}.")
+        # https://docs.python.org/3/library/os.html#os.replace
+        os.replace(tmp_path, save_path)
+        logging.debug(f"Saved checkpoint at {save_path}.")
 
         # restore SIGINT handler
         if orig_handler is not None:
@@ -144,7 +147,7 @@ class CheckpointManager:
             last_ckpt = ckpts[-1]
             status = self.checkpoint.restore(last_ckpt, self.device)
             if not status:
-                logger.info("Could not restore latest checkpoint file.")
+                logging.info("Could not restore latest checkpoint file.")
                 return 0
             self.latest_checkpoint = last_ckpt
             return int(osp.basename(last_ckpt).split(".")[0])
@@ -182,4 +185,4 @@ class CheckpointManager:
             last_ckpt = ckpts[-1]
             checkpoint.restore(last_ckpt, device)
         else:
-            logger.error(f"No checkpoints found in {directory}.")
+            logging.error(f"No checkpoints found in {directory}.")

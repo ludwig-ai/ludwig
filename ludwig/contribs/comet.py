@@ -50,14 +50,12 @@ class CometCallback(Callback):
             logger.exception("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             raise
 
-        logger.info("comet.on_train_init() called......")
         self.cometml_experiment.set_name(model_name)
         self.cometml_experiment.set_filename("Ludwig API")
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
     def on_train_start(self, model, config, config_fp, *args, **kwargs):
-        logger.info("comet.on_train_start() called......")
         if self.cometml_experiment:
             # todo v0.4: currently not clear way to set model graph
             # see: https://github.com/comet-ml/issue-tracking/issues/296
@@ -77,19 +75,22 @@ class CometCallback(Callback):
                 self.cometml_experiment.log_asset_data(config, base_name)
 
     def on_train_end(self, output_directory, *args, **kwargs):
-        logger.info("comet.on_train_end() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(output_directory)
 
+    def on_eval_end(self, trainer, progress_tracker, save_path):
+        """Called from ludwig/models/model.py."""
+        if self.cometml_experiment:
+            for key, value in progress_tracker.log_metrics().items():
+                self.cometml_experiment.log_metric(key, value)
+
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         """Called from ludwig/models/model.py."""
-        logger.info("comet.on_epoch_end() called......")
         if self.cometml_experiment:
             for key, value in progress_tracker.log_metrics().items():
                 self.cometml_experiment.log_metric(key, value)
 
     def on_visualize_figure(self, fig):
-        logger.info("comet.on_visualize_figure() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_figure(fig)
 
@@ -113,7 +114,6 @@ class CometCallback(Callback):
             # unhandled command
             return
 
-        logger.info(f"comet.{cmd}() called......")
         cli = self._make_command_line(cmd, args)
         self.cometml_experiment.set_code(cli)
         self.cometml_experiment.set_filename("Ludwig CLI")

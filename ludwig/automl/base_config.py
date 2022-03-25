@@ -322,17 +322,16 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.
-    # - The distinct values are not all numerical.
-    # - The distinct values are all numerical but comprise of a perfectly sequential list of integers that suggests the
+    # - The distinct values are not all numbers.
+    # - The distinct values are all numbers but comprise of a perfectly sequential list of integers that suggests the
     #   values represent categories.
     if num_distinct_values < row_count * CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF and (
-        (not strings_utils.are_all_numericals(distinct_values))
-        or strings_utils.are_sequential_integers(distinct_values)
+        (not strings_utils.are_all_numbers(distinct_values)) or strings_utils.are_sequential_integers(distinct_values)
     ):
         return CATEGORY
 
-    # Use numerical if all of the distinct values are numerical.
-    if strings_utils.are_all_numericals(distinct_values):
+    # Use NUMBER if all of the distinct values are numbers.
+    if strings_utils.are_all_numbers(distinct_values):
         return NUMBER
 
     # TODO (ASN): add other modalities (image, etc. )
