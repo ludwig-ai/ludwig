@@ -361,7 +361,7 @@ def test_reproducible_experiment(csv_filename):
         pd.set_option('display.max_colwidth', 120)
 
         training1 = pd.read_json(os.path.join(tmpdir, 'reproducible_run1', 'training_statistics.json'))
-        test1 = pd.read_json(os.path.join(tmpdir, 'reproducible_run1', 'test_statistics.json'))
+        # test1 = pd.read_json(os.path.join(tmpdir, 'reproducible_run1', 'test_statistics.json'))
 
         _run_ludwig(
             "experiment",
@@ -374,9 +374,9 @@ def test_reproducible_experiment(csv_filename):
             random_seed='1919'
         )
         training2 = pd.read_json(os.path.join(tmpdir, 'reproducible_run2', 'training_statistics.json'))
-        test2 = pd.read_json(os.path.join(tmpdir, 'reproducible_run2', 'test_statistics.json'))
+        # test2 = pd.read_json(os.path.join(tmpdir, 'reproducible_run2', 'test_statistics.json'))
 
         # check for reproducible result
         assert (training1 == training2).all(axis=None)
-        # todo: determine why 'combined' are NaN
+        # todo: determine why 'combined' are NaN for test_statistics.json
         # assert (test1 == test2).all(axis=None)
