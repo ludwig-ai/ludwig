@@ -18,10 +18,9 @@ import shutil
 import subprocess
 import tempfile
 
+import pandas as pd
 import pytest
 import yaml
-
-import pandas as pd
 
 from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
@@ -315,27 +314,27 @@ def test_reproducible_train(csv_filename):
             dataset=dataset_filename,
             config=config_filename,
             output_directory=tmpdir,
-            skip_save_processed_input='',  # skip saving preprocessed inputs for reproducibility
-            experiment_name='reproducible',
-            model_name='run1',
-            random_seed='1919'
+            skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
+            experiment_name="reproducible",
+            model_name="run1",
+            random_seed="1919",
         )
         # set width if assertion test fail so we can see complete data
-        pd.set_option('display.max_colwidth', 120)
+        pd.set_option("display.max_colwidth", 120)
 
-        training1 = pd.read_json(os.path.join(tmpdir, 'reproducible_run1', 'training_statistics.json'))
+        training1 = pd.read_json(os.path.join(tmpdir, "reproducible_run1", "training_statistics.json"))
 
         _run_ludwig(
             "train",
             dataset=dataset_filename,
             config=config_filename,
             output_directory=tmpdir,
-            skip_save_processed_input='',  # skip saving preprocessed inputs for reproducibility
-            experiment_name='reproducible',
-            model_name='run2',
-            random_seed='1919'
+            skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
+            experiment_name="reproducible",
+            model_name="run2",
+            random_seed="1919",
         )
-        training2 = pd.read_json(os.path.join(tmpdir, 'reproducible_run2', 'training_statistics.json'))
+        training2 = pd.read_json(os.path.join(tmpdir, "reproducible_run2", "training_statistics.json"))
 
         # check for reproducible results
         assert (training1 == training2).all(axis=None)
@@ -352,29 +351,29 @@ def test_reproducible_experiment(csv_filename):
             dataset=dataset_filename,
             config=config_filename,
             output_directory=tmpdir,
-            skip_save_processed_input='',  # skip saving preprocessed inputs for reproducibility
-            experiment_name='reproducible',
-            model_name='run1',
-            random_seed='1919'
+            skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
+            experiment_name="reproducible",
+            model_name="run1",
+            random_seed="1919",
         )
         # set width if assertion test fail so we can see complete data
-        pd.set_option('display.max_colwidth', 120)
+        pd.set_option("display.max_colwidth", 120)
 
-        training1 = pd.read_json(os.path.join(tmpdir, 'reproducible_run1', 'training_statistics.json'))
-        test1 = pd.read_json(os.path.join(tmpdir, 'reproducible_run1', 'test_statistics.json'))
+        training1 = pd.read_json(os.path.join(tmpdir, "reproducible_run1", "training_statistics.json"))
+        test1 = pd.read_json(os.path.join(tmpdir, "reproducible_run1", "test_statistics.json"))
 
         _run_ludwig(
             "experiment",
             dataset=dataset_filename,
             config=config_filename,
             output_directory=tmpdir,
-            skip_save_processed_input='',  # skip saving preprocessed inputs for reproducibility
-            experiment_name='reproducible',
-            model_name='run2',
-            random_seed='1919'
+            skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
+            experiment_name="reproducible",
+            model_name="run2",
+            random_seed="1919",
         )
-        training2 = pd.read_json(os.path.join(tmpdir, 'reproducible_run2', 'training_statistics.json'))
-        test2 = pd.read_json(os.path.join(tmpdir, 'reproducible_run2', 'test_statistics.json'))
+        training2 = pd.read_json(os.path.join(tmpdir, "reproducible_run2", "training_statistics.json"))
+        test2 = pd.read_json(os.path.join(tmpdir, "reproducible_run2", "test_statistics.json"))
 
         # check for reproducible result
         assert (training1 == training2).all(axis=None)
