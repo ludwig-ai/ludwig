@@ -27,7 +27,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
 
 @register_dataset(name="bbcnews")
 class BBCNews(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, BaseDataset):
-    """BBC News Classification from Kaggle
+    """BBC News Classification from Kaggle.
 
     Additional details:
 
