@@ -304,58 +304,22 @@ def test_preprocess_cli(csv_filename):
 
 
 @pytest.mark.distributed
-def test_reproducible_train(csv_filename):
-    """Test for reproducible training using `ludwig train --dataset`."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-
-        # run first model
-        _run_ludwig(
-            "train",
-            dataset=dataset_filename,
-            config=config_filename,
-            output_directory=tmpdir,
-            skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
-            experiment_name="reproducible",
-            model_name="run1",
-            random_seed="1919",
-        )
-
-        # retrieve training results
-        with open(os.path.join(tmpdir, "reproducible_run1", "training_statistics.json")) as f:
-            training1 = json.load(f)
-
-        # run second model with same seed
-        _run_ludwig(
-            "train",
-            dataset=dataset_filename,
-            config=config_filename,
-            output_directory=tmpdir,
-            skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
-            experiment_name="reproducible",
-            model_name="run2",
-            random_seed="1919",
-        )
-
-        # retrieve training results
-        with open(os.path.join(tmpdir, "reproducible_run2", "training_statistics.json")) as f:
-            training2 = json.load(f)
-
-        # check for reproducible results
-        assert training1 == training2
-
-
-@pytest.mark.distributed
-def test_reproducible_experiment(csv_filename):
+@pytest.mark.parametrize("backend", ["local", "horovod"])
+@pytest.mark.parametrize("type_of_run", ["train", "experiment"])
+def test_reproducible_cli_runs(backend, type_of_run, csv_filename):
     """Test for reproducible training using `ludwig experiment --dataset`."""
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
 
+        if backend == "local":
+            command_to_run = _run_ludwig
+        else:
+            command_to_run = _run_ludwig_horovod
+
         # run first model
-        _run_ludwig(
-            "experiment",
+        command_to_run(
+            type_of_run,
             dataset=dataset_filename,
             config=config_filename,
             output_directory=tmpdir,
@@ -365,15 +329,9 @@ def test_reproducible_experiment(csv_filename):
             random_seed="1919",
         )
 
-        # retrieve training and test evaluation statistics
-        with open(os.path.join(tmpdir, "reproducible_run1", "training_statistics.json")) as f:
-            training1 = json.load(f)
-        with open(os.path.join(tmpdir, "reproducible_run1", "test_statistics.json")) as f:
-            test1 = json.load(f)
-
         # run second model with same seed
-        _run_ludwig(
-            "experiment",
+        command_to_run(
+            type_of_run,
             dataset=dataset_filename,
             config=config_filename,
             output_directory=tmpdir,
@@ -383,12 +341,17 @@ def test_reproducible_experiment(csv_filename):
             random_seed="1919",
         )
 
-        # retrieve training and test evaluation statistics
+        # retrieve training statistics and compare
+        with open(os.path.join(tmpdir, "reproducible_run1", "training_statistics.json")) as f:
+            training1 = json.load(f)
         with open(os.path.join(tmpdir, "reproducible_run2", "training_statistics.json")) as f:
             training2 = json.load(f)
-        with open(os.path.join(tmpdir, "reproducible_run2", "test_statistics.json")) as f:
-            test2 = json.load(f)
-
-        # check for reproducible result
         assert training1 == training2
-        assert test1 == test2
+
+        # if type_of_run is experiment check test statistics and compare
+        if type_of_run == "experiment":
+            with open(os.path.join(tmpdir, "reproducible_run1", "test_statistics.json")) as f:
+                test1 = json.load(f)
+            with open(os.path.join(tmpdir, "reproducible_run2", "test_statistics.json")) as f:
+                test2 = json.load(f)
+            assert test1 == test2
