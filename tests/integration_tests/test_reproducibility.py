@@ -4,7 +4,6 @@ import random
 import tempfile
 
 import numpy as np
-import pandas as pd
 import pytest
 import torch
 
@@ -41,7 +40,7 @@ def test_preprocess(raw_dataset_fp):
     model1 = LudwigModel(config=CONFIG)
 
     # preprocess the raw data set, specify seed
-    training_set1, validation_set1, test_set1, _ = model1.preprocess(raw_dataset_fp, random_seed=RANDOM_SEED)
+    preprocessed_data1 = model1.preprocess(raw_dataset_fp, random_seed=RANDOM_SEED)
 
     # invoke torch random functions
     torch.manual_seed(RANDOM_SEED + 1)
@@ -50,12 +49,12 @@ def test_preprocess(raw_dataset_fp):
     # define Ludwig model
     model2 = LudwigModel(config=CONFIG)
     # preprocess same raw data set with same seed
-    training_set2, validation_set2, test_set2, _ = model2.preprocess(raw_dataset_fp, random_seed=RANDOM_SEED)
+    preprocessed_data2 = model2.preprocess(raw_dataset_fp, random_seed=RANDOM_SEED)
 
-    # confirm same split occurs before and after the calls to torch
-    assert np.all(pd.DataFrame(training_set1.dataset) == pd.DataFrame(training_set2.dataset))
-    assert np.all(pd.DataFrame(validation_set1.dataset) == pd.DataFrame(validation_set2.dataset))
-    assert np.all(pd.DataFrame(test_set1.dataset) == pd.DataFrame(test_set2.dataset))
+    # confirm data splits are reproducible
+    for i in range(3):
+        for k in preprocessed_data1[i].dataset:
+            assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
 
 def test_train(raw_dataset_fp):
@@ -74,14 +73,10 @@ def test_train(raw_dataset_fp):
         dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_progress=True, skip_save_processed_input=True
     )
 
-    # training data set split
-    assert np.all(pd.DataFrame(preprocessed_data1[0].dataset) == pd.DataFrame(preprocessed_data2[0].dataset))
-
-    # validation data set split
-    assert np.all(pd.DataFrame(preprocessed_data1[1].dataset) == pd.DataFrame(preprocessed_data2[1].dataset))
-
-    # test data set split
-    assert np.all(pd.DataFrame(preprocessed_data1[2].dataset) == pd.DataFrame(preprocessed_data2[2].dataset))
+    # confirm data splits are reproducible
+    for i in range(3):
+        for k in preprocessed_data1[i].dataset:
+            assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
     # check for equality of training statistics
     assert training_statistics1 == training_statistics2
@@ -104,14 +99,10 @@ def test_experiment(raw_dataset_fp):
         dataset=raw_dataset_fp, random_seed=RANDOM_SEED, skip_save_processed_input=True
     )
 
-    # training data set split
-    assert np.all(pd.DataFrame(preprocessed_data1[0].dataset) == pd.DataFrame(preprocessed_data2[0].dataset))
-
-    # validation data set split
-    assert np.all(pd.DataFrame(preprocessed_data1[1].dataset) == pd.DataFrame(preprocessed_data2[1].dataset))
-
-    # test data set split
-    assert np.all(pd.DataFrame(preprocessed_data1[2].dataset) == pd.DataFrame(preprocessed_data2[2].dataset))
+    # confirm data splits are reproducible
+    for i in range(3):
+        for k in preprocessed_data1[i].dataset:
+            assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
     # check for equality of training statistics
     assert training_statistics1 == training_statistics2
