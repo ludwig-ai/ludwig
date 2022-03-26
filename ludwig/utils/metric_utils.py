@@ -5,6 +5,8 @@ import torch
 from torch import Tensor
 from torchmetrics.metric import Metric
 
+from ludwig.constants import COMBINED, LOSS
+
 
 def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
     """Implements tf.sequence_mask in torch.
@@ -84,3 +86,15 @@ def reduce_trainer_metrics_dict(
             for trainer_metric in trainer_metrics:
                 flattened_dict[feature_name][metric_name].append(trainer_metric[-1])
     return flattened_dict
+
+
+def get_metric_names(output_features: Dict[str, Dict]) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {}
+    for output_feature_name, output_feature in output_features.items():
+        for metric in output_feature.metric_functions:
+            metrics = metrics_names.get(output_feature_name, [])
+            metrics.append(metric)
+            metrics_names[output_feature_name] = metrics
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names

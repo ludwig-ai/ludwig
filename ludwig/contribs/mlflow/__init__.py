@@ -86,11 +86,6 @@ class MlflowCallback(Callback):
 
         _log_model(save_path)
 
-    def on_epoch_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.steps)
-
-        _log_model(save_path)
-
     def on_trainer_train_teardown(self, trainer, progress_tracker, is_coordinator):
         if self.run is not None:
             mlflow.end_run()
