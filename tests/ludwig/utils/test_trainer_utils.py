@@ -47,8 +47,8 @@ def test_progress_tracker():
         output_features=output_features,
     )
 
-    progress_tracker.vali_metrics[COMBINED][LOSS].append(TrainerMetric(epoch=1, step=10, value=0.1))
-    progress_tracker.vali_metrics[COMBINED][LOSS].append(TrainerMetric(epoch=1, step=20, value=0.2))
+    progress_tracker.validation_metrics[COMBINED][LOSS].append(TrainerMetric(epoch=1, step=10, value=0.1))
+    progress_tracker.validation_metrics[COMBINED][LOSS].append(TrainerMetric(epoch=1, step=20, value=0.2))
 
     assert progress_tracker.log_metrics() == {
         "batch_size": 5,
@@ -59,5 +59,5 @@ def test_progress_tracker():
         "num_increases_bs": 0,
         "num_reductions_lr": 0,
         "steps": 0,
-        "vali_metrics.combined.loss": 0.2,
+        "validation_metrics.combined.loss": 0.2,
     }

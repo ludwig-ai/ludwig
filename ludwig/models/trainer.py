@@ -636,12 +636,17 @@ class Trainer(BaseTrainer):
 
             # eval metrics on validation set
             self.evaluation(
-                validation_set, "vali", progress_tracker.vali_metrics, tables, self.eval_batch_size, progress_tracker
+                validation_set,
+                "vali",
+                progress_tracker.validation_metrics,
+                tables,
+                self.eval_batch_size,
+                progress_tracker,
             )
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
-                metrics=progress_tracker.vali_metrics,
+                metrics=progress_tracker.validation_metrics,
                 step=progress_tracker.steps,
             )
 
@@ -917,7 +922,7 @@ class Trainer(BaseTrainer):
         return (
             self.model,
             progress_tracker.train_metrics,
-            progress_tracker.vali_metrics,
+            progress_tracker.validation_metrics,
             progress_tracker.test_metrics,
         )
 
@@ -1149,10 +1154,10 @@ class Trainer(BaseTrainer):
         should_break = False
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
-        vali_metric = progress_tracker.vali_metrics[validation_output_feature_name]
-        if improved(vali_metric[validation_metric][-1][-1], progress_tracker.best_eval_metric):
+        validation_metric = progress_tracker.validation_metrics[validation_output_feature_name]
+        if improved(validation_metric[validation_metric][-1][-1], progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric = progress_tracker.vali_metrics[validation_output_feature_name][
+            progress_tracker.best_eval_metric = progress_tracker.validation_metrics[validation_output_feature_name][
                 validation_metric
             ][-1][-1]
             if self.is_coordinator() and not skip_save_model:
@@ -1289,7 +1294,7 @@ class Trainer(BaseTrainer):
             if reduce_learning_rate_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif reduce_learning_rate_eval_split == VALIDATION:
-                split_metrics = progress_tracker.vali_metrics
+                split_metrics = progress_tracker.validation_metrics
             else:  # if reduce_learning_rate_eval_split == TEST:
                 split_metrics = progress_tracker.test_metrics
 
@@ -1351,7 +1356,7 @@ class Trainer(BaseTrainer):
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif increase_batch_size_eval_split == VALIDATION:
-                split_metrics = progress_tracker.vali_metrics
+                split_metrics = progress_tracker.validation_metrics
             else:  # if increase_batch_size_eval_split == TEST:
                 split_metrics = progress_tracker.test_metrics
 

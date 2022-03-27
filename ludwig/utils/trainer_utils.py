@@ -45,7 +45,7 @@ def get_new_progress_tracker(
         num_reductions_learning_rate=0,
         num_increases_batch_size=0,
         train_metrics=initialize_trainer_metric_dict(output_features),
-        vali_metrics=initialize_trainer_metric_dict(output_features),
+        validation_metrics=initialize_trainer_metric_dict(output_features),
         test_metrics=initialize_trainer_metric_dict(output_features),
         last_improvement=0,
         last_learning_rate_reduction=0,
@@ -71,7 +71,7 @@ class ProgressTracker:
         num_reductions_learning_rate: int,
         num_increases_batch_size: int,
         train_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
-        vali_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
+        validation_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
         test_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
         last_improvement: int,
         last_learning_rate_reduction: int,
@@ -103,7 +103,7 @@ class ProgressTracker:
         self.num_reductions_learning_rate = num_reductions_learning_rate
         self.num_increases_batch_size = num_increases_batch_size
         self.train_metrics = train_metrics
-        self.vali_metrics = vali_metrics
+        self.validation_metrics = validation_metrics
         self.test_metrics = test_metrics
 
     def save(self, filepath):
@@ -127,7 +127,7 @@ class ProgressTracker:
         }
         for metrics_dict_name in [
             "train_metrics",
-            "vali_metrics",
+            "validation_metrics",
             "test_metrics",
         ]:
             metrics_dict = getattr(self, metrics_dict_name)
