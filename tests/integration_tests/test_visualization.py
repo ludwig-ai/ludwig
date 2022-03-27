@@ -124,7 +124,7 @@ def test_visualization_learning_curves_output_saved(csv_filename):
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 4 == len(figure_cnt)
+        assert 2 == len(figure_cnt)
 
 
 def test_visualization_confusion_matrix_output_saved(csv_filename):

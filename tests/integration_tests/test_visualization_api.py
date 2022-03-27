@@ -147,7 +147,7 @@ def test_learning_curves_vis_api(experiment_to_use):
                 [experiment.train_stats], output_feature_name=None, output_directory=tmpvizdir, file_format=viz_output
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 3 == len(figure_cnt)
+            assert 2 == len(figure_cnt)
 
 
 def test_compare_performance_vis_api(experiment_to_use):
