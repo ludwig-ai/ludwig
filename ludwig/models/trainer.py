@@ -1154,8 +1154,8 @@ class Trainer(BaseTrainer):
         should_break = False
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
-        validation_metric = progress_tracker.validation_metrics[validation_output_feature_name]
-        if improved(validation_metric[validation_metric][-1][-1], progress_tracker.best_eval_metric):
+        validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
+        if improved(validation_metrics[validation_metric][-1][-1], progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
             progress_tracker.best_eval_metric = progress_tracker.validation_metrics[validation_output_feature_name][
                 validation_metric
