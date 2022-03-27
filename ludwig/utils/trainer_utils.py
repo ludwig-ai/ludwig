@@ -20,6 +20,39 @@ def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[
     return metrics
 
 
+def get_new_progress_tracker(
+    batch_size: int,
+    best_eval_metric: float,
+    best_reduce_learning_rate_eval_metric: float,
+    best_increase_batch_size_eval_metric: float,
+    learning_rate: float,
+    output_features: Dict[str, OutputFeature],
+):
+    """Returns a new instance of a ProgressTracker with empty metrics."""
+    return ProgressTracker(
+        epoch=0,
+        batch_size=batch_size,
+        steps=0,
+        last_improvement_steps=0,
+        last_learning_rate_reduction_steps=0,
+        last_increase_batch_size_steps=0,
+        best_eval_metric=best_eval_metric,
+        best_reduce_learning_rate_eval_metric=best_reduce_learning_rate_eval_metric,
+        last_reduce_learning_rate_eval_metric_improvement=0,
+        best_increase_batch_size_eval_metric=best_increase_batch_size_eval_metric,
+        last_increase_batch_size_eval_metric_improvement=0,
+        learning_rate=learning_rate,
+        num_reductions_learning_rate=0,
+        num_increases_batch_size=0,
+        train_metrics=initialize_trainer_metric_dict(output_features),
+        vali_metrics=initialize_trainer_metric_dict(output_features),
+        test_metrics=initialize_trainer_metric_dict(output_features),
+        last_improvement=0,
+        last_learning_rate_reduction=0,
+        last_increase_batch_size=0,
+    )
+
+
 class ProgressTracker:
     def __init__(
         self,
@@ -37,7 +70,9 @@ class ProgressTracker:
         learning_rate: float,
         num_reductions_learning_rate: int,
         num_increases_batch_size: int,
-        output_features: Dict[str, OutputFeature],
+        train_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
+        vali_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
+        test_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
         last_improvement: int,
         last_learning_rate_reduction: int,
         last_increase_batch_size: int,
@@ -67,9 +102,9 @@ class ProgressTracker:
         self.last_increase_batch_size_eval_metric_improvement = last_increase_batch_size_eval_metric_improvement
         self.num_reductions_learning_rate = num_reductions_learning_rate
         self.num_increases_batch_size = num_increases_batch_size
-        self.train_metrics = initialize_trainer_metric_dict(output_features)
-        self.vali_metrics = initialize_trainer_metric_dict(output_features)
-        self.test_metrics = initialize_trainer_metric_dict(output_features)
+        self.train_metrics = train_metrics
+        self.vali_metrics = vali_metrics
+        self.test_metrics = test_metrics
 
     def save(self, filepath):
         save_json(filepath, self.__dict__)

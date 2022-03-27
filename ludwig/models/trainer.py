@@ -53,7 +53,7 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import ProgressTracker
+from ludwig.utils.trainer_utils import get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 
@@ -812,27 +812,15 @@ class Trainer(BaseTrainer):
             if self.is_coordinator():
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
         else:
-            progress_tracker = ProgressTracker(
+            progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
-                epoch=0,
-                steps=0,
-                last_improvement_steps=0,
-                last_learning_rate_reduction_steps=0,
-                last_increase_batch_size_steps=0,
                 learning_rate=self.base_learning_rate,
                 best_eval_metric=get_initial_validation_value(self.validation_metric),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
                     self.reduce_learning_rate_eval_metric
                 ),
-                last_reduce_learning_rate_eval_metric_improvement=0,
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
-                last_increase_batch_size_eval_metric_improvement=0,
-                num_reductions_learning_rate=0,
-                num_increases_batch_size=0,
                 output_features=output_features,
-                last_improvement=0,
-                last_learning_rate_reduction=0,
-                last_increase_batch_size=0,
             )
 
         if self.horovod:
