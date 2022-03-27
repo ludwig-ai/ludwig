@@ -164,7 +164,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param is_coordinator: Is this trainer the coordinator.
         """
         pass
@@ -175,7 +175,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -186,7 +186,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -197,7 +197,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -208,7 +208,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -219,7 +219,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -230,7 +230,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -241,7 +241,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -252,7 +252,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -263,7 +263,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass
@@ -274,7 +274,7 @@ class Callback(ABC):
         :param trainer: The trainer instance.
         :type trainer: ludwig.models.trainer.Trainer
         :param progress_tracker: An object which tracks training progress.
-        :type progress_tracker: ludwig.models.trainer.ProgressTracker
+        :type progress_tracker: ludwig.utils.trainer_utils.ProgressTracker
         :param save_path: The path to the directory model is saved in.
         """
         pass

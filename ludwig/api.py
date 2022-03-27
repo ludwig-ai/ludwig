@@ -563,20 +563,21 @@ class LudwigModel:
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
                         best_vali_index, (
-                            epoch_best_vali_metric,
-                            step_best_vali_metric,
-                            best_vali_metric,
+                            epoch_best_validation_metric,
+                            step_best_validation_metric,
+                            best_validation_metric,
                         ) = best_function(
                             enumerate(validation_field_result[validation_metric]),
                             # -1 for the last element of the TrainerMetric namedtuple.
                             key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
                         )
                         logger.info(
-                            f"Best validation model step: {step_best_vali_metric}, epoch: {epoch_best_vali_metric + 1}"
+                            f"Best validation model step: {step_best_validation_metric}, epoch: "
+                            f"{epoch_best_validation_metric + 1}"
                         )
                         logger.info(
                             f"Best validation model {validation_metric} on validation set {validation_field}: "
-                            f"{best_vali_metric}"
+                            f"{best_validation_metric}"
                         )
                         if test_set is not None:
                             validation_selected_test_metric_score = train_testset_stats[validation_field][
