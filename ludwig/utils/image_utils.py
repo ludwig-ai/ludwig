@@ -77,7 +77,7 @@ def get_image_from_path(
         return bytes(img_entry, "utf-8")
 
 
-def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
+def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
     if not isinstance(img_entry, str):
         return False
     try:
@@ -88,14 +88,14 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
             return imghdr.what(None, img) is not None
         return imghdr.what(img) is not None
     except Exception as e:
-        logger.warning(f"While assessing potential image in is_image(), encountered exception: {e}")
+        logger.warning(f"While assessing potential image in is_image() for column {column}, encountered exception: {e}")
         return False
 
 
 # For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
 # with image extensions
-def is_image_score(src_path, img_entry):
-    if is_image(src_path, img_entry):
+def is_image_score(src_path, img_entry, column: str):
+    if is_image(src_path, img_entry, column):
         return 1
     elif isinstance(img_entry, str) and img_entry.lower().endswith((".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")):
         return 0.5
