@@ -57,12 +57,12 @@ from ludwig.modules.optimization_modules import (
 )
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
-from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
-from ludwig.utils.metric_utils import TrainerMetric
+from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.trainer_utils import get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 
@@ -325,9 +325,13 @@ class Trainer(BaseTrainer):
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
-        :param inputs: A dictionary of input data, from feature name to tensor.
-        :param targets: A dictionary of target data, from feature name to tensor.
-        :return: A tuple of the loss and a dictionary of metrics.
+        Params:
+            inputs: A dictionary of input data, from feature name to tensor.
+            targets: A dictionary of target data, from feature name to tensor.
+
+        Returns:
+            A tuple of the loss tensor and a dictionary of loss for every
+            output feature.
         """
         self.optimizer.zero_grad()
 
@@ -623,6 +627,8 @@ class Trainer(BaseTrainer):
         output_features,
         metrics_names,
         save_path,
+        loss: torch.Tensor,
+        all_losses: Dict[str, torch.Tensor],
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -663,12 +669,17 @@ class Trainer(BaseTrainer):
 
             # eval metrics on validation set
             self.evaluation(
-                validation_set, "vali", progress_tracker.vali_metrics, tables, self.eval_batch_size, progress_tracker
+                validation_set,
+                "vali",
+                progress_tracker.validation_metrics,
+                tables,
+                self.eval_batch_size,
+                progress_tracker,
             )
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
-                metrics=progress_tracker.vali_metrics,
+                metrics=progress_tracker.validation_metrics,
                 step=progress_tracker.steps,
             )
 
@@ -744,7 +755,7 @@ class Trainer(BaseTrainer):
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
 
-        metrics_names = self.get_metrics_names(output_features)
+        metrics_names = get_metric_names(output_features)
 
         # check if validation_field is valid
         valid_validation_field = False
@@ -822,33 +833,15 @@ class Trainer(BaseTrainer):
             if self.is_coordinator():
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
         else:
-            train_metrics = self.initialize_trainer_metric_dict(output_features)
-            vali_metrics = self.initialize_trainer_metric_dict(output_features)
-            test_metrics = self.initialize_trainer_metric_dict(output_features)
-
-            progress_tracker = ProgressTracker(
+            progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
-                epoch=0,
-                steps=0,
-                last_improvement_steps=0,
-                last_learning_rate_reduction_steps=0,
-                last_increase_batch_size_steps=0,
                 learning_rate=self.base_learning_rate,
                 best_eval_metric=get_initial_validation_value(self.validation_metric),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
                     self.reduce_learning_rate_eval_metric
                 ),
-                last_reduce_learning_rate_eval_metric_improvement=0,
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
-                last_increase_batch_size_eval_metric_improvement=0,
-                num_reductions_learning_rate=0,
-                num_increases_batch_size=0,
-                train_metrics=train_metrics,
-                vali_metrics=vali_metrics,
-                test_metrics=test_metrics,
-                last_improvement=0,
-                last_learning_rate_reduction=0,
-                last_increase_batch_size=0,
+                output_features=output_features,
             )
 
         if self.horovod:
@@ -962,7 +955,7 @@ class Trainer(BaseTrainer):
         return (
             self.model,
             progress_tracker.train_metrics,
-            progress_tracker.vali_metrics,
+            progress_tracker.validation_metrics,
             progress_tracker.test_metrics,
         )
 
@@ -1078,6 +1071,8 @@ class Trainer(BaseTrainer):
                     output_features,
                     metrics_names,
                     save_path,
+                    loss,
+                    all_losses,
                 )
                 if should_break:
                     return should_break
@@ -1192,10 +1187,10 @@ class Trainer(BaseTrainer):
         should_break = False
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
-        vali_metric = progress_tracker.vali_metrics[validation_output_feature_name]
-        if improved(vali_metric[validation_metric][-1][-1], progress_tracker.best_eval_metric):
+        validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
+        if improved(validation_metrics[validation_metric][-1][-1], progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric = progress_tracker.vali_metrics[validation_output_feature_name][
+            progress_tracker.best_eval_metric = progress_tracker.validation_metrics[validation_output_feature_name][
                 validation_metric
             ][-1][-1]
             if self.is_coordinator() and not skip_save_model:
@@ -1310,28 +1305,6 @@ class Trainer(BaseTrainer):
         progress_tracker = ProgressTracker.load(training_progress_tracker_path)
         return progress_tracker
 
-    def initialize_trainer_metric_dict(self, output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
-        """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
-        metrics = OrderedDict()
-
-        for output_feature_name, output_feature in output_features.items():
-            metrics[output_feature_name] = OrderedDict()
-            for metric in output_feature.metric_functions:
-                metrics[output_feature_name][metric] = []
-
-        metrics[COMBINED] = {LOSS: []}
-        return metrics
-
-    def get_metrics_names(self, output_features):
-        metrics_names = {}
-        for output_feature_name, output_feature in output_features.items():
-            for metric in output_feature.metric_functions:
-                metrics = metrics_names.get(output_feature_name, [])
-                metrics.append(metric)
-                metrics_names[output_feature_name] = metrics
-        metrics_names[COMBINED] = [LOSS]
-        return metrics_names
-
     def resume_weights_and_optimizer(
         self,
         model_weights_progress_path: str,
@@ -1354,7 +1327,7 @@ class Trainer(BaseTrainer):
             if reduce_learning_rate_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif reduce_learning_rate_eval_split == VALIDATION:
-                split_metrics = progress_tracker.vali_metrics
+                split_metrics = progress_tracker.validation_metrics
             else:  # if reduce_learning_rate_eval_split == TEST:
                 split_metrics = progress_tracker.test_metrics
 
@@ -1416,7 +1389,7 @@ class Trainer(BaseTrainer):
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
             elif increase_batch_size_eval_split == VALIDATION:
-                split_metrics = progress_tracker.vali_metrics
+                split_metrics = progress_tracker.validation_metrics
             else:  # if increase_batch_size_eval_split == TEST:
                 split_metrics = progress_tracker.test_metrics
 
@@ -1488,90 +1461,3 @@ class RemoteTrainer(Trainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)
         self.train_online = return_first(self.train_online)
-
-
-class ProgressTracker:
-    def __init__(
-        self,
-        epoch,
-        batch_size,
-        steps,
-        last_improvement_steps,
-        last_learning_rate_reduction_steps,
-        last_increase_batch_size_steps,
-        best_eval_metric,
-        best_reduce_learning_rate_eval_metric,
-        last_reduce_learning_rate_eval_metric_improvement,
-        best_increase_batch_size_eval_metric,
-        last_increase_batch_size_eval_metric_improvement,
-        learning_rate,
-        num_reductions_learning_rate,
-        num_increases_batch_size,
-        train_metrics,
-        vali_metrics,
-        test_metrics,
-        last_improvement,
-        last_learning_rate_reduction,
-        last_increase_batch_size,
-    ):
-        """JSON-serializable holder object that stores information related to training progress.
-
-        [train/vali/test]_metrics is a nested dictionary of TrainerMetrics: feature_name -> metric_name ->
-        List[TrainerMetrics], with one entry per training checkpoint.
-
-        Note that when a model resumes training from a checkpoint, the progress tracker is deserialized from JSON, which
-        automatically converts TrainerMetrics namedtuples into regular (epoch, steps, value) tuples.
-        """
-        self.batch_size = batch_size
-        self.epoch = epoch
-        self.steps = steps
-        self.last_improvement_steps = last_improvement_steps
-        self.last_improvement = last_improvement
-        self.last_learning_rate_reduction_steps = last_learning_rate_reduction_steps
-        self.last_learning_rate_reduction = last_learning_rate_reduction
-        self.last_increase_batch_size_steps = last_increase_batch_size_steps
-        self.last_increase_batch_size = last_increase_batch_size
-        self.learning_rate = learning_rate
-        self.best_eval_metric = best_eval_metric
-        self.best_reduce_learning_rate_eval_metric = best_reduce_learning_rate_eval_metric
-        self.last_reduce_learning_rate_eval_metric_improvement = last_reduce_learning_rate_eval_metric_improvement
-        self.best_increase_batch_size_eval_metric = best_increase_batch_size_eval_metric
-        self.last_increase_batch_size_eval_metric_improvement = last_increase_batch_size_eval_metric_improvement
-        self.num_reductions_learning_rate = num_reductions_learning_rate
-        self.num_increases_batch_size = num_increases_batch_size
-        self.train_metrics = train_metrics
-        self.vali_metrics = vali_metrics
-        self.test_metrics = test_metrics
-
-    def save(self, filepath):
-        save_json(filepath, self.__dict__)
-
-    @staticmethod
-    def load(filepath):
-        loaded = load_json(filepath)
-        return ProgressTracker(**loaded)
-
-    def log_metrics(self):
-        log_metrics = {
-            "batch_size": self.batch_size,
-            "epoch": self.epoch,
-            "steps": self.steps,
-            "last_improvement_steps": self.last_improvement_steps,
-            "learning_rate": self.learning_rate,
-            "best_valid_metric": self.best_eval_metric,
-            "num_reductions_lr": self.num_reductions_learning_rate,
-            "num_increases_bs": self.num_increases_batch_size,
-        }
-        for metrics_dict_name in [
-            "train_metrics",
-            "vali_metrics",
-            "test_metrics",
-        ]:
-            metrics_dict = getattr(self, metrics_dict_name)
-            for feature_name in metrics_dict:
-                for metric_name, metrics_tuple in metrics_dict[feature_name].items():
-                    # For logging, get the latest metrics. The second "-1" indexes into the TrainerMetric namedtuple.
-                    # The last element of the TrainerMetric namedtuple is the actual metric value.
-                    log_metrics[f"{metrics_dict_name}.{feature_name}.{metric_name}"] = metrics_tuple[-1][-1]
-
-        return log_metrics
