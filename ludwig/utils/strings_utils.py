@@ -190,7 +190,7 @@ def create_vocabulary(
     """Computes a vocabulary over the provided data frame.
 
     This function is used when the data consists of multiple tokens within one example. E.g., words in a text feature,
-    items in a set feature, etc. If the feature only contains a single toke, use `create_vocabulary_single_token`
+    items in a set feature, etc. If the feature only contains a single token, use `create_vocabulary_single_token`
     instead.
 
     A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data
