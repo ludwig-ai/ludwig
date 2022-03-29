@@ -43,7 +43,7 @@ except ImportError:
     DASK_DF_FORMATS = set()
     dd = None
 
-from ludwig.constants import PREPROCESSING, PROC_COLUMN, SPLIT
+from ludwig.constants import PREPROCESSING, SPLIT
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 
 logger = logging.getLogger(__name__)
@@ -534,10 +534,6 @@ def collapse_rare_labels(labels, labels_limit):
 
 def class_counts(dataset, labels_field):
     return np.bincount(dataset[labels_field].flatten()).tolist()
-
-
-def text_feature_data_field(text_feature):
-    return text_feature[PROC_COLUMN] + "_" + text_feature["level"]
 
 
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):

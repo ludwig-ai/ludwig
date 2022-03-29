@@ -89,7 +89,7 @@ def test_create_vocabulary_word():
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
-        tokenizer_type=preprocessing_parameters["word_tokenizer"],
+        tokenizer_type=preprocessing_parameters["tokenizer"],
         num_most_frequent=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
         vocab_file=preprocessing_parameters["vocab_file"],
@@ -112,7 +112,7 @@ def test_create_vocabulary_no_special_symbols():
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
-        tokenizer_type=preprocessing_parameters["word_tokenizer"],
+        tokenizer_type=preprocessing_parameters["tokenizer"],
         num_most_frequent=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
         vocab_file=preprocessing_parameters["vocab_file"],

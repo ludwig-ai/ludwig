@@ -66,7 +66,7 @@ class TextFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_defaults():
         return {
-            "word_tokenizer": "space_punct",
+            "tokenizer": "space_punct",
             "pretrained_model_name_or_path": None,
             "vocab_file": None,
             "max_sequence_length": 256,
@@ -163,7 +163,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
-        symbol_data = build_sequence_matrix(
+        return build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata["str2idx"],
             tokenizer_type=preprocessing_parameters["tokenizer"],
@@ -177,19 +177,16 @@ class TextFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
 
-        return symbol_data
-
     @staticmethod
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        symbol_data = TextFeatureMixin.feature_data(
+        proc_df[feature_config[PROC_COLUMN]] = TextFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]].astype(str),
             metadata[feature_config[NAME]],
             preprocessing_parameters,
             backend,
         )
-        proc_df[feature_config[PROC_COLUMN]] = symbol_data
         return proc_df
 
 
