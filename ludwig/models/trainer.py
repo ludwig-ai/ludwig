@@ -666,7 +666,7 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
-        if self.should_evaluate_train:
+        if self.evaluate_training_set:
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
             )
