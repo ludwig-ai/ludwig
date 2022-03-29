@@ -1,4 +1,3 @@
-aiohttp
 Cython>=0.25
 h5py>=2.6,!=3.0.0
 numpy>=1.15
@@ -14,7 +13,7 @@ absl-py
 kaggle
 requests
 tables
-fsspec
+fsspec[http]
 dataclasses-json
 jsonschema
 marshmallow
