@@ -53,7 +53,7 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import get_new_progress_tracker, ProgressTracker, get_terminal_steps_per_checkpoint
+from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 
@@ -844,7 +844,7 @@ class Trainer(BaseTrainer):
             total_steps = self.epochs * batcher.steps_per_epoch
 
             # Get the terminal steps per checkpoint.
-            terminal_steps_per_checkpoint = get_terminal_steps_per_checkpoint(
+            final_steps_per_checkpoint = get_final_steps_per_checkpoint(
                 batcher.steps_per_epoch, self.steps_per_checkpoint, self.checkpoints_per_epoch, self.is_coordinator()
             )
 
@@ -895,7 +895,7 @@ class Trainer(BaseTrainer):
                     output_features,
                     metrics_names,
                     checkpoint_manager,
-                    terminal_steps_per_checkpoint,
+                    final_steps_per_checkpoint,
                 )
 
                 # ================ Post Training Epoch ================
@@ -956,7 +956,7 @@ class Trainer(BaseTrainer):
         output_features,
         metrics_names,
         checkpoint_manager,
-        terminal_steps_per_checkpoint: int,
+        final_steps_per_checkpoint: int,
     ) -> bool:
         """Completes one epoch through the data."""
         while not batcher.last_batch():
@@ -1032,7 +1032,7 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
-            if progress_tracker.steps % terminal_steps_per_checkpoint == 0:
+            if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator():
                     checkpoint_manager.save(progress_tracker.steps)

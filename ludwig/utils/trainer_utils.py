@@ -1,5 +1,5 @@
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
 from typing import Dict, List
 
 from ludwig.constants import COMBINED, LOSS
@@ -142,11 +142,10 @@ class ProgressTracker:
         return log_metrics
 
 
-def get_terminal_steps_per_checkpoint(
+def get_final_steps_per_checkpoint(
     steps_per_epoch: int, steps_per_checkpoint: int = 0, checkpoints_per_epoch: float = 0, should_log: bool = False
 ):
-    """Returns the terminal steps per checkpoint to use for the training loop, given user+default inputs."""
-
+    """Returns the steps per checkpoint to use for the training loop, given user+default inputs."""
     if steps_per_checkpoint != 0 and checkpoints_per_epoch != 0:
         raise ValueError(
             "It is invalid to specify both checkpoints_per_epoch AND steps_per_checkpoint. Please specify one or the "
