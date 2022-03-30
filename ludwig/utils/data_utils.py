@@ -35,6 +35,7 @@ from ludwig.utils.fs_utils import download_h5, open_file, upload_h5
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
+    import dask
     import dask.dataframe as dd
 
     DASK_DF_FORMATS = {dd.core.DataFrame}
@@ -107,6 +108,19 @@ def load_csv(data_fp):
     return data
 
 
+# Decorator used to encourage Dask on Ray to spread out data loading across workers
+def spread(fn):
+    def wrapped_fn(*args, **kwargs):
+        if dd is None or not hasattr(dask, "annotate"):
+            return fn(*args, **kwargs)
+
+        with dask.annotate(ray_remote_args=dict(scheduling_strategy="SPREAD")):
+            return fn(*args, **kwargs)
+
+    return wrapped_fn
+
+
+@spread
 def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None):
     """Helper method to read a csv file. Wraps around pd.read_csv to handle some exceptions. Can extend to cover
     cases as necessary.
@@ -145,6 +159,7 @@ read_csv = functools.partial(read_xsv, separator=",")
 read_tsv = functools.partial(read_xsv, separator="\t")
 
 
+@spread
 def read_json(data_fp, df_lib, normalize=False):
     if normalize:
         return df_lib.json_normalize(load_json(data_fp))
@@ -152,10 +167,12 @@ def read_json(data_fp, df_lib, normalize=False):
         return df_lib.read_json(data_fp)
 
 
+@spread
 def read_jsonl(data_fp, df_lib):
     return df_lib.read_json(data_fp, lines=True)
 
 
+@spread
 def read_excel(data_fp, df_lib):
     fp_split = os.path.splitext(data_fp)
     if fp_split[1] == ".xls":
@@ -165,42 +182,52 @@ def read_excel(data_fp, df_lib):
     return df_lib.read_excel(data_fp, engine=excel_engine)
 
 
+@spread
 def read_parquet(data_fp, df_lib):
     return df_lib.read_parquet(data_fp)
 
 
+@spread
 def read_pickle(data_fp, df_lib):
     return df_lib.read_pickle(data_fp)
 
 
+@spread
 def read_fwf(data_fp, df_lib):
     return df_lib.read_fwf(data_fp)
 
 
+@spread
 def read_feather(data_fp, df_lib):
     return df_lib.read_feather(data_fp)
 
 
+@spread
 def read_html(data_fp, df_lib):
     return df_lib.read_html(data_fp)[0]
 
 
+@spread
 def read_orc(data_fp, df_lib):
     return df_lib.read_orc(data_fp)
 
 
+@spread
 def read_sas(data_fp, df_lib):
     return df_lib.read_sas(data_fp)
 
 
+@spread
 def read_spss(data_fp, df_lib):
     return df_lib.read_spss(data_fp)
 
 
+@spread
 def read_stata(data_fp, df_lib):
     return df_lib.read_stata(data_fp)
 
 
+@spread
 def read_hdf5(data_fp, **kwargs):
     return load_hdf5(data_fp, clean_cols=True)
 

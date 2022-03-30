@@ -62,7 +62,7 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import get_new_progress_tracker, ProgressTracker
+from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +149,13 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     """How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is checkpointed
        after every epoch. (default: 0)."""
 
+    checkpoints_per_epoch: int = schema.NonNegativeInteger(default=0)
+    """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
+       is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
+
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
-       improve). (default: 0.0)."""
+       improve) (default: 0.0)."""
 
     reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
     """How many epochs have to pass before the learning rate reduces (default: 5)."""
@@ -286,6 +290,7 @@ class Trainer(BaseTrainer):
         self._validation_metric = config.validation_metric
         self.early_stop = config.early_stop
         self.steps_per_checkpoint = config.steps_per_checkpoint
+        self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
         self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
@@ -319,6 +324,14 @@ class Trainer(BaseTrainer):
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
+
+        # TODO(Justin): Move to config validation when that's ready.
+        if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
+            raise ValueError(
+                "It is invalid to specify both trainer.checkpoints_per_epoch AND "
+                "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to checkpoint/eval "
+                "the model every epoch."
+            )
 
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
@@ -862,20 +875,17 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Check steps_per_checkpoint and adjust if needed.
-            if self.steps_per_checkpoint == 0 or self.steps_per_checkpoint > batcher.steps_per_epoch:
-                self.steps_per_checkpoint = batcher.steps_per_epoch
-                if self.is_coordinator():
-                    logger.info(
-                        f"Note: steps_per_checkpoint (was {self.steps_per_checkpoint}) is now set to the number of "
-                        f"steps per epoch: {batcher.steps_per_epoch}.\n"
-                    )
-
-            logger.info(
-                f"Training for {total_steps} step(s), approximately "
-                f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+            # Get the terminal steps per checkpoint.
+            final_steps_per_checkpoint = get_final_steps_per_checkpoint(
+                batcher.steps_per_epoch, self.steps_per_checkpoint, self.checkpoints_per_epoch, self.is_coordinator()
             )
-            logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
+
+            if self.is_coordinator():
+                logger.info(
+                    f"Training for {total_steps} step(s), approximately "
+                    f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+                )
+                logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
             progress_bar = None
             if self.is_coordinator():
@@ -917,6 +927,7 @@ class Trainer(BaseTrainer):
                     output_features,
                     metrics_names,
                     checkpoint_manager,
+                    final_steps_per_checkpoint,
                 )
 
                 # ================ Post Training Epoch ================
@@ -977,6 +988,7 @@ class Trainer(BaseTrainer):
         output_features,
         metrics_names,
         checkpoint_manager,
+        final_steps_per_checkpoint: int,
     ) -> bool:
         """Completes one epoch through the data."""
         while not batcher.last_batch():
@@ -1052,7 +1064,7 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
-            if progress_tracker.steps % self.steps_per_checkpoint == 0:
+            if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator():
                     checkpoint_manager.save(progress_tracker.steps)

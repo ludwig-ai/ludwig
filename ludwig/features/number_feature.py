@@ -269,6 +269,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         skip_save_processed_input,
     ):
         def normalize(series: pd.Series) -> pd.Series:
+            series = series.copy()
             numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
             series.update(numeric_transformer.transform(series.values))
             return series
