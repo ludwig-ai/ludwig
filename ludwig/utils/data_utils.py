@@ -111,7 +111,7 @@ def load_csv(data_fp):
 # Decorator used to encourage Dask on Ray to spread out data loading across workers
 def spread(fn):
     def wrapped_fn(*args, **kwargs):
-        if dd is None:
+        if dd is None or not hasattr(dask, "annotate"):
             return fn(*args, **kwargs)
 
         with dask.annotate(ray_remote_args=dict(scheduling_strategy="SPREAD")):
