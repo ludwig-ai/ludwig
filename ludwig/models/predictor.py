@@ -307,8 +307,8 @@ def save_prediction_outputs(
         csv_filename = os.path.join(output_directory, "{}_{}.csv")
         for output_field, outputs in postprocessed_dict.items():
             output_field = make_safe_filename(output_field)
-            for output_type, values in outputs.items():
-                save_csv(csv_filename.format(output_field, output_type), values)
+            for output_name, values in outputs.items():
+                save_csv(csv_filename.format(output_field, make_safe_filename(output_name)), values)
 
 
 def save_evaluation_stats(test_stats, output_directory):
