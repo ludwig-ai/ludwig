@@ -58,8 +58,9 @@ def _save_as_numpy(predictions, output_directory, saved_keys):
     npy_filename = os.path.join(output_directory, "{}.npy")
     numpy_predictions = to_numpy_dataset(predictions)
     for k, v in numpy_predictions.items():
+        k = k.replace("<", "[").replace(">", "]")  # Replace <UNK> and <PAD> with [UNK], [PAD]
+        k = k.replace("/", "_").replace("\\", "_")  # Replace / or \ with _
         if k not in saved_keys:
-            k = k.replace("<", "[").replace(">", "]")  # Replace <UNK> and <PAD>
             np.save(npy_filename.format(k), v)
             saved_keys.add(k)
 
