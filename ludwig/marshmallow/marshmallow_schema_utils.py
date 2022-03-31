@@ -612,7 +612,7 @@ def NumericOrStringOptionsField(
             # Add null as an option if applicable:
             oneof_list += [{"type": "null", "title": "null_option"}] if nullable else []
 
-            return {"oneOf": oneof_list, "title": self.__class__.__name__}
+            return {"oneOf": oneof_list, "title": self.name}
 
     return field(
         metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable, default=default)},
