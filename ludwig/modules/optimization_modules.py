@@ -283,7 +283,7 @@ def OptimizerDataclassField(default={"type": "adam"}):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(optimizer_registry.keys())},
+                    "type": {"type": "string", "enum": list(optimizer_registry.keys()), "default": default["type"]},
                 },
                 "title": "optimizer_options",
                 "allOf": get_optimizer_conds(),
