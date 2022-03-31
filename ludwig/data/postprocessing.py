@@ -20,6 +20,7 @@ import numpy as np
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS, to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.strings_utils import make_safe_filename
 
 
 def postprocess(
@@ -58,9 +59,9 @@ def _save_as_numpy(predictions, output_directory, saved_keys):
     npy_filename = os.path.join(output_directory, "{}.npy")
     numpy_predictions = to_numpy_dataset(predictions)
     for k, v in numpy_predictions.items():
+        k = k.replace("<", "[").replace(">", "]")  # Replace <UNK> and <PAD> with [UNK], [PAD]
         if k not in saved_keys:
-            k = k.replace("<", "[").replace(">", "]")  # Replace <UNK> and <PAD>
-            np.save(npy_filename.format(k), v)
+            np.save(npy_filename.format(make_safe_filename(k)), v)
             saved_keys.add(k)
 
 

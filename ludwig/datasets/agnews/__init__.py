@@ -47,7 +47,7 @@ class AGNews(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMi
         super().process_downloaded_dataset(header=None)
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
         # Maps class_index to class name.
-        class_names = ["", "world", "sports", "business", "sci/tech"]
+        class_names = ["", "world", "sports", "business", "sci_tech"]
         # Adds new column 'class' by mapping class indexes to strings.
         processed_df["class"] = processed_df.class_index.apply(lambda i: class_names[i])
         processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
