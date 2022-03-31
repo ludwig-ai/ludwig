@@ -126,18 +126,18 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     "Whether to shuffle batches during training when true (default: True)."
 
     learning_rate: float = schema.NumericOrStringOptionsField(
-        default=0.001, min=0.0, max=1.0, options=["auto"], nullable=False
+        default=0.001, min=0.0, max=1.0, options=["auto"], default_numeric=0.001, default_option="auto", nullable=False
     )
     """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
        `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""
 
     batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
-        default=128, options=["auto"], nullable=False, min_exclusive=0
+        default=128, options=["auto"], default_numeric=128, default_option="auto", nullable=False, min_exclusive=0
     )
     "Size of batch to pass to the model for training (default: 128)."
 
     eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
-        default=None, options=["auto"], nullable=True, min_exclusive=0
+        default=None, options=["auto"], default_numeric=None, default_option="auto", nullable=True, min_exclusive=0
     )
     """Size of batch to pass to the model for evaluation (default: 'auto')."""
 
