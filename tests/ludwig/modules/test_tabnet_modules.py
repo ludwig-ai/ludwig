@@ -7,7 +7,6 @@ from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, Fe
 from ludwig.utils.entmax import sparsemax
 
 RANDOM_SEED = 67
-BATCH_SIZE = 16
 
 
 @pytest.mark.parametrize(
@@ -32,12 +31,18 @@ def test_sparsemax(input_tensor: torch.Tensor) -> None:
 @pytest.mark.parametrize("apply_glu", [True, False])
 @pytest.mark.parametrize("size", [4, 12])
 @pytest.mark.parametrize("input_size", [2, 6])
+@pytest.mark.parametrize("batch_size", [1, 16])
 def test_feature_block(
-    input_size, size: int, apply_glu: bool, external_shared_fc_layer: bool, bn_virtual_bs: Optional[int]
+    input_size,
+    size: int,
+    apply_glu: bool,
+    external_shared_fc_layer: bool,
+    bn_virtual_bs: Optional[int],
+    batch_size: int,
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
+    input_tensor = torch.randn([batch_size, input_size], dtype=torch.float32)
 
     if external_shared_fc_layer:
         shared_fc_layer = torch.nn.Linear(input_size, size * 2 if apply_glu else size, bias=False)
@@ -52,7 +57,7 @@ def test_feature_block(
 
     # check for expected structure and properties
     assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, size)
+    assert output_tensor.shape == (batch_size, size)
 
     assert feature_block.input_shape[-1] == input_size
     assert feature_block.output_shape[-1] == size
@@ -63,12 +68,18 @@ def test_feature_block(
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
 @pytest.mark.parametrize("size", [4, 12])
 @pytest.mark.parametrize("input_size", [2, 6])
+@pytest.mark.parametrize("batch_size", [1, 16])
 def test_feature_transformer(
-    input_size: int, size: int, virtual_batch_size: Optional[int], num_total_blocks: int, num_shared_blocks: int
+    input_size: int,
+    size: int,
+    virtual_batch_size: Optional[int],
+    num_total_blocks: int,
+    num_shared_blocks: int,
+    batch_size: int,
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
+    input_tensor = torch.randn([batch_size, input_size], dtype=torch.float32)
 
     feature_transformer = FeatureTransformer(
         input_size,
@@ -82,7 +93,7 @@ def test_feature_transformer(
 
     # check for expected structure and properties
     assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, size)
+    assert output_tensor.shape == (batch_size, size)
 
     assert feature_transformer.input_shape[-1] == input_size
     assert feature_transformer.output_shape[-1] == size
@@ -94,13 +105,19 @@ def test_feature_transformer(
 @pytest.mark.parametrize("size", [4, 8])
 @pytest.mark.parametrize("input_size", [2, 6])
 @pytest.mark.parametrize("entmax_mode", [None, "entmax15", "adaptive", "constant"])
+@pytest.mark.parametrize("batch_size", [1, 16])
 def test_attentive_transformer(
-    entmax_mode: Optional[str], input_size: int, size: int, output_size: int, virtual_batch_size: Optional[int]
+    entmax_mode: Optional[str],
+    input_size: int,
+    size: int,
+    output_size: int,
+    virtual_batch_size: Optional[int],
+    batch_size: int,
 ) -> None:
     # setup synthetic tensors
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
-    prior_scales = torch.ones([BATCH_SIZE, input_size])
+    input_tensor = torch.randn([batch_size, input_size], dtype=torch.float32)
+    prior_scales = torch.ones([batch_size, input_size])
 
     # setup required transformers for test
     feature_transformer = FeatureTransformer(input_size, size + output_size, bn_virtual_bs=virtual_batch_size)
@@ -114,7 +131,7 @@ def test_attentive_transformer(
 
     # check for expected shape and properties
     assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, input_size)
+    assert output_tensor.shape == (batch_size, input_size)
 
     assert attentive_transformer.input_shape[-1] == size
     assert attentive_transformer.output_shape[-1] == input_size
@@ -128,12 +145,18 @@ def test_attentive_transformer(
 @pytest.mark.parametrize("output_size", [2, 4, 12])
 @pytest.mark.parametrize("input_size", [2])
 @pytest.mark.parametrize("entmax_mode", [None, "entmax15", "adaptive", "constant"])
+@pytest.mark.parametrize("batch_size", [1, 16])
 def test_tabnet(
-    entmax_mode: Optional[str], input_size: int, output_size: int, size: int, virtual_batch_size: Optional[int]
+    entmax_mode: Optional[str],
+    input_size: int,
+    output_size: int,
+    size: int,
+    virtual_batch_size: Optional[int],
+    batch_size: int,
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
+    input_tensor = torch.randn([batch_size, input_size], dtype=torch.float32)
 
     tabnet = TabNet(
         input_size, size, output_size, num_steps=3, num_total_blocks=4, num_shared_blocks=2, entmax_mode=entmax_mode
@@ -143,7 +166,7 @@ def test_tabnet(
 
     # check for expected shape and properties
     assert isinstance(output, tuple)
-    assert output[0].shape == (BATCH_SIZE, output_size)
+    assert output[0].shape == (batch_size, output_size)
 
     assert tabnet.input_shape[-1] == input_size
     assert tabnet.output_shape[-1] == output_size
