@@ -111,19 +111,19 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
     """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
-       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`)."""
+       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`)."""
 
     epochs: int = schema.PositiveInteger(default=100)
-    "Number of epochs the algorithm is intended to be run over (default: 100)."
+    """Number of epochs the algorithm is intended to be run over (default: 100)."""
 
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
-    "Strength of the $L2$ regularization (default: 0.0)."
+    """Strength of the $L2$ regularization (default: 0.0)."""
 
     regularization_type: Optional[str] = schema.RegularizerOptions(default="l2")
-    "Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."
+    """Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."""
 
     should_shuffle: bool = True
-    "Whether to shuffle batches during training when true (default: True)."
+    """Whether to shuffle batches during training when true (default: True)."""
 
     learning_rate: float = schema.NumericOrStringOptionsField(
         default=0.001, min=0.0, max=1.0, options=["auto"], default_numeric=0.001, default_option="auto", nullable=False
@@ -134,7 +134,7 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
         default=128, options=["auto"], default_numeric=128, default_option="auto", nullable=False, min_exclusive=0
     )
-    "Size of batch to pass to the model for training (default: 128)."
+    """Size of batch to pass to the model for training (default: 128)."""
 
     eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
         default=None, options=["auto"], default_numeric=None, default_option="auto", nullable=True, min_exclusive=0
@@ -173,13 +173,13 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     """Number to increase the batch size by on a plateau (default: 0)."""
 
     increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
-    "How many epochs to wait for before increasing the batch size (default: 5)."
+    """How many epochs to wait for before increasing the batch size (default: 5)."""
 
     increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(default=2.0)
-    "Rate at which the batch size increases (default: 2.0)."
+    """Rate at which the batch size increases (default: 2.0)."""
 
     increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)
-    "Maximum size of the batch (default: 512)."
+    """Maximum size of the batch (default: 512)."""
 
     increase_batch_size_eval_metric: str = LOSS
     """TODO: Document parameters. (default: 'loss')."""
