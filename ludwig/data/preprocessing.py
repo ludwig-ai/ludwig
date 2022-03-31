@@ -42,7 +42,6 @@ from ludwig.constants import (
     SPLIT,
     SRC,
     TEST,
-    TEXT,
     TRAINING,
     TYPE,
     VALIDATION,
@@ -1515,7 +1514,6 @@ def preprocess_for_training(
                 callbacks=callbacks,
             )
             training_set, test_set, validation_set, training_set_metadata = processed
-            replace_text_feature_level(features, [training_set, validation_set, test_set])
             processed = (training_set, test_set, validation_set, training_set_metadata)
 
             # cache the dataset
@@ -1786,8 +1784,6 @@ def preprocess_for_prediction(
         if new_hdf5_fp:
             training_set_metadata[DATA_TRAIN_HDF5_FP] = new_hdf5_fp
 
-        replace_text_feature_level(features, [dataset])
-
         if split != FULL:
             training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
 
@@ -1810,15 +1806,3 @@ def preprocess_for_prediction(
     )
 
     return dataset, training_set_metadata
-
-
-def replace_text_feature_level(features, datasets):
-    for feature in features:
-        if feature[TYPE] == TEXT:
-            for dataset in datasets:
-                if dataset is not None:
-                    dataset[feature[PROC_COLUMN]] = dataset["{}_{}".format(feature[PROC_COLUMN], feature["level"])]
-                    for level in ("word", "char"):
-                        name_level = f"{feature[PROC_COLUMN]}_{level}"
-                        if name_level in dataset:
-                            del dataset[name_level]

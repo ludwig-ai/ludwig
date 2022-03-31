@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @register_encoder("albert", TEXT)
 class ALBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -155,7 +155,7 @@ class ALBERTEncoder(Encoder):
 @register_encoder("mt5", TEXT)
 class MT5Encoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -277,7 +277,7 @@ class MT5Encoder(Encoder):
 @register_encoder("xlmroberta", TEXT)
 class XLMRoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -372,7 +372,7 @@ class XLMRoBERTaEncoder(Encoder):
 class BERTEncoder(Encoder):
     # TODO(justin): Use official class properties.
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -490,7 +490,7 @@ class BERTEncoder(Encoder):
 @register_encoder("xlm", TEXT)
 class XLMEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -628,7 +628,7 @@ class XLMEncoder(Encoder):
 @register_encoder("gpt", TEXT)
 class GPTEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -726,7 +726,7 @@ class GPTEncoder(Encoder):
 @register_encoder("gpt2", TEXT)
 class GPT2Encoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -828,7 +828,7 @@ class GPT2Encoder(Encoder):
 @register_encoder("roberta", TEXT)
 class RoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -912,7 +912,7 @@ class RoBERTaEncoder(Encoder):
 @register_encoder("transformer_xl", TEXT)
 class TransformerXLEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1032,7 +1032,7 @@ class TransformerXLEncoder(Encoder):
 @register_encoder("xlnet", TEXT)
 class XLNetEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1160,7 +1160,7 @@ class XLNetEncoder(Encoder):
 @register_encoder("distilbert", TEXT)
 class DistilBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1260,7 +1260,7 @@ class DistilBERTEncoder(Encoder):
 @register_encoder("ctrl", TEXT)
 class CTRLEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1359,7 +1359,7 @@ class CTRLEncoder(Encoder):
 @register_encoder("camembert", TEXT)
 class CamemBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1476,7 +1476,7 @@ class CamemBERTEncoder(Encoder):
 @register_encoder("t5", TEXT)
 class T5Encoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1580,7 +1580,7 @@ class T5Encoder(Encoder):
 @register_encoder("flaubert", TEXT)
 class FlauBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1712,7 +1712,7 @@ class FlauBERTEncoder(Encoder):
 @register_encoder("electra", TEXT)
 class ELECTRAEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1822,7 +1822,7 @@ class ELECTRAEncoder(Encoder):
 @register_encoder("longformer", TEXT)
 class LongformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
@@ -1907,7 +1907,7 @@ class LongformerEncoder(Encoder):
 @register_encoder("auto_transformer", TEXT)
 class AutoTransformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
+        "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
