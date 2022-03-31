@@ -9,6 +9,8 @@
         "ludwig.models.trainer.TrainerConfig.batch_size",
         "ludwig.models.trainer.TrainerConfig.eval_batch_size",
         "ludwig.models.trainer.TrainerConfig.early_stop",
+        "ludwig.models.trainer.TrainerConfig.steps_per_checkpoint",
+        "ludwig.models.trainer.TrainerConfig.checkpoints_per_epoch",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
@@ -97,6 +99,18 @@
                         "default": "5",
                         "kind": "POSITIONAL_OR_KEYWORD",
                         "name": "early_stop"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "steps_per_checkpoint"
+                    },
+                    {
+                        "annotation": "int",
+                        "default": "0",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "checkpoints_per_epoch"
                     },
                     {
                         "annotation": "float",
@@ -222,6 +236,13 @@
             "path": "ludwig.models.trainer.TrainerConfig.batch_size",
             "relative_file_path": "ludwig/models/trainer.py",
             "type": "Union[int, str]"
+        },
+        "ludwig.models.trainer.TrainerConfig.checkpoints_per_epoch": {
+            "docstring": "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it\nis invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0).",
+            "name": "checkpoints_per_epoch",
+            "path": "ludwig.models.trainer.TrainerConfig.checkpoints_per_epoch",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
         },
         "ludwig.models.trainer.TrainerConfig.decay": {
             "docstring": "Turn on exponential decay of the learning rate (default: False).",
@@ -350,7 +371,7 @@
             "type": "str"
         },
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau": {
-            "docstring": "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not\nimprove). (default: 0.0).",
+            "docstring": "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not\nimprove) (default: 0.0).",
             "name": "reduce_learning_rate_on_plateau",
             "path": "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
             "relative_file_path": "ludwig/models/trainer.py",
@@ -397,6 +418,13 @@
             "path": "ludwig.models.trainer.TrainerConfig.staircase",
             "relative_file_path": "ludwig/models/trainer.py",
             "type": "bool"
+        },
+        "ludwig.models.trainer.TrainerConfig.steps_per_checkpoint": {
+            "docstring": "How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is checkpointed\nafter every epoch. (default: 0).",
+            "name": "steps_per_checkpoint",
+            "path": "ludwig.models.trainer.TrainerConfig.steps_per_checkpoint",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "int"
         },
         "ludwig.models.trainer.TrainerConfig.validation_field": {
             "docstring": "First output feature, by default it is set as the same field of the first output feature (default:\n`ludwig.constants.COMBINED`).",

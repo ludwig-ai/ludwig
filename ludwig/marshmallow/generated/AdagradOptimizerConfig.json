@@ -70,7 +70,7 @@
             "type": "float"
         },
         "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value": {
-            "docstring": null,
+            "docstring": "TODO: Document parameters (default: 0).",
             "name": "initial_accumulator_value",
             "path": "ludwig.modules.optimization_modules.AdagradOptimizerConfig.initial_accumulator_value",
             "relative_file_path": "ludwig/modules/optimization_modules.py",
