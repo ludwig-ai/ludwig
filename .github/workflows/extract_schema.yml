@@ -22,7 +22,7 @@ jobs:
     env:
       PYTORCH: 1.11.0
 
-    name: py3.8, torch-1.11.0
+    name: extract_schema, py3.8, torch1.11.0
 
     timeout-minutes: 20
     steps:
