@@ -193,7 +193,7 @@ class ROCAUCMetric(LudwigMetric):
 
     @classmethod
     def get_objective(cls):
-        return MINIMIZE
+        return MAXIMIZE
 
     @classmethod
     def get_inputs(cls):
