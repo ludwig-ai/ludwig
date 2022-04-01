@@ -24,16 +24,18 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import psutil
 import torch
+from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+import ludwig.marshmallow.marshmallow_schema_utils as schema
+from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -45,7 +47,14 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
-from ludwig.modules.optimization_modules import create_optimizer_with_clipper
+from ludwig.modules.optimization_modules import (
+    BaseOptimizerConfig,
+    create_clipper,
+    create_optimizer,
+    GradientClippingConfig,
+    GradientClippingDataclassField,
+    OptimizerDataclassField,
+)
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -92,194 +101,208 @@ class BaseTrainer(ABC):
         self.shutdown()
 
 
+def get_trainer_jsonschema():
+    return schema.get_custom_schema_from_marshmallow_class(TrainerConfig)
+
+
+@dataclass
+class TrainerConfig(schema.BaseMarshmallowConfig):
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
+
+    optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
+    """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
+       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`)."""
+
+    epochs: int = schema.PositiveInteger(default=100)
+    """Number of epochs the algorithm is intended to be run over (default: 100)."""
+
+    regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
+    """Strength of the $L2$ regularization (default: 0.0)."""
+
+    regularization_type: Optional[str] = schema.RegularizerOptions(default="l2")
+    """Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."""
+
+    should_shuffle: bool = True
+    """Whether to shuffle batches during training when true (default: True)."""
+
+    learning_rate: float = schema.NumericOrStringOptionsField(
+        default=0.001, min=0.0, max=1.0, options=["auto"], default_numeric=0.001, default_option="auto", nullable=False
+    )
+    """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
+       `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""
+
+    batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
+        default=128, options=["auto"], default_numeric=128, default_option="auto", nullable=False, min_exclusive=0
+    )
+    """Size of batch to pass to the model for training (default: 128)."""
+
+    eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
+        default=None, options=["auto"], default_numeric=None, default_option="auto", nullable=True, min_exclusive=0
+    )
+    """Size of batch to pass to the model for evaluation (default: 'auto')."""
+
+    early_stop: int = schema.IntegerRange(default=5, min=-1)
+    """How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to
+       -1, which disables early_stop (default: 5)."""
+
+    steps_per_checkpoint: int = schema.NonNegativeInteger(default=0)
+    """How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is checkpointed
+       after every epoch. (default: 0)."""
+
+    checkpoints_per_epoch: int = schema.NonNegativeInteger(default=0)
+    """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
+       is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
+
+    reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
+    """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
+       improve) (default: 0.0)."""
+
+    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
+    """How many epochs have to pass before the learning rate reduces (default: 5)."""
+
+    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)
+    """Rate at which we reduce the learning rate (default: 0.5)."""
+
+    reduce_learning_rate_eval_metric: str = LOSS
+    """TODO: Document parameters. (default: `ludwig.constants.LOSS`)."""
+
+    reduce_learning_rate_eval_split: str = TRAINING
+    """TODO: Document parameters. (default: `ludwig.constants.TRAINING`)."""
+
+    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
+    """Number to increase the batch size by on a plateau (default: 0)."""
+
+    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
+    """How many epochs to wait for before increasing the batch size (default: 5)."""
+
+    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(default=2.0)
+    """Rate at which the batch size increases (default: 2.0)."""
+
+    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)
+    """Maximum size of the batch (default: 512)."""
+
+    increase_batch_size_eval_metric: str = LOSS
+    """TODO: Document parameters. (default: 'loss')."""
+
+    increase_batch_size_eval_split: str = TRAINING
+    """TODO: Document parameters. (default: 'training')."""
+
+    decay: bool = False
+    """Turn on exponential decay of the learning rate (default: False)."""
+
+    decay_steps: int = schema.PositiveInteger(default=10000)
+    """TODO: Document parameters. (default: 10000)."""
+
+    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
+    """TODO: Document parameters. (default: 0.96)."""
+
+    staircase: bool = False
+    """Decays the learning rate at discrete intervals (default: False)."""
+
+    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(default={})
+    """Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.
+       (default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)"""
+
+    # TODO(#1673): Need some more logic here for validating against output features
+    validation_field: str = COMBINED
+    """First output feature, by default it is set as the same field of the first output feature (default:
+       `ludwig.constants.COMBINED`)."""
+
+    validation_metric: str = LOSS
+    """Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`)."""
+
+    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
+    """Number of epochs to warmup the learning rate for (default: 1.0)."""
+
+
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
 
+    @staticmethod
+    def get_schema_cls():
+        return TrainerConfig
+
     def __init__(
         self,
+        config: TrainerConfig,
         model: ECD,
-        optimizer=None,
-        epochs=100,
-        steps_per_checkpoint=0,
-        checkpoints_per_epoch=0,
-        regularization_lambda=0.0,
-        regularization_type=None,
-        learning_rate=0.001,
-        decay=False,
-        decay_rate=0.96,
-        decay_steps=10000,
-        staircase=False,
-        batch_size=128,
-        eval_batch_size=None,
-        should_shuffle=True,
-        bucketing_field=None,
-        validation_field="combined",
-        validation_metric="loss",
-        early_stop=2000,
-        reduce_learning_rate_on_plateau=0,
-        reduce_learning_rate_on_plateau_patience=5,
-        reduce_learning_rate_on_plateau_rate=0.5,
-        reduce_learning_rate_eval_metric=LOSS,
-        reduce_learning_rate_eval_split=TRAINING,
-        increase_batch_size_on_plateau=0,
-        increase_batch_size_on_plateau_patience=5,
-        increase_batch_size_on_plateau_rate=2,
-        increase_batch_size_on_plateau_max=512,
-        increase_batch_size_eval_metric=LOSS,
-        increase_batch_size_eval_split=TRAINING,
-        learning_rate_warmup_epochs=1,
-        resume=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        callbacks=None,
-        random_seed=default_random_seed,
-        horovod=None,
-        device=None,
+        resume: float = False,
+        skip_save_model: bool = False,
+        skip_save_progress: bool = False,
+        skip_save_log: bool = False,
+        callbacks: List = None,
+        random_seed: float = default_random_seed,
+        horovod: Optional[Dict] = None,
+        device: Optional[str] = None,
         **kwargs,
     ):
-        """Trains a model with a set of hyperparameters listed below. Customizable.
+        """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
-                :param training_set: The training set
-        :param validation_set: The validation dataset
-        :param test_set: The test dataset
-        :param validation_field: The first output feature, by default it is set
-               as the same field of the first output feature.
-        :param validation_metric: metric used on the validation field, it is
-               accuracy by default
-        :type validation_metric:
-        :param save_path: The path to save the file
-        :type save_path: filepath (str)
-        :param regularization_lambda: Strength of the $L2$ regularization
-        :type regularization_lambda: Integer
-        :param regularization_type: Type of regularization, (l1, l2, l1_l2).
-        :type regularization_type: str
-        :param epochs: Number of epochs the algorithm is intended to be run over
-        :type epochs: Integer
-        :param steps_per_checkpoint: How often the model is checkpointed. Also dictates maximum evaluation frequency.
-                0: Model is checkpointed after every epoch.
-        :type steps_per_checkpoint: Integer
-        :param checkpoints_per_epoch: Number of checkpoints per epoch. For example, 2 -> checkpoints are written every
-                half of an epoch. Note that it is invalid to specify both non-zero steps_per_checkpoint and non-zero
-                checkpoints_per_epoch.
-        :type checkpoints_per_epoch: float
-        :param learning_rate: Learning rate specified in configuration, represents how much to scale the gradients by.
-               If 'auto', tune_learning_rate must be called before training to estimate the optimal learning rate.
-        :type learning_rate: Float
-        :param batch_size: Size of batch to pass to the model for training.  If 'auto', tune_batch_size must be called
-               before training to estimate the optimal batch size.
-        :type batch_size: Integer
-        :param eval_batch_size: Size of batch to pass to the model for evaluation.
-        :type eval_batch_size: Integer
-        :param should_shuffle: Shuffle batches during training when true (default: True).
-        :type should_shuffle: Boolean
-        :param bucketing_field: when batching, buckets datapoints based the
-               length of a field together. Bucketing on text length speeds up
-               training of RNNs consistently, 30% in some cases
-        :type bucketing_field:
-        :param validation_field: The first output feature, by default it is set
-               as the same field of the first output feature.
-        :param validation_metric: metric used on the validation field, it is
-               accuracy by default
-        :type validation_metric:
-        :param dropout: dropout probability (probability of dropping
-               a neuron in a given layer)
-        :type dropout: Float
-        :param early_stop: How many epochs without any improvement in the
-               validation_metric triggers the algorithm to stop
-        :type early_stop: Integer
-        :param reduce_learning_rate_on_plateau: Reduces the learning rate when
-               the algorithm hits a plateau (i.e. the performance on the
-               validation does not improve)
-        :type reduce_learning_rate_on_plateau: Float
-        :param reduce_learning_rate_on_plateau_patience: How many epochs have
-               to pass before the learning rate reduces
-        :type reduce_learning_rate_on_plateau_patience: Float
-        :param reduce_learning_rate_on_plateau_rate: Rate at which we reduce
-               the learning rate
-        :type reduce_learning_rate_on_plateau_rate: Float
-        :param increase_batch_size_on_plateau: Increase the batch size on a
-               plateau
-        :type increase_batch_size_on_plateau: Integer
-        :param increase_batch_size_on_plateau_patience: How many epochs to wait
-               for before increasing the batch size
-        :type increase_batch_size_on_plateau_patience: Integer
-        :param increase_batch_size_on_plateau_rate: The rate at which the batch
-               size increases.
-        :type increase_batch_size_on_plateau_rate: Float
-        :param increase_batch_size_on_plateau_max: The maximum size of the batch
-        :type increase_batch_size_on_plateau_max: Integer
-        :param learning_rate_warmup_epochs: The number of epochs to warmup the
-               learning rate for.
-        :type learning_rate_warmup_epochs: Integer
-        :param resume: Resume training a model that was being trained.
+        :param model: Underlying Ludwig model
+        :type model: `ludwig.models.ecd.ECD`
+        :param resume: Resume training a model that was being trained. (default: False).
         :type resume: Boolean
-        :param skip_save_model: disables
-               saving model weights and hyperparameters each time the model
-               improves. By default Ludwig saves model weights after each epoch
-               the validation metric (improves, but if the model is really big
-               that can be time consuming. If you do not want to keep
-               the weights and just find out what performance a model can get
-               with a set of hyperparameters, use this parameter to skip it,
-               but the model will not be loadable later on.
+        :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
+               default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
+               really big that can be time consuming. If you do not want to keep the weights and just find out what
+               performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
+               will not be loadable later on. (default: False).
         :type skip_save_model: Boolean
-        :param skip_save_progress: disables saving progress each epoch.
-               By default Ludwig saves weights and stats  after each epoch
-               for enabling resuming of training, but if the model is
-               really big that can be time consuming and will uses twice
-               as much space, use this parameter to skip it, but training
-               cannot be resumed later on
+        :param skip_save_progress: Disables saving progress each epoch. By default Ludwig saves weights and stats after
+               each epoch for enabling resuming of training, but if the model is really big that can be time consuming
+               and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
+               on. (default: False).
         :type skip_save_progress: Boolean
-        :param skip_save_log: Disables saving TensorBoard
-               logs. By default Ludwig saves logs for the TensorBoard, but if it
-               is not needed turning it off can slightly increase the
-               overall speed..
+        :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
+               it is not needed turning it off can slightly increase the overall speed. (default: False).
         :type skip_save_log: Boolean
-        :param callbacks: a list of `ludwig.callbacks.Callback` objects that
-               provide hooks into the Ludwig pipeline.
-        :type: list
-        :param random_seed: Default initialization for the random seeds
-        :type: Float
-        :param horovod: Horovod parameters
+        :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
+               (default: None).
+        :type callbacks: list
+        :param random_seed: Default initialization for the random seeds (default: 42).
+        :type random_seed: Float
+        :param horovod: Horovod parameters (default: None).
         :type horovod: dict
-        :param device: The device to load the model on from a saved checkpoint.
+        :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
+        :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
+               `ludwig.models.trainer.TrainerConfig()`).
         """
-        self.epochs = epochs
-        self.regularization_lambda = regularization_lambda
-        self.regularization_type = regularization_type
-        self.learning_rate = learning_rate
+
+        self.epochs = config.epochs
+        self.regularization_lambda = config.regularization_lambda
+        self.regularization_type = config.regularization_type
+        self.learning_rate = config.learning_rate
         try:
-            base_learning_rate = float(learning_rate)
+            base_learning_rate = float(config.learning_rate)
         except ValueError:
             # TODO (ASN): Circle back on how we want to set default placeholder value
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
-        self.decay = decay
-        self.decay_rate = decay_rate
-        self.decay_steps = decay_steps
-        self.staircase = staircase
-        self.batch_size = batch_size
-        self.eval_batch_size = batch_size if eval_batch_size is None else eval_batch_size
-        self.should_shuffle = should_shuffle
-        self.bucketing_field = bucketing_field
-        self._validation_field = validation_field
-        self._validation_metric = validation_metric
-        self.early_stop = early_stop
-        self.steps_per_checkpoint = steps_per_checkpoint
-        self.checkpoints_per_epoch = checkpoints_per_epoch
-        self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
-        self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
-        self.reduce_learning_rate_on_plateau_rate = reduce_learning_rate_on_plateau_rate
-        self.reduce_learning_rate_eval_metric = reduce_learning_rate_eval_metric
-        self.reduce_learning_rate_eval_split = reduce_learning_rate_eval_split
-        self.increase_batch_size_on_plateau = increase_batch_size_on_plateau
-        self.increase_batch_size_on_plateau_patience = increase_batch_size_on_plateau_patience
-        self.increase_batch_size_on_plateau_rate = increase_batch_size_on_plateau_rate
-        self.increase_batch_size_on_plateau_max = increase_batch_size_on_plateau_max
-        self.increase_batch_size_eval_metric = increase_batch_size_eval_metric
-        self.increase_batch_size_eval_split = increase_batch_size_eval_split
-        self.learning_rate_warmup_epochs = learning_rate_warmup_epochs
+        self.decay = config.decay
+        self.decay_rate = config.decay_rate
+        self.decay_steps = config.decay_steps
+        self.staircase = config.staircase
+        self.batch_size = config.batch_size
+        self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
+        self.should_shuffle = config.should_shuffle
+        self._validation_field = config.validation_field
+        self._validation_metric = config.validation_metric
+        self.early_stop = config.early_stop
+        self.steps_per_checkpoint = config.steps_per_checkpoint
+        self.checkpoints_per_epoch = config.checkpoints_per_epoch
+        self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
+        self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
+        self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
+        self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
+        self.reduce_learning_rate_eval_split = config.reduce_learning_rate_eval_split
+        self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
+        self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
+        self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
+        self.increase_batch_size_on_plateau_max = config.increase_batch_size_on_plateau_max
+        self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
+        self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
+        self.learning_rate_warmup_epochs = config.learning_rate_warmup_epochs
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
@@ -295,15 +318,15 @@ class Trainer(BaseTrainer):
         self.model = model
         self.model = self.model.to(self.device)
 
-        # ================ Optimizer ================
-        if optimizer is None:
-            optimizer = {TYPE: "Adam"}
-        # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training.
-        optimizer = {**optimizer, "lr": base_learning_rate}
-        self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
+        # ================ Optimizer tuning ================
+        optimizer_config = config.optimizer
+        # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
+        optimizer_config.lr = base_learning_rate
+        self.gradient_clipping_config = create_clipper(config.gradient_clipping)
+        self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
 
         # TODO(Justin): Move to config validation when that's ready.
-        if checkpoints_per_epoch != 0 and steps_per_checkpoint != 0:
+        if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
             raise ValueError(
                 "It is invalid to specify both trainer.checkpoints_per_epoch AND "
                 "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to checkpoint/eval "
@@ -340,7 +363,7 @@ class Trainer(BaseTrainer):
             self.optimizer.synchronize()
 
         # Clip gradients
-        self.clipper.clip_grads(variables)
+        self.clip_grads(variables)
 
         # Apply gradient updates
         if self.horovod:
@@ -351,6 +374,15 @@ class Trainer(BaseTrainer):
             self.optimizer.step()
 
         return loss, all_losses
+
+    def clip_grads(self, variables):
+        """Applies gradient clipping."""
+        if self.gradient_clipping_config.clipglobalnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
+        if self.gradient_clipping_config.clipnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
+        if self.gradient_clipping_config.clipvalue:
+            torch.nn.utils.clip_grad_value_(variables, self.gradient_clipping_config.clipvalue)
 
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""

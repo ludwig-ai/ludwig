@@ -1,10 +1,8 @@
 import os
 import tempfile
-from dataclasses import dataclass
 from typing import Dict
 
 import torch
-from marshmallow import INCLUDE
 from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
@@ -14,6 +12,7 @@ from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.marshmallow.test_classes import CustomTestCombinerConfig
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from tests.integration_tests.utils import (
@@ -23,14 +22,6 @@ from tests.integration_tests.utils import (
     number_feature,
     sequence_feature,
 )
-
-
-@dataclass
-class CustomTestCombinerConfig:
-    foo: bool = False
-
-    class Meta:
-        unknown = INCLUDE
 
 
 @register_combiner(name="custom_test")

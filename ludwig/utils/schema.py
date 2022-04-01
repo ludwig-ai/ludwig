@@ -13,21 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import marshmallow_dataclass
-from jsonschema import validate
-from marshmallow_jsonschema import JSONSchema
+from jsonschema import Draft7Validator, validate
+from jsonschema.validators import extend
 
-from ludwig.combiners.combiners import combiner_registry
-from ludwig.constants import TRAINER
+from ludwig.combiners.combiners import get_combiner_jsonschema
+from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.marshmallow.marshmallow_schema_utils import create_cond
+from ludwig.models.trainer import get_trainer_jsonschema
 
 
 def get_schema():
     input_feature_types = sorted(list(input_type_registry.keys()))
     output_feature_types = sorted(list(output_type_registry.keys()))
-    combiner_types = sorted(list(combiner_registry.keys()))
 
     schema = {
         "type": "object",
@@ -62,17 +62,10 @@ def get_schema():
                     "required": ["name", "type"],
                 },
             },
-            "combiner": {
-                "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": combiner_types},
-                },
-                "allOf": get_combiner_conds(combiner_types),
-                "required": ["type"],
-            },
-            TRAINER: {},
-            "preprocessing": {},
-            "hyperopt": {},
+            COMBINER: get_combiner_jsonschema(),
+            TRAINER: get_trainer_jsonschema(),
+            PREPROCESSING: {},
+            HYPEROPT: {},
         },
         "definitions": get_custom_definitions(),
         "required": ["input_features", "output_features"],
@@ -138,31 +131,16 @@ def get_output_preproc_conds(output_feature_types):
     return conds
 
 
-def get_combiner_conds(combiner_types):
-    conds = []
-    for combiner_type in combiner_types:
-        combiner_cls = combiner_registry[combiner_type]
-        schema_cls = combiner_cls.get_schema_cls()
-        schema = marshmallow_dataclass.class_schema(schema_cls)()
-        schema_json = JSONSchema().dump(schema)
-        combiner_json = schema_json["definitions"][schema_cls.__name__]["properties"]
-
-        # TODO: add type to schema: https://github.com/lovasoa/marshmallow_dataclass/issues/62
-        combiner_cond = create_cond({"type": combiner_type}, combiner_json)
-        conds.append(combiner_cond)
-    return conds
-
-
 def get_custom_definitions():
     return {}
 
 
-def create_cond(if_pred, then_pred):
-    return {
-        "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
-        "then": {"properties": {k: v for k, v in then_pred.items()}},
-    }
-
-
 def validate_config(config):
-    validate(instance=config, schema=get_schema())
+    # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
+    def custom_is_array(checker, instance):
+        return isinstance(instance, list) or isinstance(instance, tuple)
+
+    # TODO(#1783): Change to Draft7Validator to _LATEST_VERSION or Draft202012Validator when py3.6 deprecated:
+    type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
+    CustomValidator = extend(Draft7Validator, type_checker=type_checker)
+    validate(instance=config, schema=get_schema(), cls=CustomValidator)
