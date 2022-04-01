@@ -20,18 +20,17 @@ jobs:
       fail-fast: false
 
     env:
-      PYTHON: 3.8
       PYTORCH: 1.11.0
 
-    name: py${{ env.PYTHON }}, torch-${{ env.PYTORCH }}
+    name: py3.8, torch-1.11.0
 
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python $PYTHON
+      - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ env.PYTHON }}
+          python-version: 3.8
 
       - name: Setup Linux
         run: |
@@ -41,10 +40,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: linux-pip-py${{ env.PYTHON }}-torch${{ env.PYTORCH} }-${{ hashFiles('requirements*.txt') }}
-          # key: linux-pip-py3.8-torch1.11.0-${{ hashFiles('requirements*.txt') }}
+          key: linux-pip-py3.8-torch1.11.0-${{ hashFiles('requirements*.txt') }}
           restore-keys: |
-            linux-pip-py${{ env.PYTHON }}-torch${{ env.PYTORCH }}-
+            linux-pip-py3.8-torch1.11.0-
 
       - name: Install dependencies
         env:
