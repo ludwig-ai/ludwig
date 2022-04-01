@@ -56,5 +56,5 @@ class AGNews(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMi
         for ci in range(1, 5):
             # For each class, reassign the first val_set_n rows of the training set to validation set.
             train_rows = processed_df[(processed_df.split == 0) & (processed_df.class_index == ci)].index
-            processed_df.split.loc[train_rows[:val_set_n]] = 1
+            processed_df.loc[train_rows[:val_set_n], "split"] = 1
         processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
