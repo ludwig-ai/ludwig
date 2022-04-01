@@ -1,0 +1,84 @@
+#
+name: extract_schema
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# we want an ongoing run of this workflow to be canceled by a later commit
+# so that there is only one concurrent run of this workflow for each branch
+concurrency:
+  group: extract_schema-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  extract_schema:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    env:
+      PYTHON: 3.8
+      PYTORCH: 1.11.0
+
+    name: py${PYTHON}, torch-${PYTORCH}
+
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python $PYTHON
+        uses: actions/setup-python@v2
+        with:
+          python-version: $PYTHON
+
+      - name: Setup Linux
+        run: |
+          sudo apt-get install -y cmake libsndfile1
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: linux-pip-py${PYTHON}-torch${PYTORCH}-${{ hashFiles('requirements*.txt') }}
+          # key: linux-pip-py3.8-torch1.11.0-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            linux-pip-py${PYTHON}-torch${PYTORCH}-
+
+      - name: Install dependencies
+        env:
+          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_MPI: 1
+          HOROVOD_WITHOUT_TENSORFLOW: 1
+          HOROVOD_WITHOUT_MXNET: 1
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          cmake --version
+          pip install torch==$PYTORCH
+          pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
+          pip install '.[test]'
+          pip list
+        shell: bash
+
+      - name: Run marshmallow extraction script
+        run: |
+          python scripts/extract_schema.py
+
+      - name: Run git diff to see if there are changes to extracted files.
+        run: |
+          git add ludwig/marshmallow/generated
+          git diff --exit-code ludwig/marshmallow/generated
+
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
