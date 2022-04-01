@@ -107,7 +107,10 @@ def get_trainer_jsonschema():
 
 @dataclass
 class TrainerConfig(schema.BaseMarshmallowConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training.
+
+    EXAMPLE CHANGE.
+    """
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
     """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
