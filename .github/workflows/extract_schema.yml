@@ -67,7 +67,7 @@ jobs:
 
       - name: Run git diff to see if there are changes to extracted files.
         run: |
-          git add ludwig/marshmallow/generated
+          git add -N ludwig/marshmallow/generated
           git diff --exit-code ludwig/marshmallow/generated
 
   event_file:
