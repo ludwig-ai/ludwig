@@ -114,13 +114,19 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
             if second_seed_offset == 0:
                 # same seeds should result in same output
                 assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
-                assert training_statistics1 == training_statistics2
             else:
                 # non-zero second_seed_offset uses different seeds and should result in different output
                 with pytest.raises(AssertionError):
                     assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
-                with pytest.raises(AssertionError):
-                    assert training_statistics1 == training_statistics2
+
+    # confirm reproducibility/non-reproducibility of results
+    if second_seed_offset == 0:
+        # same seeds should result in same output
+        assert training_statistics1 == training_statistics2
+    else:
+        # non-zero second_seed_offset uses different seeds and should result in different output
+        with pytest.raises(AssertionError):
+            assert training_statistics1 == training_statistics2
 
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
@@ -158,13 +164,19 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
             if second_seed_offset == 0:
                 # same seeds should result in same output
                 assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
-                assert training_statistics1 == training_statistics2
-                assert evaluation_statistics1 == evaluation_statistics2
             else:
                 # non-zero second_seed_offset uses different seeds and should result in different output
                 with pytest.raises(AssertionError):
                     assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
-                with pytest.raises(AssertionError):
-                    assert training_statistics1 == training_statistics2
-                with pytest.raises(AssertionError):
-                    assert evaluation_statistics1 == evaluation_statistics2
+
+    # confirm results reproducibility/non-reproducibility of results
+    if second_seed_offset == 0:
+        # same seeds should result in same output
+        assert training_statistics1 == training_statistics2
+        assert evaluation_statistics1 == evaluation_statistics2
+    else:
+        # non-zero second_seed_offset uses different seeds and should result in different output
+        with pytest.raises(AssertionError):
+            assert training_statistics1 == training_statistics2
+        with pytest.raises(AssertionError):
+            assert evaluation_statistics1 == evaluation_statistics2
