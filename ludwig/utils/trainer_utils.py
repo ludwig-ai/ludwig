@@ -34,6 +34,7 @@ def get_new_progress_tracker(
         epoch=0,
         batch_size=batch_size,
         steps=0,
+        tune_ckpts=0,
         last_improvement_steps=0,
         last_learning_rate_reduction_steps=0,
         last_increase_batch_size_steps=0,
@@ -60,6 +61,7 @@ class ProgressTracker:
         epoch: int,
         batch_size: int,
         steps: int,
+        tune_ckpts: int,
         last_improvement_steps: int,
         last_learning_rate_reduction_steps: int,
         last_increase_batch_size_steps: int,
@@ -89,6 +91,7 @@ class ProgressTracker:
         self.batch_size = batch_size
         self.epoch = epoch
         self.steps = steps
+        self.tune_ckpts = tune_ckpts
         self.last_improvement_steps = last_improvement_steps
         self.last_improvement = last_improvement
         self.last_learning_rate_reduction_steps = last_learning_rate_reduction_steps
@@ -120,6 +123,7 @@ class ProgressTracker:
             "batch_size": self.batch_size,
             "epoch": self.epoch,
             "steps": self.steps,
+            "tune_ckpts": self.tune_ckpts,
             "last_improvement_steps": self.last_improvement_steps,
             "learning_rate": self.learning_rate,
             "best_valid_metric": self.best_eval_metric,

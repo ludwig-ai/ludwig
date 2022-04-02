@@ -451,7 +451,7 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.steps) as checkpoint_dir:
+            with tune.checkpoint_dir(step=progress_tracker.tune_ckpts) as checkpoint_dir:
                 checkpoint_model = os.path.join(checkpoint_dir, "model")
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
@@ -520,6 +520,7 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.wait()
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
+                progress_tracker.tune_ckpts += 1
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
                 # Note: Calling tune.report in both on_eval_end() and on_epoch_end() can cause multiprocessing issues
                 # for some ray samplers if evaluation happens precisely every epoch.
