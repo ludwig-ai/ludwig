@@ -55,7 +55,8 @@ def test_preprocess(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
     # preprocess the raw data set, specify seed
     preprocessed_data1 = model1.preprocess(raw_dataset_fp, random_seed=random_seed)
 
-    # invoke torch random functions
+    # invoke torch random functions with unrelated seed to
+    # see if it affects Ludwig reproducibility
     torch.manual_seed(random_seed + second_seed_offset + 5)
     torch.rand((5,))
 
@@ -94,7 +95,8 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
         dataset=raw_dataset_fp, random_seed=random_seed, skip_save_progress=True, skip_save_processed_input=True
     )
 
-    # invoke torch random functions
+    # invoke torch random functions with unrelated seed to
+    # see if it affects Ludwig reproducibility
     torch.manual_seed(random_seed + second_seed_offset + 5)
     torch.rand((5,))
 
@@ -138,7 +140,7 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
         second_seed_offset(int): zero to use same random seed for second test, non-zero to use a different
             seed for the second run.
 
-    Returns:  None
+    Returns: None
     """
     # define Ludwig model
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
@@ -147,7 +149,8 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
         dataset=raw_dataset_fp, random_seed=random_seed, skip_save_processed_input=True
     )
 
-    # invoke torch random functions
+    # invoke torch random functions with unrelated seed to
+    # see if it affects Ludwig reproducibility
     torch.manual_seed(random_seed + second_seed_offset + 5)
     torch.rand((5,))
 
