@@ -59,7 +59,9 @@ class DaskEngine(DataFrameEngine):
         return data
 
     def persist(self, data):
-        return data.persist() if self._persist else data
+        # No graph optimizations to prevent dropping custom annotations
+        # https://github.com/dask/dask/issues/7036
+        return data.persist(optimize_graph=False) if self._persist else data
 
     def concat(self, dfs):
         return self.df_lib.multi.concat(dfs)

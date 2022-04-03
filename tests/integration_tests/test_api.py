@@ -469,3 +469,51 @@ def test_api_callbacks(csv_filename, epochs, batch_size, num_examples, steps_per
 
     assert mock_callback.on_eval_end.call_count == total_checkpoints
     assert mock_callback.on_eval_start.call_count == total_checkpoints
+
+
+@pytest.mark.parametrize("epochs", [1, 2])
+@pytest.mark.parametrize("batch_size", [4, 8])
+@pytest.mark.parametrize("num_examples", [32, 64])
+@pytest.mark.parametrize("checkpoints_per_epoch", [1, 2, 4])
+def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, num_examples, checkpoints_per_epoch):
+    mock_callback = mock.Mock(wraps=Callback())
+
+    total_checkpoints = epochs * checkpoints_per_epoch
+    total_batches = epochs * (num_examples / batch_size)
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        input_features = [sequence_feature(reduce_output="sum")]
+        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": epochs, "batch_size": batch_size, "checkpoints_per_epoch": checkpoints_per_epoch},
+        }
+        model = LudwigModel(config, callbacks=[mock_callback])
+
+        data_csv = generate_data(
+            input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+        )
+        val_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "validation.csv"))
+        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "test.csv"))
+
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+
+    assert mock_callback.on_epoch_start.call_count == epochs
+    assert mock_callback.on_epoch_end.call_count == epochs
+
+    assert mock_callback.should_early_stop.call_count == total_checkpoints
+
+    assert mock_callback.on_validation_start.call_count == total_checkpoints
+    assert mock_callback.on_validation_end.call_count == total_checkpoints
+
+    assert mock_callback.on_test_start.call_count == total_checkpoints
+    assert mock_callback.on_test_end.call_count == total_checkpoints
+
+    assert mock_callback.on_batch_start.call_count == total_batches
+    assert mock_callback.on_batch_end.call_count == total_batches
+
+    assert mock_callback.on_eval_end.call_count == total_checkpoints
+    assert mock_callback.on_eval_start.call_count == total_checkpoints

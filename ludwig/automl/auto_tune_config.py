@@ -95,11 +95,11 @@ def _get_text_feature_max_length(config, training_set_metadata) -> int:
     if (
         ("preprocessing" in config)
         and (TEXT in config["preprocessing"])
-        and ("word_sequence_length_limit" in config["preprocessing"][TEXT])
+        and ("max_sequence_length" in config["preprocessing"][TEXT])
     ):
-        limit = config["preprocessing"][TEXT]["word_sequence_length_limit"]
+        limit = config["preprocessing"][TEXT]["max_sequence_length"]
     else:
-        limit = 256  # Preprocessing default word_sequence_length_limit = 256
+        limit = 256  # Preprocessing default max_sequence_length = 256
     if max_length > limit + 2:  # For start and stop symbols.
         max_length = limit + 2
     return max_length
@@ -153,7 +153,7 @@ def _get_text_feature_min_usable_length(input_features: List, training_set_metad
     min_usable_length = AUTOML_SMALLER_TEXT_LENGTH
     for feature in input_features:
         if feature["type"] == TEXT:
-            feature_99ptile_len = training_set_metadata[feature["name"]]["word_99ptile_max_sequence_length"]
+            feature_99ptile_len = training_set_metadata[feature["name"]]["max_sequence_length_99ptile"]
             if feature_99ptile_len < min_usable_length:
                 min_usable_length = feature_99ptile_len
     return round(min_usable_length)
@@ -163,13 +163,13 @@ def reduce_text_feature_max_length(config, training_set_metadata) -> bool:
     """Reduce max sequence length, when viable, to control its quadratic impact."""
     input_features = config["input_features"]
     min_usable_length = _get_text_feature_min_usable_length(input_features, training_set_metadata)
-    seq_len_limit = {"word_sequence_length_limit": min_usable_length}
+    seq_len_limit = {"max_sequence_length": min_usable_length}
     if "preprocessing" not in config:
         config["preprocessing"] = {TEXT: seq_len_limit}
     elif (
         (TEXT not in config["preprocessing"])
-        or ("word_sequence_length_limit" not in config["preprocessing"][TEXT])
-        or (min_usable_length < float(config["preprocessing"][TEXT]["word_sequence_length_limit"]))
+        or ("max_sequence_length" not in config["preprocessing"][TEXT])
+        or (min_usable_length < float(config["preprocessing"][TEXT]["max_sequence_length"]))
     ):
         config["preprocessing"][TEXT] = seq_len_limit
     else:

@@ -12,12 +12,12 @@ from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
 
 logger = logging.getLogger(__name__)
@@ -196,7 +196,7 @@ class ECD(LudwigModule):
         Args:
             targets: A dictionary of target names to target tensors.
             predictions: A dictionary of output names to output tensors.
-            regularization_type: One of 'l1', 'l2', 'l1_l2'.
+            regularization_type: One of 'l1', 'l2', 'l1_l2', or None.
             regularization_lambda: The regularization lambda.
 
         Returns:

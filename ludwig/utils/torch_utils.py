@@ -82,7 +82,6 @@ initializer_registry = {
     "orthogonal": nn.init.orthogonal_,
     "sparse": nn.init.sparse_,
     "identity": nn.init.eye_,
-    None: nn.init.xavier_uniform_,
 }
 
 activations = {

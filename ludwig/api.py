@@ -60,6 +60,7 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
+from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
@@ -68,6 +69,7 @@ from ludwig.models.predictor import (
     save_evaluation_stats,
     save_prediction_outputs,
 )
+from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
@@ -483,9 +485,10 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
             # init trainer
+            config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
             with self.backend.create_trainer(
                 model=self.model,
-                **self.config[TRAINER],
+                config=config,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -563,20 +566,21 @@ class LudwigModel:
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
                         best_vali_index, (
-                            epoch_best_vali_metric,
-                            step_best_vali_metric,
-                            best_vali_metric,
+                            epoch_best_validation_metric,
+                            step_best_validation_metric,
+                            best_validation_metric,
                         ) = best_function(
                             enumerate(validation_field_result[validation_metric]),
                             # -1 for the last element of the TrainerMetric namedtuple.
                             key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
                         )
                         logger.info(
-                            f"Best validation model step: {step_best_vali_metric}, epoch: {epoch_best_vali_metric + 1}"
+                            f"Best validation model step: {step_best_validation_metric}, epoch: "
+                            f"{epoch_best_validation_metric + 1}"
                         )
                         logger.info(
                             f"Best validation model {validation_metric} on validation set {validation_field}: "
-                            f"{best_vali_metric}"
+                            f"{best_validation_metric}"
                         )
                         if test_set is not None:
                             validation_selected_test_metric_score = train_testset_stats[validation_field][
@@ -667,9 +671,8 @@ class LudwigModel:
             self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
         if not self._online_trainer:
-            self._online_trainer = self.backend.create_trainer(
-                **self.config[TRAINER], model=self.model, random_seed=random_seed
-            )
+            config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+            self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
 

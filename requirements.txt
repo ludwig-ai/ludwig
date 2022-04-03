@@ -13,7 +13,7 @@ absl-py
 kaggle
 requests
 tables
-fsspec
+fsspec[http]
 dataclasses-json
 jsonschema
 marshmallow

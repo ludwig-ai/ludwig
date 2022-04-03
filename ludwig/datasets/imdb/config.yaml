@@ -1,0 +1,5 @@
+version: 1.0
+competition: lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
+archive_filename: imdb-dataset-of-50k-movie-reviews.zip
+download_file_type: csv
+csv_filename: 'IMDB Dataset.csv'

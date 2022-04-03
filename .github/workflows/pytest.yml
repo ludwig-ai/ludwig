@@ -274,16 +274,16 @@ jobs:
   #         name: Unit Test Results (Python ${{ matrix.python-version }} gpu
   #         path: pytest.xml
 
-  # event_file:
-  #   name: "Event File"
-  #   runs-on: ubuntu-latest
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Upload
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: Event File
-  #         path: ${{ github.event_path }}
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
 
   # stop-runner:
   #   name: Stop self-hosted EC2 runner

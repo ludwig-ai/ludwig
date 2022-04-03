@@ -66,9 +66,7 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_text_feature_non_HF(encoder, csv_filename):
-    input_features = [
-        text_feature(vocab_size=30, min_len=1, encoder=encoder, preprocessing={"word_tokenizer": "space"})
-    ]
+    input_features = [text_feature(vocab_size=30, min_len=1, encoder=encoder, preprocessing={"tokenizer": "space"})]
     output_features = [category_feature(vocab_size=2)]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -669,7 +667,7 @@ def test_visual_question_answering(tmpdir):
             output_size=8,
             num_filters=8,
         ),
-        text_feature(encoder="embed", min_len=1, level="word"),
+        text_feature(encoder="embed", min_len=1),
     ]
     output_features = [sequence_feature(decoder="generator", cell_type="lstm")]
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))

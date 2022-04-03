@@ -68,7 +68,7 @@ def test_create_vocabulary_chars():
     vocabulary_output = strings_utils.create_vocabulary(
         column,
         tokenizer_type="characters",
-        num_most_frequent=preprocessing_parameters["char_most_common"],
+        num_most_frequent=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
         unknown_symbol=preprocessing_parameters["unknown_symbol"],
         padding_symbol=preprocessing_parameters["padding_symbol"],
@@ -89,10 +89,10 @@ def test_create_vocabulary_word():
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
-        tokenizer_type=preprocessing_parameters["word_tokenizer"],
-        num_most_frequent=preprocessing_parameters["word_most_common"],
+        tokenizer_type=preprocessing_parameters["tokenizer"],
+        num_most_frequent=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
-        vocab_file=preprocessing_parameters["word_vocab_file"],
+        vocab_file=preprocessing_parameters["vocab_file"],
         unknown_symbol=preprocessing_parameters["unknown_symbol"],
         padding_symbol=preprocessing_parameters["padding_symbol"],
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
@@ -112,10 +112,10 @@ def test_create_vocabulary_no_special_symbols():
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
-        tokenizer_type=preprocessing_parameters["word_tokenizer"],
-        num_most_frequent=preprocessing_parameters["word_most_common"],
+        tokenizer_type=preprocessing_parameters["tokenizer"],
+        num_most_frequent=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
-        vocab_file=preprocessing_parameters["word_vocab_file"],
+        vocab_file=preprocessing_parameters["vocab_file"],
         unknown_symbol=preprocessing_parameters["unknown_symbol"],
         padding_symbol=preprocessing_parameters["padding_symbol"],
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
@@ -134,7 +134,7 @@ def test_create_vocabulary_from_hf():
     vocabulary_output = strings_utils.create_vocabulary(
         column,
         tokenizer_type="hf_tokenizer",
-        num_most_frequent=preprocessing_parameters["char_most_common"],
+        num_most_frequent=preprocessing_parameters["most_common"],
         lowercase=preprocessing_parameters["lowercase"],
         unknown_symbol=preprocessing_parameters["unknown_symbol"],
         padding_symbol=preprocessing_parameters["padding_symbol"],
