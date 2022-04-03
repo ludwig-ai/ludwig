@@ -31,7 +31,7 @@ def test_progress_tracker_empty():
         "num_increases_bs": 0,
         "num_reductions_lr": 0,
         "steps": 0,
-        "tune_ckpts": 0,
+        "tune_checkpoint_num": 0,
     }
 
 
@@ -62,7 +62,7 @@ def test_progress_tracker():
         "num_increases_bs": 0,
         "num_reductions_lr": 0,
         "steps": 0,
-        "tune_ckpts": 0,
+        "tune_checkpoint_num": 0,
         "validation_metrics.combined.loss": 0.2,
     }
 
