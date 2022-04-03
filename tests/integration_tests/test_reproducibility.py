@@ -138,7 +138,7 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
         second_seed_offset(int): zero to use same random seed for second test, non-zero to use a different
             seed for the second run.
 
-    Returns: None
+    Returns:  None
     """
     # define Ludwig model
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
