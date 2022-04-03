@@ -310,12 +310,7 @@ def test_preprocess_cli(csv_filename):
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
 @pytest.mark.parametrize("backend", ["local", "horovod"])
 def test_reproducible_cli_runs(
-        backend: str,
-        type_of_run: str,
-        random_seed: int,
-        second_seed_offset: int,
-        csv_filename: str,
-        tmpdir: pathlib.Path
+    backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:
     """
     Test for reproducible training using `ludwig experiment|train --dataset`.
