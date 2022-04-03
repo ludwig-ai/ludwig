@@ -367,8 +367,7 @@ def test_reproducible_cli_runs(
             assert training1 == training2
         else:
             # non-zero second_seed_offset uses different seeds and should result in different output
-            with pytest.raises(AssertionError):
-                assert training1 == training2
+            assert training1 != training2
 
         # if type_of_run is experiment check test statistics and compare
         if type_of_run == "experiment":
