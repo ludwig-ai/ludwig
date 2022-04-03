@@ -381,5 +381,4 @@ def test_reproducible_cli_runs(
                 assert test1 == test2
             else:
                 # non-zero second_seed_offset uses different seeds and should result in different output
-                with pytest.raises(AssertionError):
-                    assert test1 == test2
+                assert test1 != test2
