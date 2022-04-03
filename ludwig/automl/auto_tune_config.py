@@ -89,7 +89,7 @@ def _get_text_feature_max_length(config, training_set_metadata) -> int:
     max_length = 0
     for feature in config["input_features"]:
         if feature["type"] == TEXT:
-            feature_max_len = training_set_metadata[feature["name"]]["word_max_sequence_length"]
+            feature_max_len = training_set_metadata[feature["name"]]["max_sequence_length"]
             if feature_max_len > max_length:
                 max_length = feature_max_len
     if (
