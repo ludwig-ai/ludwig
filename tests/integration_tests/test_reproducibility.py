@@ -175,7 +175,5 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
         assert evaluation_statistics1 == evaluation_statistics2
     else:
         # non-zero second_seed_offset uses different seeds and should result in different output
-        with pytest.raises(AssertionError):
-            assert training_statistics1 == training_statistics2
-        with pytest.raises(AssertionError):
-            assert evaluation_statistics1 == evaluation_statistics2
+        assert training_statistics1 != training_statistics2
+        assert evaluation_statistics1 != evaluation_statistics2
