@@ -1,7 +1,7 @@
 import logging
 import os
+import pathlib
 import random
-import tempfile
 
 import numpy as np
 import pytest
@@ -24,17 +24,15 @@ CONFIG = {
 }
 
 
-@pytest.fixture(scope="module")
-def raw_dataset_fp() -> str:
+@pytest.fixture(scope="function")
+def raw_dataset_fp(tmpdir: pathlib.Path) -> str:
     """Generates dataset to be used in this test.
-
     Returns (str):  file path string for dataset to use in this tests
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        raw_fp = os.path.join(tmpdir, "raw_data.csv")
-        random.seed(42)
-        cli_synthesize_dataset(64, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
-        yield raw_fp
+    raw_fp = os.path.join(tmpdir, "raw_data.csv")
+    random.seed(42)
+    cli_synthesize_dataset(64, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
+    yield raw_fp
 
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
@@ -57,7 +55,7 @@ def test_preprocess(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
     preprocessed_data1 = model1.preprocess(raw_dataset_fp, random_seed=random_seed)
 
     # invoke torch random functions
-    torch.manual_seed(random_seed + 1)
+    torch.manual_seed(random_seed + second_seed_offset + 5)
     torch.rand((5,))
 
     # define Ludwig model
@@ -96,7 +94,7 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
     )
 
     # invoke torch random functions
-    torch.manual_seed(random_seed + 1)
+    torch.manual_seed(random_seed + second_seed_offset + 5)
     torch.rand((5,))
 
     model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
@@ -149,7 +147,7 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
     )
 
     # invoke torch random functions
-    torch.manual_seed(random_seed + 1)
+    torch.manual_seed(random_seed + second_seed_offset + 5)
     torch.rand((5,))
 
     model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
