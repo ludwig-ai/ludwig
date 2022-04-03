@@ -27,6 +27,7 @@ CONFIG = {
 @pytest.fixture(scope="function")
 def raw_dataset_fp(tmpdir: pathlib.Path) -> str:
     """Generates dataset to be used in this test.
+
     Returns (str):  file path string for dataset to use in this tests
     """
     raw_fp = os.path.join(tmpdir, "raw_data.csv")
