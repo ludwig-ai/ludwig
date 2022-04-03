@@ -165,8 +165,7 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
                 assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
             else:
                 # non-zero second_seed_offset uses different seeds and should result in different output
-                with pytest.raises(AssertionError):
-                    assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
+                assert not np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
     # confirm results reproducibility/non-reproducibility of results
     if second_seed_offset == 0:
