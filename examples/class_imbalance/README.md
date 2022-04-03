@@ -13,9 +13,9 @@ The Imbalanced Insurance dataset is hosted by Kaggle, and as such Ludwig will ne
 | File                         | Description                                                                                                    |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | model_training.py            | Demonstrates the use of oversampling by training two different models: one with no oversampling, and one with. |
-| model_training_results.ipynb | Example for extracting training statistics and generate visualizations.                                        |
+| model_training_results.ipynb | Example for extracting training statistics and generating visualizations.                                      |
 
-Enter `python model_training.py` will train a standard model with no class balancing and a balanced model with class balancing applied.  Results of model training will be stored in this location.
+Enter `python model_training.py` will train a standard model with no class balancing and a balanced model with class balancing applied. Results of model training will be stored in this location.
 
 ```
 ./results/
@@ -25,9 +25,9 @@ Enter `python model_training.py` will train a standard model with no class balan
 
 The only difference between these two models is that the balanced model uses a small amount of oversampling in addition to the other configuration parameters.
 The way this is done is by specifying the ratio that you want the minority class to have in relation to the majority class.
-For instance, if you specify 0.5 for the `oversample_minority` preprocessing parameter, then the minority class will be oversampled until it makes up 50% of the majority class.
-In this example, we had imbalance where the minority class was 19% of the majority class in size. We decided that we wanted to increase that to 26%.
-Though this doesn't seem like much it is enough to get some small performance improvements without experiencing performance degradation due to over-fitting.
+For instance, if you specify 0.5 for the `oversample_minority` preprocessing parameter, the minority class will be oversampled until it makes up 50% of the majority class.
+In this example, we had an imbalance where the minority class was 19% of the majority class in size. We decided that we wanted to increase that to 26%.
+Though this doesn't seem like much, it is enough to get some small performance improvements without experiencing performance degradation due to over-fitting.
 
 Here are the performance differences in the two models followed by some plots showing different metrics over training:
 
