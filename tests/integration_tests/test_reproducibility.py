@@ -116,8 +116,7 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
                 assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
             else:
                 # non-zero second_seed_offset uses different seeds and should result in different output
-                with pytest.raises(AssertionError):
-                    assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
+                assert not np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
     # confirm reproducibility/non-reproducibility of results
     if second_seed_offset == 0:
@@ -125,8 +124,7 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
         assert training_statistics1 == training_statistics2
     else:
         # non-zero second_seed_offset uses different seeds and should result in different output
-        with pytest.raises(AssertionError):
-            assert training_statistics1 == training_statistics2
+        assert training_statistics1 != training_statistics2
 
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
