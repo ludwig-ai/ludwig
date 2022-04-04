@@ -55,12 +55,7 @@ def test_preprocess(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
     # preprocess the raw data set, specify seed
     preprocessed_data1 = model1.preprocess(raw_dataset_fp, random_seed=random_seed)
 
-    # invoke torch random functions with unrelated seed to
-    # see if it affects Ludwig reproducibility
-    torch.manual_seed(random_seed + second_seed_offset + 5)
-    torch.rand((5,))
-
-    # define Ludwig model
+    # perform second preprocess operation
     model2 = LudwigModel(config=CONFIG)
     # preprocess same raw data set with same seed
     preprocessed_data2 = model2.preprocess(raw_dataset_fp, random_seed=random_seed + second_seed_offset)
@@ -76,6 +71,40 @@ def test_preprocess(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
                 assert not np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
 
 
+@pytest.mark.parametrize("random_seed", [1919, 31])
+def test_preprocess_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
+    """Test reproducibility of train/validation/test splits when an unrelated torch random operation is performed
+    between the Ludwig operations.
+
+    Args:
+        raw_dataset_fp (str): file path for data to be used as part of this test
+        random_seed(int): random seed integer to use for test
+
+    Returns: None
+    """
+    # define Ludwig model
+    model1 = LudwigModel(config=CONFIG)
+
+    # preprocess the raw data set, specify seed
+    preprocessed_data1 = model1.preprocess(raw_dataset_fp, random_seed=random_seed)
+
+    # invoke torch random functions with unrelated seed to
+    # see if it affects Ludwig reproducibility
+    torch.manual_seed(random_seed + 5)
+    torch.rand((5,))
+
+    # define Ludwig model
+    model2 = LudwigModel(config=CONFIG)
+    # preprocess same raw data set with same seed
+    preprocessed_data2 = model2.preprocess(raw_dataset_fp, random_seed=random_seed)
+
+    # confirm data splits are reproducible
+    for i in range(3):
+        for k in preprocessed_data1[i].dataset:
+            # same seeds should result in same output
+            assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
+
+
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -> None:
@@ -89,17 +118,13 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
 
     Returns: None
     """
-    # define Ludwig model
+    # perform first model training run
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
     training_statistics1, preprocessed_data1, _ = model1.train(
         dataset=raw_dataset_fp, random_seed=random_seed, skip_save_progress=True, skip_save_processed_input=True
     )
 
-    # invoke torch random functions with unrelated seed to
-    # see if it affects Ludwig reproducibility
-    torch.manual_seed(random_seed + second_seed_offset + 5)
-    torch.rand((5,))
-
+    # perform second model training run
     model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
     training_statistics2, preprocessed_data2, _ = model2.train(
         dataset=raw_dataset_fp,
@@ -127,6 +152,46 @@ def test_train(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -
         assert training_statistics1 != training_statistics2
 
 
+@pytest.mark.parametrize("random_seed", [1919, 31])
+def test_train_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
+    """Test reproducibility of training API when an unrelated torch random operation is performed between the
+    Ludwig operations.
+
+    Args:
+        raw_dataset_fp (str): file path for data to be used as part of this test
+        random_seed(int): random seed integer to use for test
+
+    Returns: None
+    """
+    # define Ludwig model
+    model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+    training_statistics1, preprocessed_data1, _ = model1.train(
+        dataset=raw_dataset_fp, random_seed=random_seed, skip_save_progress=True, skip_save_processed_input=True
+    )
+
+    # invoke torch random functions with unrelated seed to
+    # see if it affects Ludwig reproducibility
+    torch.manual_seed(random_seed + 5)
+    torch.rand((5,))
+
+    model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+    training_statistics2, preprocessed_data2, _ = model2.train(
+        dataset=raw_dataset_fp,
+        random_seed=random_seed,
+        skip_save_progress=True,
+        skip_save_processed_input=True,
+    )
+
+    # confirm data splits are reproducible
+    for i in range(3):
+        for k in preprocessed_data1[i].dataset:
+            # same seeds should result in same output
+            assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
+
+    # confirm reproducibility/non-reproducibility of results
+    assert training_statistics1 == training_statistics2
+
+
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: int) -> None:
@@ -140,18 +205,13 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
 
     Returns: None
     """
-    # define Ludwig model
+    # perform first model experiment
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
-
     evaluation_statistics1, training_statistics1, preprocessed_data1, _ = model1.experiment(
         dataset=raw_dataset_fp, random_seed=random_seed, skip_save_processed_input=True
     )
 
-    # invoke torch random functions with unrelated seed to
-    # see if it affects Ludwig reproducibility
-    torch.manual_seed(random_seed + second_seed_offset + 5)
-    torch.rand((5,))
-
+    # perform second model experiment
     model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
     evaluation_statistics2, training_statistics2, preprocessed_data2, _ = model2.experiment(
         dataset=raw_dataset_fp, random_seed=random_seed + second_seed_offset, skip_save_processed_input=True
@@ -176,3 +236,43 @@ def test_experiment(raw_dataset_fp: str, random_seed: int, second_seed_offset: i
         # non-zero second_seed_offset uses different seeds and should result in different output
         assert training_statistics1 != training_statistics2
         assert evaluation_statistics1 != evaluation_statistics2
+
+
+@pytest.mark.parametrize("random_seed", [1919, 31])
+def test_experiment_ignore_torch_seed(raw_dataset_fp: str, random_seed: int) -> None:
+    """Test reproducibility of experiment API when an unrelated torch random operation is performed between the
+    Ludwig operations.
+
+    Args:
+        raw_dataset_fp (str): file path for data to be used as part of this test
+        random_seed(int): random seed integer to use for test
+
+    Returns: None
+    """
+    # define Ludwig model
+    model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+
+    evaluation_statistics1, training_statistics1, preprocessed_data1, _ = model1.experiment(
+        dataset=raw_dataset_fp, random_seed=random_seed, skip_save_processed_input=True
+    )
+
+    # invoke torch random functions with unrelated seed to
+    # see if it affects Ludwig reproducibility
+    torch.manual_seed(random_seed + 5)
+    torch.rand((5,))
+
+    model2 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
+    evaluation_statistics2, training_statistics2, preprocessed_data2, _ = model2.experiment(
+        dataset=raw_dataset_fp, random_seed=random_seed, skip_save_processed_input=True
+    )
+
+    # confirm data splits are reproducible
+    for i in range(3):
+        for k in preprocessed_data1[i].dataset:
+            # same seeds should result in same output
+            assert np.all(preprocessed_data1[i].dataset[k] == preprocessed_data2[i].dataset[k])
+
+    # confirm results reproducibility/non-reproducibility of results
+    # same seeds should result in same output
+    assert training_statistics1 == training_statistics2
+    assert evaluation_statistics1 == evaluation_statistics2
