@@ -101,4 +101,4 @@ def wrap(dataset: Optional[CacheInput]) -> CacheableDataset:
     # TODO(travis): could try hashing the in-memory dataset, but this is tricky for Dask
     checksum = str(uuid.uuid1())
     name = checksum
-    return CacheableDataframe(df=dataset, name=name, chcksum=checksum)
+    return CacheableDataframe(df=dataset, name=name, checksum=checksum)
