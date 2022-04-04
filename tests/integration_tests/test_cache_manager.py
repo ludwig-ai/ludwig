@@ -6,6 +6,7 @@ import pytest
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
 from ludwig.data.cache.manager import alphanum, CacheManager
+from ludwig.data.cache.types import wrap
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
 from tests.integration_tests.utils import category_feature, LocalTestBackend, sequence_feature
@@ -32,12 +33,12 @@ def test_cache_dataset(use_cache_dir, use_split, tmpdir):
 
     dataset = training_set = test_set = validation_set = None
     if not use_split:
-        dataset = touch("dataset")
+        dataset = wrap(touch("dataset"))
         cache_key = manager.get_cache_key(dataset, config)
     else:
-        training_set = touch("train")
-        test_set = touch("test")
-        validation_set = touch("validation")
+        training_set = wrap(touch("train"))
+        test_set = wrap(touch("test"))
+        validation_set = wrap(touch("validation"))
         cache_key = manager.get_cache_key(training_set, config)
 
     training_set_metadata = {
