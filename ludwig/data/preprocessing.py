@@ -1464,6 +1464,13 @@ def preprocess_for_training(
         # and in case move on with the hdf5 branch.
         cached = False
         cache = backend.cache.get_dataset_cache(config, dataset, training_set, test_set, validation_set)
+
+        # Unwrap dataset into the form used for preprocessing
+        dataset = dataset.unwrap() if dataset is not None else None
+        training_set = training_set.unwrap() if training_set is not None else None
+        validation_set = validation_set.unwrap() if validation_set is not None else None
+        test_set = test_set.unwrap() if test_set is not None else None
+
         if data_format in CACHEABLE_FORMATS:
             cache_results = cache.get()
             if cache_results is not None:
@@ -1489,12 +1496,6 @@ def preprocess_for_training(
 
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
-
-        # Unwrap dataset into the form used for preprocessing
-        dataset = dataset.unwrap() if dataset is not None else None
-        training_set = training_set.unwrap() if training_set is not None else None
-        validation_set = validation_set.unwrap() if validation_set is not None else None
-        test_set = test_set.unwrap() if test_set is not None else None
 
         if cached or data_format == "hdf5":
             # Always interpret hdf5 files as preprocessed, even if missing from the cache
@@ -1758,8 +1759,11 @@ def preprocess_for_prediction(
     # because the cached data is stored in its split form, and would be
     # expensive to recombine, requiring further caching.
     cached = False
+
     dataset = wrap(dataset)
     cache = backend.cache.get_dataset_cache(config, dataset)
+    dataset = dataset.unwrap()
+
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
         cache_results = cache.get()
@@ -1775,8 +1779,6 @@ def preprocess_for_prediction(
                 cached = True
 
     data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
-
-    dataset = dataset.unwrap()
     if cached:
         processed = data_format_processor.prepare_processed_data(
             features,
