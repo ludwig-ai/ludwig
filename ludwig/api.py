@@ -1403,6 +1403,10 @@ class LudwigModel:
         """
         self._check_initialization()
 
+        # Before saving config, mark inputs as saved in checkpoint
+        for input_feature in self.config["input_features"]:
+            input_feature["trained_weights_in_checkpoint"] = True
+
         # save config
         self.save_config(save_path)
 
