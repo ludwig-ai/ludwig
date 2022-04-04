@@ -716,13 +716,13 @@ class Trainer(BaseTrainer):
 
         elapsed_time = (time.time() - start_time) * 1000.0
 
-        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
         if self.is_coordinator():
             logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # ================ Validation Logic ================
+        should_break = False
         if validation_set is not None and validation_set.size > 0:
             should_break = self.check_progress_on_validation(
                 progress_tracker,
@@ -744,14 +744,15 @@ class Trainer(BaseTrainer):
                 self.early_stop,
                 self.skip_save_model,
             )
-            if should_break:
-                return should_break
         else:
             # There's no validation, so we save the model.
             if self.is_coordinator() and not self.skip_save_model:
                 torch.save(self.model.state_dict(), model_weights_path)
 
-        return False
+        # Trigger eval end callback after any model weights save for complete checkpoint
+        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
+
+        return should_break
 
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         """Trains a model with a set of hyperparameters listed below. Customizable.
