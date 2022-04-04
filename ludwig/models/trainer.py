@@ -153,6 +153,9 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
        is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
 
+    evaluate_training_set: bool = True
+    """Whether to include the entire training set during evaluation (default: True)."""
+
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
        improve) (default: 0.0)."""
@@ -291,6 +294,7 @@ class Trainer(BaseTrainer):
         self.early_stop = config.early_stop
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
+        self.evaluate_training_set = config.evaluate_training_set
         self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
         self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
