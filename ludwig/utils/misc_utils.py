@@ -24,6 +24,7 @@ from collections.abc import Mapping
 from typing import Union
 
 import numpy
+import torch
 
 from ludwig.constants import PROC_COLUMN
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
@@ -33,6 +34,9 @@ def set_random_seed(random_seed):
     os.environ["PYTHONHASHSEED"] = str(random_seed)
     random.seed(random_seed)
     numpy.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(random_seed)
 
 
 def merge_dict(dct, merge_dct):

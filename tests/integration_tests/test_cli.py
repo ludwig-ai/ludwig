@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import os
 import os.path
+import pathlib
 import shutil
 import subprocess
 import tempfile
@@ -300,3 +302,84 @@ def test_preprocess_cli(csv_filename):
         config_filename = os.path.join(tmpdir, "config.yaml")
         dataset_filename = _prepare_data(csv_filename, config_filename)
         _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("second_seed_offset", [0, 1])
+@pytest.mark.parametrize("random_seed", [1919, 31])
+@pytest.mark.parametrize("type_of_run", ["train", "experiment"])
+@pytest.mark.parametrize("backend", ["local", "horovod"])
+def test_reproducible_cli_runs(
+    backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
+) -> None:
+    """
+    Test for reproducible training using `ludwig experiment|train --dataset`.
+    Args:
+        backend (str): backend to use
+        type_of_run(str): type of run, either train or experiment
+        csv_filename(str): file path of dataset to use
+        random_seed(int): random seed integer to use for test
+        second_seed_offset(int): zero to use same random seed for second test, non-zero to use a different
+            seed for the second run.
+        tmpdir (pathlib.Path): temporary directory path
+
+    Returns: None
+    """
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+
+    if backend == "local":
+        command_to_run = _run_ludwig
+    else:
+        command_to_run = _run_ludwig_horovod
+
+    # run first model
+    command_to_run(
+        type_of_run,
+        dataset=dataset_filename,
+        config=config_filename,
+        output_directory=str(tmpdir),
+        skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
+        experiment_name="reproducible",
+        model_name="run1",
+        random_seed=str(random_seed),
+    )
+
+    # run second model with same seed
+    command_to_run(
+        type_of_run,
+        dataset=dataset_filename,
+        config=config_filename,
+        output_directory=str(tmpdir),
+        skip_save_processed_input="",  # skip saving preprocessed inputs for reproducibility
+        experiment_name="reproducible",
+        model_name="run2",
+        random_seed=str(random_seed + second_seed_offset),
+    )
+
+    # retrieve training statistics and compare
+    with open(os.path.join(tmpdir, "reproducible_run1", "training_statistics.json")) as f:
+        training1 = json.load(f)
+    with open(os.path.join(tmpdir, "reproducible_run2", "training_statistics.json")) as f:
+        training2 = json.load(f)
+
+    if second_seed_offset == 0:
+        # same seeds should result in same output
+        assert training1 == training2
+    else:
+        # non-zero second_seed_offset uses different seeds and should result in different output
+        assert training1 != training2
+
+    # if type_of_run is experiment check test statistics and compare
+    if type_of_run == "experiment":
+        with open(os.path.join(tmpdir, "reproducible_run1", "test_statistics.json")) as f:
+            test1 = json.load(f)
+        with open(os.path.join(tmpdir, "reproducible_run2", "test_statistics.json")) as f:
+            test2 = json.load(f)
+
+        if second_seed_offset == 0:
+            # same seeds should result in same output
+            assert test1 == test2
+        else:
+            # non-zero second_seed_offset uses different seeds and should result in different output
+            assert test1 != test2
