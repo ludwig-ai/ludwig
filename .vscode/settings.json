@@ -8,5 +8,8 @@
     "python.linting.flake8Enabled": true,
     "python.linting.flake8Args": [
         "--config=setup.cfg"
-    ]
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.envFile": "${workspaceFolder}/.env"
 }

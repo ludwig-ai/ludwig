@@ -24,6 +24,7 @@ from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.print_utils import repr_ordered_dict
+from ludwig.utils.strings_utils import make_safe_filename
 from ludwig.utils.torch_utils import initialize_pytorch
 
 EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
@@ -277,7 +278,7 @@ class RemotePredictor(Predictor):
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
     overall_stats = {}
     for of_name, output_feature in output_features.items():
-        feature_metadata = output_feature.overall_statistics_metadata()
+        feature_metadata = training_set_metadata[output_feature.feature_name]
         feature_metadata.update(training_set_metadata[output_feature.feature_name])
 
         feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
@@ -305,8 +306,8 @@ def save_prediction_outputs(
         postprocessed_dict = convert_to_dict(postprocessed_output, output_features)
         csv_filename = os.path.join(output_directory, "{}_{}.csv")
         for output_field, outputs in postprocessed_dict.items():
-            for output_type, values in outputs.items():
-                save_csv(csv_filename.format(output_field, output_type), values)
+            for output_name, values in outputs.items():
+                save_csv(csv_filename.format(output_field, make_safe_filename(output_name)), values)
 
 
 def save_evaluation_stats(test_stats, output_directory):

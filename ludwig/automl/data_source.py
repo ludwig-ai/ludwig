@@ -56,7 +56,7 @@ class DataframeSourceMixin:
         return len(self.df[column].notnull())
 
     def get_image_values(self, column: str, sample_size: int = 10) -> int:
-        return int(sum(is_image_score(None, x) for x in self.df[column].head(sample_size)))
+        return int(sum(is_image_score(None, x, column) for x in self.df[column].head(sample_size)))
 
     def get_avg_num_tokens(self, column: str) -> int:
         return avg_num_tokens(self.df[column])

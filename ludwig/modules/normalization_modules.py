@@ -17,14 +17,19 @@ class GhostBatchNormalization(LudwigModule):
         self.bn = torch.nn.BatchNorm1d(num_features, momentum=momentum, eps=epsilon)
 
     def forward(self, inputs):
+        batch_size = inputs.shape[0]
         if self.training and self.virtual_batch_size:
-            batch_size = inputs.shape[0]
 
             splits = inputs.chunk(int(np.ceil(batch_size / self.virtual_batch_size)), 0)
+            if batch_size == 1:
+                # Skip batch normalization if the batch size is 1.
+                return torch.cat(splits, 0)
             x = [self.bn(x) for x in splits]
             return torch.cat(x, 0)
 
-        return self.bn(inputs)
+        if batch_size != 1:
+            return self.bn(inputs)
+        return inputs
 
     @property
     def moving_mean(self) -> torch.Tensor:

@@ -134,11 +134,11 @@ class HyperoptExecutor(ABC):
         best_function = get_best_function(self.metric)
 
         # results of the model with highest validation test performance
-        epoch_best_vali_metric, best_vali_metric = best_function(
+        epoch_best_validation_metric, best_validation_metric = best_function(
             enumerate(validation_field_result[self.metric]), key=lambda pair: pair[1]
         )
 
-        return best_vali_metric
+        return best_validation_metric
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
@@ -451,7 +451,7 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.steps) as checkpoint_dir:
+            with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
                 checkpoint_model = os.path.join(checkpoint_dir, "model")
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
@@ -472,7 +472,7 @@ class RayTuneExecutor(HyperoptExecutor):
             # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray Tune.
             train_stats = {
                 TRAINING: metric_utils.reduce_trainer_metrics_dict(progress_tracker.train_metrics),
-                VALIDATION: metric_utils.reduce_trainer_metrics_dict(progress_tracker.vali_metrics),
+                VALIDATION: metric_utils.reduce_trainer_metrics_dict(progress_tracker.validation_metrics),
                 TEST: metric_utils.reduce_trainer_metrics_dict(progress_tracker.test_metrics),
             }
 
@@ -520,6 +520,7 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.wait()
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
+                progress_tracker.tune_checkpoint_num += 1
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
                 # Note: Calling tune.report in both on_eval_end() and on_epoch_end() can cause multiprocessing issues
                 # for some ray samplers if evaluation happens precisely every epoch.

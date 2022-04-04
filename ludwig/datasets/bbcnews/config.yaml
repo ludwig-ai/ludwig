@@ -1,0 +1,7 @@
+version: 1.0
+competition: learn-ai-bbc
+archive_filename: learn-ai-bbc.zip
+split_filenames:
+  train_file: 'BBC News Train.csv'
+download_file_type: csv
+csv_filename: 'BBC News Train.csv'

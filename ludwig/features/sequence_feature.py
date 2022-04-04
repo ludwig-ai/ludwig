@@ -79,7 +79,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_defaults():
         return {
-            "sequence_length_limit": 256,
+            "max_sequence_length": 256,
             "most_common": 20000,
             "padding_symbol": PADDING_SYMBOL,
             "unknown_symbol": UNKNOWN_SYMBOL,
@@ -94,7 +94,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_schema():
         return {
-            "sequence_length_limit": {"type": "integer", "minimum": 0},
+            "max_sequence_length": {"type": "integer", "minimum": 0},
             "most_common": {"type": "integer", "minimum": 0},
             "padding_symbol": {"type": "string"},
             "unknown_symbol": {"type": "string"},
@@ -124,7 +124,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             padding_symbol=preprocessing_parameters["padding_symbol"],
             processor=backend.df_engine,
         )
-        max_length = min(preprocessing_parameters["sequence_length_limit"], max_length)
+        max_length = min(preprocessing_parameters["max_sequence_length"], max_length)
         return {
             "idx2str": idx2str,
             "str2idx": str2idx,
