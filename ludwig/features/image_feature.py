@@ -45,6 +45,7 @@ from ludwig.constants import (
     TRAINING,
     WIDTH,
 )
+from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -409,7 +410,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 for img_entry in input_df[feature_config[COLUMN]]
             ]
 
-            data_fp = backend.cache.get_cache_path(metadata.get(SRC), metadata.get(CHECKSUM), TRAINING)
+            data_fp = backend.cache.get_cache_path(wrap(metadata.get(SRC)), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(

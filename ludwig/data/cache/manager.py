@@ -1,20 +1,15 @@
 import logging
 import os
-import re
-import uuid
-from pathlib import Path
+from typing import Optional
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
+from ludwig.data.cache.types import alphanum, CacheableDataset
 from ludwig.data.cache.util import calculate_checksum
+from ludwig.data.dataset.base import DatasetManager
 from ludwig.utils import data_utils
 from ludwig.utils.fs_utils import delete, path_exists
 
 logger = logging.getLogger(__name__)
-
-
-def alphanum(v):
-    """Filters a string to only its alphanumeric characters."""
-    return re.sub(r"\W+", "", v)
 
 
 class DatasetCache:
@@ -84,11 +79,18 @@ class DatasetCache:
 
 
 class CacheManager:
-    def __init__(self, dataset_manager, cache_dir=None):
+    def __init__(self, dataset_manager: DatasetManager, cache_dir: Optional[str] = None):
         self._dataset_manager = dataset_manager
         self._cache_dir = cache_dir
 
-    def get_dataset_cache(self, config, dataset=None, training_set=None, test_set=None, validation_set=None):
+    def get_dataset_cache(
+        self,
+        config: dict,
+        dataset: Optional[CacheableDataset] = None,
+        training_set: Optional[CacheableDataset] = None,
+        test_set: Optional[CacheableDataset] = None,
+        validation_set: Optional[CacheableDataset] = None,
+    ) -> DatasetCache:
         if dataset is not None:
             key = self.get_cache_key(dataset, config)
             cache_map = {
@@ -108,19 +110,13 @@ class CacheManager:
             }
             return DatasetCache(config, key, cache_map, self._dataset_manager)
 
-    def get_cache_key(self, dataset, config):
-        if not isinstance(dataset, str):
-            # TODO(travis): could try hashing the in-memory dataset, but this is tricky for Dask
-            return str(uuid.uuid1())
+    def get_cache_key(self, dataset: CacheableDataset, config: dict) -> str:
         return calculate_checksum(dataset, config)
 
-    def get_cache_path(self, dataset, key, tag, ext=None):
-        if not isinstance(dataset, str):
-            dataset = None
-
+    def get_cache_path(self, dataset: Optional[CacheableDataset], key: str, tag: str, ext: Optional[str] = None) -> str:
         if self._cache_dir is None and dataset is not None:
             # Use the input dataset filename (minus the extension) as the cache path
-            stem = Path(dataset).stem
+            stem = dataset.get_cache_path()
         else:
             # To avoid collisions across different directories, we use the unique checksum
             # as the cache path
@@ -130,16 +126,16 @@ class CacheManager:
         cache_fname = f"{stem}.{tag}.{ext}"
         return os.path.join(self.get_cache_directory(dataset), cache_fname)
 
-    def get_cache_directory(self, input_fname):
+    def get_cache_directory(self, dataset: Optional[CacheableDataset]) -> str:
         if self._cache_dir is None:
-            if input_fname is not None:
-                return os.path.dirname(input_fname)
-            return os.getcwd()
+            if dataset is None:
+                return os.getcwd()
+            return dataset.get_cache_directory()
         return self._cache_dir
 
-    def can_cache(self, skip_save_processed_input):
+    def can_cache(self, skip_save_processed_input: bool) -> bool:
         return self._dataset_manager.can_cache(skip_save_processed_input)
 
     @property
-    def data_format(self):
+    def data_format(self) -> str:
         return self._dataset_manager.data_format
