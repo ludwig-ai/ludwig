@@ -1,0 +1,9 @@
+version: 1.0
+competition: weipengfei/ohr8r52
+archive_filename: ohr8r52.zip
+split_filenames:
+  train_file: r8/r8-train-stemmed.csv
+  test_file: r8/r8-test-stemmed.csv
+  val_file: r8/r8-dev-stemmed.csv
+download_file_type: csv
+csv_filename: reuters_r8.csv
