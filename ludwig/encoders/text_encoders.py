@@ -43,7 +43,7 @@ class ALBERTEncoder(Encoder):
         max_sequence_length,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "albert-base-v2",
-        trained_weights_in_checkpoint: bool = False,
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30000,
@@ -80,7 +80,7 @@ class ALBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = AlbertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -169,7 +169,7 @@ class MT5Encoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "google/mt5-base",
-        trained_weights_in_checkpoint: bool = False,
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 250112,
@@ -205,7 +205,7 @@ class MT5Encoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = MT5EncoderModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -292,7 +292,7 @@ class XLMRoBERTaEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "xlm-roberta-base",
-        trained_weights_in_checkpoint: bool = False,
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = True,
         vocab_size: int = None,
@@ -314,7 +314,7 @@ class XLMRoBERTaEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = XLMRobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -388,7 +388,7 @@ class BERTEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "bert-base-uncased",
-        trained_weights_in_checkpoint: bool = False,
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30522,
@@ -421,7 +421,7 @@ class BERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = BertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -507,7 +507,7 @@ class XLMEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
-        trained_weights_in_checkpoint: bool = False,
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30145,
@@ -552,7 +552,7 @@ class XLMEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = XLMModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
             if trainable:
@@ -674,7 +674,7 @@ class GPTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = OpenAIGPTModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -866,7 +866,7 @@ class RoBERTaEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = RobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -972,7 +972,7 @@ class TransformerXLEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = TransfoXLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1093,7 +1093,7 @@ class XLNetEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = XLNetModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1207,7 +1207,7 @@ class DistilBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1306,7 +1306,7 @@ class CTRLEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = CTRLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1409,7 +1409,7 @@ class CamemBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = CamembertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1522,7 +1522,7 @@ class T5Encoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = T5Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1640,7 +1640,7 @@ class FlauBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = FlaubertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1761,7 +1761,7 @@ class ELECTRAEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = ElectraModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1859,7 +1859,7 @@ class LongformerEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained and not trained_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = LongformerModel.from_pretrained(pretrained_model_name_or_path, pretrained_kwargs)
         else:
