@@ -23,7 +23,7 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, SPLIT, TRAINER
+from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, SPLIT, TEST, TRAINER, TRAINING, VALIDATION
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import (
@@ -131,7 +131,8 @@ def obtain_df_splits(data_csv):
     return test_df, train_df, val_df
 
 
-def test_learning_curves_vis_api(experiment_to_use):
+@pytest.mark.parametrize("training_only", [True, False])
+def test_learning_curves_vis_api(experiment_to_use, training_only):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param experiment_to_use: Object containing trained model and results to
@@ -140,11 +141,16 @@ def test_learning_curves_vis_api(experiment_to_use):
     """
     experiment = experiment_to_use
     viz_outputs = ("pdf", "png")
+    train_stats = experiment.train_stats
+    if training_only:
+        # ensure plot works with only training metrics
+        # Handle situation in Issue #1875
+        train_stats = {TEST: {}, TRAINING: train_stats[TRAINING], VALIDATION: {}}
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
             visualize.learning_curves(
-                [experiment.train_stats], output_feature_name=None, output_directory=tmpvizdir, file_format=viz_output
+                [train_stats], output_feature_name=None, output_directory=tmpvizdir, file_format=viz_output
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
             assert 3 == len(figure_cnt)
