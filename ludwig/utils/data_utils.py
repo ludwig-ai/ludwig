@@ -86,7 +86,7 @@ CACHEABLE_FORMATS = set.union(
         SAS_FORMATS,
         SPSS_FORMATS,
         STATA_FORMATS,
-        DATAFRAME_FORMATS
+        DATAFRAME_FORMATS,
     )
 )
 
