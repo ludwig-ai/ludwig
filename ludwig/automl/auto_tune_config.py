@@ -238,9 +238,14 @@ def memory_tune_config(config, dataset, model_category, row_count):
         else:
             param_list.pop(0)  # param not in hyperopt search space
 
-    if not fits_in_memory and model_category == TEXT and row_count > AUTOML_LARGE_TEXT_DATASET:
-        # Switch to smaller pre-trained model encoder for large datasets.
-        _update_text_encoder(config["input_features"], AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
+    if model_category == TEXT and row_count > AUTOML_LARGE_TEXT_DATASET:
+        if "checkpoints_per_epoch" not in config[TRAINER] and "steps_per_checkpoint" not in config[TRAINER]:
+            config[TRAINER]["checkpoints_per_epoch"] = 2  # decrease latency to get model accuracy signal
+        if "evaluate_training_set" not in config[TRAINER]:
+            config[TRAINER]["evaluate_training_set"] = False  # reduce overhead for increased evaluation frequency
+        if not fits_in_memory:
+            # Switch to smaller pre-trained model encoder for large datasets.
+            _update_text_encoder(config["input_features"], AUTOML_DEFAULT_TEXT_ENCODER, AUTOML_SMALLER_TEXT_ENCODER)
 
     modified_config = copy.deepcopy(config)
 

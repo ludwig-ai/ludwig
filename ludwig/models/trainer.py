@@ -153,6 +153,9 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
        is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
 
+    evaluate_training_set: bool = True
+    """Whether to include the entire training set during evaluation (default: True)."""
+
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
        improve) (default: 0.0)."""
@@ -243,21 +246,21 @@ class Trainer(BaseTrainer):
         :param resume: Resume training a model that was being trained. (default: False).
         :type resume: Boolean
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-               default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
-               really big that can be time consuming. If you do not want to keep the weights and just find out what
-               performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
-               will not be loadable later on. (default: False).
+                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
+                really big that can be time consuming. If you do not want to keep the weights and just find out what
+                performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
+                will not be loadable later on. (default: False).
         :type skip_save_model: Boolean
         :param skip_save_progress: Disables saving progress each epoch. By default Ludwig saves weights and stats after
-               each epoch for enabling resuming of training, but if the model is really big that can be time consuming
-               and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
-               on. (default: False).
+                each epoch for enabling resuming of training, but if the model is really big that can be time consuming
+                and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
+                on. (default: False).
         :type skip_save_progress: Boolean
         :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
-               it is not needed turning it off can slightly increase the overall speed. (default: False).
+                it is not needed turning it off can slightly increase the overall speed. (default: False).
         :type skip_save_log: Boolean
         :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
-               (default: None).
+                (default: None).
         :type callbacks: list
         :param random_seed: Default initialization for the random seeds (default: 42).
         :type random_seed: Float
@@ -266,7 +269,7 @@ class Trainer(BaseTrainer):
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
         :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
-               `ludwig.models.trainer.TrainerConfig()`).
+                `ludwig.models.trainer.TrainerConfig()`).
         """
 
         self.epochs = config.epochs
@@ -291,6 +294,7 @@ class Trainer(BaseTrainer):
         self.early_stop = config.early_stop
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
+        self.evaluate_training_set = config.evaluate_training_set
         self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
         self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
@@ -343,8 +347,7 @@ class Trainer(BaseTrainer):
             targets: A dictionary of target data, from feature name to tensor.
 
         Returns:
-            A tuple of the loss tensor and a dictionary of loss for every
-            output feature.
+            A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
         self.optimizer.zero_grad()
 
@@ -667,9 +670,27 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
-        self.evaluation(
-            training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
-        )
+        if self.evaluate_training_set:
+            self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            )
+
+            self.write_eval_summary(
+                summary_writer=train_summary_writer,
+                metrics=progress_tracker.train_metrics,
+                step=progress_tracker.steps,
+            )
+        else:
+            # Training set is not evaluated. Add loss to the progress tracker.
+            progress_tracker.train_metrics[COMBINED][LOSS].append(
+                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
+            )
+            for output_feature_name, loss_tensor in all_losses.items():
+                progress_tracker.train_metrics[output_feature_name][LOSS].append(
+                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
+                )
+                tables[output_feature_name].append(["train", loss_tensor.item()])
+            tables[COMBINED].append(["train", loss.item()])
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
