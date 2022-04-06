@@ -30,4 +30,9 @@ RUN HOROVOD_WITH_PYTORCH=1 \
 	HOROVOD_WITHOUT_MPI=1 \
 	HOROVOD_WITHOUT_TENSORFLOW=1 \
 	HOROVOD_WITHOUT_MXNET=1 \
-	pip install --no-cache-dir '.[full]'
+	pip install --no-cache-dir '.[full]' && \
+	horovodrun --check-build && \
+	python -c "import horovod.torch; horovod.torch.init()"
+
+# Temporary workaround until Ray 1.12
+RUN pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/991a62dd4782e17a519ce29495b6e837f37f19f3/ray-2.0.0.dev0-cp37-cp37m-manylinux2014_x86_64.whl
