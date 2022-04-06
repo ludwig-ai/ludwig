@@ -31,7 +31,7 @@ import yaml
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
-import ludwig.data.cache.types
+from ludwig.data.cache.types import CacheableDataset
 from ludwig.utils.fs_utils import download_h5, open_file, upload_h5
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -684,8 +684,8 @@ def clear_data_cache():
 
 
 def figure_data_format_dataset(dataset):
-    if isinstance(dataset, ludwig.data.cache.types.CacheableDataframe):
-        return figure_data_format_dataset(dataset.df)
+    if isinstance(dataset, CacheableDataset):
+        return figure_data_format_dataset(dataset.unwrap())
     elif isinstance(dataset, pd.DataFrame):
         return pd.DataFrame
     elif dd and isinstance(dataset, dd.core.DataFrame):

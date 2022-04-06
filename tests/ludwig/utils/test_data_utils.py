@@ -66,13 +66,10 @@ def test_figure_data_format_dataset():
     assert figure_data_format_dataset(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"])) == pd.DataFrame
     assert figure_data_format_dataset(dd.from_pandas(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]),
                                                      npartitions=1).reset_index()) == dd.core.DataFrame
-
     assert figure_data_format_dataset(CacheableDataframe(df=pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]),
                                                          name="test",
                                                          checksum="test123")) == pd.DataFrame
-
     assert figure_data_format_dataset(CacheableDataframe(df=dd.from_pandas(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]),
                                                                            npartitions=1).reset_index(),
                                                          name="test",
                                                          checksum="test123")) == dd.core.DataFrame
-    
