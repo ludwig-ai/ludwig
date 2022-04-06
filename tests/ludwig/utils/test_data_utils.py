@@ -13,8 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 import pandas as pd
+import dask.dataframe as dd
 
-from ludwig.utils.data_utils import add_sequence_feature_column, get_abs_path
+from ludwig.data.cache.types import CacheableDataframe
+from ludwig.utils.data_utils import add_sequence_feature_column, get_abs_path, figure_data_format_dataset
 
 
 def test_add_sequence_feature_column():
@@ -57,3 +59,20 @@ def test_add_sequence_feature_column():
 def test_get_abs_path():
     assert get_abs_path("a", "b.jpg") == "a/b.jpg"
     assert get_abs_path(None, "b.jpg") == "b.jpg"
+
+
+def test_figure_data_format_dataset():
+    assert figure_data_format_dataset({"a": "b"}) == dict
+    assert figure_data_format_dataset(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"])) == pd.DataFrame
+    assert figure_data_format_dataset(dd.from_pandas(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]),
+                                                     npartitions=1).reset_index()) == dd.core.DataFrame
+
+    assert figure_data_format_dataset(CacheableDataframe(df=pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]),
+                                                         name="test",
+                                                         checksum="test123")) == pd.DataFrame
+
+    assert figure_data_format_dataset(CacheableDataframe(df=dd.from_pandas(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]),
+                                                                           npartitions=1).reset_index(),
+                                                         name="test",
+                                                         checksum="test123")) == dd.core.DataFrame
+    
