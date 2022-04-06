@@ -1241,7 +1241,7 @@ def learning_curves(
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
-                    if VALIDATION in learning_stats and len(learning_stats[VALIDATION]) > 0:
+                    if VALIDATION in learning_stats and output_feature_name in learning_stats[VALIDATION]:
                         validation_stats.append(learning_stats[VALIDATION][output_feature_name][metric])
                     else:
                         validation_stats.append(None)
