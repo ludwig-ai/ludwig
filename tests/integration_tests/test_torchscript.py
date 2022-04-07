@@ -201,14 +201,21 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
+    sp_text_feature = text_feature(
+        vocab_size=3,
+        preprocessing={
+            "tokenizer": "sentencepiece_tokenizer",
+            "pretrained_model_name_or_path": r"https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model",
+        },
+    )
     input_features = [
         bin_str_feature,
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
+        sp_text_feature,
         # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
         # vector_feature(),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),

@@ -15,6 +15,10 @@ input_features:
 
 import re
 from abc import abstractmethod
+from typing import List, Union
+
+import torch
+import torchtext
 
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
@@ -708,6 +712,19 @@ class HFTokenizer(BaseTokenizer):
         return self.tokenizer.encode(text, truncation=True)
 
 
+# scriptable tokenizers
+class SentencePieceTokenizer(torch.nn.Module):
+    def __init__(self, pretrained_model_name_or_path, **kwargs):
+        super().__init__()
+
+        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(pretrained_model_name_or_path)
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+        return self.tokenizer(v)
+
+
 tokenizer_registry = {
     "characters": CharactersToListTokenizer,
     "space": SpaceStringToListTokenizer,
@@ -813,4 +830,6 @@ tokenizer_registry = {
     "multi_lemmatize_filter": MultiLemmatizeFilterTokenizer,
     "multi_lemmatize_remove_stopwords": MultiLemmatizeRemoveStopwordsTokenizer,
     "hf_tokenizer": HFTokenizer,
+    # scriptable tokenizers
+    "sentencepiece_tokenizer": SentencePieceTokenizer,
 }

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -44,18 +44,69 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import set_default_values
+from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
     SpecialSymbol,
+    START_SYMBOL,
+    STOP_SYMBOL,
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
+
 logger = logging.getLogger(__name__)
+
+
+class _TextPreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        preprocessing_params = metadata["preprocessing"]
+
+        self.lowercase = preprocessing_params["lowercase"]
+        self.tokenizer = get_from_registry(preprocessing_params["tokenizer"], tokenizer_registry)(
+            vocab_file=preprocessing_params["vocab_file"],
+            pretrained_model_name_or_path=preprocessing_params["pretrained_model_name_or_path"],
+        )
+        self.max_sequence_length = int(metadata["max_sequence_length"])
+        self.unit_to_id = metadata["str2idx"]
+        self.unknown_symbol = preprocessing_params["unknown_symbol"]
+        self.padding_symbol = preprocessing_params["padding_symbol"]
+        self.start_symbol = START_SYMBOL
+        self.stop_symbol = STOP_SYMBOL
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if self.lowercase:
+            sequences: List[str] = [sequence.lower() for sequence in v]
+        else:
+            sequences: List[str] = v
+
+        unit_sequences = self.tokenizer(sequences)
+        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+
+        sequence_matrix = torch.full(
+            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
+        )
+        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
+        for sample_idx, unit_sequence in enumerate(unit_sequences):
+            for i in range(len(unit_sequence)):
+                curr_unit = unit_sequence[i]
+                if curr_unit in self.unit_to_id:
+                    curr_id = self.unit_to_id[curr_unit]
+                else:
+                    curr_id = self.unit_to_id[self.unknown_symbol]
+                sequence_matrix[sample_idx][i + 1] = curr_id
+
+            if len(unit_sequence) + 1 < self.max_sequence_length:
+                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        return sequence_matrix
 
 
 class TextFeatureMixin(BaseFeatureMixin):
@@ -244,6 +295,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _TextPreprocessing(metadata)
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
