@@ -57,7 +57,7 @@ from ludwig.utils.image_utils import (
     read_image,
     resize_image,
 )
-from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 
@@ -306,6 +306,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
+        set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
+
         in_memory = preprocessing_parameters["in_memory"]
         if PREPROCESSING in feature_config and "in_memory" in feature_config[PREPROCESSING]:
             in_memory = feature_config[PREPROCESSING]["in_memory"]
@@ -472,5 +474,3 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
-        defaults = ImageFeatureMixin.preprocessing_defaults()
-        set_default_values(input_feature[PREPROCESSING], defaults)
