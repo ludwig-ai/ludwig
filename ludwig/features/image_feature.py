@@ -471,5 +471,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_value(input_feature, PREPROCESSING, {})
         defaults = ImageFeatureMixin.preprocessing_defaults()
         set_default_values(input_feature[PREPROCESSING], defaults)
