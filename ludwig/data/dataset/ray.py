@@ -24,6 +24,7 @@ from typing import Any, Dict, Iterator, Union
 import numpy as np
 import pandas as pd
 import ray
+from pyarrow.fs import FSSpecHandler
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -33,11 +34,17 @@ from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
+
+
+def read_remote_parquet(path: str):
+    fs, _ = get_fs_and_path(path)
+    return read_parquet(path, FSSpecHandler(fs))
 
 
 class RayDataset(Dataset):
@@ -50,7 +57,7 @@ class RayDataset(Dataset):
         training_set_metadata: Dict[str, Any],
         backend: Backend,
     ):
-        self.ds = backend.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_parquet(df)
+        self.ds = backend.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
