@@ -1194,7 +1194,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         assert 1 == len(figure_cnt)
 
 
-@pytest.mark.parametrize('binary_output_type', [True, False])
+@pytest.mark.parametrize("binary_output_type", [True, False])
 def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type):
     """Ensure pdf and png figures from the experiments can be saved.
 
