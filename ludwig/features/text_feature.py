@@ -63,23 +63,25 @@ logger = logging.getLogger(__name__)
 
 
 class _TextPreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by TextFeatureMixin.add_feature_data."""
+
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        preprocessing_params = metadata["preprocessing"]
 
-        self.lowercase = preprocessing_params["lowercase"]
-        self.tokenizer = get_from_registry(preprocessing_params["tokenizer"], tokenizer_registry)(
-            vocab_file=preprocessing_params["vocab_file"],
-            pretrained_model_name_or_path=preprocessing_params["pretrained_model_name_or_path"],
+        self.lowercase = metadata["preprocessing"]["lowercase"]
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
+            vocab_file=metadata["preprocessing"]["vocab_file"],
+            pretrained_model_name_or_path=metadata["preprocessing"]["pretrained_model_name_or_path"],
         )
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
-        self.unknown_symbol = preprocessing_params["unknown_symbol"]
-        self.padding_symbol = preprocessing_params["padding_symbol"]
+        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
+        self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
         self.start_symbol = START_SYMBOL
         self.stop_symbol = STOP_SYMBOL
 
     def forward(self, v: Union[List[str], torch.Tensor]):
+        """Takes a list of strings and returns a tensor of token ids."""
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -89,6 +91,7 @@ class _TextPreprocessing(torch.nn.Module):
             sequences: List[str] = v
 
         unit_sequences = self.tokenizer(sequences)
+        # refines type of unit_sequences from Any to List[List[str]]
         assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
 
         sequence_matrix = torch.full(
