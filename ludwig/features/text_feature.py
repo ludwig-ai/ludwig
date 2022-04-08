@@ -73,12 +73,12 @@ class _TextPreprocessing(torch.nn.Module):
             vocab_file=metadata["preprocessing"]["vocab_file"],
             pretrained_model_name_or_path=metadata["preprocessing"]["pretrained_model_name_or_path"],
         )
-        self.max_sequence_length = int(metadata["max_sequence_length"])
-        self.unit_to_id = metadata["str2idx"]
         self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
         self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
         self.start_symbol = START_SYMBOL
         self.stop_symbol = STOP_SYMBOL
+        self.max_sequence_length = int(metadata["max_sequence_length"])
+        self.unit_to_id = metadata["str2idx"]
 
     def forward(self, v: Union[List[str], torch.Tensor]):
         """Takes a list of strings and returns a tensor of token ids."""
@@ -99,7 +99,14 @@ class _TextPreprocessing(torch.nn.Module):
         )
         sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
         for sample_idx, unit_sequence in enumerate(unit_sequences):
-            for i in range(len(unit_sequence)):
+            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
+            if len(unit_sequence) + 1 < self.max_sequence_length:
+                sequence_length = len(unit_sequence)
+                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+            else:
+                sequence_length = self.max_sequence_length - 1
+
+            for i in range(sequence_length):
                 curr_unit = unit_sequence[i]
                 if curr_unit in self.unit_to_id:
                     curr_id = self.unit_to_id[curr_unit]
@@ -107,8 +114,6 @@ class _TextPreprocessing(torch.nn.Module):
                     curr_id = self.unit_to_id[self.unknown_symbol]
                 sequence_matrix[sample_idx][i + 1] = curr_id
 
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
         return sequence_matrix
 
 

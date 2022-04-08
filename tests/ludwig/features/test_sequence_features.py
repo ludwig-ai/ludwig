@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.features.text_feature import TextInputFeature
+from ludwig.features.text_feature import TextInputFeature, _TextPreprocessing
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -80,3 +80,25 @@ def test_sequence_input_feature(
 # todo: add unit test for sequence output feature
 def test_sequence_output_feature():
     pass
+
+
+def test_text_preproc_module():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "sentencepiece_tokenizer",
+            "vocab_file": None,
+            "pretrained_model_name_or_path": r"https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+    }
+    module = _TextPreprocessing(metadata)
+
+    res = module(["hello world", "hell", "hello world hello", "hello world hello world"])
+
+    assert torch.allclose(
+        res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 4, 0, 2, 2, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
+    )
