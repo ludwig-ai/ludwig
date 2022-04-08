@@ -44,7 +44,7 @@ _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 def read_remote_parquet(path: str):
     fs, _ = get_fs_and_path(path)
-    return read_parquet(path, FSSpecHandler(fs))
+    return read_parquet(path, filesystem=FSSpecHandler(fs))
 
 
 class RayDataset(Dataset):
