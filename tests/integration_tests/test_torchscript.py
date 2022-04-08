@@ -208,12 +208,20 @@ def test_torchscript_e2e(csv_filename, tmpdir):
             "pretrained_model_name_or_path": r"https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model",
         },
     )
+    clip_text_feature = text_feature(
+        vocab_size=3,
+        preprocessing={
+            "tokenizer": "clip_tokenizer",
+            "pretrained_model_name_or_path": r"http://download.pytorch.org/models/text/clip_merges.bpe",
+        },
+    )
     input_features = [
         bin_str_feature,
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
         sp_text_feature,
+        clip_text_feature,
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),

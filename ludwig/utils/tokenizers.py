@@ -725,6 +725,18 @@ class SentencePieceTokenizer(torch.nn.Module):
         return self.tokenizer(v)
 
 
+class CLIPTokenizer(torch.nn.Module):
+    def __init__(self, pretrained_model_name_or_path, **kwargs):
+        super().__init__()
+
+        self.tokenizer = torchtext.transforms.CLIPTokenizer(merges_path=pretrained_model_name_or_path)
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+        return self.tokenizer(v)
+
+
 tokenizer_registry = {
     "characters": CharactersToListTokenizer,
     "space": SpaceStringToListTokenizer,
@@ -832,4 +844,5 @@ tokenizer_registry = {
     "hf_tokenizer": HFTokenizer,
     # torchscript-enabled tokenizers
     "sentencepiece_tokenizer": SentencePieceTokenizer,
+    "clip_tokenizer": CLIPTokenizer,
 }
