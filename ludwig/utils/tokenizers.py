@@ -830,6 +830,6 @@ tokenizer_registry = {
     "multi_lemmatize_filter": MultiLemmatizeFilterTokenizer,
     "multi_lemmatize_remove_stopwords": MultiLemmatizeRemoveStopwordsTokenizer,
     "hf_tokenizer": HFTokenizer,
-    # scriptable tokenizers
+    # torchscript-enabled tokenizers
     "sentencepiece_tokenizer": SentencePieceTokenizer,
 }

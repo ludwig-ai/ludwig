@@ -213,8 +213,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
-        # TODO: future support
         sp_text_feature,
+        # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
         # image_feature(image_dest_folder),
