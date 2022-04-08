@@ -24,7 +24,7 @@ from typing import Any, Dict, Iterator, Union
 import numpy as np
 import pandas as pd
 import ray
-from pyarrow.fs import FSSpecHandler
+from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -44,7 +44,7 @@ _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 def read_remote_parquet(path: str):
     fs, _ = get_fs_and_path(path)
-    return read_parquet(path, filesystem=FSSpecHandler(fs))
+    return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
 
 class RayDataset(Dataset):
