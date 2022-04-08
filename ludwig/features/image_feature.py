@@ -57,7 +57,7 @@ from ludwig.utils.image_utils import (
     read_image,
     resize_image,
 )
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -471,4 +471,5 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-        set_default_value(input_feature, PREPROCESSING, {})
+        defaults = ImageFeatureMixin.preprocessing_defaults()
+        set_default_values(input_feature[PREPROCESSING], defaults)
