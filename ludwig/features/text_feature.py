@@ -55,7 +55,6 @@ from ludwig.utils.strings_utils import (
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
-from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
 
