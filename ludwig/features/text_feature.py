@@ -70,11 +70,10 @@ class _TextPreprocessing(torch.nn.Module):
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
-            vocab_file=metadata["preprocessing"]["vocab_file"],
-            pretrained_model_name_or_path=metadata["preprocessing"]["pretrained_model_name_or_path"],
+            pretrained_model_name_or_path=metadata["preprocessing"]["pretrained_model_name_or_path"]
         )
-        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
         self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
+        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
         self.start_symbol = START_SYMBOL
         self.stop_symbol = STOP_SYMBOL
         self.max_sequence_length = int(metadata["max_sequence_length"])

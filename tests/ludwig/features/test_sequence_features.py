@@ -87,7 +87,6 @@ def test_text_preproc_module():
         "preprocessing": {
             "lowercase": True,
             "tokenizer": "sentencepiece_tokenizer",
-            "vocab_file": None,
             "pretrained_model_name_or_path": r"https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",

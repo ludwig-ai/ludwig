@@ -717,7 +717,7 @@ class SentencePieceTokenizer(torch.nn.Module):
     def __init__(self, pretrained_model_name_or_path, **kwargs):
         super().__init__()
 
-        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(pretrained_model_name_or_path)
+        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
 
     def forward(self, v: Union[List[str], torch.Tensor]):
         if isinstance(v, torch.Tensor):
