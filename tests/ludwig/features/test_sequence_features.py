@@ -97,8 +97,8 @@ def test_text_preproc_module():
     }
     module = _TextPreprocessing(metadata)
 
-    res = module(["hello world", "hell", "hello world hello", "hello world hello world"])
+    res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
 
     assert torch.allclose(
-        res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 4, 0, 2, 2, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
+        res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
     )
