@@ -58,7 +58,6 @@ from ludwig.utils.strings_utils import (
 from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
-
 logger = logging.getLogger(__name__)
 
 

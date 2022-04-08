@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.features.text_feature import TextInputFeature, _TextPreprocessing
+from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
