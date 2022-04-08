@@ -3055,7 +3055,14 @@ def roc_curves(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
+        if "str2idx" in feature_metadata:
+            # categorical output feature
+            ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
+        else:
+            # binary output feature
+            ground_truth = ground_truth.values.astype(np.int)
+            # ensure positive_label is 1 for binary feature
+            positive_label = 1
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)

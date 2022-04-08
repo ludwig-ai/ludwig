@@ -23,6 +23,8 @@ import json
 import os
 import subprocess
 
+import pytest
+
 from ludwig.constants import TRAINER
 from ludwig.experiment import experiment_cli
 from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
@@ -1192,14 +1194,18 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         assert 1 == len(figure_cnt)
 
 
-def test_visualization_roc_curves_output_saved(csv_filename):
+@pytest.mark.parametrize('binary_output_type', [True, False])
+def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    if binary_output_type:
+        output_features = [binary_feature()]
+    else:
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
