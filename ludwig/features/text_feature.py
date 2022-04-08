@@ -57,7 +57,6 @@ from ludwig.utils.strings_utils import (
 )
 from ludwig.utils.types import DataFrame
 
-
 logger = logging.getLogger(__name__)
 
 
