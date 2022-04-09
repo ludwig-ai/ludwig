@@ -1,6 +1,6 @@
 # https://github.com/ray-project/ray/blob/9d8ce1db5981821825288576ceaabbd503951cbc/python/ray/tune/integration/mlflow.py
 #
-# TODO(travis): remove after Ray 1.12 (or whatever version contains https://github.com/ray-project/ray/pull/23662)
+# TODO(travis): remove after Ray 1.12.1
 
 import logging
 from typing import Callable, Dict, Optional
