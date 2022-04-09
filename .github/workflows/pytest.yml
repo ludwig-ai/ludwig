@@ -91,11 +91,16 @@ jobs:
             pip install torch==$PYTORCH
           fi
           pip install ray==$RAY_VERSION
+
+          torch_expected=$(python -c "import torch; print(torch.__version__)")
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
+
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
           pip list
-          python -c "import torch; assert torch.__version__ == \"$PYTORCH\", f\"torch {torch.__version__} != $PYTORCH\""
-          python -c "import ray; assert ray.__version__ == \"$RAY_VERSION\", f\"ray {ray.__version__} != $RAY_VERSION\""
+
+          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
 
       - name: Install Neuropod backend
