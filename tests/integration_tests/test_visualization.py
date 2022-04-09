@@ -1145,7 +1145,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
     if binary_output_type:
         output_features = [binary_feature()]
     else:
-        output_features = [category_feature(vocab_size=4, reduce_input="sum")]
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -1168,6 +1168,9 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
         "2",
         "--metrics",
         "accuracy",
+        "precision",
+        "recall",
+        "f1",
         "--ground_truth",
         ground_truth,
         "--output_feature_name",
@@ -1195,7 +1198,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert 4 == len(figure_cnt)
 
 
 @pytest.mark.parametrize("binary_output_type", [True, False])
