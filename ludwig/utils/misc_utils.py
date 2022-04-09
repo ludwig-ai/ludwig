@@ -13,15 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import base64
 import copy
-import hashlib
-import json
 import os
 import random
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Union
 
 import numpy
 import torch
@@ -122,14 +118,6 @@ def get_file_names(output_directory):
     model_dir = os.path.join(output_directory, "model")
 
     return description_fn, training_stats_fn, model_dir
-
-
-def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
-    s = json.dumps(d, sort_keys=True, ensure_ascii=True)
-    h = hashlib.md5(s.encode())
-    d = h.digest()
-    b = base64.b64encode(d, altchars=b"__")
-    return b[:max_length]
 
 
 def get_combined_features(config):
