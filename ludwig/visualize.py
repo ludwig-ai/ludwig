@@ -3056,11 +3056,20 @@ def roc_curves(
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
         if "str2idx" in feature_metadata:
-            # categorical output feature
+            # categorical output feature as binary
             ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
         else:
             # binary output feature
-            ground_truth = ground_truth.values.astype(np.int)
+            if "str2bool" in feature_metadata:
+                # non-standard boolean representation
+                ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"],
+                                                       ground_truth_apply_idx)
+            else:
+                # standard boolean representation
+                ground_truth = ground_truth.values
+
+            # convert to 0/1 representation
+            ground_truth = ground_truth.astype(np.int)
             # ensure positive_label is 1 for binary feature
             positive_label = 1
 
