@@ -58,6 +58,13 @@ Navigate to http://localhost:8267
 
 ### Connecting to remote filesystems (S3, GCS, etc.)
 
-Set environment variables into the cluster YAML definition with your credentials.
+Build a custom Docker image deriving from `ludwig-ray` or `ludwig-ray-gpu` containing the library needed for your
+data:
 
-For example, you can connect to S3 using the environment variables described in the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables).
+- `s3fs`
+- `adlfs`>=0.7.4\`
+- `gcsfs`
+
+Set environment variables into the cluster YAML definition with your credentials. For example, you can connect to S3 using the environment variables described in the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables).
+
+You could also include the credentials directly into the Docker image if they don't need to be configured at runtime.
