@@ -16,7 +16,7 @@ import dask.dataframe as dd
 import pandas as pd
 
 from ludwig.data.cache.types import CacheableDataframe
-from ludwig.utils.data_utils import add_sequence_feature_column, figure_data_format_dataset, get_abs_path
+from ludwig.utils.data_utils import add_sequence_feature_column, figure_data_format_dataset, get_abs_path, hash_dict
 
 
 def test_add_sequence_feature_column():
@@ -86,3 +86,9 @@ def test_figure_data_format_dataset():
         )
         == dd.core.DataFrame
     )
+
+
+def test_hash_dict_numpy_types():
+    df = pd.DataFrame([{"text": "t", "int": 1, "float": 0.1, "bool": True}])
+    d = df.to_dict()
+    assert hash_dict(d) == b"OCq5a6"
