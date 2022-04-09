@@ -101,7 +101,7 @@ class MlflowCallback(Callback):
         pass
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
-        from ray.tune.integration.mlflow import mlflow_mixin
+        from ludwig.contribs.mlflow._ray_111.mlflow import mlflow_mixin
 
         return mlflow_mixin(train_fn), {
             **tune_config,
