@@ -112,11 +112,11 @@ def ray_start_4_cpus():
 
 @spawn
 def run_hyperopt_executor(
-        sampler,
-        executor,
-        csv_filename,
-        validate_output_feature=False,
-        validation_metric=None,
+    sampler,
+    executor,
+    csv_filename,
+    validate_output_feature=False,
+    validation_metric=None,
 ):
     config = _get_config(sampler, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
@@ -244,10 +244,10 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir):
 
 @spawn
 def run_hyperopt(
-        config,
-        rel_path,
-        experiment_name="ray_hyperopt",
-        callbacks=None,
+    config,
+    rel_path,
+    experiment_name="ray_hyperopt",
+    callbacks=None,
 ):
     hyperopt_results = hyperopt(
         config,

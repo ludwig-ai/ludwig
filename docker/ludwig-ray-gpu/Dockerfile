@@ -34,4 +34,3 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     pip install --no-cache-dir '.[full]' -f https://download.pytorch.org/whl/cu111/torch_stable.html && \
     horovodrun --check-build && \
     python -c "import horovod.torch; horovod.torch.init()"
-
