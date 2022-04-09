@@ -1634,7 +1634,6 @@ def _preprocess_file_for_training(
 
     logger.info("Building dataset: DONE")
 
-    data = backend.df_engine.persist(data)
     if SPLIT in data.columns:
         logger.debug("split on split column")
         training_data, test_data, validation_data = split_dataset_ttv(data, SPLIT)
@@ -1688,7 +1687,6 @@ def _preprocess_df_for_training(
 
     logger.info("Building dataset: DONE")
 
-    dataset = backend.df_engine.persist(dataset)
     if SPLIT in dataset.columns:
         logger.debug("split on split column")
         training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
