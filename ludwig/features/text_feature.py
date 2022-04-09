@@ -170,7 +170,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         if "str2idx" not in metadata:
             prefix = "word_"
             padding_symbol_metadata_key = "word_pad_symbol"
-            # unknown_symbol_metadata_key = "word_unk_symbol"
+            unknown_symbol_metadata_key = "word_unk_symbol"
 
         return build_sequence_matrix(
             sequences=column,
