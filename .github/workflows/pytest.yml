@@ -31,7 +31,7 @@ jobs:
             ray-version: 1.9.2
           - python-version: 3.8
             pytorch-version: 1.11.0
-            torchscript-version: 1.11.0
+            torchscript-version: 1.10.2
             ray-version: 1.11.0
           - python-version: 3.9
             pytorch-version: nightly
