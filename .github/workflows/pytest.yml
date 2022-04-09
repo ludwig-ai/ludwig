@@ -28,18 +28,22 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.10.2
             torchscript-version: 1.10.2
+            ray-version: 1.9.2
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
+            ray-version: 1.10.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
+            ray-version: 1.11.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
@@ -86,6 +90,7 @@ jobs:
           else
             pip install torch==$PYTORCH
           fi
+          pip install ray==$RAY_VERSION
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
           pip list
