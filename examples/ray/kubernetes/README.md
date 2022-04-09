@@ -2,7 +2,7 @@
 
 ### Connect to k8s cluster with a Ray operator
 
-You should now be pointing to the right cluster with `kubectl`. Check the nodes to make sure you're connected correctly:
+You should now be pointing to your cluster with `kubectl`. Check the nodes to make sure you're connected correctly:
 
 ```
 kubectl get nodes
@@ -62,7 +62,7 @@ Build a custom Docker image deriving from `ludwig-ray` or `ludwig-ray-gpu` conta
 data:
 
 - `s3fs`
-- `adlfs`>=0.7.4\`
+- `adlfs`
 - `gcsfs`
 
 Set environment variables into the cluster YAML definition with your credentials. For example, you can connect to S3 using the environment variables described in the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#using-environment-variables).
