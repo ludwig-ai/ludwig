@@ -1128,7 +1128,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
         assert 1 == len(figure_cnt)
 
 
-def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
+@pytest.mark.parametrize("binary_output_type", [True, False])
+def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, binary_output_type):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1141,7 +1142,10 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
     ]
-    output_features = [category_feature(vocab_size=4, reduce_input="sum")]
+    if binary_output_type:
+        output_features = [binary_feature()]
+    else:
+        output_features = [category_feature(vocab_size=4, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
