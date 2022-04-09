@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import base64
 import collections.abc
 import csv
 import functools
+import hashlib
 import json
 import logging
 import os.path
@@ -23,7 +25,7 @@ import pickle
 import random
 import re
 from itertools import islice
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -271,6 +273,14 @@ def load_json(data_fp):
 def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, "w") as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
+
+
+def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
+    s = json.dumps(d, cls=NumpyEncoder, sort_keys=True, ensure_ascii=True)
+    h = hashlib.md5(s.encode())
+    d = h.digest()
+    b = base64.b64encode(d, altchars=b"__")
+    return b[:max_length]
 
 
 def to_json_dict(d):
