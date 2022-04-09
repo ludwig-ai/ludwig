@@ -13,10 +13,11 @@
 # limitations under the License.
 # ==============================================================================
 import dask.dataframe as dd
+import numpy as np
 import pandas as pd
 
 from ludwig.data.cache.types import CacheableDataframe
-from ludwig.utils.data_utils import add_sequence_feature_column, figure_data_format_dataset, get_abs_path
+from ludwig.utils.data_utils import add_sequence_feature_column, figure_data_format_dataset, get_abs_path, hash_dict
 
 
 def test_add_sequence_feature_column():
@@ -86,3 +87,8 @@ def test_figure_data_format_dataset():
         )
         == dd.core.DataFrame
     )
+
+
+def test_hash_dict_numpy_types():
+    d = {"float32": np.float32(1)}
+    assert hash_dict(d) == b"uqtgWB"

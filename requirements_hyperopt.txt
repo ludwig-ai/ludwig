@@ -1,4 +1,4 @@
 bayesmark>=0.0.7
 pySOT
 hyperopt
-ray[default,tune]>=1.11
+ray[default,tune]>=1.9.2

@@ -28,18 +28,22 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.10.2
             torchscript-version: 1.10.2
+            ray-version: 1.9.2
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
+            ray-version: 1.11.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
+            ray-version: 1.12.0rc1
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
@@ -82,13 +86,23 @@ jobs:
           cmake --version
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-            pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            extra_index_url=https://download.pytorch.org/whl/nightly/cpu
+            pip install --pre torch torchvision torchaudio --extra-index-url $extra_index_url
           else
-            pip install torch==$PYTORCH
+            extra_index_url=https://download.pytorch.org/whl/cpu
+            pip install torch==$PYTORCH torchvision torchaudio --extra-index-url $extra_index_url
           fi
+          pip install ray==$RAY_VERSION
+
+          torch_expected=$(python -c "import torch; print(torch.__version__)")
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
+
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
-          pip install '.[test]'
+          pip install '.[test]' --extra-index-url $extra_index_url
           pip list
+
+          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
 
       - name: Install Neuropod backend
