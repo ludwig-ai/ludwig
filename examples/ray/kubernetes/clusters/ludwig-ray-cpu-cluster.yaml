@@ -3,7 +3,7 @@ kind: RayCluster
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: luwig-ray-cpu-cluster
+  name: ludwig-ray-cpu-cluster
 spec:
   rayVersion: "2.0.0"
   headGroupSpec:
@@ -22,7 +22,7 @@ spec:
     template:
       metadata:
         labels:
-          rayCluster: luwig-ray-cpu-cluster
+          rayCluster: ludwig-ray-cpu-cluster
           rayNodeType: head
           groupName: headgroup
         annotations:
@@ -86,7 +86,7 @@ spec:
       template:
         metadata:
           labels:
-            rayCluster: luwig-ray-cpu-cluster
+            rayCluster: ludwig-ray-cpu-cluster
             rayNodeType: worker
             groupName: worker-cpu
           annotations:

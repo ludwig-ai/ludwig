@@ -3,7 +3,7 @@ kind: RayCluster
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: luwig-ray-gpu-cluster
+  name: ludwig-ray-gpu-cluster
 spec:
   rayVersion: "2.0.0"
   headGroupSpec:
@@ -22,7 +22,7 @@ spec:
     template:
       metadata:
         labels:
-          rayCluster: luwig-ray-gpu-cluster
+          rayCluster: ludwig-ray-gpu-cluster
           rayNodeType: head
           groupName: headgroup
         annotations:
@@ -87,7 +87,7 @@ spec:
       template:
         metadata:
           labels:
-            rayCluster: luwig-ray-gpu-cluster
+            rayCluster: ludwig-ray-gpu-cluster
             rayNodeType: worker
             groupName: worker-gpu
           annotations:
