@@ -2953,8 +2953,9 @@ def binary_threshold_vs_metric(
             # binary output feature
             if "str2bool" in feature_metadata:
                 # non-standard boolean representation
-                ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"],
-                                                       ground_truth_apply_idx)
+                ground_truth = _vectorize_ground_truth(
+                    ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx
+                )
             else:
                 # standard boolean representation
                 ground_truth = ground_truth.values
