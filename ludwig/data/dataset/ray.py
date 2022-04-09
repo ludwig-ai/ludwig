@@ -39,10 +39,14 @@ from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
+_ray111 = LooseVersion(ray.__version__) >= LooseVersion("1.11")
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 def read_remote_parquet(path: str):
+    if not _ray111:
+        return read_parquet(path)
+
     fs, _ = get_fs_and_path(path)
     return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
