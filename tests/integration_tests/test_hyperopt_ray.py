@@ -56,7 +56,6 @@ HYPEROPT_CONFIG = {
     "goal": "minimize",
 }
 
-
 SAMPLERS = [
     {"type": "ray"},
     {"type": "ray", "num_samples": 2},
@@ -113,11 +112,11 @@ def ray_start_4_cpus():
 
 @spawn
 def run_hyperopt_executor(
-    sampler,
-    executor,
-    csv_filename,
-    validate_output_feature=False,
-    validation_metric=None,
+        sampler,
+        executor,
+        csv_filename,
+        validate_output_feature=False,
+        validation_metric=None,
 ):
     config = _get_config(sampler, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
@@ -230,13 +229,10 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir):
         config = _get_config({"type": "ray", "num_samples": num_samples}, {"type": "ray"})
 
         rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
-
-        exp_name = "mlflow_test"
+        exp_name = "Default"
         run_hyperopt(config, rel_path, experiment_name=exp_name, callbacks=[MlflowCallback(mlflow_uri)])
-
         experiment = client.get_experiment_by_name(exp_name)
         assert experiment is not None
-
         runs = client.search_runs([experiment.experiment_id])
         assert len(runs) > 0
 
@@ -248,10 +244,10 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir):
 
 @spawn
 def run_hyperopt(
-    config,
-    rel_path,
-    experiment_name="ray_hyperopt",
-    callbacks=None,
+        config,
+        rel_path,
+        experiment_name="ray_hyperopt",
+        callbacks=None,
 ):
     hyperopt_results = hyperopt(
         config,
