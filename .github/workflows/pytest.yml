@@ -94,8 +94,8 @@ jobs:
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
           pip list
-          python -c "import torch; assert torch.__version__ == \"$PYTORCH\""
-          python -c "import ray; assert ray.__version__ == \"$RAY_VERSION\""
+          python -c "import torch; assert torch.__version__ == \"$PYTORCH\", f\"torch {torch.__version__} != $PYTORCH\""
+          python -c "import ray; assert ray.__version__ == \"$RAY_VERSION\", f\"ray {ray.__version__} != $RAY_VERSION\""
         shell: bash
 
       - name: Install Neuropod backend
