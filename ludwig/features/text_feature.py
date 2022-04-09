@@ -163,7 +163,8 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
-        # TODO(1891): Remove backward compatibility once all models have been retrained.
+        # TODO(1891): Remove backward compatibility hack once all models have been retrained with Ludwig after
+        # https://github.com/ludwig-ai/ludwig/pull/1859.
         prefix = ""
         padding_symbol_metadata_key = "padding_symbol"
         unknown_symbol_metadata_key = "unknown_symbol"
