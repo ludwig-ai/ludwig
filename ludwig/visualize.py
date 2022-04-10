@@ -3002,22 +3002,15 @@ def binary_threshold_vs_metric(
             for threshold in thresholds:
                 threshold = threshold if threshold < 1 else 0.99
 
-                # TODO: Confirm correctness with Piero
-                # t_gt = ground_truth[prob >= threshold]
                 predictions = prob >= threshold
-                # t_predictions = predictions[prob >= threshold]
 
                 if metric == "f1":
-                    # metric_score = sklearn.metrics.f1_score(t_gt, t_predictions)
                     metric_score = sklearn.metrics.f1_score(ground_truth, predictions)
                 elif metric == "precision":
-                    # metric_score = sklearn.metrics.precision_score(t_gt, t_predictions)
                     metric_score = sklearn.metrics.precision_score(ground_truth, predictions)
                 elif metric == "recall":
-                    # metric_score = sklearn.metrics.recall_score(t_gt, t_predictions)
                     metric_score = sklearn.metrics.recall_score(ground_truth, predictions)
                 elif metric == ACCURACY:
-                    # metric_score = sklearn.metrics.accuracy_score(t_gt, t_predictions)
                     metric_score = sklearn.metrics.accuracy_score(ground_truth, predictions)
 
                 scores_alg.append(metric_score)
