@@ -21,6 +21,7 @@
 import glob
 import json
 import os
+import random
 import subprocess
 
 import pytest
@@ -1148,6 +1149,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
         output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
+    random.seed(1919)
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
