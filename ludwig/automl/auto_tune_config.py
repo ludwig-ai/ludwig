@@ -1,5 +1,6 @@
 import copy
 import logging
+import math
 from collections import OrderedDict
 from typing import List
 
@@ -15,6 +16,7 @@ from ludwig.automl.utils import get_model_type
 from ludwig.constants import (
     AUTOML_DEFAULT_TEXT_ENCODER,
     AUTOML_LARGE_TEXT_DATASET,
+    AUTOML_MAX_ROWS_PER_CHECKPOINT,
     AUTOML_SMALLER_TEXT_ENCODER,
     AUTOML_SMALLER_TEXT_LENGTH,
     AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
@@ -240,7 +242,10 @@ def memory_tune_config(config, dataset, model_category, row_count):
 
     if model_category == TEXT and row_count > AUTOML_LARGE_TEXT_DATASET:
         if "checkpoints_per_epoch" not in config[TRAINER] and "steps_per_checkpoint" not in config[TRAINER]:
-            config[TRAINER]["checkpoints_per_epoch"] = 2  # decrease latency to get model accuracy signal
+            checkpoints_per_epoch = max(2, math.floor(row_count / AUTOML_MAX_ROWS_PER_CHECKPOINT))
+            config[TRAINER][
+                "checkpoints_per_epoch"
+            ] = checkpoints_per_epoch  # decrease latency to get model accuracy signal
         if "evaluate_training_set" not in config[TRAINER]:
             config[TRAINER]["evaluate_training_set"] = False  # reduce overhead for increased evaluation frequency
         if not fits_in_memory:
