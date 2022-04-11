@@ -196,6 +196,9 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torch.__version__) < (1, 11, 0), reason="requires pytorch 1.11.0 or higher"
+)
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
