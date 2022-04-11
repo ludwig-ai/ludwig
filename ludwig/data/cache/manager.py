@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional
+from typing import Optional, Union
 
 from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
 from ludwig.data.cache.types import alphanum, CacheableDataset
@@ -79,9 +79,17 @@ class DatasetCache:
 
 
 class CacheManager:
-    def __init__(self, dataset_manager: DatasetManager, cache_dir: Optional[str] = None):
+    def __init__(
+        self,
+        dataset_manager: DatasetManager,
+        cache_dir: Optional[str] = None,
+        cache_credentials: Optional[Union[str, dict]] = None,
+    ):
         self._dataset_manager = dataset_manager
         self._cache_dir = cache_dir
+        if isinstance(cache_credentials, str):
+            cache_credentials = data_utils.load_json(cache_credentials)
+        self._cache_credentials = cache_credentials
 
     def get_dataset_cache(
         self,
@@ -139,3 +147,7 @@ class CacheManager:
     @property
     def data_format(self) -> str:
         return self._dataset_manager.data_format
+
+    @property
+    def credentials(self) -> Optional[dict]:
+        return self._cache_credentials

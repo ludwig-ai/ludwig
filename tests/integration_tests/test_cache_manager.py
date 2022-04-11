@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -23,7 +24,22 @@ def change_test_dir(tmpdir, monkeypatch):
 def test_cache_dataset(use_cache_dir, use_split, use_df, tmpdir, change_test_dir):
     dataset_manager = PandasDatasetManager(backend=LocalTestBackend())
     cache_dir = os.path.join(tmpdir, "cache") if use_cache_dir else None
-    manager = CacheManager(dataset_manager, cache_dir=cache_dir)
+
+    creds_fname = os.path.join(tmpdir, "credentials.json")
+    creds = {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": "http://localhost:9000",
+                "aws_access_key_id": "test",
+                "aws_secret_access_key": "test",
+            }
+        }
+    }
+    with open(creds_fname, "w") as f:
+        json.dump(creds, f)
+
+    manager = CacheManager(dataset_manager, cache_dir=cache_dir, cache_credentials=creds_fname)
+    assert manager.credentials == creds
 
     config = {
         "input_features": [sequence_feature(reduce_output="sum")],
