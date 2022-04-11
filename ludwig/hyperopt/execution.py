@@ -22,10 +22,10 @@ from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
-from ludwig.utils.data_utils import NumpyEncoder
+from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
-from ludwig.utils.misc_utils import get_from_registry, hash_dict
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 

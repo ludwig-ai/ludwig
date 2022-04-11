@@ -306,6 +306,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
+        set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
+
         in_memory = preprocessing_parameters["in_memory"]
         if PREPROCESSING in feature_config and "in_memory" in feature_config[PREPROCESSING]:
             in_memory = feature_config[PREPROCESSING]["in_memory"]
