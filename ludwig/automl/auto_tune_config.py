@@ -243,7 +243,9 @@ def memory_tune_config(config, dataset, model_category, row_count):
     if model_category == TEXT and row_count > AUTOML_LARGE_TEXT_DATASET:
         if "checkpoints_per_epoch" not in config[TRAINER] and "steps_per_checkpoint" not in config[TRAINER]:
             checkpoints_per_epoch = max(2, math.floor(row_count / AUTOML_MAX_ROWS_PER_CHECKPOINT))
-            config[TRAINER]["checkpoints_per_epoch"] = checkpoints_per_epoch  # decrease latency to get model accuracy signal
+            config[TRAINER][
+                "checkpoints_per_epoch"
+            ] = checkpoints_per_epoch  # decrease latency to get model accuracy signal
         if "evaluate_training_set" not in config[TRAINER]:
             config[TRAINER]["evaluate_training_set"] = False  # reduce overhead for increased evaluation frequency
         if not fits_in_memory:
