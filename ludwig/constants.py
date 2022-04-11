@@ -147,3 +147,9 @@ AUTO = 'auto'
 CONFIG = 'config'
 
 COMBINER = "combiner"
+
+TRANSFORMER_ENCODERS = [
+    'bert', 'gpt', 'gpt2', 'transformer_xl', 'xlnet', 'xlm', 'roberta',
+    'distilbert', 'ctrl', 'camembert', 'albert', 't5', 'mt5', 'xlmroberta',
+    'flaubert', 'electra', 'longformer', 'auto_transformer'
+]
