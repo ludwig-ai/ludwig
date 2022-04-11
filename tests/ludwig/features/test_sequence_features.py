@@ -38,6 +38,11 @@ def input_sequence() -> Tuple[torch.Tensor, List]:
     return input_tensor, idx2str
 
 
+@pytest.fixture(scope="module")
+def output_sequence():
+    pass
+
+
 @pytest.mark.parametrize("encoder", ENCODERS)
 @pytest.mark.parametrize("sequence_type", [SequenceInputFeature, TextInputFeature])
 def test_sequence_input_feature(
@@ -79,4 +84,4 @@ def test_sequence_input_feature(
 
 # todo: add unit test for sequence output feature
 def test_sequence_output_feature():
-    pass
+    
