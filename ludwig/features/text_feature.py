@@ -335,9 +335,10 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
             def compute_prob(probs):
                 if isinstance(probs, (list, tuple, np.ndarray)):
+                    max_probs = []
                     for i in range(len(probs)):
-                        probs[i] = np.max(probs[i])
-                    return np.prod(probs)
+                        max_probs.append(np.max(probs[i]))
+                    return np.prod(max_probs)
                 else:
                     return np.prod(probs, axis=-1)
 
