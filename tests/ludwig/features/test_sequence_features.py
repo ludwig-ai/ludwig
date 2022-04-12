@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 import numpy as np
 import pytest
 import torch
+import torchtext
 
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
@@ -83,26 +84,26 @@ def test_sequence_output_feature():
     pass
 
 
-@pytest.mark.parametrize("tokenizer", TORCHSCRIPT_ENABLED_TOKENIZERS)
-def test_text_preproc_module_shape(tokenizer):
+def test_text_preproc_module_bad_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": tokenizer,
+            "tokenizer": "space_punct",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
     }
-    module = _TextPreprocessing(metadata)
 
-    res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
-
-    assert res.shape == torch.Size([4, SEQ_SIZE])
+    with pytest.raises(ValueError):
+        _TextPreprocessing(metadata)
 
 
-def test_text_preproc_module_sentencepiece_tokenizer():
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+)
+def test_text_preproc_module():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -122,17 +123,23 @@ def test_text_preproc_module_sentencepiece_tokenizer():
     )
 
 
-def test_text_preproc_module_bad_tokenizer():
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+)
+@pytest.mark.parametrize("tokenizer", TORCHSCRIPT_ENABLED_TOKENIZERS)
+def test_text_preproc_module_shape(tokenizer):
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "space_punct",
+            "tokenizer": tokenizer,
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
     }
+    module = _TextPreprocessing(metadata)
 
-    with pytest.raises(ValueError):
-        _TextPreprocessing(metadata)
+    res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
+
+    assert res.shape == torch.Size([4, SEQ_SIZE])
