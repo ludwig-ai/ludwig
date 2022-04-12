@@ -136,7 +136,7 @@ def test_text_preproc_module_shape(tokenizer):
             "padding_symbol": "<PAD>",
         },
         "max_sequence_length": SEQ_SIZE,
-        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3},
     }
     module = _TextPreprocessing(metadata)
 

@@ -27,7 +27,7 @@ SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 # requires torchtext>=0.12.0
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer"}
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer", "gpt2bpe_tokenizer"}
 
 
 class BaseTokenizer:
@@ -841,11 +841,33 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
             return self.tokenizer(v)
 
     class CLIPTokenizer(torch.nn.Module):
-        def __init__(self, pretrained_model_name_or_path=None, **kwargs):
+        def __init__(self, pretrained_model_name_or_path=None, encoder_json_path=None, **kwargs):
             super().__init__()
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
-            self.tokenizer = torchtext.transforms.CLIPTokenizer(merges_path=pretrained_model_name_or_path)
+            # TODO: add ability to modify encoder_json_path from Ludwig config
+            if encoder_json_path is None:
+                encoder_json_path = "http://download.pytorch.org/models/text/clip_encoder.json"
+            self.tokenizer = torchtext.transforms.CLIPTokenizer(
+                merges_path=pretrained_model_name_or_path, encoder_json_path=encoder_json_path
+            )
+
+        def forward(self, v: Union[List[str], torch.Tensor]):
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+            return self.tokenizer(v)
+
+    class GPT2BPETokenizer(torch.nn.Module):
+        def __init__(self, pretrained_model_name_or_path=None, vocab_bpe_path=None, **kwargs):
+            super().__init__()
+            if pretrained_model_name_or_path is None:
+                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_encoder.json"
+            # TODO: add ability to modify vocab_bpe_path from Ludwig config
+            if vocab_bpe_path is None:
+                vocab_bpe_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
+            self.tokenizer = torchtext.transforms.GPT2BPETokenizer(
+                encoder_json_path=pretrained_model_name_or_path, vocab_bpe_path=vocab_bpe_path
+            )
 
         def forward(self, v: Union[List[str], torch.Tensor]):
             if isinstance(v, torch.Tensor):
@@ -856,5 +878,6 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
         {
             "sentencepiece_tokenizer": SentencePieceTokenizer,
             "clip_tokenizer": CLIPTokenizer,
+            "gpt2bpe_tokenizer": GPT2BPETokenizer,
         }
     )
