@@ -150,8 +150,8 @@ preprocessing data, and setting up pipelines for (distributed) training, evaluat
 Ludwig takes care of the engineering complexity of deep learning out of the box, enabling research scientists to focus
 on building models at the highest level of abstraction.
 
-Without Ludwig, if you had a great idea for a novel architecture for image classification, you would implement your new
-model as a PyTorch module.
+Let's say that you have a great idea for a novel architecture for image classification with a change specific to how
+images are encoded. You would implement your new model as a PyTorch module.
 
 ```python
 import torch.nn as nn
@@ -175,7 +175,8 @@ a training-checkpoint-eval loop, post-process logits tensors into predictions, a
 these steps elongate model development time and introduce potential sources of error.
 
 Instead of implementing all of this from scratch, research scientists can implement new models as PyTorch Modules in
-Ludwig directly to take advantage of all of the engineering conveniences that Ludwig offers.
+Ludwig directly to take advantage of all of the engineering conveniences that Ludwig offers. Since your modeling idea
+applies specifically to image encoding, then only the encoder needs to be implemented.
 
 ```python
 import torch
@@ -184,7 +185,7 @@ from ludwig.encoders.base import Encoder
 
 
 @register("my_encoder", IMAGE)
-class MyImageClassificationModel(Encoder):
+class MyImageEncoder(Encoder):
     def __init__(self, hyperparameter_1, hyperparameter_2):
         # ...
         pass
