@@ -106,6 +106,9 @@ class HyperoptExecutor(ABC):
         if self._has_metric(train_stats, VALIDATION):
             logger.info("Returning metric score from training (validation) statistics")
             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
+        elif self._has_metric(train_stats, TRAINING):
+            logger.info("Returning metric score from training split statistics, " "as no validation was given")
+            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
 
