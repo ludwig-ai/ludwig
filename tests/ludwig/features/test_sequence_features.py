@@ -6,6 +6,7 @@ import torch
 
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
+from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -82,7 +83,7 @@ def test_sequence_output_feature():
     pass
 
 
-@pytest.mark.parametrize("tokenizer", ["sentencepiece_tokenizer", "clip_tokenizer"])
+@pytest.mark.parametrize("tokenizer", TORCHSCRIPT_ENABLED_TOKENIZERS)
 def test_text_preproc_module_shape(tokenizer):
     metadata = {
         "preprocessing": {

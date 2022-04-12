@@ -26,6 +26,8 @@ SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
+# requires torchtext>=0.12.0
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer"}
 
 
 class BaseTokenizer:
@@ -823,7 +825,7 @@ tokenizer_registry = {
 if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
     """Torchscript-enabled tokenizers.
 
-    Only available with torchtext >= 0.12.0.
+    Only available with torchtext>=0.12.0.
     """
 
     class SentencePieceTokenizer(torch.nn.Module):
