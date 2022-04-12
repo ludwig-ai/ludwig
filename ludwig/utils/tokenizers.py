@@ -712,31 +712,6 @@ class HFTokenizer(BaseTokenizer):
         return self.tokenizer.encode(text, truncation=True)
 
 
-# scriptable tokenizers
-class SentencePieceTokenizer(torch.nn.Module):
-    def __init__(self, pretrained_model_name_or_path, **kwargs):
-        super().__init__()
-
-        self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
-
-    def forward(self, v: Union[List[str], torch.Tensor]):
-        if isinstance(v, torch.Tensor):
-            raise ValueError(f"Unsupported input: {v}")
-        return self.tokenizer(v)
-
-
-class CLIPTokenizer(torch.nn.Module):
-    def __init__(self, pretrained_model_name_or_path, **kwargs):
-        super().__init__()
-
-        self.tokenizer = torchtext.transforms.CLIPTokenizer(merges_path=pretrained_model_name_or_path)
-
-    def forward(self, v: Union[List[str], torch.Tensor]):
-        if isinstance(v, torch.Tensor):
-            raise ValueError(f"Unsupported input: {v}")
-        return self.tokenizer(v)
-
-
 tokenizer_registry = {
     "characters": CharactersToListTokenizer,
     "space": SpaceStringToListTokenizer,
@@ -842,7 +817,45 @@ tokenizer_registry = {
     "multi_lemmatize_filter": MultiLemmatizeFilterTokenizer,
     "multi_lemmatize_remove_stopwords": MultiLemmatizeRemoveStopwordsTokenizer,
     "hf_tokenizer": HFTokenizer,
-    # torchscript-enabled tokenizers
-    "sentencepiece_tokenizer": SentencePieceTokenizer,
-    "clip_tokenizer": CLIPTokenizer,
 }
+
+
+if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
+    """Torchscript-enabled tokenizers.
+
+    Only available with torchtext >= 0.12.0.
+    """
+
+    class SentencePieceTokenizer(torch.nn.Module):
+        def __init__(
+            self,
+            pretrained_model_name_or_path=None,
+            **kwargs,
+        ):
+            super().__init__()
+            if pretrained_model_name_or_path is None:
+                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
+            self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
+
+        def forward(self, v: Union[List[str], torch.Tensor]):
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+            return self.tokenizer(v)
+
+    class CLIPTokenizer(torch.nn.Module):
+        def __init__(self, pretrained_model_name_or_path, **kwargs):
+            super().__init__()
+
+            self.tokenizer = torchtext.transforms.CLIPTokenizer(merges_path=pretrained_model_name_or_path)
+
+        def forward(self, v: Union[List[str], torch.Tensor]):
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+            return self.tokenizer(v)
+
+    tokenizer_registry.update(
+        {
+            "sentencepiece_tokenizer": SentencePieceTokenizer,
+            "clip_tokenizer": CLIPTokenizer,
+        }
+    )
