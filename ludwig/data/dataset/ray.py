@@ -47,7 +47,7 @@ def read_remote_parquet(path: str):
     if not _ray111:
         return read_parquet(path)
 
-    fs, _ = get_fs_and_path(path)
+    fs, path = get_fs_and_path(path)
     return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
 
