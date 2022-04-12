@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 import numpy as np
 import pytest
 import torch
+import torchtext
 
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
@@ -82,6 +83,25 @@ def test_sequence_output_feature():
     pass
 
 
+def test_text_preproc_module_bad_tokenizer():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "space_punct",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+    }
+
+    with pytest.raises(ValueError):
+        _TextPreprocessing(metadata)
+
+
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+)
 def test_text_preproc_module():
     metadata = {
         "preprocessing": {
@@ -100,19 +120,3 @@ def test_text_preproc_module():
     assert torch.allclose(
         res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
     )
-
-
-def test_text_preproc_module_bad_tokenizer():
-    metadata = {
-        "preprocessing": {
-            "lowercase": True,
-            "tokenizer": "space_punct",
-            "unknown_symbol": "<UNK>",
-            "padding_symbol": "<PAD>",
-        },
-        "max_sequence_length": SEQ_SIZE,
-        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
-    }
-
-    with pytest.raises(ValueError):
-        _TextPreprocessing(metadata)
