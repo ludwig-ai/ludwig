@@ -129,6 +129,12 @@ def test_text_feature_postprocess_predictions(output_result: Tuple[pd.DataFrame,
     result = result.rename({col: f"{output_feature_obj.feature_name}_{col}" for col in result.columns}, axis=1)
 
     postprocessed_result = output_feature_obj.postprocess_predictions(result, {"idx2str": idx2str}, "", LOCAL_BACKEND)
-    probability = np.stack(postprocessed_result[f"{output_feature_obj.feature_name}_{PROBABILITY}"].to_numpy())
 
-    assert np.allclose(probability, probability_expected)
+    assert len(postprocessed_result) == BATCH_SIZE
+    assert f"{output_feature_obj.feature_name}_{LENGTHS}" not in postprocessed_result.keys()
+    assert f"{output_feature_obj.feature_name}_{PREDICTIONS}" in postprocessed_result.keys()
+    assert f"{output_feature_obj.feature_name}_{PROBABILITY}" in postprocessed_result.keys()
+    assert np.allclose(
+        probability_expected,
+        np.stack(postprocessed_result[f"{output_feature_obj.feature_name}_{PROBABILITY}"].to_numpy()),
+    )
