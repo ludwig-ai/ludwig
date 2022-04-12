@@ -88,9 +88,9 @@ class _TextPreprocessing(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         if self.lowercase:
-            sequences: List[str] = [sequence.lower() for sequence in v]
+            sequences = [sequence.lower() for sequence in v]
         else:
-            sequences: List[str] = v
+            sequences = v
 
         unit_sequences = self.tokenizer(sequences)
         # refines type of unit_sequences from Any to List[List[str]]
