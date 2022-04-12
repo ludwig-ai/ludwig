@@ -26,6 +26,8 @@ SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
+# requires torchtext>=0.12.0
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer"}
 
 
 class BaseTokenizer:

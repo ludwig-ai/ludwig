@@ -52,15 +52,12 @@ from ludwig.utils.strings_utils import (
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
-    tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import tokenizer_registry, TORCHSCRIPT_ENABLED_TOKENIZERS
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
-
-
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer"}
 
 
 class _TextPreprocessing(torch.nn.Module):
