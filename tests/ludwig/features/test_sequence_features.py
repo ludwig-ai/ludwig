@@ -87,7 +87,6 @@ def test_text_preproc_module():
         "preprocessing": {
             "lowercase": True,
             "tokenizer": "sentencepiece_tokenizer",
-            "pretrained_model_name_or_path": r"https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
@@ -101,3 +100,19 @@ def test_text_preproc_module():
     assert torch.allclose(
         res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
     )
+
+
+def test_text_preproc_module_bad_tokenizer():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "space_punct",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+    }
+
+    with pytest.raises(ValueError):
+        _TextPreprocessing(metadata)
