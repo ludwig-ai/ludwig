@@ -60,11 +60,19 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer"}
+
+
 class _TextPreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by TextFeatureMixin.add_feature_data."""
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_ENABLED_TOKENIZERS}."
+            )
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
