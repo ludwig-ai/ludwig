@@ -1,4 +1,4 @@
 spacy>=2.3
 transformers>=4.10.1
 sentencepiece
-torchtext>=0.12.0
+torchtext

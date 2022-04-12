@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
@@ -197,7 +198,7 @@ def test_torchscript(csv_filename, should_load_model):
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torch.__version__) < (1, 11, 0), reason="requires pytorch 1.11.0 or higher"
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
@@ -208,7 +209,6 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         vocab_size=3,
         preprocessing={
             "tokenizer": "sentencepiece_tokenizer",
-            "pretrained_model_name_or_path": r"https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model",
         },
     )
     input_features = [
