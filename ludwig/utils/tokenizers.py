@@ -821,7 +821,10 @@ tokenizer_registry = {
 
 
 if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
-    """Torchscript-enabled tokenizers. Only available with torchtext >= 0.12.0."""
+    """Torchscript-enabled tokenizers.
+
+    Only available with torchtext >= 0.12.0.
+    """
 
     class SentencePieceTokenizer(torch.nn.Module):
         def __init__(
