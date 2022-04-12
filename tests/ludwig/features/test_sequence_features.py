@@ -1,12 +1,10 @@
 from typing import List, Tuple, Union
 
 import numpy as np
-import pandas as pd
 import pytest
 import torch
 
-from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import LENGTHS, PREDICTIONS, PROBABILITIES, PROBABILITY
+from ludwig.constants import LAST_HIDDEN, LENGTHS, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
 from ludwig.utils.data_utils import from_numpy_dataset
@@ -115,26 +113,6 @@ def test_sequence_output_feature(sequence_type: Union[SequenceOutputFeature, Tex
 
     text_output = output_feature_obj(combiner_outputs, {})
 
-    assert "last_hidden" in text_output
-    assert "logits" in text_output
-    assert text_output["logits"].size() == torch.Size([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE])
-
-
-def test_text_feature_postprocess_predictions(output_result: Tuple[pd.DataFrame, List, np.ndarray]) -> None:
-    result, idx2str, probability_expected = output_result
-    output_feature_defn = sequence_feature(
-        max_len=SEQ_SIZE, max_sequence_length=SEQ_SIZE, vocab_size=VOCAB_SIZE, input_size=VOCAB_SIZE
-    )
-    output_feature_obj = TextOutputFeature(output_feature_defn, {}).to(DEVICE)
-    result = result.rename({col: f"{output_feature_obj.feature_name}_{col}" for col in result.columns}, axis=1)
-
-    postprocessed_result = output_feature_obj.postprocess_predictions(result, {"idx2str": idx2str}, "", LOCAL_BACKEND)
-
-    assert len(postprocessed_result) == BATCH_SIZE
-    assert f"{output_feature_obj.feature_name}_{LENGTHS}" not in postprocessed_result.keys()
-    assert f"{output_feature_obj.feature_name}_{PREDICTIONS}" in postprocessed_result.keys()
-    assert f"{output_feature_obj.feature_name}_{PROBABILITY}" in postprocessed_result.keys()
-    assert np.allclose(
-        probability_expected,
-        np.stack(postprocessed_result[f"{output_feature_obj.feature_name}_{PROBABILITY}"].to_numpy()),
-    )
+    assert LAST_HIDDEN in text_output
+    assert LOGITS in text_output
+    assert text_output[LOGITS].size() == torch.Size([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE])

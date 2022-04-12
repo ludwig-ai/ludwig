@@ -16,7 +16,6 @@
 import logging
 from typing import Dict
 
-import numpy as np
 import torch
 
 from ludwig.constants import (
@@ -41,6 +40,7 @@ from ludwig.constants import (
 )
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.feature_utils import compute_sequence_probability
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_values
@@ -332,18 +332,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
 
-            def compute_prob(probs):
-                if isinstance(probs, (list, tuple, np.ndarray)):
-                    max_probs = []
-                    for i in range(len(probs)):
-                        max_probs.append(np.max(probs[i]))
-                    return np.prod(max_probs)
-                else:
-                    return np.prod(probs, axis=-1)
-
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],
-                compute_prob,
+                compute_sequence_probability,
             )
 
             # commenting probabilities out because usually it is huge:
