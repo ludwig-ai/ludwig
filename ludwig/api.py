@@ -1551,7 +1551,7 @@ class LudwigModel:
 
         for input_feature in self.config['input_features']:
             input_feature["saved_weights_in_checkpoint"] = True
-            if input_feature['encoder'] in TRANSFORMER_ENCODERS:
+            if 'encoder' in input_feature and input_feature['encoder'] in TRANSFORMER_ENCODERS:
                 text_feature = self.model.input_features[input_feature['name']]
                 transformer = text_feature.encoder_obj.transformer
                 weights_path = os.path.join(
