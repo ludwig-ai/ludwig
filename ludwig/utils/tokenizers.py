@@ -15,7 +15,7 @@ input_features:
 
 import re
 from abc import abstractmethod
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 import torch
 import torchtext
@@ -842,15 +842,29 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
             return self.tokenizer(v)
 
     class BPETokenizer(torch.nn.Module):
-        def _init_vocab(self, vocab_file):
+        """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
+
+        def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
+            super().__init__()
+            self.vocab = self._init_vocab(vocab_file)
+            self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
+
+        def _init_vocab(self, vocab_file: str) -> List[str]:
+            """Loads the vocab from the vocab file."""
             str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
             _, vocab_tuple = zip(*sorted([(v, k) for k, v in str2idx.items()]))
             return list(vocab_tuple)
 
-        def get_vocab(self):
-            return self.vocab
+        def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str) -> Any:
+            """Initializes and returns the tokenizer."""
+            raise NotImplementedError
 
         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+            """Implements forward pass for tokenizer.
+
+            BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
+            The below implementation works around this by converting the ids back to their original string tokens.
+            """
             if isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
             elif isinstance(v, str):
@@ -864,31 +878,38 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
             tokens = [[self.vocab[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
             return tokens[0] if isinstance(v, str) else tokens
 
+        def get_vocab(self) -> List[str]:
+            return self.vocab
+
     class CLIPTokenizer(BPETokenizer):
-        def __init__(self, pretrained_model_name_or_path=None, vocab_file=None, **kwargs):
-            super().__init__()
+        def __init__(
+            self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
+        ):
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
             if vocab_file is None:
                 vocab_file = "http://download.pytorch.org/models/text/clip_encoder.json"
+            super().__init__(pretrained_model_name_or_path, vocab_file)
 
-            self.tokenizer = torchtext.transforms.CLIPTokenizer(
+        def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
+            return torchtext.transforms.CLIPTokenizer(
                 encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
             )
-            self.vocab = self._init_vocab(vocab_file)
 
     class GPT2BPETokenizer(BPETokenizer):
-        def __init__(self, pretrained_model_name_or_path=None, vocab_file=None, **kwargs):
-            super().__init__()
+        def __init__(
+            self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
+        ):
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
             if vocab_file is None:
                 vocab_file = "https://download.pytorch.org/models/text/gpt2_bpe_encoder.json"
+            super().__init__(pretrained_model_name_or_path, vocab_file)
 
-            self.tokenizer = torchtext.transforms.GPT2BPETokenizer(
+        def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
+            return torchtext.transforms.GPT2BPETokenizer(
                 encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
             )
-            self.vocab = self._init_vocab(vocab_file)
 
     tokenizer_registry.update(
         {
