@@ -1535,8 +1535,11 @@ def preprocess_for_training(
 
             # cache the dataset
             if backend.cache.can_cache(skip_save_processed_input):
-                logger.debug("cache processed data")
-                processed = cache.put(*processed)
+                with use_credentials(backend.cache.credentials):
+                    logger.debug("cache processed data")
+                    processed = cache.put(*processed)
+                    # set cached=True to ensure credentials are used correctly below
+                    cached = True
             training_set, test_set, validation_set, training_set_metadata = processed
 
         with use_credentials(backend.cache.credentials if cached else None):
