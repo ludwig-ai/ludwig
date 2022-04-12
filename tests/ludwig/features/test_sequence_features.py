@@ -7,7 +7,6 @@ import torchtext
 
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
-from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -103,7 +102,7 @@ def test_text_preproc_module_bad_tokenizer():
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-def test_text_preproc_module():
+def test_text_preproc_module_sentencepiece_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -112,34 +111,90 @@ def test_text_preproc_module():
             "padding_symbol": "<PAD>",
         },
         "max_sequence_length": SEQ_SIZE,
-        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+        "str2idx": {
+            "<EOS>": 0,
+            "<SOS>": 1,
+            "<PAD>": 2,
+            "<UNK>": 3,
+            "▁hell": 4,
+            "o": 5,
+            "▁world": 6,
+            "▁pale": 7,
+            "ont": 8,
+            "ology": 9,
+        },
     }
     module = _TextPreprocessing(metadata)
 
-    res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
+    res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
     assert torch.allclose(
-        res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
+        res, torch.tensor([[1, 7, 8, 9, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
     )
 
 
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-@pytest.mark.parametrize("tokenizer", ["sentencepiece_tokenizer", "clip_tokenizer"])
-def test_text_preproc_module_shape(tokenizer):
+def test_text_preproc_module_clip_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": tokenizer,
+            "tokenizer": "clip_tokenizer",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
         "max_sequence_length": SEQ_SIZE,
-        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3},
+        "str2idx": {
+            "<EOS>": 0,
+            "<SOS>": 1,
+            "<PAD>": 2,
+            "<UNK>": 3,
+            "hello</w>": 4,
+            "world</w>": 5,
+            "pale": 7,
+            "ontology</w>": 8,
+        },
     }
     module = _TextPreprocessing(metadata)
 
     res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
-    assert res.shape == torch.Size([4, SEQ_SIZE])
+    assert torch.allclose(
+        res, torch.tensor([[1, 7, 8, 0, 2, 2], [1, 3, 0, 2, 2, 2], [1, 4, 5, 4, 0, 2], [1, 4, 5, 4, 5, 0]])
+    )
+
+
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+)
+def test_text_preproc_module_gpt2bpe_tokenizer():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "gpt2bpe_tokenizer",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {
+            "<EOS>": 0,
+            "<SOS>": 1,
+            "<PAD>": 2,
+            "<UNK>": 3,
+            "hello": 4,
+            "Ġworld": 5,
+            "Ġhello": 7,
+            "p": 8,
+            "ale": 9,
+            "ont": 10,
+            "ology": 11,
+        },
+    }
+    module = _TextPreprocessing(metadata)
+
+    res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
+
+    assert torch.allclose(
+        res, torch.tensor([[1, 8, 9, 10, 11, 0], [1, 3, 0, 2, 2, 2], [1, 4, 5, 7, 0, 2], [1, 4, 5, 7, 5, 0]])
+    )

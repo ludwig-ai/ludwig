@@ -853,21 +853,16 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
             if isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
+            elif isinstance(v, str):
+                inputs = [v]
+            else:
+                inputs = v
 
-            if isinstance(v, str):
-                sequence = self.tokenizer(v)
-                assert torch.jit.isinstance(sequence, List[str])
-                return [self.vocab[int(unit_idx)] for unit_idx in sequence]
+            token_ids = self.tokenizer(inputs)
+            assert torch.jit.isinstance(token_ids, List[List[str]])
 
-            if isinstance(v, List[str]):
-                sequences = self.tokenizer(v)
-                assert torch.jit.isinstance(sequences, List[List[str]])
-
-                unit_sequences: List[List[str]] = []
-                for sequence in sequences:
-                    unit_sequence: List[str] = [self.vocab[int(unit_idx)] for unit_idx in sequence]
-                    unit_sequences.append(unit_sequence)
-                return unit_sequences
+            tokens = [[self.vocab[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
+            return tokens[0] if isinstance(v, str) else tokens
 
     class CLIPTokenizer(BPETokenizer):
         def __init__(self, pretrained_model_name_or_path=None, vocab_file=None, **kwargs):

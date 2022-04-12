@@ -266,7 +266,6 @@ def create_vocabulary(
     processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
-    print(processed_counts)
     unit_counts = Counter(dict(processed_counts))
     line_length_max = processor.compute(processed_lines.map(len).max())
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
