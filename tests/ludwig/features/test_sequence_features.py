@@ -111,12 +111,23 @@ def test_text_preproc_module():
             "padding_symbol": "<PAD>",
         },
         "max_sequence_length": SEQ_SIZE,
-        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+        "str2idx": {
+            "<EOS>": 0,
+            "<SOS>": 1,
+            "<PAD>": 2,
+            "<UNK>": 3,
+            "▁hell": 4,
+            "o": 5,
+            "▁world": 6,
+            "▁pale": 7,
+            "ont": 8,
+            "ology": 9,
+        },
     }
     module = _TextPreprocessing(metadata)
 
-    res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
+    res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
     assert torch.allclose(
-        res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
+        res, torch.tensor([[1, 7, 8, 9, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
     )

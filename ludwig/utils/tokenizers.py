@@ -825,21 +825,17 @@ tokenizer_registry = {
 if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
     """Torchscript-enabled tokenizers.
 
-    Only available with torchtext >= 0.12.0.
+    Only available with torchtext>=0.12.0.
     """
 
     class SentencePieceTokenizer(torch.nn.Module):
-        def __init__(
-            self,
-            pretrained_model_name_or_path=None,
-            **kwargs,
-        ):
+        def __init__(self, pretrained_model_name_or_path=None, **kwargs):
             super().__init__()
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
             self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
 
-        def forward(self, v: Union[List[str], torch.Tensor]):
+        def forward(self, v: Union[str, List[str], torch.Tensor]):
             if isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
             return self.tokenizer(v)
