@@ -15,6 +15,10 @@ input_features:
 
 import re
 from abc import abstractmethod
+from typing import List, Optional, Union
+
+import torch
+import torchtext
 
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
@@ -22,6 +26,8 @@ SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
+# requires torchtext>=0.12.0
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer"}
 
 
 class BaseTokenizer:
@@ -814,3 +820,28 @@ tokenizer_registry = {
     "multi_lemmatize_remove_stopwords": MultiLemmatizeRemoveStopwordsTokenizer,
     "hf_tokenizer": HFTokenizer,
 }
+
+
+if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
+    """Torchscript-enabled tokenizers.
+
+    Only available with torchtext>=0.12.0.
+    """
+
+    class SentencePieceTokenizer(torch.nn.Module):
+        def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+            super().__init__()
+            if pretrained_model_name_or_path is None:
+                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
+            self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
+
+        def forward(self, v: Union[str, List[str], torch.Tensor]):
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+            return self.tokenizer(v)
+
+    tokenizer_registry.update(
+        {
+            "sentencepiece_tokenizer": SentencePieceTokenizer,
+        }
+    )

@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
@@ -196,19 +197,28 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+)
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
+    sp_text_feature = text_feature(
+        vocab_size=3,
+        preprocessing={
+            "tokenizer": "sentencepiece_tokenizer",
+        },
+    )
     input_features = [
         bin_str_feature,
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
+        sp_text_feature,
         # TODO: future support
         # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
         # vector_feature(),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),

@@ -3,9 +3,10 @@ from typing import List, Tuple, Union
 import numpy as np
 import pytest
 import torch
+import torchtext
 
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.features.text_feature import TextInputFeature
+from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -80,3 +81,53 @@ def test_sequence_input_feature(
 # todo: add unit test for sequence output feature
 def test_sequence_output_feature():
     pass
+
+
+def test_text_preproc_module_bad_tokenizer():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "space_punct",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
+    }
+
+    with pytest.raises(ValueError):
+        _TextPreprocessing(metadata)
+
+
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+)
+def test_text_preproc_module():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "sentencepiece_tokenizer",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {
+            "<EOS>": 0,
+            "<SOS>": 1,
+            "<PAD>": 2,
+            "<UNK>": 3,
+            "▁hell": 4,
+            "o": 5,
+            "▁world": 6,
+            "▁pale": 7,
+            "ont": 8,
+            "ology": 9,
+        },
+    }
+    module = _TextPreprocessing(metadata)
+
+    res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
+
+    assert torch.allclose(
+        res, torch.tensor([[1, 7, 8, 9, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
+    )
