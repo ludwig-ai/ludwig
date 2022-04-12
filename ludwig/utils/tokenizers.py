@@ -15,12 +15,13 @@ input_features:
 
 import re
 from abc import abstractmethod
-from typing import List, Union
+from typing import Any, List, Union
 
 import torch
 import torchtext
 
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
+from ludwig.utils.data_utils import load_json
 
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
@@ -835,44 +836,64 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
                 pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
             self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
 
-        def forward(self, v: Union[List[str], torch.Tensor]):
+        def forward(self, v: Union[str, List[str], torch.Tensor]):
             if isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
             return self.tokenizer(v)
 
-    class CLIPTokenizer(torch.nn.Module):
-        def __init__(self, pretrained_model_name_or_path=None, encoder_json_path=None, **kwargs):
+    class BPETokenizer(torch.nn.Module):
+        def _init_vocab(self, vocab_file):
+            str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
+            _, vocab_tuple = zip(*sorted([(v, k) for k, v in str2idx.items()]))
+            return list(vocab_tuple)
+
+        def get_vocab(self):
+            return self.vocab
+
+        def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+
+            if isinstance(v, str):
+                sequence = self.tokenizer(v)
+                assert torch.jit.isinstance(sequence, List[str])
+                return [self.vocab[int(unit_idx)] for unit_idx in sequence]
+
+            if isinstance(v, List[str]):
+                sequences = self.tokenizer(v)
+                assert torch.jit.isinstance(sequences, List[List[str]])
+
+                unit_sequences: List[List[str]] = []
+                for sequence in sequences:
+                    unit_sequence: List[str] = [self.vocab[int(unit_idx)] for unit_idx in sequence]
+                    unit_sequences.append(unit_sequence)
+                return unit_sequences
+
+    class CLIPTokenizer(BPETokenizer):
+        def __init__(self, pretrained_model_name_or_path=None, vocab_file=None, **kwargs):
             super().__init__()
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
-            # TODO: add ability to modify encoder_json_path from Ludwig config
-            if encoder_json_path is None:
-                encoder_json_path = "http://download.pytorch.org/models/text/clip_encoder.json"
+            if vocab_file is None:
+                vocab_file = "http://download.pytorch.org/models/text/clip_encoder.json"
+
             self.tokenizer = torchtext.transforms.CLIPTokenizer(
-                merges_path=pretrained_model_name_or_path, encoder_json_path=encoder_json_path
+                encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
             )
+            self.vocab = self._init_vocab(vocab_file)
 
-        def forward(self, v: Union[List[str], torch.Tensor]):
-            if isinstance(v, torch.Tensor):
-                raise ValueError(f"Unsupported input: {v}")
-            return self.tokenizer(v)
-
-    class GPT2BPETokenizer(torch.nn.Module):
-        def __init__(self, pretrained_model_name_or_path=None, vocab_bpe_path=None, **kwargs):
+    class GPT2BPETokenizer(BPETokenizer):
+        def __init__(self, pretrained_model_name_or_path=None, vocab_file=None, **kwargs):
             super().__init__()
             if pretrained_model_name_or_path is None:
-                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_encoder.json"
-            # TODO: add ability to modify vocab_bpe_path from Ludwig config
-            if vocab_bpe_path is None:
-                vocab_bpe_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
-            self.tokenizer = torchtext.transforms.GPT2BPETokenizer(
-                encoder_json_path=pretrained_model_name_or_path, vocab_bpe_path=vocab_bpe_path
-            )
+                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
+            if vocab_file is None:
+                vocab_file = "https://download.pytorch.org/models/text/gpt2_bpe_encoder.json"
 
-        def forward(self, v: Union[List[str], torch.Tensor]):
-            if isinstance(v, torch.Tensor):
-                raise ValueError(f"Unsupported input: {v}")
-            return self.tokenizer(v)
+            self.tokenizer = torchtext.transforms.GPT2BPETokenizer(
+                encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
+            )
+            self.vocab = self._init_vocab(vocab_file)
 
     tokenizer_registry.update(
         {

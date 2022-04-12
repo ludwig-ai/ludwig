@@ -126,7 +126,7 @@ def test_text_preproc_module():
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-@pytest.mark.parametrize("tokenizer", TORCHSCRIPT_ENABLED_TOKENIZERS)
+@pytest.mark.parametrize("tokenizer", ["sentencepiece_tokenizer", "clip_tokenizer"])
 def test_text_preproc_module_shape(tokenizer):
     metadata = {
         "preprocessing": {
@@ -140,6 +140,6 @@ def test_text_preproc_module_shape(tokenizer):
     }
     module = _TextPreprocessing(metadata)
 
-    res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
+    res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
     assert res.shape == torch.Size([4, SEQ_SIZE])
