@@ -4,10 +4,9 @@ import numpy as np
 import pytest
 import torch
 
-from ludwig.constants import LAST_HIDDEN, LENGTHS, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import LAST_HIDDEN, LOGITS
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
-from ludwig.utils.data_utils import from_numpy_dataset
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -38,27 +37,6 @@ def input_sequence() -> Tuple[torch.Tensor, List]:
     idx2str = ["<PAD>", "<UNK>"] + [str(i) for i in range(2, VOCAB_SIZE)]
 
     return input_tensor, idx2str
-
-
-@pytest.fixture(scope="module")
-def output_result():
-    """Generates a realistic looking `result` DataFrame for postprocessing."""
-    logits = torch.randn([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE], dtype=torch.float32).to(DEVICE)
-    probabilities = torch.nn.functional.softmax(logits, dim=-1).numpy()
-
-    # sentence level probability
-    probability_expected = np.prod(np.max(probabilities, axis=-1), axis=-1)
-
-    # token level predictions
-    predictions = np.argmax(probabilities, axis=-1)
-    lengths = np.full([BATCH_SIZE, 1], SEQ_SIZE)
-
-    # TODO: include test for LAST_PREDICTIONS functionality
-    output_dict = {LENGTHS: lengths, PREDICTIONS: predictions, PROBABILITIES: probabilities}
-    idx2str = ["<PAD>", "<UNK>"] + [str(i) for i in range(2, VOCAB_SIZE)]
-
-    result = from_numpy_dataset(output_dict)
-    return result, idx2str, probability_expected
 
 
 @pytest.mark.parametrize("encoder", ENCODERS)
