@@ -830,7 +830,7 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
     """
 
     class SentencePieceTokenizer(torch.nn.Module):
-        def __init__(self, pretrained_model_name_or_path=None, **kwargs):
+        def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
             super().__init__()
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
