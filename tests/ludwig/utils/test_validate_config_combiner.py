@@ -6,7 +6,8 @@ from ludwig.utils.schema import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 
-def test_config_tabnet():
+@pytest.mark.parametrize("eval_batch_size", [500000, None])
+def test_config_tabnet(eval_batch_size):
     config = {
         "input_features": [
             category_feature(vocab_size=2, reduce_input="sum"),
@@ -27,7 +28,7 @@ def test_config_tabnet():
         },
         TRAINER: {
             "batch_size": 16384,
-            "eval_batch_size": 500000,
+            "eval_batch_size": eval_batch_size,
             "epochs": 1000,
             "early_stop": 20,
             "learning_rate": 0.02,

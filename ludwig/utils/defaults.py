@@ -28,6 +28,7 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
+    EVAL_BATCH_SIZE,
     HYPEROPT,
     LOSS,
     NAME,
@@ -168,6 +169,15 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
                 )
                 hparams["trainer." + k[len(substr) :]] = v
                 del hparams[k]
+
+    if TRAINER in config:
+        trainer = config[TRAINER]
+        eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
+        if eval_batch_size == 0:
+            warnings.warn(
+                "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
+            )
+            trainer[EVAL_BATCH_SIZE] = None
 
 
 def _perform_sanity_checks(config):
