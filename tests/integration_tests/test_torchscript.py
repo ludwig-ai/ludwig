@@ -27,6 +27,7 @@ import torchtext
 from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.features.text_feature import TORCHSCRIPT_ENABLED_TOKENIZERS
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
 from tests.integration_tests import utils
@@ -205,26 +206,15 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
-    sp_text_feature = text_feature(
-        vocab_size=3,
-        preprocessing={
-            "tokenizer": "sentencepiece_tokenizer",
-        },
-    )
-    clip_text_feature = text_feature(
-        vocab_size=3,
-        preprocessing={
-            "tokenizer": "clip_tokenizer",
-            "pretrained_model_name_or_path": r"http://download.pytorch.org/models/text/clip_merges.bpe",
-        },
-    )
+    torchscript_enabled_text_features = [
+        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
+        for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
+    ]
     input_features = [
         bin_str_feature,
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
-        sp_text_feature,
-        clip_text_feature,
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
@@ -236,6 +226,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         # set_feature(vocab_size=3),
         # bag_feature(vocab_size=3),
     ]
+    input_features += torchscript_enabled_text_features
     output_features = [
         bin_str_feature,
         binary_feature(),

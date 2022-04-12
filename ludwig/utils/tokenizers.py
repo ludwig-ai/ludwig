@@ -827,11 +827,7 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
     """
 
     class SentencePieceTokenizer(torch.nn.Module):
-        def __init__(
-            self,
-            pretrained_model_name_or_path=None,
-            **kwargs,
-        ):
+        def __init__(self, pretrained_model_name_or_path=None, **kwargs):
             super().__init__()
             if pretrained_model_name_or_path is None:
                 pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
@@ -843,9 +839,10 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
             return self.tokenizer(v)
 
     class CLIPTokenizer(torch.nn.Module):
-        def __init__(self, pretrained_model_name_or_path, **kwargs):
+        def __init__(self, pretrained_model_name_or_path=None, **kwargs):
             super().__init__()
-
+            if pretrained_model_name_or_path is None:
+                pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
             self.tokenizer = torchtext.transforms.CLIPTokenizer(merges_path=pretrained_model_name_or_path)
 
         def forward(self, v: Union[List[str], torch.Tensor]):

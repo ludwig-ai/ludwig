@@ -60,7 +60,7 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer"}
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer"}
 
 
 class _TextPreprocessing(torch.nn.Module):
@@ -76,7 +76,7 @@ class _TextPreprocessing(torch.nn.Module):
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
-            pretrained_model_name_or_path=metadata["preprocessing"]["pretrained_model_name_or_path"]
+            pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
         self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
         self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
