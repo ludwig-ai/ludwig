@@ -82,11 +82,12 @@ def test_sequence_output_feature():
     pass
 
 
-def test_text_preproc_module_sentencepiece_tokenizer():
+@pytest.mark.parametrize("tokenizer", ["sentencepiece_tokenizer", "clip_tokenizer"])
+def test_text_preproc_module_shape(tokenizer):
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "sentencepiece_tokenizer",
+            "tokenizer": tokenizer,
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
@@ -97,16 +98,14 @@ def test_text_preproc_module_sentencepiece_tokenizer():
 
     res = module(["hello world", "unknown", "hello world hello", "hello world hello world"])
 
-    assert torch.allclose(
-        res, torch.tensor([[1, 4, 5, 6, 0, 2], [1, 3, 3, 3, 0, 2], [1, 4, 5, 6, 4, 5], [1, 4, 5, 6, 4, 5]])
-    )
+    assert res.shape == torch.Size([4, SEQ_SIZE])
 
 
-def test_text_preproc_module_clip_tokenizer():
+def test_text_preproc_module_sentencepiece_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "clip_tokenizer",
+            "tokenizer": "sentencepiece_tokenizer",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
