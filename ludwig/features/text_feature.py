@@ -34,7 +34,6 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    SOFTMAX_CROSS_ENTROPY,
     TEXT,
     TIED,
     TOKEN_ACCURACY,
@@ -247,7 +246,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
