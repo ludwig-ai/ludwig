@@ -103,7 +103,7 @@ def test_sequence_input_feature(
 
 
 @pytest.mark.parametrize("sequence_type", [SequenceOutputFeature, TextOutputFeature])
-def test_sequence_output_feature(sequence_type: Union[SequenceInputFeature, TextInputFeature]):
+def test_sequence_output_feature(sequence_type: Union[SequenceOutputFeature, TextOutputFeature]):
     output_feature_defn = sequence_feature(
         max_len=SEQ_SIZE, max_sequence_length=SEQ_SIZE, vocab_size=VOCAB_SIZE, input_size=VOCAB_SIZE
     )
