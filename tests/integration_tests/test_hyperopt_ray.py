@@ -119,7 +119,7 @@ def run_hyperopt_executor(
     csv_filename,
     validate_output_feature=False,
     validation_metric=None,
-    use_split=False,
+    use_split=True,
 ):
     config = _get_config(sampler, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
