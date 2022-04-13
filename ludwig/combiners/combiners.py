@@ -88,6 +88,15 @@ def get_combiner_conds():
     return conds
 
 
+def get_combiner_class(combiner_type: str):
+    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
+
+    :param combiner_type: identifier that should correspond to a registered combiner
+    :type combiner_type: str
+    """
+    return get_from_registry(combiner_type, combiner_registry)
+
+
 # super class to house common properties
 class Combiner(LudwigModule, ABC):
     def __init__(self, input_features: Dict[str, "InputFeature"]):
@@ -1176,10 +1185,104 @@ class ComparatorCombiner(Combiner):
         return ComparatorCombinerConfig
 
 
-def get_combiner_class(combiner_type: str):
-    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
+@dataclass
+class ProjectAggregateCombinerConfig:
+    projection_size: int = schema.PositiveInteger(default=128)
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    output_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
+    norm: Optional[str] = schema.StringOptions(["batch", "layer"])
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = "relu"
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    residual: bool = True
 
-    :param combiner_type: identifier that should correspond to a registered combiner
-    :type combiner_type: str
-    """
-    return get_from_registry(combiner_type, combiner_registry)
+
+@register_combiner(name="project_aggregate")
+class ProjectAggregateCombiner(Combiner):
+    def __init__(self, input_features: Dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
+        super().__init__(input_features)
+        self.name = "ProjectAggregateCombiner"
+        logger.debug(f" {self.name}")
+
+        logger.debug("  Projectors")
+        self.projectors = ModuleList(
+            # regardless of rank-2 or rank-3 input, torch.prod() calculates size
+            # after flattening the encoder output tensor
+            [
+                Linear(
+                    torch.prod(torch.Tensor([*input_features[inp].output_shape])).type(torch.int32),
+                    config.projection_size,
+                )
+                for inp in input_features
+            ]
+        )
+
+        self.fc_stack = None
+
+        # todo future: this may be redundant, check
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
+            fc_layers = []
+            for i in range(config.num_fc_layers):
+                fc_layers.append({"output_size": config.output_size})
+
+        self.fc_layers = fc_layers
+        if self.fc_layers is not None:
+            logger.debug("  FCStack")
+            self.fc_stack = FCStack(
+                first_layer_input_size=self.concatenated_shape[-1],
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_output_size=config.output_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+                residual=config.residual,
+            )
+
+        if input_features and len(input_features) == 1 and self.fc_layers is None:
+            self.supports_masking = True
+
+    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+
+        # ================ Flatten ================
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+
+        # ================ Project ================
+        projected = [self.projectors[i](eo) for i, eo in enumerate(encoder_outputs)]
+        hidden = torch.stack(projected)
+        hidden = torch.permute(hidden, (1, 0, 2))  # shape [bs, num_eo, h]
+
+        # ================ Aggregate ================
+        hidden = torch.mean(hidden, dim=-1)
+
+        # ================ Fully Connected ================
+        if self.fc_stack is not None:
+            hidden = self.fc_stack(hidden)
+
+        return_data = {"combiner_output": hidden}
+
+        if len(inputs) == 1:
+            # Workaround for including additional tensors from output of input encoders for
+            # potential use in decoders, e.g. LSTM state for seq2seq.
+            # TODO(Justin): Think about how to make this communication work for multi-sequence
+            # features. Other combiners.
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != "encoder_output":
+                    return_data[key] = value
+
+        return return_data
+
+    @staticmethod
+    def get_schema_cls():
+        return ProjectAggregateCombinerConfig
