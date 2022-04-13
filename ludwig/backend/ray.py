@@ -38,7 +38,7 @@ from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
-_ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
+_ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
@@ -50,10 +50,10 @@ except ImportError as e:
     logger.warn(f"ImportError (ray.py) from horovod.ray import RayExecutor failed with error: \n\t{e}")
     RayExecutor = None
 
-if _ray19:
-    from ray.train.horovod import HorovodConfig
+if _ray112:
+    from ludwig.backend._ray112_compat import HorovodConfig
 else:
-    from ray.train.backends.horovod import HorovodConfig
+    from ray.train.horovod import HorovodConfig
 
 
 # TODO: deprecated v0.5
