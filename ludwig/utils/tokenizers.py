@@ -841,7 +841,7 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
                 raise ValueError(f"Unsupported input: {v}")
             return self.tokenizer(v)
 
-    class BPETokenizer(torch.nn.Module):
+    class _BPETokenizer(torch.nn.Module):
         """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
 
         def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
@@ -881,7 +881,7 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
         def get_vocab(self) -> List[str]:
             return self.vocab
 
-    class CLIPTokenizer(BPETokenizer):
+    class CLIPTokenizer(_BPETokenizer):
         def __init__(
             self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
         ):
@@ -896,7 +896,7 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
                 encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
             )
 
-    class GPT2BPETokenizer(BPETokenizer):
+    class GPT2BPETokenizer(_BPETokenizer):
         def __init__(
             self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
         ):
