@@ -162,16 +162,26 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
+        # TODO(1891): Remove backward compatibility hack once all models have been retrained with Ludwig after
+        # https://github.com/ludwig-ai/ludwig/pull/1859.
+        prefix = ""
+        padding_symbol_metadata_key = "padding_symbol"
+        unknown_symbol_metadata_key = "unknown_symbol"
+        if "str2idx" not in metadata:
+            prefix = "word_"
+            padding_symbol_metadata_key = "word_pad_symbol"
+            unknown_symbol_metadata_key = "word_unk_symbol"
+
         return build_sequence_matrix(
             sequences=column,
-            inverse_vocabulary=metadata["str2idx"],
-            tokenizer_type=preprocessing_parameters["tokenizer"],
-            length_limit=metadata["max_sequence_length"],
-            padding_symbol=metadata["padding_symbol"],
+            inverse_vocabulary=metadata[f"{prefix}str2idx"],
+            tokenizer_type=preprocessing_parameters[f"{prefix}tokenizer"],
+            length_limit=metadata[f"{prefix}max_sequence_length"],
+            padding_symbol=metadata[padding_symbol_metadata_key],
             padding=preprocessing_parameters["padding"],
-            unknown_symbol=metadata["unknown_symbol"],
+            unknown_symbol=metadata[unknown_symbol_metadata_key],
             lowercase=preprocessing_parameters["lowercase"],
-            tokenizer_vocab_file=preprocessing_parameters["vocab_file"],
+            tokenizer_vocab_file=preprocessing_parameters[f"{prefix}vocab_file"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             processor=backend.df_engine,
         )
