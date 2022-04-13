@@ -20,8 +20,8 @@ from typing import Any, List, Optional, Union
 import torch
 import torchtext
 
-from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
@@ -852,7 +852,7 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
         def _init_vocab(self, vocab_file: str) -> List[str]:
             """Loads the vocab from the vocab file."""
             str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
-            _, vocab_tuple = zip(*sorted([(v, k) for k, v in str2idx.items()]))
+            _, vocab_tuple = zip(*sorted((v, k) for k, v in str2idx.items()))
             return list(vocab_tuple)
 
         def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str) -> Any:
@@ -862,8 +862,8 @@ if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
             """Implements forward pass for tokenizer.
 
-            BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
-            The below implementation works around this by converting the ids back to their original string tokens.
+            BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API. The
+            below implementation works around this by converting the ids back to their original string tokens.
             """
             if isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
