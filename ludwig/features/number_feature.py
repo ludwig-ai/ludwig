@@ -269,10 +269,14 @@ class NumberFeatureMixin(BaseFeatureMixin):
         skip_save_processed_input,
     ):
         def normalize(series: pd.Series) -> pd.Series:
-            series = series.copy()
+            # retrieve request numeric transformer
             numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
-            series.update(numeric_transformer.transform(series.values))
-            return series
+
+            # transform input numeric values with specified transformer
+            transformed_values = numeric_transformer.transform(series.values)
+
+            # return transformed values with same index values as original series.
+            return pd.Series(transformed_values, index=series.index)
 
         input_series = input_df[feature_config[COLUMN]].astype(np.float32)
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_partitions(input_series, normalize)
