@@ -5,8 +5,9 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature
+from ludwig.constants import LAST_HIDDEN, LOGITS
+from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
+from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature, TextOutputFeature
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -78,9 +79,22 @@ def test_sequence_input_feature(
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
 
-# todo: add unit test for sequence output feature
-def test_sequence_output_feature():
-    pass
+@pytest.mark.parametrize("sequence_type", [SequenceOutputFeature, TextOutputFeature])
+def test_sequence_output_feature(sequence_type: Union[SequenceOutputFeature, TextOutputFeature]):
+    output_feature_defn = sequence_feature(
+        max_len=SEQ_SIZE, max_sequence_length=SEQ_SIZE, vocab_size=VOCAB_SIZE, input_size=VOCAB_SIZE
+    )
+    output_feature_obj = sequence_type(output_feature_defn, {}).to(DEVICE)
+    combiner_outputs = {}
+    combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE], dtype=torch.float32).to(
+        DEVICE
+    )
+
+    text_output = output_feature_obj(combiner_outputs, {})
+
+    assert LAST_HIDDEN in text_output
+    assert LOGITS in text_output
+    assert text_output[LOGITS].size() == torch.Size([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE])
 
 
 def test_text_preproc_module_bad_tokenizer():
