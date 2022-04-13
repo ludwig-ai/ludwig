@@ -607,6 +607,10 @@ class LudwigModel:
                     if not path_exists(weights_save_path):
                         with open_file(weights_save_path, "wb") as f:
                             torch.save(self.model.state_dict(), f)
+                    # Adds a flag to all input features indicating that the weights are saved in the checkpoint.
+                    for input_feature in self.config["input_features"]:
+                        input_feature["saved_weights_in_checkpoint"] = True
+                    self.save_config(model_dir)
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)

@@ -43,6 +43,7 @@ class ALBERTEncoder(Encoder):
         max_sequence_length,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "albert-base-v2",
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30000,
@@ -79,7 +80,7 @@ class ALBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = AlbertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -168,6 +169,7 @@ class MT5Encoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "google/mt5-base",
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 250112,
@@ -203,7 +205,7 @@ class MT5Encoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = MT5EncoderModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -290,6 +292,7 @@ class XLMRoBERTaEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "xlm-roberta-base",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = True,
         vocab_size: int = None,
@@ -311,7 +314,7 @@ class XLMRoBERTaEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = XLMRobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -385,6 +388,7 @@ class BERTEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "bert-base-uncased",
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30522,
@@ -417,7 +421,7 @@ class BERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = BertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -503,6 +507,7 @@ class XLMEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30145,
@@ -547,7 +552,7 @@ class XLMEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = XLMModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
             if trainable:
@@ -642,6 +647,7 @@ class GPTEncoder(Encoder):
         reduce_output: str = "sum",
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "openai-gpt",
+        saved_weights_in_checkpoint: bool = False,
         trainable: bool = True,
         vocab_size: int = 30522,
         n_positions: int = 40478,
@@ -669,7 +675,7 @@ class GPTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = OpenAIGPTModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -841,6 +847,7 @@ class RoBERTaEncoder(Encoder):
         max_sequence_length,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "roberta-base",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = True,
         vocab_size: int = None,
@@ -861,7 +868,7 @@ class RoBERTaEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = RobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -925,6 +932,7 @@ class TransformerXLEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "transfo-xl-wt103",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = 267735,
@@ -967,7 +975,7 @@ class TransformerXLEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = TransfoXLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1045,6 +1053,7 @@ class XLNetEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "xlnet-base-cased",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = 32000,
@@ -1088,7 +1097,7 @@ class XLNetEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = XLNetModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1172,6 +1181,7 @@ class DistilBERTEncoder(Encoder):
         self,
         max_sequence_length: int,
         pretrained_model_name_or_path: str = "distilbert-base-uncased",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         use_pretrained: bool = True,
@@ -1202,7 +1212,7 @@ class DistilBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1273,6 +1283,7 @@ class CTRLEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "ctrl",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = 246534,
@@ -1301,7 +1312,7 @@ class CTRLEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = CTRLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1372,6 +1383,7 @@ class CamemBERTEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "ctrl",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = True,
         vocab_size: int = 30522,
@@ -1404,7 +1416,7 @@ class CamemBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = CamembertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1489,6 +1501,7 @@ class T5Encoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "t5-small",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = 32128,
@@ -1517,7 +1530,7 @@ class T5Encoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = T5Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1593,6 +1606,7 @@ class FlauBERTEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool,
         pretrained_model_name_or_path: str = "flaubert/flaubert_small_cased",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = 30145,
@@ -1635,7 +1649,7 @@ class FlauBERTEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = FlaubertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1725,6 +1739,7 @@ class ELECTRAEncoder(Encoder):
         max_sequence_length: int,
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "google/electra-small-discriminator",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = True,
         vocab_size: int = 30522,
@@ -1756,7 +1771,7 @@ class ELECTRAEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = ElectraModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
@@ -1837,6 +1852,7 @@ class LongformerEncoder(Encoder):
         attention_window: Union[List[int], int] = 512,
         sep_token_id: int = 2,
         pretrained_model_name_or_path: str = "allenai/longformer-base-4096",
+        saved_weights_in_checkpoint: bool = False,
         reduce_output: Optional[str] = "cls_pooled",
         trainable: bool = True,
         num_tokens: Optional[int] = None,
@@ -1854,7 +1870,7 @@ class LongformerEncoder(Encoder):
             )
             sys.exit(-1)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             self.transformer = LongformerModel.from_pretrained(pretrained_model_name_or_path, pretrained_kwargs)
         else:

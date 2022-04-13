@@ -13,10 +13,18 @@
 # limitations under the License.
 # ==============================================================================
 import dask.dataframe as dd
+import numpy as np
 import pandas as pd
+from fsspec.config import conf
 
 from ludwig.data.cache.types import CacheableDataframe
-from ludwig.utils.data_utils import add_sequence_feature_column, figure_data_format_dataset, get_abs_path
+from ludwig.utils.data_utils import (
+    add_sequence_feature_column,
+    figure_data_format_dataset,
+    get_abs_path,
+    hash_dict,
+    use_credentials,
+)
 
 
 def test_add_sequence_feature_column():
@@ -86,3 +94,29 @@ def test_figure_data_format_dataset():
         )
         == dd.core.DataFrame
     )
+
+
+def test_hash_dict_numpy_types():
+    d = {"float32": np.float32(1)}
+    assert hash_dict(d) == b"uqtgWB"
+
+
+def test_use_credentials():
+    conf.clear()
+    with use_credentials(None):
+        assert len(conf) == 0
+
+    s3_creds = {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": "http://localhost:9000",
+                "aws_access_key_id": "test",
+                "aws_secret_access_key": "test",
+            }
+        }
+    }
+    with use_credentials(s3_creds):
+        assert len(conf) == 1
+        assert conf == s3_creds
+
+    assert len(conf) == 0

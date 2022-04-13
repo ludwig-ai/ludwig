@@ -13,21 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import base64
 import collections.abc
+import contextlib
 import csv
 import functools
+import hashlib
 import json
 import logging
+import os
 import os.path
 import pickle
 import random
 import re
+import tempfile
 from itertools import islice
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import yaml
+from fsspec.config import conf, set_conf_files
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
@@ -271,6 +277,14 @@ def load_json(data_fp):
 def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, "w") as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
+
+
+def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
+    s = json.dumps(d, cls=NumpyEncoder, sort_keys=True, ensure_ascii=True)
+    h = hashlib.md5(s.encode())
+    d = h.digest()
+    b = base64.b64encode(d, altchars=b"__")
+    return b[:max_length]
 
 
 def to_json_dict(d):
@@ -833,3 +847,27 @@ def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
         return data_reader(dataset, df_lib)
     else:
         ValueError(f"{data_format} format is not supported")
+
+
+@contextlib.contextmanager
+def use_credentials(creds):
+    if creds is None:
+        with contextlib.nullcontext():
+            yield
+            return
+
+    # https://filesystem-spec.readthedocs.io/en/latest/features.html#configuration
+    # This allows us to avoid having to plumb the `storage_options` kwargs through
+    # every remote FS call in Ludwig. The downside is that this implementation is
+    # not threadsafe, but in practice we should not be multithreading this anyway.
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, "conf.json")
+        with open(fname, "w") as f:
+            json.dump(creds, f)
+
+        conf.clear()
+        set_conf_files(tmpdir, conf)
+        try:
+            yield
+        finally:
+            conf.clear()

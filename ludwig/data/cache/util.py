@@ -1,7 +1,7 @@
 import ludwig
 from ludwig.constants import NAME, PREPROCESSING, TYPE
 from ludwig.data.cache.types import CacheableDataset
-from ludwig.utils.misc_utils import hash_dict
+from ludwig.utils.data_utils import hash_dict
 
 
 def calculate_checksum(original_dataset: CacheableDataset, config: dict):

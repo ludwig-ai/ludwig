@@ -2,7 +2,17 @@ import copy
 
 import pytest
 
-from ludwig.constants import CATEGORY, DROP_ROW, FILL_WITH_MODE, HYPEROPT, NUMBER, PREPROCESSING, TRAINER, TYPE
+from ludwig.constants import (
+    CATEGORY,
+    DROP_ROW,
+    EVAL_BATCH_SIZE,
+    FILL_WITH_MODE,
+    HYPEROPT,
+    NUMBER,
+    PREPROCESSING,
+    TRAINER,
+    TYPE,
+)
 from ludwig.data.preprocessing import merge_preprocessing
 from ludwig.utils.defaults import default_training_params, merge_with_defaults
 from tests.integration_tests.utils import (
@@ -115,6 +125,7 @@ def test_deprecated_field_aliases():
         "output_features": [{"name": "num_out", "type": "number"}],
         "training": {
             "epochs": 2,
+            "eval_batch_size": 0,
         },
         "hyperopt": {
             "parameters": {
@@ -135,6 +146,7 @@ def test_deprecated_field_aliases():
 
     assert "training" not in merged_config
     assert merged_config[TRAINER]["epochs"] == 2
+    assert merged_config[TRAINER][EVAL_BATCH_SIZE] is None
 
     hparams = merged_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
