@@ -11,6 +11,7 @@
         "ludwig.models.trainer.TrainerConfig.early_stop",
         "ludwig.models.trainer.TrainerConfig.steps_per_checkpoint",
         "ludwig.models.trainer.TrainerConfig.checkpoints_per_epoch",
+        "ludwig.models.trainer.TrainerConfig.evaluate_training_set",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
@@ -111,6 +112,12 @@
                         "default": "0",
                         "kind": "POSITIONAL_OR_KEYWORD",
                         "name": "checkpoints_per_epoch"
+                    },
+                    {
+                        "annotation": "bool",
+                        "default": "True",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "evaluate_training_set"
                     },
                     {
                         "annotation": "float",
@@ -286,6 +293,13 @@
             "relative_file_path": "ludwig/models/trainer.py",
             "type": "Union[NoneType, int, str]"
         },
+        "ludwig.models.trainer.TrainerConfig.evaluate_training_set": {
+            "docstring": "Whether to include the entire training set during evaluation (default: True).",
+            "name": "evaluate_training_set",
+            "path": "ludwig.models.trainer.TrainerConfig.evaluate_training_set",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "bool"
+        },
         "ludwig.models.trainer.TrainerConfig.gradient_clipping": {
             "docstring": "Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.\n(default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)",
             "name": "gradient_clipping",
@@ -350,7 +364,7 @@
             "type": "float"
         },
         "ludwig.models.trainer.TrainerConfig.optimizer": {
-            "docstring": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`).",
+            "docstring": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`).",
             "name": "optimizer",
             "path": "ludwig.models.trainer.TrainerConfig.optimizer",
             "relative_file_path": "ludwig/models/trainer.py",

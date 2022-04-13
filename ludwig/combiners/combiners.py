@@ -1196,7 +1196,7 @@ class ProjectAggregateCombinerConfig:
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
     norm: Optional[str] = schema.StringOptions(["batch", "layer"])
     norm_params: Optional[dict] = schema.Dict()
-    activation: str = "relu"
+    activation: str = schema.ActivationOptions(default="relu")
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
     residual: bool = True
 
