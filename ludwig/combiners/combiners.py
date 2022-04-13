@@ -1186,7 +1186,7 @@ class ComparatorCombiner(Combiner):
 
 
 @dataclass
-class ProjectAggregateCombinerConfig:
+class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     projection_size: int = schema.PositiveInteger(default=128)
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
