@@ -13,6 +13,7 @@ input_features:
 ```
 """
 
+from ast import Import
 import re
 from abc import abstractmethod
 import logging
@@ -854,5 +855,11 @@ try:
                 "sentencepiece_tokenizer": SentencePieceTokenizer,
             }
         )
+    else:
+        raise ImportError
+
 except ImportError:
-    logger.warn('torchtext is not installed, so the "sentencepiece_tokenizer" tokenizer is not available.')
+    logger.warning(
+        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
+        f"{TORCHSCRIPT_ENABLED_TOKENIZERS}"
+    )
