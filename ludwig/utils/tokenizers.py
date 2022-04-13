@@ -13,9 +13,9 @@ input_features:
 ```
 """
 
-from abc import abstractmethod
 import logging
 import re
+from abc import abstractmethod
 from typing import List, Optional, Union
 
 import torch
