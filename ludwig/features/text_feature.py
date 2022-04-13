@@ -16,7 +16,6 @@
 import logging
 from typing import Any, Dict, List, Union
 
-import numpy as np
 import torch
 
 from ludwig.constants import (
@@ -34,7 +33,6 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    SOFTMAX_CROSS_ENTROPY,
     TEXT,
     TIED,
     TOKEN_ACCURACY,
@@ -42,6 +40,7 @@ from ludwig.constants import (
 )
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.feature_utils import compute_sequence_probability
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
@@ -322,7 +321,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
@@ -408,17 +407,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
 
-            def compute_prob(probs):
-                if isinstance(probs, (list, tuple, np.ndarray)):
-                    for i in range(len(probs)):
-                        probs[i] = np.max(probs[i])
-                    return np.prod(probs)
-                else:
-                    return np.prod(probs, axis=-1)
-
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],
-                compute_prob,
+                compute_sequence_probability,
             )
 
             # commenting probabilities out because usually it is huge:
