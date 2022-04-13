@@ -1,27 +1,43 @@
+# https://github.com/amogkam/ray/blob/ffee5f98e4e2d0efa35b870d2fbf56aa5d192790/python/ray/train/horovod.py
+# https://github.com/ray-project/ray/pull/22564
+
+import logging
 import os
 from dataclasses import dataclass
-from typing import Optional, Set, TypeVar
+from typing import Optional, Set
 
 import ray
 from horovod.ray.runner import Coordinator
 from horovod.ray.utils import detect_nics, nics_to_env_var
 from horovod.runner.common.util import secret, timeout
-from ray.util.sgd.v2.backends.backend import Backend, BackendConfig
-from ray.util.sgd.v2.utils import update_env_vars
-from ray.util.sgd.v2.worker_group import Worker, WorkerGroup
+from ray.train.backend import Backend, BackendConfig
+from ray.train.utils import update_env_vars
+from ray.train.worker_group import Worker, WorkerGroup
+from ray.util import PublicAPI
 
-T = TypeVar("T")
+logger = logging.getLogger(__name__)
 
 
+@PublicAPI(stability="beta")
 @dataclass
 class HorovodConfig(BackendConfig):
     """Configurations for Horovod setup.
 
     See https://github.com/horovod/horovod/blob/master/horovod/runner/common/util/settings.py # noqa: E501
+
     Args:
         nics (Optional[Set[str]): Network interfaces that can be used for
             communication.
         verbose (int): Horovod logging verbosity.
+        key (Optional[str]): Secret used for communication between workers.
+        ssh_port (Optional[int]): Port for SSH server running on worker nodes.
+        ssh_identity_file (Optional[str]): Path to the identity file to
+            ssh into different hosts on the cluster.
+        ssh_str (Optional[str]): CAUTION WHEN USING THIS. Private key
+            file contents. Writes the private key to ssh_identity_file.
+        timeout_s (int): Timeout parameter for Gloo rendezvous.
+        placement_group_timeout_s (int): Timeout parameter for Ray
+            Placement Group creation. Currently unused.
     """
 
     nics: Optional[Set[str]] = None
@@ -44,9 +60,6 @@ class HorovodConfig(BackendConfig):
         )
 
     def __post_init__(self):
-        if Coordinator is None:
-            raise ValueError("`horovod[ray]` is not installed. " "Please install 'horovod[ray]' to use this backend.")
-
         if self.ssh_str and not os.path.exists(self.ssh_identity_file):
             with open(self.ssh_identity_file, "w") as f:
                 os.chmod(self.ssh_identity_file, 0o600)
@@ -67,6 +80,11 @@ def init_env_vars(world_rank: int, world_size: int, node_id: str):
     os.environ["HOROVOD_SIZE"] = str(world_size)
 
 
+# TODO(tgaddair): temporary workaround for Horovod's worker discovery logic,
+#  which requires passing in an extra parameter as part of the RayExecutor
+#  API. This will be removed in the future as we migrate more of the
+#  RayExecutor utils into Ray Train.
+#  See: https://github.com/horovod/horovod/blob/v0.23.0/horovod/ray/driver_service.py#L9 # noqa: E501
 @dataclass
 class HorovodWorkerWrapper:
     w: Worker
@@ -118,9 +136,19 @@ class HorovodBackend(Backend):
         ray.get(setup_futures)
 
         coordinator_envs = self.coordinator.establish_rendezvous()
-        node_workers = [HorovodWorkerWrapper(w) for w in worker_group.workers]
 
-        nics = detect_nics(backend_config, all_host_names=list(self.coordinator.hostnames), node_workers=node_workers)
+        # Get one worker from each host/node.
+        node_worker_indexes = [node_ids.index(node_id) for node_id in set(node_ids)]
+        node_workers = [
+            HorovodWorkerWrapper(worker_group.workers[worker_index]) for worker_index in node_worker_indexes
+        ]
+        assert len(node_workers) == len(self.coordinator.hostnames)
+
+        nics = detect_nics(
+            backend_config,
+            all_host_names=list(self.coordinator.hostnames),
+            node_workers=node_workers,
+        )
         coordinator_envs.update(nics_to_env_var(nics))
 
         worker_group.execute(update_env_vars, coordinator_envs)
