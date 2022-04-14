@@ -1070,7 +1070,7 @@ def build_dataset(
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
         logger.debug(f"sample {sample_ratio} of data")
-        dataset_df = df_engine.sample(dataset_df, sample_ratio)
+        dataset_df = dataset_df.sample(frac=sample_ratio)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation

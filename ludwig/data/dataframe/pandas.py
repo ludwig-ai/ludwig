@@ -36,9 +36,6 @@ class PandasEngine(DataFrameEngine):
     def compute(self, data):
         return data
 
-    def sample(self, data: pd.DataFrame, frac: float) -> pd.DataFrame:
-        return data.sample(frac=frac)
-
     def concat(self, dfs):
         return pd.concat(dfs)
 
