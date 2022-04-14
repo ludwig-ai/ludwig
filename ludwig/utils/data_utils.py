@@ -27,6 +27,7 @@ import pickle
 import random
 import re
 import tempfile
+import threading
 from itertools import islice
 from typing import Dict, List, Tuple, Union
 
@@ -38,7 +39,7 @@ from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
 from ludwig.data.cache.types import CacheableDataset
-from ludwig.utils.fs_utils import download_h5, file_lock, open_file, upload_h5
+from ludwig.utils.fs_utils import download_h5, open_file, upload_h5
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -99,9 +100,9 @@ CACHEABLE_FORMATS = set.union(
 PANDAS_DF = pd
 
 
-# Set the lock path once for the entire interpreter as we can only have one set
+# Lock over the entire interpreter as we can only have one set
 # of credentials scoped to the interpreter at once.
-GLOBAL_LOCK_PATH = tempfile.mkdtemp()
+GLOBAL_CRED_LOCK = threading.Lock()
 
 
 def get_split_path(dataset_fp):
@@ -865,7 +866,7 @@ def use_credentials(creds):
     # This allows us to avoid having to plumb the `storage_options` kwargs through
     # every remote FS call in Ludwig. This implementation is restricted to one thread
     # in the process acquiring the lock at once.
-    with file_lock(GLOBAL_LOCK_PATH, lock_file=".lock_use_credentials"):
+    with GLOBAL_CRED_LOCK:
         with tempfile.TemporaryDirectory() as tmpdir:
             fname = os.path.join(tmpdir, "conf.json")
             with open(fname, "w") as f:
