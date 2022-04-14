@@ -36,7 +36,7 @@ jobs:
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 1.12.0rc1
+            ray-version: 1.12.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
