@@ -105,8 +105,8 @@ def run_scale_lr(config, data_csv, num_workers, outdir):
     return callback.lr
 
 
-@pytest.mark.parametrize("learning_rate_scale_up, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
-def test_scale_lr(learning_rate_scale_up, expected_lr, tmpdir, ray_test_cluster):
+@pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
+def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_test_cluster):
     base_lr = 1.0
     num_workers = 4
 
@@ -125,7 +125,7 @@ def test_scale_lr(learning_rate_scale_up, expected_lr, tmpdir, ray_test_cluster)
         TRAINER: {
             "epochs": 2,
             "learning_rate": base_lr,
-            "learning_rate_scale_up": learning_rate_scale_up,
+            "learning_rate_scaling": learning_rate_scaling,
         },
     }
 

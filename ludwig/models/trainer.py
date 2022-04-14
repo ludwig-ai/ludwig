@@ -218,7 +218,7 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
     """Number of epochs to warmup the learning rate for (default: 1.0)."""
 
-    learning_rate_scale_up: str = schema.StringOptions(["constant", "sqrt", "linear"], default="linear")
+    learning_rate_scaling: str = schema.StringOptions(["constant", "sqrt", "linear"], default="linear")
     """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
        the learning rate is scaled linearly with the number of workers to reflect the proportion by which
        the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
@@ -336,7 +336,7 @@ class Trainer(BaseTrainer):
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
-        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scale_up]
+        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # TODO(Justin): Move to config validation when that's ready.
         if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
