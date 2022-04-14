@@ -218,10 +218,10 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         number_feature(),
         category_feature(vocab_size=3),
         sp_text_feature,
+        image_feature(image_dest_folder),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
-        image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
         # timeseries_feature(),
         # date_feature(),

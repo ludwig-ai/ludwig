@@ -89,12 +89,12 @@ class _ImagePreprocessing(torch.nn.Module):
 
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
         """
-        if isinstance(v, list):
-            if isinstance(v[0], torch.Tensor):
-                imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
-                imgs_stacked = torch.stack(imgs)
-            else:
-                raise ValueError(f"Unsupported input: {v}")
+        if torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
+            imgs_stacked = torch.stack(imgs)
         else:
             imgs_stacked = v
         _, num_channels, height, width = imgs_stacked.shape

@@ -83,10 +83,8 @@ class _TextPreprocessing(torch.nn.Module):
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
         """Takes a list of strings and returns a tensor of token ids."""
-        if isinstance(v, torch.Tensor) or (isinstance(v, list) and isinstance(v[0], torch.Tensor)):
+        if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
-        # refines type of v from Union[...] to List[str]
-        assert torch.jit.isinstance(v, List[str])
 
         if self.lowercase:
             sequences = [sequence.lower() for sequence in v]
