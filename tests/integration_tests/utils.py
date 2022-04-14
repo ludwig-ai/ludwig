@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import multiprocessing
 import os
@@ -27,6 +28,7 @@ from typing import List
 
 import cloudpickle
 import pandas as pd
+import ray
 import torch
 
 from ludwig.api import LudwigModel
@@ -65,6 +67,19 @@ HF_ENCODERS = [
     "electra",
     "mt5",
 ]
+
+
+@contextlib.contextmanager
+def ray_cluster():
+    ray.init(
+        num_cpus=2,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield
+    finally:
+        ray.shutdown()
 
 
 class LocalTestBackend(LocalBackend):

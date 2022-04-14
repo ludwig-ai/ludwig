@@ -2,10 +2,9 @@ import contextlib
 import os
 
 import pytest
-import ray
 
 from ludwig.api import LudwigModel
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
+from tests.integration_tests.utils import category_feature, generate_data, ray_cluster, sequence_feature
 
 
 @contextlib.contextmanager
@@ -16,16 +15,9 @@ def init_backend(backend: str):
             return
 
     if backend == "ray":
-        ray.init(
-            num_cpus=2,
-            include_dashboard=False,
-            object_store_memory=150 * 1024 * 1024,
-        )
-        try:
+        with ray_cluster():
             yield
             return
-        finally:
-            ray.shutdown()
 
     raise ValueError(f"Unrecognized backend: {backend}")
 
