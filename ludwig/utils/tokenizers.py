@@ -13,15 +13,18 @@ input_features:
 ```
 """
 
+import logging
 import re
 from abc import abstractmethod
 from typing import Any, List, Optional, Union
 
 import torch
-import torchtext
 
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 from ludwig.utils.data_utils import load_json
+
+logger = logging.getLogger(__name__)
+
 
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
@@ -822,99 +825,114 @@ tokenizer_registry = {
     "hf_tokenizer": HFTokenizer,
 }
 
+try:
+    import torchtext
 
-if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
-    """Torchscript-enabled tokenizers.
+    if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
+        """Torchscript-enabled tokenizers.
 
-    Only available with torchtext>=0.12.0.
-    """
+        Only available with torchtext>=0.12.0.
+        """
 
-    class SentencePieceTokenizer(torch.nn.Module):
-        def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
-            super().__init__()
-            if pretrained_model_name_or_path is None:
-                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
-            self.tokenizer = torchtext.transforms.SentencePieceTokenizer(sp_model_path=pretrained_model_name_or_path)
+        class SentencePieceTokenizer(torch.nn.Module):
+            def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+                super().__init__()
+                if pretrained_model_name_or_path is None:
+                    pretrained_model_name_or_path = (
+                        "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
+                    )
+                self.tokenizer = torchtext.transforms.SentencePieceTokenizer(
+                    sp_model_path=pretrained_model_name_or_path
+                )
 
-        def forward(self, v: Union[str, List[str], torch.Tensor]):
-            if isinstance(v, torch.Tensor):
-                raise ValueError(f"Unsupported input: {v}")
-            return self.tokenizer(v)
+            def forward(self, v: Union[str, List[str], torch.Tensor]):
+                if isinstance(v, torch.Tensor):
+                    raise ValueError(f"Unsupported input: {v}")
+                return self.tokenizer(v)
 
-    class _BPETokenizer(torch.nn.Module):
-        """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
+        class _BPETokenizer(torch.nn.Module):
+            """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
 
-        def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
-            super().__init__()
-            self.vocab = self._init_vocab(vocab_file)
-            self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
+            def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
+                super().__init__()
+                self.vocab = self._init_vocab(vocab_file)
+                self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
 
-        def _init_vocab(self, vocab_file: str) -> List[str]:
-            """Loads the vocab from the vocab file."""
-            str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
-            _, vocab_tuple = zip(*sorted([(v, k) for k, v in str2idx.items()]))
-            return list(vocab_tuple)
+            def _init_vocab(self, vocab_file: str) -> List[str]:
+                """Loads the vocab from the vocab file."""
+                str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
+                _, vocab_tuple = zip(*sorted([(v, k) for k, v in str2idx.items()]))
+                return list(vocab_tuple)
 
-        def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str) -> Any:
-            """Initializes and returns the tokenizer."""
-            raise NotImplementedError
+            def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str) -> Any:
+                """Initializes and returns the tokenizer."""
+                raise NotImplementedError
 
-        def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
-            """Implements forward pass for tokenizer.
+            def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+                """Implements forward pass for tokenizer.
 
-            BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
-            The below implementation works around this by converting the ids back to their original string tokens.
-            """
-            if isinstance(v, torch.Tensor):
-                raise ValueError(f"Unsupported input: {v}")
-            elif isinstance(v, str):
-                inputs = [v]
-            else:
-                inputs = v
+                BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
+                The below implementation works around this by converting the ids back to their original string tokens.
+                """
+                if isinstance(v, torch.Tensor):
+                    raise ValueError(f"Unsupported input: {v}")
+                elif isinstance(v, str):
+                    inputs = [v]
+                else:
+                    inputs = v
 
-            token_ids = self.tokenizer(inputs)
-            assert torch.jit.isinstance(token_ids, List[List[str]])
+                token_ids = self.tokenizer(inputs)
+                assert torch.jit.isinstance(token_ids, List[List[str]])
 
-            tokens = [[self.vocab[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
-            return tokens[0] if isinstance(v, str) else tokens
+                tokens = [[self.vocab[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
+                return tokens[0] if isinstance(v, str) else tokens
 
-        def get_vocab(self) -> List[str]:
-            return self.vocab
+            def get_vocab(self) -> List[str]:
+                return self.vocab
 
-    class CLIPTokenizer(_BPETokenizer):
-        def __init__(
-            self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
-        ):
-            if pretrained_model_name_or_path is None:
-                pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
-            if vocab_file is None:
-                vocab_file = "http://download.pytorch.org/models/text/clip_encoder.json"
-            super().__init__(pretrained_model_name_or_path, vocab_file)
+        class CLIPTokenizer(_BPETokenizer):
+            def __init__(
+                self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
+            ):
+                if pretrained_model_name_or_path is None:
+                    pretrained_model_name_or_path = "http://download.pytorch.org/models/text/clip_merges.bpe"
+                if vocab_file is None:
+                    vocab_file = "http://download.pytorch.org/models/text/clip_encoder.json"
+                super().__init__(pretrained_model_name_or_path, vocab_file)
 
-        def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
-            return torchtext.transforms.CLIPTokenizer(
-                encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
-            )
+            def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
+                return torchtext.transforms.CLIPTokenizer(
+                    encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
+                )
 
-    class GPT2BPETokenizer(_BPETokenizer):
-        def __init__(
-            self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
-        ):
-            if pretrained_model_name_or_path is None:
-                pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
-            if vocab_file is None:
-                vocab_file = "https://download.pytorch.org/models/text/gpt2_bpe_encoder.json"
-            super().__init__(pretrained_model_name_or_path, vocab_file)
+        class GPT2BPETokenizer(_BPETokenizer):
+            def __init__(
+                self, pretrained_model_name_or_path: Optional[str] = None, vocab_file: Optional[str] = None, **kwargs
+            ):
+                if pretrained_model_name_or_path is None:
+                    pretrained_model_name_or_path = "https://download.pytorch.org/models/text/gpt2_bpe_vocab.bpe"
+                if vocab_file is None:
+                    vocab_file = "https://download.pytorch.org/models/text/gpt2_bpe_encoder.json"
+                super().__init__(pretrained_model_name_or_path, vocab_file)
 
-        def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
-            return torchtext.transforms.GPT2BPETokenizer(
-                encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
-            )
+            def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
+                return torchtext.transforms.GPT2BPETokenizer(
+                    encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
+                )
 
-    tokenizer_registry.update(
-        {
-            "sentencepiece_tokenizer": SentencePieceTokenizer,
-            "clip_tokenizer": CLIPTokenizer,
-            "gpt2bpe_tokenizer": GPT2BPETokenizer,
-        }
+        tokenizer_registry.update(
+            {
+                "sentencepiece_tokenizer": SentencePieceTokenizer,
+                "clip_tokenizer": CLIPTokenizer,
+                "gpt2bpe_tokenizer": GPT2BPETokenizer,
+            }
+        )
+
+    else:
+        raise ImportError
+
+except ImportError:
+    logger.warning(
+        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
+        f"{TORCHSCRIPT_ENABLED_TOKENIZERS}"
     )

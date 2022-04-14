@@ -268,11 +268,24 @@ class NumberFeatureMixin(BaseFeatureMixin):
         backend,
         skip_save_processed_input,
     ):
+        # Had to replace normalize() function due to issue #1911
+        # this comment is to provide context for the change.
+        # original code
+        # def normalize(series: pd.Series) -> pd.Series:
+        #     series = series.copy()
+        #     numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
+        #     series.update(numeric_transformer.transform(series.values))
+        #     return series
+
         def normalize(series: pd.Series) -> pd.Series:
-            series = series.copy()
+            # retrieve request numeric transformer
             numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
-            series.update(numeric_transformer.transform(series.values))
-            return series
+
+            # transform input numeric values with specified transformer
+            transformed_values = numeric_transformer.transform(series.values)
+
+            # return transformed values with same index values as original series.
+            return pd.Series(transformed_values, index=series.index)
 
         input_series = input_df[feature_config[COLUMN]].astype(np.float32)
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_partitions(input_series, normalize)
