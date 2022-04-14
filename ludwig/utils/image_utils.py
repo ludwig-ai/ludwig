@@ -173,6 +173,25 @@ def pad(
     return F.pad(img, padding=padding, padding_mode="edge")
 
 
+def pad_torchscript(img: torch.Tensor, size: Union[int, Tuple[int, int]]) -> torch.Tensor:
+    """torchscript-compatible version of image_utils.pad
+
+    Args:
+        img (torch.Tensor): image with shape [batch_size, num_channels, height, width] to pad
+        size (Union[int, Tuple[int, int]]): size to pad to. If int, pads to square image of that size."""
+    if torch.jit.isinstance(size, int):
+        new_size = torch.tensor((size, size))
+    else:
+        new_size = torch.tensor(size)
+
+    old_size = torch.tensor(img.shape[2:])
+    pad_size = (new_size - old_size) / 2
+    padding = torch.cat((torch.floor(pad_size), torch.ceil(pad_size)))
+    padding[padding < 0] = 0
+    padding = tuple(padding.to(dtype=torch.int32).tolist())
+    return F.pad(img, padding=padding, padding_mode="edge")
+
+
 def crop(
     img: torch.Tensor,
     size: Union[int, Tuple[int]],

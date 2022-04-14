@@ -4,6 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
+from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
 from ludwig.models.ecd import build_single_input
 
@@ -126,13 +127,14 @@ def test_image_preproc_module_bad_num_channels():
         module(torch.rand(2, 3, 10, 10))
 
 
+@pytest.mark.parametrize("resize_method", [INTERPOLATE, CROP_OR_PAD])
 @pytest.mark.parametrize(["num_channels", "num_channels_expected"], [(1, 3), (3, 1)])
-def test_image_preproc_module_list_of_tensors(num_channels, num_channels_expected):
+def test_image_preproc_module_list_of_tensors(resize_method, num_channels, num_channels_expected):
     metadata = {
         "preprocessing": {
             "missing_value_strategy": "backfill",
             "in_memory": True,
-            "resize_method": "interpolate",
+            "resize_method": resize_method,
             "scaling": "pixel_normalization",
             "num_processes": 1,
             "infer_image_num_channels": True,
@@ -153,13 +155,14 @@ def test_image_preproc_module_list_of_tensors(num_channels, num_channels_expecte
     assert res.shape == torch.Size((2, num_channels_expected, 12, 12))
 
 
+@pytest.mark.parametrize("resize_method", [INTERPOLATE, CROP_OR_PAD])
 @pytest.mark.parametrize(["num_channels", "num_channels_expected"], [(1, 3), (3, 1)])
-def test_image_preproc_module_tensor(num_channels, num_channels_expected):
+def test_image_preproc_module_tensor(resize_method, num_channels, num_channels_expected):
     metadata = {
         "preprocessing": {
             "missing_value_strategy": "backfill",
             "in_memory": True,
-            "resize_method": "interpolate",
+            "resize_method": resize_method,
             "scaling": "pixel_normalization",
             "num_processes": 1,
             "infer_image_num_channels": True,

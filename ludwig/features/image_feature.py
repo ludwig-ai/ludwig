@@ -28,12 +28,14 @@ from ludwig.constants import (
     BACKFILL,
     CHECKSUM,
     COLUMN,
+    CROP_OR_PAD,
     HEIGHT,
     IMAGE,
     INFER_IMAGE_DIMENSIONS,
     INFER_IMAGE_MAX_HEIGHT,
     INFER_IMAGE_MAX_WIDTH,
     INFER_IMAGE_SAMPLE_SIZE,
+    INTERPOLATE,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     NUM_CHANNELS,
@@ -83,6 +85,42 @@ class _ImagePreprocessing(torch.nn.Module):
         self.resize_method = metadata["preprocessing"]["resize_method"]
         # TODO(geoffrey): update ImageInputFeature.forward to use scaling registry
         self.scaling_fn = image_scaling_registry[metadata["preprocessing"]["scaling"]]
+        self.constants = {
+            "CROP_OR_PAD": CROP_OR_PAD,
+            "INTERPOLATE": INTERPOLATE,
+        }
+
+    def torchscript_pad(self, img: torch.Tensor, new_size: Tuple[int, int]) -> torch.Tensor:
+        """torchscript-compatible implementation of image_utils.pad"""
+        new_size = torch.tensor(new_size)
+        old_size = torch.tensor(img.shape[2:])
+        pad_size = (new_size - old_size) / 2
+        padding = torch.cat((torch.floor(pad_size), torch.ceil(pad_size)))
+        padding[padding < 0] = 0
+        padding = tuple(padding.to(dtype=torch.int32).tolist())
+        return torchvision.transforms.functional.pad(img, padding=padding, padding_mode="edge")
+
+    def torchscript_crop(self, img: torch.Tensor, new_size: Tuple[int, int]) -> torch.Tensor:
+        return torchvision.transforms.functional.center_crop(img, output_size=new_size)
+
+    def torchscript_crop_or_pad(self, img: torch.Tensor, new_size: Tuple[int, int]) -> torch.Tensor:
+        if list(new_size) == list(img.shape[1:]):
+            return img
+        img = self.pad(img, new_size)
+        img = self.crop(img, new_size)
+        return img
+
+    def torchscript_resize_image(
+        self, img: torch.Tensor, new_size: Tuple[int, int], resize_method: str
+    ) -> torch.Tensor:
+        new_size = list(new_size)
+        if list(img.shape[:1]) != new_size:
+            if resize_method == self.constants["CROP_OR_PAD"]:
+                return self.crop_or_pad(img, new_size)
+            elif resize_method == self.constants["INTERPOLATE"]:
+                return torchvision.transforms.functional.resize(img, new_size)
+            raise ValueError(f"Invalid image resize method: {resize_method}")
+        return img
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]) -> torch.Tensor:
         """Takes a list of images and applies the preprocessing specified in the metadata.
@@ -93,7 +131,7 @@ class _ImagePreprocessing(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         if torch.jit.isinstance(v, List[torch.Tensor]):
-            imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
+            imgs = [self.resize_image(img, (self.height, self.width), self.resize_method) for img in v]
             imgs_stacked = torch.stack(imgs)
         else:
             imgs_stacked = v
@@ -101,12 +139,12 @@ class _ImagePreprocessing(torch.nn.Module):
 
         # Ensure images are the size expected by the model
         if height != self.height or width != self.width:
-            imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
+            imgs_stacked = self.resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
 
         # Ensures images have the number of channels expected by the model
         if num_channels != self.num_channels:
             if self.num_channels == 1:
-                imgs_stacked = grayscale(imgs_stacked)
+                imgs_stacked = torchvision.transforms.functional.rgb_to_grayscale(imgs_stacked)
             elif num_channels < self.num_channels:
                 imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, self.num_channels - num_channels])
             else:
