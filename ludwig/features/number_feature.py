@@ -260,14 +260,23 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config,
-        input_df,
-        proc_df,
-        metadata,
-        preprocessing_parameters,
-        backend,
-        skip_save_processed_input,
+            feature_config,
+            input_df,
+            proc_df,
+            metadata,
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input,
     ):
+        # Had to replace normalize() function due to issue #1911
+        # this comment is to provide context for the change.
+        # original code
+        # def normalize(series: pd.Series) -> pd.Series:
+        #     series = series.copy()
+        #     numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
+        #     series.update(numeric_transformer.transform(series.values))
+        #     return series
+
         def normalize(series: pd.Series) -> pd.Series:
             # retrieve request numeric transformer
             numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
