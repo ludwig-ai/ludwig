@@ -861,7 +861,7 @@ try:
             def _init_vocab(self, vocab_file: str) -> List[str]:
                 """Loads the vocab from the vocab file."""
                 str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
-                _, vocab_tuple = zip(*sorted([(v, k) for k, v in str2idx.items()]))
+                _, vocab_tuple = zip(*sorted((v, k) for k, v in str2idx.items()))
                 return list(vocab_tuple)
 
             def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str) -> Any:
