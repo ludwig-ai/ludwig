@@ -77,7 +77,7 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
         positive_label = 1
 
     # convert to 0/1 representation and return
-    return ground_truth.astype(int)
+    return ground_truth.astype(int), positive_label
 
 
 def _vectorize_ground_truth(
@@ -2971,7 +2971,8 @@ def binary_threshold_vs_metric(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        ground_truth = _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label)
+        ground_truth, positive_label = _convert_ground_truth(ground_truth, feature_metadata,
+                                                             ground_truth_apply_idx, positive_label)
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
@@ -3078,7 +3079,8 @@ def roc_curves(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        ground_truth = _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label)
+        ground_truth, positive_label = _convert_ground_truth(ground_truth, feature_metadata,
+                                                             ground_truth_apply_idx, positive_label)
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
