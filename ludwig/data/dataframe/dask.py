@@ -69,6 +69,9 @@ class DaskEngine(DataFrameEngine):
     def compute(self, data):
         return data.compute()
 
+    def sample(self, data: dd.DataFrame, frac: float) -> dd.DataFrame:
+        return data.sample(frac=frac)
+
     def from_pandas(self, df):
         parallelism = self._parallelism or 1
         return dd.from_pandas(df, npartitions=parallelism).reset_index()

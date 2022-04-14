@@ -35,6 +35,10 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def sample(self, data, frac):
+        raise NotImplementedError()
+
+    @abstractmethod
     def from_pandas(self, df):
         raise NotImplementedError()
 
