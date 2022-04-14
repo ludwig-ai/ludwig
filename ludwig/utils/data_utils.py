@@ -27,6 +27,7 @@ import pickle
 import random
 import re
 import tempfile
+import threading
 from itertools import islice
 from typing import Dict, List, Tuple, Union
 
@@ -97,6 +98,11 @@ CACHEABLE_FORMATS = set.union(
 )
 
 PANDAS_DF = pd
+
+
+# Lock over the entire interpreter as we can only have one set
+# of credentials scoped to the interpreter at once.
+GLOBAL_CRED_LOCK = threading.Lock()
 
 
 def get_split_path(dataset_fp):
@@ -858,16 +864,17 @@ def use_credentials(creds):
 
     # https://filesystem-spec.readthedocs.io/en/latest/features.html#configuration
     # This allows us to avoid having to plumb the `storage_options` kwargs through
-    # every remote FS call in Ludwig. The downside is that this implementation is
-    # not threadsafe, but in practice we should not be multithreading this anyway.
-    with tempfile.TemporaryDirectory() as tmpdir:
-        fname = os.path.join(tmpdir, "conf.json")
-        with open(fname, "w") as f:
-            json.dump(creds, f)
+    # every remote FS call in Ludwig. This implementation is restricted to one thread
+    # in the process acquiring the lock at once.
+    with GLOBAL_CRED_LOCK:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname = os.path.join(tmpdir, "conf.json")
+            with open(fname, "w") as f:
+                json.dump(creds, f)
 
-        conf.clear()
-        set_conf_files(tmpdir, conf)
-        try:
-            yield
-        finally:
             conf.clear()
+            set_conf_files(tmpdir, conf)
+            try:
+                yield
+            finally:
+                conf.clear()
