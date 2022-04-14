@@ -1,8 +1,13 @@
 import os
 import shutil
 import tempfile
+from unittest import mock
+
+import pytest
 
 from ludwig.api import LudwigModel
+from ludwig.backend.horovod import HorovodBackend
+from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
 
@@ -60,3 +65,51 @@ def test_tune_batch_size_and_lr(tmpdir):
 
         # loaded model should retain the tuned params
         check_postconditions(model)
+
+
+@pytest.mark.parametrize("learning_rate_scale_up, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
+def test_scale_lr(learning_rate_scale_up, expected_lr, tmpdir):
+    base_lr = 1.0
+    num_workers = 4
+
+    outdir = os.path.join(tmpdir, "output")
+
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {
+            "epochs": 2,
+            "learning_rate": base_lr,
+            "learning_rate_scale_up": learning_rate_scale_up,
+        },
+    }
+
+    class FakeHorovodBackend(HorovodBackend):
+        def initialize(self):
+            import horovod.torch as hvd
+
+            hvd.init()
+
+            self._horovod = mock.Mock(wraps=hvd)
+            self._horovod.size.return_value = num_workers
+
+    class TestCallback(Callback):
+        def __init__(self):
+            self.lr = None
+
+        def on_trainer_train_teardown(self, trainer, progress_tracker, is_coordinator: bool):
+            for g in trainer.optimizer.param_groups:
+                self.lr = g["lr"]
+
+    callback = TestCallback()
+    model = LudwigModel(config, backend=FakeHorovodBackend(), callbacks=[callback])
+    model.train(dataset=data_csv, output_directory=outdir)
+
+    assert callback.lr == expected_lr

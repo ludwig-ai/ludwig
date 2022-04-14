@@ -16,6 +16,7 @@
 """This module contains the class and auxiliary methods of a model."""
 import gc
 import logging
+import math
 import os
 import os.path
 import signal
@@ -217,6 +218,13 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
     """Number of epochs to warmup the learning rate for (default: 1.0)."""
 
+    learning_rate_scale_up: str = schema.StringOptions(["constant", "sqrt", "linear"], default="linear")
+    """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
+       the learning rate is scaled linearly with the number of workers to reflect the proportion by which
+       the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
+       to better model performance. If the learning rate is hand-tuned for a given number of workers, setting this value
+       to constant can be used to disable scale-up (default: linear)."""
+
 
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
@@ -328,6 +336,7 @@ class Trainer(BaseTrainer):
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
+        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scale_up]
 
         # TODO(Justin): Move to config validation when that's ready.
         if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
@@ -390,7 +399,7 @@ class Trainer(BaseTrainer):
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
-            base_learning_rate *= self.horovod.size()
+            base_learning_rate *= self.lr_scale_fn(self.horovod.size())
         self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(base_learning_rate)
 
@@ -1029,17 +1038,14 @@ class Trainer(BaseTrainer):
                 )
 
             if self.horovod:
-                current_learning_rate = (
-                    learning_rate_warmup_distributed(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        self.horovod.size(),
-                        batcher.step,
-                        batcher.steps_per_epoch,
-                    )
-                    * self.horovod.size()
-                )
+                current_learning_rate = learning_rate_warmup_distributed(
+                    current_learning_rate,
+                    progress_tracker.epoch,
+                    self.learning_rate_warmup_epochs,
+                    self.horovod.size(),
+                    batcher.step,
+                    batcher.steps_per_epoch,
+                ) * self.lr_scale_fn(self.horovod.size())
             else:
                 current_learning_rate = learning_rate_warmup(
                     current_learning_rate,
@@ -1495,3 +1501,10 @@ class RemoteTrainer(Trainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)
         self.train_online = return_first(self.train_online)
+
+
+learning_rate_scale_fns = {
+    "linear": lambda n: n,
+    "sqrt": lambda n: math.sqrt(n),
+    "constant": lambda n: 1,
+}
