@@ -45,7 +45,7 @@ class InferenceModule(nn.Module):
             }
         )
 
-    def forward(self, inputs: Dict[str, Union[List[str], torch.Tensor]]):
+    def forward(self, inputs: Dict[str, Union[List[str], List[torch.Tensor], torch.Tensor]]):
         with torch.no_grad():
             preproc_inputs = {
                 feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()

@@ -28,7 +28,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils import output_feature_utils
+from ludwig.utils import image_utils, output_feature_utils
 from tests.integration_tests import utils
 from tests.integration_tests.utils import (
     audio_feature,
@@ -202,6 +202,7 @@ def test_torchscript(csv_filename, should_load_model):
 )
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
@@ -220,7 +221,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
-        # image_feature(image_dest_folder),
+        image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
         # timeseries_feature(),
         # date_feature(),
@@ -270,6 +271,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     script_module = ludwig_model.to_torchscript()
 
     def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+        if "image" in s.name:
+            return [image_utils.read_image_from_str(v) for v in s]
         if s.dtype == "object":
             return s.to_list()
         return torch.from_numpy(s.to_numpy())

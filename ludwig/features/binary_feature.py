@@ -61,7 +61,9 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
         self.should_lower = str2bool is None
 
-    def forward(self, v: Union[List[str], torch.Tensor]):
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        if isinstance(v, List[torch.Tensor]):
+            v = torch.stack(v)
         if isinstance(v, torch.Tensor):
             return v.to(dtype=torch.bool)
 
