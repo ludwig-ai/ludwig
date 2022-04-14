@@ -55,7 +55,7 @@ _PARQUET_SUFFIX = "parquet"
 
 
 def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label):
-    """converts non-np.array representation to be np.array"""
+    """converts non-np.array representation to be np.array."""
     if "str2idx" in feature_metadata:
         # categorical output feature as binary
         ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
@@ -66,9 +66,7 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
         # binary output feature
         if "str2bool" in feature_metadata:
             # non-standard boolean representation
-            ground_truth = _vectorize_ground_truth(
-                ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx
-            )
+            ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx)
         else:
             # standard boolean representation
             ground_truth = ground_truth.values
@@ -81,7 +79,7 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
 
 
 def _vectorize_ground_truth(
-        ground_truth: pd.Series, str2idx: np.array, ground_truth_apply_idx: bool = True
+    ground_truth: pd.Series, str2idx: np.array, ground_truth_apply_idx: bool = True
 ) -> np.array:
     # raw hdf5 files generated during preprocessing don't need to be converted with str2idx
     if not ground_truth_apply_idx:
