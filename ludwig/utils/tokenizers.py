@@ -20,8 +20,8 @@ from typing import Any, List, Optional, Union
 
 import torch
 
-from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
 
