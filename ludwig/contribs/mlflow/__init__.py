@@ -137,7 +137,8 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue):
-    while True:
+    should_return = False
+    while not should_return:
         elem = q.get()
         log_metrics, steps, save_path, should_return = elem
         mlflow.log_metrics(log_metrics, step=steps)
@@ -148,9 +149,6 @@ def _log_mlflow_loop(q: queue.Queue):
             continue
 
         _log_model(save_path)
-
-        if should_return:
-            return
 
 
 def _log_artifacts(output_directory):
