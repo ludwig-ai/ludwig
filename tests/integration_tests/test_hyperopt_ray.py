@@ -17,6 +17,7 @@ import logging
 import os.path
 
 import mlflow
+import pandas as pd
 import pytest
 import ray
 from mlflow.tracking import MlflowClient
@@ -118,9 +119,15 @@ def run_hyperopt_executor(
     csv_filename,
     validate_output_feature=False,
     validation_metric=None,
+    use_split=True,
 ):
     config = _get_config(sampler, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
+
+    if not use_split:
+        df = pd.read_csv(rel_path)
+        df["split"] = 0
+        df.to_csv(rel_path)
 
     config = merge_with_defaults(config)
 
@@ -165,7 +172,8 @@ def test_hyperopt_executor(sampler, executor, csv_filename):
 
 
 @pytest.mark.distributed
-def test_hyperopt_executor_with_metric(csv_filename):
+@pytest.mark.parametrize("use_split", [True, False], ids=["split", "no_split"])
+def test_hyperopt_executor_with_metric(use_split, csv_filename):
     with ray_start_4_cpus():
         run_hyperopt_executor(
             {"type": "ray", "num_samples": 2},
@@ -173,6 +181,7 @@ def test_hyperopt_executor_with_metric(csv_filename):
             csv_filename,
             validate_output_feature=True,
             validation_metric=ACCURACY,
+            use_split=use_split,
         )
 
 

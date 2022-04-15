@@ -235,6 +235,9 @@ def initialize_pytorch(
     if not allow_parallel_threads:
         torch.set_num_threads(1)
         torch.set_num_interop_threads(1)
+        if torch.cuda.is_available():
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
 
     gpu_device_count = torch.cuda.device_count()
     if horovod is not None and gpus is None:

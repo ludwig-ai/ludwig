@@ -21,7 +21,10 @@
 import glob
 import json
 import os
+import random
 import subprocess
+
+import pytest
 
 from ludwig.constants import TRAINER
 from ludwig.experiment import experiment_cli
@@ -1126,7 +1129,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
         assert 1 == len(figure_cnt)
 
 
-def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
+@pytest.mark.parametrize("binary_output_type", [True, False])
+def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, binary_output_type):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1139,9 +1143,13 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
     ]
-    output_features = [category_feature(vocab_size=4, reduce_input="sum")]
+    if binary_output_type:
+        output_features = [binary_feature()]
+    else:
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
+    random.seed(1919)
     rel_path = generate_data(input_features, output_features, csv_filename)
     input_features[0]["encoder"] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
@@ -1162,6 +1170,9 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         "2",
         "--metrics",
         "accuracy",
+        "precision",
+        "recall",
+        "f1",
         "--ground_truth",
         ground_truth,
         "--output_feature_name",
@@ -1189,17 +1200,21 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 1 == len(figure_cnt)
+        assert 4 == len(figure_cnt)
 
 
-def test_visualization_roc_curves_output_saved(csv_filename):
+@pytest.mark.parametrize("binary_output_type", [True, False])
+def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    if binary_output_type:
+        output_features = [binary_feature()]
+    else:
+        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

@@ -16,6 +16,7 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from typing import Optional, Union
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
@@ -26,9 +27,14 @@ from ludwig.utils.torch_utils import initialize_pytorch
 
 
 class Backend(ABC):
-    def __init__(self, dataset_manager: DatasetManager, cache_dir: str = None):
+    def __init__(
+        self,
+        dataset_manager: DatasetManager,
+        cache_dir: Optional[str] = None,
+        cache_credentials: Optional[Union[str, dict]] = None,
+    ):
         self._dataset_manager = dataset_manager
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
+        self._cache_manager = CacheManager(self._dataset_manager, cache_dir, cache_credentials)
 
     @property
     def cache(self):

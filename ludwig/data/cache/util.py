@@ -1,15 +1,15 @@
 import ludwig
 from ludwig.constants import NAME, PREPROCESSING, TYPE
-from ludwig.utils.fs_utils import checksum
-from ludwig.utils.misc_utils import hash_dict
+from ludwig.data.cache.types import CacheableDataset
+from ludwig.utils.data_utils import hash_dict
 
 
-def calculate_checksum(original_dataset, config):
+def calculate_checksum(original_dataset: CacheableDataset, config: dict):
     features = config.get("input_features", []) + config.get("output_features", []) + config.get("features", [])
     info = {
         "ludwig_version": ludwig.globals.LUDWIG_VERSION,
-        "dataset_checksum": checksum(original_dataset),
-        "global_preprocessing": config["preprocessing"],
+        "dataset_checksum": original_dataset.checksum,
+        "global_preprocessing": config.get("preprocessing", {}),
         "feature_names": [feature[NAME] for feature in features],
         "feature_types": [feature[TYPE] for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],

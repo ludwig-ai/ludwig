@@ -297,6 +297,7 @@ class ViTEncoder(Encoder):
         num_channels: int = 3,
         use_pretrained: bool = True,
         pretrained_model: str = "google/vit-base-patch16-224",
+        saved_weights_in_checkpoint: bool = False,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 12,
@@ -339,7 +340,7 @@ class ViTEncoder(Encoder):
             raise ValueError("img_height and img_width should be identical.")
         self._input_shape = (in_channels, img_height, img_width)
 
-        if use_pretrained:
+        if use_pretrained and not saved_weights_in_checkpoint:
             self.model = ViTModel.from_pretrained(pretrained_model)
             if trainable:
                 self.model.train()

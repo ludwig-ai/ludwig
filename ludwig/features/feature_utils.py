@@ -14,13 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
 
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
-from ludwig.utils.misc_utils import hash_dict
+from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
@@ -46,6 +46,23 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
     out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in tokenizer(set_string)]
 
     return np.array(out, dtype=np.int32)
+
+
+def compute_sequence_probability(sequence_probabilities: Union[list, tuple, np.ndarray]) -> float:
+    """Computes sequence-level probability.
+
+    Args:
+        sequence_probabilities: An iterable of iterables or np.ndarray with shape (sequence_length, num_classes)
+            where each inner iterable or np.ndarray is the probability distribution for a single timestep.
+    """
+
+    if isinstance(sequence_probabilities, (list, tuple, np.ndarray)):
+        max_probs = []
+        for timestep_probs in sequence_probabilities:
+            max_probs.append(np.max(timestep_probs))
+        return np.prod(max_probs)
+    else:
+        return np.prod(sequence_probabilities, axis=-1)
 
 
 def sanitize(name):

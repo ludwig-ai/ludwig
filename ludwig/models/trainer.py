@@ -16,6 +16,7 @@
 """This module contains the class and auxiliary methods of a model."""
 import gc
 import logging
+import math
 import os
 import os.path
 import signal
@@ -153,6 +154,9 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
        is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
 
+    evaluate_training_set: bool = True
+    """Whether to include the entire training set during evaluation (default: True)."""
+
     reduce_learning_rate_on_plateau: float = schema_utils.FloatRange(default=0.0, min=0.0, max=1.0)
     """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
        improve) (default: 0.0)."""
@@ -214,6 +218,13 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(default=1.0)
     """Number of epochs to warmup the learning rate for (default: 1.0)."""
 
+    learning_rate_scaling: str = schema_utils.StringOptions(["constant", "sqrt", "linear"], default="linear")
+    """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
+       the learning rate is scaled linearly with the number of workers to reflect the proportion by which
+       the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
+       to better model performance. If the learning rate is hand-tuned for a given number of workers, setting this value
+       to constant can be used to disable scale-up (default: linear)."""
+
 
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
@@ -243,21 +254,21 @@ class Trainer(BaseTrainer):
         :param resume: Resume training a model that was being trained. (default: False).
         :type resume: Boolean
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-               default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
-               really big that can be time consuming. If you do not want to keep the weights and just find out what
-               performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
-               will not be loadable later on. (default: False).
+                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
+                really big that can be time consuming. If you do not want to keep the weights and just find out what
+                performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
+                will not be loadable later on. (default: False).
         :type skip_save_model: Boolean
         :param skip_save_progress: Disables saving progress each epoch. By default Ludwig saves weights and stats after
-               each epoch for enabling resuming of training, but if the model is really big that can be time consuming
-               and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
-               on. (default: False).
+                each epoch for enabling resuming of training, but if the model is really big that can be time consuming
+                and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
+                on. (default: False).
         :type skip_save_progress: Boolean
         :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
-               it is not needed turning it off can slightly increase the overall speed. (default: False).
+                it is not needed turning it off can slightly increase the overall speed. (default: False).
         :type skip_save_log: Boolean
         :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
-               (default: None).
+                (default: None).
         :type callbacks: list
         :param random_seed: Default initialization for the random seeds (default: 42).
         :type random_seed: Float
@@ -266,7 +277,7 @@ class Trainer(BaseTrainer):
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
         :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
-               `ludwig.models.trainer.TrainerConfig()`).
+                `ludwig.models.trainer.TrainerConfig()`).
         """
 
         self.epochs = config.epochs
@@ -291,6 +302,7 @@ class Trainer(BaseTrainer):
         self.early_stop = config.early_stop
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
+        self.evaluate_training_set = config.evaluate_training_set
         self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
         self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
@@ -324,6 +336,7 @@ class Trainer(BaseTrainer):
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
+        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # TODO(Justin): Move to config validation when that's ready.
         if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
@@ -343,8 +356,7 @@ class Trainer(BaseTrainer):
             targets: A dictionary of target data, from feature name to tensor.
 
         Returns:
-            A tuple of the loss tensor and a dictionary of loss for every
-            output feature.
+            A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
         self.optimizer.zero_grad()
 
@@ -387,7 +399,7 @@ class Trainer(BaseTrainer):
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
-            base_learning_rate *= self.horovod.size()
+            base_learning_rate *= self.lr_scale_fn(self.horovod.size())
         self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(base_learning_rate)
 
@@ -667,9 +679,27 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
-        self.evaluation(
-            training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
-        )
+        if self.evaluate_training_set:
+            self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            )
+
+            self.write_eval_summary(
+                summary_writer=train_summary_writer,
+                metrics=progress_tracker.train_metrics,
+                step=progress_tracker.steps,
+            )
+        else:
+            # Training set is not evaluated. Add loss to the progress tracker.
+            progress_tracker.train_metrics[COMBINED][LOSS].append(
+                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
+            )
+            for output_feature_name, loss_tensor in all_losses.items():
+                progress_tracker.train_metrics[output_feature_name][LOSS].append(
+                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
+                )
+                tables[output_feature_name].append(["train", loss_tensor.item()])
+            tables[COMBINED].append(["train", loss.item()])
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -716,13 +746,13 @@ class Trainer(BaseTrainer):
 
         elapsed_time = (time.time() - start_time) * 1000.0
 
-        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
         if self.is_coordinator():
             logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # ================ Validation Logic ================
+        should_break = False
         if validation_set is not None and validation_set.size > 0:
             should_break = self.check_progress_on_validation(
                 progress_tracker,
@@ -744,14 +774,15 @@ class Trainer(BaseTrainer):
                 self.early_stop,
                 self.skip_save_model,
             )
-            if should_break:
-                return should_break
         else:
             # There's no validation, so we save the model.
             if self.is_coordinator() and not self.skip_save_model:
                 torch.save(self.model.state_dict(), model_weights_path)
 
-        return False
+        # Trigger eval end callback after any model weights save for complete checkpoint
+        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
+
+        return should_break
 
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         """Trains a model with a set of hyperparameters listed below. Customizable.
@@ -1007,17 +1038,14 @@ class Trainer(BaseTrainer):
                 )
 
             if self.horovod:
-                current_learning_rate = (
-                    learning_rate_warmup_distributed(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        self.horovod.size(),
-                        batcher.step,
-                        batcher.steps_per_epoch,
-                    )
-                    * self.horovod.size()
-                )
+                current_learning_rate = learning_rate_warmup_distributed(
+                    current_learning_rate,
+                    progress_tracker.epoch,
+                    self.learning_rate_warmup_epochs,
+                    self.horovod.size(),
+                    batcher.step,
+                    batcher.steps_per_epoch,
+                ) * self.lr_scale_fn(self.horovod.size())
             else:
                 current_learning_rate = learning_rate_warmup(
                     current_learning_rate,
@@ -1473,3 +1501,10 @@ class RemoteTrainer(Trainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)
         self.train_online = return_first(self.train_online)
+
+
+learning_rate_scale_fns = {
+    "linear": lambda n: n,
+    "sqrt": lambda n: math.sqrt(n),
+    "constant": lambda n: 1,
+}

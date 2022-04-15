@@ -37,6 +37,8 @@ class ECD(LudwigModule):
 
         self._random_seed = random_seed
 
+        # TODO: with change to misc_utils.set_random_seed() this may be redundant
+        #       seems to be required for test_api.py::test_api_training_determinism
         if random_seed is not None:
             torch.random.manual_seed(random_seed)
 
@@ -83,7 +85,7 @@ class ECD(LudwigModule):
         model_tensors = self.collect_weights()
         total_size = 0
         for tnsr in model_tensors:
-            total_size += tnsr[1].detach().numpy().size
+            total_size += tnsr[1].detach().cpu().numpy().size
         return total_size
 
     def to_torchscript(self):

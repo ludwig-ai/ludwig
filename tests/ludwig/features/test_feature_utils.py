@@ -1,3 +1,5 @@
+import numpy as np
+import pytest
 import torch
 
 from ludwig.features import feature_utils
@@ -35,3 +37,18 @@ def test_ludwig_feature_dict_with_periods():
     assert feature_dict.keys() == ["to."]
     assert feature_dict.items() == [("to.", to_module)]
     assert feature_dict["to."] == to_module
+
+
+@pytest.mark.parametrize("sequence_type", [list, tuple, np.array])
+def test_compute_sequence_probability(sequence_type):
+    inputs = sequence_type(
+        [
+            [0.1, 0.2, 0.7],
+            [0.3, 0.4, 0.3],
+            [0.6, 0.3, 0.2],
+        ]
+    )
+
+    sequence_probability = feature_utils.compute_sequence_probability(inputs)
+
+    assert sequence_probability == pytest.approx(0.168)  # 0.7 * 0.4 * 0.6

@@ -28,6 +28,7 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
+    EVAL_BATCH_SIZE,
     HYPEROPT,
     LOSS,
     NAME,
@@ -54,6 +55,7 @@ default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
 default_preprocessing_stratify = None
 default_preprocessing_undersample_majority = None
 default_preprocessing_oversample_minority = None
+default_preprocessing_sample_ratio = 1.0
 
 default_preprocessing_parameters = {
     "force_split": default_preprocessing_force_split,
@@ -61,6 +63,7 @@ default_preprocessing_parameters = {
     "stratify": default_preprocessing_stratify,
     "undersample_majority": default_preprocessing_undersample_majority,
     "oversample_minority": default_preprocessing_oversample_minority,
+    "sample_ratio": default_preprocessing_sample_ratio,
 }
 default_preprocessing_parameters.update(
     {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
@@ -168,6 +171,15 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
                 )
                 hparams["trainer." + k[len(substr) :]] = v
                 del hparams[k]
+
+    if TRAINER in config:
+        trainer = config[TRAINER]
+        eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
+        if eval_batch_size == 0:
+            warnings.warn(
+                "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
+            )
+            trainer[EVAL_BATCH_SIZE] = None
 
 
 def _perform_sanity_checks(config):

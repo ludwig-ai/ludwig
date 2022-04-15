@@ -14,9 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Any, Dict, List, Union
 
-import numpy as np
 import torch
 
 from ludwig.constants import (
@@ -34,7 +33,6 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    SOFTMAX_CROSS_ENTROPY,
     TEXT,
     TIED,
     TOKEN_ACCURACY,
@@ -42,20 +40,82 @@ from ludwig.constants import (
 )
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.feature_utils import compute_sequence_probability
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import set_default_values
+from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
     SpecialSymbol,
-    tokenizer_registry,
+    START_SYMBOL,
+    STOP_SYMBOL,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import tokenizer_registry, TORCHSCRIPT_ENABLED_TOKENIZERS
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
+
+
+class _TextPreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by TextFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_ENABLED_TOKENIZERS}."
+            )
+
+        self.lowercase = metadata["preprocessing"]["lowercase"]
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
+            pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
+        )
+        self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
+        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
+        self.start_symbol = START_SYMBOL
+        self.stop_symbol = STOP_SYMBOL
+        self.max_sequence_length = int(metadata["max_sequence_length"])
+        self.unit_to_id = metadata["str2idx"]
+
+    def forward(self, v: Union[List[str], torch.Tensor]):
+        """Takes a list of strings and returns a tensor of token ids."""
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if self.lowercase:
+            sequences = [sequence.lower() for sequence in v]
+        else:
+            sequences = v
+
+        unit_sequences = self.tokenizer(sequences)
+        # refines type of unit_sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+
+        sequence_matrix = torch.full(
+            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
+        )
+        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
+        for sample_idx, unit_sequence in enumerate(unit_sequences):
+            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
+            if len(unit_sequence) + 1 < self.max_sequence_length:
+                sequence_length = len(unit_sequence)
+                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+            else:
+                sequence_length = self.max_sequence_length - 1
+
+            for i in range(sequence_length):
+                curr_unit = unit_sequence[i]
+                if curr_unit in self.unit_to_id:
+                    curr_id = self.unit_to_id[curr_unit]
+                else:
+                    curr_id = self.unit_to_id[self.unknown_symbol]
+                sequence_matrix[sample_idx][i + 1] = curr_id
+
+        return sequence_matrix
 
 
 class TextFeatureMixin(BaseFeatureMixin):
@@ -163,16 +223,26 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
+        # TODO(1891): Remove backward compatibility hack once all models have been retrained with Ludwig after
+        # https://github.com/ludwig-ai/ludwig/pull/1859.
+        prefix = ""
+        padding_symbol_metadata_key = "padding_symbol"
+        unknown_symbol_metadata_key = "unknown_symbol"
+        if "str2idx" not in metadata:
+            prefix = "word_"
+            padding_symbol_metadata_key = "word_pad_symbol"
+            unknown_symbol_metadata_key = "word_unk_symbol"
+
         return build_sequence_matrix(
             sequences=column,
-            inverse_vocabulary=metadata["str2idx"],
-            tokenizer_type=preprocessing_parameters["tokenizer"],
-            length_limit=metadata["max_sequence_length"],
-            padding_symbol=metadata["padding_symbol"],
+            inverse_vocabulary=metadata[f"{prefix}str2idx"],
+            tokenizer_type=preprocessing_parameters[f"{prefix}tokenizer"],
+            length_limit=metadata[f"{prefix}max_sequence_length"],
+            padding_symbol=metadata[padding_symbol_metadata_key],
             padding=preprocessing_parameters["padding"],
-            unknown_symbol=metadata["unknown_symbol"],
+            unknown_symbol=metadata[unknown_symbol_metadata_key],
             lowercase=preprocessing_parameters["lowercase"],
-            tokenizer_vocab_file=preprocessing_parameters["vocab_file"],
+            tokenizer_vocab_file=preprocessing_parameters[f"{prefix}vocab_file"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
             processor=backend.df_engine,
         )
@@ -245,9 +315,13 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
 
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _TextPreprocessing(metadata)
+
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
@@ -333,17 +407,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
 
-            def compute_prob(probs):
-                if isinstance(probs, (list, tuple, np.ndarray)):
-                    for i in range(len(probs)):
-                        probs[i] = np.max(probs[i])
-                    return np.prod(probs)
-                else:
-                    return np.prod(probs, axis=-1)
-
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],
-                compute_prob,
+                compute_sequence_probability,
             )
 
             # commenting probabilities out because usually it is huge:

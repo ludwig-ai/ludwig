@@ -13,17 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import base64
 import copy
-import hashlib
-import json
 import os
 import random
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Union
 
 import numpy
+import torch
 
 from ludwig.constants import PROC_COLUMN
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
@@ -33,6 +30,9 @@ def set_random_seed(random_seed):
     os.environ["PYTHONHASHSEED"] = str(random_seed)
     random.seed(random_seed)
     numpy.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(random_seed)
 
 
 def merge_dict(dct, merge_dct):
@@ -118,14 +118,6 @@ def get_file_names(output_directory):
     model_dir = os.path.join(output_directory, "model")
 
     return description_fn, training_stats_fn, model_dir
-
-
-def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
-    s = json.dumps(d, sort_keys=True, ensure_ascii=True)
-    h = hashlib.md5(s.encode())
-    d = h.digest()
-    b = base64.b64encode(d, altchars=b"__")
-    return b[:max_length]
 
 
 def get_combined_features(config):

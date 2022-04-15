@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:1.11.0-py37
+FROM rayproject/ray:1.12.0rc1-py37
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
@@ -30,4 +30,6 @@ RUN HOROVOD_WITH_PYTORCH=1 \
 	HOROVOD_WITHOUT_MPI=1 \
 	HOROVOD_WITHOUT_TENSORFLOW=1 \
 	HOROVOD_WITHOUT_MXNET=1 \
-	pip install --no-cache-dir '.[full]'
+	pip install --no-cache-dir '.[full]' && \
+	horovodrun --check-build && \
+	python -c "import horovod.torch; horovod.torch.init()"
