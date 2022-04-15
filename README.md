@@ -113,34 +113,45 @@ Ludwig is a profound utility for research scientists, data scientists, and machi
 
 **Minimal machine learning boilerplate**
 
+```
 Ludwig takes care of the engineering complexity of deep learning out of the box, enabling research scientists to focus on building models at the highest level of abstraction.
 
 Data preprocessing, hyperparameter optimization, device management, and distributed training for newly registered `torch.nn.Module` models come completely free.
+```
 
 **Compare models against existing SOTA models**
 
+```
 Comparing the new model against existing published and implemented models is a simple config change.
+```
 
 **Easily apply new architectures to multiple problems and datasets**
 
+```
 Apply new models across the extensive set of tasks and datasets that Ludwig supports. Ludwig includes a [full benchmarking toolkit](https://arxiv.org/abs/2111.04260) accessible to any user, for running experiments with multiple models across multiple datasets with just a simple configuration.
+```
 
 **Highly configurable data preprocessing, modeling, and metrics**
 
+```
 Any and all aspects of the model architecture, training loop, hyperparameter search, and backend infrastructure can be modified as additional fields in the declarative configuration to customize the pipeline to meet your requirements.
 
 For details on what can be configured, check out [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/) docs.
+```
 
 **Low-code interface for state-of-the-art models, including pre-trained Huggingface Transformers**
 
+````
 Ludwig also natively integrates with pre-trained models, such as the ones available in [Huggingface Transformers](https://huggingface.co/docs/transformers/index). Users can choose from a vast collection of state-of-the-art pre-trained PyTorch models to use without needing to write any code at all. For example, training a BERT-based sentiment analysis model with Ludwig is as simple as:
 
 ```
 ludwig train --dataset sst5 -–config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
 ```
+````
 
 **Low-code Interface for AutoML**
 
+````
 [Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/) allows users to obtain trained models by providing just a dataset, the target column, and a time budget. It’s as simple as that!
 
 ```
@@ -148,9 +159,11 @@ auto_train_results = ludwig.automl.auto_train(
     dataset=my_dataset_df, target=target_column_name, time_limit_s=7200, tune_for_memory=False
 )
 ```
+````
 
 **Easy Productionisation**
 
+````
 Ludwig makes it easy to serve deep learning models, including on GPUs. Launch a REST API for your trained Ludwig model.
 
 ```
@@ -162,6 +175,7 @@ Ludwig supports exporting models to efficient Torschscript bundles.
 ```
 ludwig export_torchscript -–model_path=/path/to/model
 ```
+````
 
 # Examples
 
