@@ -17,7 +17,7 @@ from typing import Callable
 import pytest
 import torch
 
-from ludwig.utils.image_utils import crop, crop_or_pad, grayscale, normalize, num_channels_in_image, pad, resize_image
+from ludwig.utils.image_utils import crop, crop_or_pad, grayscale, num_channels_in_image, pad, resize_image
 
 
 @pytest.mark.parametrize("pad_fn", [pad, torch.jit.script(pad)])
@@ -212,26 +212,6 @@ def test_resize_image(
 def test_grayscale(grayscale_fn: Callable, input_img: torch.Tensor, grayscale_img: torch.Tensor):
     output_img = grayscale_fn(input_img)
     assert torch.equal(output_img, grayscale_img)
-
-
-@pytest.mark.parametrize("normalize_fn", [normalize, torch.jit.script(normalize)])
-def test_normalize(normalize_fn: Callable):
-    input_img = torch.tensor(
-        [
-            [255, 51, 0],
-            [0, 51, 255],
-        ]
-    )
-    expected_img = torch.tensor(
-        [
-            [1.0, 0.2, 0.0],
-            [0.0, 0.2, 1.0],
-        ]
-    )
-
-    output_img = normalize_fn(input_img)
-
-    assert torch.allclose(output_img, expected_img)
 
 
 def test_num_channels_in_image():
