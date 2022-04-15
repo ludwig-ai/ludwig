@@ -84,7 +84,7 @@ class _ImagePreprocessing(torch.nn.Module):
         self.resize_method = metadata["preprocessing"]["resize_method"]
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]) -> torch.Tensor:
-        """Takes a list of images and applies the preprocessing specified in the metadata.
+        """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
 
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
         """
@@ -98,6 +98,7 @@ class _ImagePreprocessing(torch.nn.Module):
             imgs_stacked = v
 
         _, num_channels, height, width = imgs_stacked.shape
+
         # Ensure images are the size expected by the model
         if height != self.height or width != self.width:
             imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
@@ -114,8 +115,6 @@ class _ImagePreprocessing(torch.nn.Module):
                     f"Number of channels cannot be reconciled. metadata.num_channels = "
                     f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
                 )
-        else:
-            imgs_stacked = imgs_stacked
 
         return imgs_stacked
 
