@@ -61,7 +61,7 @@ def prune_pytorch_structures(opt_struct):
 def extract_pytorch_structures():
     """Extracts and saves the parsed structure of all pytorch classes referenced in
     `ludwig.modules.optimization_modules.optimizer_registry` as JSON files under
-    `ludwig/marshmallow/generated/torch/`."""
+    `ludwig/marshmallow_utils/generated/torch/`."""
     for opt in lmo.optimizer_registry:
         # Get the torch class:
         optimizer_class = lmo.optimizer_registry[opt][0]
@@ -73,7 +73,9 @@ def extract_pytorch_structures():
 
         # Write it to a file:
         parent_dir = str(Path(__file__).parent.parent)
-        filename = os.path.join(parent_dir, "ludwig/marshmallow/generated/torch/", optimizer_class.__name__) + ".json"
+        filename = (
+            os.path.join(parent_dir, "ludwig/marshmallow_utils/generated/torch/", optimizer_class.__name__) + ".json"
+        )
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as outfile:
             json.dump(
@@ -107,7 +109,7 @@ def prune_ludwig_structures(opt_struct):
 
 def extract_marshmallow_structures():
     """Extracts and saves the parsed structure of all known marshmallow dataclasses referenced throughout Ludwig as
-    JSON files under `ludwig/marshmallow/generated/`."""
+    JSON files under `ludwig/marshmallow_utils/generated/`."""
     mclass_paths = get_mclass_paths()
     for cls_name, path in mclass_paths.items():
         # Parse and clean the class structure:
@@ -116,7 +118,7 @@ def extract_marshmallow_structures():
 
         # Write it to a file:
         parent_dir = str(Path(__file__).parent.parent)
-        filename = os.path.join(parent_dir, "ludwig/marshmallow/generated/", cls_name) + ".json"
+        filename = os.path.join(parent_dir, "ludwig/marshmallow_utils/generated/", cls_name) + ".json"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as outfile:
             json.dump(mclass, outfile, indent=4, sort_keys=True, separators=(",", ": "))
