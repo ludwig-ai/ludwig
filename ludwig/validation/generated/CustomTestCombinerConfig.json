@@ -1,16 +1,16 @@
 {
     "attributes": [
-        "ludwig.marshmallow_utils.test_classes.CustomTestCombinerConfig.foo"
+        "ludwig.validation.test_classes.CustomTestCombinerConfig.foo"
     ],
     "bases": [
         "ludwig.combiners.combiners.BaseCombinerConfig"
     ],
     "children": {
-        "ludwig.marshmallow_utils.test_classes.CustomTestCombinerConfig.__init__": {
+        "ludwig.validation.test_classes.CustomTestCombinerConfig.__init__": {
             "docstring": null,
             "name": "__init__",
-            "path": "ludwig.marshmallow_utils.test_classes.CustomTestCombinerConfig.__init__",
-            "relative_file_path": "ludwig/marshmallow_utils/test_classes.py",
+            "path": "ludwig.validation.test_classes.CustomTestCombinerConfig.__init__",
+            "relative_file_path": "ludwig/validation/test_classes.py",
             "signature": {
                 "parameters": [
                     {
@@ -27,15 +27,15 @@
                 "return_annotation": "None"
             }
         },
-        "ludwig.marshmallow_utils.test_classes.CustomTestCombinerConfig.foo": {
+        "ludwig.validation.test_classes.CustomTestCombinerConfig.foo": {
             "docstring": null,
             "name": "foo",
-            "path": "ludwig.marshmallow_utils.test_classes.CustomTestCombinerConfig.foo",
-            "relative_file_path": "ludwig/marshmallow_utils/test_classes.py",
+            "path": "ludwig.validation.test_classes.CustomTestCombinerConfig.foo",
+            "relative_file_path": "ludwig/validation/test_classes.py",
             "type": "bool"
         }
     },
     "docstring": "CustomTestCombinerConfig(foo: bool = False)",
     "name": "CustomTestCombinerConfig",
-    "path": "ludwig.marshmallow_utils.test_classes.CustomTestCombinerConfig"
+    "path": "ludwig.validation.test_classes.CustomTestCombinerConfig"
 }

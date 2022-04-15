@@ -32,7 +32,7 @@
         "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs"
     ],
     "bases": [
-        "ludwig.marshmallow_utils.schema.BaseMarshmallowConfig"
+        "ludwig.validation.schema_utils.BaseMarshmallowConfig"
     ],
     "children": {
         "ludwig.models.trainer.TrainerConfig.__init__": {
