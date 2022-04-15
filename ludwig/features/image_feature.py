@@ -83,8 +83,6 @@ class _ImagePreprocessing(torch.nn.Module):
         self.width = metadata["preprocessing"]["width"]
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
-        # TODO(geoffrey): update ImageInputFeature.forward to use scaling registry
-        self.scaling_fn = image_scaling_registry[metadata["preprocessing"]["scaling"]]
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]) -> torch.Tensor:
         """Takes a list of images and applies the preprocessing specified in the metadata.
@@ -95,19 +93,10 @@ class _ImagePreprocessing(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         if torch.jit.isinstance(v, List[torch.Tensor]):
-            imgs = []
-            for img in v:
-                num_channels, _, _ = img.shape
-                # if needs to be grayscale
-                if self.num_channels == 1 and num_channels != 1:
-                    img = grayscale(img)
-                img = resize_image(img, (self.height, self.width), self.resize_method)
-                imgs.append(img)
+            imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
             imgs_stacked = torch.stack(imgs)
         else:
             imgs_stacked = v
-
-        print(imgs_stacked[:, 0, 0, :10])
 
         _, num_channels, height, width = imgs_stacked.shape
         # Ensure images are the size expected by the model
@@ -116,9 +105,9 @@ class _ImagePreprocessing(torch.nn.Module):
 
         # Ensures images have the number of channels expected by the model
         if num_channels != self.num_channels:
-            # if self.num_channels == 1:
-            #     imgs_stacked = grayscale(imgs_stacked)
-            if num_channels < self.num_channels:
+            if self.num_channels == 1:
+                imgs_stacked = grayscale(imgs_stacked)
+            elif num_channels < self.num_channels:
                 extra_channels = self.num_channels - num_channels
                 imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, extra_channels])
             else:
@@ -129,9 +118,7 @@ class _ImagePreprocessing(torch.nn.Module):
         else:
             imgs_stacked = imgs_stacked
 
-        # Ensure images are normalized
-        out = self.scaling_fn(imgs_stacked)
-        return out
+        return imgs_stacked
 
 
 class ImageFeatureMixin(BaseFeatureMixin):
@@ -507,15 +494,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.uint8, torch.int64]
-
-        import inspect
-
-        print(
-            f"======== "
-            f"{inspect.getframeinfo(inspect.currentframe()).filename}:"
-            f"{inspect.getframeinfo(inspect.currentframe()).lineno} ========"
-        )
-        print(inputs[0, 0, 0, :10])
 
         # casting and rescaling
         inputs = normalize(inputs)

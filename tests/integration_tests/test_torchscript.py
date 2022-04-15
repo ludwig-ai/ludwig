@@ -218,7 +218,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         number_feature(),
         category_feature(vocab_size=3),
         sp_text_feature,
-        image_feature(image_dest_folder, preprocessing={"resize_method": "crop_or_pad"}),
+        image_feature(image_dest_folder),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
@@ -272,23 +272,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     def to_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
         if "image" in s.name:
-            out = []
-            sequences = []
-            for v in s:
-                img = image_utils.read_image(v)
-                sequences.append(img[0, 0, :10].tolist())
-                out.append(img)
-            import inspect
-
-            print(
-                f"======== "
-                f"{inspect.getframeinfo(inspect.currentframe()).filename}:"
-                f"{inspect.getframeinfo(inspect.currentframe()).lineno} ========"
-            )
-            from pprint import pprint
-
-            pprint(sorted(sequences))
-            return out
+            return [image_utils.read_image(v) for v in s]
         if s.dtype == "object":
             return s.to_list()
         return torch.from_numpy(s.to_numpy())
