@@ -188,7 +188,7 @@ ludwig export_torchscript -–model_path=/path/to/model
 
 # More Information
 
-[Full official documentation](https://ludwig-ai.github.io/ludwig-docs/)
+[Full official documentation](https://ludwig-ai.github.io/ludwig-docs/).
 
 Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declarative ML](https://arxiv.org/pdf/2107.08148.pdf), and [Ludwig’s SoTA benchmarks](https://openreview.net/pdf?id=hwjnu6qW7E4).
 
