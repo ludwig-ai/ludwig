@@ -50,12 +50,12 @@ Finally, the use of abstract interfaces throughout the codebase makes it easy fo
 
 - [Serving](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/serving)
 
-  ```
   Serve models using FastAPI.
-  ```
 
-  > ludwig serve --model_path ./results/experiment_run/model
-  > curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
+  ```
+  ludwig serve --model_path ./results/experiment_run/model
+  curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
+  ```
 
 - [Hyperparameter optimization](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/hyperopt)
 
