@@ -53,7 +53,6 @@ from ludwig.utils.image_utils import (
     get_gray_default_image,
     get_image_from_path,
     grayscale,
-    normalize,
     num_channels_in_image,
     read_image,
     resize_image,
@@ -67,7 +66,7 @@ logger = logging.getLogger(__name__)
 # TODO(shreya): Also confirm if this is being used anywhere
 # TODO(shreya): Confirm if ok to use imagenet means and std devs
 image_scaling_registry = {
-    "pixel_normalization": normalize,
+    "pixel_normalization": lambda x: x * 1.0 / 255,
     "pixel_standardization": partial(
         torchvision.transforms.functional.normalize, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     ),
@@ -496,7 +495,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         assert inputs.dtype in [torch.uint8, torch.int64]
 
         # casting and rescaling
-        inputs = normalize(inputs)
+        inputs = inputs.type(torch.float32) / 255
 
         inputs_encoded = self.encoder_obj(inputs)
 
