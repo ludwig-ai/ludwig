@@ -32,7 +32,7 @@
         "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs"
     ],
     "bases": [
-        "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig"
+        "ludwig.marshmallow_utils.schema.BaseMarshmallowConfig"
     ],
     "children": {
         "ludwig.models.trainer.TrainerConfig.__init__": {
@@ -350,7 +350,7 @@
             "type": "float"
         },
         "ludwig.models.trainer.TrainerConfig.optimizer": {
-            "docstring": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizer()`).",
+            "docstring": "Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer\nand its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`).",
             "name": "optimizer",
             "path": "ludwig.models.trainer.TrainerConfig.optimizer",
             "relative_file_path": "ludwig/models/trainer.py",
