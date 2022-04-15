@@ -23,7 +23,7 @@ from ludwig.combiners.combiners import (
     TransformerCombiner,
     TransformerCombinerConfig,
 )
-from ludwig.marshmallow_utils.schema import load_config
+from ludwig.validation.schema_utils import load_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

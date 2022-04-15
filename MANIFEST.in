@@ -1,4 +1,4 @@
 include *.txt
 recursive-include ludwig/datasets *.yaml
 recursive-include ludwig/automl/defaults *.yaml
-recursive-include ludwig/marshmallow_utils/generated *.json
+recursive-include ludwig/validation/generated *.json

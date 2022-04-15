@@ -6,10 +6,10 @@ from pathlib import Path
 
 # Import (unused) modules with marshmallow classes, necessary for generating list of subclasses.
 import ludwig.combiners.combiners as lcc  # noqa: F401
-import ludwig.marshmallow_utils.test_classes as lut  # noqa: F401
 import ludwig.models.trainer as lmt  # noqa: F401
 import ludwig.modules.optimization_modules as lmo  # noqa: F401
-from ludwig.marshmallow_utils.schema import BaseMarshmallowConfig, get_fully_qualified_class_name
+import ludwig.validation.test_classes as lut  # noqa: F401
+from ludwig.validation.schema_utils import BaseMarshmallowConfig, get_fully_qualified_class_name
 
 # Helper methods:
 
@@ -61,7 +61,7 @@ def prune_pytorch_structures(opt_struct):
 def extract_pytorch_structures():
     """Extracts and saves the parsed structure of all pytorch classes referenced in
     `ludwig.modules.optimization_modules.optimizer_registry` as JSON files under
-    `ludwig/marshmallow_utils/generated/torch/`."""
+    `ludwig/validation/generated/torch/`."""
     for opt in lmo.optimizer_registry:
         # Get the torch class:
         optimizer_class = lmo.optimizer_registry[opt][0]
@@ -73,9 +73,7 @@ def extract_pytorch_structures():
 
         # Write it to a file:
         parent_dir = str(Path(__file__).parent.parent)
-        filename = (
-            os.path.join(parent_dir, "ludwig/marshmallow_utils/generated/torch/", optimizer_class.__name__) + ".json"
-        )
+        filename = os.path.join(parent_dir, "ludwig/validation/generated/torch/", optimizer_class.__name__) + ".json"
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as outfile:
             json.dump(

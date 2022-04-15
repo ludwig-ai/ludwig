@@ -12,13 +12,13 @@ from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.marshmallow_utils.schema import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
+from ludwig.validation.schema_utils import load_config_with_kwargs
 
 logger = logging.getLogger(__name__)
 
