@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.combiners.combiners import BaseCombinerConfig
-from ludwig.marshmallow_schema_utils.utils import BaseMarshmallowConfig
+from ludwig.marshmallow_utils.schema import BaseMarshmallowConfig
 
 
 @dataclass

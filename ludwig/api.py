@@ -60,7 +60,7 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
-from ludwig.marshmallow_schema_utils.utils import load_config_with_kwargs
+from ludwig.marshmallow_utils.schema import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (

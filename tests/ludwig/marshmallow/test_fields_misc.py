@@ -4,7 +4,7 @@ import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
-import ludwig.marshmallow_schema_utils.utils as lusutils
+import ludwig.marshmallow_utils.schema as lusutils
 
 
 def get_marshmallow_from_dataclass_field(dfield):
