@@ -74,7 +74,7 @@ image_scaling_registry = {
 
 
 class _ImagePreprocessing(torch.nn.Module):
-    """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data"""
+    """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
