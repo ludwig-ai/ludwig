@@ -163,64 +163,79 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
 
 def pad(
     img: torch.Tensor,
-    size: Union[int, Tuple[int]],
+    size: Union[int, Tuple[int, int]],
 ) -> torch.Tensor:
-    old_size = np.array(img.shape[1:])
-    pad_size = (to_np_tuple(size) - old_size) / 2
-    padding = np.concatenate((np.floor(pad_size), np.ceil(pad_size)))
+    if torch.jit.isinstance(size, int):
+        new_size = torch.tensor((size, size))
+    else:
+        new_size = torch.tensor(size)
+    old_size = torch.tensor(img.shape[-2:])
+
+    pad_size = (new_size - old_size) / 2
+    padding = torch.cat((torch.floor(pad_size), torch.ceil(pad_size)))
     padding[padding < 0] = 0
-    padding = tuple(padding.astype(int).tolist())
+    padding = [int(x) for x in padding]
     return F.pad(img, padding=padding, padding_mode="edge")
 
 
 def crop(
     img: torch.Tensor,
-    size: Union[int, Tuple[int]],
+    size: Union[int, Tuple[int, int]],
 ) -> torch.Tensor:
-    return F.center_crop(img, output_size=size)
+    if torch.jit.isinstance(size, int):
+        new_size = (size, size)
+    else:
+        new_size = size
+    return F.center_crop(img, output_size=new_size)
 
 
-def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int]]):
-    new_size = to_np_tuple(new_size)
-    if new_size.tolist() == list(img.shape[1:]):
+def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
+    """torchscript-compatible implementation of resize with constants.CROP_OR_PAD.
+
+    Args:
+        img (torch.Tensor): image with shape [..., height, width] to resize
+        size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+    """
+    if torch.jit.isinstance(new_size, int):
+        new_size = (new_size, new_size)
+    else:
+        new_size = new_size
+
+    if list(new_size) == list(img.shape[-2:]):
         return img
     img = pad(img, new_size)
     img = crop(img, new_size)
     return img
 
 
-def resize_image(img: torch.Tensor, new_size: Union[int, Tuple[int, int]], resize_method: str) -> torch.Tensor:
-    try:
-        import torchvision.transforms.functional as F
-    except ImportError:
-        logger.error(
-            "torchvision is not installed. "
-            "In order to install all image feature dependencies run "
-            "pip install ludwig[image]"
-        )
-        sys.exit(-1)
+def resize_image(
+    img: torch.Tensor,
+    new_size: Union[int, Tuple[int, int]],
+    resize_method: str,
+    crop_or_pad_constant: str = CROP_OR_PAD,
+    interpolate_constant: str = INTERPOLATE,
+) -> torch.Tensor:
+    """torchscript-compatible implementation of resize.
 
-    new_size = to_np_tuple(new_size)
-    if list(img.shape[:1]) != new_size.tolist():
-        if resize_method == CROP_OR_PAD:
-            return crop_or_pad(img, new_size.tolist())
-        elif resize_method == INTERPOLATE:
-            return F.resize(img, new_size.tolist())
+    Args:
+        img (torch.Tensor): image with shape [..., height, width] to resize
+        size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+    """
+    if torch.jit.isinstance(new_size, int):
+        new_size = (new_size, new_size)
+    else:
+        new_size = new_size
+
+    if list(img.shape[-2:]) != list(new_size):
+        if resize_method == crop_or_pad_constant:
+            return crop_or_pad(img, new_size)
+        elif resize_method == interpolate_constant:
+            return F.resize(img, new_size)
         raise ValueError(f"Invalid image resize method: {resize_method}")
     return img
 
 
 def grayscale(img: torch.Tensor) -> torch.Tensor:
-    try:
-        import torchvision.transforms.functional as F
-    except ImportError:
-        logger.error(
-            "torchvision is not installed. "
-            "In order to install all image feature dependencies run "
-            "pip install ludwig[image]"
-        )
-        sys.exit(-1)
-
     return F.rgb_to_grayscale(img)
 
 
