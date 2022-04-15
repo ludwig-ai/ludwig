@@ -73,8 +73,12 @@ class RayDataset(Dataset):
         #     return df
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
-    def pipeline(self, shuffle=True) -> DatasetPipeline:
-        pipe = self.ds.repeat()
+    def pipeline(self, shuffle=True, fully_executed=True) -> DatasetPipeline:
+        ds = self.ds
+        if fully_executed:
+            ds = ds.fully_executed()
+
+        pipe = ds.repeat()
         if shuffle:
             if _ray18:
                 pipe = pipe.random_shuffle_each_window()
