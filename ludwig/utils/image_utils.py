@@ -165,6 +165,15 @@ def pad(
     img: torch.Tensor,
     size: Union[int, Tuple[int, int]],
 ) -> torch.Tensor:
+    """torchscript-compatible implementation of pad.
+
+    Args:
+        img (torch.Tensor): image with shape [..., height, width] to pad
+        size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+
+    Returns:
+        torch.Tensor: padded image of size [..., size[0], size[1]] or [..., size, size] if size is int.
+    """
     if torch.jit.isinstance(size, int):
         new_size = torch.tensor((size, size))
     else:
@@ -182,6 +191,15 @@ def crop(
     img: torch.Tensor,
     size: Union[int, Tuple[int, int]],
 ) -> torch.Tensor:
+    """torchscript-compatible implementation of crop.
+
+    Args:
+        img (torch.Tensor): image with shape [..., height, width] to crop
+        size (Union[int, Tuple[int, int]]): size to crop to. If int, crops to square image of that size.
+
+    Returns:
+        torch.Tensor: cropped image of size [..., size[0], size[1]] or [..., size, size] if size is int.
+    """
     if torch.jit.isinstance(size, int):
         new_size = (size, size)
     else:
@@ -190,11 +208,14 @@ def crop(
 
 
 def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
-    """torchscript-compatible implementation of resize with constants.CROP_OR_PAD.
+    """torchscript-compatible implementation of resize using constants.CROP_OR_PAD.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
-        size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+        size (Union[int, Tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
+
+    Returns:
+        torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
     if torch.jit.isinstance(new_size, int):
         new_size = (new_size, new_size)
@@ -219,7 +240,11 @@ def resize_image(
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
-        size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+        new_size (Union[int, Tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
+        resize_method (str): method to use for resizing. Either constants.CROP_OR_PAD or constants.INTERPOLATE.
+
+    Returns:
+        torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
     if torch.jit.isinstance(new_size, int):
         new_size = (new_size, new_size)
@@ -236,10 +261,12 @@ def resize_image(
 
 
 def grayscale(img: torch.Tensor) -> torch.Tensor:
+    """Grayscales RGB image."""
     return F.rgb_to_grayscale(img)
 
 
 def num_channels_in_image(img: torch.Tensor):
+    """Returns number of channels in image."""
     if img is None or img.ndim < 2:
         raise ValueError("Invalid image data")
 
@@ -278,7 +305,6 @@ def get_img_output_shape(
 
     Currently supported for Conv2D, MaxPool2D and AvgPool2d ops.
     """
-
     if padding == "same":
         return (img_height, img_width)
     elif padding == "valid":
