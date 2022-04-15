@@ -980,7 +980,8 @@ class Trainer(BaseTrainer):
 
         # ================ Finished Training ================
         self.callback(
-            lambda c: c.on_trainer_train_teardown(self, progress_tracker, self.is_coordinator()), coordinator_only=False
+            lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
+            coordinator_only=False,
         )
 
         if train_summary_writer is not None:

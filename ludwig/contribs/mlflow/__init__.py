@@ -1,5 +1,7 @@
 import logging
 import os
+import queue
+import threading
 from distutils.version import LooseVersion
 from typing import Any, Dict
 
@@ -30,6 +32,8 @@ class MlflowCallback(Callback):
         self.tracking_uri = tracking_uri
         self.training_set_metadata = None
         self.config = None
+        self.save_queue = None
+        self.save_thread = None
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
 
@@ -82,17 +86,18 @@ class MlflowCallback(Callback):
         if not os.path.exists(model_hyperparameters_path):
             save_json(model_hyperparameters_path, self.config)
 
+        self.save_queue = queue.Queue()
+        self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(self.save_queue,))
+        self.save_thread.start()
+
     def on_eval_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.steps)
+        self.save_queue.put((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
 
-        _log_model(save_path)
+    def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
+        if is_coordinator:
+            self.save_queue.put((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
+            self.save_thread.join()
 
-    def on_epoch_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.steps)
-
-        _log_model(save_path)
-
-    def on_trainer_train_teardown(self, trainer, progress_tracker, is_coordinator):
         if self.run is not None:
             mlflow.end_run()
 
@@ -129,6 +134,23 @@ class MlflowCallback(Callback):
         if self.run and not self.run_ended:
             mlflow.end_run()
             self.run = mlflow.start_run(run_id=self.run.info.run_id, experiment_id=self.run.info.experiment_id)
+
+
+def _log_mlflow_loop(q: queue.Queue):
+    while True:
+        elem = q.get()
+        log_metrics, steps, save_path, should_return = elem
+        mlflow.log_metrics(log_metrics, step=steps)
+
+        if not q.empty():
+            # in other words, don't bother saving the model artifacts
+            # if we're about to do it again
+            continue
+
+        _log_model(save_path)
+
+        if should_return:
+            return
 
 
 def _log_artifacts(output_directory):
