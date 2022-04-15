@@ -214,6 +214,26 @@ def test_grayscale(grayscale_fn: Callable, input_img: torch.Tensor, grayscale_im
     assert torch.equal(output_img, grayscale_img)
 
 
+@pytest.mark.parametrize("normalize_fn", [normalize, torch.jit.script(normalize)])
+def test_normalize(normalize_fn: Callable):
+    input_img = torch.tensor(
+        [
+            [255, 51, 0],
+            [0, 51, 255],
+        ]
+    )
+    expected_img = torch.tensor(
+        [
+            [1.0, 0.2, 0.0],
+            [0.0, 0.2, 1.0],
+        ]
+    )
+
+    output_img = normalize_fn(input_img)
+
+    assert torch.allclose(output_img, expected_img)
+
+
 def test_num_channels_in_image():
     image_2d = torch.randint(0, 1, (10, 10))
     image_3d = torch.randint(0, 1, (3, 10, 10))

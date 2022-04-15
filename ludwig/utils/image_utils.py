@@ -240,6 +240,19 @@ def grayscale(img: torch.Tensor) -> torch.Tensor:
     return F.rgb_to_grayscale(img)
 
 
+def normalize(image: torch.Tensor) -> torch.Tensor:
+    """
+    Normalize pixel values to be between 0 and 1.
+
+    Args:
+        image: Image tensor.
+
+    Returns:
+        Normalized image tensor.
+    """
+    return image.type(torch.float32) / 255.0
+
+
 def num_channels_in_image(img: torch.Tensor):
     if img is None or img.ndim < 2:
         raise ValueError("Invalid image data")
