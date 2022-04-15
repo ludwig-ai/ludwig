@@ -5,7 +5,7 @@ import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
-import ludwig.marshmallow.marshmallow_schema_utils as lusutils
+import ludwig.marshmallow_schema_utils.utils as lusutils
 import ludwig.modules.optimization_modules as lmo
 
 # Tests for custom dataclass/marshmallow fields:

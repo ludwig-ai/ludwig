@@ -22,7 +22,7 @@ import torch
 from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
-import ludwig.marshmallow.marshmallow_schema_utils as schema
+import ludwig.marshmallow_schema_utils.utils as schema
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.sequence_encoders import ParallelCNN, StackedCNN, StackedCNNRNN, StackedParallelCNN, StackedRNN
 from ludwig.features.base_feature import InputFeature

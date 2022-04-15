@@ -6,10 +6,10 @@ from pathlib import Path
 
 # Import (unused) modules with marshmallow classes, necessary for generating list of subclasses.
 import ludwig.combiners.combiners as lcc  # noqa: F401
-import ludwig.marshmallow.test_classes as lut  # noqa: F401
+import ludwig.marshmallow_schema_utils.test_classes as lut  # noqa: F401
 import ludwig.models.trainer as lmt  # noqa: F401
 import ludwig.modules.optimization_modules as lmo  # noqa: F401
-from ludwig.marshmallow.marshmallow_schema_utils import BaseMarshmallowConfig, get_fully_qualified_class_name
+from ludwig.marshmallow_schema_utils.utils import BaseMarshmallowConfig, get_fully_qualified_class_name
 
 # Helper methods:
 
