@@ -1189,12 +1189,12 @@ class ComparatorCombiner(Combiner):
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     projection_size: int = schema.PositiveInteger(default=128)
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-    num_fc_layers: int = schema.NonNegativeInteger(default=0)
-    output_size: int = schema.PositiveInteger(default=256)
+    num_fc_layers: int = schema.NonNegativeInteger(default=2)
+    output_size: int = schema.PositiveInteger(default=128)
     use_bias: bool = True
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
     bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    norm: Optional[str] = schema.StringOptions(["batch", "layer"])
+    norm: Optional[str] = schema.StringOptions(["batch", "layer"], default="layer")
     norm_params: Optional[dict] = schema.Dict()
     activation: str = schema.ActivationOptions(default="relu")
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
