@@ -19,7 +19,6 @@ import os
 import sys
 from collections.abc import Iterable
 from io import BytesIO
-from tkinter import E
 from typing import BinaryIO, List, Optional, TextIO, Tuple, Union
 
 import numpy as np
