@@ -48,11 +48,34 @@ from ludwig.utils.print_utils import logging_level_registry
 
 logger = logging.getLogger(__name__)
 
-
 _PREDICTIONS_SUFFIX = "_predictions"
 _PROBABILITIES_SUFFIX = "_probabilities"
 _CSV_SUFFIX = "csv"
 _PARQUET_SUFFIX = "parquet"
+
+
+def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx, positive_label):
+    """converts non-np.array representation to be np.array."""
+    if "str2idx" in feature_metadata:
+        # categorical output feature as binary
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
+
+        # convert category index to binary representation
+        ground_truth = ground_truth == positive_label
+    else:
+        # binary output feature
+        if "str2bool" in feature_metadata:
+            # non-standard boolean representation
+            ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx)
+        else:
+            # standard boolean representation
+            ground_truth = ground_truth.values
+
+        # ensure positive_label is 1 for binary feature
+        positive_label = 1
+
+    # convert to 0/1 representation and return
+    return ground_truth.astype(int), positive_label
 
 
 def _vectorize_ground_truth(
@@ -2946,7 +2969,9 @@ def binary_threshold_vs_metric(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
+        ground_truth, positive_label = _convert_ground_truth(
+            ground_truth, feature_metadata, ground_truth_apply_idx, positive_label
+        )
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
@@ -2981,18 +3006,16 @@ def binary_threshold_vs_metric(
             for threshold in thresholds:
                 threshold = threshold if threshold < 1 else 0.99
 
-                t_gt = ground_truth[prob >= threshold]
                 predictions = prob >= threshold
-                t_predictions = predictions[prob >= threshold]
 
                 if metric == "f1":
-                    metric_score = sklearn.metrics.f1_score(t_gt, t_predictions)
+                    metric_score = sklearn.metrics.f1_score(ground_truth, predictions)
                 elif metric == "precision":
-                    metric_score = sklearn.metrics.precision_score(t_gt, t_predictions)
+                    metric_score = sklearn.metrics.precision_score(ground_truth, predictions)
                 elif metric == "recall":
-                    metric_score = sklearn.metrics.recall_score(t_gt, t_predictions)
+                    metric_score = sklearn.metrics.recall_score(ground_truth, predictions)
                 elif metric == ACCURACY:
-                    metric_score = sklearn.metrics.accuracy_score(t_gt, t_predictions)
+                    metric_score = sklearn.metrics.accuracy_score(ground_truth, predictions)
 
                 scores_alg.append(metric_score)
 
@@ -3055,7 +3078,9 @@ def roc_curves(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
+        ground_truth, positive_label = _convert_ground_truth(
+            ground_truth, feature_metadata, ground_truth_apply_idx, positive_label
+        )
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)

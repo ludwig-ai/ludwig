@@ -1067,9 +1067,14 @@ def build_dataset(
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
+    sample_ratio = global_preprocessing_parameters["sample_ratio"]
+    if sample_ratio < 1.0:
+        logger.debug(f"sample {sample_ratio} of data")
+        dataset_df = dataset_df.sample(frac=sample_ratio)
+
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
-    dataset_df = backend.df_engine.persist(dataset_df)
+    dataset_df = df_engine.persist(dataset_df)
 
     global_preprocessing_parameters = merge_dict(default_preprocessing_parameters, global_preprocessing_parameters)
 
