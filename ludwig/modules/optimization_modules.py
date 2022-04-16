@@ -22,7 +22,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
-from ludwig.validation.schema_utils import (
+from ludwig.validation.marshmallow_utils import (
     BaseMarshmallowConfig,
     create_cond,
     FloatRange,

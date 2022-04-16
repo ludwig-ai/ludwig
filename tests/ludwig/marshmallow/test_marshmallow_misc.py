@@ -4,7 +4,7 @@ from marshmallow.utils import EXCLUDE
 from marshmallow_jsonschema import JSONSchema as js
 
 import ludwig.combiners.combiners as lcc
-import ludwig.validation.schema_utils as lusutils
+import ludwig.validation.marshmallow_utils as lusutils
 from ludwig.models.trainer import TrainerConfig
 from ludwig.validation.test_classes import CustomTestSchema
 

@@ -2,7 +2,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
-from ludwig.utils.schema import validate_config
+from ludwig.validation.schema import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 

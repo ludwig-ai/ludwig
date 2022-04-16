@@ -9,7 +9,7 @@ import ludwig.combiners.combiners as lcc  # noqa: F401
 import ludwig.models.trainer as lmt  # noqa: F401
 import ludwig.modules.optimization_modules as lmo  # noqa: F401
 import ludwig.validation.test_classes as lut  # noqa: F401
-from ludwig.validation.schema_utils import BaseMarshmallowConfig, get_fully_qualified_class_name
+from ludwig.validation.marshmallow_utils import BaseMarshmallowConfig, get_fully_qualified_class_name
 
 # Helper methods:
 

@@ -35,7 +35,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-import ludwig.validation.schema_utils as schema_utils
+import ludwig.validation.marshmallow_utils as marshmallow_utils
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -103,68 +103,68 @@ class BaseTrainer(ABC):
 
 
 def get_trainer_jsonschema():
-    return schema_utils.get_custom_schema_from_marshmallow_class(TrainerConfig)
+    return marshmallow_utils.get_custom_schema_from_marshmallow_class(TrainerConfig)
 
 
 @dataclass
-class TrainerConfig(schema_utils.BaseMarshmallowConfig):
+class TrainerConfig(marshmallow_utils.BaseMarshmallowConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
     """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
        and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`)."""
 
-    epochs: int = schema_utils.PositiveInteger(default=100)
+    epochs: int = marshmallow_utils.PositiveInteger(default=100)
     """Number of epochs the algorithm is intended to be run over (default: 100)."""
 
-    regularization_lambda: float = schema_utils.FloatRange(default=0.0, min=0)
+    regularization_lambda: float = marshmallow_utils.FloatRange(default=0.0, min=0)
     """Strength of the $L2$ regularization (default: 0.0)."""
 
-    regularization_type: Optional[str] = schema_utils.RegularizerOptions(default="l2")
+    regularization_type: Optional[str] = marshmallow_utils.RegularizerOptions(default="l2")
     """Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."""
 
     should_shuffle: bool = True
     """Whether to shuffle batches during training when true (default: True)."""
 
-    learning_rate: float = schema_utils.NumericOrStringOptionsField(
+    learning_rate: float = marshmallow_utils.NumericOrStringOptionsField(
         default=0.001, min=0.0, max=1.0, options=["auto"], default_numeric=0.001, default_option="auto", nullable=False
     )
     """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
        `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""
 
-    batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
+    batch_size: Union[int, str] = marshmallow_utils.IntegerOrStringOptionsField(
         default=128, options=["auto"], default_numeric=128, default_option="auto", nullable=False, min_exclusive=0
     )
     """Size of batch to pass to the model for training (default: 128)."""
 
-    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
+    eval_batch_size: Union[None, int, str] = marshmallow_utils.IntegerOrStringOptionsField(
         default=None, options=["auto"], default_numeric=None, default_option="auto", nullable=True, min_exclusive=0
     )
     """Size of batch to pass to the model for evaluation (default: 'auto')."""
 
-    early_stop: int = schema_utils.IntegerRange(default=5, min=-1)
+    early_stop: int = marshmallow_utils.IntegerRange(default=5, min=-1)
     """How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to
        -1, which disables early_stop (default: 5)."""
 
-    steps_per_checkpoint: int = schema_utils.NonNegativeInteger(default=0)
+    steps_per_checkpoint: int = marshmallow_utils.NonNegativeInteger(default=0)
     """How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is checkpointed
        after every epoch. (default: 0)."""
 
-    checkpoints_per_epoch: int = schema_utils.NonNegativeInteger(default=0)
+    checkpoints_per_epoch: int = marshmallow_utils.NonNegativeInteger(default=0)
     """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
        is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
 
     evaluate_training_set: bool = True
     """Whether to include the entire training set during evaluation (default: True)."""
 
-    reduce_learning_rate_on_plateau: float = schema_utils.FloatRange(default=0.0, min=0.0, max=1.0)
+    reduce_learning_rate_on_plateau: float = marshmallow_utils.FloatRange(default=0.0, min=0.0, max=1.0)
     """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
        improve) (default: 0.0)."""
 
-    reduce_learning_rate_on_plateau_patience: int = schema_utils.NonNegativeInteger(default=5)
+    reduce_learning_rate_on_plateau_patience: int = marshmallow_utils.NonNegativeInteger(default=5)
     """How many epochs have to pass before the learning rate reduces (default: 5)."""
 
-    reduce_learning_rate_on_plateau_rate: float = schema_utils.FloatRange(default=0.5, min=0.0, max=1.0)
+    reduce_learning_rate_on_plateau_rate: float = marshmallow_utils.FloatRange(default=0.5, min=0.0, max=1.0)
     """Rate at which we reduce the learning rate (default: 0.5)."""
 
     reduce_learning_rate_eval_metric: str = LOSS
@@ -173,16 +173,16 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     reduce_learning_rate_eval_split: str = TRAINING
     """TODO: Document parameters. (default: `ludwig.constants.TRAINING`)."""
 
-    increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(default=0)
+    increase_batch_size_on_plateau: int = marshmallow_utils.NonNegativeInteger(default=0)
     """Number to increase the batch size by on a plateau (default: 0)."""
 
-    increase_batch_size_on_plateau_patience: int = schema_utils.NonNegativeInteger(default=5)
+    increase_batch_size_on_plateau_patience: int = marshmallow_utils.NonNegativeInteger(default=5)
     """How many epochs to wait for before increasing the batch size (default: 5)."""
 
-    increase_batch_size_on_plateau_rate: float = schema_utils.NonNegativeFloat(default=2.0)
+    increase_batch_size_on_plateau_rate: float = marshmallow_utils.NonNegativeFloat(default=2.0)
     """Rate at which the batch size increases (default: 2.0)."""
 
-    increase_batch_size_on_plateau_max: int = schema_utils.PositiveInteger(default=512)
+    increase_batch_size_on_plateau_max: int = marshmallow_utils.PositiveInteger(default=512)
     """Maximum size of the batch (default: 512)."""
 
     increase_batch_size_eval_metric: str = LOSS
@@ -194,10 +194,10 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     decay: bool = False
     """Turn on exponential decay of the learning rate (default: False)."""
 
-    decay_steps: int = schema_utils.PositiveInteger(default=10000)
+    decay_steps: int = marshmallow_utils.PositiveInteger(default=10000)
     """TODO: Document parameters. (default: 10000)."""
 
-    decay_rate: float = schema_utils.FloatRange(default=0.96, min=0.0, max=1.0)
+    decay_rate: float = marshmallow_utils.FloatRange(default=0.96, min=0.0, max=1.0)
     """TODO: Document parameters. (default: 0.96)."""
 
     staircase: bool = False
@@ -215,10 +215,10 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     validation_metric: str = LOSS
     """Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`)."""
 
-    learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(default=1.0)
+    learning_rate_warmup_epochs: float = marshmallow_utils.NonNegativeFloat(default=1.0)
     """Number of epochs to warmup the learning rate for (default: 1.0)."""
 
-    learning_rate_scaling: str = schema_utils.StringOptions(["constant", "sqrt", "linear"], default="linear")
+    learning_rate_scaling: str = marshmallow_utils.StringOptions(["constant", "sqrt", "linear"], default="linear")
     """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
        the learning rate is scaled linearly with the number of workers to reflect the proportion by which
        the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
