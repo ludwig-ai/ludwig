@@ -1,16 +1,16 @@
 {
     "attributes": [
-        "ludwig.validation.test_classes.CustomTestSchema.foo"
+        "ludwig.marshmallow.test_classes.CustomTestSchema.foo"
     ],
     "bases": [
-        "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig"
+        "ludwig.marshmallow.marshmallow_schema_utils.BaseMarshmallowConfig"
     ],
     "children": {
-        "ludwig.validation.test_classes.CustomTestSchema.__init__": {
+        "ludwig.marshmallow.test_classes.CustomTestSchema.__init__": {
             "docstring": null,
             "name": "__init__",
-            "path": "ludwig.validation.test_classes.CustomTestSchema.__init__",
-            "relative_file_path": "ludwig/validation/test_classes.py",
+            "path": "ludwig.marshmallow.test_classes.CustomTestSchema.__init__",
+            "relative_file_path": "ludwig/marshmallow/test_classes.py",
             "signature": {
                 "parameters": [
                     {
@@ -27,15 +27,15 @@
                 "return_annotation": "None"
             }
         },
-        "ludwig.validation.test_classes.CustomTestSchema.foo": {
+        "ludwig.marshmallow.test_classes.CustomTestSchema.foo": {
             "docstring": "foo (default: 5)",
             "name": "foo",
-            "path": "ludwig.validation.test_classes.CustomTestSchema.foo",
-            "relative_file_path": "ludwig/validation/test_classes.py",
+            "path": "ludwig.marshmallow.test_classes.CustomTestSchema.foo",
+            "relative_file_path": "ludwig/marshmallow/test_classes.py",
             "type": "int"
         }
     },
     "docstring": "sample docstring.",
     "name": "CustomTestSchema",
-    "path": "ludwig.validation.test_classes.CustomTestSchema"
+    "path": "ludwig.marshmallow.test_classes.CustomTestSchema"
 }
