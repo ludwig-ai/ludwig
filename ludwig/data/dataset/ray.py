@@ -40,6 +40,9 @@ from ludwig.utils.types import DataFrame
 
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 _ray111 = LooseVersion(ray.__version__) >= LooseVersion("1.11")
+_ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
+
+
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
@@ -73,8 +76,15 @@ class RayDataset(Dataset):
         #     return df
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
-    def pipeline(self, shuffle=True) -> DatasetPipeline:
-        pipe = self.ds.repeat()
+    def pipeline(self, shuffle=True, fully_executed=True) -> DatasetPipeline:
+        if not fully_executed and not _ray112:
+            raise ValueError(f"Cannot set fully_execute=False in ray {ray.__version__}")
+
+        ds = self.ds
+        if fully_executed and _ray112:
+            ds = ds.fully_executed()
+
+        pipe = ds.repeat()
         if shuffle:
             if _ray18:
                 pipe = pipe.random_shuffle_each_window()

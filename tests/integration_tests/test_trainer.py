@@ -95,7 +95,7 @@ def run_scale_lr(config, data_csv, num_workers, outdir):
         def __init__(self):
             self.lr = None
 
-        def on_trainer_train_teardown(self, trainer, progress_tracker, is_coordinator: bool):
+        def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator: bool):
             for g in trainer.optimizer.param_groups:
                 self.lr = g["lr"]
 
