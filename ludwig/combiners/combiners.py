@@ -1270,7 +1270,7 @@ class ProjectAggregateCombiner(Combiner):
         hidden = torch.permute(hidden, (1, 0, 2))  # shape [bs, num_eo, h]
 
         # ================ Aggregate ================
-        hidden = torch.mean(hidden, dim=-1)
+        hidden = torch.mean(hidden, dim=1)
 
         # ================ Fully Connected ================
         if self.fc_stack is not None:
