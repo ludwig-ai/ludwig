@@ -32,7 +32,8 @@ class MlflowCallback(Callback):
         self.tracking_uri = tracking_uri
         self.training_set_metadata = None
         self.config = None
-        self.save_queue = None
+        self.save_in_background = True
+        self.save_fn = None
         self.save_thread = None
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
@@ -49,6 +50,13 @@ class MlflowCallback(Callback):
         # Filter out mlflow params like tracking URI, experiment ID, etc.
         params = {k: v for k, v in parameters.items() if k != "mlflow"}
         self._log_params({"hparam": params})
+
+        # TODO(travis): figure out a good way to support this. The problem with
+        # saving artifacts in the background with hyperopt is early stopping. If
+        # the scheduler decides to terminate a process, then currently there's no
+        # mechanism to detect this a "flush" the queue of pending writes before
+        # stopping. Should work with Ray Tune team to come up with a solution.
+        self.save_in_background = False
 
     def on_train_init(self, base_config, experiment_name, output_directory, **kwargs):
         # Experiment may already have been set during hyperopt init, in
@@ -86,17 +94,22 @@ class MlflowCallback(Callback):
         if not os.path.exists(model_hyperparameters_path):
             save_json(model_hyperparameters_path, self.config)
 
-        self.save_queue = queue.Queue()
-        self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(self.save_queue,))
-        self.save_thread.start()
+        if self.save_in_background:
+            save_queue = queue.Queue()
+            self.save_fn = lambda args: save_queue.put(args)
+            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue,))
+            self.save_thread.start()
+        else:
+            self.save_fn = lambda args: _log_mlflow(*args)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
-        self.save_queue.put((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
+        self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
         if is_coordinator:
-            self.save_queue.put((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
-            self.save_thread.join()
+            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
+            if self.save_thread is not None:
+                self.save_thread.join()
 
         if self.run is not None:
             mlflow.end_run()
@@ -149,6 +162,11 @@ def _log_mlflow_loop(q: queue.Queue):
             continue
 
         _log_model(save_path)
+
+
+def _log_mlflow(log_metrics, steps, save_path, should_return):
+    mlflow.log_metrics(log_metrics, step=steps)
+    _log_model(save_path)
 
 
 def _log_artifacts(output_directory):
