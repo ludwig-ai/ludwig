@@ -1207,7 +1207,9 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
 
 @register_combiner(name="project_aggregate")
 class ProjectAggregateCombiner(Combiner):
-    def __init__(self, input_features: Dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
+    def __init__(
+        self, input_features: Dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
+    ):
         super().__init__(input_features)
         self.name = "ProjectAggregateCombiner"
         logger.debug(f" {self.name}")
@@ -1238,7 +1240,7 @@ class ProjectAggregateCombiner(Combiner):
         if self.fc_layers is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                first_layer_input_size=self.concatenated_shape[-1],
+                first_layer_input_size=config.projection_size,
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
                 default_output_size=config.output_size,
