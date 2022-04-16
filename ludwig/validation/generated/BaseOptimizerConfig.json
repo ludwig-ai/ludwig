@@ -4,7 +4,7 @@
         "ludwig.modules.optimization_modules.BaseOptimizerConfig.type"
     ],
     "bases": [
-        "ludwig.validation.schema_utils.BaseMarshmallowConfig",
+        "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig",
         "abc.ABC"
     ],
     "children": {

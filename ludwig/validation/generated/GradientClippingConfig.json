@@ -5,7 +5,7 @@
         "ludwig.modules.optimization_modules.GradientClippingConfig.clipvalue"
     ],
     "bases": [
-        "ludwig.validation.schema_utils.BaseMarshmallowConfig"
+        "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig"
     ],
     "children": {
         "ludwig.modules.optimization_modules.GradientClippingConfig.__init__": {

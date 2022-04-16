@@ -3,7 +3,7 @@
         "ludwig.validation.test_classes.CustomTestSchema.foo"
     ],
     "bases": [
-        "ludwig.validation.schema_utils.BaseMarshmallowConfig"
+        "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig"
     ],
     "children": {
         "ludwig.validation.test_classes.CustomTestSchema.__init__": {

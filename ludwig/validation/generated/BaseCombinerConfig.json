@@ -1,7 +1,7 @@
 {
     "attributes": [],
     "bases": [
-        "ludwig.validation.schema_utils.BaseMarshmallowConfig"
+        "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig"
     ],
     "children": {},
     "docstring": "Base combiner config class.",

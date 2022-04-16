@@ -11,6 +11,7 @@
         "ludwig.models.trainer.TrainerConfig.early_stop",
         "ludwig.models.trainer.TrainerConfig.steps_per_checkpoint",
         "ludwig.models.trainer.TrainerConfig.checkpoints_per_epoch",
+        "ludwig.models.trainer.TrainerConfig.evaluate_training_set",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_patience",
         "ludwig.models.trainer.TrainerConfig.reduce_learning_rate_on_plateau_rate",
@@ -29,10 +30,11 @@
         "ludwig.models.trainer.TrainerConfig.gradient_clipping",
         "ludwig.models.trainer.TrainerConfig.validation_field",
         "ludwig.models.trainer.TrainerConfig.validation_metric",
-        "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs"
+        "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs",
+        "ludwig.models.trainer.TrainerConfig.learning_rate_scaling"
     ],
     "bases": [
-        "ludwig.validation.schema_utils.BaseMarshmallowConfig"
+        "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig"
     ],
     "children": {
         "ludwig.models.trainer.TrainerConfig.__init__": {
@@ -111,6 +113,12 @@
                         "default": "0",
                         "kind": "POSITIONAL_OR_KEYWORD",
                         "name": "checkpoints_per_epoch"
+                    },
+                    {
+                        "annotation": "bool",
+                        "default": "True",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "evaluate_training_set"
                     },
                     {
                         "annotation": "float",
@@ -225,6 +233,12 @@
                         "default": "1.0",
                         "kind": "POSITIONAL_OR_KEYWORD",
                         "name": "learning_rate_warmup_epochs"
+                    },
+                    {
+                        "annotation": "str",
+                        "default": "'linear'",
+                        "kind": "POSITIONAL_OR_KEYWORD",
+                        "name": "learning_rate_scaling"
                     }
                 ],
                 "return_annotation": "None"
@@ -286,6 +300,13 @@
             "relative_file_path": "ludwig/models/trainer.py",
             "type": "Union[NoneType, int, str]"
         },
+        "ludwig.models.trainer.TrainerConfig.evaluate_training_set": {
+            "docstring": "Whether to include the entire training set during evaluation (default: True).",
+            "name": "evaluate_training_set",
+            "path": "ludwig.models.trainer.TrainerConfig.evaluate_training_set",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "bool"
+        },
         "ludwig.models.trainer.TrainerConfig.gradient_clipping": {
             "docstring": "Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.\n(default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)",
             "name": "gradient_clipping",
@@ -341,6 +362,13 @@
             "path": "ludwig.models.trainer.TrainerConfig.learning_rate",
             "relative_file_path": "ludwig/models/trainer.py",
             "type": "float"
+        },
+        "ludwig.models.trainer.TrainerConfig.learning_rate_scaling": {
+            "docstring": "Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally\nthe learning rate is scaled linearly with the number of workers to reflect the proportion by which\nthe effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead\nto better model performance. If the learning rate is hand-tuned for a given number of workers, setting this value\nto constant can be used to disable scale-up (default: linear).",
+            "name": "learning_rate_scaling",
+            "path": "ludwig.models.trainer.TrainerConfig.learning_rate_scaling",
+            "relative_file_path": "ludwig/models/trainer.py",
+            "type": "str"
         },
         "ludwig.models.trainer.TrainerConfig.learning_rate_warmup_epochs": {
             "docstring": "Number of epochs to warmup the learning rate for (default: 1.0).",

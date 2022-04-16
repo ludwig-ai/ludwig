@@ -6,5 +6,5 @@
     "children": {},
     "docstring": "Base marshmallow class for common attributes and metadata.",
     "name": "BaseMarshmallowConfig",
-    "path": "ludwig.validation.schema_utils.BaseMarshmallowConfig"
+    "path": "ludwig.validation.marshmallow_utils.BaseMarshmallowConfig"
 }
