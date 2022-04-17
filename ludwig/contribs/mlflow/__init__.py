@@ -8,8 +8,9 @@ from typing import Any, Dict
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.data.dataset.base import Dataset
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
+from ludwig.utils.fs_utils import file_lock
 from ludwig.utils.package_utils import LazyLoader
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
@@ -150,6 +151,7 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue):
+
     should_return = False
     while not should_return:
         elem = q.get()
@@ -161,7 +163,9 @@ def _log_mlflow_loop(q: queue.Queue):
             # if we're about to do it again
             continue
 
-        _log_model(save_path)
+        training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
+        with file_lock(training_checkpoints_path, lock_file=".lock"):
+            _log_model(save_path)
 
 
 def _log_mlflow(log_metrics, steps, save_path, should_return):

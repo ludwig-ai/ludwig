@@ -14,6 +14,8 @@ from glob import glob
 import numpy as np
 import torch
 
+from ludwig.utils.fs_utils import file_lock
+
 
 def mkdir(s):
     """Create a directory if it doesn't already exist."""
@@ -47,16 +49,17 @@ def traim_checkpoints_loop(q: queue.Queue, directory: str, max_to_keep: int):
         if should_continue is False:
             return
 
-        # get a list of checkpoints in reverse
-        # chronological order
-        ckpts = get_files(directory, "*.ckpt")[::-1]
+        with file_lock(directory, lock_file=".lock"):
+            # get a list of checkpoints in reverse
+            # chronological order
+            ckpts = get_files(directory, "*.ckpt")[::-1]
 
-        # remove until `max_to_keep` remain
-        num_remove = len(ckpts) - max_to_keep
-        while num_remove > 0:
-            ckpt_name = ckpts.pop()
-            os.remove(ckpt_name)
-            num_remove -= 1
+            # remove until `max_to_keep` remain
+            num_remove = len(ckpts) - max_to_keep
+            while num_remove > 0:
+                ckpt_name = ckpts.pop()
+                os.remove(ckpt_name)
+                num_remove -= 1
 
 
 class Checkpoint:
