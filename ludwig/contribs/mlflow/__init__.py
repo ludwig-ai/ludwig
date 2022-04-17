@@ -104,11 +104,11 @@ class MlflowCallback(Callback):
             self.save_fn = lambda args: _log_mlflow(*args)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
-        self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
+        self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
         if is_coordinator:
-            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
+            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
             if self.save_thread is not None:
                 self.save_thread.join()
 
@@ -151,10 +151,10 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue):
-    should_return = False
-    while not should_return:
+    should_continue = True
+    while should_continue:
         elem = q.get()
-        log_metrics, steps, save_path, should_return = elem
+        log_metrics, steps, save_path, should_continue = elem
         mlflow.log_metrics(log_metrics, step=steps)
 
         if not q.empty():
@@ -167,7 +167,7 @@ def _log_mlflow_loop(q: queue.Queue):
             _log_model(save_path)
 
 
-def _log_mlflow(log_metrics, steps, save_path, should_return):
+def _log_mlflow(log_metrics, steps, save_path, should_continue):
     mlflow.log_metrics(log_metrics, step=steps)
     _log_model(save_path)
 
