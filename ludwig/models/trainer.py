@@ -991,6 +991,9 @@ class Trainer(BaseTrainer):
         if test_summary_writer is not None:
             test_summary_writer.close()
 
+        if self.is_coordinator():
+            checkpoint_manager.close()
+
         # Load the best weights from saved checkpoint
         if self.is_coordinator() and not self.skip_save_model:
             self.model.load_state_dict(torch.load(model_weights_path))
