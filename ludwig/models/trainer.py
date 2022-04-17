@@ -897,103 +897,110 @@ class Trainer(BaseTrainer):
 
         set_random_seed(self.random_seed)
 
-        with training_set.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            seed=self.random_seed,
-            horovod=self.horovod,
-        ) as batcher:
-            # ================ Training Loop ================
-            total_steps = self.epochs * batcher.steps_per_epoch
+        try:
+            with training_set.initialize_batcher(
+                batch_size=self.batch_size,
+                should_shuffle=self.should_shuffle,
+                seed=self.random_seed,
+                horovod=self.horovod,
+            ) as batcher:
+                # ================ Training Loop ================
+                total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Get the terminal steps per checkpoint.
-            final_steps_per_checkpoint = get_final_steps_per_checkpoint(
-                batcher.steps_per_epoch, self.steps_per_checkpoint, self.checkpoints_per_epoch, self.is_coordinator()
-            )
-
-            if self.is_coordinator():
-                logger.info(
-                    f"Training for {total_steps} step(s), approximately "
-                    f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+                # Get the terminal steps per checkpoint.
+                final_steps_per_checkpoint = get_final_steps_per_checkpoint(
+                    batcher.steps_per_epoch,
+                    self.steps_per_checkpoint,
+                    self.checkpoints_per_epoch,
+                    self.is_coordinator(),
                 )
-                logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
-
-            progress_bar = None
-            if self.is_coordinator():
-                progress_bar = tqdm(
-                    desc="Training",
-                    total=total_steps,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled(),
-                )
-
-            while progress_tracker.steps < total_steps:
-                # note that batch size may change over epochs
-                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
-
-                # epoch init
-                start_time = time.time()
-
-                # Reset the metrics at the start of the next epoch
-                self.model.train()  # Sets model to training mode.
-                self.model.reset_metrics()
-
-                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
-
-                # Trains over a full epoch of data.
-                should_break = self._train_loop(
-                    batcher,
-                    progress_tracker,
-                    save_path,
-                    train_summary_writer,
-                    progress_bar,
-                    training_set,
-                    validation_set,
-                    test_set,
-                    start_time,
-                    validation_summary_writer,
-                    test_summary_writer,
-                    model_weights_path,
-                    model_hyperparameters_path,
-                    output_features,
-                    metrics_names,
-                    checkpoint_manager,
-                    final_steps_per_checkpoint,
-                )
-
-                # ================ Post Training Epoch ================
-                progress_tracker.epoch += 1
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                 if self.is_coordinator():
-                    # ========== Save training progress ==========
-                    logging.debug(
-                        f"Epoch {progress_tracker.epoch} took: "
-                        f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                    logger.info(
+                        f"Training for {total_steps} step(s), approximately "
+                        f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
-                    checkpoint_manager.save(progress_tracker.steps)
-                    progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                    logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
-                # Early stop if needed.
-                if should_break:
-                    break
+                progress_bar = None
+                if self.is_coordinator():
+                    progress_bar = tqdm(
+                        desc="Training",
+                        total=total_steps,
+                        file=sys.stdout,
+                        disable=is_progressbar_disabled(),
+                    )
 
-        # ================ Finished Training ================
-        self.callback(
-            lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
-            coordinator_only=False,
-        )
+                while progress_tracker.steps < total_steps:
+                    # note that batch size may change over epochs
+                    batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
-        if train_summary_writer is not None:
-            train_summary_writer.close()
-        if validation_summary_writer is not None:
-            validation_summary_writer.close()
-        if test_summary_writer is not None:
-            test_summary_writer.close()
+                    # epoch init
+                    start_time = time.time()
 
-        # Load the best weights from saved checkpoint
-        if self.is_coordinator() and not self.skip_save_model:
-            self.model.load_state_dict(torch.load(model_weights_path))
+                    # Reset the metrics at the start of the next epoch
+                    self.model.train()  # Sets model to training mode.
+                    self.model.reset_metrics()
+
+                    self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+
+                    # Trains over a full epoch of data.
+                    should_break = self._train_loop(
+                        batcher,
+                        progress_tracker,
+                        save_path,
+                        train_summary_writer,
+                        progress_bar,
+                        training_set,
+                        validation_set,
+                        test_set,
+                        start_time,
+                        validation_summary_writer,
+                        test_summary_writer,
+                        model_weights_path,
+                        model_hyperparameters_path,
+                        output_features,
+                        metrics_names,
+                        checkpoint_manager,
+                        final_steps_per_checkpoint,
+                    )
+
+                    # ================ Post Training Epoch ================
+                    progress_tracker.epoch += 1
+                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+                    if self.is_coordinator():
+                        # ========== Save training progress ==========
+                        logging.debug(
+                            f"Epoch {progress_tracker.epoch} took: "
+                            f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                        )
+                        checkpoint_manager.save(progress_tracker.steps)
+                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                    # Early stop if needed.
+                    if should_break:
+                        break
+        finally:
+            # ================ Finished Training ================
+            self.callback(
+                lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
+                coordinator_only=False,
+            )
+
+            if train_summary_writer is not None:
+                train_summary_writer.close()
+            if validation_summary_writer is not None:
+                validation_summary_writer.close()
+            if test_summary_writer is not None:
+                test_summary_writer.close()
+
+            if self.is_coordinator():
+                checkpoint_manager.close()
+
+            # Load the best weights from saved checkpoint
+            if self.is_coordinator() and not self.skip_save_model:
+                self.model.load_state_dict(torch.load(model_weights_path))
 
         return (
             self.model,

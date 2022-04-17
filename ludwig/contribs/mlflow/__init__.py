@@ -8,8 +8,9 @@ from typing import Any, Dict
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.data.dataset.base import Dataset
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
+from ludwig.utils.fs_utils import file_lock
 from ludwig.utils.package_utils import LazyLoader
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
@@ -103,11 +104,11 @@ class MlflowCallback(Callback):
             self.save_fn = lambda args: _log_mlflow(*args)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
-        self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
+        self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
         if is_coordinator:
-            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
+            self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
             if self.save_thread is not None:
                 self.save_thread.join()
 
@@ -150,10 +151,10 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue):
-    should_return = False
-    while not should_return:
+    should_continue = True
+    while should_continue:
         elem = q.get()
-        log_metrics, steps, save_path, should_return = elem
+        log_metrics, steps, save_path, should_continue = elem
         mlflow.log_metrics(log_metrics, step=steps)
 
         if not q.empty():
@@ -161,10 +162,12 @@ def _log_mlflow_loop(q: queue.Queue):
             # if we're about to do it again
             continue
 
-        _log_model(save_path)
+        training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
+        with file_lock(training_checkpoints_path, lock_file=".lock"):
+            _log_model(save_path)
 
 
-def _log_mlflow(log_metrics, steps, save_path, should_return):
+def _log_mlflow(log_metrics, steps, save_path, should_continue):
     mlflow.log_metrics(log_metrics, step=steps)
     _log_model(save_path)
 

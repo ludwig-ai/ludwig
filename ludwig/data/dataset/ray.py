@@ -80,11 +80,11 @@ class RayDataset(Dataset):
         if not fully_executed and not _ray112:
             raise ValueError(f"Cannot set fully_execute=False in ray {ray.__version__}")
 
-        ds = self.ds
         if fully_executed and _ray112:
-            ds = ds.fully_executed()
+            # set instance state so calls to __len__ will also use the fully_executed version
+            self.ds = self.ds.fully_executed()
 
-        pipe = ds.repeat()
+        pipe = self.ds.repeat()
         if shuffle:
             if _ray18:
                 pipe = pipe.random_shuffle_each_window()
