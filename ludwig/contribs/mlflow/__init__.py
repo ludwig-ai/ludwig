@@ -151,7 +151,6 @@ class MlflowCallback(Callback):
 
 
 def _log_mlflow_loop(q: queue.Queue):
-
     should_return = False
     while not should_return:
         elem = q.get()
