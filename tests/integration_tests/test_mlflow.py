@@ -1,5 +1,6 @@
 import os
 import shutil
+from unittest import mock
 
 import mlflow
 import pandas as pd
@@ -39,8 +40,9 @@ def test_mlflow_callback(tmpdir):
 
     exp_name = "mlflow_test"
     callback = MlflowCallback()
+    wrapped_callback = mock.Mock(wraps=callback)
 
-    model = LudwigModel(config, callbacks=[callback], backend=FakeRemoteBackend())
+    model = LudwigModel(config, callbacks=[wrapped_callback], backend=FakeRemoteBackend())
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, experiment_name=exp_name)
     expected_df, _ = model.predict(test_csv)
 
@@ -56,6 +58,11 @@ def test_mlflow_callback(tmpdir):
 
     run_id = df.run_id[0]
     assert run_id == callback.run.info.run_id
+
+    run = mlflow.get_run(run_id)
+    assert run.info.status == "FINISHED"
+    assert wrapped_callback.on_trainer_train_setup.call_count == 1
+    assert wrapped_callback.on_trainer_train_teardown.call_count == 1
 
     artifacts = [f.path for f in client.list_artifacts(callback.run.info.run_id, "")]
     local_dir = f"{tmpdir}/local_artifacts"
