@@ -607,8 +607,9 @@ class LudwigModel:
                 if not skip_save_model:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
-                    self.save_transformer_weights(model_dir)
-                    self.save_config(model_dir)
+                    if self.backend.is_coordinator():
+                        self.save_transformer_weights(model_dir)
+                        self.save_config(model_dir)
 
                 return train_stats, preprocessed_data, output_url
 
