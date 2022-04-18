@@ -16,9 +16,6 @@ with open(path.join(here, "requirements.txt"), encoding="utf-8") as f:
 
 extra_requirements = {}
 
-with open(path.join(here, "requirements_audio.txt"), encoding="utf-8") as f:
-    extra_requirements["audio"] = [line.strip() for line in f if line]
-
 with open(path.join(here, "requirements_serve.txt"), encoding="utf-8") as f:
     extra_requirements["serve"] = [line.strip() for line in f if line]
 
