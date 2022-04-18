@@ -71,35 +71,35 @@ HYPEROPT_CONFIG = {
 
 SAMPLERS = [
     {"type": "ray", "num_samples": 2},
-    {
-        "type": "ray",
-        "num_samples": 1,
-        "scheduler": {
-            "type": "async_hyperband",
-            "time_attr": "training_iteration",
-            "reduction_factor": 2,
-            "dynamic_resource_allocation": True,
-        },
-    },
-    {
-        "type": "ray",
-        "search_alg": {"type": "bohb"},
-        "scheduler": {
-            "type": "hb_bohb",
-            "time_attr": "training_iteration",
-            "reduction_factor": 4,
-        },
-        "num_samples": 3,
-    },
+    # {
+    #     "type": "ray",
+    #     "num_samples": 1,
+    #     "scheduler": {
+    #         "type": "async_hyperband",
+    #         "time_attr": "training_iteration",
+    #         "reduction_factor": 2,
+    #         "dynamic_resource_allocation": True,
+    #     },
+    # },
+    # {
+    #     "type": "ray",
+    #     "search_alg": {"type": "bohb"},
+    #     "scheduler": {
+    #         "type": "hb_bohb",
+    #         "time_attr": "training_iteration",
+    #         "reduction_factor": 4,
+    #     },
+    #     "num_samples": 3,
+    # },
 ]
 
 EXECUTORS = [
-    {"type": "ray"},
+    {"type": "ray", "cpu_resources_per_trial": 0},
 ]
 
 
 # TODO ray: replace legacy mode when Ray Train supports placement groups
-RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}, "use_legacy": True}
+RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}}
 
 
 def _get_config(sampler, executor):
@@ -222,7 +222,6 @@ def run_hyperopt_executor(
         )
 
 
-@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @pytest.mark.parametrize("sampler", SAMPLERS)
 @pytest.mark.parametrize("executor", EXECUTORS)
