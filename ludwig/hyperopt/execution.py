@@ -490,6 +490,10 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         class RayTuneReportCallback(Callback):
+            def __init__(self):
+                super().__init__()
+                self.last_steps = 0
+
             def _get_sync_client_and_remote_checkpoint_dir(self) -> Optional[Tuple["CommandBasedClient", str]]:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
@@ -524,13 +528,16 @@ class RayTuneExecutor(HyperoptExecutor):
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
+                self.last_steps = progress_tracker.steps
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
-                # Note: Calling tune.report in both on_eval_end() and on_epoch_end() can cause multiprocessing issues
-                # for some ray samplers if evaluation happens precisely every epoch.
                 report(progress_tracker)
 
-            def on_epoch_end(self, trainer, progress_tracker, save_path):
-                self._checkpoint_progress(trainer, progress_tracker, save_path)
+            def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
+                if is_coordinator and progress_tracker.steps > self.last_steps:
+                    # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
+                    # for some ray samplers if not steps have happened since the last eval.
+                    self._checkpoint_progress(trainer, progress_tracker, save_path)
+                    report(progress_tracker)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]

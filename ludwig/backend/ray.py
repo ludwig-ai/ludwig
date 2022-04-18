@@ -200,8 +200,9 @@ def train_fn(
 
 
 class RayTrainerV2(BaseTrainer):
-    def __init__(self, model, trainer_kwargs, executable_kwargs):
+    def __init__(self, model, trainer_kwargs, data_loader_kwargs, executable_kwargs):
         self.model = model.cpu()
+        self.data_loader_kwargs = data_loader_kwargs
         self.executable_kwargs = executable_kwargs
         self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
         self.trainer.start()
@@ -223,11 +224,11 @@ class RayTrainerV2(BaseTrainer):
             **kwargs,
         }
 
-        dataset = {"train": training_set.pipeline()}
+        dataset = {"train": training_set.pipeline(**self.data_loader_kwargs)}
         if validation_set is not None:
-            dataset["val"] = validation_set.pipeline(shuffle=False)
+            dataset["val"] = validation_set.pipeline(shuffle=False, **self.data_loader_kwargs)
         if test_set is not None:
-            dataset["test"] = test_set.pipeline(shuffle=False)
+            dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
@@ -471,11 +472,12 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, processor=None, trainer=None, use_legacy=False, **kwargs):
+    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._pytorch_kwargs = {}
+        self._data_loader_kwargs = loader or {}
         self._use_legacy = use_legacy
 
     def initialize(self):
@@ -496,7 +498,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
-            return RayTrainerV2(model, self._horovod_kwargs, executable_kwargs)
+            return RayTrainerV2(model, self._horovod_kwargs, self._data_loader_kwargs, executable_kwargs)
         else:
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
