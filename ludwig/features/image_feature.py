@@ -334,9 +334,16 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels = False
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 user_specified_num_channels = True
-                # Use the maximum num_channels found across all sampled images. torchvision has built-in support for
-                # upsampling images.
-                num_channels = max(num_channels_in_image(x) for x in inferred_sample)
+                channels_in_sample = np.array([num_channels_in_image(x) for x in inferred_sample])
+                if sum(channels_in_sample == 1) > len(inferred_sample) / 2:
+                    # If the majority of images in sample are 1 channel, use 1.
+                    num_channels = 1
+                elif sum(channels_in_sample == 4) > len(inferred_sample) / 2:
+                    # If the majority of images in sample are 4 channel, use 4.
+                    num_channels = 4
+                else:
+                    # Default case: use 3 channels.
+                    num_channels = 3
             elif first_image is not None:
                 num_channels = num_channels_in_image(first_image)
             else:
