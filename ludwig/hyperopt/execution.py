@@ -465,11 +465,16 @@ class RayTuneExecutor(HyperoptExecutor):
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
-            current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
+            num_gpus = resources.required_resources.get("GPU", 0)
+            num_cpus = resources.required_resources.get("CPU", 1)
 
             hvd_kwargs = {
-                "num_workers": int(current_resources),
+                "num_workers": num_gpus if use_gpu else 1,
                 "use_gpu": use_gpu,
+                "resources_per_worker": {
+                    "CPU": num_cpus,
+                    "GPU": num_gpus,
+                },
             }
             hyperopt_dict["backend"].set_distributed_kwargs(**hvd_kwargs)
 
@@ -669,9 +674,9 @@ class RayTuneExecutor(HyperoptExecutor):
         if _is_ray_backend(backend):
             # we can't set Trial actor's CPUs to 0 so we just go very low
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
+                [{"CPU": 0}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
                 if self._gpu_resources_per_trial_non_none
-                else [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none
+                else [{"CPU": 0}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none
             )
 
         if has_remote_protocol(output_directory):
