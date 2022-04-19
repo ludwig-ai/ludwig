@@ -16,6 +16,7 @@
 """This module contains the class and auxiliary methods of a model."""
 import gc
 import logging
+import math
 import os
 import os.path
 import signal
@@ -217,6 +218,13 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
     learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
     """Number of epochs to warmup the learning rate for (default: 1.0)."""
 
+    learning_rate_scaling: str = schema.StringOptions(["constant", "sqrt", "linear"], default="linear")
+    """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
+       the learning rate is scaled linearly with the number of workers to reflect the proportion by which
+       the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
+       to better model performance. If the learning rate is hand-tuned for a given number of workers, setting this value
+       to constant can be used to disable scale-up (default: linear)."""
+
 
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
@@ -328,6 +336,7 @@ class Trainer(BaseTrainer):
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
+        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # TODO(Justin): Move to config validation when that's ready.
         if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
@@ -390,7 +399,7 @@ class Trainer(BaseTrainer):
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""
         if self.horovod:
-            base_learning_rate *= self.horovod.size()
+            base_learning_rate *= self.lr_scale_fn(self.horovod.size())
         self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(base_learning_rate)
 
@@ -888,102 +897,110 @@ class Trainer(BaseTrainer):
 
         set_random_seed(self.random_seed)
 
-        with training_set.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            seed=self.random_seed,
-            horovod=self.horovod,
-        ) as batcher:
-            # ================ Training Loop ================
-            total_steps = self.epochs * batcher.steps_per_epoch
+        try:
+            with training_set.initialize_batcher(
+                batch_size=self.batch_size,
+                should_shuffle=self.should_shuffle,
+                seed=self.random_seed,
+                horovod=self.horovod,
+            ) as batcher:
+                # ================ Training Loop ================
+                total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Get the terminal steps per checkpoint.
-            final_steps_per_checkpoint = get_final_steps_per_checkpoint(
-                batcher.steps_per_epoch, self.steps_per_checkpoint, self.checkpoints_per_epoch, self.is_coordinator()
-            )
-
-            if self.is_coordinator():
-                logger.info(
-                    f"Training for {total_steps} step(s), approximately "
-                    f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+                # Get the terminal steps per checkpoint.
+                final_steps_per_checkpoint = get_final_steps_per_checkpoint(
+                    batcher.steps_per_epoch,
+                    self.steps_per_checkpoint,
+                    self.checkpoints_per_epoch,
+                    self.is_coordinator(),
                 )
-                logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
-
-            progress_bar = None
-            if self.is_coordinator():
-                progress_bar = tqdm(
-                    desc="Training",
-                    total=total_steps,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled(),
-                )
-
-            while progress_tracker.steps < total_steps:
-                # note that batch size may change over epochs
-                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
-
-                # epoch init
-                start_time = time.time()
-
-                # Reset the metrics at the start of the next epoch
-                self.model.train()  # Sets model to training mode.
-                self.model.reset_metrics()
-
-                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
-
-                # Trains over a full epoch of data.
-                should_break = self._train_loop(
-                    batcher,
-                    progress_tracker,
-                    save_path,
-                    train_summary_writer,
-                    progress_bar,
-                    training_set,
-                    validation_set,
-                    test_set,
-                    start_time,
-                    validation_summary_writer,
-                    test_summary_writer,
-                    model_weights_path,
-                    model_hyperparameters_path,
-                    output_features,
-                    metrics_names,
-                    checkpoint_manager,
-                    final_steps_per_checkpoint,
-                )
-
-                # ================ Post Training Epoch ================
-                progress_tracker.epoch += 1
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                 if self.is_coordinator():
-                    # ========== Save training progress ==========
-                    logging.debug(
-                        f"Epoch {progress_tracker.epoch} took: "
-                        f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                    logger.info(
+                        f"Training for {total_steps} step(s), approximately "
+                        f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
-                    checkpoint_manager.save(progress_tracker.steps)
-                    progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                    logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
-                # Early stop if needed.
-                if should_break:
-                    break
+                progress_bar = None
+                if self.is_coordinator():
+                    progress_bar = tqdm(
+                        desc="Training",
+                        total=total_steps,
+                        file=sys.stdout,
+                        disable=is_progressbar_disabled(),
+                    )
 
-        # ================ Finished Training ================
-        self.callback(
-            lambda c: c.on_trainer_train_teardown(self, progress_tracker, self.is_coordinator()), coordinator_only=False
-        )
+                while progress_tracker.steps < total_steps:
+                    # note that batch size may change over epochs
+                    batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
-        if train_summary_writer is not None:
-            train_summary_writer.close()
-        if validation_summary_writer is not None:
-            validation_summary_writer.close()
-        if test_summary_writer is not None:
-            test_summary_writer.close()
+                    # epoch init
+                    start_time = time.time()
 
-        # Load the best weights from saved checkpoint
-        if self.is_coordinator() and not self.skip_save_model:
-            self.model.load_state_dict(torch.load(model_weights_path))
+                    # Reset the metrics at the start of the next epoch
+                    self.model.train()  # Sets model to training mode.
+                    self.model.reset_metrics()
+
+                    self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+
+                    # Trains over a full epoch of data.
+                    should_break = self._train_loop(
+                        batcher,
+                        progress_tracker,
+                        save_path,
+                        train_summary_writer,
+                        progress_bar,
+                        training_set,
+                        validation_set,
+                        test_set,
+                        start_time,
+                        validation_summary_writer,
+                        test_summary_writer,
+                        model_weights_path,
+                        model_hyperparameters_path,
+                        output_features,
+                        metrics_names,
+                        checkpoint_manager,
+                        final_steps_per_checkpoint,
+                    )
+
+                    # ================ Post Training Epoch ================
+                    progress_tracker.epoch += 1
+                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+                    if self.is_coordinator():
+                        # ========== Save training progress ==========
+                        logging.debug(
+                            f"Epoch {progress_tracker.epoch} took: "
+                            f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                        )
+                        checkpoint_manager.save(progress_tracker.steps)
+                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                    # Early stop if needed.
+                    if should_break:
+                        break
+        finally:
+            # ================ Finished Training ================
+            self.callback(
+                lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
+                coordinator_only=False,
+            )
+
+            if train_summary_writer is not None:
+                train_summary_writer.close()
+            if validation_summary_writer is not None:
+                validation_summary_writer.close()
+            if test_summary_writer is not None:
+                test_summary_writer.close()
+
+            if self.is_coordinator():
+                checkpoint_manager.close()
+
+            # Load the best weights from saved checkpoint
+            if self.is_coordinator() and not self.skip_save_model:
+                self.model.load_state_dict(torch.load(model_weights_path))
 
         return (
             self.model,
@@ -1029,17 +1046,14 @@ class Trainer(BaseTrainer):
                 )
 
             if self.horovod:
-                current_learning_rate = (
-                    learning_rate_warmup_distributed(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        self.horovod.size(),
-                        batcher.step,
-                        batcher.steps_per_epoch,
-                    )
-                    * self.horovod.size()
-                )
+                current_learning_rate = learning_rate_warmup_distributed(
+                    current_learning_rate,
+                    progress_tracker.epoch,
+                    self.learning_rate_warmup_epochs,
+                    self.horovod.size(),
+                    batcher.step,
+                    batcher.steps_per_epoch,
+                ) * self.lr_scale_fn(self.horovod.size())
             else:
                 current_learning_rate = learning_rate_warmup(
                     current_learning_rate,
@@ -1495,3 +1509,10 @@ class RemoteTrainer(Trainer):
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)
         self.train_online = return_first(self.train_online)
+
+
+learning_rate_scale_fns = {
+    "linear": lambda n: n,
+    "sqrt": lambda n: math.sqrt(n),
+    "constant": lambda n: 1,
+}

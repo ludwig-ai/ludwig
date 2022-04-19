@@ -179,6 +179,20 @@ def reduce_text_feature_max_length(config, training_set_metadata) -> bool:
     return True
 
 
+# For hyperparam_search_space comprised solely of choice spaces, compute maximum number of
+# combinations and return that value if it is less than num_samples; else return num_samples.
+def _update_num_samples(num_samples, hyperparam_search_space):
+    max_num_samples = 1
+    for param in hyperparam_search_space.keys():
+        if hyperparam_search_space[param][SPACE] == "choice":
+            max_num_samples *= len(hyperparam_search_space[param]["categories"])
+        else:
+            return num_samples
+    if max_num_samples < num_samples:
+        return max_num_samples
+    return num_samples
+
+
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
 def memory_tune_config(config, dataset, model_category, row_count):
     fits_in_memory = False
@@ -255,4 +269,7 @@ def memory_tune_config(config, dataset, model_category, row_count):
     modified_config = copy.deepcopy(config)
 
     modified_config[HYPEROPT]["parameters"] = modified_hyperparam_search_space
+    modified_config[HYPEROPT]["sampler"]["num_samples"] = _update_num_samples(
+        modified_config[HYPEROPT]["sampler"]["num_samples"], modified_hyperparam_search_space
+    )
     return modified_config, fits_in_memory
