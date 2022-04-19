@@ -1318,7 +1318,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
             raise ValueError(
                 f"Missing value strategy `fill_with_false` "
                 f"for column {feature[COLUMN]} expects 2 distinct values, "
-                f"found: {distinct_values}"
+                f"found: {len(distinct_values)} (ex: {distinct_values[:10]})"
             )
 
         # Determine the False label.
