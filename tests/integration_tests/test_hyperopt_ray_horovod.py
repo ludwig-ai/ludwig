@@ -94,7 +94,7 @@ SAMPLERS = [
 ]
 
 EXECUTORS = [
-    {"type": "ray", "cpu_resources_per_trial": 0},
+    {"type": "ray", "cpu_resources_per_trial": 1},
 ]
 
 
