@@ -1438,8 +1438,8 @@ class LudwigModel:
 
         The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
 
-        More specifically, for every input feature, we provide either a Tensor of batch_size inputs or a list of
-        strings batch_size in length.
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs, a list of Tensors
+        batch_size in length, or a list of strings batch_size in length.
 
         Note that the dimensions of all Tensors and lengths of all lists must match.
 
