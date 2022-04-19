@@ -19,8 +19,7 @@ import torch.nn as nn
 
 
 class ECELoss(nn.Module):
-    """
-    Calculates the Expected Calibration Error of a model.
+    """Calculates the Expected Calibration Error of a model.
 
     The input to this loss is the logits of a model, NOT the softmax scores.
     This divides the confidence outputs into equally-sized interval bins.
@@ -32,11 +31,10 @@ class ECELoss(nn.Module):
     "Obtaining Well Calibrated Probabilities Using Bayesian Binning." AAAI.
     2015.
     """
+
     def __init__(self, n_bins: int = 15):
-        """
-        n_bins (int): number of confidence interval bins
-        """
-        super(ECELoss, self).__init__()
+        """n_bins (int): number of confidence interval bins."""
+        super().__init__()
         bin_boundaries = torch.linspace(0, 1, n_bins + 1)
         self.bin_lowers = bin_boundaries[:-1]
         self.bin_uppers = bin_boundaries[1:]
