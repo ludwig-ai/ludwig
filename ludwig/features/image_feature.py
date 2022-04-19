@@ -338,6 +338,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 if sum(channels_in_sample == 1) > len(inferred_sample) / 2:
                     # If the majority of images in sample are 1 channel, use 1.
                     num_channels = 1
+                elif sum(channels_in_sample == 2) > len(inferred_sample) / 2:
+                    # If the majority of images in sample are 2 channel, use 2.
+                    num_channels = 2
                 elif sum(channels_in_sample == 4) > len(inferred_sample) / 2:
                     # If the majority of images in sample are 4 channel, use 4.
                     num_channels = 4
