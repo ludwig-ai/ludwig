@@ -549,6 +549,8 @@ class LudwigModel:
                         save_path=model_dir,
                     )
 
+                    trainer.calibration(validation_set, VALIDATION)
+
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
                     # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.

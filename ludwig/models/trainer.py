@@ -608,7 +608,7 @@ class Trainer(BaseTrainer):
             # eval metrics on validation set
             self.evaluation(
                 validation_set,
-                "vali",
+                VALIDATION,
                 progress_tracker.validation_metrics,
                 tables,
                 self.eval_batch_size,
@@ -1111,6 +1111,21 @@ class Trainer(BaseTrainer):
         tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
 
         return metrics_log, tables
+
+    def calibration(self, dataset, dataset_name):
+        """Calibrates model output probabilities by temperature scaling. This works well for most datasets, though it
+           may fail for some difficult or extremely imbalanced datasets."""
+        predictor = Predictor(self.model, batch_size=self.eval_batch_size, horovod=self.horovod)
+        metrics, predictions = predictor.batch_evaluation(
+            dataset, collect_predictions=True, collect_labels=True, dataset_name=dataset_name)
+        for output_feature in self.model.output_features.values():
+            # does output feature support temperature calibration:
+            if hasattr(output_feature, "calibration_temperature"):
+                feature_logits = predictions["%s_logits" % output_feature.feature_name]
+                feature_labels = predictions["%s_labels" % output_feature.feature_name]
+
+                # for each feature, optimize temperature to match up logits and labels.
+        print('yo')
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
