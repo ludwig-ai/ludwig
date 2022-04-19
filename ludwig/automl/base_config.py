@@ -21,7 +21,7 @@ from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
-from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMBER, TEXT
+from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMBER, TEXT, DATE
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
@@ -308,6 +308,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
     # Return
     :return: (str) feature type
     """
+    if field.dtype == DATE:
+        return DATE
+
     num_distinct_values = field.num_distinct_values
     if num_distinct_values == 0:
         return CATEGORY
