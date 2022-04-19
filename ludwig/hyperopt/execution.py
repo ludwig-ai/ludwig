@@ -251,11 +251,11 @@ class RayTuneExecutor(HyperoptExecutor):
 
     @property
     def _cpu_resources_per_trial_non_none(self):
-        return self.cpu_resources_per_trial or 1
+        return self.cpu_resources_per_trial if self.cpu_resources_per_trial is not None else 1
 
     @property
     def _gpu_resources_per_trial_non_none(self):
-        return self.gpu_resources_per_trial or 0
+        return self.gpu_resources_per_trial if self.gpu_resources_per_trial is not None else 0
 
     def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Tuple["CommandBasedClient", str]]:
         """Get the Ray sync client and path to remote checkpoint directory."""
