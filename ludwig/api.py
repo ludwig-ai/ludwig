@@ -1452,17 +1452,9 @@ class LudwigModel:
         return torch.jit.script(inference_module)
 
     def save_torchscript(self, save_path: str):
-        """Saves the Torchscript model to disk.
-
-        # Return
-        :return: `None`
-        """
-        self._check_initialization()
+        """Saves the Torchscript model to disk."""
         inference_module = self.to_torchscript()
-        print(inference_module.code)
         inference_module.save(os.path.join(save_path, "inference_module.pt"))
-        # debugging: this raises an error
-        torch.jit.load(os.path.join(save_path, "inference_module.pt"))
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
