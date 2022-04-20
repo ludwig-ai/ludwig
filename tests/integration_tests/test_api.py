@@ -530,7 +530,8 @@ def test_api_save_torchscript(tmpdir):
             },
         )
     ]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    # Test covers case where features use names reserved by Torchscript, e.g. "class"
+    output_features = [category_feature(name="class", vocab_size=5, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
