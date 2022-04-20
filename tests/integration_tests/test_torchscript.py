@@ -266,8 +266,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     # Obtain predictions from Python model
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
-    # Create graph inference model (Torchscript) from trained Ludwig model.
+    # Create, save, and load graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
+    save_path = os.path.join(tmpdir, "ludwig_model.pt")
+    script_module.save(save_path)
+    script_module = torch.jit.load(save_path)
 
     def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
         if s.dtype == "object":

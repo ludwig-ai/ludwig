@@ -5,6 +5,7 @@ from torch import nn
 
 from ludwig.constants import NAME, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.models.ecd import ECD
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -24,42 +25,41 @@ class InferenceModule(nn.Module):
         input_features = {
             feature[NAME]: get_from_registry(feature[TYPE], input_type_registry) for feature in config["input_features"]
         }
-        self.preproc_modules = nn.ModuleDict(
-            {
-                feature_name: feature.create_preproc_module(training_set_metadata[feature_name])
-                for feature_name, feature in input_features.items()
-            }
-        )
+        self.preproc_modules = nn.ModuleDict()
+        for feature_name, feature in input_features.items():
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
+
+        self.predict_modules = nn.ModuleDict()
+        for feature_name, feature in model.output_features.items():
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.predict_modules[module_dict_key] = feature.prediction_module
 
         output_features = {
             feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)
             for feature in config["output_features"]
         }
-        self.predict_modules = nn.ModuleDict(
-            {feature_name: feature.prediction_module for feature_name, feature in model.output_features.items()}
-        )
-        self.postproc_modules = nn.ModuleDict(
-            {
-                feature_name: feature.create_postproc_module(training_set_metadata[feature_name])
-                for feature_name, feature in output_features.items()
-            }
-        )
+        self.postproc_modules = nn.ModuleDict()
+        for feature_name, feature in output_features.items():
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
     def forward(self, inputs: Dict[str, Union[List[str], torch.Tensor]]):
         with torch.no_grad():
-            preproc_inputs = {
-                feature_name: preproc(inputs[feature_name]) for feature_name, preproc in self.preproc_modules.items()
-            }
-
+            preproc_inputs = {}
+            for module_dict_key, preproc in self.preproc_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                preproc_inputs[feature_name] = preproc(inputs[feature_name])
             outputs = self.model(preproc_inputs)
 
-            predictions = {
-                feature_name: predict(outputs, feature_name) for feature_name, predict in self.predict_modules.items()
-            }
+            predictions: Dict[str, Dict[str, torch.Tensor]] = {}
+            for module_dict_key, predict in self.predict_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                predictions[feature_name] = predict(outputs, feature_name)
 
-            postproc_outputs = {
-                feature_name: postproc(predictions[feature_name])
-                for feature_name, postproc in self.postproc_modules.items()
-            }
+            postproc_outputs: Dict[str, Dict[str, Any]] = {}
+            for module_dict_key, postproc in self.postproc_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                postproc_outputs[feature_name] = postproc(predictions[feature_name])
 
             return postproc_outputs
