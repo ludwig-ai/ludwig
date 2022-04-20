@@ -40,7 +40,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.utils import output_feature_utils, strings_utils
+from ludwig.utils import calibration, output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
     ConfusionMatrix,
@@ -106,13 +106,19 @@ class _BinaryPostprocessing(torch.nn.Module):
 
 
 class _BinaryPredict(PredictModule):
-    def __init__(self, threshold):
+    def __init__(self, threshold, calibration=None):
         super().__init__()
         self.threshold = threshold
+        self.calibration = calibration
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
+        if self.calibration:
+            logits = self.calibration(logits)
+
         probabilities = torch.sigmoid(logits)
+
         predictions = probabilities >= self.threshold
         return {
             self.probabilities_key: probabilities,
@@ -289,8 +295,15 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
         )
 
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        if "calibration" in feature:
+            calibration_type = feature["calibration"]
+            if calibration_type == "temperature_scaling":
+                return calibration.TemperatureScaling(num_classes=2)
+        return None
+
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold)
+        return _BinaryPredict(self.threshold, calibration=self._calibration)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -341,6 +354,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         )
 
         return overall_stats
+
+    def calibrate(self, logits, labels):
+        if self._calibration:
+            labels = np.stack([labels, 1 - labels], axis=-1)
+            logits = np.stack([np.zeros_like(logits), logits], axis=-1)
+            self._calibration.calibrate(
+                torch.tensor(logits, dtype=torch.float32), torch.tensor(labels, dtype=torch.float32)
+            )
 
     def postprocess_predictions(
         self,

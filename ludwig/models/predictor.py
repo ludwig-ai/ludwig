@@ -11,7 +11,7 @@ import pandas as pd
 import psutil
 import torch
 
-from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
+from ludwig.constants import COMBINED, LAST_HIDDEN
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_to_dict
 from ludwig.globals import (
@@ -202,7 +202,7 @@ class Predictor(BasePredictor):
                     # accumulate labels from batch for each output feature
                     if collect_labels:
                         for of_name, of_labels in targets.items():
-                            key = f"{of_name}_label"
+                            key = f"{of_name}_labels"
                             predictions[key].append(of_labels)
 
                     progress_bar.update(1)

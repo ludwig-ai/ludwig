@@ -41,7 +41,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.utils import output_feature_utils
+from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -83,9 +83,18 @@ class _CategoryPostprocessing(torch.nn.Module):
 
 
 class _CategoryPredict(PredictModule):
+    def __init__(self, calibration=None):
+        super().__init__()
+        self.calibration = calibration
+
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
+        if self.calibration:
+            probabilities = self.calibration(logits)
+
         probabilities = torch.softmax(logits, -1)
+
         predictions = torch.argmax(logits, -1)
         predictions = predictions.long()
 
@@ -234,8 +243,15 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        if "calibration" in feature:
+            calibration_type = feature["calibration"]
+            if calibration_type == "temperature_scaling":
+                return calibration.TemperatureScaling(num_classes=feature["num_classes"])
+        return None
+
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict()
+        return _CategoryPredict(calibration=self.calibration)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -362,6 +378,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
 
         return overall_stats
+
+    def calibrate(self, logits, labels):
+        if self._calibration:
+            logits = torch.tensor(logits, dtype=torch.float32)
+            labels = torch.nn.functional.one_hot(labels, self.calibration.num_classes, dtype=torch.float32)
+            self._calibration.calibrate(logits, labels)
 
     def postprocess_predictions(
         self,

@@ -201,7 +201,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.reduce_input = None
         self.reduce_dependencies = None
 
-        # List of feature names that this output feature is depdendent on.
+        # List of feature names that this output feature is dependent on.
         self.dependencies = []
 
         self.fc_layers = None
@@ -237,6 +237,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+        self._calibration = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -309,10 +310,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         }
 
     @abstractmethod
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        """Creates and returns a `nn.Module` that converts raw model outputs (logits) to probabilities."""
+        return None
+
+    @abstractmethod
     def create_predict_module(self) -> PredictModule:
         """Creates and returns a `nn.Module` that converts raw model outputs (logits) to predictions.
 
-        Thos module is needed when generating the Torchscript model using scripting.
+        This module is needed when generating the Torchscript model using scripting.
         """
         raise NotImplementedError()
 
@@ -439,6 +445,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @property
     @abstractmethod
     def default_validation_metric(self):
+        pass
+
+    @abstractmethod
+    def calibrate(self, logits, labels):
         pass
 
     @abstractmethod

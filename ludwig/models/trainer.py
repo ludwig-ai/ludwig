@@ -1113,7 +1113,7 @@ class Trainer(BaseTrainer):
         return metrics_log, tables
 
     def calibration(self, dataset, dataset_name):
-        """Calibrates model output probabilities by temperature scaling.
+        """Calibrates model output probabilities on validation set after training.
 
         This works well for most datasets, though it may fail for some difficult or extremely imbalanced datasets.
         """
@@ -1122,13 +1122,9 @@ class Trainer(BaseTrainer):
             dataset, collect_predictions=True, collect_labels=True, dataset_name=dataset_name
         )
         for output_feature in self.model.output_features.values():
-            # does output feature support temperature calibration:
-            if hasattr(output_feature, "calibration_temperature"):
-                feature_logits = predictions["%s_logits" % output_feature.feature_name]
-                feature_labels = predictions["%s_labels" % output_feature.feature_name]
-
-                # for each feature, optimize temperature to match up logits and labels.
-        print("yo")
+            feature_logits = predictions["%s_logits" % output_feature.feature_name]
+            feature_labels = predictions["%s_labels" % output_feature.feature_name]
+            output_feature.calibrate(np.array(feature_logits), np.array(feature_labels))
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
