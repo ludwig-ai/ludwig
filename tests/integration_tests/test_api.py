@@ -15,7 +15,6 @@
 import os
 import shutil
 import tempfile
-from unicodedata import category
 from unittest import mock
 
 import pytest
@@ -32,7 +31,6 @@ from tests.integration_tests.utils import (
     get_weights,
     run_api_experiment,
     sequence_feature,
-    text_feature,
 )
 
 
