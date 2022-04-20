@@ -544,7 +544,8 @@ def test_api_save_torchscript(tmpdir):
     model = LudwigModel(config)
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
     save_path = os.path.join(tmpdir, "torchscript")
-
     os.makedirs(save_path, exist_ok=True)
+
     model.save_torchscript(save_path)
+
     torch.jit.load(os.path.join(save_path, "inference_module.pt"))
