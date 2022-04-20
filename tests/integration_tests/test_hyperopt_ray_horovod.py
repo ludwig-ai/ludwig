@@ -70,17 +70,17 @@ HYPEROPT_CONFIG = {
 
 
 SAMPLERS = [
-    {"type": "ray", "num_samples": 2},
-    # {
-    #     "type": "ray",
-    #     "num_samples": 1,
-    #     "scheduler": {
-    #         "type": "async_hyperband",
-    #         "time_attr": "training_iteration",
-    #         "reduction_factor": 2,
-    #         "dynamic_resource_allocation": True,
-    #     },
-    # },
+    # {"type": "ray", "num_samples": 2},
+    {
+        "type": "ray",
+        "num_samples": 1,
+        "scheduler": {
+            "type": "async_hyperband",
+            "time_attr": "training_iteration",
+            "reduction_factor": 2,
+            "dynamic_resource_allocation": True,
+        },
+    },
     # {
     #     "type": "ray",
     #     "search_alg": {"type": "bohb"},
