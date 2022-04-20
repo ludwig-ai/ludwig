@@ -51,44 +51,15 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, missing_va
     assert infer_type(field, missing_vals, ROW_COUNT) == expected
 
 
-@pytest.mark.parametrize(
-    "num_distinct_values,distinct_values,img_values,missing_vals,expected",
-    [
-        # Random numbers.
-        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT)], 0, 0.0, NUMBER),
-        # Random numbers with NaNs.
-        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT - 1)] + ["NaN"], 0, 0.0, NUMBER),
-        # Finite list of numbers.
-        (10, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], 0, 0.0, CATEGORY),
-        (2, ["1.5", "3.7"], 0, 0.1, NUMBER),
-        (2, ["1.5", "3.7", "nan"], 0, 0.1, NUMBER),
-        # Bool-like values.
-        (2, ["0", "1"], 0, 0.0, BINARY),
-        # Mostly bool-like values.
-        (3, ["0", "1", "True"], 0, 0.0, CATEGORY),
-        # Finite list of strings.
-        (2, ["human", "bot"], 0, 0.0, CATEGORY),
-        (10, [generate_string(5) for _ in range(10)], 0, 0.0, CATEGORY),
-        (40, [generate_string(5) for _ in range(40)], 0, 0.0, CATEGORY),
-        # Mostly random strings.
-        (90, [generate_string(5) for _ in range(90)], 0, 0.0, TEXT),
-        # Mostly random strings with capped distinct values.
-        (90, [generate_string(5) for _ in range(10)], 0, 0.0, TEXT),
-        # All random strings.
-        (ROW_COUNT, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0.0, TEXT),
-        # Images.
-        (ROW_COUNT, [], ROW_COUNT, 0.0, IMAGE),
-    ],
-)
 def test_infer_type_explicit_date(num_distinct_values, distinct_values, img_values, missing_vals, expected):
     field = FieldInfo(
         name="foo",
+        distinct_values=["1", "2"],
+        num_distinct_values=2,
         dtype=DATE,
-        num_distinct_values=num_distinct_values,
-        distinct_values=distinct_values,
-        image_values=img_values,
     )
-    assert infer_type(field, missing_vals, ROW_COUNT) == DATE
+    assert infer_type(field, 0, ROW_COUNT) == DATE
+
 
 @pytest.mark.parametrize(
     "idx,num_distinct_values,dtype,name,expected",
