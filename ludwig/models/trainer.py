@@ -1124,7 +1124,9 @@ class Trainer(BaseTrainer):
         for output_feature in self.model.output_features.values():
             feature_logits = predictions["%s_logits" % output_feature.feature_name]
             feature_labels = predictions["%s_labels" % output_feature.feature_name]
-            output_feature.calibrate(np.array(feature_logits), np.array(feature_labels))
+            output_feature.calibrate(
+                np.array(list(feature_logits), dtype=np.float32), np.array(feature_labels, dtype=np.int32)
+            )
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(

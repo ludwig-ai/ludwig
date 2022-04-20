@@ -359,9 +359,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         if self._calibration:
             labels = np.stack([labels, 1 - labels], axis=-1)
             logits = np.stack([np.zeros_like(logits), logits], axis=-1)
-            self._calibration.calibrate(
-                torch.tensor(logits, dtype=torch.float32), torch.tensor(labels, dtype=torch.float32)
-            )
+            self._calibration.calibrate(logits, labels)
 
     def postprocess_predictions(
         self,

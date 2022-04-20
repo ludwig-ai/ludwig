@@ -71,8 +71,10 @@ class TemperatureScaling(nn.Module):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.temperature = nn.Parameter(torch.ones(1), requires_grad=False).to(self.device)
 
-    def calibrate(self, logits: torch.Tensor, labels: torch.Tensor):
+    def calibrate(self, logits, labels):
         """Calibrate."""
+        logits = torch.tensor(logits, dtype=torch.float32)
+        labels = torch.tensor(labels, dtype=torch.float32)
         nll_criterion = nn.CrossEntropyLoss().to(self.device)
         ece_criterion = ECELoss().to(self.device)
         self.temperature.requires_grad = True

@@ -251,7 +251,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict(calibration=self.calibration)
+        return _CategoryPredict(calibration=self._calibration)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -381,8 +381,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     def calibrate(self, logits, labels):
         if self._calibration:
-            logits = torch.tensor(logits, dtype=torch.float32)
-            labels = torch.nn.functional.one_hot(labels, self.calibration.num_classes, dtype=torch.float32)
+            labels = np.eye(self._calibration.num_classes)[labels]  # One-hot encodes labels
             self._calibration.calibrate(logits, labels)
 
     def postprocess_predictions(
