@@ -73,10 +73,12 @@ class TemperatureScaling(nn.Module):
 
     def calibrate(self, logits, labels):
         """Calibrate."""
-        logits = torch.tensor(logits, dtype=torch.float32)
-        labels = torch.tensor(labels, dtype=torch.float32)
+        logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
+        labels = torch.as_tensor(labels, dtype=torch.float32, device=self.device)
         nll_criterion = nn.CrossEntropyLoss().to(self.device)
         ece_criterion = ECELoss().to(self.device)
+        # Saves the original temperature parameter, in case something goes wrong in optimization.
+        original_temperature = self.temperature.clone().detach()
         self.temperature.requires_grad = True
         # Calculate NLL and ECE before temperature scaling
         before_temperature_nll = nll_criterion(logits, labels).item()
@@ -87,8 +89,8 @@ class TemperatureScaling(nn.Module):
             "    Expected Calibration Error: %.3f" % (before_temperature_nll, before_temperature_ece)
         )
 
-        # Next: optimize the temperature w.r.t. NLL
-        optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iter=50)
+        # Optimizes the temperature to minimize NLL
+        optimizer = torch.optim.LBFGS([self.temperature], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
 
         def eval():
             optimizer.zero_grad()
@@ -108,6 +110,14 @@ class TemperatureScaling(nn.Module):
             "    Expected Calibration Error: %.3f" % (after_temperature_nll, after_temperature_ece)
         )
         self.temperature.requires_grad = False
+        # This should never happen, but if expected calibration error is higher after optimizing temperature, revert.
+        if after_temperature_ece > before_temperature_ece:
+            logging.warning(
+                "Expected calibration error higher after scaling, "
+                "reverting to temperature=%.3f." % original_temperature.item()
+            )
+            with torch.no_grad():
+                self.temperature.data = original_temperature.data
 
     def forward(self, logits: torch.Tensor):
         return torch.div(logits, self.temperature)
