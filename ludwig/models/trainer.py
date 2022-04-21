@@ -1012,7 +1012,8 @@ class Trainer(BaseTrainer):
                 self.model.load_state_dict(torch.load(model_weights_path))
 
         # restore original sigint signal handler
-        signal.signal(signal.SIGINT, self.original_sigint_handler)
+        if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
+            signal.signal(signal.SIGINT, self.original_sigint_handler)
 
         return (
             self.model,
