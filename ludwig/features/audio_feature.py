@@ -19,6 +19,7 @@ import sys
 
 import numpy as np
 import torch
+import torchaudio
 
 from ludwig.constants import (
     AUDIO,
@@ -96,19 +97,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        try:
-            import soundfile
-        except ImportError:
-            logger.error(
-                " soundfile is not installed. "
-                "In order to install all audio feature dependencies run "
-                "pip install ludwig[audio]"
-            )
-            sys.exit(-1)
-
         audio_feature_dict = preprocessing_parameters["audio_feature"]
         first_audio_file_path = column.head(1)[0]
-        _, sampling_rate_in_hz = soundfile.read(first_audio_file_path)
+        _, sampling_rate_in_hz = torchaudio.load(first_audio_file_path)
 
         feature_dim = AudioFeatureMixin._get_feature_dim(audio_feature_dict, sampling_rate_in_hz)
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
@@ -153,19 +144,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_file_length_limit_in_s,
         backend,
     ):
-        try:
-            import soundfile
-        except ImportError:
-            logger.error(
-                " soundfile is not installed. "
-                "In order to install all audio feature dependencies run "
-                "pip install ludwig[audio]"
-            )
-            sys.exit(-1)
-
         def read_audio(path):
             filepath = get_abs_path(src_path, path)
-            return soundfile.read(filepath)
+            return torchaudio.load(filepath)
 
         df_engine = backend.df_engine
         raw_audio = df_engine.map_objects(column, read_audio)
