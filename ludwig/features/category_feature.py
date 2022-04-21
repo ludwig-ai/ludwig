@@ -90,12 +90,14 @@ class _CategoryPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
-        if self.calibration:
-            probabilities = self.calibration(logits)
+        if self.calibration is not None:
+            calibrated_logits = self.calibration(logits)
+        else:
+            calibrated_logits = logits
 
-        probabilities = torch.softmax(logits, -1)
+        probabilities = torch.softmax(calibrated_logits, -1)
 
-        predictions = torch.argmax(logits, -1)
+        predictions = torch.argmax(calibrated_logits, -1)
         predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS

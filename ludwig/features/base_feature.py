@@ -314,6 +314,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """Creates and returns a `nn.Module` that converts raw model outputs (logits) to probabilities."""
         return None
 
+    @property
+    def calibration_module(self) -> torch.nn.Module:
+        """Returns the PredictModule used to convert model outputs to predictions."""
+        return self._calibration_module
+
     @abstractmethod
     def create_predict_module(self) -> PredictModule:
         """Creates and returns a `nn.Module` that converts raw model outputs (logits) to predictions.

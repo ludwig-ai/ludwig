@@ -114,10 +114,12 @@ class _BinaryPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
-        if self.calibration:
-            logits = self.calibration(logits)
+        if self.calibration is not None:
+            calibrated_logits = self.calibration(logits)
+        else:
+            calibrated_logits = logits
 
-        probabilities = torch.sigmoid(logits)
+        probabilities = torch.sigmoid(calibrated_logits)
 
         predictions = probabilities >= self.threshold
         return {
