@@ -21,4 +21,3 @@ input_features:
 output_features:
     - name: Survived
       type: binary
-      calibration: temperature_scaling
