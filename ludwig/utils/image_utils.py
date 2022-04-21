@@ -174,10 +174,8 @@ def pad(
     Returns:
         torch.Tensor: padded image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    if torch.jit.isinstance(size, int):
-        new_size = torch.tensor((size, size))
-    else:
-        new_size = torch.tensor(size)
+    new_size = to_tensor_pair(size)
+
     old_size = torch.tensor(img.shape[-2:])
 
     pad_size = (new_size - old_size) / 2
@@ -200,10 +198,8 @@ def crop(
     Returns:
         torch.Tensor: cropped image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    if torch.jit.isinstance(size, int):
-        new_size = (size, size)
-    else:
-        new_size = size
+    new_size = to_tensor_pair(size)
+
     return F.center_crop(img, output_size=new_size)
 
 
@@ -217,10 +213,7 @@ def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
     Returns:
         torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    if torch.jit.isinstance(new_size, int):
-        new_size = (new_size, new_size)
-    else:
-        new_size = new_size
+    new_size = to_tensor_pair(new_size)
 
     if list(new_size) == list(img.shape[-2:]):
         return img
@@ -246,10 +239,7 @@ def resize_image(
     Returns:
         torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    if torch.jit.isinstance(new_size, int):
-        new_size = (new_size, new_size)
-    else:
-        new_size = new_size
+    new_size = to_tensor_pair(new_size)
 
     if list(img.shape[-2:]) != list(new_size):
         if resize_method == crop_or_pad_constant:
@@ -274,6 +264,14 @@ def num_channels_in_image(img: torch.Tensor):
         return 1
     else:
         return img.shape[0]
+
+
+def to_tensor_pair(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
+    """Converts int or tuple to tuple of ints."""
+    if torch.jit.isinstance(v, int):
+        return v, v
+    else:
+        return v
 
 
 def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
