@@ -29,6 +29,7 @@ from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import image_utils, output_feature_utils
+from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 from tests.integration_tests import utils
 from tests.integration_tests.utils import (
     audio_feature,
@@ -206,19 +207,17 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
-    sp_text_feature = text_feature(
-        vocab_size=3,
-        preprocessing={
-            "tokenizer": "sentencepiece_tokenizer",
-        },
-    )
+    torchscript_enabled_text_features = [
+        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
+        for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
+    ]
     input_features = [
         bin_str_feature,
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
-        sp_text_feature,
         image_feature(image_dest_folder),
+        *torchscript_enabled_text_features
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),

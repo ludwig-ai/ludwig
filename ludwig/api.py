@@ -1451,6 +1451,11 @@ class LudwigModel:
         inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
         return torch.jit.script(inference_module)
 
+    def save_torchscript(self, save_path: str):
+        """Saves the Torchscript model to disk."""
+        inference_module = self.to_torchscript()
+        inference_module.save(os.path.join(save_path, "inference_module.pt"))
+
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")

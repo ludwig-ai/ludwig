@@ -258,7 +258,8 @@ def create_vocabulary(
             vocab = [padding_symbol] + vocab
         else:
             padding_symbol = pad_token
-
+    elif hasattr(tokenizer, "get_vocab"):
+        vocab = tokenizer.get_vocab()
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
