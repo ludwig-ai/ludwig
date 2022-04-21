@@ -163,22 +163,20 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
 
 def pad(
     img: torch.Tensor,
-    size: Union[int, Tuple[int, int]],
+    new_size: Union[int, Tuple[int, int]],
 ) -> torch.Tensor:
     """torchscript-compatible implementation of pad.
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to pad
-        size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
+        new_size (Union[int, Tuple[int, int]]): size to pad to. If int, resizes to square image of that size.
 
     Returns:
         torch.Tensor: padded image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    new_size = to_tensor_pair(size)
-
-    old_size = torch.tensor(img.shape[-2:])
-
-    pad_size = (new_size - old_size) / 2
+    new_size = to_tuple(new_size)
+    old_size = img.shape[-2:]
+    pad_size = (torch.tensor(new_size) - torch.tensor(old_size)) / 2
     padding = torch.cat((torch.floor(pad_size), torch.ceil(pad_size)))
     padding[padding < 0] = 0
     padding = [int(x) for x in padding]
@@ -187,7 +185,7 @@ def pad(
 
 def crop(
     img: torch.Tensor,
-    size: Union[int, Tuple[int, int]],
+    new_size: Union[int, Tuple[int, int]],
 ) -> torch.Tensor:
     """torchscript-compatible implementation of crop.
 
@@ -198,8 +196,7 @@ def crop(
     Returns:
         torch.Tensor: cropped image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    new_size = to_tensor_pair(size)
-
+    new_size = to_tuple(new_size)
     return F.center_crop(img, output_size=new_size)
 
 
@@ -208,13 +205,12 @@ def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
 
     Args:
         img (torch.Tensor): image with shape [..., height, width] to resize
-        size (Union[int, Tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
+        new_size (Union[int, Tuple[int, int]]): size to resize to. If int, resizes to square image of that size.
 
     Returns:
         torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    new_size = to_tensor_pair(new_size)
-
+    new_size = to_tuple(new_size)
     if list(new_size) == list(img.shape[-2:]):
         return img
     img = pad(img, new_size)
@@ -239,8 +235,7 @@ def resize_image(
     Returns:
         torch.Tensor: resized image of size [..., size[0], size[1]] or [..., size, size] if size is int.
     """
-    new_size = to_tensor_pair(new_size)
-
+    new_size = to_tuple(new_size)
     if list(img.shape[-2:]) != list(new_size):
         if resize_method == crop_or_pad_constant:
             return crop_or_pad(img, new_size)
@@ -266,7 +261,7 @@ def num_channels_in_image(img: torch.Tensor):
         return img.shape[0]
 
 
-def to_tensor_pair(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
+def to_tuple(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
     """Converts int or tuple to tuple of ints."""
     if torch.jit.isinstance(v, int):
         return v, v
