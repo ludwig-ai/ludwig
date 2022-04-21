@@ -51,7 +51,7 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, missing_va
     assert infer_type(field, missing_vals, ROW_COUNT) == expected
 
 
-def test_infer_type_explicit_date(num_distinct_values, distinct_values, img_values, missing_vals, expected):
+def test_infer_type_explicit_date():
     field = FieldInfo(
         name="foo",
         distinct_values=["1", "2"],
