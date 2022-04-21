@@ -1,12 +1,16 @@
+import os
 from typing import Any, Dict, List, Union
 
 import torch
 from torch import nn
 
 from ludwig.constants import NAME, TYPE
+from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.ecd import ECD
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -65,3 +69,18 @@ class InferenceModule(nn.Module):
                 postproc_outputs[feature_name] = postproc(predictions[feature_name])
 
             return postproc_outputs
+
+
+class InferenceModuleWrapper:
+    """Provides a wrapper around InferenceModule for use with MLFlow"""
+
+    def __init__(self):
+        self.model = None
+        self.config = None
+        self.training_set_metadata = None
+
+    @staticmethod
+    def load_model(self, model_dir: str) -> InferenceModule:
+        self.model = torch.jit.load(os.path.join(model_dir, "inference_module.pt"))
+        self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
+        self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
