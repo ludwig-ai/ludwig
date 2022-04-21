@@ -15,7 +15,8 @@ from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 from mlflow.utils.environment import _mlflow_conda_env
 from mlflow.utils.model_utils import _get_flavor_configuration
 
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.models.inference import InferenceModuleWrapper
 from ludwig.utils.data_utils import load_json
 
 FLAVOR_NAME = "ludwig"
@@ -217,9 +218,14 @@ def log_model(
 
 
 def _load_model(path):
-    from ludwig.api import LudwigModel
+    if os.path.exists(os.path.join(path, INFERENCE_MODULE_FILE_NAME)):
+        from ludwig.models.inference import InferenceLudwigModel
 
-    return LudwigModel.load(path, backend="local")
+        return InferenceLudwigModel(path)
+    else:
+        from ludwig.api import LudwigModel
+
+        return LudwigModel.load(path, backend="local")
 
 
 def _load_pyfunc(path):

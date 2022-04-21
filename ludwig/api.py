@@ -54,6 +54,7 @@ from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.globals import (
+    INFERENCE_MODULE_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     MODEL_WEIGHTS_FILE_NAME,
@@ -1454,7 +1455,7 @@ class LudwigModel:
     def save_torchscript(self, save_path: str):
         """Saves the Torchscript model to disk."""
         inference_module = self.to_torchscript()
-        inference_module.save(os.path.join(save_path, "inference_module.pt"))
+        inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
