@@ -91,13 +91,11 @@ class _CategoryPredict(PredictModule):
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
         if self.calibration is not None:
-            calibrated_logits = self.calibration(logits)
+            probabilities = self.calibration(logits)
         else:
-            calibrated_logits = logits
+            probabilities = torch.softmax(logits, -1)
 
-        probabilities = torch.softmax(calibrated_logits, -1)
-
-        predictions = torch.argmax(calibrated_logits, -1)
+        predictions = torch.argmax(probabilities, -1)
         predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
@@ -253,7 +251,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict(calibration=self._calibration)
+        return _CategoryPredict(calibration=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -380,11 +378,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
 
         return overall_stats
-
-    def calibrate(self, logits, labels):
-        if self._calibration:
-            labels = np.eye(self._calibration.num_classes)[labels]  # One-hot encodes labels
-            self._calibration.calibrate(logits, labels)
 
     def postprocess_predictions(
         self,

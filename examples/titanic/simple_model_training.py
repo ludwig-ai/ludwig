@@ -7,7 +7,6 @@
 
 # Import required libraries
 import logging
-import os
 import shutil
 
 from ludwig.api import LudwigModel
@@ -29,10 +28,14 @@ model = LudwigModel(config="./model1_config.yaml", logging_level=logging.INFO)
     output_directory,  # location of training results stored on disk
 ) = model.train(dataset=training_set, experiment_name="simple_experiment", model_name="simple_model")
 
-# list contents of output directory
-print("contents of output directory:", output_directory)
-for item in os.listdir(output_directory):
-    print("\t", item)
 
-# batch prediction
-model.predict(test_set, skip_save_predictions=False)
+predictions, _ = model.predict(dataset=test_set)
+
+# Generates predictions and performance statistics for the test set.
+# test_stats, predictions, output_directory = model.evaluate(
+#   test_set,
+#   collect_predictions=True,
+#   collect_overall_stats=True
+# )
+
+print(predictions)

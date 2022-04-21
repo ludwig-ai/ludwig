@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from abc import ABC, abstractmethod
 
 import torch
 import torch.nn as nn
@@ -58,31 +59,49 @@ class ECELoss(nn.Module):
         return ece
 
 
-class TemperatureScaling(nn.Module):
+class Calibration(nn.Module, ABC):
+    @abstractmethod
+    def calibrate(self, logits, labels):
+        """Calibrate output probabilities using logits and labels from validation set."""
+        return NotImplementedError()
+
+
+class TemperatureScaling(Calibration):
     """Implements temperature scaling of logits. Based on results from On Calibration of Modern Neural Networks:
     https://arxiv.org/abs/1706.04599.
 
     Implementation inspired by https://github.com/gpleiss/temperature_scaling
+
+        Args:
+        num_classes: The number of classes. Must be 2 if binary is True.
+        binary: If binary is true, logits is expected to be a 1-dimensional array. If false, logits is a 2-dimensional
+                array of shape (num_examples, num_classes).
     """
 
-    def __init__(self, num_classes: int = 2):
+    def __init__(self, num_classes: int = 2, binary: bool = True):
         super().__init__()
-        self.num_classes = num_classes
+        self.num_classes = 2 if binary else num_classes
+        self.binary = binary
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.temperature = nn.Parameter(torch.ones(1), requires_grad=False).to(self.device)
 
     def calibrate(self, logits, labels):
-        """Calibrate."""
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
-        labels = torch.as_tensor(labels, dtype=torch.float32, device=self.device)
+        labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
+        one_hot_labels = nn.functional.one_hot(labels, self.num_classes).float()
+
+        if self.binary:
+            # Treat binary classification as multi-class with 2 classes to re-use code.
+            # The math works out the same: softmax([0, a])[1] == sigmoid(a)
+            logits = torch.stack([torch.zeros_like(logits), logits], axis=-1)
         nll_criterion = nn.CrossEntropyLoss().to(self.device)
         ece_criterion = ECELoss().to(self.device)
         # Saves the original temperature parameter, in case something goes wrong in optimization.
         original_temperature = self.temperature.clone().detach()
         self.temperature.requires_grad = True
         # Calculate NLL and ECE before temperature scaling
-        before_temperature_nll = nll_criterion(logits, labels).item()
-        before_temperature_ece = ece_criterion(logits, labels).item()
+        before_temperature_nll = nll_criterion(logits, one_hot_labels).item()
+        before_temperature_ece = ece_criterion(logits, one_hot_labels).item()
         logging.info(
             "Before temperature scaling:\n"
             "    Negative log-likelihood: %.3f\n"
@@ -94,15 +113,15 @@ class TemperatureScaling(nn.Module):
 
         def eval():
             optimizer.zero_grad()
-            loss = nll_criterion(self.forward(logits), labels)
+            loss = nll_criterion(self.scale_logits(logits), one_hot_labels)
             loss.backward()
             return loss
 
         optimizer.step(eval)
 
         # Calculate NLL and ECE after temperature scaling
-        after_temperature_nll = nll_criterion(self.forward(logits), labels).item()
-        after_temperature_ece = ece_criterion(self.forward(logits), labels).item()
+        after_temperature_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
+        after_temperature_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
         logging.info("Optimal temperature: %.3f" % self.temperature.item())
         logging.info(
             "After temperature scaling:\n"
@@ -119,5 +138,12 @@ class TemperatureScaling(nn.Module):
             with torch.no_grad():
                 self.temperature.data = original_temperature.data
 
-    def forward(self, logits: torch.Tensor):
+    def scale_logits(self, logits: torch.Tensor):
         return torch.div(logits, self.temperature)
+
+    def forward(self, logits: torch.Tensor):
+        """Converts logits to probabilities."""
+        if self.binary:
+            return torch.sigmoid(self.scale_logits(logits))
+        else:
+            return torch.softmax(self.scale_logits(logits), -1)

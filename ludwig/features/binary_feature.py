@@ -115,11 +115,9 @@ class _BinaryPredict(PredictModule):
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
         if self.calibration is not None:
-            calibrated_logits = self.calibration(logits)
+            probabilities = self.calibration(logits)
         else:
-            calibrated_logits = logits
-
-        probabilities = torch.sigmoid(calibrated_logits)
+            probabilities = torch.sigmoid(logits)
 
         predictions = probabilities >= self.threshold
         return {
@@ -305,7 +303,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold, calibration=self._calibration)
+        return _BinaryPredict(self.threshold, calibration=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -356,12 +354,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         )
 
         return overall_stats
-
-    def calibrate(self, logits, labels):
-        if self._calibration:
-            labels = np.stack([labels, 1 - labels], axis=-1)
-            logits = np.stack([np.zeros_like(logits), logits], axis=-1)
-            self._calibration.calibrate(logits, labels)
 
     def postprocess_predictions(
         self,

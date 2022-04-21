@@ -237,7 +237,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
-        self._calibration = self.create_calibration_module(feature)
+        self._calibration_module = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -452,9 +452,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def default_validation_metric(self):
         pass
 
-    @abstractmethod
     def calibrate(self, logits, labels):
-        pass
+        """Calibrate this feature's output probabilities given the feature logits and labels.
+
+        The default behavior is to do nothing, calibration (i.e. temperature scaling, vector scaling, etc..) may be
+        optionally supported for some feature types.
+        """
+        if self.calibration_module:
+            self.calibration_module.calibrate(logits, labels)
 
     @abstractmethod
     def postprocess_predictions(
