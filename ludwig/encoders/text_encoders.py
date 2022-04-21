@@ -17,8 +17,10 @@
 import logging
 import sys
 from abc import ABC
+from typing import Optional
 
 import tensorflow as tf
+from transformers import TFXLNetModel
 
 from ludwig.encoders import sequence_encoders
 from ludwig.encoders.base import Encoder
@@ -44,16 +46,19 @@ class BERTEncoder(TextEncoder):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+
     default_params = {
         'pretrained_model_name_or_path': 'bert-base-uncased',
     }
 
     def __init__(
             self,
-            pretrained_model_name_or_path='bert-base-uncased',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'bert-base-uncased',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -67,9 +72,14 @@ class BERTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFBertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFBertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFBertModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -106,10 +116,12 @@ class GPTEncoder(TextEncoder):
 
     def __init__(
             self,
-            reduce_output='sum',
-            pretrained_model_name_or_path='openai-gpt',
-            trainable=True,
-            num_tokens=None,
+            reduce_output: str = 'sum',
+            pretrained_model_name_or_path: str = 'openai-gpt',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -123,9 +135,14 @@ class GPTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFOpenAIGPTModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFOpenAIGPTModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFOpenAIGPTModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -157,10 +174,12 @@ class GPT2Encoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='gpt2',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'gpt2',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -174,9 +193,14 @@ class GPT2Encoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFGPT2Model.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFGPT2Model.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFGPT2Model.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -208,9 +232,11 @@ class TransformerXLEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='transfo-xl-wt103',
-            reduce_output='sum',
-            trainable=True,
+            pretrained_model_name_or_path: str = 'transfo-xl-wt103',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
             **kwargs
     ):
         super().__init__()
@@ -224,9 +250,14 @@ class TransformerXLEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFTransfoXLModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFTransfoXLModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFTransfoXLModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -255,10 +286,12 @@ class XLNetEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='xlnet-base-cased',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'xlnet-base-cased',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -272,9 +305,14 @@ class XLNetEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFXLNetModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFXLNetModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFXLNetModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -306,10 +344,12 @@ class XLMEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='xlm-mlm-en-2048',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'xlm-mlm-en-2048',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -323,9 +363,14 @@ class XLMEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFXLMModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFXLMModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFXLMModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -357,10 +402,12 @@ class RoBERTaEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='roberta-base',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'roberta-base',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -374,9 +421,14 @@ class RoBERTaEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFRobertaModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFRobertaModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFRobertaModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -412,10 +464,12 @@ class DistilBERTEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='distilbert-base-uncased',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'distilbert-base-uncased',
+            pretrained_weights: Optional[str] = None,
+            saved_weights_in_checkpoint: bool = False,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -429,9 +483,14 @@ class DistilBERTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFDistilBertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFDistilBertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFDistilBertModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -462,10 +521,12 @@ class CTRLEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='ctrl',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'ctrl',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[str] = None,
             **kwargs
     ):
         super().__init__()
@@ -479,9 +540,14 @@ class CTRLEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFCTRLModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFCTRLModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFCTRLModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -513,10 +579,12 @@ class CamemBERTEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='jplu/tf-camembert-base',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'jplu/tf-camembert-base',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -530,9 +598,14 @@ class CamemBERTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFCamembertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFCamembertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFCamembertModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -568,10 +641,12 @@ class ALBERTEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='albert-base-v2',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'albert-base-v2',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -585,9 +660,14 @@ class ALBERTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFAlbertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFAlbertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFAlbertModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -623,10 +703,12 @@ class T5Encoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='t5-small',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 't5-small',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -640,9 +722,14 @@ class T5Encoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFT5Model.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFT5Model.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFT5Model.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -674,10 +761,12 @@ class MT5Encoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='google/mt5-small',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'google/mt5-small',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -691,9 +780,14 @@ class MT5Encoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFMT5Model.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFMT5Model.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFMT5Model.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -726,10 +820,12 @@ class XLMRoBERTaEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='jplu/tf-xlm-roberta-base',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'jplu/tf-xlm-roberta-base',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -743,9 +839,14 @@ class XLMRoBERTaEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFXLMRobertaModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFXLMRobertaModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFXLMRobertaModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -781,10 +882,12 @@ class FlauBERTEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='jplu/tf-flaubert-small-cased',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'jplu/tf-flaubert-small-cased',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -798,9 +901,14 @@ class FlauBERTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFFlaubertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFFlaubertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFFlaubertModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -832,10 +940,12 @@ class ELECTRAEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='google/electra-small-discriminator',
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'google/electra-small-discriminator',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -849,9 +959,14 @@ class ELECTRAEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFElectraModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFElectraModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFElectraModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
@@ -883,10 +998,12 @@ class LongformerEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='allenai/longformer-base-4096',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str = 'allenai/longformer-base-4096',
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -900,9 +1017,14 @@ class LongformerEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFLongformerModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFLongformerModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFLongformerModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -934,10 +1056,12 @@ class AutoTransformerEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path,
-            reduce_output='sum',
-            trainable=True,
-            num_tokens=None,
+            pretrained_model_name_or_path: str,
+            saved_weights_in_checkpoint: bool = False,
+            pretrained_weights: Optional[str] = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
             **kwargs
     ):
         super().__init__()
@@ -951,9 +1075,14 @@ class AutoTransformerEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = TFAutoModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if not saved_weights_in_checkpoint:
+            self.transformer = TFAutoModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            self.transformer = TFAutoModel.from_pretrained(
+                pretrained_weights
+            )
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)

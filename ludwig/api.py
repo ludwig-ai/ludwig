@@ -40,7 +40,7 @@ import pandas as pd
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO, \
-    EVAL_BATCH_SIZE
+    EVAL_BATCH_SIZE, TRANSFORMER_ENCODERS
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -50,7 +50,7 @@ from ludwig.features.feature_registries import \
     update_config_with_metadata
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
-                            TRAIN_SET_METADATA_FILE_NAME,
+                            TRAIN_SET_METADATA_FILE_NAME, TRANSFORMER_WEIGHTS,
                             set_disable_progressbar, LUDWIG_VERSION)
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import (Predictor, calculate_overall_stats,
@@ -607,6 +607,9 @@ class LudwigModel:
                 if not skip_save_model:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
+                    if self.backend.is_coordinator():
+                        self.save_transformer_weights(model_dir)
+                        self.save_config(model_dir)
 
                 return train_stats, preprocessed_data, output_url
 
@@ -1543,6 +1546,19 @@ class LudwigModel:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
         save_json(model_hyperparameters_path, self.config)
+
+    def save_transformer_weights(self, save_path):
+        """Save weights for transformer models."""
+
+        for input_feature in self.config['input_features']:
+            input_feature["saved_weights_in_checkpoint"] = True
+            if 'encoder' in input_feature and input_feature['encoder'] in TRANSFORMER_ENCODERS:
+                text_feature = self.model.input_features[input_feature['name']]
+                transformer = text_feature.encoder_obj.transformer
+                weights_path = os.path.join(
+                    save_path, TRANSFORMER_WEIGHTS, input_feature['name'])
+                transformer.save_pretrained(weights_path)
+                input_feature['pretrained_weights'] = weights_path
 
     def save_savedmodel(self, save_path: str) -> None:
         """This function allows to save models on disk

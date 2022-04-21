@@ -22,6 +22,7 @@ MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
 TRAIN_SET_METADATA_FILE_NAME = 'training_set_metadata.json'
 TRAINING_PROGRESS_TRACKER_FILE_NAME = 'training_progress.json'
 TRAINING_CHECKPOINTS_DIR_PATH = 'training_checkpoints'
+TRANSFORMER_WEIGHTS = 'transformer_weights'
 
 DISABLE_PROGRESSBAR = False
 
