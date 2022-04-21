@@ -80,7 +80,7 @@ class TemperatureScaling(CalibrationModule):
                 array of shape (num_examples, num_classes).
     """
 
-    def __init__(self, num_classes: int = 2, binary: bool = True):
+    def __init__(self, num_classes: int = 2, binary: bool = False):
         super().__init__()
         self.num_classes = 2 if binary else num_classes
         self.binary = binary
