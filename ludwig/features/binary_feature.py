@@ -296,10 +296,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         )
 
     def create_calibration_module(self, feature) -> torch.nn.Module:
-        if "calibration" in feature:
-            calibration_type = feature["calibration"]
-            if calibration_type == "temperature_scaling":
-                return calibration.TemperatureScaling(num_classes=2)
+        calibration_type = feature.get("calibration")
+        if calibration_type == "temperature_scaling":
+            return calibration.TemperatureScaling(num_classes=2, binary=True)
         return None
 
     def create_predict_module(self) -> PredictModule:

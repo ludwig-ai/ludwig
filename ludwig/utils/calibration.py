@@ -59,14 +59,14 @@ class ECELoss(nn.Module):
         return ece
 
 
-class Calibration(nn.Module, ABC):
+class CalibrationModule(nn.Module, ABC):
     @abstractmethod
     def calibrate(self, logits, labels):
         """Calibrate output probabilities using logits and labels from validation set."""
         return NotImplementedError()
 
 
-class TemperatureScaling(Calibration):
+class TemperatureScaling(CalibrationModule):
     """Implements temperature scaling of logits. Based on results from On Calibration of Modern Neural Networks:
     https://arxiv.org/abs/1706.04599.
 
@@ -143,7 +143,77 @@ class TemperatureScaling(Calibration):
 
     def forward(self, logits: torch.Tensor):
         """Converts logits to probabilities."""
+        scaled_logits = self.scale_logits(logits)
         if self.binary:
-            return torch.sigmoid(self.scale_logits(logits))
+            return torch.sigmoid(scaled_logits)
         else:
-            return torch.softmax(self.scale_logits(logits), -1)
+            return torch.softmax(scaled_logits, -1)
+
+
+class MatrixScaling(CalibrationModule):
+    """Implements matrix scaling of logits. Only use this with a large dataset, matrix scaling has a tendency to
+    overfit.
+
+    Args:
+    num_classes: The number of classes. Must be 2 if binary is True.
+    """
+
+    def __init__(self, num_classes: int = 2):
+        super().__init__()
+        self.num_classes = num_classes
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.w = nn.Parameter(torch.eye(self.num_classes), requires_grad=False).to(self.device)
+        self.b = nn.Parameter(torch.zeros(self.num_classes), requires_grad=False).to(self.device)
+
+    def calibrate(self, logits, labels):
+        logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
+        labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
+        one_hot_labels = nn.functional.one_hot(labels, self.num_classes).float()
+        nll_criterion = nn.CrossEntropyLoss().to(self.device)
+        ece_criterion = ECELoss().to(self.device)
+        self.w.requires_grad = True
+        self.b.requires_grad = True
+        # Calculate NLL and ECE before temperature scaling
+        before_temperature_nll = nll_criterion(logits, one_hot_labels).item()
+        before_temperature_ece = ece_criterion(logits, one_hot_labels).item()
+        logging.info(
+            "Before temperature scaling:\n"
+            "    Negative log-likelihood: %.3f\n"
+            "    Expected Calibration Error: %.3f" % (before_temperature_nll, before_temperature_ece)
+        )
+
+        # Optimizes the temperature to minimize NLL
+        optimizer = torch.optim.LBFGS([self.temperature], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
+
+        def eval():
+            optimizer.zero_grad()
+            loss = nll_criterion(self.scale_logits(logits), one_hot_labels)
+            loss.backward()
+            return loss
+
+        optimizer.step(eval)
+
+        # Calculate NLL and ECE after temperature scaling
+        after_temperature_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
+        after_temperature_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
+        logging.info("Optimal temperature: %.3f" % self.temperature.item())
+        logging.info(
+            "After temperature scaling:\n"
+            "    Negative log-likelihood: %.3f\n"
+            "    Expected Calibration Error: %.3f" % (after_temperature_nll, after_temperature_ece)
+        )
+        self.w.requires_grad = False
+        self.b.requires_grad = False
+        # This should never happen, but if expected calibration error is higher after optimizing temperature, revert.
+        if after_temperature_ece > before_temperature_ece:
+            logging.warning("Expected calibration error higher after matrix scaling, reverting to identity.")
+            with torch.no_grad():
+                self.w.data = torch.eye(self.num_classes)
+                self.b.data = torch.zeros(self.num_classes)
+
+    def scale_logits(self, logits: torch.Tensor):
+        return torch.matmul(logits, self.w) + self.b
+
+    def forward(self, logits: torch.Tensor):
+        """Converts logits to probabilities."""
+        return torch.softmax(self.scale_logits(logits), -1)
