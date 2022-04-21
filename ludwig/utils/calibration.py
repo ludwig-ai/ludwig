@@ -68,7 +68,9 @@ class CalibrationModule(nn.Module, ABC):
 
 class TemperatureScaling(CalibrationModule):
     """Implements temperature scaling of logits. Based on results from On Calibration of Modern Neural Networks:
-    https://arxiv.org/abs/1706.04599.
+    https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor, so though
+    it may modify output probabilities it will never change argmax or top-n predictions. In the case of binary
+    classification with a threshold, however, calibration may change predictions.
 
     Implementation inspired by https://github.com/gpleiss/temperature_scaling
 
@@ -152,10 +154,11 @@ class TemperatureScaling(CalibrationModule):
 
 class MatrixScaling(CalibrationModule):
     """Implements matrix scaling of logits. Only use this with a large dataset, matrix scaling has a tendency to
-    overfit.
+    overfit small dataset. Also, unlike temperature scaling, matrix scaling can change the argmax or top-n
+    predictions.
 
     Args:
-    num_classes: The number of classes. Must be 2 if binary is True.
+    num_classes: The number of classes.
     """
 
     def __init__(self, num_classes: int = 2):
@@ -177,13 +180,13 @@ class MatrixScaling(CalibrationModule):
         before_temperature_nll = nll_criterion(logits, one_hot_labels).item()
         before_temperature_ece = ece_criterion(logits, one_hot_labels).item()
         logging.info(
-            "Before temperature scaling:\n"
+            "Before matrix scaling:\n"
             "    Negative log-likelihood: %.3f\n"
             "    Expected Calibration Error: %.3f" % (before_temperature_nll, before_temperature_ece)
         )
 
         # Optimizes the temperature to minimize NLL
-        optimizer = torch.optim.LBFGS([self.temperature], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
+        optimizer = torch.optim.LBFGS([self.w, self.b], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
 
         def eval():
             optimizer.zero_grad()
@@ -196,9 +199,8 @@ class MatrixScaling(CalibrationModule):
         # Calculate NLL and ECE after temperature scaling
         after_temperature_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
         after_temperature_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
-        logging.info("Optimal temperature: %.3f" % self.temperature.item())
         logging.info(
-            "After temperature scaling:\n"
+            "After matrix scaling:\n"
             "    Negative log-likelihood: %.3f\n"
             "    Expected Calibration Error: %.3f" % (after_temperature_nll, after_temperature_ece)
         )

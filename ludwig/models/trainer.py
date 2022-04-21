@@ -1129,7 +1129,9 @@ class Trainer(BaseTrainer):
             if feature_logits_key in predictions:
                 feature_logits = predictions[feature_logits_key]
                 feature_labels = predictions["%s_labels" % output_feature.feature_name]
-                output_feature.calibrate(feature_logits, feature_labels)
+                output_feature.calibrate(
+                    np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
+                )
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
