@@ -978,14 +978,15 @@ class Trainer(BaseTrainer):
                     progress_tracker.epoch += 1
                     self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-                    if self.is_coordinator() and not self.skip_save_progress:
+                    if self.is_coordinator():
                         # ========== Save training progress ==========
                         logging.debug(
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                         )
-                        checkpoint_manager.save(progress_tracker.steps)
-                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                        if not self.skip_save_progress:
+                            checkpoint_manager.save(progress_tracker.steps)
+                            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                     # Early stop if needed.
                     if should_break:
