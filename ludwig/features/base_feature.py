@@ -30,6 +30,7 @@ from ludwig.modules.metric_modules import MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
+from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import LudwigModule
@@ -309,9 +310,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             },
         }
 
-    @abstractmethod
-    def create_calibration_module(self, feature) -> torch.nn.Module:
-        """Creates and returns a `nn.Module` that converts raw model outputs (logits) to probabilities."""
+    def create_calibration_module(self, feature) -> CalibrationModule:
+        """Creates and returns a CalibrationModule that converts raw model outputs (logits) to probabilities."""
         return None
 
     @property
