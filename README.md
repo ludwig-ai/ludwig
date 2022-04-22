@@ -99,13 +99,151 @@ Finally, the use of abstract interfaces throughout the codebase makes it easy fo
 
 - [Third-Party Integrations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/integrations)
 
-  Ludwig provides an extendable interface to integrate with third-party systems for tracking experiments. Third-party integrations exist for Comet ML, Weights & Biases, WhyLabs and MLFlow.
+  Ludwig provides an extendable interface to integrate with third-party systems for tracking experiments. Third-party
+  integrations exist for Comet ML, Weights & Biases, WhyLabs and MLFlow.
 
 - [Extensibility](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide)
 
-  Ludwig is built from the ground up with extensibility in mind. It is easy to add new data types by implementing clear, well-documented abstract classes that define functions to preprocess, encode, and decode data.
+  Ludwig is built from the ground up with extensibility in mind. It is easy to add new data types by implementing clear,
+  well-documented abstract classes that define functions to preprocess, encode, and decode data.
 
-  Furthermore, new `torch nn.Module` models can be easily added by them to a registry. This encourages reuse and sharing new models with the community. Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide) for further details.
+  Furthermore, new `torch nn.Module` models can be easily added by them to a registry. This encourages reuse and sharing
+  new models with the community. Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide)
+  for further details.
+
+# Quick Start
+
+For a full tutorial, check out the official [getting started guide](https://ludwig-ai.github.io/ludwig-docs/latest/getting_started/),
+or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/latest/examples).
+
+## Step 1: Install
+
+Install from PyPi. Be aware that Ludwig requires Python 3.7+.
+
+```
+> pip install ludwig
+```
+
+## Step 2: Define a configuration
+
+Create a config that describes the schema of your data.
+
+Assume we have a text classification task, with data containing a sentence and class column like the following.
+
+|               sentence               |  class   |
+| :----------------------------------: | :------: |
+|  Former president Barack Obama ...   | politics |
+| Juventus hired Cristiano Ronaldo ... |  sport   |
+|  LeBron James joins the Lakers ...   |  sport   |
+|                 ...                  |   ...    |
+
+A configuration will look like this.
+
+```yaml
+input_features:
+- name: sentence
+  type: text
+
+output_features:
+- name: class
+  type: category
+```
+
+Starting from a simple config like the one above, any and all aspects of the model architecture, training loop,
+hyperparameter search, and backend infrastructure can be modified as additional fields in the declarative configuration
+to customize the pipeline to meet your requirements.
+
+```yaml
+input_features:
+- name: sentence
+  type: text
+  encoder: t5
+
+output_features:
+- name: class
+  type: category
+  preprocessing:
+    most_common: 10000
+
+trainer:
+  epochs: 50
+  batch_size: 256
+  optimizer:
+    type: adamw
+    beat1: 0.9
+  learning_rate: 0.0001
+
+backend:
+  type: ray
+  cache_format: parquet
+  processor:
+    type: dask
+  trainer:
+    use_gpu: true
+    num_workers: 4
+    resources_per_worker:
+      CPU: 4
+      GPU: 1
+
+hyperopt:
+  metric: f1
+  sampler: random
+  parameters:
+    title.num_layers:
+      lower: 1
+      upper: 5
+    trainer.learning_rate:
+      values: [0.01, 0.003, 0,001]
+```
+
+For details on what can be configured, check out [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/)
+docs.
+
+## Step 3: Train a model
+
+Simple commands can be used to train models and predict new data.
+
+```sh
+ludwig train --config config.yaml --dataset data.csv
+```
+
+## Step 4: Predict and evaluate
+
+The training process will produce a model that can be used for evaluating on and obtaining predictions for new data.
+
+```sh
+ludwig predict –model path/to/trained/model –dataset heldout.csv
+ludwig evaluate –model path/to/trained/model –dataset heldout.csv
+```
+
+## Step 5: Visualize
+
+Ludwig provides a suite of visualization tools allows you to analyze models' training and test performance and to
+compare them.
+
+```
+ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
+```
+
+For the full set of visualization see the [Visualization Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/visualizations).
+
+## Step 6: Hyperopt, serving, and more
+
+Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
+
+```sh
+ludwig hyperopt --config config.yaml --dataset data.csv
+```
+
+Serve models using [FastAPI](https://fastapi.tiangolo.com/).
+
+```sh
+ludwig serve --model_path ./results/experiment_run/model
+curl http://0.0.0.0:8000/predict -X POST -F "sentence=Former president Barack Obama"
+```
+
+Try applying Ludwig to your data! [Reach out](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+if you have any questions.
 
 # Advantages
 
