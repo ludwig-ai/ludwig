@@ -301,21 +301,25 @@ Ludwig supports exporting models to efficient Torschscript bundles.
 ludwig export_torchscript -–model_path=/path/to/model
 ```
 
-# Examples
+# Tutorials
 
 - [Text Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/text_classification)
+- [Tabular Data Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/adult_census_income)
+- [Image Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/mnist)
+- [Multimodal Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/multimodal_classification)
+
+# Example Use Cases
+
 - [Named Entity Recognition Tagging](https://ludwig-ai.github.io/ludwig-docs/latest/examples/ner_tagging)
 - [Natural Language Understanding](https://ludwig-ai.github.io/ludwig-docs/latest/examples/nlu)
 - [Machine Translation](https://ludwig-ai.github.io/ludwig-docs/latest/examples/machine_translation)
 - [Chit-Chat Dialogue Modeling through seq2seq](https://ludwig-ai.github.io/ludwig-docs/latest/examples/seq2seq)
 - [Sentiment Analysis](https://ludwig-ai.github.io/ludwig-docs/latest/examples/sentiment_analysis)
-- [Image Classification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/image_classification)
-- [Image Classification (MNIST)](https://ludwig-ai.github.io/ludwig-docs/latest/examples/mnist)
-- [Visual Question Answering](https://ludwig-ai.github.io/ludwig-docs/latest/examples/visual_qa)
 - [One-shot Learning with Siamese Networks](https://ludwig-ai.github.io/ludwig-docs/latest/examples/oneshot)
-- [Speaker Verification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/speaker_verification)
+- [Visual Question Answering](https://ludwig-ai.github.io/ludwig-docs/latest/examples/visual_qa)
 - [Spoken Digit Speech Recognition](https://ludwig-ai.github.io/ludwig-docs/latest/examples/speech_recognition)
-- [Binary Classification (titanic)](https://ludwig-ai.github.io/ludwig-docs/latest/examples/titanic)
+- [Speaker Verification](https://ludwig-ai.github.io/ludwig-docs/latest/examples/speaker_verification)
+- [Binary Classification (Titanic)](https://ludwig-ai.github.io/ludwig-docs/latest/examples/titanic)
 - [Timeseries forecasting](https://ludwig-ai.github.io/ludwig-docs/latest/examples/forecasting)
 - [Timeseries forecasting (Weather)](https://ludwig-ai.github.io/ludwig-docs/latest/examples/weather)
 - [Movie rating prediction](https://ludwig-ai.github.io/ludwig-docs/latest/examples/movie_ratings)
