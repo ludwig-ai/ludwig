@@ -133,6 +133,3 @@ tags
 # examples
 examples/*/data/
 examples/*/visualizations/
-
-# MLFlow artifacts
-mlruns/
