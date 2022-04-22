@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 import os
+from collections import Counter
 from functools import partial
 from multiprocessing import Pool
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -334,19 +335,37 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels = False
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 user_specified_num_channels = True
-                channels_in_sample = np.array([num_channels_in_image(x) for x in inferred_sample])
-                if sum(channels_in_sample == 1) > len(inferred_sample) / 2:
+                channel_frequency = Counter([num_channels_in_image(x) for x in inferred_sample])
+                if channel_frequency[1] > len(inferred_sample) / 2:
                     # If the majority of images in sample are 1 channel, use 1.
                     num_channels = 1
-                elif sum(channels_in_sample == 2) > len(inferred_sample) / 2:
+                elif channel_frequency[2] > len(inferred_sample) / 2:
                     # If the majority of images in sample are 2 channel, use 2.
                     num_channels = 2
-                elif sum(channels_in_sample == 4) > len(inferred_sample) / 2:
+                elif channel_frequency[4] > len(inferred_sample) / 2:
                     # If the majority of images in sample are 4 channel, use 4.
                     num_channels = 4
                 else:
                     # Default case: use 3 channels.
                     num_channels = 3
+                logging.info(
+                    f"Inferring num_channels from the first {len(inferred_sample)} images for column "
+                    f"{input_feature_col.name}."
+                )
+                logging.info(
+                    "\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())])
+                )
+                if num_channels == max(channel_frequency, key=channel_frequency.get):
+                    logging.info(
+                        f"Using {num_channels} channels because it is the majority in sample. If an image with"
+                        f" a different depth is read, will attempt to convert it to {num_channels} channels."
+                    )
+                else:
+                    logging.info(f"Defaulting to {num_channels} channels.")
+                logging.info(
+                    "To explicitly set the number of channels, define num_channels in the preprocessing dictionary of "
+                    "the image input feature config."
+                )
             elif first_image is not None:
                 num_channels = num_channels_in_image(first_image)
             else:
