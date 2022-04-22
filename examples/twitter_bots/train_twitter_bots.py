@@ -38,16 +38,14 @@ if __name__ == "__main__":
         [test_stats],
         model.training_set_metadata,
         "account_type",
-        labels=["human", "bot"],
         top_n_classes=[2],
         model_names=[""],
         normalize=True,
         output_directory="./visualizations",
+        file_format="png",
     )
 
     # Visualizes learning curves, which show how performance metrics changed over time during training.
     learning_curves(
-        train_stats,
-        output_feature_name="account_type",
-        output_directory="./visualizations",
+        train_stats, output_feature_name="account_type", output_directory="./visualizations", file_format="png"
     )
