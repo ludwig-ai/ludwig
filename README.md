@@ -46,7 +46,7 @@ configuration system.
   you need to start training deep learning models. Ludwig uses declared features to compose a deep learning model
   accordingly.
 
-- [Training, Prediction, and Evaluation](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
+- [Training, Prediction, and Evaluation from the command line](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
 
   Simple commands can be used to train models and predict new data.
 
@@ -55,32 +55,6 @@ configuration system.
   ludwig predict --model_path results/experiment_run/model --dataset test.csv
   ludwig eval --model_path results/experiment_run/model --dataset test.csv
   ```
-
-- [Distributed Training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)
-
-  Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod), which allows training on a
-  single machine with multiple GPUs or multiple machines with multiple GPUs.
-
-- [Serving](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/serving)
-
-  Serve models using FastAPI.
-
-  ```
-  ludwig serve --model_path ./results/experiment_run/model
-  curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
-  ```
-
-- [Hyperparameter optimization](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/hyperopt)
-
-  Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
-
-  ```sh
-  ludwig hyperopt --config config.yaml --dataset data.csv
-  ```
-
-- [AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl)
-
-  Ludwig AutoML takes a dataset, the target column, and a time budget, and returns a trained Ludwig model.
 
 - [Programmatic API](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel)
 
@@ -113,6 +87,32 @@ configuration system.
   # obtain predictions
   predictions = model.predict(data)
   ```
+
+- [Distributed Training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)
+
+  Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod), which allows training on a
+  single machine with multiple GPUs or multiple machines with multiple GPUs.
+
+- [Serving](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/serving)
+
+  Serve models using FastAPI.
+
+  ```
+  ludwig serve --model_path ./results/experiment_run/model
+  curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
+  ```
+
+- [Hyperparameter optimization](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/hyperopt)
+
+  Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
+
+  ```sh
+  ludwig hyperopt --config config.yaml --dataset data.csv
+  ```
+
+- [AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl)
+
+  Ludwig AutoML takes a dataset, the target column, and a time budget, and returns a trained Ludwig model.
 
 - [Third-Party Integrations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/integrations)
 
