@@ -26,7 +26,7 @@ def uncalibrated_logits_and_labels():
     )
 
 
-EPSILON = 0.01  # maximum relative precision error allowed.
+EPSILON = 0.1  # maximum relative precision error allowed.
 
 
 def test_temperature_scaling_binary(uncalibrated_logits_and_labels):
