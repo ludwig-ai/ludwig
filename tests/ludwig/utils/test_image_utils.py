@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import Callable
+
 import pytest
 import torch
 
 from ludwig.utils.image_utils import crop, crop_or_pad, grayscale, num_channels_in_image, pad, resize_image
 
 
+@pytest.mark.parametrize("pad_fn", [pad, torch.jit.script(pad)])
 @pytest.mark.parametrize(
     "img,size,padded_img",
     [
@@ -81,11 +84,12 @@ from ludwig.utils.image_utils import crop, crop_or_pad, grayscale, num_channels_
         )
     ],
 )
-def test_pad(img: torch.Tensor, size: int, padded_img: torch.Tensor):
-    output_img = pad(img, size)
+def test_pad(pad_fn: Callable, img: torch.Tensor, size: int, padded_img: torch.Tensor):
+    output_img = pad_fn(img, size)
     assert torch.equal(output_img, padded_img)
 
 
+@pytest.mark.parametrize("crop_fn", [crop, torch.jit.script(crop)])
 @pytest.mark.parametrize(
     "img,size,cropped_img",
     [
@@ -96,11 +100,12 @@ def test_pad(img: torch.Tensor, size: int, padded_img: torch.Tensor):
         )
     ],
 )
-def test_crop(img: torch.Tensor, size: int, cropped_img: torch.Tensor):
-    output_img = crop(img, size)
+def test_crop(crop_fn: Callable, img: torch.Tensor, size: int, cropped_img: torch.Tensor):
+    output_img = crop_fn(img, size)
     assert torch.equal(output_img, cropped_img)
 
 
+@pytest.mark.parametrize("crop_or_pad_fn", [crop_or_pad, torch.jit.script(crop_or_pad)])
 @pytest.mark.parametrize(
     "img,new_size,expected_img",
     [
@@ -169,11 +174,12 @@ def test_crop(img: torch.Tensor, size: int, cropped_img: torch.Tensor):
         ),
     ],
 )
-def test_crop_or_pad(img: torch.Tensor, new_size: int, expected_img: torch.Tensor):
-    output_image = crop_or_pad(img, new_size)
+def test_crop_or_pad(crop_or_pad_fn: Callable, img: torch.Tensor, new_size: int, expected_img: torch.Tensor):
+    output_image = crop_or_pad_fn(img, new_size)
     assert torch.equal(output_image, expected_img)
 
 
+@pytest.mark.parametrize("resize_image_fn", [resize_image, torch.jit.script(resize_image)])
 @pytest.mark.parametrize(
     "img,new_size,resize_method,expected_img",
     [
@@ -191,17 +197,20 @@ def test_crop_or_pad(img: torch.Tensor, new_size: int, expected_img: torch.Tenso
         ),
     ],
 )
-def test_resize_image(img: torch.Tensor, new_size: int, resize_method: str, expected_img: torch.Tensor):
-    output_img = resize_image(img, new_size, resize_method)
+def test_resize_image(
+    resize_image_fn: Callable, img: torch.Tensor, new_size: int, resize_method: str, expected_img: torch.Tensor
+):
+    output_img = resize_image_fn(img, new_size, resize_method)
     assert torch.equal(output_img, expected_img)
 
 
+@pytest.mark.parametrize("grayscale_fn", [grayscale, torch.jit.script(grayscale)])
 @pytest.mark.parametrize(
     "input_img,grayscale_img",
     [(torch.arange(12).reshape(3, 2, 2).type(torch.int), torch.Tensor([[[3, 4], [5, 6]]]).type(torch.int))],
 )
-def test_grayscale(input_img: torch.Tensor, grayscale_img: torch.Tensor):
-    output_img = grayscale(input_img)
+def test_grayscale(grayscale_fn: Callable, input_img: torch.Tensor, grayscale_img: torch.Tensor):
+    output_img = grayscale_fn(input_img)
     assert torch.equal(output_img, grayscale_img)
 
 

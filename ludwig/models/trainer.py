@@ -338,6 +338,12 @@ class Trainer(BaseTrainer):
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
+        # when training starts the sigint handler will be replaced with
+        # set_epochs_to_1_or_quit so this is needed to remember
+        # the original sigint to restore at the end of training
+        # and before set_epochs_to_1_or_quit returns
+        self.original_sigint_handler = None
+
         # TODO(Justin): Move to config validation when that's ready.
         if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
             raise ValueError(
@@ -797,6 +803,9 @@ class Trainer(BaseTrainer):
         # Only use signals when on the main thread to avoid issues with CherryPy
         # https://github.com/ludwig-ai/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
+            # set the original sigint signal handler
+            # as we want to restore it at the end of training
+            self.original_sigint_handler = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
 
         metrics_names = get_metric_names(output_features)
@@ -1001,6 +1010,10 @@ class Trainer(BaseTrainer):
             # Load the best weights from saved checkpoint
             if self.is_coordinator() and not self.skip_save_model:
                 self.model.load_state_dict(torch.load(model_weights_path))
+
+        # restore original sigint signal handler
+        if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
+            signal.signal(signal.SIGINT, self.original_sigint_handler)
 
         return (
             self.model,
@@ -1341,6 +1354,8 @@ class Trainer(BaseTrainer):
             logger.critical("Send another SIGINT to immediately interrupt the process")
         else:
             logger.critical("\nReceived a second SIGINT, will now quit")
+            if self.original_sigint_handler:
+                signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
     def quit_training(self, signum, frame):
