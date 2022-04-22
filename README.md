@@ -121,7 +121,7 @@ or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/
 Install from PyPi. Be aware that Ludwig requires Python 3.7+.
 
 ```
-> pip install ludwig
+pip install ludwig
 ```
 
 ## Step 2: Define a configuration
