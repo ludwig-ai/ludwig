@@ -14,7 +14,7 @@
 
 </div>
 
-Translated in [🇰🇷 Korean](README_KR.md)/
+Translated in [🇰🇷Korean](README_KR.md)
 
 # What is Ludwig?
 
@@ -46,11 +46,31 @@ configuration system.
   you need to start training deep learning models. Ludwig uses declared features to compose a deep learning model
   accordingly.
 
+  ```yaml
+  input_features:
+    - name: data_column_1
+      type: number
+    - name: data_column_2
+      type: category
+    - name: data_column_3
+      type: text
+    - name: data_column_4
+      type: image
+    ...
+
+  output_features:
+    - name: data_column_5
+      type: number
+    - name: data_column_6
+      type: category
+    ...
+  ```
+
 - [Training, Prediction, and Evaluation from the command line](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
 
   Simple commands can be used to train models and predict new data.
 
-  ```
+  ```shell
   ludwig train --config config.yaml --dataset data.csv
   ludwig predict --model_path results/experiment_run/model --dataset test.csv
   ludwig eval --model_path results/experiment_run/model --dataset test.csv
@@ -62,20 +82,11 @@ configuration system.
 
   ```python
   from ludwig.api import LudwigModel
-  import pandas as pd
 
   # train a model
   config = {
-      "input_features": [
-          {"name": "Pclass", "type": "category"},
-          {"name": "Sex", "type": "category"},
-          {"name": "Age", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mean"}},
-          {"name": "SibSp", "type": "number"},
-          {"name": "Parch", "type": "number"},
-          {"name": "Fare", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mean"}},
-          {"name": "Embarked", "type": "category"},
-      ],
-      "output_features": [{"name": "Survived", "type": "binary"}],
+      "input_features": [...],
+      "output_features": [...],
   }
   model = LudwigModel(config)
   data = pd.read_csv("data.csv")
@@ -97,7 +108,7 @@ configuration system.
 
   Serve models using FastAPI.
 
-  ```
+  ```shell
   ludwig serve --model_path ./results/experiment_run/model
   curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
   ```
@@ -106,7 +117,7 @@ configuration system.
 
   Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
 
-  ```sh
+  ```shell
   ludwig hyperopt --config config.yaml --dataset data.csv
   ```
 
@@ -137,7 +148,7 @@ or take a look at end-to-end [Examples](https://ludwig-ai.github.io/ludwig-docs/
 
 Install from PyPi. Be aware that Ludwig requires Python 3.7+.
 
-```
+```shell
 pip install ludwig
 ```
 
@@ -174,17 +185,18 @@ to customize the pipeline to meet your requirements.
 input_features:
 - name: sentence
   type: text
-  encoder: t5
+  encoder: transformer
+  layers: 6
+  embedding_size: 512
 
 output_features:
 - name: class
   type: category
-  preprocessing:
-    most_common: 10000
+  loss: cross_entropy
 
 trainer:
   epochs: 50
-  batch_size: 256
+  batch_size: 64
   optimizer:
     type: adamw
     beat1: 0.9
@@ -220,7 +232,7 @@ docs.
 
 Simple commands can be used to train models and predict new data.
 
-```sh
+```shell
 ludwig train --config config.yaml --dataset data.csv
 ```
 
@@ -228,7 +240,7 @@ ludwig train --config config.yaml --dataset data.csv
 
 The training process will produce a model that can be used for evaluating on and obtaining predictions for new data.
 
-```sh
+```shell
 ludwig predict –model path/to/trained/model –dataset heldout.csv
 ludwig evaluate –model path/to/trained/model –dataset heldout.csv
 ```
@@ -238,7 +250,7 @@ ludwig evaluate –model path/to/trained/model –dataset heldout.csv
 Ludwig provides a suite of visualization tools allows you to analyze models' training and test performance and to
 compare them.
 
-```
+```shell
 ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
 ```
 
@@ -259,9 +271,9 @@ Ludwig takes care of the engineering complexity of deep learning out of the box,
 
 Data preprocessing, hyperparameter optimization, device management, and distributed training for newly registered `torch.nn.Module` models come completely free.
 
-## Compare models against existing SOTA models
+## Easily build your benachmarks
 
-Comparing the new model against existing published and implemented models is a simple config change.
+Creating a state-of-the-art baseline and comapring it with a new model  is a simple config change.
 
 ## Easily apply new architectures to multiple problems and datasets
 
@@ -277,31 +289,29 @@ For details on what can be configured, check out [Ludwig Configuration](https://
 
 Ludwig also natively integrates with pre-trained models, such as the ones available in [Huggingface Transformers](https://huggingface.co/docs/transformers/index). Users can choose from a vast collection of state-of-the-art pre-trained PyTorch models to use without needing to write any code at all. For example, training a BERT-based sentiment analysis model with Ludwig is as simple as:
 
-```
+```shell
 ludwig train --dataset sst5 -–config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
 ```
 
 ## Low-code Interface for AutoML
 
-[Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/) allows users to obtain trained models by providing just a dataset, the target column, and a time budget. It’s as simple as that!
+[Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/) allows users to obtain trained models by providing just a dataset, the target column, and a time budget.
 
-```
-auto_train_results = ludwig.automl.auto_train(
-    dataset=my_dataset_df, target=target_column_name, time_limit_s=7200, tune_for_memory=False
-)
+```python
+auto_train_results = ludwig.automl.auto_train(dataset=my_dataset_df, target=target_column_name, time_limit_s=7200)
 ```
 
 ## Easy Productionisation
 
 Ludwig makes it easy to serve deep learning models, including on GPUs. Launch a REST API for your trained Ludwig model.
 
-```
+```shell
 ludwig serve --model_path=/path/to/model
 ```
 
 Ludwig supports exporting models to efficient Torschscript bundles.
 
-```
+```shell
 ludwig export_torchscript -–model_path=/path/to/model
 ```
 
