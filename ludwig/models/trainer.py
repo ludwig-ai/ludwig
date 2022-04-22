@@ -864,7 +864,7 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
-        if self.is_coordinator():
+        if self.is_coordinator() and not self.skip_save_progress:
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(
                 checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1
@@ -978,7 +978,7 @@ class Trainer(BaseTrainer):
                     progress_tracker.epoch += 1
                     self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
-                    if self.is_coordinator():
+                    if self.is_coordinator() and not self.skip_save_progress:
                         # ========== Save training progress ==========
                         logging.debug(
                             f"Epoch {progress_tracker.epoch} took: "
@@ -1004,7 +1004,7 @@ class Trainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            if self.is_coordinator():
+            if self.is_coordinator() and not self.skip_save_progress:
                 checkpoint_manager.close()
 
             # Load the best weights from saved checkpoint
@@ -1115,7 +1115,7 @@ class Trainer(BaseTrainer):
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
-                if self.is_coordinator():
+                if self.is_coordinator() and not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
                     progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
