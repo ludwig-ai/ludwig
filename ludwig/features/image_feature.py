@@ -358,7 +358,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 if num_channels == max(channel_frequency, key=channel_frequency.get):
                     logging.info(
                         f"Using {num_channels} channels because it is the majority in sample. If an image with"
-                        f" a different depth is read, will attempt to convert it to {num_channels} channels."
+                        f" a different depth is read, will attempt to convert to {num_channels} channels."
                     )
                 else:
                     logging.info(f"Defaulting to {num_channels} channels.")
