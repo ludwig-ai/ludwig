@@ -17,6 +17,7 @@ import argparse
 import logging
 import os
 import sys
+from typing import Optional
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
@@ -27,7 +28,7 @@ from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def export_torchscript(model_path: str, output_path: str = "torchscript", **kwargs) -> None:
+def export_torchscript(model_path: str, output_path: Optional[str] = None, **kwargs) -> None:
     """Exports a model to torchscript.
 
     # Inputs
@@ -38,6 +39,10 @@ def export_torchscript(model_path: str, output_path: str = "torchscript", **kwar
     # Return
     :returns: (`None`)
     """
+    if output_path is None:
+        logger.info("output_path not provided, saving to model_path")
+        output_path = model_path
+
     logger.info(f"Model path: {model_path}")
     logger.info(f"Output path: {output_path}")
     logger.info("\n")
@@ -114,7 +119,13 @@ def cli_export_torchscript(sys_argv):
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("-od", "--output_path", type=str, help="path where to save the export model", required=True)
+    parser.add_argument(
+        "-od",
+        "--output_path",
+        type=str,
+        help="path where to save the export model. If not provided, the torchscript module is saved in `model_path`.",
+        required=False,
+    )
 
     # ------------------
     # Runtime parameters

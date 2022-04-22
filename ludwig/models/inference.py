@@ -74,14 +74,17 @@ class InferenceModule(nn.Module):
 
 
 class InferenceLudwigModel:
-    """Model for inference with the subset of the LudwigModel interface used for prediction."""
+    """Model for inference with the subset of the LudwigModel interface used for prediction.
+
+    This model is instantiated with a model_dir, which contains the model and its metadata.
+    """
 
     def __init__(self, model_dir: str):
         self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
         self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
-    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
+    def _to_input(self, s: pd.Series) -> Union[List[str], torch.Tensor]:
         if s.dtype == "object":
             return s.to_list()
         return torch.from_numpy(s.to_numpy())
@@ -89,6 +92,10 @@ class InferenceLudwigModel:
     def predict(
         self, batch: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
+        """Predict on a batch of data.
+
+        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
+        """
         inputs = {
             if_config["name"]: self._to_input(batch[if_config["column"]]) for if_config in self.config["input_features"]
         }
