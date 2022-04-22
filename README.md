@@ -18,21 +18,33 @@ Translated in [🇰🇷 Korean](README_KR.md)/
 
 # What is Ludwig?
 
-Ludwig is a data-driven declarative ML framework that makes it easy to define deep learning pipelines for many types of tasks using a simple and flexible data-driven configuration system. It was open sourced by Uber and is hosted by the Linux Foundation AI & Data.
+Ludwig is an open-source [declarative Machine Learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
+that makes it easy to define deep learning pipelines for many types of tasks using a simple and flexible data-driven
+configuration system. Ludwig was open sourced by Uber and is hosted by the Linux Foundation AI & Data.
 
-A data-driven configuration system allows users to define their deep learning pipeline by providing a list of inputs and outputs with their data type. The data type determines how inputs and outputs are preprocessed, encoded, decoded and which metrics and losses to use. Ludwig will assemble and train a deep learning model based on the combination of data types for many machine learning tasks.
+A data-driven configuration system allows users to define their deep learning pipeline by providing a list of inputs and
+outputs with their data type. The data type determines how inputs and outputs are preprocessed, encoded, decoded and
+which metrics and losses to use. Ludwig will assemble and train a deep learning model based on the combination of data
+types for many machine learning tasks.
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/ludwig05/docs/images/ludwig_legos.gif)
 
-Configurations are simple and flexible, enabling deep control of every aspect of the end-to-end pipeline; from experimenting with different training recipes, exploring state-of-the-art model architectures, to scaling up to large out-of-memory datasets and multi-node clusters, and finally serving the best model in production -- all can be achieved through small configuration changes.
+Configurations are simple and flexible, enabling deep control of every aspect of the end-to-end pipeline; from
+experimenting with different training recipes, exploring state-of-the-art model architectures, to scaling up to large
+out-of-memory datasets and multi-node clusters, and finally serving the best model in production -- all can be achieved
+through small configuration changes.
 
-Finally, the use of abstract interfaces throughout the codebase makes it easy for users to extend Ludwig by adding new models, metrics, losses, preprocessing functions and register them to make them available immediately in the configuration system.
+Finally, the use of abstract interfaces throughout the codebase makes it easy for users to extend Ludwig by adding new
+models, metrics, losses, preprocessing functions and register them to make them available immediately in the
+configuration system.
 
 # Main Features
 
 - [Data-Driven configuration system](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works)
 
-  A config YAML file that describes the schema of your data (input features, output features, and their types) is all you need to start training deep learning models. Ludwig uses declared features to compose a deep learning model accordingly.
+  A config YAML file that describes the schema of your data (input features, output features, and their types) is all
+  you need to start training deep learning models. Ludwig uses declared features to compose a deep learning model
+  accordingly.
 
 - [Training, Prediction, and Evaluation](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
 
@@ -46,7 +58,8 @@ Finally, the use of abstract interfaces throughout the codebase makes it easy fo
 
 - [Distributed Training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)
 
-  Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod), which allows training on a single machine with multiple GPUs or multiple machines with multiple GPUs.
+  Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod), which allows training on a
+  single machine with multiple GPUs or multiple machines with multiple GPUs.
 
 - [Serving](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/serving)
 
@@ -59,7 +72,11 @@ Finally, the use of abstract interfaces throughout the codebase makes it easy fo
 
 - [Hyperparameter optimization](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/hyperopt)
 
-  Ludwig supports hyperparameter optimization using Ray Tune or a local executor.
+  Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
+
+  ```sh
+  ludwig hyperopt --config config.yaml --dataset data.csv
+  ```
 
 - [AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl)
 
@@ -171,7 +188,7 @@ trainer:
   optimizer:
     type: adamw
     beat1: 0.9
-  learning_rate: 0.0001
+  learning_rate: 0.001
 
 backend:
   type: ray
@@ -193,7 +210,7 @@ hyperopt:
       lower: 1
       upper: 5
     trainer.learning_rate:
-      values: [0.01, 0.003, 0,001]
+      values: [0.01, 0.003, 0.001]
 ```
 
 For details on what can be configured, check out [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/)
@@ -227,22 +244,9 @@ ludwig visualize --visualization compare_performance --test_statistics path/to/t
 
 For the full set of visualization see the [Visualization Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/visualizations).
 
-## Step 6: Hyperopt, serving, and more
+## Step 6: Happy modeling!
 
-Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
-
-```sh
-ludwig hyperopt --config config.yaml --dataset data.csv
-```
-
-Serve models using [FastAPI](https://fastapi.tiangolo.com/).
-
-```sh
-ludwig serve --model_path ./results/experiment_run/model
-curl http://0.0.0.0:8000/predict -X POST -F "sentence=Former president Barack Obama"
-```
-
-Try applying Ludwig to your data! [Reach out](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+Try applying Ludwig to your data. [Reach out](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
 if you have any questions.
 
 # Advantages
