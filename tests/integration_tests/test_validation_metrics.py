@@ -101,6 +101,6 @@ def test_validation_invalid_metric(test_case: TestCase, csv_filename: str):
     # this should generate ValueError Exception
     try:
         test_validation_metrics(test_case, csv_filename)
-        raise RuntimeError("test_validation_metrics() should have raised ValueError " "but did not.")
+        raise RuntimeError("test_validation_metrics() should have raised ValueError but did not")
     except ValueError:
         pass
