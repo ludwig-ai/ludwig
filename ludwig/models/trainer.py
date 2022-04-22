@@ -864,7 +864,7 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
-        if self.is_coordinator():
+        if self.is_coordinator() and not self.skip_save_progress:
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(
                 checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1
@@ -984,8 +984,9 @@ class Trainer(BaseTrainer):
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                         )
-                        checkpoint_manager.save(progress_tracker.steps)
-                        progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                        if not self.skip_save_progress:
+                            checkpoint_manager.save(progress_tracker.steps)
+                            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
                     # Early stop if needed.
                     if should_break:
@@ -1004,7 +1005,7 @@ class Trainer(BaseTrainer):
             if test_summary_writer is not None:
                 test_summary_writer.close()
 
-            if self.is_coordinator():
+            if self.is_coordinator() and not self.skip_save_progress:
                 checkpoint_manager.close()
 
             # Load the best weights from saved checkpoint
@@ -1115,7 +1116,7 @@ class Trainer(BaseTrainer):
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
-                if self.is_coordinator():
+                if self.is_coordinator() and not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
                     progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
