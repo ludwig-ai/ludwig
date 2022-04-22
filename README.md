@@ -18,7 +18,7 @@ Translated in [🇰🇷Korean](README_KR.md)
 
 # What is Ludwig?
 
-Ludwig is an open-source [declarative Machine Learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
+Ludwig is an open-source [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
 that makes it easy to define deep learning pipelines for many types of tasks using a simple and flexible data-driven
 configuration system. Ludwig was open sourced by Uber and is hosted by the Linux Foundation AI & Data.
 
@@ -66,7 +66,7 @@ configuration system.
     ...
   ```
 
-- [Training, Prediction, and Evaluation from the command line](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
+- [Training, prediction, and evaluation from the command line](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
 
   Simple commands can be used to train models and predict new data.
 
@@ -99,7 +99,7 @@ configuration system.
   predictions = model.predict(data)
   ```
 
-- [Distributed Training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)
+- [Distributed training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)
 
   Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod), which allows training on a
   single machine with multiple GPUs or multiple machines with multiple GPUs.
@@ -125,7 +125,7 @@ configuration system.
 
   Ludwig AutoML takes a dataset, the target column, and a time budget, and returns a trained Ludwig model.
 
-- [Third-Party Integrations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/integrations)
+- [Third-Party integrations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/integrations)
 
   Ludwig provides an extendable interface to integrate with third-party systems for tracking experiments. Third-party
   integrations exist for Comet ML, Weights & Biases, WhyLabs and MLFlow.
@@ -293,7 +293,7 @@ Ludwig also natively integrates with pre-trained models, such as the ones availa
 ludwig train --dataset sst5 -–config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
 ```
 
-## Low-code Interface for AutoML
+## Low-code interface for autoML
 
 [Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/) allows users to obtain trained models by providing just a dataset, the target column, and a time budget.
 
@@ -301,7 +301,7 @@ ludwig train --dataset sst5 -–config_str “{input_features: [{name: sentence,
 auto_train_results = ludwig.automl.auto_train(dataset=my_dataset_df, target=target_column_name, time_limit_s=7200)
 ```
 
-## Easy Productionisation
+## Easy productionisation
 
 Ludwig makes it easy to serve deep learning models, including on GPUs. Launch a REST API for your trained Ludwig model.
 
