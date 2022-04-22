@@ -16,6 +16,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
@@ -59,9 +60,19 @@ class ECELoss(nn.Module):
         return ece
 
 
+@dataclass()
+class CalibrationResult:
+    """Tracks results of probability calibration."""
+
+    before_calibration_nll: float
+    before_calibration_ece: float
+    after_calibration_nll: float
+    after_calibration_ece: float
+
+
 class CalibrationModule(nn.Module, ABC):
     @abstractmethod
-    def calibrate(self, logits, labels):
+    def calibrate(self, logits, labels) -> CalibrationResult:
         """Calibrate output probabilities using logits and labels from validation set."""
         return NotImplementedError()
 
@@ -87,11 +98,10 @@ class TemperatureScaling(CalibrationModule):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.temperature = nn.Parameter(torch.ones(1), requires_grad=False).to(self.device)
 
-    def calibrate(self, logits, labels):
+    def calibrate(self, logits, labels) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
         one_hot_labels = nn.functional.one_hot(labels, self.num_classes).float()
-
         if self.binary:
             # Treat binary classification as multi-class with 2 classes to re-use code.
             # The math works out the same: softmax([0, a])[1] == sigmoid(a)
@@ -102,12 +112,12 @@ class TemperatureScaling(CalibrationModule):
         original_temperature = self.temperature.clone().detach()
         self.temperature.requires_grad = True
         # Calculate NLL and ECE before temperature scaling
-        before_temperature_nll = nll_criterion(logits, one_hot_labels).item()
-        before_temperature_ece = ece_criterion(logits, one_hot_labels).item()
+        before_calibration_nll = nll_criterion(logits, one_hot_labels).item()
+        before_calibration_ece = ece_criterion(logits, one_hot_labels).item()
         logging.info(
             "Before temperature scaling:\n"
             "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (before_temperature_nll, before_temperature_ece)
+            "    Expected Calibration Error: %.3f" % (before_calibration_nll, before_calibration_ece)
         )
 
         # Optimizes the temperature to minimize NLL
@@ -122,23 +132,26 @@ class TemperatureScaling(CalibrationModule):
         optimizer.step(eval)
 
         # Calculate NLL and ECE after temperature scaling
-        after_temperature_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
-        after_temperature_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
+        after_calibration_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
+        after_calibration_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
         logging.info("Optimal temperature: %.3f" % self.temperature.item())
         logging.info(
             "After temperature scaling:\n"
             "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (after_temperature_nll, after_temperature_ece)
+            "    Expected Calibration Error: %.3f" % (after_calibration_nll, after_calibration_ece)
         )
         self.temperature.requires_grad = False
         # This should never happen, but if expected calibration error is higher after optimizing temperature, revert.
-        if after_temperature_ece > before_temperature_ece:
+        if after_calibration_ece > before_calibration_ece:
             logging.warning(
                 "Expected calibration error higher after scaling, "
                 "reverting to temperature=%.3f." % original_temperature.item()
             )
             with torch.no_grad():
                 self.temperature.data = original_temperature.data
+        return CalibrationResult(
+            before_calibration_nll, before_calibration_ece, after_calibration_nll, after_calibration_ece
+        )
 
     def scale_logits(self, logits: torch.Tensor):
         return torch.div(logits, self.temperature)
@@ -168,7 +181,7 @@ class MatrixScaling(CalibrationModule):
         self.w = nn.Parameter(torch.eye(self.num_classes), requires_grad=False).to(self.device)
         self.b = nn.Parameter(torch.zeros(self.num_classes), requires_grad=False).to(self.device)
 
-    def calibrate(self, logits, labels):
+    def calibrate(self, logits, labels) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
         one_hot_labels = nn.functional.one_hot(labels, self.num_classes).float()
@@ -177,15 +190,15 @@ class MatrixScaling(CalibrationModule):
         self.w.requires_grad = True
         self.b.requires_grad = True
         # Calculate NLL and ECE before temperature scaling
-        before_temperature_nll = nll_criterion(logits, one_hot_labels).item()
-        before_temperature_ece = ece_criterion(logits, one_hot_labels).item()
+        before_calibration_nll = nll_criterion(logits, one_hot_labels).item()
+        before_calibration_ece = ece_criterion(logits, one_hot_labels).item()
         logging.info(
             "Before matrix scaling:\n"
             "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (before_temperature_nll, before_temperature_ece)
+            "    Expected Calibration Error: %.3f" % (before_calibration_nll, before_calibration_ece)
         )
 
-        # Optimizes the temperature to minimize NLL
+        # Optimizes the linear transform to minimize NLL
         optimizer = torch.optim.LBFGS([self.w, self.b], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
 
         def eval():
@@ -196,22 +209,25 @@ class MatrixScaling(CalibrationModule):
 
         optimizer.step(eval)
 
-        # Calculate NLL and ECE after temperature scaling
-        after_temperature_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
-        after_temperature_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
+        # Calculate NLL and ECE after matrix scaling
+        after_calibration_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
+        after_calibration_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
         logging.info(
             "After matrix scaling:\n"
             "    Negative log-likelihood: %.3f\n"
-            "    Expected Calibration Error: %.3f" % (after_temperature_nll, after_temperature_ece)
+            "    Expected Calibration Error: %.3f" % (after_calibration_nll, after_calibration_ece)
         )
         self.w.requires_grad = False
         self.b.requires_grad = False
-        # This should never happen, but if expected calibration error is higher after optimizing temperature, revert.
-        if after_temperature_ece > before_temperature_ece:
+        # This should never happen, but if expected calibration error is higher after optimizing matrix, revert.
+        if after_calibration_ece > before_calibration_ece:
             logging.warning("Expected calibration error higher after matrix scaling, reverting to identity.")
             with torch.no_grad():
                 self.w.data = torch.eye(self.num_classes)
                 self.b.data = torch.zeros(self.num_classes)
+        return CalibrationResult(
+            before_calibration_nll, before_calibration_ece, after_calibration_nll, after_calibration_ece
+        )
 
     def scale_logits(self, logits: torch.Tensor):
         return torch.matmul(logits, self.w) + self.b
