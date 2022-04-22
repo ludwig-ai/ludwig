@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, TYPE_CHECKING
 
 import pandas as pd
 import torch
@@ -11,7 +11,10 @@ from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.ecd import ECD
+
+# Prevents circular import errors from typing.
+if TYPE_CHECKING:
+    from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -27,7 +30,7 @@ class InferenceModule(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: ECD, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
         model.cpu()

@@ -13,6 +13,7 @@ from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
+from ludwig.models.inference import InferenceModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
@@ -89,14 +90,26 @@ class ECD(LudwigModule):
         return total_size
 
     def to_torchscript(self):
+        """Returns a scripted ECD model. To get an end-to-end module, use ECD.to_inference_module."""
         self.eval()
         model_inputs = self.get_model_inputs()
         # We set strict=False to enable dict inputs and outputs.
         return torch.jit.trace(self, model_inputs, strict=False)
 
     def save_torchscript(self, save_path):
+        """Saves a scripted ECD model to save_path. To save end-to-end module, use ECD.save_inference_module."""
         traced = self.to_torchscript()
         traced.save(save_path)
+
+    def to_inference_module(self, save_path, **inference_module_kwargs):
+        """Returns a scripted InferenceModule that can be used to make predictions end-to-end."""
+        inference_module = InferenceModule(self, **inference_module_kwargs)
+        return torch.jit.script(inference_module)
+
+    def save_inference_module(self, save_path, **inference_module_kwargs):
+        """Saves a scripted InferenceModule to save_path."""
+        inference_module = self.to_inference_module(save_path, **inference_module_kwargs)
+        inference_module.save(save_path)
 
     @property
     def input_shape(self):

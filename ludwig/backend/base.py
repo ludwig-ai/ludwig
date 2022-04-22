@@ -16,13 +16,16 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.models.ecd import ECD
+
+# Prevents circular import errors from typing.
+if TYPE_CHECKING:
+    from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
@@ -111,7 +114,7 @@ class LocalTrainingMixin:
 
         return Trainer(**kwargs)
 
-    def create_predictor(self, model: ECD, **kwargs):
+    def create_predictor(self, model: "ECD", **kwargs):
         from ludwig.models.predictor import Predictor
 
         return Predictor(model, **kwargs)

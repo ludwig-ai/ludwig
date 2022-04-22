@@ -39,6 +39,7 @@ import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
+    INFERENCE_MODULE_FILE_NAME,
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     MODEL_WEIGHTS_FILE_NAME,
@@ -241,7 +242,9 @@ class Trainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        skip_save_inference_module: bool = False,
+        inference_module_kwargs: Optional[Dict] = None,
+        callbacks: Optional[List] = None,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
@@ -254,7 +257,7 @@ class Trainer(BaseTrainer):
         :param resume: Resume training a model that was being trained. (default: False).
         :type resume: Boolean
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
+                default Ludwig saves model weights after each epoch the validation metric improves, but if the model is
                 really big that can be time consuming. If you do not want to keep the weights and just find out what
                 performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
                 will not be loadable later on. (default: False).
@@ -267,6 +270,13 @@ class Trainer(BaseTrainer):
         :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
                 it is not needed turning it off can slightly increase the overall speed. (default: False).
         :type skip_save_log: Boolean
+        :param skip_save_inference_module: Disables saving torchscript-compatible inference module. By default Ludwig
+                saves the inference module after each epoch the validation metric improves. This can be time consuming.
+                If turned off, the inference module will not be loadable later on. If skip_save_model is True,
+                skip_save_inference_module is set to True (default: False).
+        :type skip_save_inference_module: Boolean
+        :param inference_module_kwargs: Keyword arguments for the inference module.
+        :type inference_module_kwargs: dict
         :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
                 (default: None).
         :type callbacks: list
@@ -319,6 +329,17 @@ class Trainer(BaseTrainer):
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
+
+        if skip_save_model:
+            logger.warning(
+                "Cannot save inference module if skip_save_model is True. "
+                "Setting skip_save_inference_module to True."
+            )
+            self.skip_save_inference_module = True
+        else:
+            self.skip_save_inference_module = skip_save_inference_module
+        self.inference_module_kwargs = inference_module_kwargs or {}
+
         self.random_seed = random_seed
         self.horovod = horovod
         self.received_sigint = False
@@ -847,12 +868,14 @@ class Trainer(BaseTrainer):
 
         # ====== Setup file names =======
         model_weights_path = model_hyperparameters_path = None
+        inference_module_path = None
         training_checkpoints_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
             model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+            inference_module_path = os.path.join(save_path, INFERENCE_MODULE_FILE_NAME)
             training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
             tensorboard_log_dir = os.path.join(save_path, "logs")
         if save_path:
@@ -992,6 +1015,21 @@ class Trainer(BaseTrainer):
                         break
         finally:
             # ================ Finished Training ================
+
+            # Load the best weights from saved checkpoint
+            if self.is_coordinator() and not self.skip_save_model:
+                self.model.load_state_dict(torch.load(model_weights_path))
+
+                # Save inference module
+                if not self.skip_save_inference_module:
+                    logger.info("Attempting to save inference module with best weights from saved checkpoint...")
+                    try:
+                        self._save_inference_module(inference_module_path)
+                        logger.info('Saved inference module to: "{}"'.format(inference_module_path))
+                    except NotImplementedError as e:
+                        logger.warning("Unable to save inference module.")
+                        logger.warning(f"Original error: {e}")
+
             self.callback(
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
@@ -1006,10 +1044,6 @@ class Trainer(BaseTrainer):
 
             if self.is_coordinator():
                 checkpoint_manager.close()
-
-            # Load the best weights from saved checkpoint
-            if self.is_coordinator() and not self.skip_save_model:
-                self.model.load_state_dict(torch.load(model_weights_path))
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
@@ -1345,6 +1379,12 @@ class Trainer(BaseTrainer):
                 )
             should_break = True
         return should_break
+
+    def _save_inference_module(self, inference_module_path):
+        self.model.save_inference_module(
+            inference_module_path,
+            **self.inference_module_kwargs,
+        )
 
     def set_epochs_to_1_or_quit(self, signum, frame):
         if not self.received_sigint:

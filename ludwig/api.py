@@ -63,7 +63,6 @@ from ludwig.globals import (
 )
 from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -242,6 +241,7 @@ class LudwigModel:
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
+        skip_save_inference_module: bool = False,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
@@ -319,6 +319,13 @@ class LudwigModel:
             dataset is provided it is preprocessed and cached by saving an HDF5
             and JSON files to avoid running the preprocessing again. If this
             parameter is `False`, the HDF5 and JSON file are not saved.
+        :param skip_save_inference_module: (bool, default: `False`) disables
+            saving torchscript-compatible inference module. By default Ludwig
+            saves the inference module after each epoch the validation metric
+            improves. This can be time consuming. If turned off, the inference
+            module will not be loadable later on. If skip_save_model is True,
+            skip_save_inference_module is automatically set to True.
+        saves
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
@@ -360,6 +367,7 @@ class LudwigModel:
             and skip_save_progress
             and skip_save_log
             and skip_save_processed_input
+            and skip_save_inference_module
         )
 
         output_url = output_directory
@@ -494,6 +502,8 @@ class LudwigModel:
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
+                skip_save_inference_module=skip_save_inference_module,
+                inference_module_kwargs={"config": self.config, "training_set_metadata": self.training_set_metadata},
                 callbacks=train_callbacks,
                 random_seed=random_seed,
             ) as trainer:
@@ -1449,13 +1459,16 @@ class LudwigModel:
         tensors of varying dimensions for probabilities, logits, etc.
         """
         self._check_initialization()
-        inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
-        return torch.jit.script(inference_module)
+        return self.model.to_inference_module(
+            **{"config": self.config, "training_set_metadata": self.training_set_metadata}
+        )
 
     def save_torchscript(self, save_path: str):
         """Saves the Torchscript model to disk."""
-        inference_module = self.to_torchscript()
-        inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
+        self.model.save_inference_module(
+            os.path.join(save_path, INFERENCE_MODULE_FILE_NAME),
+            **{"config": self.config, "training_set_metadata": self.training_set_metadata},
+        )
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:

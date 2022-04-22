@@ -19,6 +19,8 @@ from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FIL
 from ludwig.utils.data_utils import load_json
 
 FLAVOR_NAME = "ludwig"
+MODEL_TYPE_LUDWIG_MODEL = "ludwig_model"
+MODEL_TYPE_TORCHSCRIPT = "torchscript"
 
 _logger = logging.getLogger(__name__)
 
@@ -108,6 +110,11 @@ def save_model(
 
     # Save the Ludwig model
     ludwig_model.save(model_data_path)
+    model_type = (
+        MODEL_TYPE_TORCHSCRIPT
+        if os.path.isfile(os.path.join(model_data_path, INFERENCE_MODULE_FILE_NAME))
+        else MODEL_TYPE_LUDWIG_MODEL
+    )
 
     conda_env_subpath = "conda.yaml"
     if conda_env is None:
@@ -140,6 +147,7 @@ def save_model(
             ],
         },
         data=model_data_subpath,
+        model_type=model_type,
     )
     mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
 
@@ -216,19 +224,22 @@ def log_model(
     )
 
 
-def _load_model(path):
-    if os.path.exists(os.path.join(path, INFERENCE_MODULE_FILE_NAME)):
-        from ludwig.models.inference import InferenceLudwigModel
-
-        return InferenceLudwigModel(path)
-    else:
+def _load_model(path, model_type=MODEL_TYPE_LUDWIG_MODEL):
+    if model_type == MODEL_TYPE_LUDWIG_MODEL:
         from ludwig.api import LudwigModel
 
         return LudwigModel.load(path, backend="local")
+    elif model_type == MODEL_TYPE_TORCHSCRIPT:
+        from ludwig.models.inference import InferenceLudwigModel
+
+        return InferenceLudwigModel(path)
+    raise ValueError(f'Unsupported module type: "{model_type}"')
 
 
 def _load_pyfunc(path):
     """Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
+
+    Does not currently support loading the torchscript model type.
 
     :param path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
     """
@@ -254,7 +265,8 @@ def load_model(model_uri):
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
-    return _load_model(path=lgb_model_file_path)
+    model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
+    return _load_model(path=lgb_model_file_path, model_type=model_type)
 
 
 class _LudwigModelWrapper:
