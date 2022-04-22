@@ -242,7 +242,7 @@ def _short_time_fourier_transform(
 
 
 def _preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_samp, zero_mean_offset=False):
-    num_input = data.shape[0]
+    num_input = data[0].shape[0]
     num_output = get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp)
     zero_padded_matrix = np.zeros((num_output, window_length_in_samp), dtype=np.float)
     for num_output_idx in range(num_output):
