@@ -29,7 +29,6 @@ directory, train a model, and write results into the following directories:
 
 After training, the script will generate the following plots:
 
-![Account Type Accuracy](../images/learning_curves_account_type_loss.png)
-![Account Type Loss](../images/learning_curves_account_type_accuracy.png)
-
-![Account Type Confusion Matrix](../images/confusion_matrix_account_type.png)
+![Account Type Accuracy](images/learning_curves_account_type_loss.png)
+![Account Type Loss](images/learning_curves_account_type_accuracy.png)
+![Account Type Confusion Matrix](images/confusion_matrix__account_type_top2.png)
