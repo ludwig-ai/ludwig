@@ -14,7 +14,7 @@ from glob import glob
 import numpy as np
 import torch
 
-from ludwig.utils.fs_utils import file_lock
+CHECKPOINTS_LOCK = threading.Lock()
 
 
 def mkdir(s):
@@ -49,7 +49,7 @@ def traim_checkpoints_loop(q: queue.Queue, directory: str, max_to_keep: int):
         if should_continue is False:
             return
 
-        with file_lock(directory, lock_file=".lock"):
+        with CHECKPOINTS_LOCK:
             # get a list of checkpoints in reverse
             # chronological order
             ckpts = get_files(directory, "*.ckpt")[::-1]
