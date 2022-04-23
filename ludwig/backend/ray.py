@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
@@ -425,11 +426,20 @@ class RayPredictor(BasePredictor):
                 df[c] = df[c].astype(TensorDtype())
             return df
 
-        num_gpus = int(ray.cluster_resources().get("GPU", 0) > 0)
+        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_cpus = resources_per_worker.get("CPU", 1)
+        num_gpus = resources_per_worker.get("GPU", 0)
+
         dask_dataset = (
             dataset.ds.map_batches(to_tensors, batch_format="pandas")
             .map_batches(
-                batch_predictor, batch_size=self.batch_size, compute="actors", batch_format="pandas", num_gpus=num_gpus
+                batch_predictor,
+                batch_size=self.batch_size,
+                compute="actors",
+                batch_format="pandas",
+                num_cpus=num_cpus,
+                num_gpus=num_gpus,
             )
             .to_dask()
         )
@@ -559,14 +569,24 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
-            return RayTrainerV2(model, self._horovod_kwargs, self._data_loader_kwargs, executable_kwargs)
+            return RayTrainerV2(
+                model,
+                copy.deepcopy(self._horovod_kwargs),
+                copy.deepcopy(self._data_loader_kwargs),
+                copy.deepcopy(executable_kwargs),
+            )
         else:
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        return RayPredictor(model, self._horovod_kwargs, self._data_loader_kwargs, **executable_kwargs)
+        return RayPredictor(
+            model,
+            copy.deepcopy(self._horovod_kwargs),
+            copy.deepcopy(self._data_loader_kwargs),
+            **copy.deepcopy(executable_kwargs),
+        )
 
     def set_distributed_kwargs(self, **kwargs):
         self._horovod_kwargs = kwargs
