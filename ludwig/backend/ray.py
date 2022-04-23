@@ -569,6 +569,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
+            # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
             return RayTrainerV2(
                 model,
                 copy.deepcopy(self._horovod_kwargs),
