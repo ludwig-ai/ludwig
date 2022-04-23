@@ -647,7 +647,7 @@ def train_with_backend(
                     assert k1 == k2
                     for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
                         assert name1 == name2
-                        assert np.isclose(metric1, metric2)
+                        assert np.isclose(metric1, metric2), f"metric {name1}: {metric1} != {metric2}"
 
         return model
     finally:
