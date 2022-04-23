@@ -102,7 +102,15 @@ class ECD(LudwigModule):
         traced.save(save_path)
 
     def to_inference_module(self, save_path, **inference_module_kwargs):
-        """Returns a scripted InferenceModule that can be used to make predictions end-to-end."""
+        """Returns a scripted ECD model.
+
+        The input to this model is a dictionary of input features. For every input feature, the user must provide a
+        tensor, a list of tensors or a list of strings.
+
+        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
+        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
+        tensors of varying dimensions for probabilities, logits, etc.
+        """
         inference_module = InferenceModule(self, **inference_module_kwargs)
         return torch.jit.script(inference_module)
 

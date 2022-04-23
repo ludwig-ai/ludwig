@@ -1024,7 +1024,7 @@ class Trainer(BaseTrainer):
                 if not self.skip_save_inference_module:
                     logger.info("Attempting to save inference module with best weights from saved checkpoint...")
                     try:
-                        self._save_inference_module(inference_module_path)
+                        self.model.save_inference_module(inference_module_path, **self.inference_module_kwargs)
                         logger.info('Saved inference module to: "{}"'.format(inference_module_path))
                     except NotImplementedError as e:
                         logger.warning("Unable to save inference module.")
@@ -1379,12 +1379,6 @@ class Trainer(BaseTrainer):
                 )
             should_break = True
         return should_break
-
-    def _save_inference_module(self, inference_module_path):
-        self.model.save_inference_module(
-            inference_module_path,
-            **self.inference_module_kwargs,
-        )
 
     def set_epochs_to_1_or_quit(self, signum, frame):
         if not self.received_sigint:

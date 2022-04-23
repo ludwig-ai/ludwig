@@ -1445,18 +1445,9 @@ class LudwigModel:
         save_json(model_hyperparameters_path, self.config)
 
     def to_torchscript(self):
-        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
+        """Returns the model as a TorchScript module.
 
-        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
-
-        More specifically, for every input feature, we provide either a Tensor of batch_size inputs or a list of
-        strings batch_size in length.
-
-        Note that the dimensions of all Tensors and lengths of all lists must match.
-
-        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
-        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
-        tensors of varying dimensions for probabilities, logits, etc.
+        For more details, see ECD.to_inference_module.
         """
         self._check_initialization()
         return self.model.to_inference_module(
@@ -1464,7 +1455,12 @@ class LudwigModel:
         )
 
     def save_torchscript(self, save_path: str):
-        """Saves the Torchscript model to disk."""
+        """Saves the Torchscript module to disk.
+
+        # Inputs
+        :param  save_path: (str) path to the directory where the model is
+                going to be saved.
+        """
         self.model.save_inference_module(
             os.path.join(save_path, INFERENCE_MODULE_FILE_NAME),
             **{"config": self.config, "training_set_metadata": self.training_set_metadata},
