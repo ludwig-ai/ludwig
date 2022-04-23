@@ -522,7 +522,7 @@ def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, n
 def test_api_save_torchscript(tmpdir):
     """Tests successful saving and loading of model in TorchScript format."""
     input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(name="class", vocab_size=5, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
