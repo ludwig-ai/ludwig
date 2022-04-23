@@ -91,7 +91,7 @@ def run_api_experiment(config, data_parquet, backend_config):
         assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
-    model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=False)
+    model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=True)
 
     assert isinstance(model.backend, RayBackend)
     if isinstance(model.backend.df_engine, DaskEngine):

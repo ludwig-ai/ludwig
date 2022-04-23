@@ -617,7 +617,9 @@ def train_with_backend(
             assert preds is not None
 
         if evaluate:
-            _, eval_preds, _ = model.evaluate(dataset=dataset)
+            eval_stats, eval_preds, _ = model.evaluate(dataset=dataset, collect_overall_stats=False)
+            print(eval_stats)
+            print(eval_preds)
             assert eval_preds is not None
 
         return model

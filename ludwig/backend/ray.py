@@ -33,7 +33,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
+from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
@@ -93,6 +93,10 @@ def get_trainer_kwargs(use_gpu=None):
         backend=HorovodConfig(),
         num_workers=num_workers,
         use_gpu=use_gpu,
+        resources_per_worker={
+            "CPU": 0 if use_gpu else 1,
+            "GPU": 1 if use_gpu else 0,
+        },
     )
 
 
@@ -361,9 +365,40 @@ class RayLegacyTrainer(BaseTrainer):
         self.executor.shutdown()
 
 
+def eval_fn(
+    predictor_kwargs: Dict[str, Any] = None,
+    model_ref: ObjectRef = None,  # noqa: F821
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
+):
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
+        eval_shard = RayDatasetShard(
+            rt.get_dataset_shard("eval"),
+            features,
+            training_set_metadata,
+        )
+
+        model = ray.get(model_ref)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = model.to(device)
+
+        predictor = RemotePredictor(model=model, horovod=hvd, **predictor_kwargs)
+        return predictor.batch_evaluation(eval_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
+
+
 class RayPredictor(BasePredictor):
-    def __init__(self, model: ECD, **predictor_kwargs):
-        self.batch_size = predictor_kwargs.get("batch_size", 128)
+    def __init__(self, model: ECD, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+        self.batch_size = predictor_kwargs["batch_size"]
+        self.trainer_kwargs = trainer_kwargs
+        self.data_loader_kwargs = data_loader_kwargs
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
         self.model = model.cpu()
@@ -407,8 +442,34 @@ class RayPredictor(BasePredictor):
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
 
-    def batch_evaluation(self, dataset, collect_predictions=False, **kwargs):
-        raise NotImplementedError("Ray backend does not support batch evaluation at this time.")
+    def batch_evaluation(self, dataset: RayDataset, collect_predictions: bool = False, **kwargs):
+        runner = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
+        runner.start()
+        try:
+            datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
+            predictor_kwargs = {
+                **self.predictor_kwargs,
+                "collect_predictions": False,
+            }
+            eval_stats, _ = runner.run(
+                lambda config: eval_fn(**config),
+                config={
+                    "predictor_kwargs": predictor_kwargs,
+                    "model_ref": ray.put(self.model),
+                    "training_set_metadata": dataset.training_set_metadata,
+                    "features": dataset.features,
+                    **kwargs,
+                },
+                dataset=datasets,
+            )[0]
+        finally:
+            runner.shutdown()
+
+        predictions = None
+        if collect_predictions:
+            predictions = self.batch_predict(dataset)
+
+        return eval_stats, predictions
 
     def batch_collect_activations(self, model, *args, **kwargs):
         raise NotImplementedError("Ray backend does not support collecting activations at this time.")
@@ -505,7 +566,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_predictor(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        return RayPredictor(model, **executable_kwargs)
+        return RayPredictor(model, self._horovod_kwargs, self._data_loader_kwargs, **executable_kwargs)
 
     def set_distributed_kwargs(self, **kwargs):
         self._horovod_kwargs = kwargs
