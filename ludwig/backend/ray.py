@@ -453,9 +453,14 @@ class RayPredictor(BasePredictor):
         raise NotImplementedError("predict_single can only be called on a local predictor")
 
     def batch_evaluation(self, dataset: RayDataset, collect_predictions: bool = False, **kwargs):
+        # We need to be in a Horovod context to collect the aggregated metrics, since it relies on collective
+        # communication ops. However, Horovod is not suitable for transforming one big dataset to another. For that
+        # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
+        # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         runner = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
         runner.start()
         try:
+            # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
             predictor_kwargs = {
                 **self.predictor_kwargs,
@@ -477,6 +482,7 @@ class RayPredictor(BasePredictor):
 
         predictions = None
         if collect_predictions:
+            # Collect eval predictions by using Ray Datasets to transform partitions of the data in parallel
             predictions = self.batch_predict(dataset)
 
         return eval_stats, predictions
