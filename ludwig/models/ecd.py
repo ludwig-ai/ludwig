@@ -90,14 +90,20 @@ class ECD(LudwigModule):
         return total_size
 
     def to_torchscript(self):
-        """Returns a scripted ECD model. To get an end-to-end module, use ECD.to_inference_module."""
+        """Returns a scripted ECD model.
+
+        To get an end-to-end module, use ECD.to_inference_module.
+        """
         self.eval()
         model_inputs = self.get_model_inputs()
         # We set strict=False to enable dict inputs and outputs.
         return torch.jit.trace(self, model_inputs, strict=False)
 
     def save_torchscript(self, save_path):
-        """Saves a scripted ECD model to save_path. To save end-to-end module, use ECD.save_inference_module."""
+        """Saves a scripted ECD model to save_path.
+
+        To save end-to-end module, use ECD.save_inference_module.
+        """
         traced = self.to_torchscript()
         traced.save(save_path)
 
