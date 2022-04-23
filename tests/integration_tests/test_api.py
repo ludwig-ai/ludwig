@@ -17,12 +17,14 @@ import shutil
 import tempfile
 from unittest import mock
 
+import pandas as pd
 import pytest
 import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
+from ludwig.models.inference import InferenceLudwigModel
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
@@ -534,10 +536,16 @@ def test_api_save_torchscript(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
     }
     model = LudwigModel(config)
-    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
-    save_path = os.path.join(tmpdir, "torchscript")
+    _, _, output_dir = model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+
+    test_df = pd.read_csv(test_csv)
+    output_df_expected, _ = model.predict(test_df, return_type=pd.DataFrame)
+
+    save_path = os.path.join(output_dir, "model")
     os.makedirs(save_path, exist_ok=True)
-
     model.save_torchscript(save_path)
+    inference_model = InferenceLudwigModel(save_path)
+    output_df, _ = inference_model.predict(test_df, return_type=pd.DataFrame)
 
-    torch.jit.load(os.path.join(save_path, "inference_module.pt"))
+    for col in output_df.columns:
+        assert output_df[col].equals(output_df_expected[col])
