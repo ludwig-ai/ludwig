@@ -1,4 +1,4 @@
-from typing import Union, Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -9,12 +9,7 @@ from ludwig.utils.torch_utils import LudwigModule, reg_loss
 
 
 class TreeModule(LudwigModule):
-    def __init__(
-            self,
-            compiled_model,
-            input_features,
-            output_features
-    ):
+    def __init__(self, compiled_model, input_features, output_features):
         super().__init__()
         self.compiled_model = compiled_model
         self.input_features = input_features
@@ -23,8 +18,7 @@ class TreeModule(LudwigModule):
     def get_model_inputs(self, training=True):
         inputs = {
             input_feature_name: input_feature.create_input()
-            for input_feature_name, input_feature in
-            self.input_features.items()
+            for input_feature_name, input_feature in self.input_features.items()
         }
 
         if not training:
@@ -32,27 +26,23 @@ class TreeModule(LudwigModule):
 
         targets = {
             output_feature_name: output_feature.create_input()
-            for output_feature_name, output_feature in
-            self.output_features.items()
+            for output_feature_name, output_feature in self.output_features.items()
         }
         return inputs, targets
 
     def forward(
-            self,
-            inputs: Union[
-                Dict[str, torch.Tensor],
-                Dict[str, np.ndarray],
-                Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-            ],
-            mask=None
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+        mask=None,
     ) -> Dict[str, torch.Tensor]:
         if isinstance(inputs, tuple):
             inputs, targets = inputs
             # Convert targets to tensors.
             for target_feature_name, target_value in targets.items():
                 if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(
-                        target_value)
+                    targets[target_feature_name] = torch.from_numpy(target_value)
                 else:
                     targets[target_feature_name] = target_value
         else:
@@ -101,16 +91,14 @@ class TreeModule(LudwigModule):
         if output_features is None:
             of_list = self.output_features
         elif isinstance(output_features, str):
-            if output_features == 'all':
+            if output_features == "all":
                 of_list = set(self.output_features.keys())
             elif output_features in self.output_features:
                 of_list = [output_features]
             else:
                 raise ValueError(
                     "'output_features' {} is not a valid for this model. "
-                    "Available ones are: {}".format(
-                        output_features, set(self.output_features.keys())
-                    )
+                    "Available ones are: {}".format(output_features, set(self.output_features.keys()))
                 )
         elif isinstance(output_features, list or set):
             if output_features.issubset(self.output_features):
@@ -118,23 +106,16 @@ class TreeModule(LudwigModule):
             else:
                 raise ValueError(
                     "'output_features' {} must be a subset of "
-                    "available features {}".format(
-                        output_features, set(self.output_features.keys())
-                    )
+                    "available features {}".format(output_features, set(self.output_features.keys()))
                 )
         else:
-            raise ValueError(
-                "'output_features' must be None or a string or a list "
-                "of output features"
-            )
+            raise ValueError("'output_features' must be None or a string or a list " "of output features")
 
         outputs = self(inputs)
 
         predictions = {}
         for of_name in of_list:
-            predictions[of_name] = self.output_features[of_name].predictions(
-                outputs[of_name]
-            )
+            predictions[of_name] = self.output_features[of_name].predictions(outputs[of_name])
 
         return predictions
 
@@ -147,18 +128,17 @@ class TreeModule(LudwigModule):
         return self.predictions(inputs, output_features=None)
 
     def train_loss(
-            self,
-            targets,
-            predictions,
-            regularization_type: Optional[str] = None,
-            regularization_lambda: Optional[float] = None
+        self,
+        targets,
+        predictions,
+        regularization_type: Optional[str] = None,
+        regularization_lambda: Optional[float] = None,
     ):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_train_loss = of_obj.train_loss(targets[of_name],
-                                              predictions[of_name])
-            train_loss += of_obj.loss['weight'] * of_train_loss
+            of_train_loss = of_obj.train_loss(targets[of_name], predictions[of_name])
+            train_loss += of_obj.loss["weight"] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
         for loss in self.losses():
@@ -166,12 +146,7 @@ class TreeModule(LudwigModule):
 
         # Add regularization loss
         if regularization_type is not None:
-            train_loss += reg_loss(
-                self,
-                regularization_type,
-                l1=regularization_lambda,
-                l2=regularization_lambda
-            )
+            train_loss += reg_loss(self, regularization_type, l1=regularization_lambda, l2=regularization_lambda)
 
         return train_loss, of_train_losses
 
@@ -179,10 +154,8 @@ class TreeModule(LudwigModule):
         eval_loss = 0
         of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_eval_loss = of_obj.eval_loss(
-                targets[of_name], predictions[of_name]
-            )
-            eval_loss += of_obj.loss['weight'] * of_eval_loss
+            of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+            eval_loss += of_obj.loss["weight"] * of_eval_loss
             of_eval_losses[of_name] = of_eval_loss
         eval_loss += sum(self.losses())  # regularization / other losses
         return eval_loss, of_eval_losses
@@ -197,9 +170,7 @@ class TreeModule(LudwigModule):
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
-        all_of_metrics[COMBINED] = {
-            LOSS: self.eval_loss_metric.compute().detach().numpy().item()
-        }
+        all_of_metrics[COMBINED] = {LOSS: self.eval_loss_metric.compute().detach().numpy().item()}
         return all_of_metrics
 
     def reset_metrics(self):
@@ -207,21 +178,16 @@ class TreeModule(LudwigModule):
             of_obj.reset_metrics()
         self.eval_loss_metric.reset()
 
-    def collect_weights(
-            self,
-            tensor_names=None,
-            **kwargs
-    ):
+    def collect_weights(self, tensor_names=None, **kwargs):
         """Returns named parameters filtered against `tensor_names` if not None."""
         if not tensor_names:
             return self.named_parameters()
 
         # Check for bad tensor names.
-        weight_names = set(name for name, _ in self.named_parameters())
+        weight_names = {name for name, _ in self.named_parameters()}
         for name in tensor_names:
             if name not in weight_names:
-                raise ValueError(
-                    f'Requested tensor name filter "{name}" not present in the model graph')
+                raise ValueError(f'Requested tensor name filter "{name}" not present in the model graph')
 
         # Apply filter.
         tensor_set = set(tensor_names)
@@ -232,6 +198,6 @@ class TreeModule(LudwigModule):
 
 
 def convert_to_pytorch(tree_model, ecd):
-    hb_model = convert(tree_model, 'torch')
+    hb_model = convert(tree_model, "torch")
     model = hb_model.model
     return TreeModule(model, ecd.input_features, ecd.output_features)
