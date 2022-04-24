@@ -10,10 +10,7 @@ from ludwig.utils.torch_utils import activations, initializer_registry
 
 
 def load_config(cls, **kwargs):
-    """Takes a marshmallow class and instantiates it with the given keyword args.
-
-    as parameters.
-    """
+    """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     return schema.load(kwargs)
