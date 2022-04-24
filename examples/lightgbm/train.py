@@ -11,17 +11,13 @@ shutil.rmtree("./results", ignore_errors=True)
 
 model = LudwigModel(config="./config.yaml", logging_level=logging.INFO)
 
-train, val, test = adult_census_income.load(split=True)
+df = adult_census_income.load(split=False)
 
 (
     train_stats,  # dictionary containing training statistics
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
-) = model.train(
-    training_set=train,
-    validation_set=val,
-    test_set=test,
-)
+) = model.train(dataset=df)
 
 print("contents of output directory:", output_directory)
 for item in os.listdir(output_directory):
