@@ -22,10 +22,9 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
-from ludwig.utils.horovod_utils import initialize_horovod, return_first
+from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.strings_utils import make_safe_filename
-from ludwig.utils.torch_utils import initialize_pytorch
 
 EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {"confusion_matrix", "roc_curve"}
@@ -264,11 +263,7 @@ class Predictor(BasePredictor):
 
 class RemotePredictor(Predictor):
     def __init__(self, model: ECD, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        horovod = initialize_horovod()
-        initialize_pytorch(
-            gpus=gpus, gpu_memory_limit=gpu_memory_limit, allow_parallel_threads=allow_parallel_threads, horovod=horovod
-        )
-        super().__init__(model, horovod=horovod, **kwargs)
+        super().__init__(model, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
         self.batch_predict = return_first(self.batch_predict)

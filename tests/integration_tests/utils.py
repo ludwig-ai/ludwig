@@ -27,6 +27,7 @@ from distutils.util import strtobool
 from typing import List
 
 import cloudpickle
+import numpy as np
 import pandas as pd
 import ray
 import torch
@@ -617,8 +618,36 @@ def train_with_backend(
             assert preds is not None
 
         if evaluate:
-            _, eval_preds, _ = model.evaluate(dataset=dataset)
+            eval_stats, eval_preds, _ = model.evaluate(
+                dataset=dataset, collect_overall_stats=False, collect_predictions=True
+            )
             assert eval_preds is not None
+
+            # Test that eval_stats are approx equal when using local backend
+            with tempfile.TemporaryDirectory() as tmpdir:
+                model.save(tmpdir)
+                local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
+                local_eval_stats, _, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
+                )
+
+                # Filter out metrics that are not being aggregated correctly for now
+                # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
+                def filter(stats):
+                    return {
+                        k: {
+                            metric_name: value
+                            for metric_name, value in v.items()
+                            if metric_name not in {"loss", "root_mean_squared_percentage_error"}
+                        }
+                        for k, v in stats.items()
+                    }
+
+                for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
+                    assert k1 == k2
+                    for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
+                        assert name1 == name2
+                        assert np.isclose(metric1, metric2, rtol=1e-04), f"metric {name1}: {metric1} != {metric2}"
 
         return model
     finally:
