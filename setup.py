@@ -28,6 +28,9 @@ with open(path.join(here, "requirements_distributed.txt"), encoding="utf-8") as 
 with open(path.join(here, "requirements_hyperopt.txt"), encoding="utf-8") as f:
     extra_requirements["hyperopt"] = [line.strip() for line in f if line]
 
+with open(path.join(here, "requirements_tree.txt"), encoding="utf-8") as f:
+    extra_requirements["tree"] = [line.strip() for line in f if line]
+
 extra_requirements["full"] = [item for sublist in extra_requirements.values() for item in sublist]
 
 with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
