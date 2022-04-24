@@ -57,7 +57,7 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_schema_from_marshmallow_jsonschema_dump(mclass) -> tDict:
+def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     return js().dump(mclass.Schema())["definitions"][mclass.__name__]
@@ -81,6 +81,15 @@ def ReductionOptions(default: Union[None, str] = None, description=None):
 def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True, description=None):
     """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
     return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable, description=description)
+
+
+def String(default: Union[None, str] = None, nullable: bool = True, description=None):
+    if not isinstance(default, str):
+        raise ValidationError(f"Provided default `{default}` should be a string!")
+    return field(
+        metadata={"marshmallow_field": fields.String(allow_none=nullable, default=default, description=description)},
+        default=default,
+    )
 
 
 def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True, description=None):
