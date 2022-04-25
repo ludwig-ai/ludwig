@@ -290,7 +290,7 @@ def get_optimizer_conds():
     return conds
 
 
-def OptimizerDataclassField(default={"type": "adam"}, description=None):
+def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 
@@ -369,7 +369,7 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     clipvalue: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
 
 
-def GradientClippingDataclassField(default={}, allow_none=True, description=None):
+def GradientClippingDataclassField(default={}, allow_none=True, description="TODO"):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
