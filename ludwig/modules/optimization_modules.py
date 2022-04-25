@@ -26,7 +26,6 @@ from ludwig.marshmallow.marshmallow_schema_utils import (
     create_cond,
     FloatRange,
     FloatRangeTupleDataclassField,
-    get_custom_schema_from_marshmallow_class,
     NonNegativeFloat,
     StringOptions,
     unload_jsonschema_from_marshmallow_class,
@@ -281,7 +280,7 @@ def get_optimizer_conds():
     conds = []
     for optimizer in optimizer_registry:
         optimizer_cls = optimizer_registry[optimizer][1]
-        other_props = get_custom_schema_from_marshmallow_class(optimizer_cls)["properties"]
+        other_props = unload_jsonschema_from_marshmallow_class(optimizer_cls)["properties"]
         other_props.pop("type")
         preproc_cond = create_cond(
             {"type": optimizer},
@@ -355,7 +354,7 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
     optimizer_schemas_json = {}
     for opt in optimizer_registry:
         schema_cls = optimizer_registry[opt][1]
-        optimizer_schemas_json[opt] = get_custom_schema_from_marshmallow_class(schema_cls)
+        optimizer_schemas_json[opt] = unload_jsonschema_from_marshmallow_class(schema_cls)
     return optimizer_schemas_json
 
 

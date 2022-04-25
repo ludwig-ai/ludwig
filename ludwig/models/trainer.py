@@ -103,7 +103,7 @@ class BaseTrainer(ABC):
 
 
 def get_trainer_jsonschema():
-    return schema.get_custom_schema_from_marshmallow_class(TrainerConfig)
+    return schema.unload_jsonschema_from_marshmallow_class(TrainerConfig)
 
 
 @dataclass
