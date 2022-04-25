@@ -210,10 +210,12 @@ def NonNegativeFloat(default: Union[None, float] = None, description=None):
     )
 
 
-def FloatRange(default: Union[None, float] = None, description=None, **kwargs):
+def FloatRange(default: Union[None, float] = None, nullable=False, description=None, **kwargs):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(**kwargs)
+    if default is None and not nullable:
+        raise ValidationError(f"Invalid default: `{default}`")
     if default is not None:
         try:
             assert isinstance(default, float) or isinstance(default, int)
@@ -223,7 +225,7 @@ def FloatRange(default: Union[None, float] = None, description=None, **kwargs):
     return field(
         metadata={
             "marshmallow_field": fields.Float(
-                validate=val, allow_none=default is None, default=default, description=description
+                validate=val, allow_none=nullable, default=default, description=description
             )
         },
         default=default,
