@@ -17,12 +17,6 @@ class CustomTestSchema(BaseMarshmallowConfig):
     "foo (default: 5)"
 
 
-def test_get_fully_qualified_class_name():
-    # Simple examples (marshmallow and non-marshmallow classes):
-    assert lusutils.get_fully_qualified_class_name(TrainerConfig) == "ludwig.models.trainer.TrainerConfig"
-    assert lusutils.get_fully_qualified_class_name(lcc.ConcatCombiner) == "ludwig.combiners.combiners.ConcatCombiner"
-
-
 def test_assert_is_a_marshmallow_clas():
     lusutils.assert_is_a_marshmallow_class(TrainerConfig)
     with pytest.raises(AssertionError, match=r"^Expected marshmallow class.*"):
