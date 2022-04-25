@@ -84,7 +84,7 @@ def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True, 
 
 
 def String(default: Union[None, str] = None, nullable: bool = True, description=None):
-    if not isinstance(default, str):
+    if not nullable and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
     return field(
         metadata={"marshmallow_field": fields.String(allow_none=nullable, default=default, description=description)},
