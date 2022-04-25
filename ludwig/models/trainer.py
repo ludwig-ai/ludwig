@@ -1026,7 +1026,7 @@ class Trainer(BaseTrainer):
                     logger.info("Attempting to save inference module with best weights from saved checkpoint...")
                     try:
                         self.model.save_inference_module(inference_module_path, **self.inference_module_kwargs)
-                        logger.info('Saved inference module to: "{}"'.format(inference_module_path))
+                        logger.info(f'Saved inference module to: "{inference_module_path}"')
                     except NotImplementedError as e:
                         logger.warning("Unable to save inference module.")
                         logger.warning(f"Original error: {e}")
