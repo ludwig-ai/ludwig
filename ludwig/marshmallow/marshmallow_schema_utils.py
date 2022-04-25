@@ -42,7 +42,7 @@ class BaseMarshmallowConfig:
 
         Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are
         excluded from `load` calls so that the marshmallow_dataclass package can be used but
-        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.
+        `unload_jsonschema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.
         to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and
         filled in as necessary.
         """
@@ -60,7 +60,9 @@ def assert_is_a_marshmallow_class(cls):
 def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    return js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema["additionalProperties"] = True
+    return schema
 
 
 def InitializerOptions(default: str = "xavier_uniform", description="TODO"):
