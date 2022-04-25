@@ -56,9 +56,10 @@ class _CategoryPreprocessing(torch.nn.Module):
         self.str2idx = metadata["str2idx"]
         self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, v: Union[List[str], torch.Tensor]):
-        if isinstance(v, torch.Tensor):
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
+
         indices = [self.str2idx.get(s.strip(), self.unk) for s in v]
         return torch.tensor(indices, dtype=torch.int32)
 

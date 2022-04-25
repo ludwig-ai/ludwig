@@ -796,7 +796,7 @@ class LudwigModel:
         dataset: Union[str, dict, pd.DataFrame] = None,
         data_format: str = None,
         split: str = FULL,
-        batch_size: int = 128,
+        batch_size: Optional[int] = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         skip_save_eval_stats: bool = True,
@@ -822,8 +822,8 @@ class LudwigModel:
         :param: split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-        :param batch_size: (int, default: 128) size of batch to use when making
-            predictions.
+        :param batch_size: (int, default: None) size of batch to use when making
+            predictions. Defaults to model config eval_batch_size
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
             parameter is `False`, predictions and their probabilities are saved
             in both raw unprocessed numpy files containing tensors and as
@@ -868,6 +868,10 @@ class LudwigModel:
             backend=self.backend,
             callbacks=self.callbacks,
         )
+
+        # Fallback to use eval_batch_size or batch_size if not provided
+        if batch_size is None:
+            batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
@@ -1447,7 +1451,20 @@ class LudwigModel:
     def to_torchscript(self):
         """Returns the model as a TorchScript module.
 
+<<<<<<< HEAD
         For more details, see ECD.to_inference_module.
+=======
+        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
+
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs, a list of Tensors
+        batch_size in length, or a list of strings batch_size in length.
+
+        Note that the dimensions of all Tensors and lengths of all lists must match.
+
+        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
+        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
+        tensors of varying dimensions for probabilities, logits, etc.
+>>>>>>> master
         """
         self._check_initialization()
         return self.model.to_inference_module(

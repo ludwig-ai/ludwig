@@ -4,10 +4,10 @@ pyarrow>=2.0.0
 # requirements for horovod
 horovod[pytorch]>=0.24.0
 # requirements for ray
-ray[default,data,serve,tune]>=1.9.2,!=1.10
+ray[default,data,serve,tune]>=1.11.0
 pickle5; python_version <= '3.7'
 tensorboardX<2.3
 GPUtil
 tblib
 awscli
-modin[ray]; python_version >= '3.7'
+modin[ray]
