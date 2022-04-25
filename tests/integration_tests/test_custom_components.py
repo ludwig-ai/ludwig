@@ -3,10 +3,10 @@ import tempfile
 from typing import Dict
 
 import torch
+from build.lib.ludwig.combiners.combiners import BaseCombinerConfig
 from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
-from build.lib.ludwig.combiners.combiners import BaseCombinerConfig
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
 from ludwig.constants import NUMBER, TRAINER
