@@ -29,6 +29,7 @@ from ludwig.marshmallow.marshmallow_schema_utils import (
     get_custom_schema_from_marshmallow_class,
     NonNegativeFloat,
     StringOptions,
+    unload_jsonschema_from_marshmallow_class,
 )
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
@@ -290,7 +291,7 @@ def get_optimizer_conds():
     return conds
 
 
-def OptimizerDataclassField(default={"type": "adam"}):
+def OptimizerDataclassField(default={"type": "adam"}, description=None):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 
@@ -333,6 +334,7 @@ def OptimizerDataclassField(default={"type": "adam"}):
                 "title": "optimizer_options",
                 "allOf": get_optimizer_conds(),
                 "required": ["type"],
+                "description": description,
             }
 
     if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
@@ -368,7 +370,7 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     clipvalue: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
 
 
-def GradientClippingDataclassField(default={}, allow_none=True):
+def GradientClippingDataclassField(default={}, allow_none=True, description=None):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
@@ -398,10 +400,11 @@ def GradientClippingDataclassField(default={}, allow_none=True):
         def _jsonschema_type_mapping(self):
             return {
                 "oneOf": [
-                    {"type": "null", "title": "disabled"},
-                    {**get_custom_schema_from_marshmallow_class(GradientClippingConfig), "title": "enabled_options"},
+                    {"type": "null", "title": "disabled", "description": "Disable gradient clipping."},
+                    {**unload_jsonschema_from_marshmallow_class(GradientClippingConfig), "title": "enabled_options"},
                 ],
                 "title": "gradient_clipping_options",
+                "description": description,
             }
 
     if not isinstance(default, dict):
