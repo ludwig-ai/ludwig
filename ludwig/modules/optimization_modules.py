@@ -22,6 +22,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.marshmallow.marshmallow_schema_utils import (
     BaseMarshmallowConfig,
+    Boolean,
     create_cond,
     FloatRange,
     FloatRangeTupleDataclassField,
@@ -72,14 +73,13 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     """Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'sgd')"""
 
-    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)
-    """(default: 0.001)"""
+    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0, description="Learning rate.")
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :
-    momentum: float = NonNegativeFloat(default=0.0)
-    weight_decay: float = NonNegativeFloat(default=0.0)
-    dampening: float = NonNegativeFloat(default=0.0)
-    nesterov: bool = False
+    momentum: float = NonNegativeFloat(default=0.0, description="Momentum factor.")
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
+    dampening: float = NonNegativeFloat(default=0.0, description="Dampening for momentum.")
+    nesterov: bool = Boolean(default=False, description="Enables Nesterov momentum.")
 
 
 @register_optimizer(name="adam")
@@ -95,11 +95,21 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
        (default: 'adam')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)
-    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
-    eps: float = NonNegativeFloat(default=1e-08)
-    weight_decay: float = NonNegativeFloat(default=0.0)
-    amsgrad: bool = False
+    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0, description="Learning rate.")
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
+    )
+    eps: float = NonNegativeFloat(
+        default=1e-08, description="Term added to the denominator to improve numerical stability."
+    )
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay (L2 penalty).")
+    amsgrad: bool = Boolean(
+        default=False,
+        description=(
+            "Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam and"
+            "Beyond'."
+        ),
+    )
 
 
 @register_optimizer(name="adamw")
@@ -115,11 +125,21 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
        (default: 'adamw')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0)
-    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
-    eps: float = NonNegativeFloat(default=1e-08)
-    weight_decay: float = NonNegativeFloat(default=0.0)
-    amsgrad: bool = False
+    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0, description="Learning rate.")
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
+    )
+    eps: float = NonNegativeFloat(
+        default=1e-08, description="Term added to the denominator to improve numerical stability."
+    )
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
+    amsgrad: bool = Boolean(
+        default=False,
+        description=(
+            "Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam and"
+            "Beyond'."
+        ),
+    )
 
 
 @register_optimizer(name="adadelta")
@@ -135,10 +155,22 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
        (default: 'adadelta')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adadelta.html#torch.optim.Adadelta :
-    rho: float = FloatRange(default=0.9, min=0.0, max=1.0)
-    eps: float = NonNegativeFloat(default=1e-06)
-    lr: float = FloatRange(default=1.0, min=0.0, max=1.0)
-    weight_decay: float = NonNegativeFloat(default=0.0)
+    rho: float = FloatRange(
+        default=0.9,
+        min=0.0,
+        max=1.0,
+        description="Coefficient used for computing a running average of squared gradients.",
+    )
+    eps: float = NonNegativeFloat(
+        default=1e-06, description="Term added to the denominator to improve numerical stability."
+    )
+    lr: float = FloatRange(
+        default=1.0,
+        min=0.0,
+        max=1.0,
+        description="Coefficient that scales delta before it is applied to the parameters.",
+    )
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
 @register_optimizer(name="adagrad")
@@ -155,13 +187,11 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
        (default: 'adagrad')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
-    initial_accumulator_value: float = NonNegativeFloat(default=0)
-    """TODO: Document parameters (default: 0)."""
-
-    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
-    lr_decay: float = 0
-    weight_decay: float = 0
-    eps: float = 1e-10
+    initial_accumulator_value: float = NonNegativeFloat(default=0, description="TODO: Document parameters.")
+    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0, description="Learning rate.")
+    lr_decay: float = FloatRange(default=0, description="Learning rate decay.")
+    weight_decay: float = FloatRange(default=0, description="Weight decay ($L2$ penalty).")
+    eps: float = FloatRange(default=1e-10, description="Term added to the denominator to improve numerical stability.")
 
 
 @register_optimizer(name="adamax")
@@ -177,10 +207,14 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
        (default: 'adamax')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adamax.html#torch.optim.Adamax :
-    lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
-    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
-    eps: float = NonNegativeFloat(default=1e-08)
-    weight_decay: float = NonNegativeFloat(default=0.0)
+    lr: float = FloatRange(default=2e-3, min=0.0, max=1.0, description="Learning rate.")
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
+    )
+    eps: float = NonNegativeFloat(
+        default=1e-08, description="Term added to the denominator to improve numerical stability."
+    )
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
 # NOTE: keep ftrl and nadam optimizers out of registry:
@@ -201,11 +235,15 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
     type: str = StringOptions(["nadam"], default="nadam", nullable=False)
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
-    lr: float = FloatRange(default=2e-3, min=0.0, max=1.0)
-    betas: Tuple[float, float] = FloatRangeTupleDataclassField(default=(0.9, 0.999))
-    eps: float = NonNegativeFloat(default=1e-08)
-    weight_decay: float = NonNegativeFloat(default=0.0)
-    momentum_decay: float = NonNegativeFloat(default=4e-3)
+    lr: float = FloatRange(default=2e-3, min=0.0, max=1.0, description="Learning rate.")
+    betas: Tuple[float, float] = FloatRangeTupleDataclassField(
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
+    )
+    eps: float = NonNegativeFloat(
+        default=1e-08, description="Term added to the denominator to improve numerical stability."
+    )
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
+    momentum_decay: float = NonNegativeFloat(default=4e-3, description="Momentum decay.")
 
 
 @register_optimizer(name="rmsprop")
@@ -221,12 +259,19 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
        (default: 'rmsprop')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.RMSprop.html#torch.optim.RMSprop:
-    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0)
-    momentum: float = NonNegativeFloat(default=0.0)
-    alpha: float = NonNegativeFloat(default=0.99)
-    eps: float = NonNegativeFloat(default=1e-08)
-    centered: bool = False
-    weight_decay: float = NonNegativeFloat(default=0.0)
+    lr: float = FloatRange(default=1e-2, min=0.0, max=1.0, description="Learning rate.")
+    momentum: float = NonNegativeFloat(default=0.0, description="Momentum factor.")
+    alpha: float = NonNegativeFloat(default=0.99, description="Smoothing constant.")
+    eps: float = NonNegativeFloat(
+        default=1e-08, description="Term added to the denominator to improve numerical stability."
+    )
+    centered: bool = Boolean(
+        default=False,
+        description=(
+            "If True, computes the centered RMSProp, and the gradient is normalized by an estimation of its variance."
+        ),
+    )
+    weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
 def get_optimizer_conds():
@@ -316,12 +361,11 @@ def get_all_optimizer_json_schemas() -> Dict[str, str]:
 class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
-    clipglobalnorm: Optional[float] = 0.5
-    """TODO: Document parameters. (default: 0.5)"""
-    clipnorm: Optional[float] = None
-    """TODO: Document parameters. (default: None)"""
-    clipvalue: Optional[float] = None
-    """TODO: Document parameters. (default: None)"""
+    clipglobalnorm: Optional[float] = FloatRange(default=0.5, nullable=True, description="TODO: Document parameters.")
+
+    clipnorm: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
+
+    clipvalue: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
 
 
 def GradientClippingDataclassField(default={}, allow_none=True):
