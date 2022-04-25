@@ -1,2 +1,3 @@
 hummingbird-ml
 lightgbm
+lightgbm-ray

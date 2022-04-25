@@ -5,13 +5,27 @@ import os
 import shutil
 
 from ludwig.api import LudwigModel
-from ludwig.datasets import adult_census_income
+from ludwig.backend import initialize_backend
+from ludwig.datasets import higgs  # adult_census_income
 
 shutil.rmtree("./results", ignore_errors=True)
 
-model = LudwigModel(config="./config.yaml", logging_level=logging.INFO)
+backend_config = {
+    "type": "ray",
+    "processor": {
+        "parallelism": 6,
+        "type": "dask",
+    },
+    "trainer": {
+        "num_actors": 3,
+        "cpus_per_actor": 2,
+    },
+}
+backend = initialize_backend(backend_config)
+model = LudwigModel(config="./config_higgs.yaml", logging_level=logging.INFO, backend=backend)
 
-df = adult_census_income.load(split=False)
+# df = adult_census_income.load(split=False)
+df = higgs.load(split=False, add_validation_set=True)
 
 (
     train_stats,  # dictionary containing training statistics

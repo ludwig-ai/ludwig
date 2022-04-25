@@ -35,6 +35,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
+from ludwig.models.lightgbm import LightGBMRayTrainer
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
 from ludwig.utils.horovod_utils import initialize_horovod
@@ -721,12 +722,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
-            return RayTrainerV2(
-                model,
-                copy.deepcopy(self._horovod_kwargs),
-                self._data_loader_kwargs,
-                executable_kwargs,
-            )
+            # return RayTrainerV2(
+            #     model,
+            #     copy.deepcopy(self._horovod_kwargs),
+            #     self._data_loader_kwargs,
+            #     executable_kwargs,
+            # )
+            return LightGBMRayTrainer(model=model, ray_kwargs=self._horovod_kwargs, **kwargs)
         else:
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
