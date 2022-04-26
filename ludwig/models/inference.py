@@ -1,12 +1,22 @@
-from typing import Any, Dict, List, Union
+import os
+from typing import Any, Dict, List, TYPE_CHECKING, Union
 
+import pandas as pd
 import torch
 from torch import nn
 
 from ludwig.constants import NAME, TYPE
+from ludwig.data.postprocessing import convert_dict_to_df
+from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
-from ludwig.models.ecd import ECD
+from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+
+# Prevents circular import errors from typing.
+if TYPE_CHECKING:
+    from ludwig.models.ecd import ECD
+
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -21,7 +31,7 @@ class InferenceModule(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: ECD, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
         model.cpu()
@@ -49,7 +59,7 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, Union[List[str], torch.Tensor]]):
+    def forward(self, inputs: Dict[str, Union[List[str], List[torch.Tensor], torch.Tensor]]):
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -68,3 +78,37 @@ class InferenceModule(nn.Module):
                 postproc_outputs[feature_name] = postproc(predictions[feature_name])
 
             return postproc_outputs
+
+
+class InferenceLudwigModel:
+    """Model for inference with the subset of the LudwigModel interface used for prediction.
+
+    This model is instantiated with a model_dir, which contains the model and its metadata.
+    """
+
+    def __init__(self, model_dir: str):
+        self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
+        self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
+        self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
+
+    def _to_input(self, s: pd.Series) -> Union[List[str], torch.Tensor]:
+        if s.dtype == "object":
+            return s.to_list()
+        return torch.from_numpy(s.to_numpy())
+
+    def predict(
+        self, batch: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
+    ) -> Union[pd.DataFrame, dict]:
+        """Predict on a batch of data.
+
+        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
+        """
+        inputs = {
+            if_config["name"]: self._to_input(batch[if_config["column"]]) for if_config in self.config["input_features"]
+        }
+
+        preds = self.model(inputs)
+
+        if return_type == pd.DataFrame:
+            preds = convert_dict_to_df(preds)
+        return preds, None  # Second return value is for compatibility with LudwigModel.predict

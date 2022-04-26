@@ -4,7 +4,8 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.features.image_feature import ImageInputFeature
+from ludwig.constants import CROP_OR_PAD, INTERPOLATE
+from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
 from ludwig.models.ecd import build_single_input
 
 BATCH_SIZE = 2
@@ -99,3 +100,84 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     #         raise RuntimeError(
     #             f'no parameter update for {a[0]}'
     #         )
+
+
+def test_image_preproc_module_bad_num_channels():
+    metadata = {
+        "preprocessing": {
+            "missing_value_strategy": "backfill",
+            "in_memory": True,
+            "resize_method": "interpolate",
+            "scaling": "pixel_normalization",
+            "num_processes": 1,
+            "infer_image_num_channels": True,
+            "infer_image_dimensions": True,
+            "infer_image_max_height": 256,
+            "infer_image_max_width": 256,
+            "infer_image_sample_size": 100,
+            "height": 12,
+            "width": 12,
+            "num_channels": 2,
+        },
+        "reshape": (2, 12, 12),
+    }
+    module = _ImagePreprocessing(metadata)
+
+    with pytest.raises(ValueError):
+        module(torch.rand(2, 3, 10, 10))
+
+
+@pytest.mark.parametrize("resize_method", [INTERPOLATE, CROP_OR_PAD])
+@pytest.mark.parametrize(["num_channels", "num_channels_expected"], [(1, 3), (3, 1)])
+def test_image_preproc_module_list_of_tensors(resize_method, num_channels, num_channels_expected):
+    metadata = {
+        "preprocessing": {
+            "missing_value_strategy": "backfill",
+            "in_memory": True,
+            "resize_method": resize_method,
+            "scaling": "pixel_normalization",
+            "num_processes": 1,
+            "infer_image_num_channels": True,
+            "infer_image_dimensions": True,
+            "infer_image_max_height": 256,
+            "infer_image_max_width": 256,
+            "infer_image_sample_size": 100,
+            "height": 12,
+            "width": 12,
+            "num_channels": num_channels_expected,
+        },
+        "reshape": (num_channels_expected, 12, 12),
+    }
+    module = _ImagePreprocessing(metadata)
+
+    res = module([torch.rand(num_channels, 25, 25), torch.rand(num_channels, 10, 10)])
+
+    assert res.shape == torch.Size((2, num_channels_expected, 12, 12))
+
+
+@pytest.mark.parametrize("resize_method", [INTERPOLATE, CROP_OR_PAD])
+@pytest.mark.parametrize(["num_channels", "num_channels_expected"], [(1, 3), (3, 1)])
+def test_image_preproc_module_tensor(resize_method, num_channels, num_channels_expected):
+    metadata = {
+        "preprocessing": {
+            "missing_value_strategy": "backfill",
+            "in_memory": True,
+            "resize_method": resize_method,
+            "scaling": "pixel_normalization",
+            "num_processes": 1,
+            "infer_image_num_channels": True,
+            "infer_image_dimensions": True,
+            "infer_image_max_height": 256,
+            "infer_image_max_width": 256,
+            "infer_image_sample_size": 100,
+            "height": 12,
+            "width": 12,
+            "num_channels": num_channels_expected,
+        },
+        "reshape": (num_channels_expected, 12, 12),
+    }
+    module = _ImagePreprocessing(metadata)
+
+    res = module(torch.rand(2, num_channels, 10, 10))
+
+    assert res.shape == torch.Size((2, num_channels_expected, 12, 12))

@@ -54,6 +54,7 @@ from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.globals import (
+    INFERENCE_MODULE_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     MODEL_WEIGHTS_FILE_NAME,
@@ -785,7 +786,7 @@ class LudwigModel:
         dataset: Union[str, dict, pd.DataFrame] = None,
         data_format: str = None,
         split: str = FULL,
-        batch_size: int = 128,
+        batch_size: Optional[int] = None,
         skip_save_unprocessed_output: bool = True,
         skip_save_predictions: bool = True,
         skip_save_eval_stats: bool = True,
@@ -811,8 +812,8 @@ class LudwigModel:
         :param: split: (str, default= `'full'`): if the input dataset contains
             a split column, this parameter indicates which split of the data
             to use. Possible values are `'full'`, `'training'`, `'validation'`, `'test'`.
-        :param batch_size: (int, default: 128) size of batch to use when making
-            predictions.
+        :param batch_size: (int, default: None) size of batch to use when making
+            predictions. Defaults to model config eval_batch_size
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
             parameter is `False`, predictions and their probabilities are saved
             in both raw unprocessed numpy files containing tensors and as
@@ -857,6 +858,10 @@ class LudwigModel:
             backend=self.backend,
             callbacks=self.callbacks,
         )
+
+        # Fallback to use eval_batch_size or batch_size if not provided
+        if batch_size is None:
+            batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
@@ -1438,8 +1443,8 @@ class LudwigModel:
 
         The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
 
-        More specifically, for every input feature, we provide either a Tensor of batch_size inputs or a list of
-        strings batch_size in length.
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs, a list of Tensors
+        batch_size in length, or a list of strings batch_size in length.
 
         Note that the dimensions of all Tensors and lengths of all lists must match.
 
@@ -1454,7 +1459,7 @@ class LudwigModel:
     def save_torchscript(self, save_path: str):
         """Saves the Torchscript model to disk."""
         inference_module = self.to_torchscript()
-        inference_module.save(os.path.join(save_path, "inference_module.pt"))
+        inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
