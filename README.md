@@ -271,7 +271,7 @@ Ludwig takes care of the engineering complexity of deep learning out of the box,
 
 Data preprocessing, hyperparameter optimization, device management, and distributed training for newly registered `torch.nn.Module` models come completely free.
 
-## Easily build your benachmarks
+## Easily build your benchmarks
 
 Creating a state-of-the-art baseline and comapring it with a new model  is a simple config change.
 
@@ -293,7 +293,7 @@ Ludwig also natively integrates with pre-trained models, such as the ones availa
 ludwig train --dataset sst5 -–config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
 ```
 
-## Low-code interface for autoML
+## Low-code interface for AutoML
 
 [Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/) allows users to obtain trained models by providing just a dataset, the target column, and a time budget.
 
