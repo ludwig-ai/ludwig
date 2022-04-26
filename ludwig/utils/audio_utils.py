@@ -176,7 +176,7 @@ def _short_time_fourier_transform(
     window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
     window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
     preprocessed_data_matrix = _preprocess_to_padded_matrix(
-        data, window_length_in_samp, window_shift_in_samp, zero_mean_offset=zero_mean_offset
+        data[0], window_length_in_samp, window_shift_in_samp, zero_mean_offset=zero_mean_offset
     )
     weighted_data_matrix = _weight_data_matrix(
         preprocessed_data_matrix, window_type, data_transformation=data_transformation
@@ -186,7 +186,7 @@ def _short_time_fourier_transform(
 
 
 def _preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_samp, zero_mean_offset=False):
-    num_input = data[0].shape[0]
+    num_input = data.shape[0]
     num_output = get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp)
     zero_padded_matrix = np.zeros((num_output, window_length_in_samp), dtype=np.float)
     for num_output_idx in range(num_output):
