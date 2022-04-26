@@ -1,11 +1,13 @@
-"""Module structure: ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to
-describing and validating.
-
-|                               Ludwig configs. ├── utils.py                <-- An extensive set of marshmallow-related
-fields, methods, and schemas that are used |                               elsewhere in Ludwig. ├── schema.py
-<-- Contains the fully assembled Ludwig schema and validate() function that is used for |
-user-input YAML validation. Users should generally only need to look at this. └── __init__.py
-"""
+#
+# Module structure:
+# ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to describing and validating
+# |                               Ludwig configs.
+# ├── utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
+# |                               elsewhere in Ludwig.
+# ├── schema.py               <-- Contains the fully assembled Ludwig schema and validate() function that is used for
+# |                               user-input YAML validation. Users should generally only need to look at this.
+# └── __init__.py
+#
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
