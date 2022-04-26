@@ -3,7 +3,7 @@ import json
 import pytest
 
 from ludwig.automl.automl import create_auto_config
-from tests.regression_tests.type_inference_test_utils import get_dataset_golden_types_path, REGISTRY
+from tests.regression_tests.automl.type_inference_test_utils import get_dataset_golden_types_path, REGISTRY
 
 
 @pytest.mark.parametrize("dataset_module", REGISTRY)
