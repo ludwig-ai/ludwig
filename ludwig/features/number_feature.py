@@ -52,8 +52,8 @@ logger = logging.getLogger(__name__)
 class ZScoreTransformer(nn.Module):
     def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
         super().__init__()
-        self.mu = float(mean)
-        self.sigma = float(std)
+        self.mu = float(mean) if mean is not None else mean
+        self.sigma = float(std) if std is not None else std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.mu) / self.sigma
@@ -79,9 +79,12 @@ class ZScoreTransformer(nn.Module):
 class MinMaxTransformer(nn.Module):
     def __init__(self, min: float = None, max: float = None, **kwargs: dict):
         super().__init__()
-        self.min_value = float(min)
-        self.max_value = float(max)
-        self.range = float(None if min is None or max is None else max - min)
+        self.min_value = float(min) if min is not None else min
+        self.max_value = float(max) if max is not None else max
+        if self.min_value is None or self.max_value is None:
+            self.range = None
+        else:
+            self.range = self.max_value - self.min_value
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.min_value) / self.range
