@@ -14,7 +14,7 @@
 # ==============================================================================
 from abc import ABC
 from dataclasses import asdict, field
-from typing import ClassVar, Dict, Optional, Tuple
+from typing import ClassVar, Optional, Tuple
 
 import torch
 from marshmallow import fields, ValidationError
@@ -340,22 +340,22 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
+        load_default = opt.Schema().load(default)
+        dump_default = opt.Schema().dump(default)
 
         return field(
-            metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=False)},
-            default_factory=lambda: opt.Schema().load(default),
+            metadata={
+                "marshmallow_field": OptimizerMarshmallowField(
+                    allow_none=False,
+                    dump_default=dump_default,
+                    load_default=load_default,
+                    metadata={"description": description},
+                )
+            },
+            default_factory=lambda: load_default,
         )
     except Exception as e:
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
-
-
-def get_all_optimizer_json_schemas() -> Dict[str, str]:
-    """Return a dict of strings, wherein each key is an optimizer name pointing to its stringified JSON schema."""
-    optimizer_schemas_json = {}
-    for opt in optimizer_registry:
-        schema_cls = optimizer_registry[opt][1]
-        optimizer_schemas_json[opt] = unload_jsonschema_from_marshmallow_class(schema_cls)
-    return optimizer_schemas_json
 
 
 @dataclass
@@ -408,9 +408,18 @@ def GradientClippingDataclassField(default={}, allow_none=True, description="TOD
 
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
+    load_default = GradientClippingConfig.Schema().load(default)
+    dump_default = GradientClippingConfig.Schema().dump(default)
     return field(
-        metadata={"marshmallow_field": GradientClippingMarshmallowField(allow_none=allow_none)},
-        default_factory=lambda: GradientClippingConfig.Schema().load(default),
+        metadata={
+            "marshmallow_field": GradientClippingMarshmallowField(
+                allow_none=allow_none,
+                load_default=load_default,
+                dump_default=dump_default,
+                metadata={"description": description},
+            )
+        },
+        default_factory=lambda: load_default,
     )
 
 
