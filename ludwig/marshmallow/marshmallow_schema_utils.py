@@ -1,5 +1,3 @@
-import json
-import re
 from dataclasses import field
 from typing import Dict as tDict
 from typing import List, Tuple, Union
@@ -12,10 +10,7 @@ from ludwig.utils.torch_utils import activations, initializer_registry
 
 
 def load_config(cls, **kwargs):
-    """Takes a marshmallow class and instantiates it with the given keyword args.
-
-    as parameters.
-    """
+    """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     return schema.load(kwargs)
@@ -47,7 +42,7 @@ class BaseMarshmallowConfig:
 
         Currently only sets `unknown` flag to `EXCLUDE`. This is done to mirror Ludwig behavior: unknown properties are
         excluded from `load` calls so that the marshmallow_dataclass package can be used but
-        `get_custom_schema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.
+        `unload_jsonschema_from_marshmallow_class` will manually set a marshmallow schema's `additionalProperties` attr.
         to True so that JSON objects with extra properties do not raise errors; as a result properties are picked and
         filled in as necessary.
         """
@@ -62,167 +57,44 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def get_fully_qualified_class_name(cls):
-    """Returns fully dot-qualified path of a class, e.g. `ludwig.models.trainer.TrainerConfig` given
-    `TrainerConfig`."""
-    return ".".join([cls.__module__, cls.__name__])
-
-
-def unload_schema_from_marshmallow_jsonschema_dump(mclass) -> tDict:
+def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    return js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema["additionalProperties"] = True
+    return schema
 
 
-def get_custom_schema_from_marshmallow_class(mclass) -> tDict:
-    """Get Ludwig-customized schema from a given marshmallow class."""
-    assert_is_a_marshmallow_class(mclass)
-
-    def cleanup_python_comment(dstring: str) -> str:
-        """Cleans up some common issues with parsed comments/docstrings."""
-        if dstring is None or dstring == "" or str.isspace(dstring):
-            return ""
-        # Add spaces after periods:
-        dstring = re.sub(r"\.(?! )", ". ", dstring)
-        # Replace internal newlines with spaces:
-        dstring = re.sub("\n+", " ", dstring)
-        # Replace any multiple-spaces with single spaces:
-        dstring = re.sub(" +", " ", dstring)
-        # Remove leading/ending spaces:
-        dstring = dstring.strip()
-        # Add final period if it's not there:
-        dstring += "." if dstring[-1] != "." else ""
-        # Capitalize first word in string and first word in each sentence.
-        dstring = re.sub(r"((?<=[\.\?!]\s)(\w+)|(^\w+))", lambda m: m.group().capitalize(), dstring)
-        return dstring
-
-    def load_pytkdocs_json(name: str, is_torch=False):
-        import os
-        from pathlib import Path
-
-        subfolder = "" if not is_torch else "torch/"
-        relative_path = os.path.join("generated/", subfolder, name)
-        parent_dir = str(Path(__file__).parent)
-        full_path = os.path.join(parent_dir, relative_path) + ".json"
-        with open(full_path) as input:
-            return json.load(input)
-
-    def get_attrs_dict(cls):
-        return {attr.split(".")[-1]: cls["children"][attr] for attr in cls["attributes"]}
-
-    def get_torch_attrs_dict(cls):
-        attrs_list = cls["docstring_sections"][0]["value"]
-        return {attr["name"]: attr for attr in attrs_list}
-
-    def generate_extra_json_schema_props(schema_cls) -> Dict:
-        """Workaround for adding 'description' fields to a marshmallow schema's JSON Schema.
-
-        Currently targeted for use with optimizer and combiner schema; if there is no description provided for a
-        particular field, the description is pulled from the corresponding torch optimizer. Note that this currently
-        overrides whatever may already be in the description/default fields. TODO(ksbrar): Watch this
-        [issue](https://github.com/fuhrysteve/marshmallow-jsonschema/issues/41) to improve this eventually.
-        """
-
-        schema_dump = unload_schema_from_marshmallow_jsonschema_dump(schema_cls)
-        if schema_cls.__doc__ is not None:
-            parsed_documentation = load_pytkdocs_json(schema_cls.__name__)
-            parsed_parents = [load_pytkdocs_json(parent.__name__) for parent in schema_cls.__bases__]
-
-            # Add the top-level description to the schema if it exists:
-            if parsed_documentation["docstring"] is not None:
-                # schema_dump["description"] = cleanup_python_comment(parsed_documentation.docstring)
-                schema_dump["description"] = cleanup_python_comment(parsed_documentation["docstring"])
-
-            # Create a dictionary of all attributes (including possible inherited ones):
-            # parsed_attrs = {attr.name: attr for attr in parsed_documentation.attributes}
-            parsed_attrs = get_attrs_dict(parsed_documentation)
-            parsed_parent_attrs = {}
-            for parent in parsed_parents:
-                # attrs = {attr.name: attr for attr in parent.attributes}
-                attrs = get_attrs_dict(parent)
-
-                parsed_parent_attrs = {**parsed_parent_attrs, **attrs}
-            parsed_attrs = {**parsed_parent_attrs, **parsed_attrs}
-
-            # For each prop in the schema, set its description and default if they are not already set. If not already
-            # set and there is no available value from the Ludwig docstring, attempt to pull from PyTorch, if applicable
-            # (e.g. for optimizer parameters).
-            parsed_torch = None
-            if hasattr(schema_cls, "optimizer_class") and schema_cls.optimizer_class is not None:
-                parsed_torch = get_torch_attrs_dict(
-                    load_pytkdocs_json(schema_cls.optimizer_class.__name__, is_torch=True)
-                )
-
-            for prop in schema_dump["properties"]:
-                schema_prop = schema_dump["properties"][prop]
-
-                if prop in parsed_attrs:
-                    # Handle descriptions:
-
-                    # Get the particular attribute's docstring (if it has one), strip the default from the string:
-                    parsed_docstring = parsed_attrs[prop]["docstring"]
-                    if parsed_docstring is None:
-                        parsed_docstring = ""
-
-                    # Split the description and default (if they exist in the string):
-                    parsed_desc = parsed_default = None
-                    docstring_split = parsed_docstring.split("(default: ")
-                    if len(docstring_split) == 2:
-                        parsed_default = docstring_split[1]
-                    parsed_desc = docstring_split[0]
-                    if parsed_desc is None:
-                        parsed_desc = ""
-
-                    # If no description is provided, attempt to pull from torch if applicable (e.g. for optimizers):
-                    desc = parsed_desc
-                    if (
-                        desc == ""
-                        and parsed_torch is not None
-                        and prop in parsed_torch
-                        and (parsed_torch[prop]["description"] is not None or parsed_torch[prop]["description"] != "")
-                    ):
-                        desc_split = parsed_torch[prop]["description"].split("(default: ")
-                        if parsed_default is None and len(desc_split) == 2:
-                            parsed_default = desc_split[1]
-                        desc = cleanup_python_comment(desc_split[0])
-
-                    # Add parsed default back to string if it exists:
-                    if parsed_default is not None:
-                        desc += f"(default: {parsed_default}"
-                    schema_prop["description"] = cleanup_python_comment(desc)
-
-        # Manual workaround because marshmallow_{dataclass,jsonschema} do not support setting this field (see above):
-        schema_dump["additionalProperties"] = True
-        return schema_dump
-
-    return generate_extra_json_schema_props(mclass)
-
-
-def InitializerOptions(default: str = "xavier_uniform"):
+def InitializerOptions(default: str = "xavier_uniform", description="TODO"):
     """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
-    return StringOptions(list(initializer_registry.keys()), default=default, nullable=False)
+    return StringOptions(list(initializer_registry.keys()), default=default, nullable=False, description=description)
 
 
-def ActivationOptions(default: str = "relu"):
+def ActivationOptions(default: str = "relu", description="TODO"):
     """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
-    return StringOptions(list(activations.keys()), default=default, nullable=True)
+    return StringOptions(list(activations.keys()), default=default, nullable=True, description=description)
 
 
-def ReductionOptions(default: Union[None, str] = None):
+def ReductionOptions(default: Union[None, str] = None, description="TODO"):
     """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
-    return StringOptions(
-        list(reduce_mode_registry.keys()),
+    return StringOptions(list(reduce_mode_registry.keys()), default=default, nullable=True, description=description)
+
+
+def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True, description="TODO"):
+    """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
+    return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable, description=description)
+
+
+def String(default: Union[None, str] = None, nullable: bool = True, description="TODO"):
+    if not nullable and not isinstance(default, str):
+        raise ValidationError(f"Provided default `{default}` should be a string!")
+    return field(
+        metadata={"marshmallow_field": fields.String(allow_none=nullable, default=default, description=description)},
         default=default,
-        nullable=True,
     )
 
 
-def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True):
-    """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
-    return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable)
-
-
-def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True):
+def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True, description="TODO"):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
@@ -242,16 +114,26 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                validate=validate.OneOf(options),
-                allow_none=nullable,
-                default=default,
+                validate=validate.OneOf(options), allow_none=nullable, default=default, description=description
             )
         },
         default=default,
     )
 
 
-def PositiveInteger(default: Union[None, int] = None):
+def Boolean(default: bool, description="TODO"):
+    if default is not None:
+        try:
+            assert isinstance(default, bool)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={"marshmallow_field": fields.Boolean(truthy={True}, falsy={False}, allow_none=False, default=default)},
+        default=default,
+    )
+
+
+def PositiveInteger(default: Union[None, int] = None, description="TODO"):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
     val = validate.Range(min=1)
@@ -263,13 +145,15 @@ def PositiveInteger(default: Union[None, int] = None):
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={
-            "marshmallow_field": fields.Integer(strict=True, validate=val, allow_none=default is None, default=default)
+            "marshmallow_field": fields.Integer(
+                strict=True, validate=val, allow_none=default is None, default=default, description=description
+            )
         },
         default=default,
     )
 
 
-def NonNegativeInteger(default: Union[None, int] = None):
+def NonNegativeInteger(default: Union[None, int] = None, description="TODO"):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
     val = validate.Range(min=0)
@@ -281,13 +165,15 @@ def NonNegativeInteger(default: Union[None, int] = None):
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={
-            "marshmallow_field": fields.Integer(strict=True, validate=val, allow_none=default is None, default=default)
+            "marshmallow_field": fields.Integer(
+                strict=True, validate=val, allow_none=default is None, default=default, description="TODO"
+            )
         },
         default=default,
     )
 
 
-def IntegerRange(default: Union[None, int] = None, **kwargs):
+def IntegerRange(default: Union[None, int] = None, description="TODO", **kwargs):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
     val = validate.Range(**kwargs)
@@ -299,13 +185,15 @@ def IntegerRange(default: Union[None, int] = None, **kwargs):
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
         metadata={
-            "marshmallow_field": fields.Integer(strict=True, validate=val, allow_none=default is None, default=default)
+            "marshmallow_field": fields.Integer(
+                strict=True, validate=val, allow_none=default is None, default=default, description=description
+            )
         },
         default=default,
     )
 
 
-def NonNegativeFloat(default: Union[None, float] = None):
+def NonNegativeFloat(default: Union[None, float] = None, description="TODO"):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
     if default is not None:
@@ -315,15 +203,21 @@ def NonNegativeFloat(default: Union[None, float] = None):
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={"marshmallow_field": fields.Float(validate=val, allow_none=default is None, default=default)},
+        metadata={
+            "marshmallow_field": fields.Float(
+                validate=val, allow_none=default is None, default=default, description=description
+            )
+        },
         default=default,
     )
 
 
-def FloatRange(default: Union[None, float] = None, **kwargs):
+def FloatRange(default: Union[None, float] = None, nullable=False, description="TODO", **kwargs):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(**kwargs)
+    if default is None and not nullable:
+        raise ValidationError(f"Invalid default: `{default}`")
     if default is not None:
         try:
             assert isinstance(default, float) or isinstance(default, int)
@@ -331,12 +225,16 @@ def FloatRange(default: Union[None, float] = None, **kwargs):
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={"marshmallow_field": fields.Float(validate=val, allow_none=default is None, default=default)},
+        metadata={
+            "marshmallow_field": fields.Float(
+                validate=val, allow_none=nullable, default=default, description=description
+            )
+        },
         default=default,
     )
 
 
-def Dict(default: Union[None, tDict] = None):
+def Dict(default: Union[None, tDict] = None, description="TODO"):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
@@ -345,12 +243,14 @@ def Dict(default: Union[None, tDict] = None):
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
     return field(
-        metadata={"marshmallow_field": fields.Dict(fields.String(), allow_none=True, default=default)},
+        metadata={
+            "marshmallow_field": fields.Dict(fields.String(), allow_none=True, default=default, description=description)
+        },
         default_factory=lambda: default,
     )
 
 
-def DictList(default: Union[None, List[tDict]] = None):
+def DictList(default: Union[None, List[tDict]] = None, description="TODO"):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
         try:
@@ -362,7 +262,11 @@ def DictList(default: Union[None, List[tDict]] = None):
             raise ValidationError(f"Invalid default: `{default}`")
 
     return field(
-        metadata={"marshmallow_field": fields.List(fields.Dict(fields.String()), allow_none=True, default=default)},
+        metadata={
+            "marshmallow_field": fields.List(
+                fields.Dict(fields.String()), allow_none=True, default=default, description=description
+            )
+        },
         default_factory=lambda: default,
     )
 
@@ -395,11 +299,18 @@ def Embed():
         def _jsonschema_type_mapping(self):
             return {
                 "oneOf": [
-                    {"type": "string", "enum": _embed_options, "default": "add", "title": "embed_string_option"},
-                    {"type": "integer", "title": "embed_integer_option"},
-                    {"type": "null", "title": "embed_null_option"},
+                    {
+                        "type": "string",
+                        "enum": _embed_options,
+                        "default": "add",
+                        "title": "embed_string_option",
+                        "description": "TODO: Document params.",
+                    },
+                    {"type": "integer", "title": "embed_integer_option", "description": "TODO: Document params."},
+                    {"type": "null", "title": "embed_null_option", "description": "TODO: Document params."},
                 ],
                 "title": self.name,
+                "description": "Valid options for embedding input feature names.",
             }
 
     return field(
@@ -407,7 +318,7 @@ def Embed():
     )
 
 
-def InitializerOrDict(default: str = "xavier_uniform"):
+def InitializerOrDict(default: str = "xavier_uniform", description="TODO"):
     """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
 
     In particular, allows str or dict types; in the former case the field is equivalent to `InitializerOptions` while in
@@ -441,8 +352,9 @@ def InitializerOrDict(default: str = "xavier_uniform"):
                     {
                         "type": "string",
                         "enum": initializers,
-                        "default": self.default,
+                        "default": default,
                         "title": "initializer_preconfigured_option",
+                        "description": "Pick a preconfigured initializer.",
                     },
                     # Note: default not provided in the custom dict option:
                     {
@@ -453,18 +365,25 @@ def InitializerOrDict(default: str = "xavier_uniform"):
                         "required": ["type"],
                         "title": "initializer_custom_option",
                         "additionalProperties": True,
+                        "description": "Customize an existing initializer.",
                     },
                 ],
                 "title": self.name,
+                "default": default,
+                "description": description,
             }
 
     return field(
-        metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=False, default=default)},
+        metadata={
+            "marshmallow_field": InitializerOptionsOrCustomDictField(
+                allow_none=False, default=default, description=description
+            )
+        },
         default=default,
     )
 
 
-def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1):
+def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1, description="TODO"):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
     range.
 
@@ -488,6 +407,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
                 ]
                 * N,
                 "default": default,
+                "description": description,
             }
 
     def validate_range(data: Tuple):
@@ -507,7 +427,11 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * N, allow_none=False, validate=validate_range, default=default
+                tuple_fields=[fields.Float()] * N,
+                allow_none=False,
+                validate=validate_range,
+                default=default,
+                description=description,
             )
         },
         default=default,
@@ -525,6 +449,7 @@ def IntegerOrStringOptionsField(
     max: Union[None, int] = None,
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
+    description="TODO",
 ):
     """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
     is_integer = True
@@ -542,6 +467,7 @@ def NumericOrStringOptionsField(
     max: Union[None, int] = None,
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
+    description="TODO",
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
 
@@ -585,7 +511,12 @@ def NumericOrStringOptionsField(
 
             # Prepare numeric option:
             numeric_type = "integer" if is_integer else "number"
-            numeric_option = {"type": numeric_type, "title": numeric_type + "_option", "default": default_numeric}
+            numeric_option = {
+                "type": numeric_type,
+                "title": numeric_type + "_option",
+                "default": default_numeric,
+                "description": "Set to a valid number.",
+            }
             if min is not None:
                 numeric_option["minimum"] = min
             if min_exclusive is not None:
@@ -603,6 +534,7 @@ def NumericOrStringOptionsField(
                 "enum": options,
                 "default": default_option,
                 "title": "preconfigured_option",
+                "description": "Choose a preconfigured option.",
             }
             oneof_list = [
                 numeric_option,
@@ -610,11 +542,17 @@ def NumericOrStringOptionsField(
             ]
 
             # Add null as an option if applicable:
-            oneof_list += [{"type": "null", "title": "null_option"}] if nullable else []
+            oneof_list += (
+                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}] if nullable else []
+            )
 
-            return {"oneOf": oneof_list, "title": self.name}
+            return {"oneOf": oneof_list, "title": self.name, "description": description}
 
     return field(
-        metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable, default=default)},
+        metadata={
+            "marshmallow_field": IntegerOrStringOptionsField(
+                allow_none=nullable, default=default, description=description
+            )
+        },
         default=default,
     )
