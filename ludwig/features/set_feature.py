@@ -48,9 +48,13 @@ logger = logging.getLogger(__name__)
 
 
 class _SetPreprocessing(torch.nn.Module):
-    """Torchscript-enabled version of preprocessing done by TextFeatureMixin.add_feature_data."""
+    """Torchscript-enabled version of preprocessing done by SetFeatureMixin.add_feature_data.
 
-    def __init__(self, metadata: Dict[str, Any]):
+    If is_bag is true, forward returns a vector for each sample indicating counts of each token. Else, forward returns
+    a multi-hot vector for each sample indicating presence of each token.
+    """
+
+    def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
         super().__init__()
         if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
             raise ValueError(
@@ -63,9 +67,10 @@ class _SetPreprocessing(torch.nn.Module):
         self.vocab_size = metadata["vocab_size"]
         self.unknown_symbol = UNKNOWN_SYMBOL
         self.unit_to_id = metadata["str2idx"]
+        self.is_bag = is_bag
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
-        """Takes a list of strings and returns a multi-hot indicating the presence of each token."""
+        """Takes a list of strings and returns a tensor of counts for each token."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -87,7 +92,11 @@ class _SetPreprocessing(torch.nn.Module):
                     curr_id = self.unit_to_id[curr_unit]
                 else:
                     curr_id = self.unit_to_id[self.unknown_symbol]
-                set_matrix[sample_idx][curr_id] = 1
+
+                if self.is_bag:
+                    set_matrix[sample_idx][curr_id] += 1
+                else:
+                    set_matrix[sample_idx][curr_id] = 1
 
         return set_matrix
 
