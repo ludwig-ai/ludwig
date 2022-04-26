@@ -743,9 +743,9 @@ class HFTokenizer(BaseTokenizer):
 
 
 tokenizer_registry = {
-    # Compatible with torchscript
+    # Torchscript-compatible tokenizers. Torchtext tokenizers are also available below (requires torchtext>=0.12.0).
     "space": SpaceStringToListTokenizer,
-    # Not compatible with torchscript
+    # Tokenizers not compatible with torchscript
     "characters": CharactersToListTokenizer,
     "space_punct": SpacePunctuationStringToListTokenizer,
     "underscore": UnderscoreStringToListTokenizer,
