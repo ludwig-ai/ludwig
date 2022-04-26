@@ -26,12 +26,15 @@ from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 logger = logging.getLogger(__name__)
 
 
-SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
-# requires torchtext>=0.12.0
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer", "gpt2bpe_tokenizer"}
+TORCHTEXT_TOKENIZERS = {
+    "sentencepiece_tokenizer",
+    "clip_tokenizer",
+    "gpt2bpe_tokenizer",
+}  # requires torchtext>=0.12.0
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"space", *TORCHTEXT_TOKENIZERS}
 
 
 class BaseTokenizer:
@@ -49,9 +52,30 @@ class CharactersToListTokenizer(BaseTokenizer):
         return [char for char in text]
 
 
-class SpaceStringToListTokenizer(BaseTokenizer):
-    def __call__(self, text):
-        return SPLIT_REGEX.split(text.strip())
+class SpaceStringToListTokenizer(torch.nn.Module):
+    """Implements torchscript-compatible whitespace tokenization."""
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+        elif isinstance(v, str):
+            inputs = [v]
+        else:
+            inputs = v
+
+        tokens: List[List[str]] = []
+        for sequence in inputs:
+            split_sequence = sequence.strip().split(" ")
+            token_sequence: List[str] = []
+            for token in split_sequence:
+                if len(token) > 0:
+                    token_sequence.append(token)
+            tokens.append(token_sequence)
+
+        return tokens[0] if isinstance(v, str) else tokens
 
 
 class SpacePunctuationStringToListTokenizer(BaseTokenizer):
@@ -719,8 +743,10 @@ class HFTokenizer(BaseTokenizer):
 
 
 tokenizer_registry = {
-    "characters": CharactersToListTokenizer,
+    # Torchscript-compatible tokenizers. Torchtext tokenizers are also available below (requires torchtext>=0.12.0).
     "space": SpaceStringToListTokenizer,
+    # Tokenizers not compatible with torchscript
+    "characters": CharactersToListTokenizer,
     "space_punct": SpacePunctuationStringToListTokenizer,
     "underscore": UnderscoreStringToListTokenizer,
     "comma": CommaStringToListTokenizer,
@@ -933,6 +959,5 @@ try:
 
 except ImportError:
     logger.warning(
-        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
-        f"{TORCHSCRIPT_ENABLED_TOKENIZERS}"
+        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: " f"{TORCHTEXT_TOKENIZERS}"
     )
