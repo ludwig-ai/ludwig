@@ -26,11 +26,9 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
-    COMBINED,
     DROP_ROW,
     EVAL_BATCH_SIZE,
     HYPEROPT,
-    LOSS,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -42,6 +40,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.trainer_config import TrainerConfig
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
@@ -71,32 +70,7 @@ default_preprocessing_parameters.update(
 
 default_combiner_type = "concat"
 
-default_training_params = {
-    "optimizer": {TYPE: "adam"},
-    "epochs": 100,
-    "regularization_lambda": 0,
-    "regularization_type": "l2",
-    "learning_rate": 0.001,
-    "batch_size": 128,
-    "eval_batch_size": None,
-    "early_stop": 1000,
-    "steps_per_checkpoint": 0,
-    "reduce_learning_rate_on_plateau": 0,
-    "reduce_learning_rate_on_plateau_patience": 5,
-    "reduce_learning_rate_on_plateau_rate": 0.5,
-    "increase_batch_size_on_plateau": 0,
-    "increase_batch_size_on_plateau_patience": 5,
-    "increase_batch_size_on_plateau_rate": 2,
-    "increase_batch_size_on_plateau_max": 512,
-    "decay": False,
-    "decay_steps": 10000,
-    "decay_rate": 0.96,
-    "staircase": False,
-    "gradient_clipping": None,
-    "validation_field": COMBINED,
-    "validation_metric": LOSS,
-    "learning_rate_warmup_epochs": 1,
-}
+default_training_params = TrainerConfig.dump({})
 
 default_optimizer_params_registry = {
     "sgd": {},
