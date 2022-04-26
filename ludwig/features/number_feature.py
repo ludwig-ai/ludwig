@@ -52,25 +52,19 @@ logger = logging.getLogger(__name__)
 class ZScoreTransformer(nn.Module):
     def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
         super().__init__()
-        self.mu = mean
-        self.sigma = std
+        self.mu = float(mean)
+        self.sigma = float(std)
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return self._transform(x)
-
-    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
-        return self._inverse_transform(x)
-
-    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        return self._transform(x)
-
-    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        return self._inverse_transform(x)
-
-    def _transform(self, x: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
         return (x - self.mu) / self.sigma
 
-    def _inverse_transform(self, x: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x * self.sigma + self.mu
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.mu) / self.sigma
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
         return x * self.sigma + self.mu
 
     @staticmethod
@@ -85,26 +79,22 @@ class ZScoreTransformer(nn.Module):
 class MinMaxTransformer(nn.Module):
     def __init__(self, min: float = None, max: float = None, **kwargs: dict):
         super().__init__()
-        self.min_value = min
-        self.max_value = max
-        self.range = None if min is None or max is None else max - min
+        self.min_value = float(min)
+        self.max_value = float(max)
+        self.range = float(None if min is None or max is None else max - min)
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return self._transform(x)
-
-    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
-        return self._inverse_transform(x)
-
-    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        return self._transform(x)
-
-    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        return self._inverse_transform(x)
-
-    def _transform(self, x: Union[np.ndarray, torch.Tensor]):
         return (x - self.min_value) / self.range
 
-    def _inverse_transform(self, x: Union[np.ndarray, torch.Tensor]):
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        if self.range is None:
+            raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
+        return x * self.range + self.min_value
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.min_value) / self.range
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
         if self.range is None:
             raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
         return x * self.range + self.min_value
