@@ -107,7 +107,7 @@ class ECD(LudwigModule):
         traced = self.to_torchscript()
         traced.save(save_path)
 
-    def to_inference_module(self, save_path, **inference_module_kwargs):
+    def to_inference_module(self, **inference_module_kwargs):
         """Returns a scripted ECD model.
 
         The input to this model is a dictionary of input features. For every input feature, the user must provide a
@@ -122,7 +122,7 @@ class ECD(LudwigModule):
 
     def save_inference_module(self, save_path, **inference_module_kwargs):
         """Saves a scripted InferenceModule to save_path."""
-        inference_module = self.to_inference_module(save_path, **inference_module_kwargs)
+        inference_module = self.to_inference_module(**inference_module_kwargs)
         inference_module.save(save_path)
 
     @property
