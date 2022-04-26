@@ -48,7 +48,7 @@ class _BagPreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
-        """Takes a list of strings and returns a tensor of token ids."""
+        """Takes a list of strings and returns a tensor of counts for each token."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -72,7 +72,6 @@ class _BagPreprocessing(torch.nn.Module):
                     curr_id = self.unit_to_id[self.unknown_symbol]
                 bag_matrix[sample_idx][curr_id] += 1
 
-        print(bag_matrix)
         return bag_matrix
 
 

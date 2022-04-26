@@ -211,18 +211,14 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
         for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
     ]
-    torchscript_enabled_bag_features = [
-        bag_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
-        for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
-    ]
     input_features = [
-        # bin_str_feature,
-        # binary_feature(),
-        # number_feature(),
-        # category_feature(vocab_size=3),
-        # image_feature(image_dest_folder),
-        # *torchscript_enabled_text_features,
-        *torchscript_enabled_bag_features,
+        bin_str_feature,
+        binary_feature(),
+        number_feature(),
+        category_feature(vocab_size=3),
+        image_feature(image_dest_folder),
+        *torchscript_enabled_text_features,
+        bag_feature(vocab_size=3, preprocessing={"tokenizer": "torchscript_whitespace"}),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
@@ -277,6 +273,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         if "image" in s.name:
             return [image_utils.read_image(v) for v in s]
         if s.dtype == "object":
+            if "bag" in s.name:
+                s = s.astype(str)
             return s.to_list()
         return torch.from_numpy(s.to_numpy())
 
