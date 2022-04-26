@@ -70,6 +70,7 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.schema import validate_config
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
@@ -84,7 +85,6 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
