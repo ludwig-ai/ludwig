@@ -21,7 +21,7 @@ import torch
 
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.data_utils import hash_dict
-from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"
