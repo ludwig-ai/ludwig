@@ -50,8 +50,8 @@ logger = logging.getLogger(__name__)
 class _SetPreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by SetFeatureMixin.add_feature_data.
 
-    If is_bag is true, forward returns a vector for each sample indicating counts of each token. Else, forward returns
-    a multi-hot vector for each sample indicating presence of each token.
+    If is_bag is true, forward returns a vector for each sample indicating counts of each token. Else, forward returns a
+    multi-hot vector for each sample indicating presence of each token.
     """
 
     def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
