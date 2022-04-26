@@ -217,7 +217,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         number_feature(),
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
-        *torchscript_enabled_text_features
+        *torchscript_enabled_text_features,
+        bag_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
@@ -226,7 +227,6 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         # date_feature(),
         # h3_feature(),
         # set_feature(vocab_size=3),
-        # bag_feature(vocab_size=3),
     ]
     output_features = [
         bin_str_feature,

@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from collections import Counter
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -22,10 +23,57 @@ import torch
 from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, NAME, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 
 logger = logging.getLogger(__name__)
+
+
+class _BagPreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by TextFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_ENABLED_TOKENIZERS}."
+            )
+
+        self.lowercase = metadata["preprocessing"]["lowercase"]
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.vocab_size = metadata["vocab_size"]
+        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
+        self.unit_to_id = metadata["str2idx"]
+
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        """Takes a list of strings and returns a tensor of token ids."""
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if self.lowercase:
+            sequences = [sequence.lower() for sequence in v]
+        else:
+            sequences = v
+
+        unit_sequences = self.tokenizer(sequences)
+        # refines type of unit_sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+
+        bag_matrix = torch.zeros(len(unit_sequences), self.vocab_size, dtype=torch.float32)
+        for sample_idx, unit_sequence in enumerate(unit_sequences):
+            sequence_length = len(unit_sequence)
+            for i in range(sequence_length):
+                curr_unit = unit_sequence[i]
+                if curr_unit in self.unit_to_id:
+                    curr_id = self.unit_to_id[curr_unit]
+                else:
+                    curr_id = self.unit_to_id[self.unknown_symbol]
+                bag_matrix[sample_idx][curr_id] += 1
+
+        print(bag_matrix)
+        return bag_matrix
 
 
 class BagFeatureMixin(BaseFeatureMixin):
@@ -79,10 +127,20 @@ class BagFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
         def to_vector(set_str):
+            import inspect
+
+            print(
+                f"======== "
+                f"{inspect.getframeinfo(inspect.currentframe()).filename}:"
+                f"{inspect.getframeinfo(inspect.currentframe()).lineno} ========"
+            )
+            print(metadata)
+            print(set_str)
             bag_vector = np.zeros((len(metadata["str2idx"]),), dtype=np.float32)
             col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], preprocessing_parameters["tokenizer"]))
-
+            print(col_counter)
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
+            print(bag_vector)
             return bag_vector
 
         return backend.df_engine.map_objects(column, to_vector)
@@ -135,3 +193,7 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _BagPreprocessing(metadata)
