@@ -47,12 +47,12 @@ from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import (
-    START_SYMBOL,
-    STOP_SYMBOL,
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
     SpecialSymbol,
+    START_SYMBOL,
+    STOP_SYMBOL,
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
