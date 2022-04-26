@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 import os
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -49,6 +50,21 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
+
+
+class _AudioPreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super.__init__()
+        self.padding_value = metadata["preprocessing"]["padding_value"]
+        self.normalization_type = metadata["preprocessing"]["norm"]
+
+        self.feature_dim = metadata["feature_dim"]
+        self.max_length = metadata["max_length"]
+        self.audio_feature_dict = metadata["preprocessing"]["audio_featugit stre"]
+        self.audio_file_length_limit_in_s = metadata["preprocessing"]["audio_file_length_limit_in_s"]
+
+    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+        pass
 
 
 class AudioFeatureMixin(BaseFeatureMixin):
@@ -338,6 +354,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError("There are no audio files in the dataset provided.")
 
         if feature_config[PREPROCESSING]["in_memory"]:
+            # print(metadata)
             audio_features = AudioFeatureMixin._process_in_memory(
                 input_df[feature_config[NAME]],
                 src_path,
@@ -418,3 +435,8 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_values(input_feature, {TIED: None, "preprocessing": {}})
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        print(metadata)
+        return _AudioPreprocessing(metadata)

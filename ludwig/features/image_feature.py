@@ -83,7 +83,9 @@ class _ImagePreprocessing(torch.nn.Module):
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]) -> torch.Tensor:
+    def forward(
+        self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]
+    ) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
 
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.

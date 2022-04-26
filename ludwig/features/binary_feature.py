@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -61,7 +61,7 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
         self.should_lower = str2bool is None
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
         if torch.jit.isinstance(v, List[torch.Tensor]):
             v = torch.stack(v)
 

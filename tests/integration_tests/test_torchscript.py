@@ -16,7 +16,7 @@ import os
 import shutil
 import tempfile
 from copy import deepcopy
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -204,6 +204,7 @@ def test_torchscript(csv_filename, should_load_model):
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
@@ -217,11 +218,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         number_feature(),
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
-        *torchscript_enabled_text_features
+        *torchscript_enabled_text_features,
+        audio_feature(audio_dest_folder),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
-        # audio_feature(audio_dest_folder),
         # timeseries_feature(),
         # date_feature(),
         # h3_feature(),
@@ -269,7 +270,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
 
-    def to_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
+    def to_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]:
         if "image" in s.name:
             return [image_utils.read_image(v) for v in s]
         if s.dtype == "object":
