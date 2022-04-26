@@ -1,4 +1,4 @@
-"""Module description: ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to
+"""Module structure: ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to
 describing and validating.
 
 |                               Ludwig configs. ├── utils.py                <-- An extensive set of marshmallow-related
