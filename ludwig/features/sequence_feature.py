@@ -209,7 +209,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             tokenizer_vocab_file=preprocessing_parameters["vocab_file"],
             processor=backend.df_engine,
         )
-        print(sequence_data)
         return sequence_data
 
     @staticmethod
