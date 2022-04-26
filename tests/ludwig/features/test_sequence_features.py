@@ -214,14 +214,11 @@ def test_text_preproc_module_gpt2bpe_tokenizer():
     )
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
-)
-def test_text_preproc_module_whitespace_tokenizer():
+def test_text_preproc_module_space_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "torchscript_whitespace",
+            "tokenizer": "space",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },

@@ -68,7 +68,7 @@ class SpaceStringToListTokenizer(torch.nn.Module):
 
         tokens: List[List[str]] = []
         for sequence in inputs:
-            split_sequence = sequence.split(" ")
+            split_sequence = sequence.strip().split(" ")
             token_sequence: List[str] = []
             for token in split_sequence:
                 if len(token) > 0:
