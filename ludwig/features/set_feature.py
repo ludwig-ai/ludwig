@@ -174,8 +174,8 @@ class SetFeatureMixin(BaseFeatureMixin):
             raise Exception(f"Tokenizer {tokenizer_name} not supported")
 
         def to_dense(x):
-            set_vector = np.zeros((len(metadata["str2idx"]),))
             feature_vector = set_str_to_idx(x, metadata["str2idx"], tokenizer)
+            set_vector = np.zeros((len(metadata["str2idx"]),))
             set_vector[feature_vector] = 1
             return set_vector.astype(np.bool)
 
