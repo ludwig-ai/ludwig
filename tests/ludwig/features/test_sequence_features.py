@@ -148,7 +148,7 @@ def test_text_preproc_module_sentencepiece_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "sentencepiece_tokenizer",
+            "tokenizer": "sentencepiece",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
@@ -182,7 +182,7 @@ def test_text_preproc_module_clip_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "clip_tokenizer",
+            "tokenizer": "clip",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
@@ -214,7 +214,7 @@ def test_text_preproc_module_gpt2bpe_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "gpt2bpe_tokenizer",
+            "tokenizer": "gpt2bpe",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
