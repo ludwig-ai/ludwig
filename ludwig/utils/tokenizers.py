@@ -31,7 +31,12 @@ SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 # requires torchtext>=0.12.0
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer", "gpt2bpe_tokenizer"}
+TORCHSCRIPT_ENABLED_TOKENIZERS = {
+    "sentencepiece_tokenizer",
+    "clip_tokenizer",
+    "gpt2bpe_tokenizer",
+    "torchscript_whitespace",
+}
 
 
 class BaseTokenizer:
@@ -920,11 +925,37 @@ try:
                     encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
                 )
 
+        class TSWhitespaceTokenizer(torch.nn.Module):
+            """Implements torchscript-compatible whitespace tokenization."""
+
+            def __init__(self, **kwargs):
+                super().__init__()
+
+            def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+                if isinstance(v, torch.Tensor):
+                    raise ValueError(f"Unsupported input: {v}")
+                elif isinstance(v, str):
+                    inputs = [v]
+                else:
+                    inputs = v
+
+                tokens: List[List[str]] = []
+                for sequence in inputs:
+                    split_sequence = sequence.split(" ")
+                    token_sequence: List[str] = []
+                    for token in split_sequence:
+                        if len(token) > 0:
+                            token_sequence.append(token)
+                    tokens.append(token_sequence)
+
+                return tokens[0] if isinstance(v, str) else tokens
+
         tokenizer_registry.update(
             {
                 "sentencepiece_tokenizer": SentencePieceTokenizer,
                 "clip_tokenizer": CLIPTokenizer,
                 "gpt2bpe_tokenizer": GPT2BPETokenizer,
+                "torchscript_whitespace": TSWhitespaceTokenizer,
             }
         )
 
