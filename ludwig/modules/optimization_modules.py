@@ -20,7 +20,7 @@ import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.marshmallow.utils import (
+from ludwig.schema.utils import (
     BaseMarshmallowConfig,
     Boolean,
     create_cond,

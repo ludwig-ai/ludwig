@@ -4,9 +4,9 @@ from marshmallow.utils import EXCLUDE
 from marshmallow_dataclass import dataclass
 
 import ludwig.combiners.combiners as lcc
-import ludwig.marshmallow.utils as lusutils
-from ludwig.marshmallow.utils import BaseMarshmallowConfig
+import ludwig.schema.utils as lusutils
 from ludwig.models.trainer import TrainerConfig
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @dataclass
