@@ -227,7 +227,6 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         # timeseries_feature(),
         # date_feature(),
         # h3_feature(),
-        # set_feature(vocab_size=3),
     ]
     output_features = [
         bin_str_feature,
