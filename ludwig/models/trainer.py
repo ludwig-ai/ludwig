@@ -35,7 +35,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-import ludwig.marshmallow.marshmallow_schema_utils as schema
+import ludwig.marshmallow.utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (

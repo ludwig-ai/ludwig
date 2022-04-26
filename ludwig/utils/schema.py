@@ -21,7 +21,7 @@ from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.marshmallow.marshmallow_schema_utils import create_cond
+from ludwig.marshmallow.utils import create_cond
 from ludwig.models.trainer import get_trainer_jsonschema
 
 
