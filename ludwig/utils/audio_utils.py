@@ -13,9 +13,64 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
+import logging
+import os
+import sys
 import numpy as np
+import torch
+from typing import Union, Tuple
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
+
+from ludwig.utils.fs_utils import upgrade_http, is_http
+from ludwig.utils.data_utils import get_abs_path
+
+logger = logging.getLogger(__name__)
+
+
+@functools.lru_cache(maxsize=32)
+def read_audio(audio: Union[str, torch.Tensor], src_path):
+    """
+    Function for reading audio files.
+
+    Args:
+        src_path: Local file source path
+        audio: Audio file input
+
+    Returns: Audio converted into torch tensor.
+    """
+    if isinstance(audio, torch.Tensor):
+        return audio
+    if isinstance(audio, str):
+        return read_audio_from_str(audio, src_path)
+
+
+def read_audio_from_str(audio_path: str, src_path: str) -> Tuple[torch.Tensor, int]:
+    try:
+        from torchaudio.backend.sox_io_backend import load
+    except ImportError:
+        logger.error(
+            "torchaudio is not installed. "
+            "Please install torchaudio to train models with audio features"
+        )
+        sys.exit(-1)
+
+    try:
+        if is_http(audio_path):
+            return load(audio_path)
+        if src_path:
+            filepath = get_abs_path(src_path, audio_path)
+            return load(filepath)
+        if src_path is None and not os.path.isabs(audio_path):
+            raise ValueError("Audio file paths must be absolute")
+    except Exception as e:
+        upgraded = upgrade_http(audio_path)
+        if upgraded:
+            logger.info(f"reading audio url {audio_path} failed due to {e}. upgrading to https and retrying")
+            return read_audio_from_str(upgraded)
+        logger.info(f"reading audio url {audio_path} failed due to {e}")
+        return None
 
 
 def _pre_emphasize_data(data, emphasize_value=0.97):
@@ -55,7 +110,7 @@ def get_group_delay(raw_data, sampling_rate_in_hz, window_length_in_s, window_sh
 
 
 def get_phase_stft_magnitude(
-    raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
+        raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
 ):
     stft = _get_stft(
         raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type
@@ -67,7 +122,7 @@ def get_phase_stft_magnitude(
 
 
 def get_stft_magnitude(
-    raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
+        raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
 ):
     stft = _get_stft(
         raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type
@@ -82,7 +137,8 @@ def get_stft_magnitude(
 # https://github.com/jameslyons/python_speech_features/blob/40c590269b57c64a8c1f1ddaaff2162008d1850c/python_speech_features/base.py#L84################################################################################
 ################################################################################
 def get_fbank(
-    raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, num_filter_bands
+        raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type,
+        num_filter_bands
 ):
     stft = _get_stft(
         raw_data,
@@ -139,14 +195,14 @@ def _convert_mel_to_hz(mel):
 
 
 def _get_stft(
-    raw_data,
-    sampling_rate_in_hz,
-    window_length_in_s,
-    window_shift_in_s,
-    num_fft_points,
-    window_type,
-    data_transformation=None,
-    zero_mean_offset=False,
+        raw_data,
+        sampling_rate_in_hz,
+        window_length_in_s,
+        window_shift_in_s,
+        num_fft_points,
+        window_type,
+        data_transformation=None,
+        zero_mean_offset=False,
 ):
     pre_emphasized_data = _pre_emphasize_data(raw_data)
     stft = _short_time_fourier_transform(
@@ -164,14 +220,14 @@ def _get_stft(
 
 
 def _short_time_fourier_transform(
-    data,
-    sampling_rate_in_hz,
-    window_length_in_s,
-    window_shift_in_s,
-    num_fft_points,
-    window_type,
-    data_transformation=None,
-    zero_mean_offset=False,
+        data,
+        sampling_rate_in_hz,
+        window_length_in_s,
+        window_shift_in_s,
+        num_fft_points,
+        window_type,
+        data_transformation=None,
+        zero_mean_offset=False,
 ):
     window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
     window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)

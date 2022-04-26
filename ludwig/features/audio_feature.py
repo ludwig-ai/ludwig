@@ -44,9 +44,10 @@ from ludwig.utils.audio_utils import (
     get_non_symmetric_length,
     get_phase_stft_magnitude,
     get_stft_magnitude,
+    read_audio,
 )
-from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.fs_utils import has_remote_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -143,12 +144,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_file_length_limit_in_s,
         backend,
     ):
-        def read_audio(path):
-            filepath = get_abs_path(src_path, path)
-            return torchaudio.load(filepath)
+        def read_audio_file(path):
+            return read_audio(path, src_path)
 
         df_engine = backend.df_engine
-        raw_audio = df_engine.map_objects(column, read_audio)
+        raw_audio = df_engine.map_objects(column, read_audio_file)
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
@@ -315,15 +315,23 @@ class AudioFeatureMixin(BaseFeatureMixin):
         column = feature_config[COLUMN]
         proc_column = feature_config[PROC_COLUMN]
 
+        num_audio_files = len(input_df[column])
+        if num_audio_files == 0:
+            raise ValueError("There are no audio files in the dataset provided.")
+
+        first_audio_entry = next(iter(input_df[column]))
+        logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
+
+        if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
+            raise ValueError(
+                "Invalid audio feature data type.  Detected type is {}, "
+                "expected either string for local/remote file path or Torch Tensor.".format(type(first_audio_entry))
+            )
+
         src_path = None
-        # this is not super nice, but works both and DFs and lists
-        first_path = "."
-        for first_path in input_df[column]:
-            break
         if SRC in metadata:
-            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        if src_path is None and not os.path.isabs(first_path):
-            raise ValueError("Audio file paths must be absolute")
+            if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
+                src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
@@ -339,7 +347,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
-                input_df[feature_config[NAME]],
+                input_df[column],
                 src_path,
                 audio_feature_dict,
                 feature_dim,
