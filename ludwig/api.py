@@ -490,7 +490,7 @@ class LudwigModel:
             with self.backend.create_trainer(
                 model=self.model,
                 config=config,
-                resume=not(model_resume_path is None and experiment_name is None),
+                resume=not (model_resume_path is None and experiment_name is None),
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,

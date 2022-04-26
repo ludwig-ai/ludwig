@@ -931,11 +931,8 @@ class Trainer(BaseTrainer):
             batch_size=self.batch_size,
             learning_rate=self.base_learning_rate,
             best_eval_metric=get_initial_validation_value(self.validation_metric),
-            best_reduce_learning_rate_eval_metric=get_initial_validation_value(
-                self.reduce_learning_rate_eval_metric
-            ),
-            best_increase_batch_size_eval_metric=get_initial_validation_value(
-                self.increase_batch_size_eval_metric),
+            best_reduce_learning_rate_eval_metric=get_initial_validation_value(self.reduce_learning_rate_eval_metric),
+            best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
             output_features=output_features,
         )
         if self.resume:
