@@ -920,6 +920,27 @@ try:
                     encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
                 )
 
+        class TSWhiteSpaceTokenizer(torch.nn.Module):
+            def __init__(self, **kwargs):
+                super().__init__()
+
+            def forward(self, v: Union[str, List[str], torch.Tensor]):
+                if isinstance(v, torch.Tensor):
+                    raise ValueError(f"Unsupported input: {v}")
+                elif isinstance(v, str):
+                    inputs = [v]
+                else:
+                    inputs = v
+
+                token_sequences = []
+                for sequence in inputs:
+                    for token in sequence.split(" "):
+                        token_sequence = []
+                        if len(token) > 0:
+                            token_sequence.append(token)
+                    token_sequences.append(token_sequence)
+                return token_sequences
+
         tokenizer_registry.update(
             {
                 "sentencepiece_tokenizer": SentencePieceTokenizer,
