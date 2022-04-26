@@ -55,16 +55,29 @@ logger = logging.getLogger(__name__)
 class _AudioPreprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super.__init__()
+        self.audio_feature_dict = metadata["preprocessing"]["audio_feature"]
+        self.feature_dim = metadata["feature_dim"]
+        self.max_length = metadata["max_length"]
         self.padding_value = metadata["preprocessing"]["padding_value"]
         self.normalization_type = metadata["preprocessing"]["norm"]
 
-        self.feature_dim = metadata["feature_dim"]
-        self.max_length = metadata["max_length"]
-        self.audio_feature_dict = metadata["preprocessing"]["audio_featugit stre"]
-        self.audio_file_length_limit_in_s = metadata["preprocessing"]["audio_file_length_limit_in_s"]
-
     def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
-        pass
+        if not torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        processed_audio_matrix = []
+        for audio, sampling_rate_in_hz in v:
+            processed_audio = AudioFeatureMixin._transform_to_feature(
+                audio,
+                sampling_rate_in_hz,
+                self.audio_feature_dict,
+                self.feature_dim,
+                self.max_length,
+                self.padding_value,
+                self.normalization_type,
+            )
+            processed_audio_matrix.append(processed_audio)
+        return torch.tensor(processed_audio_matrix)
 
 
 class AudioFeatureMixin(BaseFeatureMixin):
@@ -227,24 +240,25 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
         feature_type = audio_feature_dict[TYPE]
         if feature_type == "raw":
-            audio_feature = np.expand_dims(audio, axis=-1)
+            audio_feature = torch.unsqueeze(audio, axis=-1)
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
-            audio_feature = np.transpose(
-                AudioFeatureMixin._get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz)
+            audio_feature = AudioFeatureMixin._get_2D_feature(
+                audio, feature_type, audio_feature_dict, sampling_rate_in_hz
             )
+            audio_feature = torch.transpose(audio_feature, 0, 1)
         else:
             raise ValueError(f"{feature_type} is not recognized.")
 
         if normalization_type == "per_file":
-            mean = np.mean(audio_feature, axis=0)
-            std = np.std(audio_feature, axis=0)
-            audio_feature = np.divide((audio_feature - mean), std + 1.0e-10)
+            mean = torch.mean(audio_feature, dim=0)
+            std = torch.std(audio_feature, dim=0)
+            audio_feature = torch.divide((audio_feature - mean), std + 1.0e-10)
         elif normalization_type == "global":
             raise ValueError("not implemented yet")
 
         feature_length = audio_feature.shape[0]
         broadcast_feature_length = min(feature_length, max_length)
-        audio_feature_padded = np.full((max_length, feature_dim), padding_value, dtype=np.float32)
+        audio_feature_padded = torch.full((max_length, feature_dim), padding_value, dtype=torch.float32)
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
 
         return audio_feature_padded
