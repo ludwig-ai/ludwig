@@ -30,10 +30,10 @@ from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 logger = logging.getLogger(__name__)
 
 
-class _BagPreprocessing(torch.nn.Module):
+class _SetPreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by TextFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
         super().__init__()
         if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
             raise ValueError(
@@ -46,6 +46,7 @@ class _BagPreprocessing(torch.nn.Module):
         self.vocab_size = metadata["vocab_size"]
         self.unknown_symbol = UNKNOWN_SYMBOL
         self.unit_to_id = metadata["str2idx"]
+        self.is_bag = is_bag
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
         """Takes a list of strings and returns a tensor of counts for each token."""
@@ -61,7 +62,7 @@ class _BagPreprocessing(torch.nn.Module):
         # refines type of unit_sequences from Any to List[List[str]]
         assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
 
-        bag_matrix = torch.zeros(len(unit_sequences), self.vocab_size, dtype=torch.float32)
+        set_matrix = torch.zeros(len(unit_sequences), self.vocab_size, dtype=torch.float32)
         for sample_idx, unit_sequence in enumerate(unit_sequences):
             sequence_length = len(unit_sequence)
             for i in range(sequence_length):
@@ -70,9 +71,13 @@ class _BagPreprocessing(torch.nn.Module):
                     curr_id = self.unit_to_id[curr_unit]
                 else:
                     curr_id = self.unit_to_id[self.unknown_symbol]
-                bag_matrix[sample_idx][curr_id] += 1
 
-        return bag_matrix
+                if self.is_bag:
+                    set_matrix[sample_idx][curr_id] += 1
+                else:
+                    set_matrix[sample_idx][curr_id] = 1
+
+        return set_matrix
 
 
 class BagFeatureMixin(BaseFeatureMixin):
