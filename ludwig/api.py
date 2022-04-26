@@ -318,7 +318,7 @@ class LudwigModel:
         :param skip_save_processed_input: (bool, default: `False`) if input
             dataset is provided it is preprocessed and cached by saving an HDF5
             and JSON files to avoid running the preprocessing again. If this
-            parameter is `False`, the HDF5 and JSON file are not saved.
+            parameter is `False`, the HDF5 and JSON file are saved.
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
@@ -490,7 +490,7 @@ class LudwigModel:
             with self.backend.create_trainer(
                 model=self.model,
                 config=config,
-                resume=model_resume_path is not None,
+                resume=not(model_resume_path is None and experiment_name is None),
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,

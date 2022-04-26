@@ -25,6 +25,7 @@ import torch
 from ludwig.constants import PROC_COLUMN
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
+BASE_PATH = "/ludwig/output"
 
 def set_random_seed(random_seed):
     os.environ["PYTHONHASHSEED"] = str(random_seed)
@@ -106,9 +107,11 @@ def get_class_attributes(c):
     return {i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_")}
 
 
-def get_output_directory(output_directory, experiment_name, model_name="run"):
+def get_output_directory(output_directory, experiment_name, model_name="run", create_unique_output_dir=False):
     base_dir_name = os.path.join(output_directory, experiment_name + ("_" if model_name else "") + (model_name or ""))
-    return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
+    non_existing_dir = find_non_existing_dir_by_adding_suffix(base_dir_name)
+    abs_path = os.path.join(BASE_PATH, non_existing_dir)
+    return abs_path
 
 
 def get_file_names(output_directory):

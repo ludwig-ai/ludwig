@@ -927,22 +927,25 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
+        progress_tracker = get_new_progress_tracker(
+            batch_size=self.batch_size,
+            learning_rate=self.base_learning_rate,
+            best_eval_metric=get_initial_validation_value(self.validation_metric),
+            best_reduce_learning_rate_eval_metric=get_initial_validation_value(
+                self.reduce_learning_rate_eval_metric
+            ),
+            best_increase_batch_size_eval_metric=get_initial_validation_value(
+                self.increase_batch_size_eval_metric),
+            output_features=output_features,
+        )
         if self.resume:
-            progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-            if self.is_coordinator():
-                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-        else:
-            progress_tracker = get_new_progress_tracker(
-                batch_size=self.batch_size,
-                learning_rate=self.base_learning_rate,
-                best_eval_metric=get_initial_validation_value(self.validation_metric),
-                best_reduce_learning_rate_eval_metric=get_initial_validation_value(
-                    self.reduce_learning_rate_eval_metric
-                ),
-                best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
-                output_features=output_features,
-            )
-
+            try:
+                progress_tracker_resumed = self.resume_training_progress_tracker(training_progress_tracker_path)
+                if self.is_coordinator():
+                    self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+                progress_tracker = progress_tracker_resumed
+            except FileNotFoundError:
+                pass
         if self.horovod:
             # Horovod: broadcast initial variable states from rank 0 to all other processes.
             # This is necessary to ensure consistent initialization of all workers when
