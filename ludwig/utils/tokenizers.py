@@ -118,9 +118,10 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
 
 
 class LegacySpacePunctuationStringToListTokenizer(BaseTokenizer):
-    """Regex implementation of space_punct tokenizer.
+    """Regex implementation of "space_punct" tokenizer.
 
-    Not compatible with TorchScript. This is kept for backwards compatibility.
+    Not compatible with TorchScript. This is kept for backwards compatibility in case there are unforeseen differences
+    between this and the torchscript-compatible implementation (see SpacePunctuationStringToListTokenizer).
     """
 
     def __call__(self, text):
