@@ -103,127 +103,173 @@ class BaseTrainer(ABC):
 
 
 def get_trainer_jsonschema():
-    return schema.get_custom_schema_from_marshmallow_class(TrainerConfig)
+    return schema.unload_jsonschema_from_marshmallow_class(TrainerConfig)
 
 
 @dataclass
 class TrainerConfig(schema.BaseMarshmallowConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
-    optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
-    """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
-       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`)."""
+    optimizer: BaseOptimizerConfig = OptimizerDataclassField(
+        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
+    )
 
-    epochs: int = schema.PositiveInteger(default=100)
-    """Number of epochs the algorithm is intended to be run over (default: 100)."""
+    epochs: int = schema.PositiveInteger(
+        default=100, description="Number of epochs the algorithm is intended to be run over."
+    )
 
-    regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
-    """Strength of the $L2$ regularization (default: 0.0)."""
+    regularization_lambda: float = schema.FloatRange(
+        default=0.0, min=0, description="Strength of the $L2$ regularization."
+    )
 
-    regularization_type: Optional[str] = schema.RegularizerOptions(default="l2")
-    """Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."""
+    regularization_type: Optional[str] = schema.RegularizerOptions(default="l2", description="Type of regularization.")
 
-    should_shuffle: bool = True
-    """Whether to shuffle batches during training when true (default: True)."""
+    should_shuffle: bool = schema.Boolean(
+        default=True, description="Whether to shuffle batches during training when true."
+    )
 
     learning_rate: float = schema.NumericOrStringOptionsField(
-        default=0.001, min=0.0, max=1.0, options=["auto"], default_numeric=0.001, default_option="auto", nullable=False
+        default=0.001,
+        min=0.0,
+        max=1.0,
+        options=["auto"],
+        default_numeric=0.001,
+        default_option="auto",
+        nullable=False,
+        description=(
+            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
+            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
+        ),
     )
-    """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
-       `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""
 
     batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
-        default=128, options=["auto"], default_numeric=128, default_option="auto", nullable=False, min_exclusive=0
+        default=128,
+        options=["auto"],
+        default_numeric=128,
+        default_option="auto",
+        nullable=False,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for training.",
     )
-    """Size of batch to pass to the model for training (default: 128)."""
 
     eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
-        default=None, options=["auto"], default_numeric=None, default_option="auto", nullable=True, min_exclusive=0
+        default=None,
+        options=["auto"],
+        default_numeric=None,
+        default_option="auto",
+        nullable=True,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for evaluation.",
     )
-    """Size of batch to pass to the model for evaluation (default: 'auto')."""
 
-    early_stop: int = schema.IntegerRange(default=5, min=-1)
-    """How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to
-       -1, which disables early_stop (default: 5)."""
+    early_stop: int = schema.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be "
+            "set to -1, which disables `early_stop`."
+        ),
+    )
 
-    steps_per_checkpoint: int = schema.NonNegativeInteger(default=0)
-    """How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is checkpointed
-       after every epoch. (default: 0)."""
+    steps_per_checkpoint: int = schema.NonNegativeInteger(
+        default=0,
+        description=(
+            "How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is "
+            "checkpointed after every epoch."
+        ),
+    )
 
-    checkpoints_per_epoch: int = schema.NonNegativeInteger(default=0)
-    """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
-       is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
+    checkpoints_per_epoch: int = schema.NonNegativeInteger(
+        default=0,
+        description=(
+            "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note "
+            "that it is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch`."
+        ),
+    )
 
-    evaluate_training_set: bool = True
-    """Whether to include the entire training set during evaluation (default: True)."""
+    evaluate_training_set: bool = schema.Boolean(
+        default=True, description="Whether to include the entire training set during evaluation."
+    )
 
-    reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
-    """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
-       improve) (default: 0.0)."""
+    reduce_learning_rate_on_plateau: float = schema.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does "
+            "not improve"
+        ),
+    )
 
-    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
-    """How many epochs have to pass before the learning rate reduces (default: 5)."""
+    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(
+        default=5, description="How many epochs have to pass before the learning rate reduces."
+    )
 
-    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)
-    """Rate at which we reduce the learning rate (default: 0.5)."""
+    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(
+        default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
+    )
 
-    reduce_learning_rate_eval_metric: str = LOSS
-    """TODO: Document parameters. (default: `ludwig.constants.LOSS`)."""
+    reduce_learning_rate_eval_metric: str = schema.String(default=LOSS, description="TODO: Document parameters.")
 
-    reduce_learning_rate_eval_split: str = TRAINING
-    """TODO: Document parameters. (default: `ludwig.constants.TRAINING`)."""
+    reduce_learning_rate_eval_split: str = schema.String(default=TRAINING, description="TODO: Document parameters.")
 
-    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
-    """Number to increase the batch size by on a plateau (default: 0)."""
+    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(
+        default=0, description="Number to increase the batch size by on a plateau."
+    )
 
-    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
-    """How many epochs to wait for before increasing the batch size (default: 5)."""
+    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(
+        default=5, description="How many epochs to wait for before increasing the batch size."
+    )
 
-    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(default=2.0)
-    """Rate at which the batch size increases (default: 2.0)."""
+    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(
+        default=2.0, description="Rate at which the batch size increases."
+    )
 
-    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)
-    """Maximum size of the batch (default: 512)."""
+    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(
+        default=512, description="Maximum size of the batch."
+    )
 
-    increase_batch_size_eval_metric: str = LOSS
-    """TODO: Document parameters. (default: 'loss')."""
+    increase_batch_size_eval_metric: str = schema.String(default=LOSS, description="TODO: Document parameters.")
 
-    increase_batch_size_eval_split: str = TRAINING
-    """TODO: Document parameters. (default: 'training')."""
+    increase_batch_size_eval_split: str = schema.String(default=TRAINING, description="TODO: Document parameters.")
 
-    decay: bool = False
-    """Turn on exponential decay of the learning rate (default: False)."""
+    decay: bool = schema.Boolean(default=False, description="Turn on exponential decay of the learning rate.")
 
-    decay_steps: int = schema.PositiveInteger(default=10000)
-    """TODO: Document parameters. (default: 10000)."""
+    decay_steps: int = schema.PositiveInteger(default=10000, description="TODO: Document parameters.")
 
-    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
-    """TODO: Document parameters. (default: 0.96)."""
+    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0, description="TODO: Document parameters.")
 
-    staircase: bool = False
-    """Decays the learning rate at discrete intervals (default: False)."""
+    staircase: bool = schema.Boolean(default=False, description="Decays the learning rate at discrete intervals.")
 
-    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(default={})
-    """Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.
-       (default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)"""
+    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
+        description="Parameter values for gradient clipping."
+    )
 
     # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = COMBINED
-    """First output feature, by default it is set as the same field of the first output feature (default:
-       `ludwig.constants.COMBINED`)."""
+    validation_field: str = schema.String(
+        default=COMBINED,
+        description="First output feature, by default it is set as the same field of the first output feature.",
+    )
 
-    validation_metric: str = LOSS
-    """Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`)."""
+    validation_metric: str = schema.String(
+        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
+    )
 
-    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(default=1.0)
-    """Number of epochs to warmup the learning rate for (default: 1.0)."""
+    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(
+        default=1.0, description="Number of epochs to warmup the learning rate for."
+    )
 
-    learning_rate_scaling: str = schema.StringOptions(["constant", "sqrt", "linear"], default="linear")
-    """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
-       the learning rate is scaled linearly with the number of workers to reflect the proportion by which
-       the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
-       to better model performance. If the learning rate is hand-tuned for a given number of workers, setting this value
-       to constant can be used to disable scale-up (default: linear)."""
+    learning_rate_scaling: str = schema.StringOptions(
+        ["constant", "sqrt", "linear"],
+        default="linear",
+        description=(
+            "Scale by which to increase the learning rate as the number of distributed workers increases. "
+            "Traditionally the learning rate is scaled linearly with the number of workers to reflect the proportion by"
+            " which the effective batch size is increased. For very large batch sizes, a softer square-root scale can "
+            "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
+            "workers, setting this value to constant can be used to disable scale-up."
+        ),
+    )
 
 
 class Trainer(BaseTrainer):

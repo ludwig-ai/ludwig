@@ -5,7 +5,6 @@ wandb<0.12.11
 comet_ml
 mlflow
 whylogs
-pytkdocs
 
 # For testing BOHB with Ray Tune
 hpbandster

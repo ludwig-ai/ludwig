@@ -17,7 +17,7 @@ def get_marshmallow_from_dataclass_field(dfield):
 
 
 def test_torch_description_pull():
-    example_empty_desc_prop = lusutils.get_custom_schema_from_marshmallow_class(lmo.AdamOptimizerConfig)["properties"][
+    example_empty_desc_prop = lusutils.unload_jsonschema_from_marshmallow_class(lmo.AdamOptimizerConfig)["properties"][
         "lr"
     ]
     assert (
