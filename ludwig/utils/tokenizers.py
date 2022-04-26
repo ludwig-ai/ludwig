@@ -926,6 +926,8 @@ try:
                 )
 
         class TSWhitespaceTokenizer(torch.nn.Module):
+            """Implements torchscript-compatible whitespace tokenization."""
+
             def __init__(self, **kwargs):
                 super().__init__()
 
