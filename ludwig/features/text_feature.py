@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 import torch
 
@@ -43,17 +43,15 @@ from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry, set_default_values
+from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
     SpecialSymbol,
-    START_SYMBOL,
-    STOP_SYMBOL,
     UNKNOWN_SYMBOL,
 )
-from ludwig.utils.tokenizers import tokenizer_registry, TORCHSCRIPT_ENABLED_TOKENIZERS
+from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
