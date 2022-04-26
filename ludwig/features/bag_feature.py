@@ -80,15 +80,10 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
-        tokenizer_name = preprocessing_parameters["tokenizer"]
-        try:
-            tokenizer = tokenizer_registry[tokenizer_name]()
-        except ValueError:
-            raise Exception(f"Tokenizer {tokenizer_name} not supported")
-
         def to_vector(set_str):
             bag_vector = np.zeros((len(metadata["str2idx"]),), dtype=np.float32)
-            col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], tokenizer))
+            col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], preprocessing_parameters["tokenizer"]))
+
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
             return bag_vector
 

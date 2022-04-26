@@ -21,7 +21,7 @@ import torch
 
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.data_utils import hash_dict
-from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"
@@ -37,9 +37,14 @@ def should_regularize(regularize_layers):
     return regularize
 
 
-def set_str_to_idx(set_string, feature_dict, tokenizer):
-    """Returns a list of indices corresponding to the set string."""
+def set_str_to_idx(set_string, feature_dict, tokenizer_name):
+    try:
+        tokenizer = tokenizer_registry[tokenizer_name]()
+    except ValueError:
+        raise Exception(f"Tokenizer {tokenizer_name} not supported")
+
     out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in tokenizer(set_string)]
+
     return np.array(out, dtype=np.int32)
 
 
