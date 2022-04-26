@@ -1,0 +1,13 @@
+[
+    {
+        "column": "image_path",
+        "encoder": "stacked_cnn",
+        "name": "image_path",
+        "type": "image"
+    },
+    {
+        "column": "label",
+        "name": "label",
+        "type": "category"
+    }
+]
