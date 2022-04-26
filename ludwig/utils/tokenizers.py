@@ -30,8 +30,12 @@ SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
-# requires torchtext>=0.12.0
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"sentencepiece_tokenizer", "clip_tokenizer", "gpt2bpe_tokenizer"}
+TORCHTEXT_TOKENIZERS = {
+    "sentencepiece_tokenizer",
+    "clip_tokenizer",
+    "gpt2bpe_tokenizer",
+}  # requires torchtext>=0.12.0
+TORCHSCRIPT_ENABLED_TOKENIZERS = {"space_punct", *TORCHTEXT_TOKENIZERS}
 
 
 class BaseTokenizer:
@@ -54,7 +58,51 @@ class SpaceStringToListTokenizer(BaseTokenizer):
         return SPLIT_REGEX.split(text.strip())
 
 
-class SpacePunctuationStringToListTokenizer(BaseTokenizer):
+class SpacePunctuationStringToListTokenizer(torch.nn.Module):
+    """Implements torchscript-compatible space_punct tokenization."""
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def is_regex_w(self, c: str) -> bool:
+        return c.isalnum() or c == "_"
+
+    def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+        if isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+        elif isinstance(v, str):
+            inputs = [v]
+        else:
+            inputs = v
+
+        tokens: List[List[str]] = []
+        for sequence in inputs:
+            token_sequence: List[str] = []
+            word: List[str] = []
+            for c in sequence:
+                if self.is_regex_w(c):
+                    word.append(c)
+                elif len(word) > 0:  # if non-empty word and non-alphanumeric char, append word to token sequence
+                    token_sequence.append("".join(word))
+                    word.clear()
+
+                if not self.is_regex_w(c) and not c.isspace():  # non-alphanumeric, non-space char is punctuation
+                    token_sequence.append(c)
+
+            if len(word) > 0:  # add last word
+                token_sequence.append("".join(word))
+
+            tokens.append(token_sequence)
+
+        return tokens[0] if isinstance(v, str) else tokens
+
+
+class LegacySpacePunctuationStringToListTokenizer(BaseTokenizer):
+    """Regex implementation of space_punct tokenizer.
+
+    Not compatible with TorchScript. This is kept for backwards compatibility.
+    """
+
     def __call__(self, text):
         return SPACE_PUNCTUATION_REGEX.findall(text.strip())
 
@@ -719,9 +767,12 @@ class HFTokenizer(BaseTokenizer):
 
 
 tokenizer_registry = {
+    # Compatible with torchscript
+    "space_punct": SpacePunctuationStringToListTokenizer,
+    # Not compatible with torchscript
     "characters": CharactersToListTokenizer,
     "space": SpaceStringToListTokenizer,
-    "space_punct": SpacePunctuationStringToListTokenizer,
+    "legacy_space_punct": LegacySpacePunctuationStringToListTokenizer,
     "underscore": UnderscoreStringToListTokenizer,
     "comma": CommaStringToListTokenizer,
     "untokenized": UntokenizedStringToListTokenizer,
@@ -933,6 +984,5 @@ try:
 
 except ImportError:
     logger.warning(
-        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
-        f"{TORCHSCRIPT_ENABLED_TOKENIZERS}"
+        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: " f"{TORCHTEXT_TOKENIZERS}"
     )

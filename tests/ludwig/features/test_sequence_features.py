@@ -101,7 +101,7 @@ def test_text_preproc_module_bad_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
-            "tokenizer": "space_punct",
+            "tokenizer": "dutch_lemmatize",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
         },
@@ -111,6 +111,37 @@ def test_text_preproc_module_bad_tokenizer():
 
     with pytest.raises(ValueError):
         _TextPreprocessing(metadata)
+
+
+def test_text_preproc_module_space_punct_tokenizer():
+    metadata = {
+        "preprocessing": {
+            "lowercase": True,
+            "tokenizer": "space_punct",
+            "unknown_symbol": "<UNK>",
+            "padding_symbol": "<PAD>",
+        },
+        "max_sequence_length": SEQ_SIZE,
+        "str2idx": {
+            "<EOS>": 0,
+            "<SOS>": 1,
+            "<PAD>": 2,
+            "<UNK>": 3,
+            "this": 4,
+            "sentence": 5,
+            "has": 6,
+            "punctuation": 7,
+            ",": 8,
+            ".": 9,
+        },
+    }
+    module = _TextPreprocessing(metadata)
+
+    res = module(["punctuation", ",,,,", "this... this... punctuation", "unknown"])
+
+    assert torch.allclose(
+        res, torch.tensor([[1, 7, 0, 2, 2, 2], [1, 8, 8, 8, 8, 0], [1, 4, 9, 9, 9, 4], [1, 3, 0, 2, 2, 2]])
+    )
 
 
 @pytest.mark.skipif(
