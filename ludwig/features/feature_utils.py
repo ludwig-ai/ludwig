@@ -37,14 +37,9 @@ def should_regularize(regularize_layers):
     return regularize
 
 
-def set_str_to_idx(set_string, feature_dict, tokenizer_name):
-    try:
-        tokenizer = tokenizer_registry[tokenizer_name]()
-    except ValueError:
-        raise Exception(f"Tokenizer {tokenizer_name} not supported")
-
+def set_str_to_idx(set_string, feature_dict, tokenizer):
+    """Returns a list of indices corresponding to the set string."""
     out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in tokenizer(set_string)]
-
     return np.array(out, dtype=np.int32)
 
 

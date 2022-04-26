@@ -44,7 +44,7 @@ class _BagPreprocessing(torch.nn.Module):
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
         self.vocab_size = metadata["vocab_size"]
-        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
+        self.unknown_symbol = UNKNOWN_SYMBOL
         self.unit_to_id = metadata["str2idx"]
 
     def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
@@ -126,20 +126,17 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
-        def to_vector(set_str):
-            import inspect
+        tokenizer_name = preprocessing_parameters["tokenizer"]
+        try:
+            tokenizer = tokenizer_registry[tokenizer_name]()
+        except ValueError:
+            raise Exception(f"Tokenizer {tokenizer_name} not supported")
 
-            print(
-                f"======== "
-                f"{inspect.getframeinfo(inspect.currentframe()).filename}:"
-                f"{inspect.getframeinfo(inspect.currentframe()).lineno} ========"
-            )
-            print(metadata)
-            print(set_str)
+        def to_vector(set_str):
             bag_vector = np.zeros((len(metadata["str2idx"]),), dtype=np.float32)
-            col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], preprocessing_parameters["tokenizer"]))
-            print(col_counter)
+            col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], tokenizer))
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
+            print(len(set_str), type(set_str), set_str)
             print(bag_vector)
             return bag_vector
 
