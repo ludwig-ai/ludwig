@@ -1073,7 +1073,7 @@ class Trainer(BaseTrainer):
                     try:
                         self.model.save_inference_module(inference_module_path, **self.inference_module_kwargs)
                         logger.info(f'Saved inference module to: "{inference_module_path}"')
-                    except (NotImplementedError, ValueError) as e:
+                    except Exception as e:
                         logger.warning("Unable to save inference module.")
                         logger.warning(f"Original error: {e}")
 
