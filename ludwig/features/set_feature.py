@@ -167,10 +167,15 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
-        def to_dense(x):
-            feature_vector = set_str_to_idx(x, metadata["str2idx"], preprocessing_parameters["tokenizer"])
+        tokenizer_name = preprocessing_parameters["tokenizer"]
+        try:
+            tokenizer = tokenizer_registry[tokenizer_name]()
+        except ValueError:
+            raise Exception(f"Tokenizer {tokenizer_name} not supported")
 
+        def to_dense(x):
             set_vector = np.zeros((len(metadata["str2idx"]),))
+            feature_vector = set_str_to_idx(x, metadata["str2idx"], tokenizer)
             set_vector[feature_vector] = 1
             return set_vector.astype(np.bool)
 

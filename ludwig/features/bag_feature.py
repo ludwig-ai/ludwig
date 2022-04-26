@@ -90,8 +90,6 @@ class BagFeatureMixin(BaseFeatureMixin):
             bag_vector = np.zeros((len(metadata["str2idx"]),), dtype=np.float32)
             col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], tokenizer))
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
-            print(len(set_str), type(set_str), set_str)
-            print(bag_vector)
             return bag_vector
 
         return backend.df_engine.map_objects(column, to_vector)
