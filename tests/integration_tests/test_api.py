@@ -536,7 +536,9 @@ def test_api_save_torchscript(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
     }
     model = LudwigModel(config)
-    _, _, output_dir = model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+    _, _, output_dir = model.train(
+        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
+    )
 
     test_df = pd.read_csv(test_csv)
     output_df_expected, _ = model.predict(test_df, return_type=pd.DataFrame)
