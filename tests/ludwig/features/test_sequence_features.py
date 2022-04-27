@@ -163,7 +163,7 @@ def test_text_preproc_module_space_punct_tokenizer():
             ".": 9,
         },
     }
-    module = _TextPreprocessing(metadata)
+    module = _SequencePreprocessing(metadata)
 
     res = module(["punctuation", ",,,,", "this... this... punctuation", "unknown"])
 
