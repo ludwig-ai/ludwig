@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import NAME, TYPE
+from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -91,20 +91,20 @@ class InferenceLudwigModel:
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
         self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
-    def _to_input(self, s: pd.Series) -> Union[List[str], torch.Tensor]:
-        if s.dtype == "object":
-            return s.to_list()
+    def _to_input(self, s: pd.Series, feature_type: str) -> Union[List[str], torch.Tensor]:
+        if feature_type in {"category"}:
+            return s.astype(str).to_list()
         return torch.from_numpy(s.to_numpy())
 
     def predict(
-        self, batch: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
+        self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
         """Predict on a batch of data.
 
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
         inputs = {
-            if_config["name"]: self._to_input(batch[if_config["column"]]) for if_config in self.config["input_features"]
+            if_config["name"]: self._to_input(dataset[if_config[COLUMN]], if_config[TYPE]) for if_config in self.config["input_features"]
         }
 
         preds = self.model(inputs)
