@@ -6,8 +6,8 @@ import torch
 import torchtext
 
 from ludwig.constants import LAST_HIDDEN, LOGITS
-from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
-from ludwig.features.text_feature import _TextPreprocessing, TextInputFeature, TextOutputFeature
+from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
+from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -97,7 +97,7 @@ def test_sequence_output_feature(sequence_type: Union[SequenceOutputFeature, Tex
     assert text_output[LOGITS].size() == torch.Size([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE])
 
 
-def test_text_preproc_module_bad_tokenizer():
+def test_sequence_preproc_module_bad_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -110,10 +110,10 @@ def test_text_preproc_module_bad_tokenizer():
     }
 
     with pytest.raises(ValueError):
-        _TextPreprocessing(metadata)
+        _SequencePreprocessing(metadata)
 
 
-def test_text_preproc_module_space_tokenizer():
+def test_sequence_preproc_module_space_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -132,7 +132,7 @@ def test_text_preproc_module_space_tokenizer():
             "paleontology": 6,
         },
     }
-    module = _TextPreprocessing(metadata)
+    module = _SequencePreprocessing(metadata)
 
     res = module(["    paleontology", "unknown", "hello    world hello", "hello world hello     world    "])
 
@@ -144,7 +144,7 @@ def test_text_preproc_module_space_tokenizer():
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-def test_text_preproc_module_sentencepiece_tokenizer():
+def test_sequence_preproc_module_sentencepiece_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -166,7 +166,7 @@ def test_text_preproc_module_sentencepiece_tokenizer():
             "ology": 9,
         },
     }
-    module = _TextPreprocessing(metadata)
+    module = _SequencePreprocessing(metadata)
 
     res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
@@ -178,7 +178,7 @@ def test_text_preproc_module_sentencepiece_tokenizer():
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-def test_text_preproc_module_clip_tokenizer():
+def test_sequence_preproc_module_clip_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -198,7 +198,7 @@ def test_text_preproc_module_clip_tokenizer():
             "ontology</w>": 8,
         },
     }
-    module = _TextPreprocessing(metadata)
+    module = _SequencePreprocessing(metadata)
 
     res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
@@ -210,7 +210,7 @@ def test_text_preproc_module_clip_tokenizer():
 @pytest.mark.skipif(
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-def test_text_preproc_module_gpt2bpe_tokenizer():
+def test_sequence_preproc_module_gpt2bpe_tokenizer():
     metadata = {
         "preprocessing": {
             "lowercase": True,
@@ -233,7 +233,7 @@ def test_text_preproc_module_gpt2bpe_tokenizer():
             "ology": 11,
         },
     }
-    module = _TextPreprocessing(metadata)
+    module = _SequencePreprocessing(metadata)
 
     res = module(["paleontology", "unknown", "hello world hello", "hello world hello world"])
 
