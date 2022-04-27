@@ -30,9 +30,9 @@ SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 TORCHTEXT_TOKENIZERS = {
-    "sentencepiece_tokenizer",
-    "clip_tokenizer",
-    "gpt2bpe_tokenizer",
+    "sentencepiece",
+    "clip",
+    "gpt2bpe",
 }  # requires torchtext>=0.12.0
 TORCHSCRIPT_ENABLED_TOKENIZERS = {"space", "space_punct", *TORCHTEXT_TOKENIZERS}
 
@@ -982,9 +982,9 @@ try:
 
         tokenizer_registry.update(
             {
-                "sentencepiece_tokenizer": SentencePieceTokenizer,
-                "clip_tokenizer": CLIPTokenizer,
-                "gpt2bpe_tokenizer": GPT2BPETokenizer,
+                "sentencepiece": SentencePieceTokenizer,
+                "clip": CLIPTokenizer,
+                "gpt2bpe": GPT2BPETokenizer,
             }
         )
 
