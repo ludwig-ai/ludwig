@@ -17,16 +17,17 @@ import functools
 import logging
 import os
 import sys
+from typing import List, Tuple, Union
+
 import numpy as np
 import torch
 import torch.nn.functional as F
-from typing import Union, Tuple, List
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
 
-from ludwig.utils.fs_utils import upgrade_http, is_http
-from ludwig.utils.data_utils import get_abs_path
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
+from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import is_http, upgrade_http
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,7 @@ def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.
 
 @functools.lru_cache(maxsize=32)
 def read_audio(audio: Union[str, torch.Tensor], src_path):
-    """
-    Function for reading audio files.
+    """Function for reading audio files.
 
     Args:
         src_path: Local file source path
@@ -68,10 +68,7 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
     try:
         from torchaudio.backend.sox_io_backend import load
     except ImportError:
-        logger.error(
-            "torchaudio is not installed. "
-            "Please install torchaudio to train models with audio features"
-        )
+        logger.error("torchaudio is not installed. " "Please install torchaudio to train models with audio features")
         sys.exit(-1)
 
     try:
@@ -133,7 +130,7 @@ def get_group_delay(raw_data, sampling_rate_in_hz, window_length_in_s, window_sh
 
 
 def get_phase_stft_magnitude(
-        raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
+    raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
 ):
     stft = _get_stft(
         raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type
@@ -145,7 +142,7 @@ def get_phase_stft_magnitude(
 
 
 def get_stft_magnitude(
-        raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
+    raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
 ):
     stft = _get_stft(
         raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type
@@ -160,8 +157,7 @@ def get_stft_magnitude(
 # https://github.com/jameslyons/python_speech_features/blob/40c590269b57c64a8c1f1ddaaff2162008d1850c/python_speech_features/base.py#L84################################################################################
 ################################################################################
 def get_fbank(
-        raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type,
-        num_filter_bands
+    raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, num_filter_bands
 ):
     stft = _get_stft(
         raw_data,
@@ -218,14 +214,14 @@ def _convert_mel_to_hz(mel):
 
 
 def _get_stft(
-        raw_data,
-        sampling_rate_in_hz,
-        window_length_in_s,
-        window_shift_in_s,
-        num_fft_points,
-        window_type,
-        data_transformation=None,
-        zero_mean_offset=False,
+    raw_data,
+    sampling_rate_in_hz,
+    window_length_in_s,
+    window_shift_in_s,
+    num_fft_points,
+    window_type,
+    data_transformation=None,
+    zero_mean_offset=False,
 ):
     pre_emphasized_data = _pre_emphasize_data(raw_data)
     stft = _short_time_fourier_transform(
@@ -243,14 +239,14 @@ def _get_stft(
 
 
 def _short_time_fourier_transform(
-        data,
-        sampling_rate_in_hz,
-        window_length_in_s,
-        window_shift_in_s,
-        num_fft_points,
-        window_type,
-        data_transformation=None,
-        zero_mean_offset=False,
+    data,
+    sampling_rate_in_hz,
+    window_length_in_s,
+    window_shift_in_s,
+    num_fft_points,
+    window_type,
+    data_transformation=None,
+    zero_mean_offset=False,
 ):
     window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
     window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)

@@ -47,8 +47,8 @@ from ludwig.utils.audio_utils import (
     get_stft_magnitude,
     read_audio,
 )
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.fs_utils import has_remote_protocol
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -157,9 +157,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             logger.info("Unable to process audio files provided")
             raise RuntimeError
 
-        raw_audio = df_engine.map_objects(
-            raw_audio,
-            lambda row: row if row is not None else default_audio)
+        raw_audio = df_engine.map_objects(raw_audio, lambda row: row if row is not None else default_audio)
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
