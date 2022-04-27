@@ -24,7 +24,7 @@ from typing import Union, Tuple, List
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
 
-from ludwig.utils.fs_utils import upgrade_http
+from ludwig.utils.fs_utils import upgrade_http, is_http
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 
@@ -75,13 +75,15 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
         sys.exit(-1)
 
     try:
+        if is_http(audio_path):
+            load(audio_path)
         if src_path:
             filepath = get_abs_path(src_path, audio_path)
             return load(filepath)
-        elif src_path is None and not os.path.isabs(audio_path):
-            raise ValueError("Audio file paths must be absolute")
-        else:
+        if src_path is None and os.path.isabs(audio_path):
             return load(audio_path)
+        if src_path is None and not os.path.isabs(audio_path):
+            raise ValueError("Audio file paths must be absolute")
     except Exception as e:
         upgraded = upgrade_http(audio_path)
         if upgraded:
