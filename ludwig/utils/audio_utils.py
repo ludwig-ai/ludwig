@@ -87,12 +87,12 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
     except Exception as e:
         upgraded = upgrade_http(audio_path)
         if upgraded:
-            logger.info(f"reading audio url {audio_path} failed due to {e}. upgrading to https and retrying")
+            logger.info(f"{e}. upgrading to https and retrying")
             return read_audio_from_str(upgraded, src_path, False)
         if retry:
-            logger.info(f"reading audio url {audio_path} failed due to {e}, retrying...")
+            logger.info(f"{e}, retrying...")
             return read_audio_from_str(audio_path, src_path, False)
-        logger.info(f"reading audio url {audio_path} failed due to {e}")
+        logger.info(e)
         return None
 
 
