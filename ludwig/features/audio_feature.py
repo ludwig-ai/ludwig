@@ -37,6 +37,7 @@ from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
+    get_default_audio,
     get_fbank,
     get_group_delay,
     get_length_in_samp,
@@ -149,6 +150,16 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         df_engine = backend.df_engine
         raw_audio = df_engine.map_objects(column, read_audio_file)
+
+        try:
+            default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])
+        except RuntimeError:
+            logger.info("Unable to process audio files provided")
+            raise RuntimeError
+
+        raw_audio = df_engine.map_objects(
+            raw_audio,
+            lambda row: row if row is not None else default_audio)
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(

@@ -19,14 +19,32 @@ import os
 import sys
 import numpy as np
 import torch
-from typing import Union, Tuple
+import torch.nn.functional as F
+from typing import Union, Tuple, List
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
 
-from ludwig.utils.fs_utils import upgrade_http, is_http
+from ludwig.utils.fs_utils import upgrade_http
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 
 logger = logging.getLogger(__name__)
+
+
+def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor, int]:
+    sampling_rates = [audio[1] for audio in audio_lst]
+    tensor_list = [audio[0] for audio in audio_lst]
+
+    for i, tensor in enumerate(tensor_list):
+        if tensor.shape[1] > DEFAULT_AUDIO_TENSOR_LENGTH:
+            tensor_list[i] = tensor[:, :DEFAULT_AUDIO_TENSOR_LENGTH]
+        else:
+            pad_size = DEFAULT_AUDIO_TENSOR_LENGTH - tensor.shape[1]
+            tensor_list[i] = F.pad(tensor, (0, pad_size))
+    default_audio_tensor = torch.mean(torch.stack(tensor_list), dim=0)
+    default_sampling_rate = calculate_mean(sum(sampling_rates), len(sampling_rates))
+
+    return default_audio_tensor, default_sampling_rate
 
 
 @functools.lru_cache(maxsize=32)
@@ -46,7 +64,7 @@ def read_audio(audio: Union[str, torch.Tensor], src_path):
         return read_audio_from_str(audio, src_path)
 
 
-def read_audio_from_str(audio_path: str, src_path: str) -> Tuple[torch.Tensor, int]:
+def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> Tuple[torch.Tensor, int]:
     try:
         from torchaudio.backend.sox_io_backend import load
     except ImportError:
@@ -57,18 +75,21 @@ def read_audio_from_str(audio_path: str, src_path: str) -> Tuple[torch.Tensor, i
         sys.exit(-1)
 
     try:
-        if is_http(audio_path):
-            return load(audio_path)
         if src_path:
             filepath = get_abs_path(src_path, audio_path)
             return load(filepath)
-        if src_path is None and not os.path.isabs(audio_path):
+        elif src_path is None and not os.path.isabs(audio_path):
             raise ValueError("Audio file paths must be absolute")
+        else:
+            return load(audio_path)
     except Exception as e:
         upgraded = upgrade_http(audio_path)
         if upgraded:
             logger.info(f"reading audio url {audio_path} failed due to {e}. upgrading to https and retrying")
-            return read_audio_from_str(upgraded)
+            return read_audio_from_str(upgraded, src_path, False)
+        if retry:
+            logger.info(f"reading audio url {audio_path} failed due to {e}, retrying...")
+            return read_audio_from_str(audio_path, src_path, False)
         logger.info(f"reading audio url {audio_path} failed due to {e}")
         return None
 
