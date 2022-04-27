@@ -4,6 +4,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 import lightgbm as lgb
 import lightgbm_ray as lgb_ray
 import torch
+from lightgbm_ray.tune import _TuneLGBMRank0Mixin
 
 from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, NUMBER
 from ludwig.data.dataset.ray import RayDataset
@@ -242,6 +243,21 @@ class LightGBMTrainer(Trainer):
         torch.save(self.model.state_dict(), model_weights_path)
 
 
+class LogEvalDistributed(_TuneLGBMRank0Mixin):
+    def __init__(self, period: int, show_stdv: bool = True):
+        self.period = period
+        self.show_stdv = show_stdv
+
+    def __call__(self, env: lgb.callback.CallbackEnv):
+        if not self.is_rank_0:
+            return
+        if self.period > 0 and env.evaluation_result_list and (env.iteration + 1) % self.period == 0:
+            result = "\t".join(
+                [lgb.callback._format_eval_result(x, self.show_stdv) for x in env.evaluation_result_list]
+            )
+            lgb.callback._log_info(f"[{env.iteration + 1}]\t{result}")
+
+
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
@@ -312,7 +328,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             # categorical_feature=categorical_features,
             callbacks=[
                 lgb.early_stopping(stopping_rounds=self.early_stop),
-                lgb.log_evaluation(10),
+                LogEvalDistributed(10),
             ],
             ray_params=lgb_ray.RayParams(**self.ray_kwargs),
         )
