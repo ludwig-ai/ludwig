@@ -6,6 +6,7 @@ import shutil
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
+from ludwig.data.cache.types import CacheableDataframe
 from ludwig.datasets import higgs  # adult_census_income
 
 shutil.rmtree("./results", ignore_errors=True)
@@ -26,6 +27,7 @@ model = LudwigModel(config="./config_higgs.yaml", logging_level=logging.INFO, ba
 
 # df = adult_census_income.load(split=False)
 df = higgs.load(split=False, add_validation_set=True)
+df = CacheableDataframe(df=df, name="cache_higgs", checksum="9YeB0J_fiQ9Dh_lL84NdZg==")
 
 (
     train_stats,  # dictionary containing training statistics
