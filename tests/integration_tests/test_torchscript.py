@@ -219,9 +219,9 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
         *torchscript_enabled_text_features,
+        sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
         audio_feature(audio_dest_folder),
         # TODO: future support
-        # sequence_feature(vocab_size=3),
         # vector_feature(),
         # timeseries_feature(),
         # date_feature(),

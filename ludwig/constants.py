@@ -165,3 +165,5 @@ HYPEROPT_WARNING = (
     "It will be ignored. If you want to run hyperopt you should use the following command: ludwig "
     "hyperopt\n\n Do you want to continue? "
 )
+
+DEFAULT_AUDIO_TENSOR_LENGTH = 70000

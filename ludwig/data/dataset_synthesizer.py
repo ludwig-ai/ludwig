@@ -262,7 +262,6 @@ def generate_audio(feature):
     num_samples = int(audio_length * sampling_rate)
     audio = np.sin(np.arange(num_samples) / 100 * 2 * np.pi) * 2 * (np.random.random(num_samples) - 0.5)
     audio_tensor = torch.tensor(np.array([audio])).type(torch.float32)
-
     audio_filename = uuid.uuid4().hex[:10].upper() + ".wav"
 
     try:
