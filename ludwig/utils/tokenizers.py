@@ -117,17 +117,6 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
         return tokens[0] if isinstance(v, str) else tokens
 
 
-class LegacySpacePunctuationStringToListTokenizer(BaseTokenizer):
-    """Regex implementation of "space_punct" tokenizer.
-
-    Not compatible with TorchScript. This is kept for backwards compatibility in case there are unforeseen differences
-    between this and the torchscript-compatible implementation (see SpacePunctuationStringToListTokenizer).
-    """
-
-    def __call__(self, text):
-        return SPACE_PUNCTUATION_REGEX.findall(text.strip())
-
-
 class UnderscoreStringToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return UNDERSCORE_REGEX.split(text.strip())
@@ -793,7 +782,6 @@ tokenizer_registry = {
     "space_punct": SpacePunctuationStringToListTokenizer,
     # Tokenizers not compatible with torchscript
     "characters": CharactersToListTokenizer,
-    "legacy_space_punct": LegacySpacePunctuationStringToListTokenizer,
     "underscore": UnderscoreStringToListTokenizer,
     "comma": CommaStringToListTokenizer,
     "untokenized": UntokenizedStringToListTokenizer,
