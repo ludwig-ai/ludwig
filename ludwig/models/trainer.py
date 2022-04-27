@@ -166,8 +166,8 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
         default=5,
         min=-1,
         description=(
-            "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be "
-            "set to -1, which disables `early_stop`."
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
         ),
     )
 
@@ -706,6 +706,7 @@ class Trainer(BaseTrainer):
         save_path,
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
+        early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -823,7 +824,7 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_on_plateau_max,
                 self.increase_batch_size_eval_metric,
                 self.increase_batch_size_eval_split,
-                self.early_stop,
+                early_stopping_steps,
                 self.skip_save_model,
             )
         else:
@@ -970,6 +971,8 @@ class Trainer(BaseTrainer):
                     self.is_coordinator(),
                 )
 
+                early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+
                 if self.is_coordinator():
                     logger.info(
                         f"Training for {total_steps} step(s), approximately "
@@ -1018,6 +1021,7 @@ class Trainer(BaseTrainer):
                         metrics_names,
                         checkpoint_manager,
                         final_steps_per_checkpoint,
+                        early_stopping_steps,
                     )
 
                     # ================ Post Training Epoch ================
@@ -1088,6 +1092,7 @@ class Trainer(BaseTrainer):
         metrics_names,
         checkpoint_manager,
         final_steps_per_checkpoint: int,
+        early_stopping_steps: int,
     ) -> bool:
         """Completes one epoch through the data."""
         while not batcher.last_batch():
@@ -1181,6 +1186,7 @@ class Trainer(BaseTrainer):
                     save_path,
                     loss,
                     all_losses,
+                    early_stopping_steps,
                 )
                 if should_break:
                     return should_break
@@ -1282,7 +1288,7 @@ class Trainer(BaseTrainer):
         increase_batch_size_on_plateau_max,
         increase_batch_size_eval_metric,
         increase_batch_size_eval_split,
-        early_stop,
+        early_stopping_steps: int,
         skip_save_model,
     ):
         """Checks the history of validation scores.
@@ -1372,7 +1378,7 @@ class Trainer(BaseTrainer):
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
-        early_stop_bool = 0 < early_stop <= progress_tracker.last_improvement
+        early_stop_bool = 0 < early_stopping_steps <= progress_tracker.last_improvement
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
