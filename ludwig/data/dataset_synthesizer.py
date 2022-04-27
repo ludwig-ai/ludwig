@@ -24,6 +24,7 @@ from typing import List
 
 import numpy as np
 import torch
+import torchaudio
 import yaml
 
 from ludwig.constants import (
@@ -252,16 +253,6 @@ def generate_timeseries(feature):
 
 
 def generate_audio(feature):
-    try:
-        import soundfile
-    except ImportError:
-        logger.error(
-            " soundfile is not installed. "
-            "In order to install all audio feature dependencies run "
-            "pip install ludwig[audio]"
-        )
-        sys.exit(-1)
-
     destination_folder = feature.get("destination_folder", "audio_files")
     if PREPROCESSING in feature:
         audio_length = feature[PREPROCESSING].get("audio_file_length_limit_in_s", 2)
@@ -270,6 +261,7 @@ def generate_audio(feature):
     sampling_rate = 16000
     num_samples = int(audio_length * sampling_rate)
     audio = np.sin(np.arange(num_samples) / 100 * 2 * np.pi) * 2 * (np.random.random(num_samples) - 0.5)
+    audio_tensor = torch.tensor(np.array([audio])).type(torch.float32)
     audio_filename = uuid.uuid4().hex[:10].upper() + ".wav"
 
     try:
@@ -277,7 +269,7 @@ def generate_audio(feature):
             os.makedirs(destination_folder)
 
         audio_dest_path = os.path.join(destination_folder, audio_filename)
-        soundfile.write(audio_dest_path, audio, sampling_rate)
+        torchaudio.save(audio_dest_path, audio_tensor, sampling_rate)
 
     except OSError as e:
         raise OSError("Unable to create a folder for audio or save audio to disk." "{}".format(e))

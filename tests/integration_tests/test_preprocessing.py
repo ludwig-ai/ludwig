@@ -1,10 +1,20 @@
 import contextlib
 import os
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from tests.integration_tests.utils import category_feature, generate_data, ray_cluster, sequence_feature
+from ludwig.constants import COLUMN, PROC_COLUMN
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    LocalTestBackend,
+    ray_cluster,
+    sequence_feature,
+)
 
 
 @contextlib.contextmanager
@@ -51,3 +61,26 @@ def test_sample_ratio(backend, tmpdir):
         sample_size = num_examples * sample_ratio
         count = len(train_set) + len(val_set) + len(test_set)
         assert sample_size == count
+
+
+def test_strip_whitespace_category(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    input_features = [binary_feature()]
+    cat_feat = category_feature(vocab_size=3)
+    output_features = [cat_feat]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # prefix with whitespace
+    df[cat_feat[COLUMN]] = df[cat_feat[COLUMN]].apply(lambda s: " " + s)
+
+    # run preprocessing
+    ludwig_model = LudwigModel(config, backend=backend)
+    train_ds, _, _, metadata = ludwig_model.preprocess(dataset=df)
+
+    # expect values containing whitespaces to be properly mapped to vocab_size unique values
+    assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat["vocab_size"]
