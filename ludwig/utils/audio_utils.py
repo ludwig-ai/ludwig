@@ -76,7 +76,7 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
 
     try:
         if is_http(audio_path):
-            load(audio_path)
+            return load(audio_path)
         if src_path:
             filepath = get_abs_path(src_path, audio_path)
             return load(filepath)
