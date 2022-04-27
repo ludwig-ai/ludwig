@@ -92,7 +92,7 @@ class _BinaryPostprocessing(torch.nn.Module):
         probs = preds[self.probabilities_key]
         if len(probs.shape) == 1:
             probs = probs.unsqueeze(-1)
-            
+
         probs = torch.cat([1 - probs, probs], dim=-1)
 
         return {
