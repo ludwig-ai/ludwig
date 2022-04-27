@@ -27,7 +27,7 @@ outputs with their data type. The data type determines how inputs and outputs ar
 which metrics and losses to use. Ludwig will assemble and train a deep learning model based on the combination of data
 types for many machine learning tasks.
 
-![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/ludwig05/docs/images/ludwig_legos.gif)
+![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos.gif)
 
 Configurations are simple and flexible, enabling deep control of every aspect of the end-to-end pipeline; from
 experimenting with different training recipes, exploring state-of-the-art model architectures, to scaling up to large
