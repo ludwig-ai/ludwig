@@ -198,26 +198,26 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
-)
+# @pytest.mark.skipif(
+#     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
+# )
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
-    torchscript_enabled_text_features = [
-        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
-        for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
-    ]
+    # torchscript_enabled_text_features = [
+    #     text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
+    #     for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
+    # ]
     input_features = [
         bin_str_feature,
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
-        *torchscript_enabled_text_features
+        # *torchscript_enabled_text_features
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
