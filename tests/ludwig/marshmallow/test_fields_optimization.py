@@ -6,7 +6,7 @@ from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
 import ludwig.modules.optimization_modules as lmo
-from ludwig.schema import utils
+from ludwig.schema import utils as schema_utils
 
 # Tests for custom dataclass/marshmallow fields:
 
@@ -17,9 +17,9 @@ def get_marshmallow_from_dataclass_field(dfield):
 
 
 def test_torch_description_pull():
-    example_empty_desc_prop = utils.unload_jsonschema_from_marshmallow_class(lmo.AdamOptimizerConfig)["properties"][
-        "lr"
-    ]
+    example_empty_desc_prop = schema_utils.unload_jsonschema_from_marshmallow_class(lmo.AdamOptimizerConfig)[
+        "properties"
+    ]["lr"]
     assert (
         isinstance(example_empty_desc_prop, dict)
         and "description" in example_empty_desc_prop
@@ -58,7 +58,7 @@ def test_OptimizerDataclassField():
 
     # Test creating a schema with default options:
     @dataclass
-    class CustomTestSchema(utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: Optional[lmo.BaseOptimizerConfig] = lmo.OptimizerDataclassField()
 
     with pytest.raises(MarshmallowValidationError):
@@ -68,7 +68,7 @@ def test_OptimizerDataclassField():
 
     # Test creating a schema with set default:
     @dataclass
-    class CustomTestSchema(utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: Optional[lmo.BaseOptimizerConfig] = lmo.OptimizerDataclassField({"type": "adamax", "betas": (0.1, 0.1)})
 
     with pytest.raises(MarshmallowValidationError):
@@ -115,7 +115,7 @@ def test_ClipperDataclassField():
 
     # Test creating a schema with default options:
     @dataclass
-    class CustomTestSchema(utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: Optional[lmo.GradientClippingConfig] = lmo.GradientClippingConfig()
 
     with pytest.raises(MarshmallowValidationError):
@@ -125,7 +125,7 @@ def test_ClipperDataclassField():
 
     # Test creating a schema with set default:
     @dataclass
-    class CustomTestSchema(utils.BaseMarshmallowConfig):
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
         foo: Optional[lmo.GradientClippingConfig] = lmo.GradientClippingDataclassField({"clipglobalnorm": 0.1})
 
     with pytest.raises(MarshmallowValidationError):

@@ -30,7 +30,7 @@ from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
-from ludwig.schema import utils
+from ludwig.schema import utils as schema_utils
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
@@ -81,9 +81,9 @@ def get_combiner_conds():
     for combiner_type in combiner_types:
         combiner_cls = combiner_registry[combiner_type]
         schema_cls = combiner_cls.get_schema_cls()
-        combiner_schema = utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        combiner_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         combiner_props = combiner_schema["properties"]
-        combiner_cond = utils.create_cond({"type": combiner_type}, combiner_props)
+        combiner_cond = schema_utils.create_cond({"type": combiner_type}, combiner_props)
         conds.append(combiner_cond)
     return conds
 
@@ -122,7 +122,7 @@ class Combiner(LudwigModule, ABC):
         return output_tensor["combiner_output"].size()[1:]
 
 
-class BaseCombinerConfig(utils.BaseMarshmallowConfig):
+class BaseCombinerConfig(schema_utils.BaseMarshmallowConfig):
     """Base combiner config class."""
 
     pass
@@ -132,33 +132,35 @@ class BaseCombinerConfig(utils.BaseMarshmallowConfig):
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
-    fc_layers: Optional[List[Dict[str, Any]]] = utils.DictList(description="TODO: Document parameters.")
+    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(description="TODO: Document parameters.")
 
-    num_fc_layers: int = utils.NonNegativeInteger(default=0, description="TODO: Document parameters.")
+    num_fc_layers: int = schema_utils.NonNegativeInteger(default=0, description="TODO: Document parameters.")
 
-    output_size: int = utils.PositiveInteger(default=256, description="Output size of a fully connected layer.")
+    output_size: int = schema_utils.PositiveInteger(default=256, description="Output size of a fully connected layer.")
 
-    use_bias: bool = utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
+    use_bias: bool = schema_utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform", description="TODO: Document parameters."
     )
 
-    bias_initializer: Union[str, Dict] = utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros", description="TODO: Document parameters."
     )
 
-    norm: Optional[str] = utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
+    norm: Optional[str] = schema_utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
 
-    norm_params: Optional[dict] = utils.Dict(description="TODO: Document parameters.")
+    norm_params: Optional[dict] = schema_utils.Dict(description="TODO: Document parameters.")
 
-    activation: str = utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
+    activation: str = schema_utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
 
-    dropout: float = utils.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
+    dropout: float = schema_utils.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
 
-    flatten_inputs: bool = utils.Boolean(default=False, description="Whether to flatten input tensors to a vector.")
+    flatten_inputs: bool = schema_utils.Boolean(
+        default=False, description="Whether to flatten input tensors to a vector."
+    )
 
-    residual: bool = utils.Boolean(
+    residual: bool = schema_utils.Boolean(
         default=False,
         description=(
             "Whether to add a residual connection to each fully connected layer block. All fully connected layers must"
@@ -245,9 +247,9 @@ class ConcatCombiner(Combiner):
 class SequenceConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence concat combiner."""
 
-    main_sequence_feature: Optional[str] = utils.String(default=None, description="TODO: Document parameters.")
+    main_sequence_feature: Optional[str] = schema_utils.String(default=None, description="TODO: Document parameters.")
 
-    reduce_output: Optional[str] = utils.ReductionOptions(default=None, description="TODO: Document parameters.")
+    reduce_output: Optional[str] = schema_utils.ReductionOptions(default=None, description="TODO: Document parameters.")
 
 
 @register_combiner(name="sequence_concat")
@@ -400,11 +402,11 @@ class SequenceConcatCombiner(Combiner):
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
-    main_sequence_feature: Optional[str] = utils.String(default=None, description="TODO: Document parameters.")
+    main_sequence_feature: Optional[str] = schema_utils.String(default=None, description="TODO: Document parameters.")
 
-    reduce_output: Optional[str] = utils.ReductionOptions(default=None, description="TODO: Document parameters.")
+    reduce_output: Optional[str] = schema_utils.ReductionOptions(default=None, description="TODO: Document parameters.")
 
-    encoder: Optional[str] = utils.StringOptions(
+    encoder: Optional[str] = schema_utils.StringOptions(
         list(sequence_encoder_registry.keys()), default=None, description="TODO: Document parameters."
     )
 
@@ -478,13 +480,13 @@ class SequenceCombiner(Combiner):
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
 
-    size: int = utils.PositiveInteger(default=32, description="`N_a` in the paper.")
+    size: int = schema_utils.PositiveInteger(default=32, description="`N_a` in the paper.")
 
-    output_size: int = utils.PositiveInteger(
+    output_size: int = schema_utils.PositiveInteger(
         default=32, description="Output size of a fully connected layer. `N_d` in the paper"
     )
 
-    num_steps: int = utils.NonNegativeInteger(
+    num_steps: int = schema_utils.NonNegativeInteger(
         default=1,
         description=(
             "Number of steps / repetitions of the the attentive transformer and feature transformer computations. "
@@ -492,15 +494,15 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         ),
     )
 
-    num_total_blocks: int = utils.NonNegativeInteger(
+    num_total_blocks: int = schema_utils.NonNegativeInteger(
         default=4, description="Total number of feature transformer block at each step"
     )
 
-    num_shared_blocks: int = utils.NonNegativeInteger(
+    num_shared_blocks: int = schema_utils.NonNegativeInteger(
         default=2, description="Number of shared feature transformer blocks across the steps"
     )
 
-    relaxation_factor: float = utils.FloatRange(
+    relaxation_factor: float = schema_utils.FloatRange(
         default=1.5,
         description=(
             "Factor that influences how many times a feature should be used across the steps of computation. a value of"
@@ -509,11 +511,15 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         ),
     )
 
-    bn_epsilon: float = utils.FloatRange(default=1e-3, description="Epsilon to be added to the batch norm denominator.")
+    bn_epsilon: float = schema_utils.FloatRange(
+        default=1e-3, description="Epsilon to be added to the batch norm denominator."
+    )
 
-    bn_momentum: float = utils.FloatRange(default=0.7, description="Momentum of the batch norm. `m_B` in the paper.")
+    bn_momentum: float = schema_utils.FloatRange(
+        default=0.7, description="Momentum of the batch norm. `m_B` in the paper."
+    )
 
-    bn_virtual_bs: Optional[int] = utils.PositiveInteger(
+    bn_virtual_bs: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         description=(
             "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
@@ -521,19 +527,21 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         ),
     )
 
-    sparsity: float = utils.FloatRange(
+    sparsity: float = schema_utils.FloatRange(
         default=1e-5, description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper"
     )
 
-    entmax_mode: str = utils.StringOptions(
+    entmax_mode: str = schema_utils.StringOptions(
         ["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax", description="TODO: Document parameters."
     )
 
-    entmax_alpha: float = utils.FloatRange(
+    entmax_alpha: float = schema_utils.FloatRange(
         default=1.5, min=1, max=2, description="TODO: Document parameters."
     )  # 1 corresponds to softmax, 2 is sparsemax.
 
-    dropout: float = utils.FloatRange(default=0.0, min=0, max=1, description="Dropout rate for the transformer block.")
+    dropout: float = schema_utils.FloatRange(
+        default=0.0, min=0, max=1, description="Dropout rate for the transformer block."
+    )
 
 
 @register_combiner(name="tabnet")
@@ -620,9 +628,9 @@ class TabNetCombiner(Combiner):
 class CommonTransformerConfig:
     """Common transformer parameter values."""
 
-    num_layers: int = utils.PositiveInteger(default=1, description="TODO: Document parameters.")
+    num_layers: int = schema_utils.PositiveInteger(default=1, description="TODO: Document parameters.")
 
-    hidden_size: int = utils.NonNegativeInteger(
+    hidden_size: int = schema_utils.NonNegativeInteger(
         default=256,
         description=(
             "The number of hidden units of the TransformerStack as well as the dimension that each incoming input "
@@ -630,11 +638,11 @@ class CommonTransformerConfig:
         ),
     )
 
-    num_heads: int = utils.NonNegativeInteger(
+    num_heads: int = schema_utils.NonNegativeInteger(
         default=8, description="Number of heads of the self attention in the transformer block."
     )
 
-    transformer_output_size: int = utils.NonNegativeInteger(
+    transformer_output_size: int = schema_utils.NonNegativeInteger(
         default=256,
         description=(
             "Size of the fully connected layer after self attention in the transformer block. This is usually the same "
@@ -642,37 +650,39 @@ class CommonTransformerConfig:
         ),
     )
 
-    dropout: float = utils.FloatRange(default=0.1, min=0, max=1, description="Dropout rate for the transformer block.")
+    dropout: float = schema_utils.FloatRange(
+        default=0.1, min=0, max=1, description="Dropout rate for the transformer block."
+    )
 
-    fc_layers: Optional[List[Dict[str, Any]]] = utils.DictList(description="TODO: Document parameters.")
+    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(description="TODO: Document parameters.")
 
     # TODO(#1673): Add conditional logic for fields like this one:
-    num_fc_layers: int = utils.NonNegativeInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The number of stacked fully connected layers (only applies if `reduce_output` is not null).",
     )
 
-    output_size: int = utils.PositiveInteger(default=256, description="Output size of a fully connected layer.")
+    output_size: int = schema_utils.PositiveInteger(default=256, description="Output size of a fully connected layer.")
 
-    use_bias: bool = utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
+    use_bias: bool = schema_utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform", description="TODO: Document parameters."
     )
 
-    bias_initializer: Union[str, Dict] = utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros", description="TODO: Document parameters."
     )
 
-    norm: Optional[str] = utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
+    norm: Optional[str] = schema_utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
 
-    norm_params: Optional[dict] = utils.Dict(description="TODO: Document parameters.")
+    norm_params: Optional[dict] = schema_utils.Dict(description="TODO: Document parameters.")
 
-    fc_activation: str = utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
+    fc_activation: str = schema_utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
 
-    fc_dropout: float = utils.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
+    fc_dropout: float = schema_utils.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
 
-    fc_residual: bool = utils.Boolean(default=False, description="TODO: Document parameters.")
+    fc_residual: bool = schema_utils.Boolean(default=False, description="TODO: Document parameters.")
 
 
 # TODO(ksbrar): Refactor transformers into using base class for common attrs?
@@ -680,7 +690,9 @@ class CommonTransformerConfig:
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
-    reduce_output: Optional[str] = utils.ReductionOptions(default="mean", description="TODO: Document parameters.")
+    reduce_output: Optional[str] = schema_utils.ReductionOptions(
+        default="mean", description="TODO: Document parameters."
+    )
 
 
 @register_combiner(name="transformer")
@@ -787,9 +799,9 @@ class TransformerCombiner(Combiner):
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 
-    embed_input_feature_name: Optional[Union[str, int]] = utils.Embed()
+    embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed()
 
-    reduce_output: str = utils.ReductionOptions(default="concat", description="TODO: Document parameters.")
+    reduce_output: str = schema_utils.ReductionOptions(default="concat", description="TODO: Document parameters.")
 
 
 @register_combiner(name="tabtransformer")
@@ -1006,29 +1018,31 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     entity_2: List[str]
     """TODO: Document parameters."""
 
-    fc_layers: Optional[List[Dict[str, Any]]] = utils.DictList(description="TODO: Document parameters.")
+    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(description="TODO: Document parameters.")
 
-    num_fc_layers: int = utils.NonNegativeInteger(default=1, description="TODO: Document parameters.")
+    num_fc_layers: int = schema_utils.NonNegativeInteger(default=1, description="TODO: Document parameters.")
 
-    output_size: int = utils.PositiveInteger(default=256, description="Output size of a fully connected layer")
+    output_size: int = schema_utils.PositiveInteger(default=256, description="Output size of a fully connected layer")
 
-    use_bias: bool = utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
+    use_bias: bool = schema_utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = utils.InitializerOrDict(
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform", description="TODO: Document parameters."
     )
 
-    bias_initializer: Union[str, Dict] = utils.InitializerOrDict(
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros", description="TODO: Document parameters."
     )
 
-    norm: Optional[str] = utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
+    norm: Optional[str] = schema_utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
 
-    norm_params: Optional[dict] = utils.Dict(description="TODO: Document parameters.")
+    norm_params: Optional[dict] = schema_utils.Dict(description="TODO: Document parameters.")
 
-    activation: str = utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
+    activation: str = schema_utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
 
-    dropout: float = utils.FloatRange(default=0.0, min=0, max=1, description="Dropout rate for the transformer block.")
+    dropout: float = schema_utils.FloatRange(
+        default=0.0, min=0, max=1, description="Dropout rate for the transformer block."
+    )
 
 
 @register_combiner(name="comparator")
