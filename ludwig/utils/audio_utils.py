@@ -92,8 +92,11 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
 
 
 def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
-    filter_window = torch.tensor([1.0, -emphasize_value])
-    pre_emphasized_data = torchaudio.functional.lfilter(data, torch.tensor([1, 1]), filter_window)
+    # Increase precision in order to achieve parity with scipy.signal.lfilter implementation
+    filter_window = torch.tensor([1.0, -emphasize_value], dtype=torch.float64)
+    pre_emphasized_data = torchaudio.functional.lfilter(
+        data.to(dtype=torch.float64), torch.tensor([1, 0], dtype=torch.float64), filter_window, clamp=False
+    ).to(torch.float32)
     return pre_emphasized_data
 
 

@@ -2,8 +2,11 @@ from random import choice
 from string import ascii_lowercase, ascii_uppercase, digits
 from typing import Dict
 
+import numpy as np
 import pytest
+from scipy.signal import lfilter
 import torch
+import torchaudio
 
 from ludwig.features.audio_feature import AudioInputFeature
 
