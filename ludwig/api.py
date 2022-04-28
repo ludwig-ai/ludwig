@@ -691,6 +691,7 @@ class LudwigModel:
         skip_save_predictions: bool = True,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+        additional_callbacks: Optional[List[Callback]] = None,
         **kwargs,
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
@@ -742,7 +743,7 @@ class LudwigModel:
             split=split,
             include_outputs=False,
             backend=self.backend,
-            callbacks=self.callbacks,
+            callbacks=self.callbacks + (additional_callbacks or []),
         )
 
         logger.debug("Predicting")
