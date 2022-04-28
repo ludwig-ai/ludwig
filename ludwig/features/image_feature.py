@@ -92,6 +92,9 @@ class _ImagePreprocessing(torch.nn.Module):
         """
         if torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
+        # HACK: figure out how to do this in one conditional statement
+        if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
+            raise ValueError(f"Unsupported input: {v}")
 
         if torch.jit.isinstance(v, List[torch.Tensor]):
             imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]

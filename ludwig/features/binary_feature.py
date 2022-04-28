@@ -62,6 +62,9 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.should_lower = str2bool is None
 
     def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+        if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
+            raise ValueError(f"Unsupported input: {v}")
+
         if torch.jit.isinstance(v, List[torch.Tensor]):
             v = torch.stack(v)
 

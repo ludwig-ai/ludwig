@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+import torchaudio
 import torchtext
 
 from ludwig.api import LudwigModel
@@ -273,6 +274,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     def to_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]:
         if "image" in s.name:
             return [image_utils.read_image(v) for v in s]
+        if "audio" in s.name:
+            return [torchaudio.load(v) for v in s]
         if s.dtype == "object":
             return s.to_list()
         return torch.from_numpy(s.to_numpy())
