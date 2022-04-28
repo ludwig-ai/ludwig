@@ -72,7 +72,6 @@ def generate_neuropod_torchscript(model: LudwigModel):
 
         gen_module = gen_ts.GeneratedInferenceModule(inference_module)
         scripted_module = torch.jit.script(gen_module)
-        print(scripted_module.inference_module.preproc_modules.binary_1__ludwig.code)
     return scripted_module
 
 
