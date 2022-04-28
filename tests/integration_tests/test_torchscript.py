@@ -16,7 +16,6 @@ import os
 import shutil
 import tempfile
 from copy import deepcopy
-from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -46,6 +45,7 @@ from tests.integration_tests.utils import (
     set_feature,
     text_feature,
     timeseries_feature,
+    to_inference_module_input,
     vector_feature,
 )
 
@@ -218,8 +218,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
         *torchscript_enabled_text_features,
-        bag_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
-        set_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
+        bag_feature(vocab_size=3),
+        set_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # vector_feature(),
@@ -268,18 +268,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
-
-    def to_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
-        if "image" in s.name:
-            return [image_utils.read_image(v) for v in s]
-        if s.dtype == "object":
-            if "bag" in s.name or "set" in s.name:
-                s = s.astype(str)
-            return s.to_list()
-        return torch.from_numpy(s.to_numpy())
-
     df = pd.read_csv(training_data_csv_path)
-    inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
+    inputs = {
+        name: to_inference_module_input(df[feature.column])
+        for name, feature in ludwig_model.model.input_features.items()
+    }
     outputs = script_module(inputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now
