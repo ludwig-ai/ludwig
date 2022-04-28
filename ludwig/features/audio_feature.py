@@ -268,6 +268,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         else:
             raise ValueError(f"{feature_type} is not recognized.")
 
+        # Outer conditional is type refinement from Union[str, None] to str
         if normalization_type is not None:
             if normalization_type == "per_file":
                 mean = torch.mean(audio_feature, dim=0)

@@ -329,8 +329,8 @@ def _weight_data_matrix(
 ) -> torch.Tensor:
     window_length_in_samp = data_matrix[0].shape[0]
     window = get_window(window_type, window_length_in_samp)
-    # if data_transformation is not None and data_transformation == "group_delay":
-    #     window *= torch.arange(window_length_in_samp).float()
+    if data_transformation is not None and data_transformation == "group_delay":
+        window *= torch.arange(window_length_in_samp).float()
     return data_matrix * window
 
 
