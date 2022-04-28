@@ -21,7 +21,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
