@@ -3,7 +3,6 @@ import tempfile
 from typing import Dict
 
 import torch
-from build.lib.ludwig.combiners.combiners import BaseCombinerConfig
 from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
@@ -16,6 +15,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
+from ludwig.schema.combiners.base import BaseCombinerConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
