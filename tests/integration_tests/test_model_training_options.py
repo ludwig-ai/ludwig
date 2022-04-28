@@ -87,7 +87,7 @@ def generated_data_for_optimizer():
     return GeneratedData(train, validation, test)
 
 
-@pytest.mark.parametrize("early_stop", [105, 168])
+@pytest.mark.parametrize("early_stop", [3, 5])
 def test_early_stopping(early_stop, generated_data, tmp_path):
     input_features, output_features = get_feature_configs()
 
@@ -97,7 +97,6 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         "combiner": {"type": "concat"},
         TRAINER: {"epochs": 30, "early_stop": early_stop, "batch_size": 16},
     }
-    steps_per_epoch = 21  # (NUMBER_OBSERVATIONS * 0.7) / batch_size
 
     # create sub-directory to store results
     results_dir = tmp_path / "results"
@@ -135,11 +134,10 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     # retrieve validation losses
     vald_losses_data = train_stats["validation"]["combined"]["loss"]
 
-    last_steps = (len(vald_losses_data) - 1) * steps_per_epoch
-    best_steps = np.argmin(vald_losses_data) * steps_per_epoch
-    steps_interval = last_steps - best_steps
+    last_evaluation = len(vald_losses_data) - 1
+    best_evaluation = np.argmin(vald_losses_data)
 
-    assert steps_interval == early_stop_value
+    assert last_evaluation - best_evaluation == early_stop_value
 
 
 @pytest.mark.parametrize("skip_save_progress", [False])
