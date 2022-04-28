@@ -1399,8 +1399,7 @@ class Trainer(BaseTrainer):
                 logger.info(
                     "\nEARLY STOPPING due to lack of validation improvement. "
                     f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
-                    f"last validation improvement, which is more than {self.early_stop} rounds of evaluation, or "
-                    f"{early_stopping_steps} steps.\n"
+                    f"last validation improvement.\n"
                 )
             should_break = True
         return should_break
