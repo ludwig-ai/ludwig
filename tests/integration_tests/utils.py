@@ -24,7 +24,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List
+from typing import List, Union
 
 import cloudpickle
 import numpy as np
@@ -39,6 +39,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
+from ludwig.utils import image_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
@@ -316,6 +317,17 @@ def vector_feature(**kwargs):
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
+
+
+def to_inference_module_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
+    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
+    if "image" in s.name:
+        return [image_utils.read_image(v) for v in s]
+    if s.dtype == "object":
+        if "bag" in s.name or "set" in s.name:
+            s = s.astype(str)
+        return s.to_list()
+    return torch.from_numpy(s.to_numpy())
 
 
 def run_experiment(
