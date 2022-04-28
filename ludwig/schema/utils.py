@@ -290,7 +290,6 @@ def Embed():
     """
     _embed_options = ["add"]
 
-    # TODO(ksbrar): Should the default choice here be null?
     class EmbedInputFeatureNameField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:

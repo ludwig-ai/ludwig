@@ -2,9 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.utils import sequence_encoder_registry
 
 
 @dataclass

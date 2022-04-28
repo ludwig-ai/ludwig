@@ -12,17 +12,6 @@ def register_combiner(name: str):
     return wrap
 
 
-sequence_encoder_registry = Registry()
-
-
-def register_sequence_encoder(name: str):
-    def wrap(cls):
-        sequence_encoder_registry[name] = cls
-        return cls
-
-    return wrap
-
-
 def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""

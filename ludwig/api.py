@@ -71,7 +71,7 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.schema.schema import validate_config
+from ludwig.schema import validate_config
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (

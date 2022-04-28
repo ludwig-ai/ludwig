@@ -22,6 +22,7 @@ import torch
 from torch.nn import Linear, ModuleList
 
 from ludwig.constants import BINARY, NUMBER
+from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.features.base_feature import InputFeature
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.embedding_modules import Embed
@@ -37,7 +38,7 @@ from ludwig.schema.combiners import (
     TabTransformerCombinerConfig,
     TransformerCombinerConfig,
 )
-from ludwig.schema.combiners.utils import combiner_registry, register_combiner, sequence_encoder_registry
+from ludwig.schema.combiners.utils import combiner_registry, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask

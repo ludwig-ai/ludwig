@@ -3,13 +3,13 @@ from typing import Optional, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import COMBINED, LOSS, TRAINING
-from ludwig.modules.optimization_modules import (
+from ludwig.schema import utils as schema_utils
+from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
     GradientClippingConfig,
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
-from ludwig.schema import utils as schema_utils
 
 
 @dataclass
