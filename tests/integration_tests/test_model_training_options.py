@@ -17,7 +17,7 @@ from ludwig.constants import TRAINER, TRAINING
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
-from ludwig.modules.optimization_modules import optimizer_registry
+from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend
