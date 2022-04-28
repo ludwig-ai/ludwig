@@ -189,7 +189,6 @@ def get_fbank(
         window_type=window_type,
         zero_mean_offset=True,
     )
-    # stft = torch.tensor(stft, dtype=torch.float32)
     stft_power = torch.abs(stft) ** 2
     upper_limit_freq = int(sampling_rate_in_hz / 2)
     upper_limit_mel = _convert_hz_to_mel(upper_limit_freq)
