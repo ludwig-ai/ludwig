@@ -27,6 +27,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+from ludwig.models.inference import to_inference_module_input
 from ludwig.utils import output_feature_utils
 from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 from tests.integration_tests import utils
@@ -45,7 +46,6 @@ from tests.integration_tests.utils import (
     set_feature,
     text_feature,
     timeseries_feature,
-    to_inference_module_input,
     vector_feature,
 )
 
@@ -270,7 +270,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     script_module = ludwig_model.to_torchscript()
     df = pd.read_csv(training_data_csv_path)
     inputs = {
-        name: to_inference_module_input(df[feature.column])
+        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
         for name, feature in ludwig_model.model.input_features.items()
     }
     outputs = script_module(inputs)
