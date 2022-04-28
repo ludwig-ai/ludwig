@@ -312,16 +312,15 @@ def get_num_output_padded_to_fit_input(num_input: int, window_length_in_samp: in
 
 
 def get_window(window_type: str, window_length_in_samp: int) -> torch.Tensor:
-    if window_type == "hann":
-        return torch.hann_window(window_length_in_samp, dtype=torch.float32)
-    elif window_type == "hamming":
-        return torch.hamming_window(window_length_in_samp, dtype=torch.float32)
+    # Increase precision in order to achieve parity with scipy.signal.windows.get_window implementation
+    if window_type == "bartlett":
+        return torch.bartlett_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
     elif window_type == "blackman":
-        return torch.blackman_window(window_length_in_samp, dtype=torch.float32)
-    elif window_type == "bartlett":
-        return torch.bartlett_window(window_length_in_samp, dtype=torch.float32)
-    elif window_type == "kaiser":
-        return torch.kaiser_window(window_length_in_samp, dtype=torch.float32)
+        return torch.blackman_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
+    elif window_type == "hamming":
+        return torch.hamming_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
+    elif window_type == "hann":
+        return torch.hann_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
     else:
         raise ValueError(f"Unknown window type: {window_type}")
 
