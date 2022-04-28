@@ -16,6 +16,7 @@ from ludwig.data.preprocessing import balance_data
         ("undersample_majority", 0.25),
         ("undersample_majority", 0.5),
         ("undersample_majority", 0.75),
+        ("undersample_majority", 0.9),
     ],
 )
 def test_balance(method, balance):
@@ -47,8 +48,7 @@ def test_balance(method, balance):
     minority_class = test_df[target].value_counts()[test_df[target].value_counts().idxmin()]
     new_class_balance = round(minority_class / majority_class, 2)
 
-    assert (balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
-    assert (balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
+    assert abs(balance - new_class_balance) < BALANCE_PERCENTAGE_TOLERANCE
 
 
 def test_non_binary_failure():
