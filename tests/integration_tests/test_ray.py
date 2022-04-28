@@ -214,6 +214,7 @@ def test_ray_sequence():
     run_test_parquet(input_features, output_features)
 
 
+@pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
 def test_ray_audio():
     with tempfile.TemporaryDirectory() as tmpdir:

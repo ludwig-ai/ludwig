@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 INFERENCE_MODULE_TEMPLATE = """
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 import torch
 
 class GeneratedInferenceModule(torch.nn.Module):
@@ -72,6 +72,7 @@ def generate_neuropod_torchscript(model: LudwigModel):
 
         gen_module = gen_ts.GeneratedInferenceModule(inference_module)
         scripted_module = torch.jit.script(gen_module)
+        print(scripted_module.inference_module.preproc_modules.binary_1__ludwig.code)
     return scripted_module
 
 
