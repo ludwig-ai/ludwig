@@ -29,12 +29,8 @@ logger = logging.getLogger(__name__)
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
-TORCHTEXT_TOKENIZERS = {
-    "sentencepiece",
-    "clip",
-    "gpt2bpe",
-}  # requires torchtext>=0.12.0
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"space", "space_punct", *TORCHTEXT_TOKENIZERS}
+TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
+TORCHTEXT_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 
 
 class BaseTokenizer:
@@ -987,7 +983,7 @@ try:
                 "gpt2bpe": GPT2BPETokenizer,
             }
         )
-
+        TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_TOKENIZERS)
     else:
         raise ImportError
 
