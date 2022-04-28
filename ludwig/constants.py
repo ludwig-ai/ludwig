@@ -148,7 +148,7 @@ CONFIG = "config"
 
 COMBINER = "combiner"
 
-BALANCE_PERCENTAGE_TOLERANCE = 0.02
+BALANCE_PERCENTAGE_TOLERANCE = 0.03
 
 TABULAR = "tabular"
 AUTOML_DEFAULT_TABULAR_MODEL = "tabnet"
@@ -165,3 +165,5 @@ HYPEROPT_WARNING = (
     "It will be ignored. If you want to run hyperopt you should use the following command: ludwig "
     "hyperopt\n\n Do you want to continue? "
 )
+
+DEFAULT_AUDIO_TENSOR_LENGTH = 70000

@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -45,18 +45,80 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
     SpecialSymbol,
+    START_SYMBOL,
+    STOP_SYMBOL,
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
+
+
+class _SequencePreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by SequenceFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
+            )
+
+        self.lowercase = metadata["preprocessing"]["lowercase"]
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
+            pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
+        )
+        self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
+        self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
+        self.start_symbol = START_SYMBOL
+        self.stop_symbol = STOP_SYMBOL
+        self.max_sequence_length = int(metadata["max_sequence_length"])
+        self.unit_to_id = metadata["str2idx"]
+
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        """Takes a list of strings and returns a tensor of token ids."""
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if self.lowercase:
+            sequences = [sequence.lower() for sequence in v]
+        else:
+            sequences = v
+
+        unit_sequences = self.tokenizer(sequences)
+        # refines type of unit_sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+
+        sequence_matrix = torch.full(
+            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
+        )
+        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
+        for sample_idx, unit_sequence in enumerate(unit_sequences):
+            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
+            if len(unit_sequence) + 1 < self.max_sequence_length:
+                sequence_length = len(unit_sequence)
+                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+            else:
+                sequence_length = self.max_sequence_length - 1
+
+            for i in range(sequence_length):
+                curr_unit = unit_sequence[i]
+                if curr_unit in self.unit_to_id:
+                    curr_id = self.unit_to_id[curr_unit]
+                else:
+                    curr_id = self.unit_to_id[self.unknown_symbol]
+                sequence_matrix[sample_idx][i + 1] = curr_id
+
+        return sequence_matrix
 
 
 class _SequencePredict(PredictModule):
@@ -210,6 +272,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SequencePreprocessing(metadata)
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
