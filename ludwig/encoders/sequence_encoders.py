@@ -28,6 +28,7 @@ from ludwig.modules.embedding_modules import EmbedSequence, TokenAndPositionEmbe
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.combiners.utils import register_sequence_encoder
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,7 @@ class SequenceEmbedEncoder(Encoder):
         return self.reduce_sequence.output_shape
 
 
+@register_sequence_encoder("parallel_cnn")
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class ParallelCNN(Encoder):
     def __init__(
@@ -496,6 +498,7 @@ class ParallelCNN(Encoder):
         return self.parallel_conv1d.output_shape
 
 
+@register_sequence_encoder("stacked_cnn")
 @register_encoder("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedCNN(Encoder):
     def __init__(
@@ -825,6 +828,7 @@ class StackedCNN(Encoder):
         return {"encoder_output": hidden}
 
 
+@register_sequence_encoder("stacked_parallel_cnn")
 @register_encoder("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedParallelCNN(Encoder):
     def __init__(
@@ -1129,6 +1133,7 @@ class StackedParallelCNN(Encoder):
         return {"encoder_output": hidden}
 
 
+@register_sequence_encoder("rnn")
 @register_encoder("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedRNN(Encoder):
     def __init__(
@@ -1394,6 +1399,7 @@ class StackedRNN(Encoder):
         return {"encoder_output": hidden, "encoder_output_state": final_state}
 
 
+@register_sequence_encoder("cnnrnn")
 @register_encoder("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedCNNRNN(Encoder):
     def __init__(
