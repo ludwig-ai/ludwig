@@ -978,6 +978,12 @@ class Trainer(BaseTrainer):
                         f"Training for {total_steps} step(s), approximately "
                         f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
+                    logger.info(
+                        f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
+                        f"step(s), which is approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
+                        "epoch(s).\n"
+                    )
+
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar = None
@@ -1391,10 +1397,10 @@ class Trainer(BaseTrainer):
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
-                    "\nEARLY STOPPING due to lack of "
-                    "validation improvement, "
-                    f"it has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
-                    "last validation improvement.\n"
+                    "\nEARLY STOPPING due to lack of validation improvement. "
+                    f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
+                    f"last validation improvement, which is more than {self.early_stop} rounds of evaluation, or "
+                    f"{early_stopping_steps} steps.\n"
                 )
             should_break = True
         return should_break
