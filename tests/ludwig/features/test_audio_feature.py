@@ -2,15 +2,10 @@ from random import choice
 from string import ascii_lowercase, ascii_uppercase, digits
 from typing import Dict
 
-import numpy as np
 import pytest
-from scipy.signal import lfilter
-from scipy.signal.windows import get_window
 import torch
-import torchaudio
 
 from ludwig.features.audio_feature import AudioInputFeature
-import ludwig.utils.audio_utils as audio_utils
 
 BATCH_SIZE = 2
 SEQ_SIZE = 20
@@ -49,30 +44,3 @@ def test_audio_input_feature(audio_config: Dict, encoder: str) -> None:
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = audio_input_feature(audio_tensor)
     assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape
-
-
-def test_lfilter(audio_config: Dict) -> None:
-    raw_audio_tensor = torch.randn([1, 10000], dtype=torch.float64)
-    emphasize_value = 0.97
-    filter_window = np.asarray([1.0, -emphasize_value])
-    pre_emphasized_data_expected = lfilter(filter_window, 1, raw_audio_tensor)
-
-    filter_window = torch.tensor(filter_window, dtype=torch.float64)
-    pre_emphasized_data = torchaudio.functional.lfilter(
-        raw_audio_tensor, torch.tensor([1, 0], dtype=torch.float64), filter_window, clamp=False
-    ).to(dtype=torch.float32)
-
-    assert np.allclose(pre_emphasized_data_expected, pre_emphasized_data.numpy())
-
-
-@pytest.mark.parametrize("window_type", ["bartlett", "blackman", "hamming", "hann", "kaiser"])
-def test_get_window(window_type):
-    window_length_in_samp = 10
-    window_expected = get_window(window_type, window_length_in_samp, fftbins=False)
-
-    window = audio_utils.get_window(window_type, window_length_in_samp)
-
-    print(window_type)
-    print(window_expected)
-    print(window)
-    assert np.allclose(window_expected, window.numpy())
