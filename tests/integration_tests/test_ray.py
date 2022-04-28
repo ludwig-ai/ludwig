@@ -354,8 +354,7 @@ def test_balance_ray(method, balance):
         minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
         new_class_balance = round(minority_class / majority_class, 2)
 
-        assert (balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
-        assert (balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
+        assert abs(balance - new_class_balance) < BALANCE_PERCENTAGE_TOLERANCE
 
 
 def _run_train_gpu_load_cpu(config, data_parquet):

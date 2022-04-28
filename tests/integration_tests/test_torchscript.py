@@ -220,8 +220,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         *torchscript_enabled_text_features,
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
         # TODO: future support
-        # sequence_feature(vocab_size=3),
         # vector_feature(),
         # audio_feature(audio_dest_folder),
         # timeseries_feature(),
