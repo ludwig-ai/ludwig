@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 import ray
 import torch
+import torchaudio
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -323,6 +324,8 @@ def to_inference_module_input(s: pd.Series) -> Union[List[str], List[torch.Tenso
     """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
     if "image" in s.name:
         return [image_utils.read_image(v) for v in s]
+    if "audio" in s.name:
+        return [torchaudio.load(v) for v in s]
     if s.dtype == "object":
         if "bag" in s.name or "set" in s.name:
             s = s.astype(str)
