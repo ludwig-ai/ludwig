@@ -27,7 +27,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils import image_utils, output_feature_utils
+from ludwig.utils import output_feature_utils
 from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
 from tests.integration_tests import utils
 from tests.integration_tests.utils import (
