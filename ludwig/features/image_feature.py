@@ -90,11 +90,10 @@ class _ImagePreprocessing(torch.nn.Module):
 
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
         """
-        if torch.jit.isinstance(v, List[str]):
-            raise ValueError(f"Unsupported input: {v}")
-        # HACK: figure out how to do this in one conditional statement
-        if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
-            raise ValueError(f"Unsupported input: {v}")
+        # Nested conditional is a workaround to short-circuit boolean evaluation.
+        if not torch.jit.isinstance(v, List[torch.Tensor]):
+            if not torch.jit.isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
 
         if torch.jit.isinstance(v, List[torch.Tensor]):
             imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
