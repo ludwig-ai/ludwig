@@ -116,6 +116,6 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     if feature_type == "image":
         if load_paths:
             return [image_utils.read_image(v) for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence"}:
+    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())
