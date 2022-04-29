@@ -115,6 +115,8 @@ def save_model(
         if os.path.isfile(os.path.join(model_data_path, INFERENCE_MODULE_FILE_NAME))
         else MODEL_TYPE_LUDWIG_MODEL
     )
+    logging.info("INSIDE SAVE MODEL")
+    logging.info("model_type: " + model_type)
 
     conda_env_subpath = "conda.yaml"
     if conda_env is None:
@@ -266,7 +268,12 @@ def load_model(model_uri):
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
     model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
-    return _load_model(path=lgb_model_file_path, model_type=model_type)
+    model = _load_model(path=lgb_model_file_path, model_type=model_type)
+    logging.info("ASDFASDF INSIDE LOAD MODEL")
+    logging.info("lgb_model_file_path: %s", lgb_model_file_path)
+    logging.info("model_type: %s", model_type)
+    logging.info("type(model) %s", type(model))
+    return model
 
 
 class _LudwigModelWrapper:

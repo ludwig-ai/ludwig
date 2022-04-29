@@ -343,6 +343,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        logger.info("ASDFASDF STARTED TRAINING")
         # setup directories and file names
         if model_resume_path is not None:
             if path_exists(model_resume_path):
