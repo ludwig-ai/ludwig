@@ -12,9 +12,9 @@
 FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
-RUN sudo apt-key del 7fa2af80 && \
+RUN apt-key del 7fa2af80 && \
     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-keyring_1.0-1_all.deb && \
-    sudo dpkg -i cuda-keyring_1.0-1_all.deb
+    dpkg -i cuda-keyring_1.0-1_all.deb
 
 RUN apt-get -y update && apt-get -y install \
     git \
