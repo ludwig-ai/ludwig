@@ -253,6 +253,43 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
+    def _infer_number_of_channels(image_sample: List[torch.Tensor]):
+        """Infers the channel depth to use from a group of images.
+
+        We make the assumption that the majority of datasets scraped from the web will be RGB, so if we get a mixed bag
+        of images we should default to that. However, if the majority of the sample images have a specific channel depth
+        (other than 3) this is probably intentional so we keep it, but log an info message.
+        """
+        n_images = len(image_sample)
+        channel_frequency = Counter([num_channels_in_image(x) for x in image_sample])
+        if channel_frequency[1] > n_images / 2:
+            # If the majority of images in sample are 1 channel, use 1.
+            num_channels = 1
+        elif channel_frequency[2] > n_images / 2:
+            # If the majority of images in sample are 2 channel, use 2.
+            num_channels = 2
+        elif channel_frequency[4] > n_images / 2:
+            # If the majority of images in sample are 4 channel, use 4.
+            num_channels = 4
+        else:
+            # Default case: use 3 channels.
+            num_channels = 3
+        logging.info(f"Inferring num_channels from the first {n_images} images.")
+        logging.info("\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())]))
+        if num_channels == max(channel_frequency, key=channel_frequency.get):
+            logging.info(
+                f"Using {num_channels} channels because it is the majority in sample. If an image with"
+                f" a different depth is read, will attempt to convert to {num_channels} channels."
+            )
+        else:
+            logging.info(f"Defaulting to {num_channels} channels.")
+        logging.info(
+            "To explicitly set the number of channels, define num_channels in the preprocessing dictionary of "
+            "the image input feature config."
+        )
+        return num_channels
+
+    @staticmethod
     def _finalize_preprocessing_parameters(
         preprocessing_parameters: dict,
         first_img_entry: Optional[Union[str, torch.Tensor]],
@@ -335,37 +372,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels = False
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 user_specified_num_channels = True
-                channel_frequency = Counter([num_channels_in_image(x) for x in inferred_sample])
-                if channel_frequency[1] > len(inferred_sample) / 2:
-                    # If the majority of images in sample are 1 channel, use 1.
-                    num_channels = 1
-                elif channel_frequency[2] > len(inferred_sample) / 2:
-                    # If the majority of images in sample are 2 channel, use 2.
-                    num_channels = 2
-                elif channel_frequency[4] > len(inferred_sample) / 2:
-                    # If the majority of images in sample are 4 channel, use 4.
-                    num_channels = 4
-                else:
-                    # Default case: use 3 channels.
-                    num_channels = 3
-                logging.info(
-                    f"Inferring num_channels from the first {len(inferred_sample)} images for column "
-                    f"{input_feature_col.name}."
-                )
-                logging.info(
-                    "\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())])
-                )
-                if num_channels == max(channel_frequency, key=channel_frequency.get):
-                    logging.info(
-                        f"Using {num_channels} channels because it is the majority in sample. If an image with"
-                        f" a different depth is read, will attempt to convert to {num_channels} channels."
-                    )
-                else:
-                    logging.info(f"Defaulting to {num_channels} channels.")
-                logging.info(
-                    "To explicitly set the number of channels, define num_channels in the preprocessing dictionary of "
-                    "the image input feature config."
-                )
+                num_channels = ImageFeatureMixin._infer_number_of_channels(inferred_sample)
             elif first_image is not None:
                 num_channels = num_channels_in_image(first_image)
             else:
