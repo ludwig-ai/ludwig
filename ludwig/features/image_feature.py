@@ -253,6 +253,27 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
+    def _infer_image_size(image_sample: List[torch.Tensor], max_height: int, max_width: int):
+        """Infers the size to use from a group of images. The returned height will be the average height of images
+        in image_sample rounded to the nearest integer, or max_height. Likewise for width.
+
+        Args:
+            image_sample: Sample of images to use to infer image size. Must be formatted as [channels, height, width].
+            max_height: Maximum height.
+            max_width: Maximum width.
+
+        Return:
+            (height, width) The inferred height and width.
+        """
+        height_avg = sum(x.shape[1] for x in image_sample) / len(image_sample)
+        width_avg = sum(x.shape[2] for x in image_sample) / len(image_sample)
+        height = min(int(round(height_avg)), max_height)
+        width = min(int(round(width_avg)), max_width)
+
+        logger.debug(f"Inferring height: {height} and width: {width}")
+        return height, width
+
+    @staticmethod
     def _infer_number_of_channels(image_sample: List[torch.Tensor]):
         """Infers the channel depth to use from a group of images.
 
@@ -343,19 +364,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
             # Default to inferring from sample or first image.
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
-
-                # assumed image format is channels first [channels, height, width]
-                height_avg = min(
-                    sum(x.shape[1] for x in inferred_sample) / len(inferred_sample),
-                    preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT],
+                height, width = ImageFeatureMixin._infer_image_size(
+                    inferred_sample,
+                    max_height=preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT],
+                    max_width=preprocessing_parameters[INFER_IMAGE_MAX_WIDTH],
                 )
-                width_avg = min(
-                    sum(x.shape[2] for x in inferred_sample) / len(inferred_sample),
-                    preprocessing_parameters[INFER_IMAGE_MAX_WIDTH],
-                )
-
-                height, width = round(height_avg), round(width_avg)
-                logger.debug(f"Inferring height: {height} and width: {width}")
             elif first_image is not None:
                 height, width = first_image.shape[0], first_image.shape[1]
             else:
