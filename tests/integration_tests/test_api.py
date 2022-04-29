@@ -22,6 +22,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.backend import LOCAL_BACKEND, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.models.inference import InferenceLudwigModel
@@ -271,6 +272,7 @@ def run_api_commands(
     skip_save_eval_stats=False,
     skip_collect_predictions=False,
     skip_collect_overall_stats=False,
+    backend=None,
 ):
     """Helper method to avoid code repetition in running an experiment.
 
@@ -286,7 +288,7 @@ def run_api_commands(
         TRAINER: {"epochs": 2},
     }
 
-    model = LudwigModel(config, backend="ray")
+    model = LudwigModel(config, backend=backend)
 
     # Training with csv
     model.train(
@@ -391,11 +393,12 @@ def test_api_skip_parameters_predict(
         )
 
 
-@pytest.mark.parametrize("skip_save_unprocessed_output", [True])
-@pytest.mark.parametrize("skip_save_predictions", [True])
-@pytest.mark.parametrize("skip_save_eval_stats", [True])
-@pytest.mark.parametrize("skip_collect_predictions", [True])
-@pytest.mark.parametrize("skip_collect_overall_stats", [True])
+@pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
+@pytest.mark.parametrize("skip_save_predictions", [False, True])
+@pytest.mark.parametrize("skip_save_eval_stats", [False, True])
+@pytest.mark.parametrize("skip_collect_predictions", [False, True])
+@pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
+@pytest.mark.parametrize("backend", [None, RAY])
 def test_api_skip_parameters_evaluate(
     csv_filename,
     skip_save_unprocessed_output,
@@ -403,16 +406,11 @@ def test_api_skip_parameters_evaluate(
     skip_save_eval_stats,
     skip_collect_predictions,
     skip_collect_overall_stats,
+    backend,
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=5)]
     output_features = [category_feature(vocab_size=5)]
-
-    print("ASDFASDF inside tests.integration_tests.test_api.test_api_skip_parameters_evaluate")
-    print("input_features")
-    print(input_features)
-    print("output_features")
-    print(output_features)
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -427,6 +425,7 @@ def test_api_skip_parameters_evaluate(
             skip_save_eval_stats=skip_save_eval_stats,
             skip_collect_predictions=skip_collect_predictions,
             skip_collect_overall_stats=skip_collect_overall_stats,
+            backend=backend,
         )
 
 

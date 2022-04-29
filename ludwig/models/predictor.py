@@ -180,14 +180,6 @@ class Predictor(BasePredictor):
                         f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                     )
 
-                    print("inside ludwig.models.predictor.Predictor.batch_evaluation")
-                    print(
-                        {
-                            o_feat.feature_name: batch[o_feat.proc_column]
-                            for o_feat in self.model.output_features.values()
-                        }
-                    )
-
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
                         for i_feat in self.model.input_features.values()

@@ -1265,10 +1265,6 @@ class LudwigModel:
             `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
-        print("ASDFASDF inside api.LudwigModel.preprocess")
-        print("before preprocess_for_training")
-        print(dataset)
-        print(pd.read_csv(dataset).head())
 
         preprocessed_data = preprocess_for_training(
             self.config,
@@ -1286,15 +1282,7 @@ class LudwigModel:
         )
 
         (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
-        print("after preprocess_for_training")
-        print("proc_training_set")
-        print(proc_training_set)
-        print("proc_training_set.ds")
-        print(proc_training_set.ds)
-        print("proc_training_set.features")
-        from pprint import pprint
 
-        pprint(proc_training_set.features)
         return proc_training_set, proc_validation_set, proc_test_set, training_set_metadata
 
     @staticmethod

@@ -1122,40 +1122,21 @@ def build_dataset(
     if split is not None:
         proc_cols[SPLIT] = split
 
-    print("ASDFASDF inside ludwig.data.preprocessing.build_dataset")
-
     # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
     #  conversion with Tensor columns. Can remove for 1.8.
     if backend.df_engine.partitioned:
-        print("inside backend.df_engine.partitioned")
         for feature in features:
             name = feature[NAME]
             proc_column = feature[PROC_COLUMN]
             reshape = metadata[name].get("reshape")
             if reshape is not None:
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
-    print("proc_cols")
-    print(proc_cols)
 
-    print("dataset BEFORE df_like")
-    print(dataset_df)
-    print(dataset_df.head())
-    print("backend.df_engine")
-    print(backend.df_engine)
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
-    print("dataset AFTER df_like")
-    print(dataset)
-    print(dataset.head())
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
-    print("dataset BEFORE dropna")
-    print(dataset)
-    print(dataset.head())
     dataset = dataset.dropna()
-    print("dataset AFTER dropna")
-    print(dataset)
-    print(dataset.head())
 
     return dataset, metadata
 
@@ -1251,11 +1232,8 @@ def build_data(
     Returns:
         Dictionary of (feature name) -> (processed data).
     """
-    print("ASDFASDF inside ludwig.data.preprocessing.build_data")
     proc_cols = {}
     for feature_config in feature_configs:
-        print("feature_config")
-        print(feature_config)
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
         handle_missing_values(input_cols, feature_config, preprocessing_parameters)
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
@@ -1267,8 +1245,6 @@ def build_data(
             backend,
             skip_save_processed_input,
         )
-        print("proc_cols")
-        print(proc_cols)
     return proc_cols
 
 
@@ -1525,9 +1501,6 @@ def preprocess_for_training(
 
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
-        print("ASDFASDF inside ludwig.data.preprocessing.preprocess_for_training")
-        print("data_format_processor")
-        print(data_format_processor)
 
         if cached or data_format == "hdf5":
             with use_credentials(backend.cache.credentials):
@@ -1625,9 +1598,6 @@ def _preprocess_file_for_training(
         logger.info("Building dataset (it may take a while)")
 
         dataset_df = read_fn(dataset, backend.df_engine.df_lib)
-        print("ASDFASDF inside ludwig.data.preprocessing._preprocess_file_for_training")
-        print("dataset_df.head()")
-        print(dataset_df.head())
         training_set_metadata[SRC] = dataset
 
         data, training_set_metadata = build_dataset(
@@ -1863,9 +1833,5 @@ def preprocess_for_prediction(
             config,
             training_set_metadata,
         )
-
-    print("ASDFASDF inside ludwig.data.preprocessing.preprocess_for_prediction")
-    print("dataset")
-    print(dataset)
 
     return dataset, training_set_metadata
