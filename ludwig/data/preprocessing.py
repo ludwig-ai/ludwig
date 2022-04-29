@@ -1133,6 +1133,7 @@ def build_dataset(
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
+
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
@@ -1245,6 +1246,7 @@ def build_data(
             backend,
             skip_save_processed_input,
         )
+
     return proc_cols
 
 

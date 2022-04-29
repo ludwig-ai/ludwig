@@ -22,7 +22,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LOCAL_BACKEND, RAY
+from ludwig.backend import RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.models.inference import InferenceLudwigModel

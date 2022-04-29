@@ -859,8 +859,6 @@ class LudwigModel:
             callbacks=self.callbacks,
         )
 
-        print("ASDFASDF INSIDE API.PY")
-
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
             batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]
@@ -1265,7 +1263,6 @@ class LudwigModel:
             `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
-
         preprocessed_data = preprocess_for_training(
             self.config,
             dataset=dataset,
