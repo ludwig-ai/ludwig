@@ -273,7 +273,7 @@ Data preprocessing, hyperparameter optimization, device management, and distribu
 
 ## Easily build your benchmarks
 
-Creating a state-of-the-art baseline and comapring it with a new model is a simple config change.
+Creating a state-of-the-art baseline and comparing it with a new model is a simple config change.
 
 ## Easily apply new architectures to multiple problems and datasets
 
