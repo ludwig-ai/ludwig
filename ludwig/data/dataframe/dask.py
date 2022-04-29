@@ -44,13 +44,29 @@ class DaskEngine(DataFrameEngine):
         self._parallelism = parallelism
 
     def df_like(self, df, proc_cols):
+        print("ASDFASDF inside ludwig.data.dataframe.dask.DaskEngine.df_like")
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
+        print("dataset")
+        print(dataset)
+        print("type(dataset)")
+        print(type(dataset))
         # TODO: address if following results in fragmented DataFrame
         for k, v in proc_cols.items():
+            print("v.dtype")
+            print(v.dtype)
+            print("type(v)")
+            print(type(v))
+            print("v.isnull().sum().compute()")
+            print(v.isnull().sum().compute())
             dataset[k] = v
+            dataset[k] = dataset[k].astype(v.dtype)
+            print("dataset[k].dtype")
+            print(dataset[k].dtype)
+        print("dataset")
+        print(dataset)
         return dataset
 
     def parallelize(self, data):

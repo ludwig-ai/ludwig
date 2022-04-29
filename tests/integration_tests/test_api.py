@@ -286,7 +286,7 @@ def run_api_commands(
         TRAINER: {"epochs": 2},
     }
 
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend="ray")
 
     # Training with csv
     model.train(
@@ -391,11 +391,11 @@ def test_api_skip_parameters_predict(
         )
 
 
-@pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
-@pytest.mark.parametrize("skip_save_predictions", [False, True])
-@pytest.mark.parametrize("skip_save_eval_stats", [False, True])
-@pytest.mark.parametrize("skip_collect_predictions", [False, True])
-@pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
+@pytest.mark.parametrize("skip_save_unprocessed_output", [True])
+@pytest.mark.parametrize("skip_save_predictions", [True])
+@pytest.mark.parametrize("skip_save_eval_stats", [True])
+@pytest.mark.parametrize("skip_collect_predictions", [True])
+@pytest.mark.parametrize("skip_collect_overall_stats", [True])
 def test_api_skip_parameters_evaluate(
     csv_filename,
     skip_save_unprocessed_output,
@@ -407,6 +407,12 @@ def test_api_skip_parameters_evaluate(
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=5)]
     output_features = [category_feature(vocab_size=5)]
+
+    print("ASDFASDF inside tests.integration_tests.test_api.test_api_skip_parameters_evaluate")
+    print("input_features")
+    print(input_features)
+    print("output_features")
+    print(output_features)
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data

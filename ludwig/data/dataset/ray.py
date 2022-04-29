@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import logging
 import math
 import queue
 import threading
@@ -246,13 +247,21 @@ class RayDatasetBatcher(Batcher):
         features = self.features
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            print("ASDFASDF inside data.dataset.ray.RayDatasetBatcher._to_tensors_fn.to_tensors")
             for c in columns:
+                print("before conversion")
+                print(c)
+                print(df[c])
                 # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
                 if features[c][TYPE] not in _SCALAR_TYPES:
+                    print("converting")
                     df[c] = df[c].astype(TensorDtype())
                 elif features[c][TYPE] == BINARY:
                     # TODO(travis): figure out why Ray is converting these into object types by default
                     df[c] = df[c].astype(np.bool_)
+                print("after conversion")
+                print(c)
+                print(df[c])
             return df
 
         return to_tensors
