@@ -481,11 +481,11 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     size: int = schema.PositiveInteger(default=32, description="`N_a` in the paper.")
 
     output_size: int = schema.PositiveInteger(
-        default=32, description="Output size of a fully connected layer. `N_d` in the paper"
+        default=128, description="Output size of a fully connected layer. `N_d` in the paper"
     )
 
     num_steps: int = schema.NonNegativeInteger(
-        default=1,
+        default=3,
         description=(
             "Number of steps / repetitions of the the attentive transformer and feature transformer computations. "
             "`N_steps` in the paper"
@@ -513,10 +513,10 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         default=1e-3, description="Epsilon to be added to the batch norm denominator."
     )
 
-    bn_momentum: float = schema.FloatRange(default=0.7, description="Momentum of the batch norm. `m_B` in the paper.")
+    bn_momentum: float = schema.FloatRange(default=0.95, description="Momentum of the batch norm. `m_B` in the paper.")
 
     bn_virtual_bs: Optional[int] = schema.PositiveInteger(
-        default=None,
+        default=1024,
         description=(
             "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
             "`B_v` from the paper"
@@ -524,7 +524,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     )
 
     sparsity: float = schema.FloatRange(
-        default=1e-5, description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper"
+        default=1e-4, description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper"
     )
 
     entmax_mode: str = schema.StringOptions(
@@ -535,7 +535,9 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         default=1.5, min=1, max=2, description="TODO: Document parameters."
     )  # 1 corresponds to softmax, 2 is sparsemax.
 
-    dropout: float = schema.FloatRange(default=0.0, min=0, max=1, description="Dropout rate for the transformer block.")
+    dropout: float = schema.FloatRange(
+        default=0.05, min=0, max=1, description="Dropout rate for the transformer block."
+    )
 
 
 @register_combiner(name="tabnet")
