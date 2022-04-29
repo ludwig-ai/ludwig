@@ -18,21 +18,21 @@ Translated in [🇰🇷Korean](README_KR.md)
 
 # What is Ludwig?
 
-Ludwig is an open-source [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
-that makes it easy to define deep learning pipelines for many types of tasks using a simple and flexible data-driven
-configuration system. Ludwig was open sourced by Uber and is hosted by the Linux Foundation AI & Data.
+Ludwig is an open-source, [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
+that makes it easy to define deep learning pipelines  with a simple and flexible data-driven configuration system.
+Ludwig is suitable for a wide variety of AI tasks, and is hosted by the [Linux Foundation AI & Data](https://lfaidata.foundation/).
 
-A data-driven configuration system allows users to define their deep learning pipeline by providing a list of inputs and
-outputs with their data type. The data type determines how inputs and outputs are preprocessed, encoded, decoded and
-which metrics and losses to use. Ludwig will assemble and train a deep learning model based on the combination of data
-types for many machine learning tasks.
+Ludwig allows users to define their deep learning pipeline by simply providing a configuration file, which lists the
+inputs and outputs, and their respective data types. Ludwig will then assemble and train a deep learning model and based
+on the configuration file, determine how inputs and outputs are preprocessed, encoded, decoded and which metrics and
+loss criterion to use.
 
 ![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos.gif)
 
-Configurations are simple and flexible, enabling deep control of every aspect of the end-to-end pipeline; from
-experimenting with different training recipes, exploring state-of-the-art model architectures, to scaling up to large
-out-of-memory datasets and multi-node clusters, and finally serving the best model in production -- all can be achieved
-through small configuration changes.
+Writing a configuration file for Ludwig is easy. The configuration file flexibility allows for full control of every
+aspect of the end-to-end pipeline. This includes exploring state-of-the-art model architectures, running a
+hyperparameter search, scaling up to larger than available memory datasets and multi-node clusters, and finally serving
+the best model in production. All of this is achieved through simple configuration file changes.
 
 Finally, the use of abstract interfaces throughout the codebase makes it easy for users to extend Ludwig by adding new
 models, metrics, losses, preprocessing functions and register them to make them available immediately in the
@@ -273,7 +273,7 @@ Data preprocessing, hyperparameter optimization, device management, and distribu
 
 ## Easily build your benchmarks
 
-Creating a state-of-the-art baseline and comapring it with a new model  is a simple config change.
+Creating a state-of-the-art baseline and comparing it with a new model is a simple config change.
 
 ## Easily apply new architectures to multiple problems and datasets
 
@@ -284,6 +284,18 @@ Apply new models across the extensive set of tasks and datasets that Ludwig supp
 Any and all aspects of the model architecture, training loop, hyperparameter search, and backend infrastructure can be modified as additional fields in the declarative configuration to customize the pipeline to meet your requirements.
 
 For details on what can be configured, check out [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/) docs.
+
+## Multi-modal, multi-task learning out-of-the-box
+
+Mix and match tabular data, text, images, and even audio into complex model configurations without writing code.
+
+## Rich model exporting and tracking
+
+Automatically track all trials and metrics with tools like Tensorboard, Comet ML, Weights & Biases, and MLflow.
+
+## Automatically scale training to multi-GPU, multi-node clusters
+
+Go from training on your local machine to the cloud without code changes.
 
 ## Low-code interface for state-of-the-art models, including pre-trained Huggingface Transformers
 
