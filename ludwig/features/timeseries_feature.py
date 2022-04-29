@@ -32,7 +32,7 @@ from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
-from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,10 @@ class _TimeseriesPreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
                 f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
-                f"one of {TORCHSCRIPT_ENABLED_TOKENIZERS}."
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
             )
         self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
         self.padding = metadata["preprocessing"]["padding"]
