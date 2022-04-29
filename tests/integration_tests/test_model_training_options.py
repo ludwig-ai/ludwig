@@ -267,7 +267,7 @@ def test_resume_training_mlflow(optimizer, generated_data, tmp_path):
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
         callbacks=[MlflowCallback(mlflow_uri)],
-        experiment_name=experiment_name
+        experiment_name=experiment_name,
     )
     # Can't change any artifact spec on a run once it has been logged to mlflow, so skipping changing epochs
 
@@ -278,7 +278,7 @@ def test_resume_training_mlflow(optimizer, generated_data, tmp_path):
         test_set=generated_data.test_df,
         model_resume_path=output_dir1,
         callbacks=[MlflowCallback(mlflow_uri)],
-        experiment_name=experiment_name
+        experiment_name=experiment_name,
     )
 
     # make sure there is only one mlflow run id
