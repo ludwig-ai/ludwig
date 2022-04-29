@@ -33,7 +33,7 @@ class WandbCallback(Callback):
         experiment_name,
         model_name,
         output_directory,
-        resume,
+        resume_directory,
     ):
         logger.info("wandb.on_train_init() called...")
         wandb.init(
