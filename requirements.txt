@@ -35,5 +35,5 @@ psutil
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
-pyarrow         # parquet
+pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
 lxml            # html
