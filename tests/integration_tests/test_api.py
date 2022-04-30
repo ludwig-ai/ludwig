@@ -398,7 +398,6 @@ def test_api_skip_parameters_predict(
 @pytest.mark.parametrize("skip_save_eval_stats", [False, True])
 @pytest.mark.parametrize("skip_collect_predictions", [False, True])
 @pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
-@pytest.mark.parametrize("backend", [None, RAY])
 def test_api_skip_parameters_evaluate(
     csv_filename,
     skip_save_unprocessed_output,
@@ -406,7 +405,6 @@ def test_api_skip_parameters_evaluate(
     skip_save_eval_stats,
     skip_collect_predictions,
     skip_collect_overall_stats,
-    backend,
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=5)]
@@ -425,7 +423,30 @@ def test_api_skip_parameters_evaluate(
             skip_save_eval_stats=skip_save_eval_stats,
             skip_collect_predictions=skip_collect_predictions,
             skip_collect_overall_stats=skip_collect_overall_stats,
-            backend=backend,
+            backend=None,
+        )
+
+
+# TODO: Add parametrized tests for skip_*=False
+def test_api_skip_parameters_evaluate_ray(csv_filename):
+    # Single sequence input, single category output
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        # Generate test data
+        rel_path = generate_data(input_features, output_features, os.path.join(output_dir, csv_filename))
+        run_api_commands(
+            input_features,
+            output_features,
+            data_csv=rel_path,
+            output_dir=output_dir,
+            skip_save_unprocessed_output=True,
+            skip_save_predictions=True,
+            skip_save_eval_stats=True,
+            skip_collect_predictions=True,
+            skip_collect_overall_stats=True,
+            backend=RAY,
         )
 
 
