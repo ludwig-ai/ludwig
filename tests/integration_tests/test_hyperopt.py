@@ -16,7 +16,6 @@ import logging
 import os.path
 
 import pytest
-import torch
 
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
@@ -33,37 +32,27 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 HYPEROPT_CONFIG = {
     "parameters": {
         "trainer.learning_rate": {
-            "type": "float",
-            "low": 0.0001,
-            "high": 0.1,
-            "space": "log",
-            "steps": 3,
+            "space": "loguniform",
+            "lower": 0.001,
+            "upper": 0.1,
         },
-        "combiner.num_fc_layers": {
-            "type": "int",
-            "low": 1,
-            "high": 4,
-            "space": "linear",
-            "steps": 3,
-        },
+        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
         "combiner.fc_layers": {
-            "type": "category",
-            "values": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
+            "space": "choice",
+            "categories": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
         },
-        "utterance.cell_type": {"type": "category", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"type": "category", "values": [True, False]},
+        "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
+        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
     },
     "goal": "minimize",
 }
 
 SAMPLERS = [
-    {"type": "grid"},
-    {"type": "random", "num_samples": 5},
-    {"type": "pysot", "num_samples": 5},
+    {"type": "ray", "num_samples": 2}
 ]
 
 EXECUTORS = [
-    {"type": "serial"},
+    {"type": "ray"},
 ]
 
 
@@ -110,15 +99,16 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
         hyperopt_sampler, output_feature, metric, split, **executor
     )
 
-    gpus = [i for i in range(torch.cuda.device_count())]
-    hyperopt_executor.execute(config, dataset=rel_path, gpus=gpus)
+    # TODO: update to use Ray config for use of gpus by RayTune
+    # gpus = [i for i in range(torch.cuda.device_count())]
+    hyperopt_executor.execute(config, dataset=rel_path)
 
 
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
     test_hyperopt_executor(
-        {"type": "random", "num_samples": 2},
-        {"type": "serial"},
+        {"type": "ray", "num_samples": 2},
+        {"type": "ray"},
         csv_filename,
         validate_output_feature=True,
         validation_metric=ACCURACY,
@@ -149,28 +139,26 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
     hyperopt_configs = {
         "parameters": {
             "trainer.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.01,
-                "space": "log",
-                "steps": 3,
+                "lower": 0.0001,
+                "upper": 0.01,
+                "space": "loguniform",
             },
             output_feature_name
             + ".fc_layers": {
-                "type": "category",
-                "values": [
+                "space": "choice",
+                "categories": [
                     [{"output_size": 64}, {"output_size": 32}],
                     [{"output_size": 64}],
                     [{"output_size": 32}],
                 ],
             },
-            output_feature_name + ".output_size": {"type": "int", "low": 16, "high": 36, "steps": 5},
-            output_feature_name + ".num_fc_layers": {"type": "int", "low": 1, "high": 5, "space": "linear", "steps": 4},
+            output_feature_name + ".output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "serial"},
+        "executor": {"type": "ray"},
         "sampler": {"type": samplers["type"], "num_samples": 2},
     }
 
@@ -189,7 +177,9 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
         os.remove(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
 
 
+# TODO: Need to confirm if this is still needed with a RayTune only executore
 @pytest.mark.distributed
+@pytest.mark.skip("This is Serial only test?")
 def test_hyperopt_executor_get_metric_score():
     executor = EXECUTORS[0]
     output_feature = "of_name"

@@ -184,109 +184,6 @@ class HyperoptExecutor(ABC):
         pass
 
 
-class SerialExecutor(HyperoptExecutor):
-    def __init__(
-        self, hyperopt_sampler: HyperoptSampler, output_feature: str, metric: str, split: str, **kwargs
-    ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature, metric, split)
-
-    def execute(
-        self,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs,
-    ) -> HyperoptResults:
-        trial_results = []
-        trials = 0
-        while not self.hyperopt_sampler.finished():
-            sampled_parameters = self.hyperopt_sampler.sample_batch()
-            metric_scores = []
-
-            for i, parameters in enumerate(sampled_parameters):
-                modified_config = substitute_parameters(copy.deepcopy(config), parameters)
-
-                trial_id = trials + i
-
-                model = LudwigModel(
-                    config=modified_config,
-                    backend=backend,
-                    gpus=gpus,
-                    gpu_memory_limit=gpu_memory_limit,
-                    allow_parallel_threads=allow_parallel_threads,
-                    callbacks=callbacks,
-                )
-                eval_stats, train_stats, _, _ = model.experiment(
-                    dataset=dataset,
-                    training_set=training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    training_set_metadata=training_set_metadata,
-                    data_format=data_format,
-                    experiment_name=f"{experiment_name}_{trial_id}",
-                    model_name=model_name,
-                    # model_load_path=model_load_path,
-                    # model_resume_path=model_resume_path,
-                    eval_split=self.split,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    skip_save_unprocessed_output=skip_save_unprocessed_output,
-                    skip_save_predictions=skip_save_predictions,
-                    skip_save_eval_stats=skip_save_eval_stats,
-                    output_directory=output_directory,
-                    skip_collect_predictions=True,
-                    skip_collect_overall_stats=False,
-                    random_seed=random_seed,
-                    debug=debug,
-                )
-                metric_score = self.get_metric_score(train_stats)
-                metric_scores.append(metric_score)
-
-                trial_results.append(
-                    TrialResults(
-                        parameters=parameters,
-                        metric_score=metric_score,
-                        training_stats=train_stats,
-                        eval_stats=eval_stats,
-                    )
-                )
-            trials += len(sampled_parameters)
-
-            self.hyperopt_sampler.update_batch(zip(sampled_parameters, metric_scores))
-
-        ordered_trials = self.sort_hyperopt_results(trial_results)
-        return HyperoptResults(ordered_trials=ordered_trials)
-
-
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
         self,
@@ -842,7 +739,7 @@ def get_build_hyperopt_executor(executor_type):
     return get_from_registry(executor_type, executor_registry)
 
 
-executor_registry = {"serial": SerialExecutor, "ray": RayTuneExecutor}
+executor_registry = {"ray": RayTuneExecutor}
 
 
 def set_values(model_dict, name, parameters_dict):

@@ -367,7 +367,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
         sampler_defaults,
     )
 
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "serial"})
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
 
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
