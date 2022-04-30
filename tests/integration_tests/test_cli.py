@@ -87,18 +87,16 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
         "hyperopt": {
             "parameters": {
                 "trainer.learning_rate": {
-                    "type": "float",
-                    "low": 0.0001,
-                    "high": 0.01,
-                    "space": "log",
-                    "steps": 3,
+                    "space": "loguniform",
+                    "lower": 0.0001,
+                    "upper": 0.01,
                 }
             },
             "goal": "minimize",
             "output_feature": output_features[0]["name"],
             "validation_metrics": "loss",
-            "executor": {"type": "serial"},
-            "sampler": {"type": "random", "num_samples": 2},
+            "executor": {"type": "ray"},
+            "sampler": {"type": "ray", "num_samples": 2},
         },
     }
 
