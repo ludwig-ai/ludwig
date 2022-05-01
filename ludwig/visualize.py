@@ -29,7 +29,7 @@ from sklearn.metrics import brier_score_loss
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT, TRAINING, VALIDATION
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPLIT, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
