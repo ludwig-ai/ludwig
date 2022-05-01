@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os.path
+from typing import Optional
 
 import pytest
+import ray
+import torch
 
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
@@ -52,6 +56,20 @@ SAMPLERS = [{"type": "ray", "num_samples": 2}]
 EXECUTORS = [
     {"type": "ray"},
 ]
+
+
+@contextlib.contextmanager
+def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
+    res = ray.init(
+        num_cpus=num_cpus,
+        num_gpus=num_gpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
 
 
 @pytest.mark.distributed
@@ -93,13 +111,13 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
 
     hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
 
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, split, **executor
-    )
+    gpus = [i for i in range(torch.cuda.device_count())]
+    with ray_start(num_gpus=len(gpus)):
+        hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
+            hyperopt_sampler, output_feature, metric, split, **executor
+        )
 
-    # TODO: update to use Ray config for use of gpus by RayTune
-    # gpus = [i for i in range(torch.cuda.device_count())]
-    hyperopt_executor.execute(config, dataset=rel_path)
+        hyperopt_executor.execute(config, dataset=rel_path)
 
 
 @pytest.mark.distributed
@@ -163,7 +181,8 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
 
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory="results_hyperopt")
+    with ray_start():
+        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory="results_hyperopt")
 
     # check for return results
     assert isinstance(hyperopt_results, HyperoptResults)
@@ -175,7 +194,7 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
         os.remove(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
 
 
-# TODO: Need to confirm if this is still needed with a RayTune only executore
+# TODO: Need to confirm if this is still needed with a RayTune only executors
 @pytest.mark.distributed
 @pytest.mark.skip("This is Serial only test?")
 def test_hyperopt_executor_get_metric_score():
