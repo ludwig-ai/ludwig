@@ -64,20 +64,18 @@ def hyperopt_results():
     hyperopt_configs = {
         "parameters": {
             "trainer.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.01,
-                "space": "log",
-                "steps": 3,
+                "space": "loguniform",
+                "lower": 0.0001,
+                "upper": 0.01,
             },
-            output_feature_name + ".output_size": {"type": "int", "low": 32, "high": 256, "steps": 5},
-            output_feature_name + ".num_fc_layers": {"type": "int", "low": 1, "high": 5, "space": "linear", "steps": 4},
+            output_feature_name + ".output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "serial"},
-        "sampler": {"type": "random", "num_samples": 2},
+        "executor": {"type": "ray"},
+        "sampler": {"type": "ray", "num_samples": 2},
     }
 
     # add hyperopt parameter space to the config

@@ -29,7 +29,7 @@ from sklearn.metrics import brier_score_loss
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPLIT, TRAINING, TYPE, VALIDATION
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
@@ -3710,7 +3710,8 @@ def hyperopt_hiplot(hyperopt_stats_path, output_directory=None, **kwargs):
 
 def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric):
     df = pd.DataFrame([{metric: res["metric_score"], **res["parameters"]} for res in hyperopt_results])
-    df = df.astype({hp_name: hp_params[TYPE] for hp_name, hp_params in hyperopt_parameters.items()})
+    # TODO: work out how to use SPACE key instead of TYPE key
+    # df = df.astype({hp_name: hp_params[SPACE] for hp_name, hp_params in hyperopt_parameters.items()})
     return df
 
 
