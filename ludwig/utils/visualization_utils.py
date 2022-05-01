@@ -23,7 +23,7 @@ from sys import platform
 import numpy as np
 import pandas as pd
 
-from ludwig.constants import SPACE, TRAINING, TYPE, VALIDATION
+from ludwig.constants import SPACE, TRAINING, VALIDATION
 
 logger = logging.getLogger(__name__)
 
