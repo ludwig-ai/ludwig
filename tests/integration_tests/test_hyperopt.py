@@ -47,9 +47,7 @@ HYPEROPT_CONFIG = {
     "goal": "minimize",
 }
 
-SAMPLERS = [
-    {"type": "ray", "num_samples": 2}
-]
+SAMPLERS = [{"type": "ray", "num_samples": 2}]
 
 EXECUTORS = [
     {"type": "ray"},
