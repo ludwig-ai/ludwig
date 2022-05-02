@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import copy
-import itertools
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -22,12 +20,9 @@ from inspect import signature
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
-from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
-from bayesmark.space import JointSpace
 
-from ludwig.constants import CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE, TYPE
+from ludwig.constants import MAXIMIZE, MINIMIZE
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.strings_utils import str2bool
 
 try:
     from ray import tune
