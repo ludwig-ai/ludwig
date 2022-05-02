@@ -331,12 +331,12 @@ class HyperoptSampler(ABC):
 
 class RayTuneSampler(HyperoptSampler):
     def __init__(
-            self,
-            goal: str,
-            parameters: Dict[str, Any],
-            search_alg: dict = None,
-            scheduler: dict = None,
-            num_samples=1,
+        self,
+        goal: str,
+        parameters: Dict[str, Any],
+        search_alg: dict = None,
+        scheduler: dict = None,
+        num_samples=1,
         **kwargs,
     ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
