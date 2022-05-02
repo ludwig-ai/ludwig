@@ -54,7 +54,7 @@ FLOAT_QUANTILES = 10
 # mapping from RayTune search space to Ludwig types (float, int, category) for hyperopt visualizations
 RAY_TUNE_FLOAT_SPACES = {"uniform", "quniform", "loguniform", "qloguniform", "randn", "qrandn"}
 RAY_TUNE_INT_SPACES = {"randint", "qrandint", "lograndint", "qlograndint"}
-RAY_TUNE_CATEGORY_SPACES = {"choice", "grid"}
+RAY_TUNE_CATEGORY_SPACES = {"choice", "grid_search"}
 
 _matplotlib_34 = LooseVersion(mpl.__version__) >= LooseVersion("3.4")
 
@@ -1298,6 +1298,12 @@ def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_templ
                 metric,
                 title.format(hp_name),
                 filename_template.format(hp_name) if filename_template else None,
+            )
+        else:
+            # TODO: more research needed on how to handle RayTune "sample_from" search space
+            raise ValueError(
+                f"{hp_params[SPACE]} search space not supported in Ludwig.  "
+                f"Supported values are {RAY_TUNE_FLOAT_SPACES | RAY_TUNE_INT_SPACES | RAY_TUNE_CATEGORY_SPACES}."
             )
 
     # quantize float and int columns
