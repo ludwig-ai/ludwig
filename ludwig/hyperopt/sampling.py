@@ -154,193 +154,194 @@ class HyperoptSampler(ABC):
         pass
 
 
-class RandomSampler(HyperoptSampler):
-    num_samples = 10
+# TODO: Remove
+# class RandomSampler(HyperoptSampler):
+#     num_samples = 10
+#
+#     def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs) -> None:
+#         HyperoptSampler.__init__(self, goal, parameters)
+#         params_for_join_space = copy.deepcopy(parameters)
+#
+#         cat_params_values_types = {}
+#         for param_name, param_values in params_for_join_space.items():
+#             if param_values[TYPE] == CATEGORY:
+#                 param_values[TYPE] = "cat"
+#                 values_str = []
+#                 values_types = {}
+#                 for value in param_values["values"]:
+#                     value_type = type(value)
+#                     if value_type == bool:
+#                         value_str = str(value)
+#                         value_type = str2bool
+#                     elif value_type == str or value_type == int or value_type == float:
+#                         value_str = str(value)
+#                     else:
+#                         value_str = json.dumps(value)
+#                         value_type = json.loads
+#                     values_str.append(value_str)
+#                     values_types[value_str] = value_type
+#                 param_values["values"] = values_str
+#                 cat_params_values_types[param_name] = values_types
+#             if param_values[TYPE] == FLOAT:
+#                 param_values[TYPE] = "real"
+#             if param_values[TYPE] == INT or param_values[TYPE] == "real":
+#                 if SPACE not in param_values:
+#                     param_values[SPACE] = "linear"
+#                 param_values["range"] = (param_values["low"], param_values["high"])
+#                 del param_values["low"]
+#                 del param_values["high"]
+#
+#         self.cat_params_values_types = cat_params_values_types
+#         self.space = JointSpace(params_for_join_space)
+#         self.num_samples = num_samples
+#         self.samples = self._determine_samples()
+#         self.sampled_so_far = 0
+#         self.default_batch_size = self.num_samples
+#
+#     def _determine_samples(self):
+#         samples = []
+#         for _ in range(self.num_samples):
+#             bounds = self.space.get_bounds()
+#             x = bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * np.random.rand(1, len(self.space.get_bounds()))
+#             sample = self.space.unwarp(x)[0]
+#             samples.append(sample)
+#         return samples
+#
+#     def sample(self) -> Dict[str, Any]:
+#         if self.sampled_so_far >= len(self.samples):
+#             raise IndexError()
+#         sample = self.samples[self.sampled_so_far]
+#         for key in sample:
+#             if key in self.cat_params_values_types:
+#                 values_types = self.cat_params_values_types[key]
+#                 sample[key] = values_types[sample[key]](sample[key])
+#         self.sampled_so_far += 1
+#         return sample
+#
+#     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
+#         pass
+#
+#     def finished(self) -> bool:
+#         return self.sampled_so_far >= len(self.samples)
 
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs) -> None:
-        HyperoptSampler.__init__(self, goal, parameters)
-        params_for_join_space = copy.deepcopy(parameters)
+# TODO: Remove
+# class GridSampler(HyperoptSampler):
+#     def __init__(self, goal: str, parameters: Dict[str, Any], **kwargs) -> None:
+#         HyperoptSampler.__init__(self, goal, parameters)
+#         self.search_space = self._create_search_space()
+#         self.samples = self._get_grids()
+#         self.sampled_so_far = 0
+#         self.default_batch_size = len(self.samples)
+#
+#     def _create_search_space(self):
+#         search_space = {}
+#         for hp_name, hp_params in self.parameters.items():
+#             grid_function = get_from_registry(hp_params[TYPE], grid_functions_registry)
+#             search_space[hp_name] = grid_function(**hp_params)
+#         return search_space
+#
+#     def _get_grids(self):
+#         hp_params = sorted(self.search_space)
+#         grids = [
+#             dict(zip(hp_params, prod))
+#             for prod in itertools.product(*(self.search_space[hp_name] for hp_name in hp_params))
+#         ]
+#
+#         return grids
+#
+#     def sample(self) -> Dict[str, Any]:
+#         if self.sampled_so_far >= len(self.samples):
+#             raise IndexError()
+#         sample = self.samples[self.sampled_so_far]
+#         self.sampled_so_far += 1
+#         return sample
+#
+#     def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
+#         # actual implementation ...
+#         pass
+#
+#     def finished(self) -> bool:
+#         return self.sampled_so_far >= len(self.samples)
 
-        cat_params_values_types = {}
-        for param_name, param_values in params_for_join_space.items():
-            if param_values[TYPE] == CATEGORY:
-                param_values[TYPE] = "cat"
-                values_str = []
-                values_types = {}
-                for value in param_values["values"]:
-                    value_type = type(value)
-                    if value_type == bool:
-                        value_str = str(value)
-                        value_type = str2bool
-                    elif value_type == str or value_type == int or value_type == float:
-                        value_str = str(value)
-                    else:
-                        value_str = json.dumps(value)
-                        value_type = json.loads
-                    values_str.append(value_str)
-                    values_types[value_str] = value_type
-                param_values["values"] = values_str
-                cat_params_values_types[param_name] = values_types
-            if param_values[TYPE] == FLOAT:
-                param_values[TYPE] = "real"
-            if param_values[TYPE] == INT or param_values[TYPE] == "real":
-                if SPACE not in param_values:
-                    param_values[SPACE] = "linear"
-                param_values["range"] = (param_values["low"], param_values["high"])
-                del param_values["low"]
-                del param_values["high"]
-
-        self.cat_params_values_types = cat_params_values_types
-        self.space = JointSpace(params_for_join_space)
-        self.num_samples = num_samples
-        self.samples = self._determine_samples()
-        self.sampled_so_far = 0
-        self.default_batch_size = self.num_samples
-
-    def _determine_samples(self):
-        samples = []
-        for _ in range(self.num_samples):
-            bounds = self.space.get_bounds()
-            x = bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * np.random.rand(1, len(self.space.get_bounds()))
-            sample = self.space.unwarp(x)[0]
-            samples.append(sample)
-        return samples
-
-    def sample(self) -> Dict[str, Any]:
-        if self.sampled_so_far >= len(self.samples):
-            raise IndexError()
-        sample = self.samples[self.sampled_so_far]
-        for key in sample:
-            if key in self.cat_params_values_types:
-                values_types = self.cat_params_values_types[key]
-                sample[key] = values_types[sample[key]](sample[key])
-        self.sampled_so_far += 1
-        return sample
-
-    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-        pass
-
-    def finished(self) -> bool:
-        return self.sampled_so_far >= len(self.samples)
-
-
-class GridSampler(HyperoptSampler):
-    def __init__(self, goal: str, parameters: Dict[str, Any], **kwargs) -> None:
-        HyperoptSampler.__init__(self, goal, parameters)
-        self.search_space = self._create_search_space()
-        self.samples = self._get_grids()
-        self.sampled_so_far = 0
-        self.default_batch_size = len(self.samples)
-
-    def _create_search_space(self):
-        search_space = {}
-        for hp_name, hp_params in self.parameters.items():
-            grid_function = get_from_registry(hp_params[TYPE], grid_functions_registry)
-            search_space[hp_name] = grid_function(**hp_params)
-        return search_space
-
-    def _get_grids(self):
-        hp_params = sorted(self.search_space)
-        grids = [
-            dict(zip(hp_params, prod))
-            for prod in itertools.product(*(self.search_space[hp_name] for hp_name in hp_params))
-        ]
-
-        return grids
-
-    def sample(self) -> Dict[str, Any]:
-        if self.sampled_so_far >= len(self.samples):
-            raise IndexError()
-        sample = self.samples[self.sampled_so_far]
-        self.sampled_so_far += 1
-        return sample
-
-    def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
-        # actual implementation ...
-        pass
-
-    def finished(self) -> bool:
-        return self.sampled_so_far >= len(self.samples)
-
-
-class PySOTSampler(HyperoptSampler):
-    """pySOT: Surrogate optimization in Python.
-    This is a wrapper around the pySOT package (https://github.com/dme65/pySOT):
-        David Eriksson, David Bindel, Christine Shoemaker
-        pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
-    """
-
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs) -> None:
-        HyperoptSampler.__init__(self, goal, parameters)
-        params_for_join_space = copy.deepcopy(parameters)
-
-        cat_params_values_types = {}
-        for param_name, param_values in params_for_join_space.items():
-            if param_values[TYPE] == CATEGORY:
-                param_values[TYPE] = "cat"
-                values_str = []
-                values_types = {}
-                for value in param_values["values"]:
-                    value_type = type(value)
-                    if value_type == bool:
-                        value_str = str(value)
-                        value_type = str2bool
-                    elif value_type == str or value_type == int or value_type == float:
-                        value_str = str(value)
-                    else:
-                        value_str = json.dumps(value)
-                        value_type = json.loads
-                    values_str.append(value_str)
-                    values_types[value_str] = value_type
-                param_values["values"] = values_str
-                cat_params_values_types[param_name] = values_types
-            if param_values[TYPE] == FLOAT:
-                param_values[TYPE] = "real"
-            if param_values[TYPE] == INT or param_values[TYPE] == "real":
-                if SPACE not in param_values:
-                    param_values[SPACE] = "linear"
-                param_values["range"] = (param_values["low"], param_values["high"])
-                del param_values["low"]
-                del param_values["high"]
-
-        self.cat_params_values_types = cat_params_values_types
-        self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
-        self.sampled_so_far = 0
-        self.num_samples = num_samples
-
-    def sample(self) -> Dict[str, Any]:
-        """Suggest one new point to be evaluated."""
-        if self.sampled_so_far >= self.num_samples:
-            raise IndexError()
-        sample = self.pysot_optimizer.suggest(n_suggestions=1)[0]
-        for key in sample:
-            if key in self.cat_params_values_types:
-                values_types = self.cat_params_values_types[key]
-                sample[key] = values_types[sample[key]](sample[key])
-        self.sampled_so_far += 1
-        return sample
-
-    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-        for key in sampled_parameters:
-            if key in self.cat_params_values_types:
-                if type(sampled_parameters[key]) not in {bool, int, float, str}:
-                    sampled_parameters[key] = json.dumps(sampled_parameters[key])
-                else:
-                    sampled_parameters[key] = str(sampled_parameters[key])
-        self.pysot_optimizer.observe([sampled_parameters], [metric_score])
-
-    def finished(self) -> bool:
-        return self.sampled_so_far >= self.num_samples
+# TODO: Remove
+# class PySOTSampler(HyperoptSampler):
+#     """pySOT: Surrogate optimization in Python.
+#     This is a wrapper around the pySOT package (https://github.com/dme65/pySOT):
+#         David Eriksson, David Bindel, Christine Shoemaker
+#         pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
+#     """
+#
+#     def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs) -> None:
+#         HyperoptSampler.__init__(self, goal, parameters)
+#         params_for_join_space = copy.deepcopy(parameters)
+#
+#         cat_params_values_types = {}
+#         for param_name, param_values in params_for_join_space.items():
+#             if param_values[TYPE] == CATEGORY:
+#                 param_values[TYPE] = "cat"
+#                 values_str = []
+#                 values_types = {}
+#                 for value in param_values["values"]:
+#                     value_type = type(value)
+#                     if value_type == bool:
+#                         value_str = str(value)
+#                         value_type = str2bool
+#                     elif value_type == str or value_type == int or value_type == float:
+#                         value_str = str(value)
+#                     else:
+#                         value_str = json.dumps(value)
+#                         value_type = json.loads
+#                     values_str.append(value_str)
+#                     values_types[value_str] = value_type
+#                 param_values["values"] = values_str
+#                 cat_params_values_types[param_name] = values_types
+#             if param_values[TYPE] == FLOAT:
+#                 param_values[TYPE] = "real"
+#             if param_values[TYPE] == INT or param_values[TYPE] == "real":
+#                 if SPACE not in param_values:
+#                     param_values[SPACE] = "linear"
+#                 param_values["range"] = (param_values["low"], param_values["high"])
+#                 del param_values["low"]
+#                 del param_values["high"]
+#
+#         self.cat_params_values_types = cat_params_values_types
+#         self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
+#         self.sampled_so_far = 0
+#         self.num_samples = num_samples
+#
+#     def sample(self) -> Dict[str, Any]:
+#         """Suggest one new point to be evaluated."""
+#         if self.sampled_so_far >= self.num_samples:
+#             raise IndexError()
+#         sample = self.pysot_optimizer.suggest(n_suggestions=1)[0]
+#         for key in sample:
+#             if key in self.cat_params_values_types:
+#                 values_types = self.cat_params_values_types[key]
+#                 sample[key] = values_types[sample[key]](sample[key])
+#         self.sampled_so_far += 1
+#         return sample
+#
+#     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
+#         for key in sampled_parameters:
+#             if key in self.cat_params_values_types:
+#                 if type(sampled_parameters[key]) not in {bool, int, float, str}:
+#                     sampled_parameters[key] = json.dumps(sampled_parameters[key])
+#                 else:
+#                     sampled_parameters[key] = str(sampled_parameters[key])
+#         self.pysot_optimizer.observe([sampled_parameters], [metric_score])
+#
+#     def finished(self) -> bool:
+#         return self.sampled_so_far >= self.num_samples
 
 
 class RayTuneSampler(HyperoptSampler):
     def __init__(
-        self,
-        goal: str,
-        parameters: Dict[str, Any],
-        search_alg: dict = None,
-        scheduler: dict = None,
-        num_samples=1,
+            self,
+            goal: str,
+            parameters: Dict[str, Any],
+            search_alg: dict = None,
+            scheduler: dict = None,
+            num_samples=1,
         **kwargs,
     ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
@@ -432,4 +433,4 @@ def get_build_hyperopt_sampler(strategy_type):
     return get_from_registry(strategy_type, sampler_registry)
 
 
-sampler_registry = {"grid": GridSampler, "random": RandomSampler, "pysot": PySOTSampler, "ray": RayTuneSampler}
+sampler_registry = {"ray": RayTuneSampler}

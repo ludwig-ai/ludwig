@@ -358,7 +358,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(hyperopt_params[SAMPLER], {TYPE: "random"})
+    set_default_values(hyperopt_params[SAMPLER], {TYPE: "ray"})
 
     sampler = get_from_registry(hyperopt_params[SAMPLER][TYPE], sampler_registry)
     sampler_defaults = {k: v for k, v in sampler.__dict__.items() if k in get_class_attributes(sampler)}
