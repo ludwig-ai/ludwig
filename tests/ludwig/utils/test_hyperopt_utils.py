@@ -14,8 +14,6 @@
 # ==============================================================================
 import pytest
 
-from ludwig.hyperopt.sampling import GridSampler, PySOTSampler, RandomSampler
-
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
@@ -48,6 +46,7 @@ HYPEROPT_PARAMS = {
 }
 
 
+@pytest.mark.skip("Rework for RayTune")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
     hyperopt_test_params = HYPEROPT_PARAMS[key]
@@ -75,6 +74,7 @@ def test_grid_strategy(key):
     assert len(grid_sampler.samples) == hyperopt_test_params["expected_len_grids"]
 
 
+@pytest.mark.skip("Rework for RayTune")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_random_sampler(key):
     hyperopt_test_params = HYPEROPT_PARAMS[key]
@@ -100,34 +100,3 @@ def test_random_sampler(key):
 
     assert actual_params_keys == expected_params_keys
     assert len(random_sampler.samples) == num_samples
-
-
-@pytest.mark.parametrize("key", ["test_1", "test_2"])
-def test_pysot_sampler(key):
-    hyperopt_test_params = HYPEROPT_PARAMS[key]
-    goal = hyperopt_test_params["goal"]
-    pysot_sampler_params = hyperopt_test_params["parameters"]
-    num_samples = hyperopt_test_params["num_samples"]
-
-    pysot_sampler = PySOTSampler(goal=goal, parameters=pysot_sampler_params, num_samples=num_samples)
-
-    actual_params_keys = pysot_sampler.sample().keys()
-    expected_params_keys = pysot_sampler_params.keys()
-
-    pysot_sampler_samples = 1
-
-    for _ in range(num_samples - 1):
-        sample = pysot_sampler.sample()
-        for param in actual_params_keys:
-            value = sample[param]
-            param_type = pysot_sampler_params[param]["type"]
-            if param_type == "int" or param_type == "float":
-                low = pysot_sampler_params[param]["low"]
-                high = pysot_sampler_params[param]["high"]
-                assert value >= low and value <= high
-            else:
-                assert value in set(pysot_sampler_params[param]["values"])
-        pysot_sampler_samples += 1
-
-    assert actual_params_keys == expected_params_keys
-    assert pysot_sampler_samples == num_samples
