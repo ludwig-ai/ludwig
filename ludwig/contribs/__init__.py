@@ -38,11 +38,12 @@ from .comet import CometCallback
 from .mlflow import MlflowCallback
 from .wandb import WandbCallback
 from .whylogs import WhyLogsCallback
-
+from .aim import AimCallback
 contrib_registry = {
     # Contributors, add your class here:
     "comet": CometCallback,
     "wandb": WandbCallback,
     "mlflow": MlflowCallback,
     "whylogs": WhyLogsCallback,
+    "aim": AimCallback,
 }
