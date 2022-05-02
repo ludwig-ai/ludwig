@@ -53,25 +53,26 @@ def test_grid_strategy(key):
     goal = hyperopt_test_params["goal"]
     grid_sampler_params = hyperopt_test_params["parameters"]
 
-    grid_sampler = GridSampler(goal=goal, parameters=grid_sampler_params)
-
-    actual_params_keys = grid_sampler.sample().keys()
-    expected_params_keys = grid_sampler_params.keys()
-
-    for sample in grid_sampler.samples:
-        for param in actual_params_keys:
-            value = sample[param]
-            param_type = grid_sampler_params[param]["type"]
-            if param_type == "int" or param_type == "float":
-                low = grid_sampler_params[param]["low"]
-                high = grid_sampler_params[param]["high"]
-                assert value >= low and value <= high
-            else:
-                assert value in set(grid_sampler_params[param]["values"])
-
-    assert actual_params_keys == expected_params_keys
-    assert grid_sampler.search_space == hyperopt_test_params["expected_search_space"]
-    assert len(grid_sampler.samples) == hyperopt_test_params["expected_len_grids"]
+    # TODO: Rework for RayTune
+    # grid_sampler = GridSampler(goal=goal, parameters=grid_sampler_params)
+    #
+    # actual_params_keys = grid_sampler.sample().keys()
+    # expected_params_keys = grid_sampler_params.keys()
+    #
+    # for sample in grid_sampler.samples:
+    #     for param in actual_params_keys:
+    #         value = sample[param]
+    #         param_type = grid_sampler_params[param]["type"]
+    #         if param_type == "int" or param_type == "float":
+    #             low = grid_sampler_params[param]["low"]
+    #             high = grid_sampler_params[param]["high"]
+    #             assert value >= low and value <= high
+    #         else:
+    #             assert value in set(grid_sampler_params[param]["values"])
+    #
+    # assert actual_params_keys == expected_params_keys
+    # assert grid_sampler.search_space == hyperopt_test_params["expected_search_space"]
+    # assert len(grid_sampler.samples) == hyperopt_test_params["expected_len_grids"]
 
 
 @pytest.mark.skip("Rework for RayTune")
@@ -82,21 +83,22 @@ def test_random_sampler(key):
     random_sampler_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
-    random_sampler = RandomSampler(goal=goal, parameters=random_sampler_params, num_samples=num_samples)
-
-    actual_params_keys = random_sampler.sample().keys()
-    expected_params_keys = random_sampler_params.keys()
-
-    for sample in random_sampler.samples:
-        for param in actual_params_keys:
-            value = sample[param]
-            param_type = random_sampler_params[param]["type"]
-            if param_type == "int" or param_type == "float":
-                low = random_sampler_params[param]["low"]
-                high = random_sampler_params[param]["high"]
-                assert value >= low and value <= high
-            else:
-                assert value in set(random_sampler_params[param]["values"])
-
-    assert actual_params_keys == expected_params_keys
-    assert len(random_sampler.samples) == num_samples
+    # TODO: Rework for RayTune
+    # random_sampler = RandomSampler(goal=goal, parameters=random_sampler_params, num_samples=num_samples)
+    #
+    # actual_params_keys = random_sampler.sample().keys()
+    # expected_params_keys = random_sampler_params.keys()
+    #
+    # for sample in random_sampler.samples:
+    #     for param in actual_params_keys:
+    #         value = sample[param]
+    #         param_type = random_sampler_params[param]["type"]
+    #         if param_type == "int" or param_type == "float":
+    #             low = random_sampler_params[param]["low"]
+    #             high = random_sampler_params[param]["high"]
+    #             assert value >= low and value <= high
+    #         else:
+    #             assert value in set(random_sampler_params[param]["values"])
+    #
+    # assert actual_params_keys == expected_params_keys
+    # assert len(random_sampler.samples) == num_samples
