@@ -49,11 +49,13 @@ HYPEROPT_PARAMS = {
 @pytest.mark.skip("Rework for RayTune")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
-    hyperopt_test_params = HYPEROPT_PARAMS[key]
-    goal = hyperopt_test_params["goal"]
-    grid_sampler_params = hyperopt_test_params["parameters"]
-
+    pass
     # TODO: Rework for RayTune
+
+    # hyperopt_test_params = HYPEROPT_PARAMS[key]
+    # goal = hyperopt_test_params["goal"]
+    # grid_sampler_params = hyperopt_test_params["parameters"]
+
     # grid_sampler = GridSampler(goal=goal, parameters=grid_sampler_params)
     #
     # actual_params_keys = grid_sampler.sample().keys()
@@ -78,12 +80,14 @@ def test_grid_strategy(key):
 @pytest.mark.skip("Rework for RayTune")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_random_sampler(key):
-    hyperopt_test_params = HYPEROPT_PARAMS[key]
-    goal = hyperopt_test_params["goal"]
-    random_sampler_params = hyperopt_test_params["parameters"]
-    num_samples = hyperopt_test_params["num_samples"]
+    pass
 
     # TODO: Rework for RayTune
+    # hyperopt_test_params = HYPEROPT_PARAMS[key]
+    # goal = hyperopt_test_params["goal"]
+    # random_sampler_params = hyperopt_test_params["parameters"]
+    # num_samples = hyperopt_test_params["num_samples"]
+
     # random_sampler = RandomSampler(goal=goal, parameters=random_sampler_params, num_samples=num_samples)
     #
     # actual_params_keys = random_sampler.sample().keys()
