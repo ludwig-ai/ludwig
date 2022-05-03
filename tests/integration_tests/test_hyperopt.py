@@ -21,9 +21,9 @@ import pytest
 import ray
 import torch
 
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.constants import ACCURACY, RAY, TRAINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
-from ludwig.hyperopt.results import HyperoptResults
+from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
@@ -51,11 +51,7 @@ HYPEROPT_CONFIG = {
     "goal": "minimize",
 }
 
-SAMPLERS = [{"type": "ray", "num_samples": 2}]
-
-EXECUTORS = [
-    {"type": "ray"},
-]
+SAMPLERS = [{"num_samples": 2}]
 
 
 @contextlib.contextmanager
@@ -74,8 +70,7 @@ def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("sampler", SAMPLERS)
-@pytest.mark.parametrize("executor", EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feature=False, validation_metric=None):
+def test_hyperopt_executor(sampler, csv_filename, validate_output_feature=False, validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -109,22 +104,21 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(goal, parameters, **sampler)
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
-        hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-            hyperopt_sampler, output_feature, metric, split, **executor
-        )
+        hyperopt_executor = get_build_hyperopt_executor(RAY)(hyperopt_sampler, output_feature, metric, split)
 
-        hyperopt_executor.execute(config, dataset=rel_path)
+        raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
+
+        assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
     test_hyperopt_executor(
-        {"type": "ray", "num_samples": 2},
-        {"type": "ray"},
+        {"num_samples": 2},
         csv_filename,
         validate_output_feature=True,
         validation_metric=ACCURACY,
@@ -132,8 +126,7 @@ def test_hyperopt_executor_with_metric(csv_filename):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("samplers", SAMPLERS)
-def test_hyperopt_run_hyperopt(csv_filename, samplers):
+def test_hyperopt_run_hyperopt(csv_filename):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -175,7 +168,7 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
         "executor": {"type": "ray"},
-        "sampler": {"type": samplers["type"], "num_samples": 2},
+        "sampler": {"type": "ray", "num_samples": 2},
     }
 
     # add hyperopt parameter space to the config
@@ -192,41 +185,3 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
 
     if os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json")):
         os.remove(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
-
-
-# TODO: Need to confirm if this is still needed with a RayTune only executors
-@pytest.mark.distributed
-@pytest.mark.skip("This is Serial only test?")
-def test_hyperopt_executor_get_metric_score():
-    executor = EXECUTORS[0]
-    output_feature = "of_name"
-    split = "validation"
-
-    train_stats = {
-        "training": {
-            output_feature: {
-                "loss": [0.58760345, 1.5066891],
-                "accuracy": [0.6666667, 0.33333334],
-                "hits_at_k": [1.0, 1.0],
-            },
-            "combined": {"loss": [0.58760345, 1.5066891]},
-        },
-        "validation": {
-            output_feature: {"loss": [0.30233705, 2.6505466], "accuracy": [1.0, 0.0], "hits_at_k": [1.0, 1.0]},
-            "combined": {"loss": [0.30233705, 2.6505466]},
-        },
-        "test": {
-            output_feature: {"loss": [1.0876318, 1.4353828], "accuracy": [0.7, 0.5], "hits_at_k": [1.0, 1.0]},
-            "combined": {"loss": [1.0876318, 1.4353828]},
-        },
-    }
-
-    metric = "loss"
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats)
-    assert score == 0.30233705
-
-    metric = "accuracy"
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats)
-    assert score == 1.0
