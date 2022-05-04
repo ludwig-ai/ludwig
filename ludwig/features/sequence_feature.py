@@ -475,7 +475,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         f'Sequence probability array should be 2-dimensional '
                         f'shape, instead shape is {dim}-dimensional ({prob.shape})'
                     )
-                return np.amax(prob, axis=-1)
+                length = result[lengths_col][0]
+                return np.amax(prob, axis=-1)[:length]
 
             # get probability of token in that sequence position
             result[probs_col] = backend.df_engine.map_objects(
