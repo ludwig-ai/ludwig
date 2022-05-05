@@ -21,30 +21,38 @@ class AimCallback(Callback):
         output_directory,
         resume,
     ):
-        logger.info("wandb.on_train_init() called...")
+        logger.info("aim.on_train_init() called...")
+
+        print("base config ", base_config)
+        print("experiment directory ", experiment_directory)
+        print("experiment name ", experiment_name)
+        print("model name ", model_name)
+        print("output directory ", output_directory)
 
         self.aim_run = aim.Run(repo=experiment_directory, experiment=experiment_name, run_hash=None)
         self.aim_run["base_config"] = base_config
 
         params = dict(name=model_name, dir=output_directory)
         self.aim_run["params"] = params
+        print(params)
 
     def aim_track(self, progress_tracker):
 
+        print("LogMetrics are being tracked...", progress_tracker.log_metrics())
         if self.aim_run:
             train_config = self.aim_run["train_config"]
             for key, value in progress_tracker.log_metrics().items():
                 if "metrics" in key:
                     print(key)
                     metrics_dict_name, feature_name, metric_name = key.split(".")
+
                     self.aim_run.track(
                         value,
-                        name=f"{metrics_dict_name}.{feature_name}",
-                        context={"type": f"{key}_{metric_name}"},
+                        name=metric_name,
+                        context={metrics_dict_name: feature_name},
                         epoch=progress_tracker.epoch,
-                        step=progress_tracker.step,
+                        step=progress_tracker.steps,
                     )
-
                 else:
                     train_config[key] = value
 
@@ -52,9 +60,10 @@ class AimCallback(Callback):
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator: bool):
         optimizer_config = {}
-        for group in trainer.optimizer.param_groups:
-            if isinstance(group, dict):
-                optimizer_config.update(group)
+        for index, group in enumerate(trainer.optimizer.param_groups):
+            for key in group:
+                if "param" not in key:
+                    optimizer_config[f"param_group_{index}_{key}"] = group[key]
 
         self.aim_run["optimizer_config"] = optimizer_config
 
@@ -62,21 +71,46 @@ class AimCallback(Callback):
 
     def on_train_start(self, model, config, *args, **kwargs):
         logger.info("aim.on_train_start() called...")
-        logger.info(args, kwargs)
+
+        config = config.copy()
+        del config["input_features"]
+        del config["output_features"]
+
+        print(config)
         self.aim_run["train_config"] = config
+
+    def on_train_end(self, output_directory, *args, **kwargs):
+        print("END OF TRAINING")
+        print(kwargs)
+        print("_________________")
+
+    def on_eval_end(self, trainer, progress_tracker, save_path):
+        print("END OF EPOCH")
+        print(progress_tracker.log_metrics())
+        print("_________________")
+
+    def on_batch_start(self, trainer, progress_tracker, save_path: str):
+        print("START OF BATCH")
+        print(progress_tracker.log_metrics())
+        print("_________________")
+
+    def on_batch_end(self, trainer, progress_tracker, save_path: str):
+        print("END OF BATCH")
+        # print(progress_tracker.train_metrics)
+        # print("___________________________")
+        print(progress_tracker.log_metrics())
+        print("_________________")
+
+    def on_epoch_end(self, trainer, progress_tracker, save_path):
+        print("END OF EVAL")
+        print(progress_tracker.log_metrics())
+        print("_________________")
+
+        self.aim_track(progress_tracker)
 
     def on_ludwig_end(self):
         self.aim_run.close()
         self.aim_run = None
-
-    def on_train_end(self, output_directory, *args, **kwargs):
-        pass
-
-    def on_eval_end(self, trainer, progress_tracker, save_path):
-        pass
-
-    def on_epoch_end(self, trainer, progress_tracker, save_path):
-        pass
 
     def on_visualize_figure(self, fig):
         logger.info("aim.on_visualize_figure() called...")
