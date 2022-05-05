@@ -22,7 +22,6 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.backend import RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.models.inference import InferenceLudwigModel
@@ -272,7 +271,6 @@ def run_api_commands(
     skip_save_eval_stats=False,
     skip_collect_predictions=False,
     skip_collect_overall_stats=False,
-    backend=None,
 ):
     """Helper method to avoid code repetition in running an experiment.
 
@@ -288,7 +286,7 @@ def run_api_commands(
         TRAINER: {"epochs": 2},
     }
 
-    model = LudwigModel(config, backend=backend)
+    model = LudwigModel(config)
 
     # Training with csv
     model.train(
@@ -421,7 +419,6 @@ def test_api_skip_parameters_evaluate(
             skip_save_eval_stats=skip_save_eval_stats,
             skip_collect_predictions=skip_collect_predictions,
             skip_collect_overall_stats=skip_collect_overall_stats,
-            backend=None,
         )
 
 
