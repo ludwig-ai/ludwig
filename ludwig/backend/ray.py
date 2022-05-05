@@ -576,25 +576,21 @@ class RayPredictor(BasePredictor):
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
 
-        dask_dataset = (
-            dataset.ds.map_batches(
-                to_tensors,
-                batch_format="pandas",
-                num_cpus=num_cpus,
-                num_gpus=num_gpus,)
-            .map_batches(
-                batch_predictor,
-                batch_size=self.batch_size,
-                compute="actors",
-                batch_format="pandas",
-                num_cpus=num_cpus,
-                num_gpus=num_gpus,
-            )
+        dask_dataset = dataset.ds.map_batches(
+            to_tensors,
+            batch_format="pandas",
+            num_cpus=num_cpus,
+            num_gpus=num_gpus,
+        ).map_batches(
+            batch_predictor,
+            batch_size=self.batch_size,
+            compute="actors",
+            batch_format="pandas",
+            num_cpus=num_cpus,
+            num_gpus=num_gpus,
         )
 
-        with dask.annotate(
-                ray_remote_args={"num_cpus": num_cpus, "num_gpus": num_gpus}
-        ):
+        with dask.annotate(ray_remote_args={"num_cpus": num_cpus, "num_gpus": num_gpus}):
             dask_dataset = dask_dataset.to_dask()
 
         for of_feature in self.model.output_features.values():
