@@ -374,3 +374,27 @@ def train_gpu(config, dataset, output_directory):
 def predict_cpu(model_dir, dataset):
     model = LudwigModel.load(model_dir, backend="local")
     model.predict(dataset)
+
+
+def test_tune_batch_size():
+    with ray_start(num_cpus=2, num_gpus=None):
+        config = {
+            "input_features": [
+                number_feature(normalization="zscore"),
+                set_feature(),
+                binary_feature(),
+            ],
+            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": 2, "batch_size": "auto"},
+        }
+
+        backend_config = {**RAY_BACKEND_CONFIG}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            dataset_csv = generate_data(
+                config["input_features"], config["output_features"], csv_filename, num_examples=100
+            )
+            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+            run_api_experiment(config, data_parquet=dataset_parquet, backend_config=backend_config)

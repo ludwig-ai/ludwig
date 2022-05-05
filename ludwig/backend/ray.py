@@ -36,6 +36,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -204,6 +205,35 @@ def train_fn(
     return train_results
 
 
+def tune_batch_size_fn(
+    executable_kwargs: Dict[str, Any] = None,
+    model_ref: ObjectRef = None,  # noqa: F821
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
+):
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
+        eval_shard = RayDatasetShard(
+            rt.get_dataset_shard("eval"),
+            features,
+            training_set_metadata,
+        )
+
+        model = ray.get(model_ref)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = model.to(device)
+
+        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        return trainer.tune_batch_size(eval_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
+
+
 class RayTrainerV2(BaseTrainer):
     def __init__(self, model, trainer_kwargs, data_loader_kwargs, executable_kwargs):
         self.model = model.cpu()
@@ -250,6 +280,26 @@ class RayTrainerV2(BaseTrainer):
 
     def train_online(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: RayDataset,
+        **kwargs,
+    ) -> int:
+        datasets = {"train": training_set.pipeline(shuffle=False, **self.data_loader_kwargs)}
+        batch_size = self.trainer.run(
+            lambda config: tune_batch_size_fn(**config),
+            config={
+                "executable_kwargs": self.executable_kwargs,
+                "model_ref": ray.put(self.model),
+                "training_set_metadata": training_set.training_set_metadata,
+                "features": training_set.features,
+                **kwargs,
+            },
+            dataset=datasets,
+        )[0]
+        return batch_size
 
     @property
     def validation_field(self):
@@ -353,6 +403,16 @@ class RayLegacyTrainer(BaseTrainer):
         results = self.executor.execute(lambda trainer: trainer.train_online(model, *args, **kwargs))
 
         return results[0]
+
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: RayDataset,
+        random_seed: int = default_random_seed,
+        max_trials: int = 10,
+        halving_limit: int = 3,
+    ) -> int:
+        raise NotImplementedError("Use v2 trainer to tune batch size")
 
     @property
     def validation_field(self):

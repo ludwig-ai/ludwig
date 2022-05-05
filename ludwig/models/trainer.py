@@ -80,6 +80,17 @@ class BaseTrainer(ABC):
     ):
         raise NotImplementedError()
 
+    @abstractmethod
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: Dataset,
+        random_seed: int = default_random_seed,
+        max_trials: int = 10,
+        halving_limit: int = 3,
+    ) -> int:
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def validation_field(self):
