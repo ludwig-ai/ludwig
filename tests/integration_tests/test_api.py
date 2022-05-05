@@ -344,6 +344,7 @@ def test_api_skip_parameters_train(
     skip_save_model,
     skip_save_progress,
     skip_save_log,
+    skip_save_processed_input,
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=5)]
@@ -362,6 +363,7 @@ def test_api_skip_parameters_train(
             skip_save_model=skip_save_model,
             skip_save_progress=skip_save_progress,
             skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
         )
 
 
