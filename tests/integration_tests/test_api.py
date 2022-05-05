@@ -442,7 +442,6 @@ def test_api_skip_parameters_evaluate_ray(csv_filename):
             data_csv=rel_path,
             output_dir=output_dir,
             skip_save_unprocessed_output=True,
-            skip_save_processed_input=False,
             skip_save_predictions=True,
             skip_save_eval_stats=True,
             skip_collect_predictions=True,

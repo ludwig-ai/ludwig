@@ -1130,7 +1130,6 @@ def build_dataset(
             proc_column = feature[PROC_COLUMN]
             reshape = metadata[name].get("reshape")
             if reshape is not None:
-                print("reshaping")
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
