@@ -48,7 +48,6 @@ class DaskEngine(DataFrameEngine):
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
-
         # TODO: address if following results in fragmented DataFrame
         for k, v in proc_cols.items():
             dataset[k] = v
