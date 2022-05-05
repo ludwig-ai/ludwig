@@ -48,13 +48,31 @@ class DaskEngine(DataFrameEngine):
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
+        print(dataset)
+        print("dataset")
+        print(dataset)
+        print("dataset.dtypes")
+        print(dataset.dtypes)
         # TODO: address if following results in fragmented DataFrame
         for k, v in proc_cols.items():
-            dataset[k] = v
-            dataset[k] = dataset[k].astype(v.dtype)
+            print("v")
+            print(v)
+            print("v.compute()")
+            print(v.compute())
+            dataset[k] = v.astype(v.dtype)
+            # dataset = dataset.assign(**{k: v})
+            print("dataset[k]")
+            print(dataset[k])
+            print("dataset[k].dtype")
+            print(dataset[k].dtype)
+            print("dataset[k].compute()")
+            print(dataset[k].compute())
+            # dataset[k] = dataset[k].astype(v.dtype)
         return dataset
 
     def parallelize(self, data):
+        print("self.parallelism")
+        print(self.parallelism)
         if self.parallelism:
             return data.repartition(self.parallelism)
         return data
@@ -62,6 +80,8 @@ class DaskEngine(DataFrameEngine):
     def persist(self, data):
         # No graph optimizations to prevent dropping custom annotations
         # https://github.com/dask/dask/issues/7036
+        print("self._persist")
+        print(self._persist)
         return data.persist(optimize_graph=False) if self._persist else data
 
     def concat(self, dfs):
@@ -94,8 +114,8 @@ class DaskEngine(DataFrameEngine):
             df.to_parquet(
                 path,
                 engine="pyarrow",
-                write_index=False,
-                schema="infer",
+                index=False,
+                # schema="infer",
             )
 
     def to_ray_dataset(self, df):
