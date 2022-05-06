@@ -134,7 +134,7 @@ def run_test_imbalance_local(
 
 @pytest.mark.parametrize(
     "balance",
-    ["oversample_minority", "undersample_majority"],
+    ["oversample_minority"],
 )
 @pytest.mark.distributed
 def test_imbalance_ray(balance):
