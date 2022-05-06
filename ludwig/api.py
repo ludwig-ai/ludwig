@@ -552,7 +552,7 @@ class LudwigModel:
                     # Calibrates output feature probabilities on validation set if calibration is enabled.
                     # Must be done after training, and before final model parameters are saved.
                     if self.backend.is_coordinator() and validation_set is not None:
-                        trainer.calibration(validation_set, VALIDATION)
+                        trainer.calibration(validation_set, VALIDATION, save_path=model_dir)
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->

@@ -1112,7 +1112,7 @@ class Trainer(BaseTrainer):
 
         return metrics_log, tables
 
-    def calibration(self, dataset, dataset_name):
+    def calibration(self, dataset, dataset_name: str, save_path: str):
         """Calibrates model output probabilities on validation set after training.
 
         This works well for most datasets, though it may fail for some difficult or extremely imbalanced datasets.
@@ -1132,6 +1132,9 @@ class Trainer(BaseTrainer):
                 output_feature.calibrate(
                     np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
                 )
+        if self.is_coordinator() and not self.skip_save_model:
+            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            torch.save(self.model.state_dict(), model_weights_path)
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
