@@ -51,6 +51,7 @@ class DaskEngine(DataFrameEngine):
         # TODO: address if following results in fragmented DataFrame
         for k, v in proc_cols.items():
             dataset[k] = v
+            dataset[k] = dataset[k].astype(v.dtype)
         return dataset
 
     def parallelize(self, data):

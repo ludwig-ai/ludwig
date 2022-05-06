@@ -11,6 +11,7 @@ from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.utils import image_utils
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -91,11 +92,6 @@ class InferenceLudwigModel:
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
         self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
-    def _to_input(self, s: pd.Series, feature_type: str) -> Union[List[str], torch.Tensor]:
-        if feature_type in {"category"}:
-            return s.astype(str).to_list()
-        return torch.from_numpy(s.to_numpy())
-
     def predict(
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
@@ -104,7 +100,7 @@ class InferenceLudwigModel:
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
         inputs = {
-            if_config["name"]: self._to_input(dataset[if_config[COLUMN]], if_config[TYPE])
+            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
             for if_config in self.config["input_features"]
         }
 
@@ -113,3 +109,13 @@ class InferenceLudwigModel:
         if return_type == pd.DataFrame:
             preds = convert_dict_to_df(preds)
         return preds, None  # Second return value is for compatibility with LudwigModel.predict
+
+
+def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:
+    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
+    if feature_type == "image":
+        if load_paths:
+            return [image_utils.read_image(v) for v in s]
+    if feature_type in {"binary", "category", "bag", "set", "text", "sequence"}:
+        return s.astype(str).to_list()
+    return torch.from_numpy(s.to_numpy())
