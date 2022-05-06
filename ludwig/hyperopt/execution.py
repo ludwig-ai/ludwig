@@ -466,10 +466,10 @@ class RayTuneExecutor(HyperoptExecutor):
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
             num_gpus = resources.required_resources.get("GPU", 0)
-            num_cpus = resources.required_resources.get("CPU", 1)
+            num_cpus = resources.required_resources.get("CPU", 1) if num_gpus == 0 else 0
 
             hvd_kwargs = {
-                "num_workers": num_gpus if use_gpu else 1,
+                "num_workers": int(num_gpus) if use_gpu else 1,
                 "use_gpu": use_gpu,
                 "resources_per_worker": {
                     "CPU": num_cpus,
