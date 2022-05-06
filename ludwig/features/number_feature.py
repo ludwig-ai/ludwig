@@ -288,7 +288,9 @@ class NumberFeatureMixin(BaseFeatureMixin):
             return pd.Series(transformed_values, index=series.index)
 
         input_series = input_df[feature_config[COLUMN]].astype(np.float32)
-        proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_partitions(input_series, normalize)
+        proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_partitions(
+            input_series, normalize, meta=input_series
+        )
 
         return proc_df
 

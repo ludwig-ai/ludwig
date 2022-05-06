@@ -75,15 +75,15 @@ class DaskEngine(DataFrameEngine):
         return dd.from_pandas(df, npartitions=parallelism).reset_index()
 
     def map_objects(self, series, map_fn, meta=None):
-        meta = meta or ("data", "object")
+        meta = meta if meta is not None else ("data", "object")
         return series.map(map_fn, meta=meta)
 
     def map_partitions(self, series, map_fn, meta=None):
-        meta = meta or ("data", "object")
+        meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
 
     def apply_objects(self, df, apply_fn, meta=None):
-        meta = meta or ("data", "object")
+        meta = meta if meta is not None else ("data", "object")
         return df.apply(apply_fn, axis=1, meta=meta)
 
     def reduce_objects(self, series, reduce_fn):
