@@ -3,11 +3,11 @@
 import json
 
 from ludwig.automl.automl import create_auto_config
-from tests.regression_tests.automl.utils import get_dataset_golden_types_path, get_dataset_object, REGISTRY
+from tests.regression_tests.automl.utils import get_dataset_golden_types_path, get_dataset_object, TEST_DATASET_REGISTRY
 
 
 def write_json_files():
-    for dataset_name in REGISTRY:
+    for dataset_name in TEST_DATASET_REGISTRY:
         dataset_obj = get_dataset_object(dataset_name)
         dataset = dataset_obj.load(split=False)
 
