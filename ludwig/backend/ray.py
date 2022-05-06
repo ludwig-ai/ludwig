@@ -571,7 +571,9 @@ class RayPredictor(BasePredictor):
                 df[c] = df[c].astype(TensorDtype())
             return df
 
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.
+        # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
