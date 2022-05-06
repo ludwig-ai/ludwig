@@ -566,6 +566,7 @@ class LudwigModel:
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
+                        print(validation_field_result)
                         best_vali_index, (
                             epoch_best_validation_metric,
                             step_best_validation_metric,

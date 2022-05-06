@@ -217,15 +217,15 @@ class RayDatasetBatcher(Batcher):
     def _fetch_next_epoch(self):
         dataset = next(self.dataset_epoch_iterator)
 
-        read_parallelism = 1
-        if read_parallelism == 1:
-            self.dataset_batch_iter = self._create_async_reader(dataset)
-        elif read_parallelism > 1:
-            self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
-        else:
-            # TODO: consider removing this. doesn't work currently and read performance seems generally
-            #  very good with 1 parallelism
-            self.dataset_batch_iter = self._create_sync_reader(dataset)
+        # read_parallelism = 1
+        # if read_parallelism == 1:
+        #     self.dataset_batch_iter = self._create_async_reader(dataset)
+        # elif read_parallelism > 1:
+        #     self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
+        # else:
+        # TODO: consider removing this. doesn't work currently and read performance seems generally
+        #  very good with 1 parallelism
+        self.dataset_batch_iter = self._create_sync_reader(dataset)
 
         self._step = 0
         self._fetch_next_batch()

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import copy
 import logging
 from distutils.version import LooseVersion
@@ -35,7 +36,7 @@ from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
@@ -184,6 +185,9 @@ def train_fn(
                 training_set_metadata,
             )
 
+        print("VALIDATION LEN", len(val_shard))
+        print("TEST LEN", len(test_shard))
+
         model = ray.get(model_ref)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = model.to(device)
@@ -205,9 +209,13 @@ def train_fn(
     return train_results
 
 
+@ray.remote
 def tune_batch_size_fn(
+    dataset: RayDataset = None,
+    data_loader_kwargs: Dict[str, Any] = None,
     executable_kwargs: Dict[str, Any] = None,
-    model_ref: ObjectRef = None,  # noqa: F821
+    model: ECD = None,  # noqa: F821
+    ludwig_config: Dict[str, Any] = None,
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -217,18 +225,18 @@ def tune_batch_size_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
-        eval_shard = RayDatasetShard(
-            rt.get_dataset_shard("eval"),
+        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+        train_shard = RayDatasetShard(
+            pipe,
             features,
             training_set_metadata,
         )
 
-        model = ray.get(model_ref)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
-        return trainer.tune_batch_size(eval_shard, **kwargs)
+        return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
@@ -239,10 +247,18 @@ class RayTrainerV2(BaseTrainer):
         self.model = model.cpu()
         self.data_loader_kwargs = data_loader_kwargs
         self.executable_kwargs = executable_kwargs
-        self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
-        self.trainer.start()
+        self.trainer_kwargs = trainer_kwargs
         self._validation_field = None
         self._validation_metric = None
+
+    @contextlib.contextmanager
+    def create_runner(self):
+        trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
+        trainer.start()
+        try:
+            yield trainer
+        finally:
+            trainer.shutdown()
 
     def train(
         self,
@@ -265,11 +281,12 @@ class RayTrainerV2(BaseTrainer):
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
-        results, self._validation_field, self._validation_metric = self.trainer.run(
-            lambda config: train_fn(**config),
-            config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
-            dataset=dataset,
-        )[0]
+        with self.create_runner() as runner:
+            results, self._validation_field, self._validation_metric = runner.run(
+                lambda config: train_fn(**config),
+                config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
+                dataset=dataset,
+            )[0]
 
         # load state dict back into the model
         state_dict, *args = results
@@ -287,19 +304,39 @@ class RayTrainerV2(BaseTrainer):
         training_set: RayDataset,
         **kwargs,
     ) -> int:
-        datasets = {"train": training_set.pipeline(shuffle=False, **self.data_loader_kwargs)}
-        batch_size = self.trainer.run(
-            lambda config: tune_batch_size_fn(**config),
-            config={
-                "executable_kwargs": self.executable_kwargs,
-                "model_ref": ray.put(self.model),
-                "training_set_metadata": training_set.training_set_metadata,
-                "features": training_set.features,
+        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_cpus = resources_per_worker.get("CPU", 1)
+        num_gpus = resources_per_worker.get("GPU", 0)
+
+        return ray.get(
+            tune_batch_size_fn.options(num_cpus=num_cpus, num_gpus=num_gpus).remote(
+                dataset=training_set,
+                data_loader_kwargs=self.data_loader_kwargs,
+                executable_kwargs=self.executable_kwargs,
+                model=ray.put(self.model),
+                ludwig_config=config,
+                training_set_metadata=training_set.training_set_metadata,
+                features=training_set.features,
                 **kwargs,
-            },
-            dataset=datasets,
-        )[0]
-        return batch_size
+            )
+        )
+
+        # dataset = training_set.pipeline(shuffle=False, **self.data_loader_kwargs)
+        # with self.create_runner() as runner:
+        #     batch_size = runner.run(
+        #         lambda config: tune_batch_size_fn(**config),
+        #         config={
+        #             "executable_kwargs": self.executable_kwargs,
+        #             "model_ref": ray.put(self.model),
+        #             "ludwig_config": config,
+        #             "training_set_metadata": training_set.training_set_metadata,
+        #             "features": training_set.features,
+        #             **kwargs,
+        #         },
+        #         dataset=dataset,
+        #     )[0]
+        # return batch_size
 
     @property
     def validation_field(self):
@@ -309,8 +346,31 @@ class RayTrainerV2(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
+    @property
+    def config(self) -> TrainerConfig:
+        return self.executable_kwargs["config"]
+
+    @property
+    def batch_size(self) -> int:
+        return self.config.batch_size
+
+    @batch_size.setter
+    def batch_size(self, value: int):
+        self.config.batch_size = value
+
+    @property
+    def eval_batch_size(self) -> int:
+        return self.config.eval_batch_size
+
+    @eval_batch_size.setter
+    def eval_batch_size(self, value: int):
+        self.config.eval_batch_size = value
+
+    def set_base_learning_rate(self, learning_rate: float):
+        self.config.learning_rate = learning_rate
+
     def shutdown(self):
-        self.trainer.shutdown()
+        pass
 
 
 def legacy_train_fn(

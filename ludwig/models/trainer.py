@@ -515,6 +515,7 @@ class Trainer(BaseTrainer):
     ):
         """Function to be used by tune_batch_size."""
         self.model.train()  # Sets model training mode.
+        print("BATCH SIZE", batch_size)
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
 
             step_count = 0
@@ -531,6 +532,7 @@ class Trainer(BaseTrainer):
 
                 self.train_step(inputs, targets)
                 step_count += 1
+        print("STEP COUNT", step_count)
         return self.model
 
     def tune_learning_rate(
@@ -633,16 +635,17 @@ class Trainer(BaseTrainer):
         config: Dict[str, Any],
         training_set: Dataset,
         random_seed: int = default_random_seed,
-        max_trials: int = 10,
+        max_trials: int = 20,
         halving_limit: int = 3,
     ) -> int:
         def _is_valid_batch_size(batch_size):
+            # make sure that batch size is valid (e.g. less than size of ds)
             return batch_size < len(training_set)
 
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value (namely, 128)
-        batch_size = 128
+        # placeholder starting value
+        batch_size = 8
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -651,55 +654,29 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        best_batch_size = None
         try:
-            high = None
             count = 0
-            halving_count = 0
-            while halving_count < halving_limit:
+            while count < max_trials and _is_valid_batch_size(batch_size):
                 gc.collect()
 
-                low = batch_size
-                prev_batch_size = batch_size
                 try:
                     self.train_for_tuning(training_set, batch_size, total_steps=3)
+                    best_batch_size = batch_size
                     count += 1
-                    if count >= max_trials:
-                        break
-                    if high:
-                        if high - low <= 1:
-                            break
-                        midval = (high + low) // 2
-                        batch_size = midval
-                    else:
-                        batch_size *= 2  # double batch size
 
-                    if batch_size == prev_batch_size:
-                        break
-
+                    # double batch size
+                    batch_size *= 2
                 except RuntimeError:
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
-                    high = batch_size
-                    halving_count += 1
-                    midval = (high + low) // 2
-                    batch_size = midval
-                    if high - low <= 1:
-                        break
-
-                # make sure that batch size is valid (e.g. less than size of ds)
-                if not _is_valid_batch_size(batch_size):
-                    batch_size = min(batch_size, len(training_set))
-
-                # edge case where bs is no longer increasing
-                if batch_size == prev_batch_size:
-                    break
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-        return batch_size
+        return best_batch_size
 
     def run_evaluation(
         self,
@@ -867,6 +844,9 @@ class Trainer(BaseTrainer):
 
         metrics_names = get_metric_names(output_features)
 
+        self.batch_size = 8
+        print("TRAIN BATCH SIZE", self.batch_size)
+
         # check if validation_field is valid
         valid_validation_field = False
         if self.validation_field == "combined":
@@ -1009,6 +989,7 @@ class Trainer(BaseTrainer):
                     self.model.reset_metrics()
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+                    print("START EPOCH")
 
                     # Trains over a full epoch of data.
                     should_break = self._train_loop(
@@ -1030,6 +1011,9 @@ class Trainer(BaseTrainer):
                         checkpoint_manager,
                         final_steps_per_checkpoint,
                     )
+
+                    print("TRAIN METRICS", progress_tracker.train_metrics)
+                    print("VAL METRICS", progress_tracker.validation_metrics)
 
                     # ================ Post Training Epoch ================
                     progress_tracker.epoch += 1
