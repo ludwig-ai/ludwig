@@ -191,11 +191,27 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.parametrize("dataset_type", ["parquet", "csv"])
-@pytest.mark.parametrize("skip_save_processed_input", [True, False])
 @pytest.mark.distributed
-def test_ray_tabular(df_engine, dataset_type, skip_save_processed_input):
+def test_ray_save_processed_input(dataset_type):
+    input_features = [
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
+    output_features = [
+        category_feature(vocab_size=2),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        skip_save_processed_input=False,
+    )
+
+
+@pytest.mark.parametrize("df_engine", ["dask", "modin"])
+@pytest.mark.distributed
+def test_ray_tabular(df_engine):
     input_features = [
         sequence_feature(reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -216,8 +232,6 @@ def test_ray_tabular(df_engine, dataset_type, skip_save_processed_input):
         input_features,
         output_features,
         df_engine=df_engine,
-        dataset_type=dataset_type,
-        skip_save_processed_input=skip_save_processed_input,
     )
 
 
