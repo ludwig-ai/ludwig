@@ -353,8 +353,8 @@ def cli(sys_argv):
         type=int,
         default=42,
         help="a random seed that is going to be used anywhere there is a call "
-             "to a random number generator: data splitting, parameter "
-             "initialization and training set shuffling",
+        "to a random number generator: data splitting, parameter "
+        "initialization and training set shuffling",
     )
     parser.add_argument(
         "-hlv",
@@ -363,8 +363,8 @@ def cli(sys_argv):
         default=1,
         choices=[0, 1, 2, 3],
         help="Controls verbosity of ray tune log messages.  Valid values: "
-             "0 = silent, 1 = only status updates, 2 = status and brief trial "
-             "results, 3 = status and detailed trial results."
+        "0 = silent, 1 = only status updates, 2 = status and brief trial "
+        "results, 3 = status and detailed trial results.",
     )
     parser.add_argument("-g", "--gpus", nargs="+", type=int, default=None, help="list of gpus to use")
     parser.add_argument(
@@ -374,7 +374,7 @@ def cli(sys_argv):
         "-b",
         "--backend",
         help="specifies backend to use for parallel / distributed execution, "
-             "defaults to local execution or Horovod if called using horovodrun",
+        "defaults to local execution or Horovod if called using horovodrun",
         choices=ALL_BACKENDS,
     )
     parser.add_argument(
