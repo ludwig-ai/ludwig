@@ -158,6 +158,16 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise RuntimeError
 
         raw_audio = df_engine.map_objects(raw_audio, lambda row: row if row is not None else default_audio)
+        test = raw_audio.compute()[0]
+        test_feature = AudioFeatureMixin._transform_to_feature(
+            audio=test[0],
+            sampling_rate_in_hz=test[1],
+            audio_feature_dict=audio_feature_dict,
+            feature_dim=feature_dim,
+            max_length=max_length,
+            padding_value=padding_value,
+            normalization_type=normalization_type,
+        )
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
@@ -235,7 +245,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         elif normalization_type == "global":
             raise ValueError("not implemented yet")
 
-        feature_length = audio_feature.shape[1]
+        feature_length = audio_feature.shape[0]
         broadcast_feature_length = min(feature_length, max_length)
         audio_feature_padded = np.full((max_length, feature_dim), padding_value, dtype=np.float32)
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
