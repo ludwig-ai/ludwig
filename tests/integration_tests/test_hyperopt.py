@@ -171,10 +171,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space):
     else:
         # grid search space will be product each parameter size
         search_parameters = {
-            "trainer.learning_rate": {
-                "space": "grid_search",
-                "values": [0.001, 0.005, 0.01]
-            },
+            "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.01]},
             output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21, 36]},
             output_feature_name + ".num_fc_layers": {"space": "grid_search", "values": [1, 3, 6]},
         }
