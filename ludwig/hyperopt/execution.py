@@ -530,17 +530,18 @@ class RayTuneExecutor(HyperoptExecutor):
         skip_save_log=False,
         skip_save_processed_input=True,
         skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs,
+            skip_save_predictions=False,
+            skip_save_eval_stats=False,
+            output_directory="results",
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            callbacks=None,
+            backend=None,
+            random_seed=default_random_seed,
+            debug=False,
+            hyperopt_log_verbosity=1,
+            **kwargs,
     ) -> RayTuneResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
@@ -678,6 +679,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
                 trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
                 callbacks=tune_callbacks,
+                verbose=hyperopt_log_verbosity,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.

@@ -46,17 +46,18 @@ def hyperopt(
     skip_save_log: bool = False,
     skip_save_processed_input: bool = True,
     skip_save_unprocessed_output: bool = False,
-    skip_save_predictions: bool = False,
-    skip_save_eval_stats: bool = False,
-    skip_save_hyperopt_statistics: bool = False,
-    output_directory: str = "results",
-    gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: int = None,
-    allow_parallel_threads: bool = True,
-    callbacks: List[Callback] = None,
-    backend: Union[Backend, str] = None,
-    random_seed: int = default_random_seed,
-    **kwargs,
+        skip_save_predictions: bool = False,
+        skip_save_eval_stats: bool = False,
+        skip_save_hyperopt_statistics: bool = False,
+        output_directory: str = "results",
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
+        backend: Union[Backend, str] = None,
+        random_seed: int = default_random_seed,
+        hyperopt_log_verbosity: int = 1,
+        **kwargs,
 ) -> HyperoptResults:
     """This method performs an hyperparameter optimization.
 
@@ -148,6 +149,9 @@ def hyperopt(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
+    :param hyperopt_log_verbosity: (int: default: 1) controls verbosity of
+        ray tune log messages.  Valid values: 0 = silent, 1 = only status updates,
+        2 = status and brief trial results, 3 = status and detailed trial results.
 
     # Return
 
@@ -324,6 +328,7 @@ def hyperopt(
         callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
+        hyperopt_log_verbosity=hyperopt_log_verbosity,
         **kwargs,
     )
 
