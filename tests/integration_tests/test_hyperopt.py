@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
+RANDOM_SEARCH_SIZE = 10
+
 HYPEROPT_CONFIG = {
     "parameters": {
         "trainer.learning_rate": {
@@ -126,7 +128,8 @@ def test_hyperopt_executor_with_metric(csv_filename):
 
 
 @pytest.mark.distributed
-def test_hyperopt_run_hyperopt(csv_filename):
+@pytest.mark.parametrize("search_space", ["random", "grid"])
+def test_hyperopt_run_hyperopt(csv_filename, search_space):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -145,8 +148,9 @@ def test_hyperopt_run_hyperopt(csv_filename):
 
     output_feature_name = output_features[0]["name"]
 
-    hyperopt_configs = {
-        "parameters": {
+    if search_space == "random":
+        # random search will be size of num_samples
+        search_parameters = {
             "trainer.learning_rate": {
                 "lower": 0.0001,
                 "upper": 0.01,
@@ -163,12 +167,25 @@ def test_hyperopt_run_hyperopt(csv_filename):
             },
             output_feature_name + ".output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
             output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
-        },
+        }
+    else:
+        # grid search space will be product each parameter size
+        search_parameters = {
+            "trainer.learning_rate": {
+                "space": "grid_search",
+                "values": [0.001, 0.005, 0.01]
+            },
+            output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21, 36]},
+            output_feature_name + ".num_fc_layers": {"space": "grid_search", "values": [1, 3, 6]},
+        }
+
+    hyperopt_configs = {
+        "parameters": search_parameters,
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
         "executor": {"type": "ray"},
-        "sampler": {"type": "ray", "num_samples": 2},
+        "sampler": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
     }
 
     # add hyperopt parameter space to the config
@@ -176,6 +193,15 @@ def test_hyperopt_run_hyperopt(csv_filename):
 
     with ray_start():
         hyperopt_results = hyperopt(config, dataset=rel_path, output_directory="results_hyperopt")
+
+    if search_space == "random":
+        assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
+    else:
+        # compute size of search space for grid search
+        grid_search_size = 1
+        for k, v in search_parameters.items():
+            grid_search_size *= len(v["values"])
+        assert hyperopt_results.experiment_analysis.results_df.shape[0] == grid_search_size
 
     # check for return results
     assert isinstance(hyperopt_results, HyperoptResults)
