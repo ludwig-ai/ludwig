@@ -121,7 +121,7 @@ class TemperatureScaling(CalibrationModule):
         )
 
         # Optimizes the temperature to minimize NLL
-        optimizer = torch.optim.LBFGS([self.temperature], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
+        optimizer = torch.optim.LBFGS([self.temperature], lr=0.01, max_iter=50, line_search_fn="strong_wolfe")
 
         def eval():
             optimizer.zero_grad()
@@ -165,21 +165,33 @@ class TemperatureScaling(CalibrationModule):
             return torch.softmax(scaled_logits, -1)
 
 
-class MatrixScaling(CalibrationModule):
-    """Implements matrix scaling of logits. Only use this with a large dataset, matrix scaling has a tendency to
-    overfit small dataset. Also, unlike temperature scaling, matrix scaling can change the argmax or top-n
-    predictions.
+class DirichletScaling(CalibrationModule):
+    """Implements dirichlet matrix scaling of logits, as described in Beyond temperature scaling: Obtaining well-
+    calibrated multiclass probabilities with Dirichlet calibration https://arxiv.org/abs/1910.12656.
+
+    Unlike temperature scaling which has only one free parameter, matrix scaling has n_classes x (n_classes + 1)
+    parameters. Ise this only with a large validation set, as matrix scaling has a tendency to overfit small datasets.
+    Also, unlike temperature scaling, matrix scaling can change the argmax or top-n predictions.
 
     Args:
     num_classes: The number of classes.
+    off_diagonal_l2: The regularization weight for off-diagonal matrix entries.
+    mu: The regularization weight for bias vector. Defaults to off_diagonal_l2 if not specified.
     """
 
-    def __init__(self, num_classes: int = 2):
+    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.1, mu: float = None):
         super().__init__()
         self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.w = nn.Parameter(torch.eye(self.num_classes), requires_grad=False).to(self.device)
         self.b = nn.Parameter(torch.zeros(self.num_classes), requires_grad=False).to(self.device)
+        self.off_diagonal_l2 = off_diagonal_l2
+        self.mu = off_diagonal_l2 if mu is None else mu
+
+    def _safe_ln(self, x):
+        """Safe natural log of x (tensor)"""
+        eps = torch.finfo(torch.float32).eps  # ~ 1e-16
+        return torch.log(torch.clip(x, eps, 1 - eps))
 
     def calibrate(self, logits, labels) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
@@ -193,27 +205,27 @@ class MatrixScaling(CalibrationModule):
         before_calibration_nll = nll_criterion(logits, one_hot_labels).item()
         before_calibration_ece = ece_criterion(logits, one_hot_labels).item()
         logging.info(
-            "Before matrix scaling:\n"
+            "Before dirichlet scaling:\n"
             "    Negative log-likelihood: %.3f\n"
             "    Expected Calibration Error: %.3f" % (before_calibration_nll, before_calibration_ece)
         )
 
         # Optimizes the linear transform to minimize NLL
-        optimizer = torch.optim.LBFGS([self.w, self.b], lr=0.001, max_iter=1000, line_search_fn="strong_wolfe")
+        optimizer = torch.optim.LBFGS([self.w, self.b], lr=0.01, max_iter=50, line_search_fn="strong_wolfe")
 
         def eval():
             optimizer.zero_grad()
-            loss = nll_criterion(self.scale_logits(logits), one_hot_labels)
+            loss = nll_criterion(self.scale_logits(logits), one_hot_labels) + self.regularization_terms()
             loss.backward()
             return loss
 
         optimizer.step(eval)
 
-        # Calculate NLL and ECE after matrix scaling
+        # Calculate NLL and ECE after dirichlet scaling
         after_calibration_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
         after_calibration_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
         logging.info(
-            "After matrix scaling:\n"
+            "After dirichlet scaling:\n"
             "    Negative log-likelihood: %.3f\n"
             "    Expected Calibration Error: %.3f" % (after_calibration_nll, after_calibration_ece)
         )
@@ -221,7 +233,7 @@ class MatrixScaling(CalibrationModule):
         self.b.requires_grad = False
         # This should never happen, but if expected calibration error is higher after optimizing matrix, revert.
         if after_calibration_ece > before_calibration_ece:
-            logging.warning("Expected calibration error higher after matrix scaling, reverting to identity.")
+            logging.warning("Expected calibration error higher after dirichlet matrix scaling, reverting to identity.")
             with torch.no_grad():
                 self.w.data = torch.eye(self.num_classes)
                 self.b.data = torch.zeros(self.num_classes)
@@ -229,8 +241,14 @@ class MatrixScaling(CalibrationModule):
             before_calibration_nll, before_calibration_ece, after_calibration_nll, after_calibration_ece
         )
 
+    def regularization_terms(self):
+        off_diagonal_entries = self.w * (1.0 - torch.eye(self.num_classes))
+        weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.matrix_norm(off_diagonal_entries)
+        bias_vector_loss = self.mu * torch.linalg.vector_norm(self.b, 2)
+        return weight_matrix_loss + bias_vector_loss
+
     def scale_logits(self, logits: torch.Tensor):
-        return torch.matmul(logits, self.w) + self.b
+        return torch.matmul(self._safe_ln(logits), self.w) + self.b
 
     def forward(self, logits: torch.Tensor):
         """Converts logits to probabilities."""

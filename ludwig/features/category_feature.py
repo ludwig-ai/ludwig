@@ -247,8 +247,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         calibration_type = feature.get("calibration")
         if calibration_type == "temperature_scaling":
             return calibration.TemperatureScaling(num_classes=feature["num_classes"])
-        elif calibration_type == "matrix_scaling":
-            return calibration.MatrixScaling(num_classes=feature["num_classes"])
+        elif calibration_type == "dirichlet_scaling":
+            return calibration.DirichletScaling(num_classes=feature["num_classes"])
         return None
 
     def create_predict_module(self) -> PredictModule:
