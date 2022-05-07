@@ -193,7 +193,8 @@ def read_excel(data_fp, df_lib):
         excel_engine = "xlrd"
     else:
         excel_engine = "openpyxl"
-    return df_lib.read_excel(data_fp, engine=excel_engine)
+    # Dask does not support read_excel
+    return pd.read_excel(data_fp, engine=excel_engine)
 
 
 @spread
