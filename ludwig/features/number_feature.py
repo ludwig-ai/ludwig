@@ -184,8 +184,8 @@ class _NumberPreprocessing(torch.nn.Module):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
-    def forward(self, v: Union[List[str], torch.Tensor]):
-        if not isinstance(v, torch.Tensor):
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         v = v.to(dtype=torch.float32)
         return self.numeric_transformer.transform_inference(v)

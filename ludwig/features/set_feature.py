@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -40,10 +40,65 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 
 logger = logging.getLogger(__name__)
+
+
+class _SetPreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by SetFeatureMixin.add_feature_data.
+
+    If is_bag is true, forward returns a vector for each sample indicating counts of each token. Else, forward returns a
+    multi-hot vector for each sample indicating presence of each token.
+    """
+
+    def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
+        super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
+            )
+
+        self.lowercase = metadata["preprocessing"]["lowercase"]
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.vocab_size = metadata["vocab_size"]
+        self.unknown_symbol = UNKNOWN_SYMBOL
+        self.unit_to_id = metadata["str2idx"]
+        self.is_bag = is_bag
+
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        """Takes a list of strings and returns a tensor of counts for each token."""
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if self.lowercase:
+            sequences = [sequence.lower() for sequence in v]
+        else:
+            sequences = v
+
+        unit_sequences = self.tokenizer(sequences)
+        # refines type of unit_sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+
+        set_matrix = torch.zeros(len(unit_sequences), self.vocab_size, dtype=torch.float32)
+        for sample_idx, unit_sequence in enumerate(unit_sequences):
+            sequence_length = len(unit_sequence)
+            for i in range(sequence_length):
+                curr_unit = unit_sequence[i]
+                if curr_unit in self.unit_to_id:
+                    curr_id = self.unit_to_id[curr_unit]
+                else:
+                    curr_id = self.unit_to_id[self.unknown_symbol]
+
+                if self.is_bag:
+                    set_matrix[sample_idx][curr_id] += 1
+                else:
+                    set_matrix[sample_idx][curr_id] = 1
+
+        return set_matrix
 
 
 class _SetPredict(PredictModule):
@@ -173,6 +228,10 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SetPreprocessing(metadata)
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):

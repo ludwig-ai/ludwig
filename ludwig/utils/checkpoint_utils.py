@@ -5,12 +5,16 @@ https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 import logging
 import os
 import os.path as osp
+import queue
 import re
 import signal
+import threading
 from glob import glob
 
 import numpy as np
 import torch
+
+CHECKPOINTS_LOCK = threading.Lock()
 
 
 def mkdir(s):
@@ -36,6 +40,26 @@ def get_files(d, pattern, sort=True):
 
         files.sort(key=lambda x: int(filter_numeric(os.path.basename(x).split(".")[0])))
     return files
+
+
+def traim_checkpoints_loop(q: queue.Queue, directory: str, max_to_keep: int):
+    """Trim older checkpoints until `max_to_keep` remain."""
+    while True:
+        should_continue = q.get()
+        if should_continue is False:
+            return
+
+        with CHECKPOINTS_LOCK:
+            # get a list of checkpoints in reverse
+            # chronological order
+            ckpts = get_files(directory, "*.ckpt")[::-1]
+
+            # remove until `max_to_keep` remain
+            num_remove = len(ckpts) - max_to_keep
+            while num_remove > 0:
+                ckpt_name = ckpts.pop()
+                os.remove(ckpt_name)
+                num_remove -= 1
 
 
 class Checkpoint:
@@ -135,6 +159,12 @@ class CheckpointManager:
         # already exist
         mkdir(self.directory)
 
+        self.queue = queue.Queue()
+        self.trim_thread = threading.Thread(
+            target=traim_checkpoints_loop, args=(self.queue, self.directory, self.max_to_keep)
+        )
+        self.trim_thread.start()
+
     def restore_or_initialize(self):
         """Restore items in checkpoint from the latest checkpoint file.
 
@@ -163,20 +193,11 @@ class CheckpointManager:
         save_path = osp.join(self.directory, f"{global_step:09d}.ckpt")
         self.checkpoint.save(save_path)
         self.latest_checkpoint = save_path
-        self._trim_checkpoints()
+        self.queue.put(True)
 
-    def _trim_checkpoints(self):
-        """Trim older checkpoints until `max_to_keep` remain."""
-        # get a list of checkpoints in reverse
-        # chronological order
-        ckpts = get_files(self.directory, "*.ckpt")[::-1]
-
-        # remove until `max_to_keep` remain
-        num_remove = len(ckpts) - self.max_to_keep
-        while num_remove > 0:
-            ckpt_name = ckpts.pop()
-            os.remove(ckpt_name)
-            num_remove -= 1
+    def close(self):
+        self.queue.put(False)
+        self.trim_thread.join()
 
     @staticmethod
     def load_latest_checkpoint(checkpoint, directory, device):

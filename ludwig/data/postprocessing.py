@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from typing import Any, Dict, List, Union
 
 import numpy as np
+import pandas as pd
+import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS, to_numpy_dataset
@@ -63,6 +66,40 @@ def _save_as_numpy(predictions, output_directory, saved_keys):
         if k not in saved_keys:
             np.save(npy_filename.format(make_safe_filename(k)), v)
             saved_keys.add(k)
+
+
+def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.Tensor, np.array]]]) -> pd.DataFrame:
+    """Converts a dictionary of predictions into a pandas DataFrame.
+
+    Example format of predictions dictionary:
+
+    {
+        "binary_C82EB": {
+            "predictions": torch.tensor([True, True, True, False]),
+            "probabilities": torch.tensor([[0.4777, 0.5223], [0.4482, 0.5518], [0.4380, 0.5620], [0.5059, 0.4941]]),
+        },
+        "category_1491D": {
+            "predictions": ["NkNUG", "NkNUG", "NkNUG", "NkNUG"],
+            "probabilities": torch.tensor(
+                [
+                    [0.1058, 0.4366, 0.1939, 0.2637],
+                    [0.0816, 0.4807, 0.1978, 0.2399],
+                    [0.0907, 0.4957, 0.1829, 0.2308],
+                    [0.0728, 0.5015, 0.1900, 0.2357],
+                ]
+            ),
+        },
+        "num_7B25F": {"predictions": torch.tensor([2.0436, 2.1158, 2.1222, 2.1964])},
+    }
+    """
+    output = {}
+    for of_name, preds_dict in predictions.items():
+        for key, value in preds_dict.items():
+            output_key = f"{of_name}_{key}"
+            if not isinstance(value, list):
+                value = value.tolist()
+            output[output_key] = value
+    return pd.DataFrame.from_dict(output)
 
 
 def convert_predictions(predictions, output_features, return_type="dict"):

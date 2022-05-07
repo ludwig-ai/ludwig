@@ -16,31 +16,14 @@ with open(path.join(here, "requirements.txt"), encoding="utf-8") as f:
 
 extra_requirements = {}
 
-with open(path.join(here, "requirements_audio.txt"), encoding="utf-8") as f:
-    extra_requirements["audio"] = [line.strip() for line in f if line]
-
-with open(path.join(here, "requirements_image.txt"), encoding="utf-8") as f:
-    extra_requirements["image"] = [line.strip() for line in f if line]
-
 with open(path.join(here, "requirements_serve.txt"), encoding="utf-8") as f:
     extra_requirements["serve"] = [line.strip() for line in f if line]
-
-with open(path.join(here, "requirements_text.txt"), encoding="utf-8") as f:
-    extra_requirements["text"] = [line.strip() for line in f if line]
 
 with open(path.join(here, "requirements_viz.txt"), encoding="utf-8") as f:
     extra_requirements["viz"] = [line.strip() for line in f if line]
 
-with open(path.join(here, "requirements_horovod.txt"), encoding="utf-8") as f:
-    extra_requirements["horovod"] = [line.strip() for line in f if line]
-
-with open(path.join(here, "requirements_dask.txt"), encoding="utf-8") as f:
-    extra_requirements["dask"] = [line.strip() for line in f if line]
-
-with open(path.join(here, "requirements_ray.txt"), encoding="utf-8") as f:
-    extra_requirements["ray"] = (
-        [line.strip() for line in f if line] + extra_requirements["dask"] + extra_requirements["horovod"]
-    )
+with open(path.join(here, "requirements_distributed.txt"), encoding="utf-8") as f:
+    extra_requirements["distributed"] = [line.strip() for line in f if line]
 
 with open(path.join(here, "requirements_hyperopt.txt"), encoding="utf-8") as f:
     extra_requirements["hyperopt"] = [line.strip() for line in f if line]

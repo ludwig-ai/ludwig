@@ -17,12 +17,14 @@ import shutil
 import tempfile
 from unittest import mock
 
+import pandas as pd
 import pytest
 import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
+from ludwig.models.inference import InferenceLudwigModel
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
@@ -517,3 +519,35 @@ def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, n
 
     assert mock_callback.on_eval_end.call_count == total_checkpoints
     assert mock_callback.on_eval_start.call_count == total_checkpoints
+
+
+def test_api_save_torchscript(tmpdir):
+    """Tests successful saving and loading of model in TorchScript format."""
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(name="class", vocab_size=5, reduce_input="sum")]
+
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+    }
+    model = LudwigModel(config)
+    _, _, output_dir = model.train(
+        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
+    )
+
+    test_df = pd.read_csv(test_csv)
+    output_df_expected, _ = model.predict(test_df, return_type=pd.DataFrame)
+
+    save_path = os.path.join(output_dir, "model")
+    os.makedirs(save_path, exist_ok=True)
+    model.save_torchscript(save_path)
+    inference_model = InferenceLudwigModel(save_path)
+    output_df, _ = inference_model.predict(test_df, return_type=pd.DataFrame)
+
+    for col in output_df.columns:
+        assert output_df[col].equals(output_df_expected[col])

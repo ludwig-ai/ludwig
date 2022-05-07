@@ -1,7 +1,0 @@
-ray[default,data,serve,tune]>=1.9.2,!=1.10
-pickle5; python_version <= '3.7'
-tensorboardX<2.3
-GPUtil
-tblib
-awscli
-modin[ray]; python_version >= '3.7'

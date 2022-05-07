@@ -32,7 +32,7 @@ def _get_input_signature(config: Dict[str, Any]) -> str:
     args = []
     for feature in config["input_features"]:
         name = feature[NAME]
-        args.append(f"{name}: Union[List[str], torch.Tensor]")
+        args.append(f"{name}: Union[List[str], List[torch.Tensor], torch.Tensor]")
     return ", ".join(args)
 
 

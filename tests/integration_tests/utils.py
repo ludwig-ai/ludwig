@@ -24,9 +24,10 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List
+from typing import List, Union
 
 import cloudpickle
+import numpy as np
 import pandas as pd
 import ray
 import torch
@@ -38,6 +39,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
+from ludwig.utils import image_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
@@ -315,6 +317,17 @@ def vector_feature(**kwargs):
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
+
+
+def to_inference_module_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
+    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
+    if "image" in s.name:
+        return [image_utils.read_image(v) for v in s]
+    if s.dtype == "object":
+        if "bag" in s.name or "set" in s.name:
+            s = s.astype(str)
+        return s.to_list()
+    return torch.from_numpy(s.to_numpy())
 
 
 def run_experiment(
@@ -617,8 +630,36 @@ def train_with_backend(
             assert preds is not None
 
         if evaluate:
-            _, eval_preds, _ = model.evaluate(dataset=dataset)
+            eval_stats, eval_preds, _ = model.evaluate(
+                dataset=dataset, collect_overall_stats=False, collect_predictions=True
+            )
             assert eval_preds is not None
+
+            # Test that eval_stats are approx equal when using local backend
+            with tempfile.TemporaryDirectory() as tmpdir:
+                model.save(tmpdir)
+                local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
+                local_eval_stats, _, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
+                )
+
+                # Filter out metrics that are not being aggregated correctly for now
+                # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
+                def filter(stats):
+                    return {
+                        k: {
+                            metric_name: value
+                            for metric_name, value in v.items()
+                            if metric_name not in {"loss", "root_mean_squared_percentage_error"}
+                        }
+                        for k, v in stats.items()
+                    }
+
+                for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
+                    assert k1 == k2
+                    for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
+                        assert name1 == name2
+                        assert np.isclose(metric1, metric2, rtol=1e-04), f"metric {name1}: {metric1} != {metric2}"
 
         return model
     finally:

@@ -1,0 +1,5 @@
+version: 1.0
+competition: danieltreiman/twitter-human-bots-dataset
+archive_filename: twitter-human-bots-dataset.zip
+download_file_type: csv
+csv_filename: twitter_human_bots_dataset.csv

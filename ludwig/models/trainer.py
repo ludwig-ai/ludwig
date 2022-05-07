@@ -35,6 +35,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -63,7 +64,6 @@ from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, lea
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
-from ludwig.validation import marshmallow_utils
 
 logger = logging.getLogger(__name__)
 
@@ -103,127 +103,173 @@ class BaseTrainer(ABC):
 
 
 def get_trainer_jsonschema():
-    return marshmallow_utils.get_custom_schema_from_marshmallow_class(TrainerConfig)
+    return schema.unload_jsonschema_from_marshmallow_class(TrainerConfig)
 
 
 @dataclass
-class TrainerConfig(marshmallow_utils.BaseMarshmallowConfig):
+class TrainerConfig(schema.BaseMarshmallowConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
-    optimizer: BaseOptimizerConfig = OptimizerDataclassField(default={"type": "adam"})
-    """Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` that specifies a torch-supported optimizer
-       and its attributes (default: `ludwig.modules.optimization_modules.AdamOptimizerConfig()`)."""
-
-    epochs: int = marshmallow_utils.PositiveInteger(default=100)
-    """Number of epochs the algorithm is intended to be run over (default: 100)."""
-
-    regularization_lambda: float = marshmallow_utils.FloatRange(default=0.0, min=0)
-    """Strength of the $L2$ regularization (default: 0.0)."""
-
-    regularization_type: Optional[str] = marshmallow_utils.RegularizerOptions(default="l2")
-    """Type of regularization, one of ('l1', 'l2', 'l1_l2', None) (default: 'l2')."""
-
-    should_shuffle: bool = True
-    """Whether to shuffle batches during training when true (default: True)."""
-
-    learning_rate: float = marshmallow_utils.NumericOrStringOptionsField(
-        default=0.001, min=0.0, max=1.0, options=["auto"], default_numeric=0.001, default_option="auto", nullable=False
+    optimizer: BaseOptimizerConfig = OptimizerDataclassField(
+        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
     )
-    """Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto',
-       `tune_learning_rate` must be called before training to estimate the optimal learning rate. (default: 0.001)."""
 
-    batch_size: Union[int, str] = marshmallow_utils.IntegerOrStringOptionsField(
-        default=128, options=["auto"], default_numeric=128, default_option="auto", nullable=False, min_exclusive=0
+    epochs: int = schema.PositiveInteger(
+        default=100, description="Number of epochs the algorithm is intended to be run over."
     )
-    """Size of batch to pass to the model for training (default: 128)."""
 
-    eval_batch_size: Union[None, int, str] = marshmallow_utils.IntegerOrStringOptionsField(
-        default=None, options=["auto"], default_numeric=None, default_option="auto", nullable=True, min_exclusive=0
+    regularization_lambda: float = schema.FloatRange(
+        default=0.0, min=0, description="Strength of the $L2$ regularization."
     )
-    """Size of batch to pass to the model for evaluation (default: 'auto')."""
 
-    early_stop: int = marshmallow_utils.IntegerRange(default=5, min=-1)
-    """How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be set to
-       -1, which disables early_stop (default: 5)."""
+    regularization_type: Optional[str] = schema.RegularizerOptions(default="l2", description="Type of regularization.")
 
-    steps_per_checkpoint: int = marshmallow_utils.NonNegativeInteger(default=0)
-    """How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is checkpointed
-       after every epoch. (default: 0)."""
+    should_shuffle: bool = schema.Boolean(
+        default=True, description="Whether to shuffle batches during training when true."
+    )
 
-    checkpoints_per_epoch: int = marshmallow_utils.NonNegativeInteger(default=0)
-    """Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note that it
-       is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch` (default: 0)."""
+    learning_rate: float = schema.NumericOrStringOptionsField(
+        default=0.001,
+        min=0.0,
+        max=1.0,
+        options=["auto"],
+        default_numeric=0.001,
+        default_option="auto",
+        nullable=False,
+        description=(
+            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
+            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
+        ),
+    )
 
-    evaluate_training_set: bool = True
-    """Whether to include the entire training set during evaluation (default: True)."""
+    batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
+        default=128,
+        options=["auto"],
+        default_numeric=128,
+        default_option="auto",
+        nullable=False,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for training.",
+    )
 
-    reduce_learning_rate_on_plateau: float = marshmallow_utils.FloatRange(default=0.0, min=0.0, max=1.0)
-    """Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does not
-       improve) (default: 0.0)."""
+    eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
+        default=None,
+        options=["auto"],
+        default_numeric=None,
+        default_option="auto",
+        nullable=True,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for evaluation.",
+    )
 
-    reduce_learning_rate_on_plateau_patience: int = marshmallow_utils.NonNegativeInteger(default=5)
-    """How many epochs have to pass before the learning rate reduces (default: 5)."""
+    early_stop: int = schema.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be "
+            "set to -1, which disables `early_stop`."
+        ),
+    )
 
-    reduce_learning_rate_on_plateau_rate: float = marshmallow_utils.FloatRange(default=0.5, min=0.0, max=1.0)
-    """Rate at which we reduce the learning rate (default: 0.5)."""
+    steps_per_checkpoint: int = schema.NonNegativeInteger(
+        default=0,
+        description=(
+            "How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is "
+            "checkpointed after every epoch."
+        ),
+    )
 
-    reduce_learning_rate_eval_metric: str = LOSS
-    """TODO: Document parameters. (default: `ludwig.constants.LOSS`)."""
+    checkpoints_per_epoch: int = schema.NonNegativeInteger(
+        default=0,
+        description=(
+            "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note "
+            "that it is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch`."
+        ),
+    )
 
-    reduce_learning_rate_eval_split: str = TRAINING
-    """TODO: Document parameters. (default: `ludwig.constants.TRAINING`)."""
+    evaluate_training_set: bool = schema.Boolean(
+        default=True, description="Whether to include the entire training set during evaluation."
+    )
 
-    increase_batch_size_on_plateau: int = marshmallow_utils.NonNegativeInteger(default=0)
-    """Number to increase the batch size by on a plateau (default: 0)."""
+    reduce_learning_rate_on_plateau: float = schema.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does "
+            "not improve"
+        ),
+    )
 
-    increase_batch_size_on_plateau_patience: int = marshmallow_utils.NonNegativeInteger(default=5)
-    """How many epochs to wait for before increasing the batch size (default: 5)."""
+    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(
+        default=5, description="How many epochs have to pass before the learning rate reduces."
+    )
 
-    increase_batch_size_on_plateau_rate: float = marshmallow_utils.NonNegativeFloat(default=2.0)
-    """Rate at which the batch size increases (default: 2.0)."""
+    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(
+        default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
+    )
 
-    increase_batch_size_on_plateau_max: int = marshmallow_utils.PositiveInteger(default=512)
-    """Maximum size of the batch (default: 512)."""
+    reduce_learning_rate_eval_metric: str = schema.String(default=LOSS, description="TODO: Document parameters.")
 
-    increase_batch_size_eval_metric: str = LOSS
-    """TODO: Document parameters. (default: 'loss')."""
+    reduce_learning_rate_eval_split: str = schema.String(default=TRAINING, description="TODO: Document parameters.")
 
-    increase_batch_size_eval_split: str = TRAINING
-    """TODO: Document parameters. (default: 'training')."""
+    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(
+        default=0, description="Number to increase the batch size by on a plateau."
+    )
 
-    decay: bool = False
-    """Turn on exponential decay of the learning rate (default: False)."""
+    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(
+        default=5, description="How many epochs to wait for before increasing the batch size."
+    )
 
-    decay_steps: int = marshmallow_utils.PositiveInteger(default=10000)
-    """TODO: Document parameters. (default: 10000)."""
+    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(
+        default=2.0, description="Rate at which the batch size increases."
+    )
 
-    decay_rate: float = marshmallow_utils.FloatRange(default=0.96, min=0.0, max=1.0)
-    """TODO: Document parameters. (default: 0.96)."""
+    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(
+        default=512, description="Maximum size of the batch."
+    )
 
-    staircase: bool = False
-    """Decays the learning rate at discrete intervals (default: False)."""
+    increase_batch_size_eval_metric: str = schema.String(default=LOSS, description="TODO: Document parameters.")
 
-    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(default={})
-    """Instance of `ludwig.modules.optimization_modules.GradientClippingConfig` that sets gradient clipping params.
-       (default: `ludwig.modules.optimization_modules.GradientClippingConfig()`)"""
+    increase_batch_size_eval_split: str = schema.String(default=TRAINING, description="TODO: Document parameters.")
+
+    decay: bool = schema.Boolean(default=False, description="Turn on exponential decay of the learning rate.")
+
+    decay_steps: int = schema.PositiveInteger(default=10000, description="TODO: Document parameters.")
+
+    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0, description="TODO: Document parameters.")
+
+    staircase: bool = schema.Boolean(default=False, description="Decays the learning rate at discrete intervals.")
+
+    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
+        description="Parameter values for gradient clipping."
+    )
 
     # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = COMBINED
-    """First output feature, by default it is set as the same field of the first output feature (default:
-       `ludwig.constants.COMBINED`)."""
+    validation_field: str = schema.String(
+        default=COMBINED,
+        description="First output feature, by default it is set as the same field of the first output feature.",
+    )
 
-    validation_metric: str = LOSS
-    """Metric used on `validation_field`, set by default to accuracy (default: `ludwig.constants.LOSS`)."""
+    validation_metric: str = schema.String(
+        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
+    )
 
-    learning_rate_warmup_epochs: float = marshmallow_utils.NonNegativeFloat(default=1.0)
-    """Number of epochs to warmup the learning rate for (default: 1.0)."""
+    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(
+        default=1.0, description="Number of epochs to warmup the learning rate for."
+    )
 
-    learning_rate_scaling: str = marshmallow_utils.StringOptions(["constant", "sqrt", "linear"], default="linear")
-    """Scale by which to increase the learning rate as the number of distributed workers increases. Traditionally
-       the learning rate is scaled linearly with the number of workers to reflect the proportion by which
-       the effective batch size is increased. For very large batch sizes, a softer square-root scale can sometimes lead
-       to better model performance. If the learning rate is hand-tuned for a given number of workers, setting this value
-       to constant can be used to disable scale-up (default: linear)."""
+    learning_rate_scaling: str = schema.StringOptions(
+        ["constant", "sqrt", "linear"],
+        default="linear",
+        description=(
+            "Scale by which to increase the learning rate as the number of distributed workers increases. "
+            "Traditionally the learning rate is scaled linearly with the number of workers to reflect the proportion by"
+            " which the effective batch size is increased. For very large batch sizes, a softer square-root scale can "
+            "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
+            "workers, setting this value to constant can be used to disable scale-up."
+        ),
+    )
 
 
 class Trainer(BaseTrainer):
@@ -337,6 +383,12 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
+
+        # when training starts the sigint handler will be replaced with
+        # set_epochs_to_1_or_quit so this is needed to remember
+        # the original sigint to restore at the end of training
+        # and before set_epochs_to_1_or_quit returns
+        self.original_sigint_handler = None
 
         # TODO(Justin): Move to config validation when that's ready.
         if config.checkpoints_per_epoch != 0 and config.steps_per_checkpoint != 0:
@@ -797,6 +849,9 @@ class Trainer(BaseTrainer):
         # Only use signals when on the main thread to avoid issues with CherryPy
         # https://github.com/ludwig-ai/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
+            # set the original sigint signal handler
+            # as we want to restore it at the end of training
+            self.original_sigint_handler = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
 
         metrics_names = get_metric_names(output_features)
@@ -855,7 +910,7 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
-        if self.is_coordinator():
+        if self.is_coordinator() and not self.skip_save_progress:
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(
                 checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1
@@ -897,102 +952,115 @@ class Trainer(BaseTrainer):
 
         set_random_seed(self.random_seed)
 
-        with training_set.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            seed=self.random_seed,
-            horovod=self.horovod,
-        ) as batcher:
-            # ================ Training Loop ================
-            total_steps = self.epochs * batcher.steps_per_epoch
+        try:
+            with training_set.initialize_batcher(
+                batch_size=self.batch_size,
+                should_shuffle=self.should_shuffle,
+                seed=self.random_seed,
+                horovod=self.horovod,
+            ) as batcher:
+                # ================ Training Loop ================
+                total_steps = self.epochs * batcher.steps_per_epoch
 
-            # Get the terminal steps per checkpoint.
-            final_steps_per_checkpoint = get_final_steps_per_checkpoint(
-                batcher.steps_per_epoch, self.steps_per_checkpoint, self.checkpoints_per_epoch, self.is_coordinator()
-            )
-
-            if self.is_coordinator():
-                logger.info(
-                    f"Training for {total_steps} step(s), approximately "
-                    f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+                # Get the terminal steps per checkpoint.
+                final_steps_per_checkpoint = get_final_steps_per_checkpoint(
+                    batcher.steps_per_epoch,
+                    self.steps_per_checkpoint,
+                    self.checkpoints_per_epoch,
+                    self.is_coordinator(),
                 )
-                logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
-
-            progress_bar = None
-            if self.is_coordinator():
-                progress_bar = tqdm(
-                    desc="Training",
-                    total=total_steps,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled(),
-                )
-
-            while progress_tracker.steps < total_steps:
-                # note that batch size may change over epochs
-                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
-
-                # epoch init
-                start_time = time.time()
-
-                # Reset the metrics at the start of the next epoch
-                self.model.train()  # Sets model to training mode.
-                self.model.reset_metrics()
-
-                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
-
-                # Trains over a full epoch of data.
-                should_break = self._train_loop(
-                    batcher,
-                    progress_tracker,
-                    save_path,
-                    train_summary_writer,
-                    progress_bar,
-                    training_set,
-                    validation_set,
-                    test_set,
-                    start_time,
-                    validation_summary_writer,
-                    test_summary_writer,
-                    model_weights_path,
-                    model_hyperparameters_path,
-                    output_features,
-                    metrics_names,
-                    checkpoint_manager,
-                    final_steps_per_checkpoint,
-                )
-
-                # ================ Post Training Epoch ================
-                progress_tracker.epoch += 1
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
                 if self.is_coordinator():
-                    # ========== Save training progress ==========
-                    logging.debug(
-                        f"Epoch {progress_tracker.epoch} took: "
-                        f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                    logger.info(
+                        f"Training for {total_steps} step(s), approximately "
+                        f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
-                    checkpoint_manager.save(progress_tracker.steps)
-                    progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                    logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
-                # Early stop if needed.
-                if should_break:
-                    break
+                progress_bar = None
+                if self.is_coordinator():
+                    progress_bar = tqdm(
+                        desc="Training",
+                        total=total_steps,
+                        file=sys.stdout,
+                        disable=is_progressbar_disabled(),
+                    )
 
-        # ================ Finished Training ================
-        self.callback(
-            lambda c: c.on_trainer_train_teardown(self, progress_tracker, self.is_coordinator()), coordinator_only=False
-        )
+                while progress_tracker.steps < total_steps:
+                    # note that batch size may change over epochs
+                    batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
-        if train_summary_writer is not None:
-            train_summary_writer.close()
-        if validation_summary_writer is not None:
-            validation_summary_writer.close()
-        if test_summary_writer is not None:
-            test_summary_writer.close()
+                    # epoch init
+                    start_time = time.time()
 
-        # Load the best weights from saved checkpoint
-        if self.is_coordinator() and not self.skip_save_model:
-            self.model.load_state_dict(torch.load(model_weights_path))
+                    # Reset the metrics at the start of the next epoch
+                    self.model.train()  # Sets model to training mode.
+                    self.model.reset_metrics()
+
+                    self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+
+                    # Trains over a full epoch of data.
+                    should_break = self._train_loop(
+                        batcher,
+                        progress_tracker,
+                        save_path,
+                        train_summary_writer,
+                        progress_bar,
+                        training_set,
+                        validation_set,
+                        test_set,
+                        start_time,
+                        validation_summary_writer,
+                        test_summary_writer,
+                        model_weights_path,
+                        model_hyperparameters_path,
+                        output_features,
+                        metrics_names,
+                        checkpoint_manager,
+                        final_steps_per_checkpoint,
+                    )
+
+                    # ================ Post Training Epoch ================
+                    progress_tracker.epoch += 1
+                    self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+                    if self.is_coordinator():
+                        # ========== Save training progress ==========
+                        logging.debug(
+                            f"Epoch {progress_tracker.epoch} took: "
+                            f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                        )
+                        if not self.skip_save_progress:
+                            checkpoint_manager.save(progress_tracker.steps)
+                            progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+
+                    # Early stop if needed.
+                    if should_break:
+                        break
+        finally:
+            # ================ Finished Training ================
+            self.callback(
+                lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
+                coordinator_only=False,
+            )
+
+            if train_summary_writer is not None:
+                train_summary_writer.close()
+            if validation_summary_writer is not None:
+                validation_summary_writer.close()
+            if test_summary_writer is not None:
+                test_summary_writer.close()
+
+            if self.is_coordinator() and not self.skip_save_progress:
+                checkpoint_manager.close()
+
+            # Load the best weights from saved checkpoint
+            if self.is_coordinator() and not self.skip_save_model:
+                self.model.load_state_dict(torch.load(model_weights_path))
+
+        # restore original sigint signal handler
+        if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
+            signal.signal(signal.SIGINT, self.original_sigint_handler)
 
         return (
             self.model,
@@ -1094,7 +1162,7 @@ class Trainer(BaseTrainer):
 
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
-                if self.is_coordinator():
+                if self.is_coordinator() and not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
                     progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
@@ -1333,6 +1401,8 @@ class Trainer(BaseTrainer):
             logger.critical("Send another SIGINT to immediately interrupt the process")
         else:
             logger.critical("\nReceived a second SIGINT, will now quit")
+            if self.original_sigint_handler:
+                signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
     def quit_training(self, signum, frame):

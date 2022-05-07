@@ -1,0 +1,13 @@
+# requirements for dask
+dask[dataframe]>2021.3.1,<2022.1.1
+pyarrow==6.0.1 # https://github.com/ray-project/ray/issues/22310
+# requirements for horovod
+horovod[pytorch]>=0.24.0
+# requirements for ray
+ray[default,data,serve,tune]>=1.11.0
+pickle5; python_version <= '3.7'
+tensorboardX<2.3
+GPUtil
+tblib
+awscli
+modin[ray]

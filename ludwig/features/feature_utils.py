@@ -95,16 +95,16 @@ def get_input_size_with_dependencies(
     return input_size_with_dependencies
 
 
-def get_module_dict_key_from_name(name):
+def get_module_dict_key_from_name(name: str, feature_name_suffix: str = FEATURE_NAME_SUFFIX) -> str:
     """Returns a key that's guaranteed to be compatible with torch."""
     key = name.replace(".", "__ludwig_punct_period__")
-    return key + FEATURE_NAME_SUFFIX
+    return key + feature_name_suffix
 
 
-def get_name_from_module_dict_key(key):
+def get_name_from_module_dict_key(key: str, feature_name_suffix_length: int = FEATURE_NAME_SUFFIX_LENGTH) -> str:
     """Reverse of get_module_dict_key_from_name."""
     name = key.replace("__ludwig_punct_period__", ".")
-    return name[:-FEATURE_NAME_SUFFIX_LENGTH]
+    return name[:-feature_name_suffix_length]
 
 
 class LudwigFeatureDict(torch.nn.Module):

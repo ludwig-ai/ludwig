@@ -17,7 +17,7 @@ import logging
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import requests
@@ -61,6 +61,7 @@ from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 
+
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
 # TODO(shreya): Confirm if ok to use imagenet means and std devs
@@ -70,6 +71,52 @@ image_scaling_registry = {
         torchvision.transforms.functional.normalize, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     ),
 }
+
+
+class _ImagePreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.height = metadata["preprocessing"]["height"]
+        self.width = metadata["preprocessing"]["width"]
+        self.num_channels = metadata["preprocessing"]["num_channels"]
+        self.resize_method = metadata["preprocessing"]["resize_method"]
+
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]) -> torch.Tensor:
+        """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
+
+        If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
+        """
+        if torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
+            imgs_stacked = torch.stack(imgs)
+        else:
+            imgs_stacked = v
+
+        _, num_channels, height, width = imgs_stacked.shape
+
+        # Ensure images are the size expected by the model
+        if height != self.height or width != self.width:
+            imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
+
+        # Ensures images have the number of channels expected by the model
+        if num_channels != self.num_channels:
+            if self.num_channels == 1:
+                imgs_stacked = grayscale(imgs_stacked)
+            elif num_channels < self.num_channels:
+                extra_channels = self.num_channels - num_channels
+                imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, extra_channels])
+            else:
+                raise ValueError(
+                    f"Number of channels cannot be reconciled. metadata.num_channels = "
+                    f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
+                )
+
+        return imgs_stacked
 
 
 class ImageFeatureMixin(BaseFeatureMixin):
@@ -474,3 +521,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _ImagePreprocessing(metadata)

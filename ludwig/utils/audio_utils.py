@@ -13,9 +13,84 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
+import logging
+import os
+import sys
+from typing import List, Tuple, Union
+
 import numpy as np
+import torch
+import torch.nn.functional as F
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
+
+from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
+from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import is_http, upgrade_http
+
+logger = logging.getLogger(__name__)
+
+
+def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor, int]:
+    sampling_rates = [audio[1] for audio in audio_lst]
+    tensor_list = [audio[0] for audio in audio_lst]
+
+    for i, tensor in enumerate(tensor_list):
+        if tensor.shape[1] > DEFAULT_AUDIO_TENSOR_LENGTH:
+            tensor_list[i] = tensor[:, :DEFAULT_AUDIO_TENSOR_LENGTH]
+        else:
+            pad_size = DEFAULT_AUDIO_TENSOR_LENGTH - tensor.shape[1]
+            tensor_list[i] = F.pad(tensor, (0, pad_size))
+    default_audio_tensor = torch.mean(torch.stack(tensor_list), dim=0)
+    default_sampling_rate = calculate_mean(sum(sampling_rates), len(sampling_rates))
+
+    return default_audio_tensor, default_sampling_rate
+
+
+@functools.lru_cache(maxsize=32)
+def read_audio(audio: Union[str, torch.Tensor], src_path):
+    """Function for reading audio files.
+
+    Args:
+        src_path: Local file source path
+        audio: Audio file input
+
+    Returns: Audio converted into torch tensor.
+    """
+    if isinstance(audio, torch.Tensor):
+        return audio
+    if isinstance(audio, str):
+        return read_audio_from_str(audio, src_path)
+
+
+def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> Tuple[torch.Tensor, int]:
+    try:
+        from torchaudio.backend.sox_io_backend import load
+    except ImportError:
+        logger.error("torchaudio is not installed. " "Please install torchaudio to train models with audio features")
+        sys.exit(-1)
+
+    try:
+        if is_http(audio_path):
+            return load(audio_path)
+        if src_path:
+            filepath = get_abs_path(src_path, audio_path)
+            return load(filepath)
+        if src_path is None and os.path.isabs(audio_path):
+            return load(audio_path)
+        if src_path is None and not os.path.isabs(audio_path):
+            raise ValueError("Audio file paths must be absolute")
+    except Exception as e:
+        upgraded = upgrade_http(audio_path)
+        if upgraded:
+            logger.info(f"{e}. upgrading to https and retrying")
+            return read_audio_from_str(upgraded, src_path, False)
+        if retry:
+            logger.info(f"{e}, retrying...")
+            return read_audio_from_str(audio_path, src_path, False)
+        logger.info(e)
+        return None
 
 
 def _pre_emphasize_data(data, emphasize_value=0.97):
@@ -176,7 +251,7 @@ def _short_time_fourier_transform(
     window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
     window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
     preprocessed_data_matrix = _preprocess_to_padded_matrix(
-        data, window_length_in_samp, window_shift_in_samp, zero_mean_offset=zero_mean_offset
+        data[0], window_length_in_samp, window_shift_in_samp, zero_mean_offset=zero_mean_offset
     )
     weighted_data_matrix = _weight_data_matrix(
         preprocessed_data_matrix, window_type, data_transformation=data_transformation

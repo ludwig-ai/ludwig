@@ -5,8 +5,8 @@ import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
+import ludwig.marshmallow.marshmallow_schema_utils as lusutils
 import ludwig.modules.optimization_modules as lmo
-import ludwig.validation.marshmallow_utils as lusutils
 
 # Tests for custom dataclass/marshmallow fields:
 
@@ -17,7 +17,7 @@ def get_marshmallow_from_dataclass_field(dfield):
 
 
 def test_torch_description_pull():
-    example_empty_desc_prop = lusutils.get_custom_schema_from_marshmallow_class(lmo.AdamOptimizerConfig)["properties"][
+    example_empty_desc_prop = lusutils.unload_jsonschema_from_marshmallow_class(lmo.AdamOptimizerConfig)["properties"][
         "lr"
     ]
     assert (

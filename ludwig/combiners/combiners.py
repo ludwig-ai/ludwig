@@ -22,6 +22,7 @@ import torch
 from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
+import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.sequence_encoders import ParallelCNN, StackedCNN, StackedCNNRNN, StackedParallelCNN, StackedRNN
 from ludwig.features.base_feature import InputFeature
@@ -34,7 +35,6 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
-from ludwig.validation import marshmallow_utils
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +81,9 @@ def get_combiner_conds():
     for combiner_type in combiner_types:
         combiner_cls = combiner_registry[combiner_type]
         schema_cls = combiner_cls.get_schema_cls()
-        combiner_schema = marshmallow_utils.get_custom_schema_from_marshmallow_class(schema_cls)
+        combiner_schema = schema.unload_jsonschema_from_marshmallow_class(schema_cls)
         combiner_props = combiner_schema["properties"]
-        combiner_cond = marshmallow_utils.create_cond({"type": combiner_type}, combiner_props)
+        combiner_cond = schema.create_cond({"type": combiner_type}, combiner_props)
         conds.append(combiner_cond)
     return conds
 
@@ -131,7 +131,7 @@ class Combiner(LudwigModule, ABC):
         return output_tensor["combiner_output"].size()[1:]
 
 
-class BaseCombinerConfig(marshmallow_utils.BaseMarshmallowConfig):
+class BaseCombinerConfig(schema.BaseMarshmallowConfig):
     """Base combiner config class."""
 
     pass
@@ -141,42 +141,39 @@ class BaseCombinerConfig(marshmallow_utils.BaseMarshmallowConfig):
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
-    fc_layers: Optional[List[Dict[str, Any]]] = marshmallow_utils.DictList()
-    """TODO: Document parameters. (default: None)."""
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList(description="TODO: Document parameters.")
 
-    num_fc_layers: int = marshmallow_utils.NonNegativeInteger(default=0)
-    """TODO: Document parameters. (default: 0)."""
+    num_fc_layers: int = schema.NonNegativeInteger(default=0, description="TODO: Document parameters.")
 
-    output_size: int = marshmallow_utils.PositiveInteger(default=256)
-    """Output size of a fully connected layer (default: 256)."""
+    output_size: int = schema.PositiveInteger(default=256, description="Output size of a fully connected layer.")
 
-    use_bias: bool = True
-    """Whether the layer uses a bias vector (default: True)."""
+    use_bias: bool = schema.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="xavier_uniform")
-    """TODO: Document parameters. (default: 'xavier_uniform')."""
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="xavier_uniform", description="TODO: Document parameters."
+    )
 
-    bias_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="zeros")
-    """TODO: Document parameters. (default: 'zeros')."""
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="zeros", description="TODO: Document parameters."
+    )
 
-    norm: Optional[str] = marshmallow_utils.StringOptions(["batch", "layer"])
-    """TODO: Document parameters. (default: norm)."""
+    norm: Optional[str] = schema.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
 
-    norm_params: Optional[dict] = marshmallow_utils.Dict()
-    """TODO: Document parameters. (default: None)."""
+    norm_params: Optional[dict] = schema.Dict(description="TODO: Document parameters.")
 
-    activation: str = marshmallow_utils.ActivationOptions(default="relu")
-    """TODO: Document parameters. (default: 'relu')."""
+    activation: str = schema.ActivationOptions(default="relu", description="TODO: Document parameters.")
 
-    dropout: float = marshmallow_utils.FloatRange(default=0.0, min=0, max=1)
-    """TODO: Document parameters. (default: 0.0)."""
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
 
-    flatten_inputs: bool = False
-    """Whether to flatten input tensors to a vector (default: False)."""
+    flatten_inputs: bool = schema.Boolean(default=False, description="Whether to flatten input tensors to a vector.")
 
-    residual: bool = False
-    """Whether to add a residual connection to each fully connected layer block. All fully connected layers must have
-       the same size (default: False)."""
+    residual: bool = schema.Boolean(
+        default=False,
+        description=(
+            "Whether to add a residual connection to each fully connected layer block. All fully connected layers must"
+            " have the same size"
+        ),
+    )
 
 
 @register_combiner(name="concat")
@@ -257,11 +254,9 @@ class ConcatCombiner(Combiner):
 class SequenceConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence concat combiner."""
 
-    main_sequence_feature: Optional[str] = None
-    """TODO: Document parameters. (default: None)."""
+    main_sequence_feature: Optional[str] = schema.String(default=None, description="TODO: Document parameters.")
 
-    reduce_output: Optional[str] = marshmallow_utils.ReductionOptions()
-    """TODO: Document parameters. (default: None)."""
+    reduce_output: Optional[str] = schema.ReductionOptions(default=None, description="TODO: Document parameters.")
 
 
 @register_combiner(name="sequence_concat")
@@ -414,14 +409,13 @@ class SequenceConcatCombiner(Combiner):
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
-    main_sequence_feature: Optional[str] = None
-    """TODO: Document parameters. (default: None)."""
+    main_sequence_feature: Optional[str] = schema.String(default=None, description="TODO: Document parameters.")
 
-    reduce_output: Optional[str] = marshmallow_utils.ReductionOptions()
-    """TODO: Document parameters. (default: None)."""
+    reduce_output: Optional[str] = schema.ReductionOptions(default=None, description="TODO: Document parameters.")
 
-    encoder: Optional[str] = marshmallow_utils.StringOptions(list(sequence_encoder_registry.keys()))
-    """TODO: Document parameters. (default: None)."""
+    encoder: Optional[str] = schema.StringOptions(
+        list(sequence_encoder_registry.keys()), default=None, description="TODO: Document parameters."
+    )
 
 
 @register_combiner(name="sequence")
@@ -493,52 +487,66 @@ class SequenceCombiner(Combiner):
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
 
-    size: int = marshmallow_utils.PositiveInteger(default=32)
-    """`N_a` in the paper (default: 32)."""
+    size: int = schema.PositiveInteger(default=32, description="`N_a` in the paper.")
 
-    output_size: int = marshmallow_utils.PositiveInteger(default=32)
-    """Output size of a fully connected layer. `N_d` in the paper (default: 32)."""
-
-    num_steps: int = marshmallow_utils.NonNegativeInteger(default=1)
-    """Number of steps / repetitions of the the attentive transformer and feature transformer computations. `N_steps` in
-       the paper (default: 1)."""
-
-    num_total_blocks: int = marshmallow_utils.NonNegativeInteger(default=4)
-    """Total number of feature transformer block at each step (default: 4)."""
-
-    num_shared_blocks: int = marshmallow_utils.NonNegativeInteger(default=2)
-    """Number of shared feature transformer blocks across the steps (default: 2)."""
-
-    relaxation_factor: float = 1.5
-    """Factor that influences how many times a feature should be used across the steps of computation. a value of 1
-       implies it each feature should be use once, a higher value allows for multiple usages. `gamma` in the paper
-       (default: 1.5)."""
-
-    bn_epsilon: float = 1e-3
-    """Epsilon to be added to the batch norm denominator (default: 1e-3)."""
-
-    bn_momentum: float = 0.7
-    """Momentum of the batch norm. `m_B` in the paper (default: 0.7)."""
-
-    bn_virtual_bs: Optional[int] = marshmallow_utils.PositiveInteger()
-    """Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. `B_v` from
-       the paper (default: None)."""
-
-    sparsity: float = 1e-5
-    """Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper (default: 1e-5)."""
-
-    entmax_mode: str = marshmallow_utils.StringOptions(
-        ["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax"
+    output_size: int = schema.PositiveInteger(
+        default=128, description="Output size of a fully connected layer. `N_d` in the paper"
     )
-    """TODO: Document parameters. (default: 'sparsemax')"""
 
-    entmax_alpha: float = marshmallow_utils.FloatRange(
-        default=1.5, min=1, max=2
+    num_steps: int = schema.NonNegativeInteger(
+        default=3,
+        description=(
+            "Number of steps / repetitions of the the attentive transformer and feature transformer computations. "
+            "`N_steps` in the paper"
+        ),
+    )
+
+    num_total_blocks: int = schema.NonNegativeInteger(
+        default=4, description="Total number of feature transformer block at each step"
+    )
+
+    num_shared_blocks: int = schema.NonNegativeInteger(
+        default=2, description="Number of shared feature transformer blocks across the steps"
+    )
+
+    relaxation_factor: float = schema.FloatRange(
+        default=1.5,
+        description=(
+            "Factor that influences how many times a feature should be used across the steps of computation. a value of"
+            " 1 implies it each feature should be use once, a higher value allows for multiple usages. `gamma` in the "
+            "paper"
+        ),
+    )
+
+    bn_epsilon: float = schema.FloatRange(
+        default=1e-3, description="Epsilon to be added to the batch norm denominator."
+    )
+
+    bn_momentum: float = schema.FloatRange(default=0.95, description="Momentum of the batch norm. `m_B` in the paper.")
+
+    bn_virtual_bs: Optional[int] = schema.PositiveInteger(
+        default=1024,
+        description=(
+            "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
+            "`B_v` from the paper"
+        ),
+    )
+
+    sparsity: float = schema.FloatRange(
+        default=1e-4, description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper"
+    )
+
+    entmax_mode: str = schema.StringOptions(
+        ["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax", description="TODO: Document parameters."
+    )
+
+    entmax_alpha: float = schema.FloatRange(
+        default=1.5, min=1, max=2, description="TODO: Document parameters."
     )  # 1 corresponds to softmax, 2 is sparsemax.
-    """TODO: Document parameters. (default: 1.5)"""
 
-    dropout: float = marshmallow_utils.FloatRange(default=0.0, min=0, max=1)
-    """Dropout rate for the transformer block (default: 0.0)."""
+    dropout: float = schema.FloatRange(
+        default=0.05, min=0, max=1, description="Dropout rate for the transformer block."
+    )
 
 
 @register_combiner(name="tabnet")
@@ -625,56 +633,59 @@ class TabNetCombiner(Combiner):
 class CommonTransformerConfig:
     """Common transformer parameter values."""
 
-    num_layers: int = marshmallow_utils.PositiveInteger(default=1)
-    """TODO: Document parameters. (default: 1)."""
+    num_layers: int = schema.PositiveInteger(default=1, description="TODO: Document parameters.")
 
-    hidden_size: int = marshmallow_utils.NonNegativeInteger(default=256)
-    """The number of hidden units of the TransformerStack as well as the dimension that each incoming input feature is
-       projected to before feeding to the TransformerStack (default: 256)."""
+    hidden_size: int = schema.NonNegativeInteger(
+        default=256,
+        description=(
+            "The number of hidden units of the TransformerStack as well as the dimension that each incoming input "
+            "feature is projected to before feeding to the TransformerStack"
+        ),
+    )
 
-    num_heads: int = marshmallow_utils.NonNegativeInteger(default=8)
-    """Number of heads of the self attention in the transformer block (default: 8)."""
+    num_heads: int = schema.NonNegativeInteger(
+        default=8, description="Number of heads of the self attention in the transformer block."
+    )
 
-    transformer_output_size: int = marshmallow_utils.NonNegativeInteger(default=256)
-    """Size of the fully connected layer after self attention in the transformer block. This is usually the same as
-       `hidden_size` and `embedding_size` (default: 256)."""
+    transformer_output_size: int = schema.NonNegativeInteger(
+        default=256,
+        description=(
+            "Size of the fully connected layer after self attention in the transformer block. This is usually the same "
+            "as `hidden_size` and `embedding_size`."
+        ),
+    )
 
-    dropout: float = marshmallow_utils.FloatRange(default=0.1, min=0, max=1)
-    """Dropout rate for the transformer block (default: 0.1)."""
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1, description="Dropout rate for the transformer block.")
 
-    fc_layers: Optional[List[Dict[str, Any]]] = marshmallow_utils.DictList()
-    """TODO: Document parameters. (default: None)."""
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList(description="TODO: Document parameters.")
 
     # TODO(#1673): Add conditional logic for fields like this one:
-    num_fc_layers: int = marshmallow_utils.NonNegativeInteger(default=0)
-    """The number of stacked fully connected layers (only applies if `reduce_output` is not null) (default: 0)."""
+    num_fc_layers: int = schema.NonNegativeInteger(
+        default=0,
+        description="The number of stacked fully connected layers (only applies if `reduce_output` is not null).",
+    )
 
-    output_size: int = marshmallow_utils.PositiveInteger(default=256)
-    """Output size of a fully connected layer (default: 256)."""
+    output_size: int = schema.PositiveInteger(default=256, description="Output size of a fully connected layer.")
 
-    use_bias: bool = True
-    """Whether the layer uses a bias vector (default: True)."""
+    use_bias: bool = schema.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="xavier_uniform")
-    """TODO: Document parameters. (default: 'xavier_uniform')."""
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="xavier_uniform", description="TODO: Document parameters."
+    )
 
-    bias_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="zeros")
-    """TODO: Document parameters. (default: 'zeros')."""
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="zeros", description="TODO: Document parameters."
+    )
 
-    norm: Optional[str] = marshmallow_utils.StringOptions(["batch", "layer"])
-    """TODO: Document parameters. (default: None)."""
+    norm: Optional[str] = schema.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
 
-    norm_params: Optional[dict] = marshmallow_utils.Dict()
-    """TODO: Document parameters. (default: None)."""
+    norm_params: Optional[dict] = schema.Dict(description="TODO: Document parameters.")
 
-    fc_activation: str = marshmallow_utils.ActivationOptions(default="relu")
-    """TODO: Document parameters. (default: 'relu')."""
+    fc_activation: str = schema.ActivationOptions(default="relu", description="TODO: Document parameters.")
 
-    fc_dropout: float = marshmallow_utils.FloatRange(default=0.0, min=0, max=1)
-    """TODO: Document parameters. (default: 0.0)."""
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
 
-    fc_residual: bool = False
-    """TODO: Document parameters. (default: False)."""
+    fc_residual: bool = schema.Boolean(default=False, description="TODO: Document parameters.")
 
 
 # TODO(ksbrar): Refactor transformers into using base class for common attrs?
@@ -682,8 +693,7 @@ class CommonTransformerConfig:
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
-    reduce_output: Optional[str] = marshmallow_utils.ReductionOptions(default="mean")
-    """TODO: Document parameters. (default: 'mean')."""
+    reduce_output: Optional[str] = schema.ReductionOptions(default="mean", description="TODO: Document parameters.")
 
 
 @register_combiner(name="transformer")
@@ -790,11 +800,9 @@ class TransformerCombiner(Combiner):
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 
-    embed_input_feature_name: Optional[Union[str, int]] = marshmallow_utils.Embed()
-    """TODO: Document parameters. (default: None)."""
+    embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()
 
-    reduce_output: str = marshmallow_utils.ReductionOptions(default="concat")
-    """TODO: Document parameters. (default: 'concat')."""
+    reduce_output: str = schema.ReductionOptions(default="concat", description="TODO: Document parameters.")
 
 
 @register_combiner(name="tabtransformer")
@@ -1011,35 +1019,29 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     entity_2: List[str]
     """TODO: Document parameters."""
 
-    fc_layers: Optional[List[Dict[str, Any]]] = marshmallow_utils.DictList()
-    """TODO: Document parameters. (default: None)."""
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList(description="TODO: Document parameters.")
 
-    num_fc_layers: int = marshmallow_utils.NonNegativeInteger(default=1)
-    """TODO: Document parameters. (default: 1)."""
+    num_fc_layers: int = schema.NonNegativeInteger(default=1, description="TODO: Document parameters.")
 
-    output_size: int = marshmallow_utils.PositiveInteger(default=256)
-    """Output size of a fully connected layer (default: 256)."""
+    output_size: int = schema.PositiveInteger(default=256, description="Output size of a fully connected layer")
 
-    use_bias: bool = True
-    """Whether the layer uses a bias vector (default: True)."""
+    use_bias: bool = schema.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="xavier_uniform")
-    """TODO: Document parameters. (default: 'xavier_uniform')."""
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="xavier_uniform", description="TODO: Document parameters."
+    )
 
-    bias_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="zeros")
-    """TODO: Document parameters. (default: 'zeros')."""
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="zeros", description="TODO: Document parameters."
+    )
 
-    norm: Optional[str] = marshmallow_utils.StringOptions(["batch", "layer"])
-    """TODO: Document parameters. (default: None)."""
+    norm: Optional[str] = schema.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
 
-    norm_params: Optional[dict] = marshmallow_utils.Dict()
-    """TODO: Document parameters. (default: None)."""
+    norm_params: Optional[dict] = schema.Dict(description="TODO: Document parameters.")
 
-    activation: str = marshmallow_utils.ActivationOptions(default="relu")
-    """TODO: Document parameters. (default: 'relu')."""
+    activation: str = schema.ActivationOptions(default="relu", description="TODO: Document parameters.")
 
-    dropout: float = marshmallow_utils.FloatRange(default=0.0, min=0, max=1)
-    """Dropout rate for the transformer block (default: 0.0)."""
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1, description="Dropout rate for the transformer block.")
 
 
 @register_combiner(name="comparator")
@@ -1191,17 +1193,17 @@ class ComparatorCombiner(Combiner):
 
 @dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
-    projection_size: int = marshmallow_utils.PositiveInteger(default=128)
-    fc_layers: Optional[List[Dict[str, Any]]] = marshmallow_utils.DictList()
-    num_fc_layers: int = marshmallow_utils.NonNegativeInteger(default=2)
-    output_size: int = marshmallow_utils.PositiveInteger(default=128)
+    projection_size: int = schema.PositiveInteger(default=128)
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=2)
+    output_size: int = schema.PositiveInteger(default=128)
     use_bias: bool = True
-    weights_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="xavier_uniform")
-    bias_initializer: Union[str, Dict] = marshmallow_utils.InitializerOrDict(default="zeros")
-    norm: Optional[str] = marshmallow_utils.StringOptions(["batch", "layer"], default="layer")
-    norm_params: Optional[dict] = marshmallow_utils.Dict()
-    activation: str = marshmallow_utils.ActivationOptions(default="relu")
-    dropout: float = marshmallow_utils.FloatRange(default=0.0, min=0, max=1)
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
+    norm: Optional[str] = schema.StringOptions(["batch", "layer"], default="layer")
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = schema.ActivationOptions(default="relu")
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
     residual: bool = True
 
 

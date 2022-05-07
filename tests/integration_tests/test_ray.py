@@ -14,7 +14,6 @@
 # ==============================================================================
 import contextlib
 import os
-import sys
 import tempfile
 
 import numpy as np
@@ -91,7 +90,7 @@ def run_api_experiment(config, data_parquet, backend_config):
         assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
-    model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=False)
+    model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=True, predict=False)
 
     assert isinstance(model.backend, RayBackend)
     if isinstance(model.backend.df_engine, DaskEngine):
@@ -102,7 +101,7 @@ def run_split_api_experiment(config, data_parquet, backend_config):
     train_fname, val_fname, test_fname = split(data_parquet)
 
     # Train
-    train_with_backend(backend_config, config, training_set=train_fname, evaluate=False, predict=False)
+    train_with_backend(backend_config, config, training_set=train_fname, evaluate=False, predict=True)
 
     # Train + Validation
     train_with_backend(
@@ -176,9 +175,6 @@ def run_test_parquet(
 @pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.distributed
 def test_ray_tabular(df_engine):
-    if df_engine == "modin" and sys.version_info < (3, 7):
-        pytest.skip("Modin is not supported with Python 3.6 at this time")
-
     input_features = [
         sequence_feature(reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -358,8 +354,7 @@ def test_balance_ray(method, balance):
         minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
         new_class_balance = round(minority_class / majority_class, 2)
 
-        assert (balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
-        assert (balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
+        assert abs(balance - new_class_balance) < BALANCE_PERCENTAGE_TOLERANCE
 
 
 def _run_train_gpu_load_cpu(config, data_parquet):

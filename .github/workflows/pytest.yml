@@ -28,11 +28,11 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.10.2
             torchscript-version: 1.10.2
-            ray-version: 1.9.2
+            ray-version: 1.11.0
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
-            ray-version: 1.11.0
+            ray-version: 1.12.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
@@ -87,7 +87,8 @@ jobs:
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            # TODO: temp fix for https://github.com/pytorch/vision/issues/5873
+            pip install --pre torch==1.12.0.dev20220421+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
