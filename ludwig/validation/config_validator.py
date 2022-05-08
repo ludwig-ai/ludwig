@@ -21,11 +21,11 @@ from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.marshmallow.marshmallow_schema_utils import create_cond
 from ludwig.models.trainer import get_trainer_jsonschema
+from ludwig.validation.schema import create_cond
 
 
-def get_schema():
+def get_validation_schema():
     input_feature_types = sorted(list(input_type_registry.keys()))
     output_feature_types = sorted(list(output_type_registry.keys()))
 
@@ -143,4 +143,4 @@ def validate_config(config):
     # TODO(#1783): Change to Draft7Validator to _LATEST_VERSION or Draft202012Validator when py3.6 deprecated:
     type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
     CustomValidator = extend(Draft7Validator, type_checker=type_checker)
-    validate(instance=config, schema=get_schema(), cls=CustomValidator)
+    validate(instance=config, schema=get_validation_schema(), cls=CustomValidator)

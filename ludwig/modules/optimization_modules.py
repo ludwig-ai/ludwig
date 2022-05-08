@@ -20,7 +20,9 @@ import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.marshmallow.marshmallow_schema_utils import (
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry
+from ludwig.validation.schema import (
     BaseMarshmallowConfig,
     Boolean,
     create_cond,
@@ -30,8 +32,6 @@ from ludwig.marshmallow.marshmallow_schema_utils import (
     StringOptions,
     unload_jsonschema_from_marshmallow_class,
 )
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.registry import Registry
 
 optimizer_registry = Registry()
 

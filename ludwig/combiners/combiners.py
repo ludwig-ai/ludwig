@@ -22,7 +22,6 @@ import torch
 from marshmallow_dataclass import dataclass
 from torch.nn import Linear, ModuleList
 
-import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.sequence_encoders import ParallelCNN, StackedCNN, StackedCNNRNN, StackedParallelCNN, StackedRNN
 from ludwig.features.base_feature import InputFeature
@@ -35,6 +34,7 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
+from ludwig.validation import schema
 
 logger = logging.getLogger(__name__)
 

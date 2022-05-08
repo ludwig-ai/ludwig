@@ -61,7 +61,6 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
-from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
@@ -85,7 +84,8 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.schema import validate_config
+from ludwig.validation.config_validator import validate_config
+from ludwig.validation.schema import load_config_with_kwargs
 
 logger = logging.getLogger(__name__)
 

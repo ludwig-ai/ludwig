@@ -35,7 +35,6 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -64,6 +63,7 @@ from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, lea
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
+from ludwig.validation import schema
 
 logger = logging.getLogger(__name__)
 
