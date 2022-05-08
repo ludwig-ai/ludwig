@@ -161,16 +161,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise RuntimeError
 
         raw_audio = df_engine.map_objects(raw_audio, lambda row: row if row is not None else default_audio)
-        test = raw_audio.compute()[0]
-        test_feature = AudioFeatureMixin._transform_to_feature(
-            audio=test[0],
-            sampling_rate_in_hz=test[1],
-            audio_feature_dict=audio_feature_dict,
-            feature_dim=feature_dim,
-            max_length=max_length,
-            padding_value=padding_value,
-            normalization_type=normalization_type,
-        )
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
