@@ -1192,7 +1192,6 @@ class ComparatorCombiner(Combiner):
 
 
 @dataclass
-@dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     projection_size: int = schema.PositiveInteger(
         default=128, description="All combiner inputs are projected to this size before being aggregated."
