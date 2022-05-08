@@ -1194,6 +1194,9 @@ class ComparatorCombiner(Combiner):
 @dataclass
 @dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
+    projection_size: int = schema.PositiveInteger(
+        default=128, description="All combiner inputs are projected to this size before being aggregated."
+    )
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList(
         description="Full secification of the fully connected layers after the aggregation. "
         "It should be a list of dict, each disct representing one layer."
@@ -1228,9 +1231,6 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
         default=0.0, min=0, max=1, description="Dropout rate to apply to each fully connected layer."
     )
     residual: bool = True
-    projection_size: int = schema.PositiveInteger(
-        default=128, description="All combiner inputs are projected to this size before being aggregated."
-    )
 
 
 @register_combiner(name="project_aggregate")
