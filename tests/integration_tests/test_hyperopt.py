@@ -47,14 +47,18 @@ HYPEROPT_CONFIG = {
             "space": "choice",
             "categories": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
         },
-        "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
+        "utterance.cell_type": {"space": "choice", "categories": ["rnn", "gru"]},
         "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
     },
     "goal": "minimize",
 }
 
-SAMPLERS = [{"num_samples": 2}]
-
+SAMPLERS = [
+    {"num_samples": 2},
+    {"num_samples": 2, "search_alg": {"type": "variant_generator", "random_state": 13}},
+    {"num_samples": 2, "search_alg": {"type": "hyperopt", "random_state_seed": 13}},
+    {"num_samples": 2, "search_alg": {"type": "bohb", "seed": 13}},
+]
 
 @contextlib.contextmanager
 def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):

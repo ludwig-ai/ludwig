@@ -123,6 +123,7 @@ EXECUTOR = "executor"
 MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
+SEARCH_ALG = "search_alg"
 PARAMETERS = "parameters"
 
 NAME = "name"
