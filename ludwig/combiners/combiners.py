@@ -1192,18 +1192,44 @@ class ComparatorCombiner(Combiner):
 
 
 @dataclass
+@dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
-    projection_size: int = schema.PositiveInteger(default=128)
-    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
-    num_fc_layers: int = schema.NonNegativeInteger(default=2)
-    output_size: int = schema.PositiveInteger(default=128)
+    projection_size: int = schema.PositiveInteger(
+        default=128, description="All combiner inputs are projected to this size before being aggregated."
+    )
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList(
+        description="Full secification of the fully connected layers after the aggregation. "
+        "It should be a list of dict, each disct representing one layer."
+    )
+    num_fc_layers: int = schema.NonNegativeInteger(
+        default=2, description="Number of fully connected layers after aggregation."
+    )
+    output_size: int = schema.PositiveInteger(
+        default=128, description="Output size of each layer of the stack of fully connected layers."
+    )
     use_bias: bool = True
-    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default="xavier_uniform")
-    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default="zeros")
-    norm: Optional[str] = schema.StringOptions(["batch", "layer"], default="layer")
-    norm_params: Optional[dict] = schema.Dict()
-    activation: str = schema.ActivationOptions(default="relu")
-    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="xavier_uniform",
+        description="Initializer to use for the weights of the projection and for the fully connected layers.",
+    )
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="zeros",
+        description="Initializer to use for the baias of the projection and for the fully connected layers.",
+    )
+    norm: Optional[str] = schema.StringOptions(
+        ["batch", "layer"],
+        default="layer",
+        description="Normalization to apply to each projection and fully connected layer.",
+    )
+    norm_params: Optional[dict] = schema.Dict(
+        description="Parameters of the normalization to apply to each projection and fully connected layer."
+    )
+    activation: str = schema.ActivationOptions(
+        default="relu", description="Activation to apply to each fully connected layer."
+    )
+    dropout: float = schema.FloatRange(
+        default=0.0, min=0, max=1, description="Dropout rate to apply to each fully connected layer."
+    )
     residual: bool = True
 
 
