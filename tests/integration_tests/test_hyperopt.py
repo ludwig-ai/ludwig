@@ -60,6 +60,7 @@ SAMPLERS = [
     {"num_samples": 2, "search_alg": {"type": "bohb", "seed": 13}},
 ]
 
+
 @contextlib.contextmanager
 def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
     res = ray.init(
