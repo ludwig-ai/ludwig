@@ -67,7 +67,10 @@ class AudioFeatureMixin(BaseFeatureMixin):
             "padding_value": 0,
             "norm": None,
             "audio_feature": {
-                TYPE: "raw",
+                TYPE: "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
             },
         }
 
@@ -230,7 +233,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
         feature_type = audio_feature_dict[TYPE]
         if feature_type == "raw":
-            audio_feature = np.expand_dims(audio, axis=-1)
+            audio_feature = np.expand_dims(audio[0], axis=-1)
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
             audio_feature = np.transpose(
                 AudioFeatureMixin._get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz)
