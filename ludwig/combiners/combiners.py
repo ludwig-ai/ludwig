@@ -1206,7 +1206,7 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     output_size: int = schema.PositiveInteger(
         default=128, description="Output size of each layer of the stack of fully connected layers."
     )
-    use_bias: bool = True
+    use_bias: bool = schema.Boolean(default=True, description="Whether the layers use a bias vector.")
     weights_initializer: Union[str, Dict] = schema.InitializerOrDict(
         default="xavier_uniform",
         description="Initializer to use for the weights of the projection and for the fully connected layers.",
@@ -1229,7 +1229,10 @@ class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     dropout: float = schema.FloatRange(
         default=0.0, min=0, max=1, description="Dropout rate to apply to each fully connected layer."
     )
-    residual: bool = True
+    residual: bool = schema.Boolean(
+        default=True,
+        description="Whether to add residual skip connection between the fully connected layers in the stack..",
+    )
 
 
 @register_combiner(name="project_aggregate")
