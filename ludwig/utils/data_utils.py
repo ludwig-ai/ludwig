@@ -235,7 +235,7 @@ def read_html(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")
-        return dd.from_pandas(pd.read_html(data_fp), npartitions=1)
+        return dd.from_pandas(pd.read_html(data_fp)[0], npartitions=1)
     return df_lib.read_html(data_fp)[0]
 
 
