@@ -59,6 +59,7 @@ class SpaceStringToListTokenizer(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
         if isinstance(v, str):
             inputs.append(v)
         else:
@@ -90,6 +91,7 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
         if isinstance(v, str):
             inputs.append(v)
         else:
@@ -938,6 +940,7 @@ try:
                     raise ValueError(f"Unsupported input: {v}")
 
                 inputs: List[str] = []
+                # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
                 if isinstance(v, str):
                     inputs.append(v)
                 else:
