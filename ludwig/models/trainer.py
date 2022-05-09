@@ -980,7 +980,7 @@ class Trainer(BaseTrainer):
                     )
                     logger.info(
                         f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
-                        f"step(s), which is approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
+                        f"step(s), approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
                         "epoch(s).\n"
                     )
 
