@@ -216,11 +216,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         *torchscript_compatible_text_features,
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
-        sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
+        sequence_feature(vocab_size=3),
+        timeseries_feature(),
         # TODO: future support
         # vector_feature(),
         # audio_feature(audio_dest_folder),
-        # timeseries_feature(),
         # date_feature(),
         # h3_feature(),
     ]
