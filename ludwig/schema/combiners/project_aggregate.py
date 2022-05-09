@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 

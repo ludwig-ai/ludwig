@@ -32,12 +32,12 @@ from ludwig.modules.tabnet_modules import TabNet
 from ludwig.schema.combiners import (
     ComparatorCombinerConfig,
     ConcatCombinerConfig,
+    ProjectAggregateCombinerConfig,
     SequenceCombinerConfig,
     SequenceConcatCombinerConfig,
     TabNetCombinerConfig,
     TabTransformerCombinerConfig,
     TransformerCombinerConfig,
-    ProjectAggregateCombinerConfig
 )
 from ludwig.schema.combiners.utils import combiner_registry, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
