@@ -46,7 +46,7 @@ class DaskEngine(DataFrameEngine):
 
     def df_like(self, df, proc_cols):
         # TODO: address if following results in fragmented DataFrame
-        dataset = dd.from_pandas(pd.DataFrame(proc_cols, index=df.index), npartitions=1)
+        dataset = self.from_pandas(pd.DataFrame(proc_cols, index=df.index))
         return dataset
 
     def parallelize(self, data):
@@ -65,9 +65,12 @@ class DaskEngine(DataFrameEngine):
     def compute(self, data):
         return data.compute()
 
-    def from_pandas(self, df):
+    def from_pandas(self, df, reset_index=True):
         parallelism = self._parallelism or 1
-        return dd.from_pandas(df, npartitions=parallelism).reset_index()
+        if reset_index:
+            return dd.from_pandas(df, npartitions=parallelism).reset_index()
+        else:
+            return dd.from_pandas(df, npartitions=parallelism)
 
     def map_objects(self, series, map_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
