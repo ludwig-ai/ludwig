@@ -20,6 +20,7 @@ import dask
 import dask.array as da
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
+import pandas as pd
 from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
@@ -44,14 +45,8 @@ class DaskEngine(DataFrameEngine):
         self._parallelism = parallelism
 
     def df_like(self, df, proc_cols):
-        # Our goal is to preserve the index of the input dataframe but to drop
-        # all its columns. Because to_frame() creates a column from the index,
-        # we need to drop it immediately following creation.
-        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
         # TODO: address if following results in fragmented DataFrame
-        for k, v in proc_cols.items():
-            dataset[k] = v
-            dataset[k] = dataset[k].astype(v.dtype)
+        dataset = dd.from_pandas(pd.DataFrame(proc_cols, index=df.index), npartitions=1)
         return dataset
 
     def parallelize(self, data):
