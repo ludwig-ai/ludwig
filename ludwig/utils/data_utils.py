@@ -195,8 +195,8 @@ def read_excel(data_fp, df_lib):
     else:
         excel_engine = "openpyxl"
 
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_excel() since dask backend does not support it")
     return pd.read_excel(data_fp, engine=excel_engine)
 
@@ -208,8 +208,8 @@ def read_parquet(data_fp, df_lib):
 
 @spread
 def read_pickle(data_fp, df_lib):
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_pickle() since dask backend does not support it")
     return pd.read_pickle(data_fp)
 
@@ -221,16 +221,16 @@ def read_fwf(data_fp, df_lib):
 
 @spread
 def read_feather(data_fp, df_lib):
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_feather() since dask backend does not support it")
     return pd.read_feather(data_fp)
 
 
 @spread
 def read_html(data_fp, df_lib):
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")
     return pd.read_html(data_fp)[0]
 
@@ -242,24 +242,24 @@ def read_orc(data_fp, df_lib):
 
 @spread
 def read_sas(data_fp, df_lib):
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_sas() since dask backend does not support it")
     return pd.read_sas(data_fp)
 
 
 @spread
 def read_spss(data_fp, df_lib):
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_spss() since dask backend does not support it")
     return pd.read_spss(data_fp)
 
 
 @spread
 def read_stata(data_fp, df_lib):
+    # https://github.com/dask/dask/issues/9055
     if df_lib.__name__ == DASK_MODULE_NAME:
-        # https://github.com/dask/dask/issues/9055
         logger.warning("Falling back to pd.read_stata() since dask backend does not support it")
     return pd.read_stata(data_fp)
 
