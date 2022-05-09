@@ -149,7 +149,7 @@ class ProgressTracker:
 def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
     """Returns train_steps if non-negative.
 
-    Otherwise, use the number of epochs.
+    Otherwise, returns the number of epochs.
     """
     if train_steps != -1:
         return train_steps

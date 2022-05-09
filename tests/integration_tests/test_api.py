@@ -523,13 +523,12 @@ def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, n
 
 
 def test_api_callbacks_default_train_steps(csv_filename):
-    mock_callback = mock.Mock(wraps=Callback())
-
     # Default for train_steps is -1: use epochs.
     train_steps = TrainerConfig.train_steps.dump_default
     epochs = 10
     batch_size = 8
     num_examples = 80
+    mock_callback = mock.Mock(wraps=Callback())
 
     with tempfile.TemporaryDirectory() as output_dir:
         input_features = [sequence_feature(reduce_output="sum")]
@@ -542,31 +541,26 @@ def test_api_callbacks_default_train_steps(csv_filename):
             TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
         }
         model = LudwigModel(config, callbacks=[mock_callback])
-
-        data_csv = generate_data(
-            input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+        model.train(
+            dataset=generate_data(
+                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+            )
         )
-        val_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "test.csv"))
-
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
     assert mock_callback.on_epoch_start.call_count == epochs
 
 
 def test_api_callbacks_fixed_train_steps(csv_filename):
-    mock_callback = mock.Mock(wraps=Callback())
-
     # If train_steps is set manually, epochs is ignored.
     train_steps = 100
     epochs = 2
     batch_size = 8
     num_examples = 80
+    mock_callback = mock.Mock(wraps=Callback())
 
     with tempfile.TemporaryDirectory() as output_dir:
         input_features = [sequence_feature(reduce_output="sum")]
         output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-
         config = {
             "input_features": input_features,
             "output_features": output_features,
@@ -574,14 +568,11 @@ def test_api_callbacks_fixed_train_steps(csv_filename):
             TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
         }
         model = LudwigModel(config, callbacks=[mock_callback])
-
-        data_csv = generate_data(
-            input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+        model.train(
+            dataset=generate_data(
+                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+            )
         )
-        val_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "test.csv"))
-
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
     # There are 10 steps per epoch, so 100 train steps => 10 epochs.
     assert mock_callback.on_epoch_start.call_count == 10
