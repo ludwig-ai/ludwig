@@ -6,3 +6,4 @@ from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig  # noqa: F401
 from ludwig.schema.combiners.tabnet import TabNetCombinerConfig  # noqa: F401
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig  # noqa: F401
+from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig # noqa: F401

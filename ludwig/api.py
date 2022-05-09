@@ -472,7 +472,7 @@ class LudwigModel:
                     experiment_name=experiment_name,
                     model_name=model_name,
                     output_directory=output_directory,
-                    resume=model_resume_path is not None,
+                    resume_directory=model_resume_path,
                 )
 
             # Build model if not provided
@@ -691,6 +691,7 @@ class LudwigModel:
         skip_save_predictions: bool = True,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+        callbacks: Optional[List[Callback]] = None,
         **kwargs,
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
@@ -723,6 +724,9 @@ class LudwigModel:
             model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format of the returned predictions.
+        :param callbacks: (Optional[List[Callback]], default: None)
+            optional list of callbacks to use during this predict operation. Any callbacks
+            already registered to the model will be preserved.
 
         # Return
 
@@ -742,7 +746,7 @@ class LudwigModel:
             split=split,
             include_outputs=False,
             backend=self.backend,
-            callbacks=self.callbacks,
+            callbacks=self.callbacks + (callbacks or []),
         )
 
         logger.debug("Predicting")

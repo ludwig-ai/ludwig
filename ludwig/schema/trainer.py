@@ -24,6 +24,14 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=100, description="Number of epochs the algorithm is intended to be run over."
     )
 
+    train_steps: int = schema_utils.PositiveInteger(
+        default=None,
+        description=(
+            "Maximum number of training steps the algorithm is intended to be run over. "
+            + "If unset, then `epochs` is used to determine training length."
+        ),
+    )
+
     regularization_lambda: float = schema_utils.FloatRange(
         default=0.0, min=0, description="Strength of the $L2$ regularization."
     )
@@ -74,8 +82,8 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=5,
         min=-1,
         description=(
-            "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be "
-            "set to -1, which disables `early_stop`."
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
         ),
     )
 

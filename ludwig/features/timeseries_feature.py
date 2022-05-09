@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -31,8 +32,48 @@ from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 
 logger = logging.getLogger(__name__)
+
+
+class _TimeseriesPreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by TimeseriesFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
+            )
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.padding = metadata["preprocessing"]["padding"]
+        self.padding_value = metadata["preprocessing"]["padding_value"]
+        self.max_timeseries_length = int(metadata["max_timeseries_length"])
+
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+        """Takes a list of strings and returns a tensor of token ids."""
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        sequences = self.tokenizer(v)
+        # refines type of sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(sequences, List[List[str]]), "sequences is not a list of lists."
+
+        float_sequences: List[List[float]] = [[float(s) for s in sequence] for sequence in sequences]
+        timeseries_matrix = torch.full(
+            [len(float_sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
+        )
+        for sample_idx, float_sequence in enumerate(float_sequences):
+            limit = min(len(float_sequence), self.max_timeseries_length)
+            if self.padding == "right":
+                timeseries_matrix[sample_idx][:limit] = torch.tensor(float_sequence[:limit])
+            else:  # if self.padding == 'left
+                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = torch.tensor(
+                    float_sequence[:limit]
+                )
+        return timeseries_matrix
 
 
 class TimeseriesFeatureMixin(BaseFeatureMixin):
@@ -169,6 +210,10 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
                 "encoder": "parallel_cnn",
             },
         )
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _TimeseriesPreprocessing(metadata)
 
 
 # this is still WIP

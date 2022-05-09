@@ -55,7 +55,12 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
+from ludwig.utils.trainer_utils import (
+    get_final_steps_per_checkpoint,
+    get_new_progress_tracker,
+    get_total_steps,
+    ProgressTracker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +154,7 @@ class Trainer(BaseTrainer):
         """
 
         self.epochs = config.epochs
+        self.train_steps = config.train_steps
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
@@ -528,6 +534,7 @@ class Trainer(BaseTrainer):
         save_path,
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
+        early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -645,7 +652,7 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_on_plateau_max,
                 self.increase_batch_size_eval_metric,
                 self.increase_batch_size_eval_split,
-                self.early_stop,
+                early_stopping_steps,
                 self.skip_save_model,
             )
         else:
@@ -782,7 +789,7 @@ class Trainer(BaseTrainer):
                 horovod=self.horovod,
             ) as batcher:
                 # ================ Training Loop ================
-                total_steps = self.epochs * batcher.steps_per_epoch
+                total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -792,11 +799,19 @@ class Trainer(BaseTrainer):
                     self.is_coordinator(),
                 )
 
+                early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+
                 if self.is_coordinator():
                     logger.info(
                         f"Training for {total_steps} step(s), approximately "
                         f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
+                    logger.info(
+                        f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
+                        f"step(s), approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
+                        "epoch(s).\n"
+                    )
+
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar = None
@@ -840,6 +855,7 @@ class Trainer(BaseTrainer):
                         metrics_names,
                         checkpoint_manager,
                         final_steps_per_checkpoint,
+                        early_stopping_steps,
                     )
 
                     # ================ Post Training Epoch ================
@@ -910,6 +926,7 @@ class Trainer(BaseTrainer):
         metrics_names,
         checkpoint_manager,
         final_steps_per_checkpoint: int,
+        early_stopping_steps: int,
     ) -> bool:
         """Completes one epoch through the data."""
         while not batcher.last_batch():
@@ -1003,6 +1020,7 @@ class Trainer(BaseTrainer):
                     save_path,
                     loss,
                     all_losses,
+                    early_stopping_steps,
                 )
                 if should_break:
                     return should_break
@@ -1104,7 +1122,7 @@ class Trainer(BaseTrainer):
         increase_batch_size_on_plateau_max,
         increase_batch_size_eval_metric,
         increase_batch_size_eval_split,
-        early_stop,
+        early_stopping_steps: int,
         skip_save_model,
     ):
         """Checks the history of validation scores.
@@ -1194,7 +1212,7 @@ class Trainer(BaseTrainer):
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
-        early_stop_bool = 0 < early_stop <= progress_tracker.last_improvement
+        early_stop_bool = 0 < early_stopping_steps <= progress_tracker.last_improvement
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
@@ -1207,10 +1225,9 @@ class Trainer(BaseTrainer):
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
-                    "\nEARLY STOPPING due to lack of "
-                    "validation improvement, "
-                    f"it has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
-                    "last validation improvement.\n"
+                    "\nEARLY STOPPING due to lack of validation improvement. "
+                    f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
+                    f"last validation improvement.\n"
                 )
             should_break = True
         return should_break
