@@ -25,7 +25,6 @@ from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.models.inference import InferenceLudwigModel
-from ludwig.models.trainer import TrainerConfig
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
@@ -524,7 +523,7 @@ def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, n
 
 def test_api_callbacks_default_train_steps(csv_filename):
     # Default for train_steps is -1: use epochs.
-    train_steps = TrainerConfig.train_steps.dump_default
+    train_steps = None
     epochs = 10
     batch_size = 8
     num_examples = 80

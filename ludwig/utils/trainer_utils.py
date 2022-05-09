@@ -151,7 +151,7 @@ def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
 
     Otherwise, returns the number of epochs.
     """
-    if train_steps != -1:
+    if train_steps:
         return train_steps
     return epochs * steps_per_epoch
 

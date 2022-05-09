@@ -30,7 +30,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import psutil
 import torch
-from marshmallow import fields
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
@@ -124,11 +123,11 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
         default=100, description="Number of epochs the algorithm is intended to be run over."
     )
 
-    train_steps: int = fields.Integer(
-        default=-1,
+    train_steps: int = schema.PositiveInteger(
+        default=None,
         description=(
             "Maximum number of training steps the algorithm is intended to be run over. "
-            + "If -1, then `epochs` is used to determine training length."
+            + "If unset, then `epochs` is used to determine training length."
         ),
     )
 
