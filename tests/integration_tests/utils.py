@@ -606,6 +606,7 @@ def train_with_backend(
     predict=True,
     evaluate=True,
     callbacks=None,
+    skip_save_processed_input=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None
@@ -616,7 +617,7 @@ def train_with_backend(
             training_set=training_set,
             validation_set=validation_set,
             test_set=test_set,
-            skip_save_processed_input=True,
+            skip_save_processed_input=skip_save_processed_input,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,
