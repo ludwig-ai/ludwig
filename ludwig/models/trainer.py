@@ -384,8 +384,8 @@ class Trainer(BaseTrainer):
             self.skip_save_inference_module = True
         else:
             self.skip_save_inference_module = skip_save_inference_module
-            
-        print('ASDFASDF inside Trainer.__init__')
+
+        print("ASDFASDF inside Trainer.__init__")
         print("inference_module_kwargs")
         print(inference_module_kwargs)
         self.inference_module_kwargs = inference_module_kwargs or {}
@@ -1604,7 +1604,7 @@ class Trainer(BaseTrainer):
 
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
-        print('ASDFASDF inside RemoteTrainer.__init__')
+        print("ASDFASDF inside RemoteTrainer.__init__")
         print("kwargs")
         print(kwargs)
         super().__init__(**kwargs)
