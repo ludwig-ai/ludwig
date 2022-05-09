@@ -63,7 +63,12 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
+from ludwig.utils.trainer_utils import (
+    get_final_steps_per_checkpoint,
+    get_new_progress_tracker,
+    get_total_steps,
+    ProgressTracker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +121,14 @@ class TrainerConfig(schema.BaseMarshmallowConfig):
 
     epochs: int = schema.PositiveInteger(
         default=100, description="Number of epochs the algorithm is intended to be run over."
+    )
+
+    train_steps: int = schema.PositiveInteger(
+        default=None,
+        description=(
+            "Maximum number of training steps the algorithm is intended to be run over. "
+            + "If unset, then `epochs` is used to determine training length."
+        ),
     )
 
     regularization_lambda: float = schema.FloatRange(
@@ -327,6 +340,7 @@ class Trainer(BaseTrainer):
         """
 
         self.epochs = config.epochs
+        self.train_steps = config.train_steps
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
@@ -961,7 +975,7 @@ class Trainer(BaseTrainer):
                 horovod=self.horovod,
             ) as batcher:
                 # ================ Training Loop ================
-                total_steps = self.epochs * batcher.steps_per_epoch
+                total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
