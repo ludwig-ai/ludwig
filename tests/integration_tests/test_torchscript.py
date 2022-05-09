@@ -264,6 +264,12 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
+
+    # Ensure torchscript saving/loading does not effect final predictions.
+    script_module_path = os.path.join(tmpdir, "inference_module.pt")
+    torch.jit.save(script_module, script_module_path)
+    script_module = torch.jit.load(script_module_path)
+
     df = pd.read_csv(training_data_csv_path)
     inputs = {
         name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
