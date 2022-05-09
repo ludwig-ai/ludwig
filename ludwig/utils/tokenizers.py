@@ -87,7 +87,7 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
         return c.isalnum() or c == "_"
 
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
-        if torch.jit.isinstance(v, torch.Tensor):
+        if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 
         inputs: List[str] = []
