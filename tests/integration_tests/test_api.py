@@ -542,7 +542,7 @@ def test_api_callbacks_default_train_steps(csv_filename):
         }
         model = LudwigModel(config, callbacks=[mock_callback])
         model.train(
-            dataset=generate_data(
+            training_set=generate_data(
                 input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
             )
         )
@@ -569,7 +569,7 @@ def test_api_callbacks_fixed_train_steps(csv_filename):
         }
         model = LudwigModel(config, callbacks=[mock_callback])
         model.train(
-            dataset=generate_data(
+            training_set=generate_data(
                 input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
             )
         )
