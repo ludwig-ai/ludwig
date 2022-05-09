@@ -19,8 +19,8 @@ import logging
 import dask
 import dask.array as da
 import dask.dataframe as dd
-from dask.diagnostics import ProgressBar
 import pandas as pd
+from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
