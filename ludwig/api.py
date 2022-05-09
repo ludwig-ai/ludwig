@@ -497,10 +497,6 @@ class LudwigModel:
             # init trainer
             config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
 
-            print("ASDFASDF inside api.py")
-            print('{"config": self.config, "training_set_metadata": self.training_set_metadata}')
-            print({"config": self.config, "training_set_metadata": self.training_set_metadata})
-
             with self.backend.create_trainer(
                 model=self.model,
                 config=config,

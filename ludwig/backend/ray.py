@@ -187,10 +187,6 @@ def train_fn(
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = model.to(device)
 
-        print("ASDFASDF inside ray.train_fn")
-        print("executable_kwargs")
-        print(executable_kwargs)
-
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
@@ -218,13 +214,6 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
-        print("ASDFASDF inside RayTrainerV2.__init__")
-
-        print("self.data_loader_kwargs")
-        print(self.data_loader_kwargs)
-        print("self.executable_kwargs")
-        print(self.executable_kwargs)
-
     def train(
         self,
         training_set: RayDataset,
@@ -245,12 +234,6 @@ class RayTrainerV2(BaseTrainer):
             dataset["val"] = validation_set.pipeline(shuffle=False, **self.data_loader_kwargs)
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
-
-        print("ASDFASDF inside RayTrainerV2.train")
-        print("executable_kwargs")
-        print(executable_kwargs)
-        print("kwargs")
-        print(kwargs)
 
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
