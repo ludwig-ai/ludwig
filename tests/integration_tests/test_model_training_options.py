@@ -14,13 +14,17 @@ from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import TRAINER, TRAINING
+from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAINING_PREPROC_FILE_NAME
 from ludwig.modules.optimization_modules import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.package_utils import LazyLoader
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend
+
+mlflow = LazyLoader("mlflow", globals(), "mlflow")
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -237,6 +241,48 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     print("y_pred1", y_pred1)
     print("y_pred2", y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
+
+
+@pytest.mark.parametrize("optimizer", ["sgd", "adam"])
+def test_resume_training_mlflow(optimizer, generated_data, tmp_path):
+    input_features, output_features = get_feature_configs()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat"},
+        TRAINER: {"epochs": 2, "batch_size": 16, "optimizer": {"type": optimizer}},
+    }
+
+    # create sub-directory to store results
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    mlflow_uri = f"file://{tmp_path}/mlruns"
+    experiment_name = optimizer + "_experiment"
+
+    _, _, _, _, output_dir1 = experiment_cli(
+        config,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
+        callbacks=[MlflowCallback(mlflow_uri)],
+        experiment_name=experiment_name,
+    )
+    # Can't change any artifact spec on a run once it has been logged to mlflow, so skipping changing epochs
+
+    _, _, _, _, output_dir2 = experiment_cli(
+        config,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
+        model_resume_path=output_dir1,
+        callbacks=[MlflowCallback(mlflow_uri)],
+        experiment_name=experiment_name,
+    )
+
+    # make sure there is only one mlflow run id
+    experiment = mlflow.get_experiment_by_name(experiment_name)
+    previous_runs = mlflow.search_runs([experiment.experiment_id])
+    assert len(previous_runs) == 1
 
 
 @pytest.mark.parametrize("optimizer_type", optimizer_registry)
