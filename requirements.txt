@@ -8,12 +8,11 @@ scikit-learn
 tqdm
 torch==1.9.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
 torch>=1.10.0 ; platform_system != "Windows"
-torchaudio>=0.9.0
+torchaudio
 torchtext
 torchvision==0.10.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
 torchvision>=0.10.1 ; platform_system != "Windows"
 transformers>=4.10.1
-soundfile
 spacy>=2.3
 PyYAML>=3.12
 absl-py
@@ -36,5 +35,5 @@ psutil
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
-pyarrow         # parquet
+pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
 lxml            # html
