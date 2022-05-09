@@ -108,6 +108,8 @@ class InferenceLudwigModel:
 
         if return_type == pd.DataFrame:
             preds = convert_dict_to_df(preds)
+
+        print("inside InferenceLudwigModel.predict")
         return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
 

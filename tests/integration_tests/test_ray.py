@@ -191,7 +191,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("dataset_type", ["parquet", "csv"])
+@pytest.mark.parametrize("dataset_type", ["csv"])
 @pytest.mark.distributed
 def test_ray_save_processed_input(dataset_type):
     input_features = [
@@ -205,7 +205,7 @@ def test_ray_save_processed_input(dataset_type):
         output_features,
         df_engine="dask",
         dataset_type=dataset_type,
-        skip_save_processed_input=False,
+        skip_save_processed_input=True,
     )
 
 
