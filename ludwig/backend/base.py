@@ -115,7 +115,7 @@ class LocalTrainingMixin:
 
         return Trainer(**kwargs)
 
-    def create_predictor(self, model: "ECD", **kwargs):
+    def create_predictor(self, model: ECD, **kwargs):
         from ludwig.models.predictor import Predictor
 
         return Predictor(model, **kwargs)

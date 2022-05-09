@@ -22,7 +22,7 @@ FLAVOR_NAME = "ludwig"
 MODEL_TYPE_LUDWIG_MODEL = "ludwig_model"
 MODEL_TYPE_TORCHSCRIPT = "torchscript"
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_default_conda_env():
@@ -115,8 +115,6 @@ def save_model(
         if os.path.isfile(os.path.join(model_data_path, INFERENCE_MODULE_FILE_NAME))
         else MODEL_TYPE_LUDWIG_MODEL
     )
-    logging.info("INSIDE SAVE MODEL")
-    logging.info("model_type: " + model_type)
 
     conda_env_subpath = "conda.yaml"
     if conda_env is None:
@@ -152,6 +150,7 @@ def save_model(
         model_type=model_type,
     )
     mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
+    logger.info(f"Model with model_type '{model_type}' saved to MLFlow.")
 
 
 def log_model(
@@ -266,13 +265,12 @@ def load_model(model_uri):
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
+
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
     model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
+
     model = _load_model(path=lgb_model_file_path, model_type=model_type)
-    logging.info("ASDFASDF INSIDE LOAD MODEL")
-    logging.info("lgb_model_file_path: %s", lgb_model_file_path)
-    logging.info("model_type: %s", model_type)
-    logging.info("type(model) %s", type(model))
+    logger.info(f"Model with model_type '{model_type}' loaded from MLFlow.")
     return model
 
 

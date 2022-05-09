@@ -13,7 +13,7 @@ from ludwig.constants import TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.contribs.mlflow.model import load_model
 from ludwig.models.inference import InferenceLudwigModel
-from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data
+from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def config_tuple():
     epochs = 2
     batch_size = 8
 
-    input_features = [category_feature(vocab_size=5)]
+    input_features = [sequence_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     config = {
