@@ -59,7 +59,7 @@ class SpaceStringToListTokenizer(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         inputs: List[str] = []
-        if torch.jit.isinstance(v, str):
+        if isinstance(v, str):
             inputs.append(v)
         else:
             inputs.extend(v)
@@ -90,7 +90,7 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
             raise ValueError(f"Unsupported input: {v}")
 
         inputs: List[str] = []
-        if torch.jit.isinstance(v, str):
+        if isinstance(v, str):
             inputs.append(v)
         else:
             inputs.extend(v)
@@ -938,7 +938,7 @@ try:
                     raise ValueError(f"Unsupported input: {v}")
 
                 inputs: List[str] = []
-                if torch.jit.isinstance(v, str):
+                if isinstance(v, str):
                     inputs.append(v)
                 else:
                     inputs.extend(v)
