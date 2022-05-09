@@ -55,7 +55,7 @@ class SpaceStringToListTokenizer(torch.nn.Module):
         super().__init__()
 
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
-        if torch.jit.isinstance(v, torch.Tensor):
+        if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
 
         inputs: List[str] = []
@@ -74,7 +74,7 @@ class SpaceStringToListTokenizer(torch.nn.Module):
                     token_sequence.append(token)
             tokens.append(token_sequence)
 
-        return tokens[0] if torch.jit.isinstance(v, str) else tokens
+        return tokens[0] if isinstance(v, str) else tokens
 
 
 class SpacePunctuationStringToListTokenizer(torch.nn.Module):
@@ -116,7 +116,7 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
 
             tokens.append(token_sequence)
 
-        return tokens[0] if torch.jit.isinstance(v, str) else tokens
+        return tokens[0] if isinstance(v, str) else tokens
 
 
 class UnderscoreStringToListTokenizer(BaseTokenizer):
@@ -908,7 +908,7 @@ try:
                 )
 
             def forward(self, v: Union[str, List[str], torch.Tensor]):
-                if torch.jit.isinstance(v, torch.Tensor):
+                if isinstance(v, torch.Tensor):
                     raise ValueError(f"Unsupported input: {v}")
                 return self.tokenizer(v)
 
@@ -936,7 +936,7 @@ try:
                 BPE tokenizers from torchtext return ids directly, which is inconsistent with the Ludwig tokenizer API.
                 The below implementation works around this by converting the ids back to their original string tokens.
                 """
-                if torch.jit.isinstance(v, torch.Tensor):
+                if isinstance(v, torch.Tensor):
                     raise ValueError(f"Unsupported input: {v}")
 
                 inputs: List[str] = []
@@ -950,7 +950,7 @@ try:
                 assert torch.jit.isinstance(token_ids, List[List[str]])
 
                 tokens = [[self.vocab[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
-                return tokens[0] if torch.jit.isinstance(v, str) else tokens
+                return tokens[0] if isinstance(v, str) else tokens
 
             def get_vocab(self) -> List[str]:
                 return self.vocab

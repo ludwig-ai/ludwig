@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import random
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -184,7 +184,7 @@ class _NumberPreprocessing(torch.nn.Module):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         v = v.to(dtype=torch.float32)
