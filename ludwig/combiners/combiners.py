@@ -88,6 +88,15 @@ def get_combiner_conds():
     return conds
 
 
+def get_combiner_class(combiner_type: str):
+    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
+
+    :param combiner_type: identifier that should correspond to a registered combiner
+    :type combiner_type: str
+    """
+    return get_from_registry(combiner_type, combiner_registry)
+
+
 # super class to house common properties
 class Combiner(LudwigModule, ABC):
     def __init__(self, input_features: Dict[str, "InputFeature"]):
@@ -481,11 +490,11 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     size: int = schema.PositiveInteger(default=32, description="`N_a` in the paper.")
 
     output_size: int = schema.PositiveInteger(
-        default=32, description="Output size of a fully connected layer. `N_d` in the paper"
+        default=128, description="Output size of a fully connected layer. `N_d` in the paper"
     )
 
     num_steps: int = schema.NonNegativeInteger(
-        default=1,
+        default=3,
         description=(
             "Number of steps / repetitions of the the attentive transformer and feature transformer computations. "
             "`N_steps` in the paper"
@@ -513,10 +522,10 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         default=1e-3, description="Epsilon to be added to the batch norm denominator."
     )
 
-    bn_momentum: float = schema.FloatRange(default=0.7, description="Momentum of the batch norm. `m_B` in the paper.")
+    bn_momentum: float = schema.FloatRange(default=0.95, description="Momentum of the batch norm. `m_B` in the paper.")
 
     bn_virtual_bs: Optional[int] = schema.PositiveInteger(
-        default=None,
+        default=1024,
         description=(
             "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
             "`B_v` from the paper"
@@ -524,7 +533,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     )
 
     sparsity: float = schema.FloatRange(
-        default=1e-5, description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper"
+        default=1e-4, description="Multiplier of the sparsity inducing loss. `lambda_sparse` in the paper"
     )
 
     entmax_mode: str = schema.StringOptions(
@@ -535,7 +544,9 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         default=1.5, min=1, max=2, description="TODO: Document parameters."
     )  # 1 corresponds to softmax, 2 is sparsemax.
 
-    dropout: float = schema.FloatRange(default=0.0, min=0, max=1, description="Dropout rate for the transformer block.")
+    dropout: float = schema.FloatRange(
+        default=0.05, min=0, max=1, description="Dropout rate for the transformer block."
+    )
 
 
 @register_combiner(name="tabnet")
@@ -1180,10 +1191,134 @@ class ComparatorCombiner(Combiner):
         return ComparatorCombinerConfig
 
 
-def get_combiner_class(combiner_type: str):
-    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
+@dataclass
+class ProjectAggregateCombinerConfig(BaseCombinerConfig):
+    projection_size: int = schema.PositiveInteger(
+        default=128, description="All combiner inputs are projected to this size before being aggregated."
+    )
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList(
+        description="Full secification of the fully connected layers after the aggregation. "
+        "It should be a list of dict, each disct representing one layer."
+    )
+    num_fc_layers: int = schema.NonNegativeInteger(
+        default=2, description="Number of fully connected layers after aggregation."
+    )
+    output_size: int = schema.PositiveInteger(
+        default=128, description="Output size of each layer of the stack of fully connected layers."
+    )
+    use_bias: bool = schema.Boolean(default=True, description="Whether the layers use a bias vector.")
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="xavier_uniform",
+        description="Initializer to use for the weights of the projection and for the fully connected layers.",
+    )
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(
+        default="zeros",
+        description="Initializer to use for the baias of the projection and for the fully connected layers.",
+    )
+    norm: Optional[str] = schema.StringOptions(
+        ["batch", "layer"],
+        default="layer",
+        description="Normalization to apply to each projection and fully connected layer.",
+    )
+    norm_params: Optional[dict] = schema.Dict(
+        description="Parameters of the normalization to apply to each projection and fully connected layer."
+    )
+    activation: str = schema.ActivationOptions(
+        default="relu", description="Activation to apply to each fully connected layer."
+    )
+    dropout: float = schema.FloatRange(
+        default=0.0, min=0, max=1, description="Dropout rate to apply to each fully connected layer."
+    )
+    residual: bool = schema.Boolean(
+        default=True,
+        description="Whether to add residual skip connection between the fully connected layers in the stack..",
+    )
 
-    :param combiner_type: identifier that should correspond to a registered combiner
-    :type combiner_type: str
-    """
-    return get_from_registry(combiner_type, combiner_registry)
+
+@register_combiner(name="project_aggregate")
+class ProjectAggregateCombiner(Combiner):
+    def __init__(
+        self, input_features: Dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
+    ):
+        super().__init__(input_features)
+        self.name = "ProjectAggregateCombiner"
+        logger.debug(f" {self.name}")
+
+        logger.debug("  Projectors")
+        self.projectors = ModuleList(
+            # regardless of rank-2 or rank-3 input, torch.prod() calculates size
+            # after flattening the encoder output tensor
+            [
+                Linear(
+                    torch.prod(torch.Tensor([*input_features[inp].output_shape])).type(torch.int32),
+                    config.projection_size,
+                )
+                for inp in input_features
+            ]
+        )
+
+        self.fc_stack = None
+
+        # todo future: this may be redundant, check
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
+            fc_layers = []
+            for i in range(config.num_fc_layers):
+                fc_layers.append({"output_size": config.output_size})
+
+        self.fc_layers = fc_layers
+        if self.fc_layers is not None:
+            logger.debug("  FCStack")
+            self.fc_stack = FCStack(
+                first_layer_input_size=config.projection_size,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_output_size=config.output_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+                residual=config.residual,
+            )
+
+        if input_features and len(input_features) == 1 and self.fc_layers is None:
+            self.supports_masking = True
+
+    def forward(self, inputs: Dict) -> Dict:  # encoder outputs
+        encoder_outputs = [inputs[k]["encoder_output"] for k in inputs]
+
+        # ================ Flatten ================
+        batch_size = encoder_outputs[0].shape[0]
+        encoder_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs]
+
+        # ================ Project ================
+        projected = [self.projectors[i](eo) for i, eo in enumerate(encoder_outputs)]
+        hidden = torch.stack(projected)
+        hidden = torch.permute(hidden, (1, 0, 2))  # shape [bs, num_eo, h]
+
+        # ================ Aggregate ================
+        hidden = torch.mean(hidden, dim=1)
+
+        # ================ Fully Connected ================
+        if self.fc_stack is not None:
+            hidden = self.fc_stack(hidden)
+
+        return_data = {"combiner_output": hidden}
+
+        if len(inputs) == 1:
+            # Workaround for including additional tensors from output of input encoders for
+            # potential use in decoders, e.g. LSTM state for seq2seq.
+            # TODO(Justin): Think about how to make this communication work for multi-sequence
+            # features. Other combiners.
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != "encoder_output":
+                    return_data[key] = value
+
+        return return_data
+
+    @staticmethod
+    def get_schema_cls():
+        return ProjectAggregateCombinerConfig

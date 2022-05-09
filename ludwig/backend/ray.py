@@ -596,8 +596,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return RayTrainerV2(
                 model,
                 copy.deepcopy(self._horovod_kwargs),
-                copy.deepcopy(self._data_loader_kwargs),
-                copy.deepcopy(executable_kwargs),
+                self._data_loader_kwargs,
+                executable_kwargs,
             )
         else:
             # TODO: deprecated 0.5
@@ -608,8 +608,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return RayPredictor(
             model,
             copy.deepcopy(self._horovod_kwargs),
-            copy.deepcopy(self._data_loader_kwargs),
-            **copy.deepcopy(executable_kwargs),
+            self._data_loader_kwargs,
+            **executable_kwargs,
         )
 
     def set_distributed_kwargs(self, **kwargs):
