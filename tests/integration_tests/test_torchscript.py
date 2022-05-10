@@ -25,6 +25,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.inference import to_inference_module_input
 from ludwig.utils import output_feature_utils
@@ -203,6 +204,10 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
+    transformed_number_features = [
+        number_feature(preprocessing={"normalization": numeric_transformer})
+        for numeric_transformer in numeric_transformation_registry.keys()
+    ]
     torchscript_compatible_text_features = [
         text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
         for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
@@ -210,7 +215,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     input_features = [
         bin_str_feature,
         binary_feature(),
-        number_feature(),
+        *transformed_number_features,
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
         *torchscript_compatible_text_features,
@@ -264,6 +269,12 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
+
+    # Ensure torchscript saving/loading does not affect final predictions.
+    script_module_path = os.path.join(tmpdir, "inference_module.pt")
+    torch.jit.save(script_module, script_module_path)
+    script_module = torch.jit.load(script_module_path)
+
     df = pd.read_csv(training_data_csv_path)
     inputs = {
         name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)

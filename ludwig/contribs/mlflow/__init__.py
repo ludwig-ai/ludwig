@@ -18,6 +18,10 @@ mlflow = LazyLoader("mlflow", globals(), "mlflow")
 logger = logging.getLogger(__name__)
 
 
+def _get_runs(experiment_id: str):
+    return mlflow.tracking.client.MlflowClient().search_runs([experiment_id])
+
+
 def _get_or_create_experiment_id(experiment_name):
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is not None:
@@ -59,15 +63,24 @@ class MlflowCallback(Callback):
         # stopping. Should work with Ray Tune team to come up with a solution.
         self.save_in_background = False
 
-    def on_train_init(self, base_config, experiment_name, output_directory, **kwargs):
+    def on_train_init(self, base_config, experiment_name, output_directory, resume_directory, **kwargs):
         # Experiment may already have been set during hyperopt init, in
         # which case we don't want to create a new experiment / run, as
         # this should be handled by the executor.
         if self.experiment_id is None:
             mlflow.end_run()
             self.experiment_id = _get_or_create_experiment_id(experiment_name)
-            run_name = os.path.basename(output_directory)
-            self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
+
+            run_id = None
+            if resume_directory is not None:
+                previous_runs = _get_runs(self.experiment_id)
+                if len(previous_runs) > 0:
+                    run_id = previous_runs[0].info.run_id
+            if run_id is not None:
+                self.run = mlflow.start_run(run_id=run_id)
+            else:
+                run_name = os.path.basename(output_directory)
+                self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
 
         mlflow.log_dict(to_json_dict(base_config), "config.yaml")
 

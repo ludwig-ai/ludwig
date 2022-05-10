@@ -37,7 +37,7 @@ class CometCallback(Callback):
         experiment_name,
         model_name,
         output_directory,
-        resume,
+        resume_directory,
     ):
         if self.cometml_experiment:
             # Comet ML already initialized

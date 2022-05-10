@@ -521,6 +521,62 @@ def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, n
     assert mock_callback.on_eval_start.call_count == total_checkpoints
 
 
+def test_api_callbacks_default_train_steps(csv_filename):
+    # Default for train_steps is -1: use epochs.
+    train_steps = None
+    epochs = 10
+    batch_size = 8
+    num_examples = 80
+    mock_callback = mock.Mock(wraps=Callback())
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        input_features = [sequence_feature(reduce_output="sum")]
+        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
+        }
+        model = LudwigModel(config, callbacks=[mock_callback])
+        model.train(
+            training_set=generate_data(
+                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+            )
+        )
+
+    assert mock_callback.on_epoch_start.call_count == epochs
+
+
+def test_api_callbacks_fixed_train_steps(csv_filename):
+    # If train_steps is set manually, epochs is ignored.
+    train_steps = 100
+    epochs = 2
+    batch_size = 8
+    num_examples = 80
+    mock_callback = mock.Mock(wraps=Callback())
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        input_features = [sequence_feature(reduce_output="sum")]
+        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
+        }
+        model = LudwigModel(config, callbacks=[mock_callback])
+        model.train(
+            training_set=generate_data(
+                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
+            )
+        )
+
+    # There are 10 steps per epoch, so 100 train steps => 10 epochs.
+    assert mock_callback.on_epoch_start.call_count == 10
+
+
 def test_api_save_torchscript(tmpdir):
     """Tests successful saving and loading of model in TorchScript format."""
     input_features = [category_feature(vocab_size=5)]
