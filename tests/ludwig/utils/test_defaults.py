@@ -5,9 +5,11 @@ import pytest
 from ludwig.constants import (
     CATEGORY,
     DROP_ROW,
+    ECD,
     EVAL_BATCH_SIZE,
     FILL_WITH_MODE,
     HYPEROPT,
+    MODEL_TYPE,
     NUMBER,
     PREPROCESSING,
     TRAINER,
@@ -151,3 +153,18 @@ def test_deprecated_field_aliases():
     hparams = merged_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
     assert "trainer.learning_rate" in hparams
+
+
+def test_default_model_type():
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[MODEL_TYPE] == ECD

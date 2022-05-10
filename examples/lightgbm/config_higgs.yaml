@@ -1,3 +1,4 @@
+model_type: gbm
 input_features:
   - name: lepton_pT
     type: number

@@ -4,12 +4,12 @@ import tempfile
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
-from tests.integration_tests.utils import binary_feature, category_feature, generate_data, numerical_feature
+from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature
 
 
 def test_lightgbm(tmpdir):
     with tempfile.TemporaryDirectory() as outdir:
-        input_features = [numerical_feature(), category_feature(reduce_output="sum")]
+        input_features = [number_feature(), category_feature(reduce_output="sum")]
         output_features = [binary_feature()]
 
         csv_filename = os.path.join(tmpdir, "training.csv")
@@ -18,6 +18,7 @@ def test_lightgbm(tmpdir):
         test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
         config = {
+            "model_type": "gbm",
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "fc_size": 14},
@@ -36,4 +37,6 @@ def test_lightgbm(tmpdir):
             test_set=test_csv,
             output_directory=outdir,
         )
-        model.predict(dataset=test_csv, output_directory=output_directory)
+        preds = model.predict(dataset=test_csv, output_directory=output_directory)
+
+    assert preds is not None

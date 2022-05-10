@@ -61,7 +61,7 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
-from ludwig.models.ecd import ECD
+from ludwig.models.abstractmodel import AbstractModel
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
@@ -69,6 +69,7 @@ from ludwig.models.predictor import (
     save_evaluation_stats,
     save_prediction_outputs,
 )
+from ludwig.models.registry import model_type_registry
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
@@ -84,7 +85,7 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
-from ludwig.utils.misc_utils import get_file_names, get_output_directory
+from ludwig.utils.misc_utils import get_file_names, get_from_registry, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
@@ -1470,8 +1471,8 @@ class LudwigModel:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config: dict, random_seed: int = default_random_seed) -> ECD:
-        """Instantiates Encoder-Combiner-Decoder (ECD) object.
+    def create_model(config: dict, random_seed: int = default_random_seed) -> AbstractModel:
+        """Instantiates AbstractModel object.
 
         # Inputs
         :param config: (dict) Ludwig config
@@ -1480,15 +1481,10 @@ class LudwigModel:
             splits and any other random function.
 
         # Return
-        :return: (ludwig.models.ECD) Instance of the Ludwig model object.
+        :return: (ludwig.models.AbstractModel) Instance of the Ludwig model object.
         """
-        # todo: support loading other model types based on config
-        return ECD(
-            input_features_def=config["input_features"],
-            combiner_def=config["combiner"],
-            output_features_def=config["output_features"],
-            random_seed=random_seed,
-        )
+        model_type = get_from_registry(config["model_type"], model_type_registry)
+        return model_type(**config, random_seed=random_seed)
 
     @staticmethod
     def set_logging_level(logging_level: int) -> None:

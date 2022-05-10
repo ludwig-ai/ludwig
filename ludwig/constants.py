@@ -167,3 +167,7 @@ HYPEROPT_WARNING = (
 )
 
 DEFAULT_AUDIO_TENSOR_LENGTH = 70000
+
+MODEL_TYPE = "model_type"
+ECD = "ecd"
+GBM = "gbm"

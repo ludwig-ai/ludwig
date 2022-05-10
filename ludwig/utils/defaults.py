@@ -28,9 +28,11 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
+    ECD,
     EVAL_BATCH_SIZE,
     HYPEROPT,
     LOSS,
+    MODEL_TYPE,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -68,6 +70,8 @@ default_preprocessing_parameters = {
 default_preprocessing_parameters.update(
     {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
 )
+
+default_model_type = ECD
 
 default_combiner_type = "concat"
 
@@ -220,6 +224,11 @@ def _perform_sanity_checks(config):
             "as a dictionary. Please check your config format."
         )
 
+    if MODEL_TYPE in config:
+        assert isinstance(
+            config[MODEL_TYPE], str
+        ), "Ludwig expects model type as a string. Please check your model config format."
+
 
 def _set_feature_column(config: dict) -> None:
     for feature in config["input_features"] + config["output_features"]:
@@ -311,6 +320,9 @@ def merge_with_defaults(config):
     default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])
+
+    # ===== Model Type =====
+    set_default_value(config, MODEL_TYPE, default_model_type)
 
     # ===== Input Features =====
     for input_feature in config["input_features"]:
