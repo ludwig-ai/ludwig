@@ -15,15 +15,8 @@ from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-
-<<<<<<< HEAD:ludwig/schema/schema.py
-from ludwig.models.trainer import get_trainer_jsonschema
-
-=======
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.trainer import get_trainer_jsonschema
-
->>>>>>> origin/master:ludwig/schema/__init__.py
 from ludwig.schema.utils import create_cond
 
 
