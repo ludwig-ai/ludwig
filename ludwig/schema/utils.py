@@ -160,10 +160,12 @@ def Boolean(default: bool, description="MISSING"):
     )
 
 
-def PositiveInteger(default: Union[None, int] = None, description="MISSING"):
+def PositiveInteger(default: Union[None, int] = None, allow_none=False, description="MISSING"):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
     val = validate.Range(min=1)
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -175,7 +177,7 @@ def PositiveInteger(default: Union[None, int] = None, description="MISSING"):
             "marshmallow_field": fields.Integer(
                 strict=True,
                 validate=val,
-                allow_none=default is None,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -185,10 +187,12 @@ def PositiveInteger(default: Union[None, int] = None, description="MISSING"):
     )
 
 
-def NonNegativeInteger(default: Union[None, int] = None, description="MISSING"):
+def NonNegativeInteger(default: Union[None, int] = None, allow_none=False, description="MISSING"):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
     val = validate.Range(min=0)
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -200,7 +204,7 @@ def NonNegativeInteger(default: Union[None, int] = None, description="MISSING"):
             "marshmallow_field": fields.Integer(
                 strict=True,
                 validate=val,
-                allow_none=default is None,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -210,10 +214,12 @@ def NonNegativeInteger(default: Union[None, int] = None, description="MISSING"):
     )
 
 
-def IntegerRange(default: Union[None, int] = None, description="MISSING", **kwargs):
+def IntegerRange(default: Union[None, int] = None, allow_none=False, description="MISSING", **kwargs):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
     val = validate.Range(**kwargs)
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -225,7 +231,7 @@ def IntegerRange(default: Union[None, int] = None, description="MISSING", **kwar
             "marshmallow_field": fields.Integer(
                 strict=True,
                 validate=val,
-                allow_none=default is None,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -235,9 +241,11 @@ def IntegerRange(default: Union[None, int] = None, description="MISSING", **kwar
     )
 
 
-def NonNegativeFloat(default: Union[None, float] = None, description="MISSING"):
+def NonNegativeFloat(default: Union[None, float] = None, allow_none=False, description="MISSING"):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, float) or isinstance(default, int)
@@ -248,7 +256,7 @@ def NonNegativeFloat(default: Union[None, float] = None, description="MISSING"):
         metadata={
             "marshmallow_field": fields.Float(
                 validate=val,
-                allow_none=default is None,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -262,8 +270,8 @@ def FloatRange(default: Union[None, float] = None, allow_none=False, description
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(**kwargs)
-    if default is None and not allow_none:
-        raise ValidationError(f"Invalid default: `{default}`")
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, float) or isinstance(default, int)

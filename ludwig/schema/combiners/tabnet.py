@@ -51,6 +51,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
 
     bn_virtual_bs: Optional[int] = schema_utils.PositiveInteger(
         default=1024,
+        allow_none=True,
         description=(
             "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
             "`B_v` from the paper"
