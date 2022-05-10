@@ -172,7 +172,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
        (default: 'adagrad')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
-    initial_accumulator_value: float = NonNegativeFloat(default=0, description="TODO: Document parameters.")
+    initial_accumulator_value: float = NonNegativeFloat(default=0, description="")
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0, description="Learning rate.")
     lr_decay: float = FloatRange(default=0, description="Learning rate decay.")
     weight_decay: float = FloatRange(default=0, description="Weight decay ($L2$ penalty).")
@@ -347,11 +347,11 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
 class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
-    clipglobalnorm: Optional[float] = FloatRange(default=0.5, allow_none=True, description="TODO: Document parameters.")
+    clipglobalnorm: Optional[float] = FloatRange(default=0.5, allow_none=True, description="")
 
-    clipnorm: Optional[float] = FloatRange(default=None, allow_none=True, description="TODO: Document parameters.")
+    clipnorm: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
-    clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="TODO: Document parameters.")
+    clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
 
 def GradientClippingDataclassField(default={}, allow_none=True, description="TODO"):

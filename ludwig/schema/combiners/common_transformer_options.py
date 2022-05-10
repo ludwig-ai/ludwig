@@ -9,7 +9,7 @@ from ludwig.schema import utils as schema_utils
 class CommonTransformerConfig:
     """Common transformer parameter values."""
 
-    num_layers: int = schema_utils.PositiveInteger(default=1, description="TODO: Document parameters.")
+    num_layers: int = schema_utils.PositiveInteger(default=1, description="")
 
     hidden_size: int = schema_utils.NonNegativeInteger(
         default=256,
@@ -35,7 +35,7 @@ class CommonTransformerConfig:
         default=0.1, min=0, max=1, description="Dropout rate for the transformer block."
     )
 
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(description="TODO: Document parameters.")
+    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(description="")
 
     # TODO(#1673): Add conditional logic for fields like this one:
     num_fc_layers: int = schema_utils.NonNegativeInteger(
@@ -47,20 +47,16 @@ class CommonTransformerConfig:
 
     use_bias: bool = schema_utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform", description="TODO: Document parameters."
-    )
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(default="xavier_uniform", description="")
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros", description="TODO: Document parameters."
-    )
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(default="zeros", description="")
 
-    norm: Optional[str] = schema_utils.StringOptions(["batch", "layer"], description="TODO: Document parameters.")
+    norm: Optional[str] = schema_utils.StringOptions(["batch", "layer"], description="")
 
-    norm_params: Optional[dict] = schema_utils.Dict(description="TODO: Document parameters.")
+    norm_params: Optional[dict] = schema_utils.Dict(description="")
 
-    fc_activation: str = schema_utils.ActivationOptions(default="relu", description="TODO: Document parameters.")
+    fc_activation: str = schema_utils.ActivationOptions(default="relu", description="")
 
-    fc_dropout: float = schema_utils.FloatRange(default=0.0, min=0, max=1, description="TODO: Document parameters.")
+    fc_dropout: float = schema_utils.FloatRange(default=0.0, min=0, max=1, description="")
 
-    fc_residual: bool = schema_utils.Boolean(default=False, description="TODO: Document parameters.")
+    fc_residual: bool = schema_utils.Boolean(default=False, description="")

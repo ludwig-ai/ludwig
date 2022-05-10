@@ -125,11 +125,9 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
     )
 
-    reduce_learning_rate_eval_metric: str = schema_utils.String(default=LOSS, description="TODO: Document parameters.")
+    reduce_learning_rate_eval_metric: str = schema_utils.String(default=LOSS, description="")
 
-    reduce_learning_rate_eval_split: str = schema_utils.String(
-        default=TRAINING, description="TODO: Document parameters."
-    )
+    reduce_learning_rate_eval_split: str = schema_utils.String(default=TRAINING, description="")
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0, description="Number to increase the batch size by on a plateau."
@@ -147,19 +145,15 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=512, description="Maximum size of the batch."
     )
 
-    increase_batch_size_eval_metric: str = schema_utils.String(default=LOSS, description="TODO: Document parameters.")
+    increase_batch_size_eval_metric: str = schema_utils.String(default=LOSS, description="")
 
-    increase_batch_size_eval_split: str = schema_utils.String(
-        default=TRAINING, description="TODO: Document parameters."
-    )
+    increase_batch_size_eval_split: str = schema_utils.String(default=TRAINING, description="")
 
     decay: bool = schema_utils.Boolean(default=False, description="Turn on exponential decay of the learning rate.")
 
-    decay_steps: int = schema_utils.PositiveInteger(default=10000, description="TODO: Document parameters.")
+    decay_steps: int = schema_utils.PositiveInteger(default=10000, description="")
 
-    decay_rate: float = schema_utils.FloatRange(
-        default=0.96, min=0.0, max=1.0, description="TODO: Document parameters."
-    )
+    decay_rate: float = schema_utils.FloatRange(default=0.96, min=0.0, max=1.0, description="")
 
     staircase: bool = schema_utils.Boolean(default=False, description="Decays the learning rate at discrete intervals.")
 
