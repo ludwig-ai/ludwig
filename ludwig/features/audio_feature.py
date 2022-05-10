@@ -15,10 +15,10 @@
 # ==============================================================================
 import logging
 import os
-import sys
 
 import numpy as np
 import torch
+import torchaudio
 
 from ludwig.constants import (
     AUDIO,
@@ -37,6 +37,7 @@ from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
+    get_default_audio,
     get_fbank,
     get_group_delay,
     get_length_in_samp,
@@ -44,8 +45,9 @@ from ludwig.utils.audio_utils import (
     get_non_symmetric_length,
     get_phase_stft_magnitude,
     get_stft_magnitude,
+    read_audio,
 )
-from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
@@ -65,7 +67,10 @@ class AudioFeatureMixin(BaseFeatureMixin):
             "padding_value": 0,
             "norm": None,
             "audio_feature": {
-                TYPE: "raw",
+                TYPE: "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
             },
         }
 
@@ -96,19 +101,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        try:
-            import soundfile
-        except ImportError:
-            logger.error(
-                " soundfile is not installed. "
-                "In order to install all audio feature dependencies run "
-                "pip install ludwig[audio]"
-            )
-            sys.exit(-1)
-
         audio_feature_dict = preprocessing_parameters["audio_feature"]
         first_audio_file_path = column.head(1)[0]
-        _, sampling_rate_in_hz = soundfile.read(first_audio_file_path)
+        _, sampling_rate_in_hz = torchaudio.load(first_audio_file_path)
 
         feature_dim = AudioFeatureMixin._get_feature_dim(audio_feature_dict, sampling_rate_in_hz)
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
@@ -153,22 +148,19 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_file_length_limit_in_s,
         backend,
     ):
-        try:
-            import soundfile
-        except ImportError:
-            logger.error(
-                " soundfile is not installed. "
-                "In order to install all audio feature dependencies run "
-                "pip install ludwig[audio]"
-            )
-            sys.exit(-1)
-
-        def read_audio(path):
-            filepath = get_abs_path(src_path, path)
-            return soundfile.read(filepath)
+        def read_audio_file(path):
+            return read_audio(path, src_path)
 
         df_engine = backend.df_engine
-        raw_audio = df_engine.map_objects(column, read_audio)
+        raw_audio = df_engine.map_objects(column, read_audio_file)
+
+        try:
+            default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])
+        except RuntimeError:
+            logger.info("Unable to process audio files provided")
+            raise RuntimeError
+
+        raw_audio = df_engine.map_objects(raw_audio, lambda row: row if row is not None else default_audio)
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
@@ -231,7 +223,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
         feature_type = audio_feature_dict[TYPE]
         if feature_type == "raw":
-            audio_feature = np.expand_dims(audio, axis=-1)
+            audio_feature = np.expand_dims(audio[0], axis=-1)
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
             audio_feature = np.transpose(
                 AudioFeatureMixin._get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz)
@@ -335,15 +327,23 @@ class AudioFeatureMixin(BaseFeatureMixin):
         column = feature_config[COLUMN]
         proc_column = feature_config[PROC_COLUMN]
 
+        num_audio_files = len(input_df[column])
+        if num_audio_files == 0:
+            raise ValueError("There are no audio files in the dataset provided.")
+
+        first_audio_entry = next(iter(input_df[column]))
+        logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
+
+        if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
+            raise ValueError(
+                "Invalid audio feature data type.  Detected type is {}, "
+                "expected either string for local/remote file path or Torch Tensor.".format(type(first_audio_entry))
+            )
+
         src_path = None
-        # this is not super nice, but works both and DFs and lists
-        first_path = "."
-        for first_path in input_df[column]:
-            break
         if SRC in metadata:
-            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        if src_path is None and not os.path.isabs(first_path):
-            raise ValueError("Audio file paths must be absolute")
+            if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
+                src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
@@ -359,7 +359,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
-                input_df[feature_config[NAME]],
+                input_df[column],
                 src_path,
                 audio_feature_dict,
                 feature_dim,

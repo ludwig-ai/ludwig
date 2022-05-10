@@ -24,7 +24,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List
+from typing import List, Union
 
 import cloudpickle
 import numpy as np
@@ -39,6 +39,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
+from ludwig.utils import image_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
@@ -318,6 +319,17 @@ def vector_feature(**kwargs):
     return feature
 
 
+def to_inference_module_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
+    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
+    if "image" in s.name:
+        return [image_utils.read_image(v) for v in s]
+    if s.dtype == "object":
+        if "bag" in s.name or "set" in s.name:
+            s = s.astype(str)
+        return s.to_list()
+    return torch.from_numpy(s.to_numpy())
+
+
 def run_experiment(
     input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
@@ -594,6 +606,7 @@ def train_with_backend(
     predict=True,
     evaluate=True,
     callbacks=None,
+    skip_save_processed_input=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None
@@ -604,7 +617,7 @@ def train_with_backend(
             training_set=training_set,
             validation_set=validation_set,
             test_set=test_set,
-            skip_save_processed_input=True,
+            skip_save_processed_input=skip_save_processed_input,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,

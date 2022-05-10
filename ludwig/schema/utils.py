@@ -1,3 +1,13 @@
+#
+# Module structure:
+# ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to describing and validating
+# |                               Ludwig configs.
+# ├── utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
+# |                               elsewhere in Ludwig.
+# ├── schema.py               <-- Contains the fully assembled Ludwig schema and validate() function that is used for
+# |                               user-input YAML validation. Users should generally only need to look at this.
+# └── __init__.py
+#
 from dataclasses import field
 from typing import Dict as tDict
 from typing import List, Tuple, Union
@@ -325,7 +335,6 @@ def Embed():
     """
     _embed_options = ["add"]
 
-    # TODO(ksbrar): Should the default choice here be null?
     class EmbedInputFeatureNameField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:

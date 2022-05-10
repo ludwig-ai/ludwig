@@ -113,7 +113,7 @@ class Callback(ABC):
         experiment_name: str,
         model_name: str,
         output_directory: str,
-        resume: Union[str, None],
+        resume_directory: Union[str, None],
     ):
         """Called after preprocessing, but before the creation of the model and trainer objects.
 
@@ -122,7 +122,7 @@ class Callback(ABC):
         :param experiment_name: The experiment name.
         :param model_name: The model name.
         :param output_directory: file path to where training results are stored.
-        :param resume: model directory to resume training from, or None.
+        :param resume_directory: model directory to resume training from, or None.
         """
         pass
 

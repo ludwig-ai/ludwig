@@ -25,12 +25,11 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
-from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -47,15 +46,8 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
-from ludwig.modules.optimization_modules import (
-    BaseOptimizerConfig,
-    create_clipper,
-    create_optimizer,
-    GradientClippingConfig,
-    GradientClippingDataclassField,
-    OptimizerDataclassField,
-)
-from ludwig.schema import utils
+from ludwig.modules.optimization_modules import create_clipper, create_optimizer
+from ludwig.schema.trainer import TrainerConfig
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -63,7 +55,12 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import get_final_steps_per_checkpoint, get_new_progress_tracker, ProgressTracker
+from ludwig.utils.trainer_utils import (
+    get_final_steps_per_checkpoint,
+    get_new_progress_tracker,
+    get_total_steps,
+    ProgressTracker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,176 +97,6 @@ class BaseTrainer(ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
-
-
-def get_trainer_jsonschema():
-    return utils.unload_jsonschema_from_marshmallow_class(TrainerConfig)
-
-
-@dataclass
-class TrainerConfig(utils.BaseMarshmallowConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
-
-    optimizer: BaseOptimizerConfig = OptimizerDataclassField(
-        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
-    )
-
-    epochs: int = utils.PositiveInteger(
-        default=100, description="Number of epochs the algorithm is intended to be run over."
-    )
-
-    regularization_lambda: float = utils.FloatRange(
-        default=0.0, min=0, description="Strength of the $L2$ regularization."
-    )
-
-    regularization_type: Optional[str] = utils.RegularizerOptions(default="l2", description="Type of regularization.")
-
-    should_shuffle: bool = utils.Boolean(
-        default=True, description="Whether to shuffle batches during training when true."
-    )
-
-    learning_rate: float = utils.NumericOrStringOptionsField(
-        default=0.001,
-        min=0.0,
-        max=1.0,
-        options=["auto"],
-        default_numeric=0.001,
-        default_option="auto",
-        nullable=False,
-        description=(
-            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
-            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
-        ),
-    )
-
-    batch_size: Union[int, str] = utils.IntegerOrStringOptionsField(
-        default=128,
-        options=["auto"],
-        default_numeric=128,
-        default_option="auto",
-        nullable=False,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for training.",
-    )
-
-    eval_batch_size: Union[None, int, str] = utils.IntegerOrStringOptionsField(
-        default=None,
-        options=["auto"],
-        default_numeric=None,
-        default_option="auto",
-        nullable=True,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for evaluation.",
-    )
-
-    early_stop: int = utils.IntegerRange(
-        default=5,
-        min=-1,
-        description=(
-            "How many epochs without any improvement in the `validation_metric` triggers the algorithm to stop. Can be "
-            "set to -1, which disables `early_stop`."
-        ),
-    )
-
-    steps_per_checkpoint: int = utils.NonNegativeInteger(
-        default=0,
-        description=(
-            "How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is "
-            "checkpointed after every epoch."
-        ),
-    )
-
-    checkpoints_per_epoch: int = utils.NonNegativeInteger(
-        default=0,
-        description=(
-            "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note "
-            "that it is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch`."
-        ),
-    )
-
-    evaluate_training_set: bool = utils.Boolean(
-        default=True, description="Whether to include the entire training set during evaluation."
-    )
-
-    reduce_learning_rate_on_plateau: float = utils.FloatRange(
-        default=0.0,
-        min=0.0,
-        max=1.0,
-        description=(
-            "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does "
-            "not improve"
-        ),
-    )
-
-    reduce_learning_rate_on_plateau_patience: int = utils.NonNegativeInteger(
-        default=5, description="How many epochs have to pass before the learning rate reduces."
-    )
-
-    reduce_learning_rate_on_plateau_rate: float = utils.FloatRange(
-        default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
-    )
-
-    reduce_learning_rate_eval_metric: str = utils.String(default=LOSS, description="TODO: Document parameters.")
-
-    reduce_learning_rate_eval_split: str = utils.String(default=TRAINING, description="TODO: Document parameters.")
-
-    increase_batch_size_on_plateau: int = utils.NonNegativeInteger(
-        default=0, description="Number to increase the batch size by on a plateau."
-    )
-
-    increase_batch_size_on_plateau_patience: int = utils.NonNegativeInteger(
-        default=5, description="How many epochs to wait for before increasing the batch size."
-    )
-
-    increase_batch_size_on_plateau_rate: float = utils.NonNegativeFloat(
-        default=2.0, description="Rate at which the batch size increases."
-    )
-
-    increase_batch_size_on_plateau_max: int = utils.PositiveInteger(
-        default=512, description="Maximum size of the batch."
-    )
-
-    increase_batch_size_eval_metric: str = utils.String(default=LOSS, description="TODO: Document parameters.")
-
-    increase_batch_size_eval_split: str = utils.String(default=TRAINING, description="TODO: Document parameters.")
-
-    decay: bool = utils.Boolean(default=False, description="Turn on exponential decay of the learning rate.")
-
-    decay_steps: int = utils.PositiveInteger(default=10000, description="TODO: Document parameters.")
-
-    decay_rate: float = utils.FloatRange(default=0.96, min=0.0, max=1.0, description="TODO: Document parameters.")
-
-    staircase: bool = utils.Boolean(default=False, description="Decays the learning rate at discrete intervals.")
-
-    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
-        description="Parameter values for gradient clipping."
-    )
-
-    # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
-    )
-
-    validation_metric: str = utils.String(
-        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
-    )
-
-    learning_rate_warmup_epochs: float = utils.NonNegativeFloat(
-        default=1.0, description="Number of epochs to warmup the learning rate for."
-    )
-
-    learning_rate_scaling: str = utils.StringOptions(
-        ["constant", "sqrt", "linear"],
-        default="linear",
-        description=(
-            "Scale by which to increase the learning rate as the number of distributed workers increases. "
-            "Traditionally the learning rate is scaled linearly with the number of workers to reflect the proportion by"
-            " which the effective batch size is increased. For very large batch sizes, a softer square-root scale can "
-            "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
-            "workers, setting this value to constant can be used to disable scale-up."
-        ),
-    )
 
 
 class Trainer(BaseTrainer):
@@ -327,6 +154,7 @@ class Trainer(BaseTrainer):
         """
 
         self.epochs = config.epochs
+        self.train_steps = config.train_steps
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
@@ -706,6 +534,7 @@ class Trainer(BaseTrainer):
         save_path,
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
+        early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -823,7 +652,7 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_on_plateau_max,
                 self.increase_batch_size_eval_metric,
                 self.increase_batch_size_eval_split,
-                self.early_stop,
+                early_stopping_steps,
                 self.skip_save_model,
             )
         else:
@@ -960,7 +789,7 @@ class Trainer(BaseTrainer):
                 horovod=self.horovod,
             ) as batcher:
                 # ================ Training Loop ================
-                total_steps = self.epochs * batcher.steps_per_epoch
+                total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -970,11 +799,19 @@ class Trainer(BaseTrainer):
                     self.is_coordinator(),
                 )
 
+                early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+
                 if self.is_coordinator():
                     logger.info(
                         f"Training for {total_steps} step(s), approximately "
                         f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
+                    logger.info(
+                        f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
+                        f"step(s), approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
+                        "epoch(s).\n"
+                    )
+
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar = None
@@ -1018,6 +855,7 @@ class Trainer(BaseTrainer):
                         metrics_names,
                         checkpoint_manager,
                         final_steps_per_checkpoint,
+                        early_stopping_steps,
                     )
 
                     # ================ Post Training Epoch ================
@@ -1088,6 +926,7 @@ class Trainer(BaseTrainer):
         metrics_names,
         checkpoint_manager,
         final_steps_per_checkpoint: int,
+        early_stopping_steps: int,
     ) -> bool:
         """Completes one epoch through the data."""
         while not batcher.last_batch():
@@ -1181,6 +1020,7 @@ class Trainer(BaseTrainer):
                     save_path,
                     loss,
                     all_losses,
+                    early_stopping_steps,
                 )
                 if should_break:
                     return should_break
@@ -1282,7 +1122,7 @@ class Trainer(BaseTrainer):
         increase_batch_size_on_plateau_max,
         increase_batch_size_eval_metric,
         increase_batch_size_eval_split,
-        early_stop,
+        early_stopping_steps: int,
         skip_save_model,
     ):
         """Checks the history of validation scores.
@@ -1372,7 +1212,7 @@ class Trainer(BaseTrainer):
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
-        early_stop_bool = 0 < early_stop <= progress_tracker.last_improvement
+        early_stop_bool = 0 < early_stopping_steps <= progress_tracker.last_improvement
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
@@ -1385,10 +1225,9 @@ class Trainer(BaseTrainer):
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
-                    "\nEARLY STOPPING due to lack of "
-                    "validation improvement, "
-                    f"it has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
-                    "last validation improvement.\n"
+                    "\nEARLY STOPPING due to lack of validation improvement. "
+                    f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
+                    f"last validation improvement.\n"
                 )
             should_break = True
         return should_break

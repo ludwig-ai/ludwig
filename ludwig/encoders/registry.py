@@ -5,6 +5,16 @@ from ludwig.utils.registry import DEFAULT_KEYS, Registry
 
 encoder_registry = Registry()
 
+sequence_encoder_registry = Registry()
+
+
+def register_sequence_encoder(name: str):
+    def wrap(cls):
+        sequence_encoder_registry[name] = cls
+        return cls
+
+    return wrap
+
 
 def register_encoder(name: str, features: Union[str, List[str]], default=False):
     if isinstance(features, str):

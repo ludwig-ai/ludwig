@@ -22,12 +22,13 @@ from typing import List, Optional, Set, Union
 
 import numpy as np
 
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tokenizers import tokenizer_registry
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import Series
 
 BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
 BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
@@ -84,7 +85,7 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     if v_str in BOOL_FALSE_STRS:
         return False
     if fallback_true_label is None:
-        raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified.")
+        raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified")
     return v == fallback_true_label
 
 
@@ -174,7 +175,7 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
 
 
 def create_vocabulary(
-    data: DataFrame,
+    data: Series,
     tokenizer_type: str = "space",
     lowercase: bool = True,
     num_most_frequent: int = None,
@@ -185,7 +186,7 @@ def create_vocabulary(
     start_symbol: str = START_SYMBOL,
     stop_symbol: str = STOP_SYMBOL,
     pretrained_model_name_or_path: str = None,
-    processor: str = PANDAS,
+    processor: DataFrameEngine = PANDAS,
 ):
     """Computes a vocabulary over the provided data frame.
 
@@ -202,7 +203,7 @@ def create_vocabulary(
     STOP) are added if add_special_symbols=True.
 
     Args:
-        data: DataFrame of string data.
+        data: Series of string data.
         tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
         lowercase: Whether to lowercase all strings.
         num_most_frequent: Upper limit on vocabulary size.,
@@ -294,9 +295,9 @@ def create_vocabulary(
 
 
 def create_vocabulary_single_token(
-    data: DataFrame,
+    data: Series,
     num_most_frequent: Optional[int] = None,
-    processor: str = PANDAS,
+    processor: DataFrameEngine = PANDAS,
     unknown_symbol: str = UNKNOWN_SYMBOL,
 ):
     """Computes a vocabulary over the provided data frame.
@@ -311,7 +312,7 @@ def create_vocabulary_single_token(
     STOP) are added if add_special_symbols=True.
 
     Args:
-        data: DataFrame of string data.
+        data: Series of string data.
         num_most_frequent: Upper limit on vocabulary size.
         unknown_symbol: String representation for the UNKNOWN symbol.
         processor: Which processor to use to process data.
@@ -322,7 +323,7 @@ def create_vocabulary_single_token(
             str2idx: Map of symbol to index.
             str2freq: Map of symbol to frequency.
     """
-    processed_counts = data.value_counts(sort=True)
+    processed_counts = data.str.strip().value_counts(sort=True)
     processed_counts = processor.compute(processed_counts)
     vocab = [unknown_symbol] + processed_counts.index.tolist()[:num_most_frequent]
     str2idx = {unit: i for i, unit in enumerate(vocab)}

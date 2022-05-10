@@ -79,7 +79,7 @@ def ray_start(num_cpus=2, num_gpus=None):
         ray.shutdown()
 
 
-def run_api_experiment(config, data_parquet, backend_config):
+def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
     if torch.cuda.device_count() > 0:
@@ -90,7 +90,14 @@ def run_api_experiment(config, data_parquet, backend_config):
         assert not kwargs.get("use_gpu"), kwargs
 
     # Train on Parquet
-    model = train_with_backend(backend_config, config, dataset=data_parquet, evaluate=True, predict=False)
+    model = train_with_backend(
+        backend_config,
+        config,
+        dataset=dataset,
+        evaluate=True,
+        predict=False,
+        skip_save_processed_input=skip_save_processed_input,
+    )
 
     assert isinstance(model.backend, RayBackend)
     if isinstance(model.backend.df_engine, DaskEngine):
@@ -138,7 +145,7 @@ def split(data_parquet):
 
 
 @spawn
-def run_test_parquet(
+def run_test_with_features(
     input_features,
     output_features,
     num_examples=100,
@@ -147,6 +154,8 @@ def run_test_parquet(
     num_cpus=2,
     num_gpus=None,
     df_engine=None,
+    dataset_type="parquet",
+    skip_save_processed_input=True,
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
@@ -163,13 +172,41 @@ def run_test_parquet(
         with tempfile.TemporaryDirectory() as tmpdir:
             csv_filename = os.path.join(tmpdir, "dataset.csv")
             dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+            dataset = create_data_set_to_use(dataset_type, dataset_csv)
 
             if expect_error:
                 with pytest.raises(ValueError):
-                    run_fn(config, data_parquet=dataset_parquet, backend_config=backend_config)
+                    run_fn(
+                        config,
+                        dataset=dataset,
+                        backend_config=backend_config,
+                        skip_save_processed_input=skip_save_processed_input,
+                    )
             else:
-                run_fn(config, data_parquet=dataset_parquet, backend_config=backend_config)
+                run_fn(
+                    config,
+                    dataset=dataset,
+                    backend_config=backend_config,
+                    skip_save_processed_input=skip_save_processed_input,
+                )
+
+
+@pytest.mark.parametrize("dataset_type", ["parquet", "csv"])
+@pytest.mark.distributed
+def test_ray_save_processed_input(dataset_type):
+    input_features = [
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
+    output_features = [
+        category_feature(vocab_size=5),  # Regression test for #1991 requires multi-class predictions.
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        skip_save_processed_input=False,
+    )
 
 
 @pytest.mark.parametrize("df_engine", ["dask", "modin"])
@@ -191,7 +228,11 @@ def test_ray_tabular(df_engine):
         binary_feature(),
         number_feature(normalization="zscore"),
     ]
-    run_test_parquet(input_features, output_features, df_engine=df_engine)
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine=df_engine,
+    )
 
 
 @pytest.mark.skip(reason="TODO torch")
@@ -203,7 +244,7 @@ def test_ray_text():
     output_features = [
         text_feature(reduce_input=None, decoder="tagger"),
     ]
-    run_test_parquet(input_features, output_features)
+    run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.skip(reason="TODO torch")
@@ -211,7 +252,7 @@ def test_ray_text():
 def test_ray_sequence():
     input_features = [sequence_feature(max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
     output_features = [sequence_feature(max_len=10, decoder="tagger", attention=False, reduce_input=None)]
-    run_test_parquet(input_features, output_features)
+    run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.distributed
@@ -220,7 +261,7 @@ def test_ray_audio():
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder)]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features)
+        run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.distributed
@@ -237,7 +278,7 @@ def test_ray_image():
             ),
         ]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features)
+        run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
@@ -249,7 +290,7 @@ def test_ray_split():
         binary_feature(),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
-    run_test_parquet(
+    run_test_with_features(
         input_features,
         output_features,
         run_fn=run_split_api_experiment,
@@ -261,7 +302,7 @@ def test_ray_split():
 def test_ray_timeseries():
     input_features = [timeseries_feature()]
     output_features = [number_feature()]
-    run_test_parquet(input_features, output_features)
+    run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.distributed
@@ -277,7 +318,7 @@ def test_ray_lazy_load_audio_error():
             )
         ]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features, expect_error=True)
+        run_test_with_features(input_features, output_features, expect_error=True)
 
 
 @pytest.mark.distributed
@@ -294,7 +335,7 @@ def test_ray_lazy_load_image_error():
             ),
         ]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features, expect_error=True)
+        run_test_with_features(input_features, output_features, expect_error=True)
 
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
@@ -308,7 +349,7 @@ def test_train_gpu_load_cpu():
     output_features = [
         binary_feature(),
     ]
-    run_test_parquet(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
+    run_test_with_features(input_features, output_features, run_fn=_run_train_gpu_load_cpu, num_gpus=1)
 
 
 @pytest.mark.distributed
@@ -354,8 +395,7 @@ def test_balance_ray(method, balance):
         minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
         new_class_balance = round(minority_class / majority_class, 2)
 
-        assert (balance - BALANCE_PERCENTAGE_TOLERANCE) <= new_class_balance
-        assert (balance + BALANCE_PERCENTAGE_TOLERANCE) >= new_class_balance
+        assert abs(balance - new_class_balance) < BALANCE_PERCENTAGE_TOLERANCE
 
 
 def _run_train_gpu_load_cpu(config, data_parquet):
