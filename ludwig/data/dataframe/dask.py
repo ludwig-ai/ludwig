@@ -71,12 +71,9 @@ class DaskEngine(DataFrameEngine):
     def compute(self, data):
         return data.compute()
 
-    def from_pandas(self, df, reset_index=True):
+    def from_pandas(self, df):
         parallelism = self._parallelism or 1
-        if reset_index:
-            return dd.from_pandas(df, npartitions=parallelism).reset_index()
-        else:
-            return dd.from_pandas(df, npartitions=parallelism)
+        return dd.from_pandas(df, npartitions=parallelism).reset_index()
 
     def map_objects(self, series, map_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
