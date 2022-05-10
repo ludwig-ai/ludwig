@@ -19,14 +19,14 @@ def test_StringOptions():
     # Test case of default conflicting with allowed options:
     test_options = ["one"]
     with pytest.raises(MarshmallowValidationError):
-        schema_utils.StringOptions(test_options, default=None, nullable=False)
+        schema_utils.StringOptions(test_options, default=None, allow_none=False)
 
     # Test creating a schema with simple option, null not allowed:
     test_options = ["one"]
 
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: str = schema_utils.StringOptions(test_options, "one", nullable=False)
+        foo: str = schema_utils.StringOptions(test_options, "one", allow_none=False)
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": None})

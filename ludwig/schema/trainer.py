@@ -51,7 +51,7 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         options=["auto"],
         default_numeric=0.001,
         default_option="auto",
-        nullable=False,
+        allow_none=False,
         description=(
             "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
             "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
@@ -63,7 +63,7 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         options=["auto"],
         default_numeric=128,
         default_option="auto",
-        nullable=False,
+        allow_none=False,
         min_exclusive=0,
         description="Size of batch to pass to the model for training.",
     )
@@ -73,7 +73,7 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         options=["auto"],
         default_numeric=None,
         default_option="auto",
-        nullable=True,
+        allow_none=True,
         min_exclusive=0,
         description="Size of batch to pass to the model for evaluation.",
     )

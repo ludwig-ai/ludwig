@@ -77,38 +77,38 @@ def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
 
 def InitializerOptions(default: str = "xavier_uniform", description="MISSING"):
     """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
-    return StringOptions(list(initializer_registry.keys()), default=default, nullable=False, description=description)
+    return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
 
 
 def ActivationOptions(default: str = "relu", description="MISSING"):
     """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
-    return StringOptions(list(activations.keys()), default=default, nullable=True, description=description)
+    return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
 
 
 def ReductionOptions(default: Union[None, str] = None, description="MISSING"):
     """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
-    return StringOptions(list(reduce_mode_registry.keys()), default=default, nullable=True, description=description)
+    return StringOptions(list(reduce_mode_registry.keys()), default=default, allow_none=True, description=description)
 
 
-def RegularizerOptions(default: Union[None, str] = None, nullable: bool = True, description="MISSING"):
+def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True, description="MISSING"):
     """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
-    return StringOptions(["l1", "l2", "l1_l2"], default=default, nullable=nullable, description=description)
+    return StringOptions(["l1", "l2", "l1_l2"], default=default, allow_none=allow_none, description=description)
 
 
-def String(default: Union[None, str] = None, nullable: bool = True, description="MISSING"):
-    if not nullable and not isinstance(default, str):
+def String(default: Union[None, str] = None, allow_none: bool = True, description="MISSING"):
+    if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                allow_none=nullable, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             )
         },
         default=default,
     )
 
 
-def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True, description="MISSING"):
+def StringOptions(options: List[str], default: Union[None, str] = None, allow_none: bool = True, description="MISSING"):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
@@ -119,9 +119,9 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
         raise ValidationError("Must provide non-empty list of options!")
     if default is not None and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
-    if nullable and None not in options:
+    if allow_none and None not in options:
         options += [None]
-    if not nullable and None in options:
+    if not allow_none and None in options:
         options.remove(None)
     if default not in options:
         raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
@@ -129,7 +129,7 @@ def StringOptions(options: List[str], default: Union[None, str] = None, nullable
         metadata={
             "marshmallow_field": fields.String(
                 validate=validate.OneOf(options),
-                allow_none=nullable,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -258,11 +258,11 @@ def NonNegativeFloat(default: Union[None, float] = None, description="MISSING"):
     )
 
 
-def FloatRange(default: Union[None, float] = None, nullable=False, description="MISSING", **kwargs):
+def FloatRange(default: Union[None, float] = None, allow_none=False, description="MISSING", **kwargs):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
     val = validate.Range(**kwargs)
-    if default is None and not nullable:
+    if default is None and not allow_none:
         raise ValidationError(f"Invalid default: `{default}`")
     if default is not None:
         try:
@@ -274,7 +274,7 @@ def FloatRange(default: Union[None, float] = None, nullable=False, description="
         metadata={
             "marshmallow_field": fields.Float(
                 validate=val,
-                allow_none=nullable,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -503,7 +503,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 def IntegerOrStringOptionsField(
     options: List[str],
-    nullable: bool,
+    allow_none: bool,
     default: Union[None, int],
     default_numeric: Union[None, int],
     default_option: Union[None, str],
@@ -521,7 +521,7 @@ def IntegerOrStringOptionsField(
 
 def NumericOrStringOptionsField(
     options: List[str],
-    nullable: bool,
+    allow_none: bool,
     default: Union[None, int, float, str],
     default_numeric: Union[None, int, float],
     default_option: Union[None, str],
@@ -606,7 +606,9 @@ def NumericOrStringOptionsField(
 
             # Add null as an option if applicable:
             oneof_list += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}] if nullable else []
+                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
+                if allow_none
+                else []
             )
 
             return {"oneOf": oneof_list, "title": self.name, "description": description}
@@ -614,7 +616,7 @@ def NumericOrStringOptionsField(
     return field(
         metadata={
             "marshmallow_field": IntegerOrStringOptionsField(
-                allow_none=nullable, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             )
         },
         default=default,

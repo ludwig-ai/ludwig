@@ -54,7 +54,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
     """Points to `torch.optim.SGD`."""
 
-    type: str = StringOptions(["sgd"], default="sgd", nullable=False)
+    type: str = StringOptions(["sgd"], default="sgd", allow_none=False)
     """Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'sgd')"""
 
@@ -75,7 +75,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     """Points to `torch.optim.Adam`."""
 
-    type: str = StringOptions(["adam"], default="adam", nullable=False)
+    type: str = StringOptions(["adam"], default="adam", allow_none=False)
     """Must be 'adam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adam')"""
 
@@ -105,7 +105,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.AdamW
     """Points to `torch.optim.AdamW`."""
 
-    type: str = StringOptions(["adamw"], default="adamw", nullable=False)
+    type: str = StringOptions(["adamw"], default="adamw", allow_none=False)
     """Must be 'adamw' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamw')"""
 
@@ -135,7 +135,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
     """Points to `torch.optim.Adadelta`."""
 
-    type: str = StringOptions(["adadelta"], default="adadelta", nullable=False)
+    type: str = StringOptions(["adadelta"], default="adadelta", allow_none=False)
     """Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adadelta')"""
 
@@ -167,7 +167,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
     """Points to `torch.optim.Adagrad`."""
 
-    type: str = StringOptions(["adagrad"], default="adagrad", nullable=False)
+    type: str = StringOptions(["adagrad"], default="adagrad", allow_none=False)
     """Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adagrad')"""
 
@@ -187,7 +187,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
     """Points to `torch.optim.Adamax`."""
 
-    type: str = StringOptions(["adamax"], default="adamax", nullable=False)
+    type: str = StringOptions(["adamax"], default="adamax", allow_none=False)
     """Must be 'adamax' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamax')"""
 
@@ -207,7 +207,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 @dataclass
 class FtrlOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
-    type: str = StringOptions(["ftrl"], default="ftrl", nullable=False)
+    type: str = StringOptions(["ftrl"], default="ftrl", allow_none=False)
     learning_rate_power: float = FloatRange(default=-0.5, max=0.0)
     initial_accumulator_value: float = NonNegativeFloat(default=0.1)
     l1_regularization_strength: float = NonNegativeFloat(default=0.0)
@@ -218,7 +218,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 @dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
-    type: str = StringOptions(["nadam"], default="nadam", nullable=False)
+    type: str = StringOptions(["nadam"], default="nadam", allow_none=False)
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0, description="Learning rate.")
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
@@ -239,7 +239,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
     """Points to `torch.optim.RMSprop`."""
 
-    type: str = StringOptions(["rmsprop"], default="rmsprop", nullable=False)
+    type: str = StringOptions(["rmsprop"], default="rmsprop", allow_none=False)
     """Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'rmsprop')"""
 
@@ -347,11 +347,11 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
 class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
-    clipglobalnorm: Optional[float] = FloatRange(default=0.5, nullable=True, description="TODO: Document parameters.")
+    clipglobalnorm: Optional[float] = FloatRange(default=0.5, allow_none=True, description="TODO: Document parameters.")
 
-    clipnorm: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
+    clipnorm: Optional[float] = FloatRange(default=None, allow_none=True, description="TODO: Document parameters.")
 
-    clipvalue: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
+    clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="TODO: Document parameters.")
 
 
 def GradientClippingDataclassField(default={}, allow_none=True, description="TODO"):
