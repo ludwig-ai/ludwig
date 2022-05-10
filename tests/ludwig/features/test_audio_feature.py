@@ -1,15 +1,13 @@
 import os
 from random import choice
 from string import ascii_lowercase, ascii_uppercase, digits
-from typing import Dict
 
-import numpy as np
 import pandas as pd
 import pytest
 import torch
 
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import COLUMN, FILL_WITH_MEAN, NAME, PROC_COLUMN
+from ludwig.constants import FILL_WITH_MEAN, PROC_COLUMN
 from ludwig.features.audio_feature import AudioInputFeature, AudioFeatureMixin
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 
