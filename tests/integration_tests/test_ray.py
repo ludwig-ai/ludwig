@@ -198,7 +198,7 @@ def test_ray_save_processed_input(dataset_type):
         category_feature(vocab_size=2, reduce_input="sum"),
     ]
     output_features = [
-        category_feature(vocab_size=2),
+        category_feature(vocab_size=5),  # Regression test for #1991 requires multi-class predictions.
     ]
     run_test_with_features(
         input_features,
