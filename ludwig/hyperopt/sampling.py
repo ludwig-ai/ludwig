@@ -152,13 +152,13 @@ grid_functions_registry = {
 
 class RayTuneSampler:
     def __init__(
-            self,
-            goal: str,
-            parameters: Dict[str, Any],
-            search_alg: dict = None,
-            scheduler: dict = None,
-            num_samples=1,
-            **kwargs,
+        self,
+        goal: str,
+        parameters: Dict[str, Any],
+        search_alg: dict = None,
+        scheduler: dict = None,
+        num_samples=1,
+        **kwargs,
     ) -> None:
         # TODO: remove commentws code
         # HyperoptSampler.__init__(self, goal, parameters)
@@ -301,5 +301,5 @@ search_algo_registry = {
     None: BasicVariantSA,
     "variant_generator": BasicVariantSA,
     "hyperopt": HyperoptSA,
-    "bohb": BOHBSA
+    "bohb": BOHBSA,
 }

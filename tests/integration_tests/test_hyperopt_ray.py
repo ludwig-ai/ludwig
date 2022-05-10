@@ -113,12 +113,12 @@ def ray_start_4_cpus():
 
 @spawn
 def run_hyperopt_executor(
-        search_alg,
-        executor,
-        csv_filename,
-        validate_output_feature=False,
-        validation_metric=None,
-        use_split=True,
+    search_alg,
+    executor,
+    csv_filename,
+    validate_output_feature=False,
+    validation_metric=None,
+    use_split=True,
 ):
     config = _get_config(search_alg, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
@@ -153,8 +153,7 @@ def run_hyperopt_executor(
     hyperopt_sampler = get_build_hyperopt_sampler("ray")(goal, parameters, **search_alg)
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, goal, split,
-        search_alg=search_alg, **executor
+        hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
     hyperopt_executor.execute(
@@ -239,8 +238,7 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir):
 
         num_samples = 2
         config = _get_config(
-            {"type": "variant_generator"},  # search_alg
-            {"type": "ray", "num_samples": num_samples}  # executor
+            {"type": "variant_generator"}, {"type": "ray", "num_samples": num_samples}  # search_alg  # executor
         )
 
         rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
