@@ -170,7 +170,7 @@ class DirichletScaling(CalibrationModule):
     calibrated multiclass probabilities with Dirichlet calibration https://arxiv.org/abs/1910.12656.
 
     Unlike temperature scaling which has only one free parameter, matrix scaling has n_classes x (n_classes + 1)
-    parameters. Ise this only with a large validation set, as matrix scaling has a tendency to overfit small datasets.
+    parameters. Use this only with a large validation set, as matrix scaling has a tendency to overfit small datasets.
     Also, unlike temperature scaling, matrix scaling can change the argmax or top-n predictions.
 
     Args:
@@ -179,7 +179,7 @@ class DirichletScaling(CalibrationModule):
     mu: The regularization weight for bias vector. Defaults to off_diagonal_l2 if not specified.
     """
 
-    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.1, mu: float = None):
+    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 1.0, mu: float = None):
         super().__init__()
         self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -191,7 +191,7 @@ class DirichletScaling(CalibrationModule):
     def _safe_ln(self, x):
         """Safe natural log of x (tensor)"""
         eps = torch.finfo(torch.float32).eps  # ~ 1e-16
-        return torch.log(torch.clip(x, eps, 1 - eps))
+        return torch.log(torch.clamp(x, eps, 1 - eps))
 
     def calibrate(self, logits, labels) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
@@ -211,11 +211,12 @@ class DirichletScaling(CalibrationModule):
         )
 
         # Optimizes the linear transform to minimize NLL
-        optimizer = torch.optim.LBFGS([self.w, self.b], lr=0.01, max_iter=50, line_search_fn="strong_wolfe")
+        optimizer = torch.optim.LBFGS([self.w, self.b], lr=0.001, max_iter=200, line_search_fn="strong_wolfe")
 
         def eval():
             optimizer.zero_grad()
             loss = nll_criterion(self.scale_logits(logits), one_hot_labels) + self.regularization_terms()
+            print("loss: " + str(loss))
             loss.backward()
             return loss
 
@@ -242,13 +243,15 @@ class DirichletScaling(CalibrationModule):
         )
 
     def regularization_terms(self):
-        off_diagonal_entries = self.w * (1.0 - torch.eye(self.num_classes))
-        weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.matrix_norm(off_diagonal_entries)
+        off_diagonal_entries = torch.masked_select(self.w, ~torch.eye(self.num_classes, dtype=bool))
+        print("off_diagonal_entries: " + str(off_diagonal_entries))
+        weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.vector_norm(off_diagonal_entries)
         bias_vector_loss = self.mu * torch.linalg.vector_norm(self.b, 2)
-        return weight_matrix_loss + bias_vector_loss
+        print("bias_vector_loss: " + str(bias_vector_loss))
+        return bias_vector_loss + weight_matrix_loss
 
     def scale_logits(self, logits: torch.Tensor):
-        return torch.matmul(self._safe_ln(logits), self.w) + self.b
+        return torch.matmul(self.w, self._safe_ln(logits).T).T + self.b
 
     def forward(self, logits: torch.Tensor):
         """Converts logits to probabilities."""
