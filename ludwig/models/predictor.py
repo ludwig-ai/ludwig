@@ -270,7 +270,7 @@ class RemotePredictor(Predictor):
         self.batch_evaluation = return_first(self.batch_evaluation)
 
 
-def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
+def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata, df_engine):
     overall_stats = {}
     for of_name, output_feature in output_features.items():
         feature_metadata = training_set_metadata[output_feature.feature_name]
@@ -278,10 +278,11 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
 
         feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1 :])
+        feature_df = df_engine.compute(feature_df)
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             feature_df,  # predictions
-            dataset.get(output_feature.proc_column),  # target
+            df_engine.compute(dataset.loc[:, output_feature.proc_column]),  # target
             feature_metadata,  # output feature metadata
         )
     return overall_stats
