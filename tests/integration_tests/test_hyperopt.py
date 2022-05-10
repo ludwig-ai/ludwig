@@ -51,13 +51,13 @@ HYPEROPT_CONFIG = {
         "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
     },
     "goal": "minimize",
+    "executor": {"num_samples": 2}
 }
 
-SAMPLERS = [
-    {"num_samples": 2},
-    {"num_samples": 2, "search_alg": {"type": "variant_generator", "random_state": 13}},
-    {"num_samples": 2, "search_alg": {"type": "hyperopt", "random_state_seed": 13}},
-    {"num_samples": 2, "search_alg": {"type": "bohb", "seed": 13}},
+SEARCH_ALG = [
+    {"type": "variant_generator", "random_state": 13},
+    {"type": "hyperopt", "random_state_seed": 13},
+    {"type": "bohb", "seed": 13},
 ]
 
 
@@ -76,8 +76,8 @@ def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("sampler", SAMPLERS)
-def test_hyperopt_executor(sampler, csv_filename, validate_output_feature=False, validation_metric=None):
+@pytest.mark.parametrize("search_alg", SEARCH_ALG)
+def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=False, validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -97,6 +97,7 @@ def test_hyperopt_executor(sampler, csv_filename, validate_output_feature=False,
     config = merge_with_defaults(config)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
+    hyperopt_config["search_alg"] = search_alg
 
     if validate_output_feature:
         hyperopt_config["output_feature"] = output_features[0]["name"]
@@ -110,12 +111,14 @@ def test_hyperopt_executor(sampler, csv_filename, validate_output_feature=False,
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
+    executor = hyperopt_config["executor"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(goal, parameters, **sampler)
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(goal, parameters, **search_alg)
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
-        hyperopt_executor = get_build_hyperopt_executor(RAY)(hyperopt_sampler, output_feature, metric, split)
+        hyperopt_executor = get_build_hyperopt_executor(RAY)(hyperopt_sampler, output_feature, metric, goal, split,
+                                                             search_alg=search_alg, **executor)
 
         raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
 
@@ -125,7 +128,7 @@ def test_hyperopt_executor(sampler, csv_filename, validate_output_feature=False,
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
     test_hyperopt_executor(
-        {"num_samples": 2},
+        {"type": "variant_generator", "random_state": 13},
         csv_filename,
         validate_output_feature=True,
         validation_metric=ACCURACY,

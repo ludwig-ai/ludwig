@@ -164,10 +164,10 @@ class RayTuneSampler:
         # HyperoptSampler.__init__(self, goal, parameters)
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
-        self.search_alg_dict = search_alg
-        self.scheduler = self._create_scheduler(scheduler, parameters)
-        self.num_samples = num_samples
-        self.goal = goal
+        # self.search_alg_dict = search_alg
+        # self.scheduler = self._create_scheduler(scheduler, parameters)
+        # self.num_samples = num_samples
+        # self.goal = goal
 
     def _check_ray_tune(self):
         if not _HAS_RAY_TUNE:

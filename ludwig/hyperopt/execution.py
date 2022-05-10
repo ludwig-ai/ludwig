@@ -190,7 +190,9 @@ class RayTuneExecutor(HyperoptExecutor):
             hyperopt_sampler,
             output_feature: str,
             metric: str,
+            goal: str,
             split: str,
+            search_alg: Optional[Dict] = None,
             cpu_resources_per_trial: int = None,
             gpu_resources_per_trial: int = None,
             kubernetes_namespace: str = None,
@@ -216,12 +218,12 @@ class RayTuneExecutor(HyperoptExecutor):
                 ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = num_samples
-        self.goal = hyperopt_sampler.goal
+        self.goal = goal
         # self.search_alg_dict = hyperopt_sampler.search_alg_dict  TODO: remove
-        self.search_algorithm = get_search_algorithm(None)(hyperopt_sampler.search_alg_dict) \
-            if hyperopt_sampler.search_alg_dict is None \
-            else get_search_algorithm(hyperopt_sampler.search_alg_dict[TYPE])(hyperopt_sampler.search_alg_dict)
-        self.scheduler = hyperopt_sampler.scheduler
+        self.search_algorithm = get_search_algorithm(None)(search_alg) \
+            if search_alg is None \
+            else get_search_algorithm(search_alg[TYPE])(search_alg)
+        self.scheduler = scheduler
         self.decode_ctx = hyperopt_sampler.decode_ctx
         self.output_feature = output_feature
         self.metric = metric

@@ -179,7 +179,8 @@ def hyperopt(
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info("\n")
 
-    sampler = hyperopt_config["sampler"]
+    sampler = hyperopt_config["sampler"]  # TODO: reserach how to refactor or eliminate
+    search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config["executor"]
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
@@ -250,7 +251,7 @@ def hyperopt(
     hyperopt_sampler = get_build_hyperopt_sampler(sampler[TYPE])(goal, parameters, **sampler)
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
-        hyperopt_sampler, output_feature, metric, split, **executor
+        hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
