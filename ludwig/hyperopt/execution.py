@@ -18,7 +18,7 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
+from ludwig.hyperopt.sampling import RayTuneSampler, get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
@@ -63,7 +63,7 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 class HyperoptExecutor(ABC):
     def __init__(
-        self, hyperopt_sampler: Union[dict, HyperoptSampler], output_feature: str, metric: str, split: str
+            self, hyperopt_sampler: Union[dict, RayTuneSampler], output_feature: str, metric: str, split: str
     ) -> None:
         self.hyperopt_sampler = hyperopt_sampler
         self.output_feature = output_feature
@@ -215,7 +215,10 @@ class RayTuneExecutor(HyperoptExecutor):
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
         self.goal = hyperopt_sampler.goal
-        self.search_alg_dict = hyperopt_sampler.search_alg_dict
+        # self.search_alg_dict = hyperopt_sampler.search_alg_dict  TODO: remove
+        self.search_algorithm = get_search_algorithm(None)(hyperopt_sampler.search_alg_dict) \
+            if hyperopt_sampler.search_alg_dict is None \
+            else get_search_algorithm(hyperopt_sampler.search_alg_dict[TYPE])(hyperopt_sampler.search_alg_dict)
         self.scheduler = hyperopt_sampler.scheduler
         self.decode_ctx = hyperopt_sampler.decode_ctx
         self.output_feature = output_feature
@@ -594,13 +597,14 @@ class RayTuneExecutor(HyperoptExecutor):
 
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
-        if self.search_alg_dict is not None:
-            if TYPE not in self.search_alg_dict:
+        if self.search_algorithm.search_alg_dict is not None:
+            if TYPE not in self.search_algorithm.search_alg_dict:
                 logger.warning("WARNING: Kindly set type param for search_alg " "to utilize Tune's Search Algorithms.")
                 search_alg = None
             else:
-                search_alg_type = self.search_alg_dict[TYPE]
-                search_alg = tune.create_searcher(search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
+                search_alg_type = self.search_algorithm.search_alg_dict[TYPE]
+                search_alg = tune.create_searcher(search_alg_type, metric=metric, mode=mode,
+                                                  **self.search_algorithm.search_alg_dict)
         else:
             search_alg = None
 

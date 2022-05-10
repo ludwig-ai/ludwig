@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-RANDOM_SEARCH_SIZE = 10
+RANDOM_SEARCH_SIZE = 4
 
 HYPEROPT_CONFIG = {
     "parameters": {

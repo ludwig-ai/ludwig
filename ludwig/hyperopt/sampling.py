@@ -101,65 +101,67 @@ grid_functions_registry = {
 }
 
 
-class HyperoptSampler(ABC):
-    def __init__(self, goal: str, parameters: Dict[str, Any], batch_size: int = 1) -> None:
-        assert goal in [MINIMIZE, MAXIMIZE]
-        self.goal = goal  # useful for Bayesian strategy
-        self.parameters = parameters
-        self.default_batch_size = batch_size
+# TODO: remove code
+# class HyperoptSampler(ABC):
+#     def __init__(self, goal: str, parameters: Dict[str, Any], batch_size: int = 1) -> None:
+#         assert goal in [MINIMIZE, MAXIMIZE]
+#         self.goal = goal  # useful for Bayesian strategy
+#         self.parameters = parameters
+#         self.default_batch_size = batch_size
+#
+#     @abstractmethod
+#     def sample(self) -> Dict[str, Any]:
+#         # Yields a set of parameters names and their values.
+#         # Define `build_hyperopt_strategy` which would take parameters as inputs
+#         pass
+#
+#     def sample_batch(self, batch_size: int = None) -> List[Dict[str, Any]]:
+#         samples = []
+#         if batch_size is None:
+#             batch_size = self.default_batch_size
+#         for _ in range(batch_size):
+#             try:
+#                 samples.append(self.sample())
+#             except IndexError:
+#                 # Logic: is samples is empty it means that we encountered
+#                 # the IndexError the first time we called self.sample()
+#                 # so we should raise the exception. If samples is not empty
+#                 # we should just return it, even if it will contain
+#                 # less samples than the specified batch_size.
+#                 # This is fine as from now on finished() will return True.
+#                 if not samples:
+#                     raise IndexError
+#         return samples
+#
+#     @abstractmethod
+#     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
+#         # Given the results of previous computation, it updates
+#         # the strategy (not needed for stateless strategies like "grid"
+#         # and random, but will be needed by Bayesian)
+#         pass
+#
+#     def update_batch(self, parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]):
+#         for (sampled_parameters, metric_score) in parameters_metric_tuples:
+#             self.update(sampled_parameters, metric_score)
+#
+#     @abstractmethod
+#     def finished(self) -> bool:
+#         # Should return true when all samples have been sampled
+#         pass
 
-    @abstractmethod
-    def sample(self) -> Dict[str, Any]:
-        # Yields a set of parameters names and their values.
-        # Define `build_hyperopt_strategy` which would take parameters as inputs
-        pass
 
-    def sample_batch(self, batch_size: int = None) -> List[Dict[str, Any]]:
-        samples = []
-        if batch_size is None:
-            batch_size = self.default_batch_size
-        for _ in range(batch_size):
-            try:
-                samples.append(self.sample())
-            except IndexError:
-                # Logic: is samples is empty it means that we encountered
-                # the IndexError the first time we called self.sample()
-                # so we should raise the exception. If samples is not empty
-                # we should just return it, even if it will contain
-                # less samples than the specified batch_size.
-                # This is fine as from now on finished() will return True.
-                if not samples:
-                    raise IndexError
-        return samples
-
-    @abstractmethod
-    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-        # Given the results of previous computation, it updates
-        # the strategy (not needed for stateless strategies like "grid"
-        # and random, but will be needed by Bayesian)
-        pass
-
-    def update_batch(self, parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]):
-        for (sampled_parameters, metric_score) in parameters_metric_tuples:
-            self.update(sampled_parameters, metric_score)
-
-    @abstractmethod
-    def finished(self) -> bool:
-        # Should return true when all samples have been sampled
-        pass
-
-
-class RayTuneSampler(HyperoptSampler):
+class RayTuneSampler:
     def __init__(
-        self,
-        goal: str,
-        parameters: Dict[str, Any],
-        search_alg: dict = None,
-        scheduler: dict = None,
-        num_samples=1,
-        **kwargs,
+            self,
+            goal: str,
+            parameters: Dict[str, Any],
+            search_alg: dict = None,
+            scheduler: dict = None,
+            num_samples=1,
+            **kwargs,
     ) -> None:
-        HyperoptSampler.__init__(self, goal, parameters)
+        # TODO: remove code
+        # HyperoptSampler.__init__(self, goal, parameters)
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
@@ -211,14 +213,15 @@ class RayTuneSampler(HyperoptSampler):
             config[param] = param_search_space(**param_search_input_args)
         return config, ctx
 
-    def sample(self) -> Dict[str, Any]:
-        pass
-
-    def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
-        pass
-
-    def finished(self) -> bool:
-        pass
+    # TODO: remove code
+    # def sample(self) -> Dict[str, Any]:
+    #     pass
+    #
+    # def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
+    #     pass
+    #
+    # def finished(self) -> bool:
+    #     pass
 
     @staticmethod
     def encode_values(param, values, ctx):
@@ -249,3 +252,49 @@ def get_build_hyperopt_sampler(strategy_type):
 
 
 sampler_registry = {"ray": RayTuneSampler}
+
+
+# TODO: split to separate module?
+class SearchAlgorithm(ABC):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        self.search_alg_dict = search_alg_dict
+
+    @abstractmethod
+    def set_random_seed(self):
+        pass
+
+
+class BasicVariantSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        super().__init__(search_alg_dict)
+
+    def set_random_seed(self):
+        pass
+
+
+class HyperoptSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        super().__init__(search_alg_dict)
+
+    def set_random_seed(self):
+        pass
+
+
+class BOHBSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        super().__init__(search_alg_dict)
+
+    def set_random_seed(self):
+        pass
+
+
+def get_search_algorithm(search_algo):
+    return get_from_registry(search_algo, search_algo_registry)
+
+
+search_algo_registry = {
+    None: BasicVariantSA,
+    "variant_generator": BasicVariantSA,
+    "hyperopt": HyperoptSA,
+    "bohb": BOHBSA
+}
