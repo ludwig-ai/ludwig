@@ -11,7 +11,7 @@ import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Dict
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
@@ -186,17 +186,19 @@ class HyperoptExecutor(ABC):
 
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
-        self,
-        hyperopt_sampler,
-        output_feature: str,
-        metric: str,
-        split: str,
-        cpu_resources_per_trial: int = None,
-        gpu_resources_per_trial: int = None,
-        kubernetes_namespace: str = None,
-        time_budget_s: Union[int, float, datetime.timedelta] = None,
-        max_concurrent_trials: Optional[int] = None,
-        **kwargs,
+            self,
+            hyperopt_sampler,
+            output_feature: str,
+            metric: str,
+            split: str,
+            cpu_resources_per_trial: int = None,
+            gpu_resources_per_trial: int = None,
+            kubernetes_namespace: str = None,
+            time_budget_s: Union[int, float, datetime.timedelta] = None,
+            max_concurrent_trials: Optional[int] = None,
+            num_samples: int = 1,
+            scheduler: Optional[Dict] = None,
+            **kwargs,
     ) -> None:
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
@@ -213,7 +215,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 logger.info("Initializing new Ray cluster...")
                 ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
-        self.num_samples = hyperopt_sampler.num_samples
+        self.num_samples = num_samples
         self.goal = hyperopt_sampler.goal
         # self.search_alg_dict = hyperopt_sampler.search_alg_dict  TODO: remove
         self.search_algorithm = get_search_algorithm(None)(hyperopt_sampler.search_alg_dict) \

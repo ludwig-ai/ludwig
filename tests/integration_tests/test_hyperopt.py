@@ -186,8 +186,8 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray"},
-        "sampler": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "executor": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "search_alg": {"type": "variant_generator"},
     }
 
     # add hyperopt parameter space to the config
