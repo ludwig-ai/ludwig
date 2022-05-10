@@ -148,7 +148,12 @@ def Boolean(default: bool, description="MISSING"):
     return field(
         metadata={
             "marshmallow_field": fields.Boolean(
-                truthy={True}, falsy={False}, allow_none=False, load_default=default, dump_default=default
+                truthy={True},
+                falsy={False},
+                allow_none=False,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
             )
         },
         default=default,
@@ -364,7 +369,7 @@ def Embed():
                     {"type": "null", "title": "embed_null_option", "description": "MISSING"},
                 ],
                 "title": self.name,
-                "description": "Valid options for embedding (or not) input feature names.",
+                "description": "Valid options for embedding (or not embedding) input feature names.",
             }
 
     return field(
