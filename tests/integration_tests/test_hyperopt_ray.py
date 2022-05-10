@@ -58,27 +58,26 @@ HYPEROPT_CONFIG = {
 }
 
 
-SAMPLERS = [
-    {"type": "ray"},
-    {"type": "ray", "num_samples": 2},
-    {
-        "type": "ray",
-        "search_alg": {"type": "bohb"},
-        "scheduler": {
-            "type": "hb_bohb",
-            "time_attr": "training_iteration",
-            "reduction_factor": 4,
-        },
-        "num_samples": 3,
-    },
+SCENARIOS = [
+    {"executor": {"type": "ray"}, "search_alg": {"type": "variant_generator"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
+    # todo: enable following scenario
+    # {
+    #     "executor": {
+    #         "type": "ray",
+    #         "num_samples": 3,
+    #         "scheduler":{
+    #             "type": "hb_bohb",
+    #             "time_attr": "training_iteration",
+    #             "reduction_factor": 4,
+    #         }
+    #     },
+    #     "search_alg": {"type": "bohb"}
+    # },
 ]
 
-EXECUTORS = [
-    {"type": "ray"},
-]
 
-
-def _get_config(sampler, executor):
+def _get_config(search_alg, executor):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -94,7 +93,7 @@ def _get_config(sampler, executor):
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
-            "sampler": sampler,
+            "search_alg": search_alg,
         },
     }
 
@@ -114,14 +113,14 @@ def ray_start_4_cpus():
 
 @spawn
 def run_hyperopt_executor(
-    sampler,
-    executor,
-    csv_filename,
-    validate_output_feature=False,
-    validation_metric=None,
-    use_split=True,
+        search_alg,
+        executor,
+        csv_filename,
+        validate_output_feature=False,
+        validation_metric=None,
+        use_split=True,
 ):
-    config = _get_config(sampler, executor)
+    config = _get_config(search_alg, executor)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
     if not use_split:
@@ -141,7 +140,7 @@ def run_hyperopt_executor(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
-    if sampler.get("search_alg", {}).get("type", "") == "bohb":
+    if search_alg.get("search_alg", {}).get("type", "") == "bohb":
         # bohb does not support grid_search search space
         del parameters["utterance.cell_type"]
 
@@ -149,11 +148,13 @@ def run_hyperopt_executor(
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
+    search_alg = hyperopt_config["search_alg"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
+    hyperopt_sampler = get_build_hyperopt_sampler("ray")(goal, parameters, **search_alg)
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, split, **executor
+        hyperopt_sampler, output_feature, metric, goal, split,
+        search_alg=search_alg, **executor
     )
 
     hyperopt_executor.execute(
@@ -164,11 +165,12 @@ def run_hyperopt_executor(
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("sampler", SAMPLERS)
-@pytest.mark.parametrize("executor", EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename):
+@pytest.mark.parametrize("scenario", SCENARIOS)
+def test_hyperopt_executor(scenario, csv_filename):
+    search_alg = scenario["search_alg"]
+    executor = scenario["executor"]
     with ray_start_4_cpus():
-        run_hyperopt_executor(sampler, executor, csv_filename)
+        run_hyperopt_executor(search_alg, executor, csv_filename)
 
 
 @pytest.mark.distributed
@@ -176,8 +178,8 @@ def test_hyperopt_executor(sampler, executor, csv_filename):
 def test_hyperopt_executor_with_metric(use_split, csv_filename):
     with ray_start_4_cpus():
         run_hyperopt_executor(
-            {"type": "ray", "num_samples": 2},
-            {"type": "ray"},
+            {"type": "variant_generator"},  # search_alg
+            {"type": "ray", "num_samples": 2},  # executor
             csv_filename,
             validate_output_feature=True,
             validation_metric=ACCURACY,
@@ -219,8 +221,8 @@ def test_hyperopt_run_hyperopt(csv_filename):
             "goal": "minimize",
             "output_feature": output_feature_name,
             "validation_metrics": "loss",
-            "executor": {"type": "ray"},
-            "sampler": {"type": "ray", "num_samples": 2},
+            "executor": {"type": "ray", "num_samples": 2},
+            "search_alg": {"type": "variant_generator"},
         }
 
         # add hyperopt parameter space to the config
@@ -236,7 +238,10 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir):
         client = MlflowClient(tracking_uri=mlflow_uri)
 
         num_samples = 2
-        config = _get_config({"type": "ray", "num_samples": num_samples}, {"type": "ray"})
+        config = _get_config(
+            {"type": "variant_generator"},  # search_alg
+            {"type": "ray", "num_samples": num_samples}  # executor
+        )
 
         rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
