@@ -160,7 +160,7 @@ class RayTuneSampler:
             num_samples=1,
             **kwargs,
     ) -> None:
-        # TODO: remove code
+        # TODO: remove commentws code
         # HyperoptSampler.__init__(self, goal, parameters)
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
@@ -173,20 +173,20 @@ class RayTuneSampler:
         if not _HAS_RAY_TUNE:
             raise ValueError("Requested Ray sampler but Ray Tune is not installed. Run `pip install ray[tune]`")
 
-    def _create_scheduler(self, scheduler_config, parameters):
-        if not scheduler_config:
-            return None
-
-        dynamic_resource_allocation = scheduler_config.pop("dynamic_resource_allocation", False)
-
-        if scheduler_config.get("type") == "pbt":
-            scheduler_config.update({"hyperparam_mutations": self.search_space})
-
-        scheduler = tune.create_scheduler(scheduler_config.get("type"), **scheduler_config)
-
-        if dynamic_resource_allocation:
-            scheduler = ResourceChangingScheduler(scheduler, ray_resource_allocation_function)
-        return scheduler
+    # def _create_scheduler(self, scheduler_config, parameters):
+    #     if not scheduler_config:
+    #         return None
+    #
+    #     dynamic_resource_allocation = scheduler_config.pop("dynamic_resource_allocation", False)
+    #
+    #     if scheduler_config.get("type") == "pbt":
+    #         scheduler_config.update({"hyperparam_mutations": self.search_space})
+    #
+    #     scheduler = tune.create_scheduler(scheduler_config.get("type"), **scheduler_config)
+    #
+    #     if dynamic_resource_allocation:
+    #         scheduler = ResourceChangingScheduler(scheduler, ray_resource_allocation_function)
+    #     return scheduler
 
     def _get_search_space(self, parameters):
         config = {}
@@ -269,6 +269,7 @@ class BasicVariantSA(SearchAlgorithm):
         super().__init__(search_alg_dict)
 
     def set_random_seed(self):
+        # TODO: to be implemented
         pass
 
 
@@ -277,6 +278,7 @@ class HyperoptSA(SearchAlgorithm):
         super().__init__(search_alg_dict)
 
     def set_random_seed(self):
+        # TODO: to be implemented
         pass
 
 
@@ -284,7 +286,10 @@ class BOHBSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         super().__init__(search_alg_dict)
 
+        # TODO: Need to setup scheduler
+
     def set_random_seed(self):
+        # TODO: to be implemented
         pass
 
 
