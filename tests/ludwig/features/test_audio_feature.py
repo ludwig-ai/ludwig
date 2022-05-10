@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN
+from ludwig.constants import COLUMN, FILL_WITH_MEAN, NAME, PROC_COLUMN
 from ludwig.features.audio_feature import AudioInputFeature, AudioFeatureMixin
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 
@@ -49,39 +49,45 @@ def test_audio_input_feature(encoder: str) -> None:
     assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape
 
 
-# @pytest.mark.parametrize("encoder", ["rnn", "stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn"])
-def test_add_feature_data(tmpdir):
+@pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
+def test_add_feature_data(feature_type, tmpdir):
+    preprocessing_params = {
+        "audio_file_length_limit_in_s": 3.0,
+        "missing_value_strategy": FILL_WITH_MEAN,
+        "in_memory": True,
+        "padding_value": 0,
+        "norm": "per_file",
+        "audio_feature": {
+            "type": feature_type,
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
+        },
+    }
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    audio_feature_config = audio_feature(audio_dest_folder, preprocessing=preprocessing_params)
+    data_df_path = generate_data(
+        [audio_feature_config],
+        [category_feature(vocab_size=5, reduce_input="sum")],
+        os.path.join(tmpdir, "data.csv"),
+        num_examples=10,
+    )
+    data_df = pd.read_csv(data_df_path)
+    metadata = {
+        audio_feature_config["name"]: AudioFeatureMixin.get_feature_meta(
+            data_df[audio_feature_config["name"]], preprocessing_params, LOCAL_BACKEND
+        )
+    }
 
-    # Single audio input, single category output
-    input_features = [audio_feature(audio_dest_folder)]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    proc_df = {}
+    AudioFeatureMixin.add_feature_data(
+        feature_config=audio_feature_config,
+        input_df=data_df,
+        proc_df=proc_df,
+        metadata=metadata,
+        preprocessing_parameters=preprocessing_params,
+        backend=LOCAL_BACKEND,
+        skip_save_processed_input=False,
+    )
 
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "data.csv"))
-
-    print(pd.read_csv(rel_path))
-
-    # AudioFeatureMixin.add_feature_data(
-    #     feature_config=num_feature,
-    #     input_df=data_df,
-    #     proc_df=proc_df,
-    #     metadata={input_features[0]: b,
-    #     preprocessing_parameters={"normalization": "zscore"},
-    #     backend=LOCAL_BACKEND,
-    #     skip_save_processed_input=False,
-    # )
-    # assert np.allclose(
-    #     np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-1.26491106, -0.63245553, 0, 0.63245553, 1.26491106])
-    # )
-
-    # NumberFeatureMixin.add_feature_data(
-    #     feature_config=num_feature,
-    #     input_df=data_df,
-    #     proc_df=proc_df,
-    #     metadata={num_feature[NAME]: feature_2_meta},
-    #     preprocessing_parameters={"normalization": "minmax"},
-    #     backend=LOCAL_BACKEND,
-    #     skip_save_processed_input=False,
-    # )
-    # assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([0, 0.25, 0.5, 0.75, 1]))
+    assert len(proc_df[audio_feature_config[PROC_COLUMN]]) == 10
