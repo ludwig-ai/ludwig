@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from typing import Dict
 
 import dask
 import dask.array as da
@@ -44,12 +45,15 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
-    def df_like(self, df, proc_cols):
+    def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
+        # Our goal is to preserve the index of the input dataframe but to drop
+        # all its columns. Because to_frame() creates a column from the index,
+        # we need to drop it immediately following creation.
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
         # TODO: address if following results in fragmented DataFrame
         col_names, cols = zip(*proc_cols.items())
         dataset = dd.concat([dataset] + list(cols), axis=1)
         dataset.columns = col_names
-        print(dataset)
         return dataset
 
     def parallelize(self, data):
