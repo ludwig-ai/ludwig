@@ -480,7 +480,7 @@ class LudwigModel:
                     experiment_name=experiment_name,
                     model_name=model_name,
                     output_directory=output_directory,
-                    resume=model_resume_path is not None,
+                    resume_directory=model_resume_path,
                 )
 
             # Build model if not provided

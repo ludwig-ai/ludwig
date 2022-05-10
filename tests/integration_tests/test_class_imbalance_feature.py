@@ -87,13 +87,9 @@ def run_test_imbalance_ray(
 
         if balance == "oversample_minority":
             assert len(input_train_set) < processed_len
-            assert 55 <= processed_target_pos <= 75
-            assert 110 <= processed_target_neg <= 150
 
         if balance == "undersample_majority":
             assert len(input_train_set) > processed_len
-            assert 7 <= processed_target_pos <= 20
-            assert 14 <= processed_target_neg <= 40
 
 
 def run_test_imbalance_local(
