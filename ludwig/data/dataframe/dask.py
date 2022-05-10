@@ -46,7 +46,10 @@ class DaskEngine(DataFrameEngine):
 
     def df_like(self, df, proc_cols):
         # TODO: address if following results in fragmented DataFrame
-        dataset = self.from_pandas(pd.DataFrame(proc_cols, index=df.index))
+        col_names, cols = zip(*proc_cols.items())
+        dataset = dd.concat([dataset] + list(cols), axis=1)
+        dataset.columns = col_names
+        print(dataset)
         return dataset
 
     def parallelize(self, data):
