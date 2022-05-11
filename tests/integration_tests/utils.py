@@ -521,12 +521,13 @@ def run_api_experiment(input_features, output_features, data_csv):
 
 
 def read_csv_with_nan(path, nan_percent=0.0):
-    """Adds random NaNs to a CSV file."""
+    """Converts nan_percent% of samples in each row of the CSV at `path` to NaNs."""
     df = pd.read_csv(path)
     if nan_percent > 0:
-        ix = [(row, col) for row in range(df.shape[0]) for col in range(df.shape[1])]
-        for row, col in random.sample(ix, int(round(nan_percent * len(ix)))):
-            df.iat[row, col] = np.nan
+        num_rows = len(df)
+        for col in df.columns:
+            for row in random.sample(range(num_rows), int(round(nan_percent * num_rows))):
+                df[col].iloc[row] = np.nan
     return df
 
 
