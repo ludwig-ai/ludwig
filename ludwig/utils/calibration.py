@@ -50,7 +50,7 @@ class ECELoss(nn.Module):
         accuracies = predictions.eq(labels)
         ece = torch.zeros(1, device=logits.device)
         for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
-            # Calculated |confidence - accuracy| in each bin
+            # Calculates |confidence - accuracy| in each bin
             in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
             prop_in_bin = in_bin.float().mean()
             if prop_in_bin.item() > 0:
@@ -79,9 +79,9 @@ class CalibrationModule(nn.Module, ABC):
 
 class TemperatureScaling(CalibrationModule):
     """Implements temperature scaling of logits. Based on results from On Calibration of Modern Neural Networks:
-    https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor, so though
-    it may modify output probabilities it will never change argmax or top-n predictions. In the case of binary
-    classification with a threshold, however, calibration may change predictions.
+    https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor. Though it
+    may modify output probabilities it will never change argmax or categorical top-n predictions. In the case of
+    binary classification with a threshold, however, calibration may change predictions.
 
     Implementation inspired by https://github.com/gpleiss/temperature_scaling
 
