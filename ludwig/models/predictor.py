@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
-from ludwig.data.postprocessing import convert_to_dict
+from ludwig.data.utils import convert_to_dict
 from ludwig.globals import (
     is_progressbar_disabled,
     PREDICTIONS_PARQUET_FILE_NAME,

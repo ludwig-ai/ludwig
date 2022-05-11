@@ -43,6 +43,7 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     FULL,
     LEARNING_RATE,
+    MODEL_TYPE,
     PREPROCESSING,
     TEST,
     TRAINER,
@@ -70,10 +71,10 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
 from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.trainers.trainer import Trainer
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -1483,7 +1484,7 @@ class LudwigModel:
         # Return
         :return: (ludwig.models.AbstractModel) Instance of the Ludwig model object.
         """
-        model_type = get_from_registry(config["model_type"], model_type_registry)
+        model_type = get_from_registry(config[MODEL_TYPE], model_type_registry)
         return model_type(**config, random_seed=random_seed)
 
     @staticmethod

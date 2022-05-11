@@ -23,7 +23,6 @@ import signal
 import sys
 import threading
 import time
-from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -34,7 +33,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -48,6 +47,8 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.schema.trainer import TrainerConfig
+from ludwig.trainers.base import BaseTrainer
+from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -65,51 +66,7 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
-class BaseTrainer(ABC):
-    @abstractmethod
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def train_online(
-        self,
-        dataset,
-    ):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def tune_batch_size(
-        self,
-        config: Dict[str, Any],
-        training_set: Dataset,
-        random_seed: int = default_random_seed,
-        max_trials: int = 10,
-        halving_limit: int = 3,
-    ) -> int:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def validation_field(self):
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def validation_metric(self):
-        raise NotImplementedError()
-
-    # Remote implementations may override this
-    def shutdown(self):
-        pass
-
-    # Functions needed to treat Trainer as a context manager
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.shutdown()
-
-
+@register_trainer("trainer", MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
 

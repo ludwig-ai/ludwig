@@ -22,7 +22,10 @@ from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.models.ecd import ECD
+from ludwig.models.abstractmodel import AbstractModel
+from ludwig.schema.trainer import TrainerConfig
+from ludwig.trainers.registry import trainers_registry
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
@@ -54,7 +57,7 @@ class Backend(ABC):
 
     @contextmanager
     @abstractmethod
-    def create_trainer(self, **kwargs):
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
         raise NotImplementedError()
 
     @abstractmethod
@@ -106,12 +109,17 @@ class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(self, **kwargs):
-        from ludwig.models.lightgbm import LightGBMTrainer
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+        config: TrainerConfig = kwargs["config"]
+        model: AbstractModel = kwargs["model"]
 
-        return LightGBMTrainer(**kwargs)
+        trainers_for_model = get_from_registry(model.type(), trainers_registry)
 
-    def create_predictor(self, model: ECD, **kwargs):
+        trainer_cls = get_from_registry(config.type, trainers_for_model)
+
+        return trainer_cls(**kwargs)
+
+    def create_predictor(self, model: AbstractModel, **kwargs):
         from ludwig.models.predictor import Predictor
 
         return Predictor(model, **kwargs)

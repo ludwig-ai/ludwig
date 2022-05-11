@@ -17,10 +17,11 @@
 import time
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
+from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
-from ludwig.models.trainer import Trainer
+from ludwig.trainers.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -36,7 +37,9 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, horovod=self._horovod, **kwargs)
 
-    def create_trainer(self, **kwargs):
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
+        if kwargs.get(MODEL_TYPE, "") == MODEL_GBM:
+            raise ValueError("Horovod backend does not support GBM models.")
         return Trainer(horovod=self._horovod, **kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):

@@ -5,10 +5,10 @@ import pytest
 from ludwig.constants import (
     CATEGORY,
     DROP_ROW,
-    ECD,
     EVAL_BATCH_SIZE,
     FILL_WITH_MODE,
     HYPEROPT,
+    MODEL_ECD,
     MODEL_TYPE,
     NUMBER,
     PREPROCESSING,
@@ -167,4 +167,4 @@ def test_default_model_type():
 
     merged_config = merge_with_defaults(config)
 
-    assert merged_config[MODEL_TYPE] == ECD
+    assert merged_config[MODEL_TYPE] == MODEL_ECD

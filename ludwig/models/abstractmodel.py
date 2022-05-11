@@ -102,7 +102,6 @@ class AbstractModel(LudwigModule):
             predictions: A dictionary of output names to output tensors.
             regularization_type: One of 'l1', 'l2', 'l1_l2', or None.
             regularization_lambda: The regularization lambda.
-
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every
             output feature.

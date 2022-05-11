@@ -16,6 +16,11 @@ from ludwig.schema.optimizers import (
 class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
 
+    type: str = schema_utils.StringOptions(
+        ["trainer", "ray_trainer_v2", "lightgbm_trainer", "lightgbm_ray_trainer"],
+        description="Trainer to use for training the model.",
+    )
+
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
     )

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torchmetrics
 
-from ludwig.constants import LOGITS, NAME
+from ludwig.constants import LOGITS, MODEL_GBM, NAME
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.abstractmodel import AbstractModel
@@ -31,6 +31,10 @@ def build_outputs(output_features_def: List[Dict[str, Any]], input_size: int) ->
 
 
 class GBM(AbstractModel):
+    @staticmethod
+    def type():
+        return MODEL_GBM
+
     def __init__(self, input_features, output_features, random_seed=None, **_kwargs):
         self._input_features_def = copy.deepcopy(input_features)
         self._output_features_def = copy.deepcopy(output_features)

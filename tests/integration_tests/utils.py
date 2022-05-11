@@ -38,7 +38,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.models.trainer import Trainer
+from ludwig.trainers.trainer import Trainer
 from ludwig.utils import image_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
@@ -92,7 +92,7 @@ class LocalTestBackend(LocalBackend):
 
 # Simulates running training on a separate node from the driver process
 class FakeRemoteBackend(LocalBackend):
-    def create_trainer(self, **kwargs):
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
         return FakeRemoteTrainer(**kwargs)
 
     @property

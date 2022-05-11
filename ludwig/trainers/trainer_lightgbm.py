@@ -7,13 +7,14 @@ import torch
 from hummingbird.ml import convert
 from lightgbm_ray.tune import _TuneLGBMRank0Mixin
 
-from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, NUMBER
-from ludwig.data.dataset.ray import RayDataset
+from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.models.gbm import GBM
-from ludwig.models.trainer import BaseTrainer, TrainerConfig
 from ludwig.modules.metric_modules import get_initial_validation_value
+from ludwig.schema.trainer import TrainerConfig
+from ludwig.trainers.base import BaseTrainer
+from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker
@@ -33,6 +34,7 @@ def iter_feature_metrics(output_features: LudwigFeatureDict) -> Iterable[Tuple[s
             yield output_feature_name, metric
 
 
+@register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
 class LightGBMTrainer(BaseTrainer):
     TRAIN_KEY = "training"
     VALID_KEY = "validation"
@@ -287,6 +289,7 @@ class LogEvalDistributed(_TuneLGBMRank0Mixin):
             lgb.callback._log_info(f"[{env.iteration + 1}]\t{result}")
 
 
+@register_ray_trainer("lightgbm_ray_trainer", MODEL_GBM, default=True)
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
@@ -300,7 +303,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         random_seed: float = ...,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
-        ray_kwargs: Optional[Dict] = None,
+        trainer_kwargs: Optional[Dict] = None,
         **kwargs,
     ):
         super().__init__(
@@ -317,13 +320,13 @@ class LightGBMRayTrainer(LightGBMTrainer):
             **kwargs,
         )
 
-        self.ray_kwargs = ray_kwargs or {}
+        self.ray_kwargs = trainer_kwargs or {}
 
     def train(
         self,
-        training_set: RayDataset,
-        validation_set: Optional[RayDataset] = None,
-        test_set: Optional[RayDataset] = None,
+        training_set: "RayDataset",  # noqa: F821
+        validation_set: Optional["RayDataset"] = None,  # noqa: F821
+        test_set: Optional["RayDataset"] = None,  # noqa: F821
         save_path="model",
         **kwargs,
     ):
@@ -384,9 +387,9 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
     def _construct_lgb_datasets(
         self,
-        training_set: RayDataset,
-        validation_set: Optional[RayDataset] = None,
-        test_set: Optional[RayDataset] = None,
+        training_set: "RayDataset",  # noqa: F821
+        validation_set: Optional["RayDataset"] = None,  # noqa: F821
+        test_set: Optional["RayDataset"] = None,  # noqa: F821
     ) -> Tuple[lgb_ray.RayDMatrix, List[lgb_ray.RayDMatrix], List[str]]:
         label_col = self.model.output_features.values()[0].proc_column
         # feat_names = list(self.model.input_features.keys()) + [label_col]

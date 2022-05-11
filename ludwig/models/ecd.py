@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 
 from ludwig.combiners.combiners import Combiner, get_combiner_class
-from ludwig.constants import NAME, TIED, TYPE
+from ludwig.constants import MODEL_ECD, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 class ECD(AbstractModel):
+    @staticmethod
+    def type():
+        return MODEL_ECD
+
     def __init__(
         self,
         input_features,

@@ -4,7 +4,7 @@ from marshmallow.utils import EXCLUDE
 from marshmallow_dataclass import dataclass
 
 import ludwig.combiners.combiners as lcc
-from ludwig.models.trainer import TrainerConfig
+from ludwig.schema.trainer import TrainerConfig
 from ludwig.schema.utils import assert_is_a_marshmallow_class, BaseMarshmallowConfig, load_config_with_kwargs
 
 

@@ -28,10 +28,10 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
-    ECD,
     EVAL_BATCH_SIZE,
     HYPEROPT,
     LOSS,
+    MODEL_ECD,
     MODEL_TYPE,
     NAME,
     NUMBER,
@@ -71,7 +71,7 @@ default_preprocessing_parameters.update(
     {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
 )
 
-default_model_type = ECD
+default_model_type = MODEL_ECD
 
 default_combiner_type = "concat"
 

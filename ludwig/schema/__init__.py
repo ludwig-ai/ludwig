@@ -24,21 +24,18 @@ from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.models.registry import model_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.trainer import get_trainer_jsonschema
 from ludwig.schema.utils import create_cond
 
 
 def get_schema():
-    model_types = sorted(list(model_type_registry.keys()))
     input_feature_types = sorted(list(input_type_registry.keys()))
     output_feature_types = sorted(list(output_type_registry.keys()))
 
     schema = {
         "type": "object",
         "properties": {
-            "model_type": {"type": "string", "enum": model_types},
             "input_features": {
                 "type": "array",
                 "items": {
