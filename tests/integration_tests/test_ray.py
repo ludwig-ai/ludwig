@@ -103,6 +103,8 @@ def run_api_experiment(config, dataset, backend_config, skip_save_processed_inpu
     if isinstance(model.backend.df_engine, DaskEngine):
         assert model.backend.df_engine.parallelism == backend_config["processor"]["parallelism"]
 
+    return model
+
 
 def run_split_api_experiment(config, data_parquet, backend_config):
     train_fname, val_fname, test_fname = split(data_parquet)
@@ -438,4 +440,6 @@ def test_tune_batch_size_lr():
                 config["input_features"], config["output_features"], csv_filename, num_examples=100
             )
             dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
-            run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+            model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+            assert model.config[TRAINER]["batch_size"] != "auto"
+            assert model.config[TRAINER]["learning_rate"] != "auto"
