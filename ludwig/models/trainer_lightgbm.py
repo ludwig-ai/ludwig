@@ -4,19 +4,27 @@ from typing import Dict, Iterable, List, Optional, Tuple
 import lightgbm as lgb
 import lightgbm_ray as lgb_ray
 import torch
+from hummingbird.ml import convert
 from lightgbm_ray.tune import _TuneLGBMRank0Mixin
 
 from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, NUMBER
 from ludwig.data.dataset.ray import RayDataset
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH
-from ludwig.models.ecd import ECD
-from ludwig.models.hummingbird import convert_to_pytorch
-from ludwig.models.trainer import Trainer, TrainerConfig
+from ludwig.models.gbm import GBM
+from ludwig.models.trainer import BaseTrainer, TrainerConfig
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker
+
+
+def convert_to_pytorch(gbm: lgb.Booster, tree_module: GBM):
+    """Convert a LightGBM model to a PyTorch model."""
+    hb_model = convert(gbm, "torch")
+    model = hb_model.model
+    tree_module.set_compiled_model(model)
+    return tree_module
 
 
 def iter_feature_metrics(output_features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
@@ -25,7 +33,7 @@ def iter_feature_metrics(output_features: LudwigFeatureDict) -> Iterable[Tuple[s
             yield output_feature_name, metric
 
 
-class LightGBMTrainer(Trainer):
+class LightGBMTrainer(BaseTrainer):
     TRAIN_KEY = "training"
     VALID_KEY = "validation"
     TEST_KEY = "test"
@@ -33,7 +41,7 @@ class LightGBMTrainer(Trainer):
     def __init__(
         self,
         config: TrainerConfig,
-        model: ECD,
+        model: GBM,
         resume: float = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
@@ -44,19 +52,25 @@ class LightGBMTrainer(Trainer):
         device: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(
-            config,
-            model,
-            resume,
-            skip_save_model,
-            skip_save_progress,
-            skip_save_log,
-            callbacks,
-            random_seed,
-            horovod,
-            device,
-            **kwargs,
-        )
+        super().__init__()
+
+        self.model = model
+
+        self._validation_field = config.validation_field
+        self._validation_metric = config.validation_metric
+        self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
+        self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
+        try:
+            base_learning_rate = float(config.learning_rate)
+        except ValueError:
+            # TODO (ASN): Circle back on how we want to set default placeholder value
+            base_learning_rate = 0.001  # Default initial learning rate for autoML.
+        self.base_learning_rate = base_learning_rate
+        self.early_stop = config.early_stop
+
+        self.device = device
+        if self.device is None:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.progress_tracker = get_new_progress_tracker(
             batch_size=-1,
@@ -66,6 +80,20 @@ class LightGBMTrainer(Trainer):
             best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
             output_features=self.model.output_features,
         )
+
+    def train_online(
+        self,
+        dataset,
+    ):
+        raise NotImplementedError()
+
+    @property
+    def validation_field(self):
+        return self._validation_field
+
+    @property
+    def validation_metric(self):
+        return self._validation_metric
 
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         # TODO: construct new datasets by running encoders (for text, image)
@@ -111,6 +139,7 @@ class LightGBMTrainer(Trainer):
 
         # convert to pytorch for inference, fine tuning
         self.model = convert_to_pytorch(gbm, self.model)
+        self.model = self.model.to(self.device)
 
         self._save(save_path)
 
@@ -262,7 +291,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
         config: TrainerConfig,
-        model: ECD,
+        model: GBM,
         resume: float = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
