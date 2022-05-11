@@ -95,8 +95,13 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
             "goal": "minimize",
             "output_feature": output_features[0]["name"],
             "validation_metrics": "loss",
-            "executor": {"type": "ray"},
-            "sampler": {"type": "ray", "num_samples": 2},
+            "executor": {
+                "type": "ray",
+                "num_samples": 2,
+            },
+            "search_alg": {
+                "type": "variant_generator",
+            },
         },
     }
 

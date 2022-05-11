@@ -74,8 +74,13 @@ def hyperopt_results():
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray"},
-        "sampler": {"type": "ray", "num_samples": 2},
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+        },
+        "search_alg": {
+            "type": "variant_generator",
+        },
     }
 
     # add hyperopt parameter space to the config
