@@ -61,19 +61,18 @@ HYPEROPT_CONFIG = {
 SCENARIOS = [
     {"executor": {"type": "ray"}, "search_alg": {"type": "variant_generator"}},
     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
-    # todo: enable following scenario
-    # {
-    #     "executor": {
-    #         "type": "ray",
-    #         "num_samples": 3,
-    #         "scheduler":{
-    #             "type": "hb_bohb",
-    #             "time_attr": "training_iteration",
-    #             "reduction_factor": 4,
-    #         }
-    #     },
-    #     "search_alg": {"type": "bohb"}
-    # },
+    {
+        "executor": {
+            "type": "ray",
+            "num_samples": 3,
+            "scheduler": {
+                "type": "hb_bohb",
+                "time_attr": "training_iteration",
+                "reduction_factor": 4,
+            }
+        },
+        "search_alg": {"type": "bohb"}
+    },
 ]
 
 
@@ -140,9 +139,10 @@ def run_hyperopt_executor(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
-    if search_alg.get("search_alg", {}).get("type", "") == "bohb":
+    if search_alg.get("type", "") == "bohb":
         # bohb does not support grid_search search space
         del parameters["utterance.cell_type"]
+        hyperopt_config["parameters"] = parameters
 
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]

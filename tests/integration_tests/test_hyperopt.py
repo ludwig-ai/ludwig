@@ -54,10 +54,22 @@ HYPEROPT_CONFIG = {
     "executor": {"num_samples": 2},
 }
 
-SEARCH_ALG = [
-    {"type": "variant_generator", "random_state": 13},
-    {"type": "hyperopt"},
-    {"type": "bohb", "seed": 13},
+SCENARIOS = [
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "hyperopt"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "bohb"}},
+    {
+        "executor": {
+            "type": "ray",
+            "num_samples": 3,
+            "scheduler": {
+                "type": "hb_bohb",
+                "time_attr": "training_iteration",
+                "reduction_factor": 4,
+            }
+        },
+        "search_alg": {"type": "bohb"}
+    },
 ]
 
 
@@ -76,8 +88,8 @@ def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("search_alg", SEARCH_ALG)
-def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=False, validation_metric=None):
+@pytest.mark.parametrize("scenario", SCENARIOS)
+def test_hyperopt_executor(scenario, csv_filename, validate_output_feature=False, validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -97,7 +109,8 @@ def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=Fal
     config = merge_with_defaults(config)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
-    hyperopt_config["search_alg"] = search_alg
+    hyperopt_config["search_alg"] = scenario["search_alg"]
+    hyperopt_config["executor"] = scenario["executor"]
 
     if validate_output_feature:
         hyperopt_config["output_feature"] = output_features[0]["name"]
@@ -112,6 +125,7 @@ def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=Fal
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
     executor = hyperopt_config["executor"]
+    search_alg = hyperopt_config["search_alg"]
 
     hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
 
@@ -129,7 +143,7 @@ def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=Fal
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
     test_hyperopt_executor(
-        {"type": "variant_generator", "random_state": 13},
+        {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
         csv_filename,
         validate_output_feature=True,
         validation_metric=ACCURACY,

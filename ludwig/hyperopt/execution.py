@@ -219,13 +219,12 @@ class RayTuneExecutor(HyperoptExecutor):
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = num_samples
         self.goal = goal
-        # self.search_alg_dict = hyperopt_sampler.search_alg_dict  TODO: remove
         self.search_algorithm = (
             get_search_algorithm(None)(search_alg)
             if search_alg is None
             else get_search_algorithm(search_alg[TYPE])(search_alg)
         )
-        self.scheduler = scheduler
+        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.decode_ctx = hyperopt_sampler.decode_ctx
         self.output_feature = output_feature
         self.metric = metric
