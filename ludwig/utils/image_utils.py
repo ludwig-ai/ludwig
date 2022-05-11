@@ -32,6 +32,8 @@ from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
 
 logger = logging.getLogger(__name__)
 
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+
 
 def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
     return np.full((num_channels, height, width), 128, dtype=np.uint8)
@@ -92,12 +94,15 @@ def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
         return False
 
 
-# For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
-# with image extensions
 def is_image_score(src_path, img_entry, column: str):
+    """
+    Used for AutoML
+    For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
+    with image extensions
+    """
     if is_image(src_path, img_entry, column):
         return 1
-    elif isinstance(img_entry, str) and img_entry.lower().endswith((".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")):
+    elif isinstance(img_entry, str) and img_entry.lower().endswith(IMAGE_EXTENSIONS):
         return 0.5
     return 0
 

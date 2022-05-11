@@ -183,6 +183,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         num_distinct_values, distinct_values = source.get_distinct_values(field, MAX_DISTINCT_VALUES_TO_RETURN)
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
+        audio_values = source.get_audio_values(field)
         avg_words = None
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
@@ -194,6 +195,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 num_distinct_values=num_distinct_values,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
+                audio_values=audio_values,
                 avg_words=avg_words,
             )
         )
