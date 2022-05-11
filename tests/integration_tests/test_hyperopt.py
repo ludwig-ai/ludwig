@@ -113,7 +113,7 @@ def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=Fal
     goal = hyperopt_config["goal"]
     executor = hyperopt_config["executor"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(goal, parameters, **search_alg)
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):

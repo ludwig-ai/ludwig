@@ -248,7 +248,7 @@ def hyperopt(
                 )
             )
 
-    hyperopt_sampler = get_build_hyperopt_sampler(sampler[TYPE])(goal, parameters, **sampler)
+    hyperopt_sampler = get_build_hyperopt_sampler(sampler[TYPE])(parameters)
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
         hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor

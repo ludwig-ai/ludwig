@@ -150,7 +150,7 @@ def run_hyperopt_executor(
     goal = hyperopt_config["goal"]
     search_alg = hyperopt_config["search_alg"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler("ray")(goal, parameters, **search_alg)
+    hyperopt_sampler = get_build_hyperopt_sampler("ray")(parameters)
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, goal, split,
