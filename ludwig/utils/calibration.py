@@ -165,9 +165,9 @@ class TemperatureScaling(CalibrationModule):
             return torch.softmax(scaled_logits, -1)
 
 
-class DirichletScaling(CalibrationModule):
-    """Implements dirichlet matrix scaling of logits, as described in Beyond temperature scaling: Obtaining well-
-    calibrated multiclass probabilities with Dirichlet calibration https://arxiv.org/abs/1910.12656.
+class MatrixScaling(CalibrationModule):
+    """Implements matrix scaling of logits, as described in Beyond temperature scaling: Obtaining well-calibrated
+    multiclass probabilities with Dirichlet calibration https://arxiv.org/abs/1910.12656.
 
     Unlike temperature scaling which has only one free parameter, matrix scaling has n_classes x (n_classes + 1)
     parameters. Use this only with a large validation set, as matrix scaling has a tendency to overfit small datasets.
@@ -179,7 +179,7 @@ class DirichletScaling(CalibrationModule):
     mu: The regularization weight for bias vector. Defaults to off_diagonal_l2 if not specified.
     """
 
-    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 1.0, mu: float = None):
+    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.001, mu: float = None):
         super().__init__()
         self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -205,7 +205,7 @@ class DirichletScaling(CalibrationModule):
         before_calibration_nll = nll_criterion(logits, one_hot_labels).item()
         before_calibration_ece = ece_criterion(logits, one_hot_labels).item()
         logging.info(
-            "Before dirichlet scaling:\n"
+            "Before matrix scaling:\n"
             "    Negative log-likelihood: %.3f\n"
             "    Expected Calibration Error: %.3f" % (before_calibration_nll, before_calibration_ece)
         )
@@ -216,17 +216,16 @@ class DirichletScaling(CalibrationModule):
         def eval():
             optimizer.zero_grad()
             loss = nll_criterion(self.scale_logits(logits), one_hot_labels) + self.regularization_terms()
-            print("loss: " + str(loss))
             loss.backward()
             return loss
 
         optimizer.step(eval)
 
-        # Calculate NLL and ECE after dirichlet scaling
+        # Calculate NLL and ECE after matrix scaling
         after_calibration_nll = nll_criterion(self.scale_logits(logits), one_hot_labels).item()
         after_calibration_ece = ece_criterion(self.scale_logits(logits), one_hot_labels).item()
         logging.info(
-            "After dirichlet scaling:\n"
+            "After matrix scaling:\n"
             "    Negative log-likelihood: %.3f\n"
             "    Expected Calibration Error: %.3f" % (after_calibration_nll, after_calibration_ece)
         )
@@ -234,7 +233,7 @@ class DirichletScaling(CalibrationModule):
         self.b.requires_grad = False
         # This should never happen, but if expected calibration error is higher after optimizing matrix, revert.
         if after_calibration_ece > before_calibration_ece:
-            logging.warning("Expected calibration error higher after dirichlet matrix scaling, reverting to identity.")
+            logging.warning("Expected calibration error higher after matrix scaling, reverting to identity.")
             with torch.no_grad():
                 self.w.data = torch.eye(self.num_classes)
                 self.b.data = torch.zeros(self.num_classes)
@@ -243,15 +242,19 @@ class DirichletScaling(CalibrationModule):
         )
 
     def regularization_terms(self):
+        """Off-Diagonal and Intercept Regularisation (ODIR).
+
+        Described in "Beyond temperature scaling: Obtaining well-calibrated multiclass probabilities with Dirichlet
+        calibration"
+        https://proceedings.neurips.cc/paper/2019/file/8ca01ea920679a0fe3728441494041b9-Paper.pdf
+        """
         off_diagonal_entries = torch.masked_select(self.w, ~torch.eye(self.num_classes, dtype=bool))
-        print("off_diagonal_entries: " + str(off_diagonal_entries))
         weight_matrix_loss = self.off_diagonal_l2 * torch.linalg.vector_norm(off_diagonal_entries)
         bias_vector_loss = self.mu * torch.linalg.vector_norm(self.b, 2)
-        print("bias_vector_loss: " + str(bias_vector_loss))
         return bias_vector_loss + weight_matrix_loss
 
     def scale_logits(self, logits: torch.Tensor):
-        return torch.matmul(self.w, self._safe_ln(logits).T).T + self.b
+        return torch.matmul(self.w, logits.T).T + self.b
 
     def forward(self, logits: torch.Tensor):
         """Converts logits to probabilities."""
