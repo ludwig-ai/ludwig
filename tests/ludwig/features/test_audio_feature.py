@@ -8,9 +8,8 @@ import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BACKFILL, PROC_COLUMN
-from ludwig.features.audio_feature import AudioInputFeature, AudioFeatureMixin
+from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
-
 
 BATCH_SIZE = 2
 SEQ_SIZE = 20
