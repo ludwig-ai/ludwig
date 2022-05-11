@@ -11,14 +11,14 @@ import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Tuple, Union, Dict
+from typing import Dict, Optional, Tuple, Union
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import RayTuneSampler, get_search_algorithm
+from ludwig.hyperopt.sampling import get_search_algorithm, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
@@ -63,7 +63,7 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 class HyperoptExecutor(ABC):
     def __init__(
-            self, hyperopt_sampler: Union[dict, RayTuneSampler], output_feature: str, metric: str, split: str
+        self, hyperopt_sampler: Union[dict, RayTuneSampler], output_feature: str, metric: str, split: str
     ) -> None:
         self.hyperopt_sampler = hyperopt_sampler
         self.output_feature = output_feature
@@ -186,21 +186,21 @@ class HyperoptExecutor(ABC):
 
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
-            self,
-            hyperopt_sampler,
-            output_feature: str,
-            metric: str,
-            goal: str,
-            split: str,
-            search_alg: Optional[Dict] = None,
-            cpu_resources_per_trial: int = None,
-            gpu_resources_per_trial: int = None,
-            kubernetes_namespace: str = None,
-            time_budget_s: Union[int, float, datetime.timedelta] = None,
-            max_concurrent_trials: Optional[int] = None,
-            num_samples: int = 1,
-            scheduler: Optional[Dict] = None,
-            **kwargs,
+        self,
+        hyperopt_sampler,
+        output_feature: str,
+        metric: str,
+        goal: str,
+        split: str,
+        search_alg: Optional[Dict] = None,
+        cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
+        num_samples: int = 1,
+        scheduler: Optional[Dict] = None,
+        **kwargs,
     ) -> None:
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
@@ -220,9 +220,11 @@ class RayTuneExecutor(HyperoptExecutor):
         self.num_samples = num_samples
         self.goal = goal
         # self.search_alg_dict = hyperopt_sampler.search_alg_dict  TODO: remove
-        self.search_algorithm = get_search_algorithm(None)(search_alg) \
-            if search_alg is None \
+        self.search_algorithm = (
+            get_search_algorithm(None)(search_alg)
+            if search_alg is None
             else get_search_algorithm(search_alg[TYPE])(search_alg)
+        )
         self.scheduler = scheduler
         self.decode_ctx = hyperopt_sampler.decode_ctx
         self.output_feature = output_feature
@@ -609,8 +611,9 @@ class RayTuneExecutor(HyperoptExecutor):
                 search_alg = None
             else:
                 search_alg_type = self.search_algorithm.search_alg_dict[TYPE]
-                search_alg = tune.create_searcher(search_alg_type, metric=metric, mode=mode,
-                                                  **self.search_algorithm.search_alg_dict)
+                search_alg = tune.create_searcher(
+                    search_alg_type, metric=metric, mode=mode, **self.search_algorithm.search_alg_dict
+                )
         else:
             search_alg = None
 

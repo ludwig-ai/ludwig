@@ -51,7 +51,7 @@ HYPEROPT_CONFIG = {
         "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
     },
     "goal": "minimize",
-    "executor": {"num_samples": 2}
+    "executor": {"num_samples": 2},
 }
 
 SEARCH_ALG = [
@@ -117,8 +117,9 @@ def test_hyperopt_executor(search_alg, csv_filename, validate_output_feature=Fal
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
-        hyperopt_executor = get_build_hyperopt_executor(RAY)(hyperopt_sampler, output_feature, metric, goal, split,
-                                                             search_alg=search_alg, **executor)
+        hyperopt_executor = get_build_hyperopt_executor(RAY)(
+            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        )
 
         raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
 
