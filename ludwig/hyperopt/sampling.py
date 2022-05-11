@@ -102,9 +102,9 @@ grid_functions_registry = {
 
 class RayTuneSampler:
     def __init__(
-            self,
-            parameters: Dict[str, Any],
-            **kwargs,
+        self,
+        parameters: Dict[str, Any],
+        **kwargs,
     ) -> None:
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
