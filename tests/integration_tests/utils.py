@@ -643,7 +643,6 @@ def train_with_backend(
             assert preds is not None
 
         if evaluate:
-            print("BEFORE RAY EVALUATE")
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
@@ -653,7 +652,6 @@ def train_with_backend(
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-                print("LOCAL EVALUATE")
                 local_eval_stats, _, _ = local_model.evaluate(
                     dataset=dataset, collect_overall_stats=False, collect_predictions=False
                 )

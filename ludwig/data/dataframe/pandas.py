@@ -27,8 +27,6 @@ class PandasEngine(DataFrameEngine):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
-        print("inside pandas engine")
-
         col_names, cols = zip(*proc_cols.items())
         series_cols = []
         for col in cols:
@@ -38,8 +36,6 @@ class PandasEngine(DataFrameEngine):
                 series_cols.append(col)
         dataset = pd.concat(series_cols, join="inner", axis=1)  # inner join handles Series with dropped rows
         dataset.columns = col_names
-        print(dataset)
-        print(dataset.index)
         return dataset
 
     def parallelize(self, data):

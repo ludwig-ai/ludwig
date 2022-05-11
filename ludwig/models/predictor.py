@@ -174,8 +174,6 @@ class Predictor(BasePredictor):
 
                 predictions = defaultdict(list)
 
-                features = []
-
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     logger.debug(
@@ -190,9 +188,6 @@ class Predictor(BasePredictor):
                         o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
                         for o_feat in self.model.output_features.values()
                     }
-
-                    feature_tuples = torch.stack(list(inputs.values()) + list(targets.values())).transpose(0, 1)
-                    features.append(feature_tuples)
 
                     preds = self.model.evaluation_step(inputs, targets)
 
@@ -210,17 +205,6 @@ class Predictor(BasePredictor):
                             f"evaluation for {dataset_name}: completed batch {progress_bar.n} "
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
-
-            features = torch.cat(features)
-            from collections import Counter
-
-            features_list = sorted(features.tolist())
-            features_tuple = [tuple(x) for x in features_list]
-            counts = Counter(features_tuple)
-            print("COUNTS SUM")
-            print(sum(counts.values()))
-            print("COUNTS")
-            print(sorted(counts.items(), key=lambda x: x[0]))
 
             if self.is_coordinator():
                 progress_bar.close()

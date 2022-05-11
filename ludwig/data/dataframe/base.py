@@ -17,9 +17,6 @@
 from abc import ABC, abstractmethod
 
 
-TMP_COLUMN = "__TMP_COLUMN__"
-
-
 class DataFrameEngine(ABC):
     @abstractmethod
     def df_like(self, df, proc_cols):
