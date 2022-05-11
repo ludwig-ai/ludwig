@@ -173,7 +173,6 @@ class Predictor(BasePredictor):
                     )
 
                 predictions = defaultdict(list)
-
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     logger.debug(
