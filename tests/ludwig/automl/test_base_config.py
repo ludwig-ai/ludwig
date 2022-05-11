@@ -43,13 +43,14 @@ TARGET_NAME = "target"
 
     ],
 )
-def test_infer_type(num_distinct_values, distinct_values, img_values, missing_vals, expected):
+def test_infer_type(num_distinct_values, distinct_values, img_values, audio_values, missing_vals, expected):
     field = FieldInfo(
         name="foo",
         dtype="object",
         num_distinct_values=num_distinct_values,
         distinct_values=distinct_values,
         image_values=img_values,
+        audio_values=audio_values
     )
     assert infer_type(field, missing_vals, ROW_COUNT) == expected
 
