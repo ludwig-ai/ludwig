@@ -19,16 +19,22 @@ import pandas as pd
 from ludwig.data.dataframe.base import DataFrameEngine
 
 
+TMP_COLUMN = "__TMP_COLUMN__"
+
+
 class PandasEngine(DataFrameEngine):
     def __init__(self, **kwargs):
         super().__init__()
 
     def df_like(self, df, proc_cols):
-        # df argument unused for pandas, which can instantiate df directly
-        col_names, cols = zip(*proc_cols.items())
-        # inner concat prevents NaNs from being introduced due to dropped rows in some proc_cols
-        dataset = pd.concat(list(cols), join="inner", axis=1)
-        dataset.columns = col_names
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
+        for col_name, col in proc_cols.items():
+            if type(col) not in {pd.Series, pd.DataFrame}:
+                col = pd.Series(col)
+            col.name = col_name
+            dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
+
+        print(dataset)
         return dataset
 
     def parallelize(self, data):

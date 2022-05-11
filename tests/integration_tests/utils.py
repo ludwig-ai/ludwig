@@ -549,7 +549,9 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     dataset_to_use = None
 
     if data_format == "csv":
-        dataset_to_use = read_csv_with_nan(raw_data, nan_percent=nan_percent)
+        # Replace the original CSV with a CSV with NaNs
+        dataset_to_use = raw_data
+        read_csv_with_nan(raw_data, nan_percent=nan_percent).to_csv(dataset_to_use)
 
     elif data_format in {"df", "dict"}:
         dataset_to_use = read_csv_with_nan(raw_data, nan_percent=nan_percent)
@@ -641,6 +643,7 @@ def train_with_backend(
             assert preds is not None
 
         if evaluate:
+            print("before distributed model evaluate")
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
@@ -650,6 +653,7 @@ def train_with_backend(
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
+                print("before local model evaluate")
                 local_eval_stats, _, _ = local_model.evaluate(
                     dataset=dataset, collect_overall_stats=False, collect_predictions=False
                 )

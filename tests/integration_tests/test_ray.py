@@ -25,7 +25,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, DROP_ROW, NAME, PREPROCESSING, TRAINER
+from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
@@ -156,7 +156,6 @@ def run_test_with_features(
     df_engine=None,
     dataset_type="parquet",
     skip_save_processed_input=True,
-    nan_percent=0.0,
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
@@ -173,7 +172,7 @@ def run_test_with_features(
         with tempfile.TemporaryDirectory() as tmpdir:
             csv_filename = os.path.join(tmpdir, "dataset.csv")
             dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-            dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
+            dataset = create_data_set_to_use(dataset_type, dataset_csv)
 
             if expect_error:
                 with pytest.raises(ValueError):
@@ -192,17 +191,14 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("dataset_type", ["parquet", "csv"])
+@pytest.mark.parametrize("dataset_type", ["csv"])
 @pytest.mark.distributed
 def test_ray_save_processed_input(dataset_type):
     input_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
     ]
     output_features = [
-        category_feature(
-            vocab_size=5,  # Regression test for #1991 requires multi-class predictions.
-            **{PREPROCESSING: {"missing_value_strategy": DROP_ROW}}
-        ),
+        category_feature(vocab_size=5),  # Regression test for #1991 requires multi-class predictions.
     ]
     run_test_with_features(
         input_features,
@@ -210,7 +206,6 @@ def test_ray_save_processed_input(dataset_type):
         df_engine="dask",
         dataset_type=dataset_type,
         skip_save_processed_input=False,
-        nan_percent=0.1,
     )
 
 
