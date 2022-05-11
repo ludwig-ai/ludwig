@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import torch
 
 from ludwig.utils import calibration
 
@@ -7,6 +8,11 @@ from ludwig.utils import calibration
 @pytest.fixture
 def uncalibrated_logits_and_labels():
     """Returns a pair of logits (10x3) and labels (10)."""
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.manual_seed(17)
+    torch.cuda.manual_seed_all(17)
+
     return (
         np.array(
             [
