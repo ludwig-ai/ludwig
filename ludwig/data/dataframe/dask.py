@@ -25,7 +25,6 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
 
-
 TMP_COLUMN = "__TMP_COLUMN__"
 
 logger = logging.getLogger(__name__)
