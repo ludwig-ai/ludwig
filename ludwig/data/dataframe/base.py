@@ -16,7 +16,6 @@
 
 from abc import ABC, abstractmethod
 
-
 TMP_COLUMN = "__TMP_COLUMN__"
 
 
