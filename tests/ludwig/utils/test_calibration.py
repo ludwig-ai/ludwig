@@ -47,11 +47,11 @@ def test_temperature_scaling_category(uncalibrated_logits_and_labels):
     logits, labels = uncalibrated_logits_and_labels
     temperature_scaling = calibration.TemperatureScaling(num_classes=logits.shape[-1])
     calibration_result = temperature_scaling.calibrate(logits, labels)
-    assert temperature_scaling.temperature.item() == pytest.approx(61.550, EPSILON)
+    assert temperature_scaling.temperature.item() == pytest.approx(19.139, EPSILON)
     assert calibration_result.before_calibration_nll == pytest.approx(4.904, EPSILON)
     assert calibration_result.before_calibration_ece == pytest.approx(0.4574, EPSILON)
-    assert calibration_result.after_calibration_nll == pytest.approx(1.0938, EPSILON)
-    assert calibration_result.after_calibration_ece == pytest.approx(0.03858, EPSILON)
+    assert calibration_result.after_calibration_nll == pytest.approx(1.1234, EPSILON)
+    assert calibration_result.after_calibration_ece == pytest.approx(0.2991, EPSILON)
 
 
 def test_matrix_scaling_category(uncalibrated_logits_and_labels):
