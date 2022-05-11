@@ -15,13 +15,12 @@
 # ==============================================================================
 import json
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from inspect import signature
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict
 
 import numpy as np
 
-from ludwig.constants import MAXIMIZE, MINIMIZE
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -101,92 +100,18 @@ grid_functions_registry = {
 }
 
 
-# TODO: remove code
-# class HyperoptSampler(ABC):
-#     def __init__(self, goal: str, parameters: Dict[str, Any], batch_size: int = 1) -> None:
-#         assert goal in [MINIMIZE, MAXIMIZE]
-#         self.goal = goal  # useful for Bayesian strategy
-#         self.parameters = parameters
-#         self.default_batch_size = batch_size
-#
-#     @abstractmethod
-#     def sample(self) -> Dict[str, Any]:
-#         # Yields a set of parameters names and their values.
-#         # Define `build_hyperopt_strategy` which would take parameters as inputs
-#         pass
-#
-#     def sample_batch(self, batch_size: int = None) -> List[Dict[str, Any]]:
-#         samples = []
-#         if batch_size is None:
-#             batch_size = self.default_batch_size
-#         for _ in range(batch_size):
-#             try:
-#                 samples.append(self.sample())
-#             except IndexError:
-#                 # Logic: is samples is empty it means that we encountered
-#                 # the IndexError the first time we called self.sample()
-#                 # so we should raise the exception. If samples is not empty
-#                 # we should just return it, even if it will contain
-#                 # less samples than the specified batch_size.
-#                 # This is fine as from now on finished() will return True.
-#                 if not samples:
-#                     raise IndexError
-#         return samples
-#
-#     @abstractmethod
-#     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-#         # Given the results of previous computation, it updates
-#         # the strategy (not needed for stateless strategies like "grid"
-#         # and random, but will be needed by Bayesian)
-#         pass
-#
-#     def update_batch(self, parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]):
-#         for (sampled_parameters, metric_score) in parameters_metric_tuples:
-#             self.update(sampled_parameters, metric_score)
-#
-#     @abstractmethod
-#     def finished(self) -> bool:
-#         # Should return true when all samples have been sampled
-#         pass
-
-
 class RayTuneSampler:
     def __init__(
             self,
-            goal: str,
             parameters: Dict[str, Any],
-            search_alg: dict = None,
-            scheduler: dict = None,
-            num_samples=1,
             **kwargs,
     ) -> None:
-        # TODO: remove commentws code
-        # HyperoptSampler.__init__(self, goal, parameters)
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
-        # self.search_alg_dict = search_alg
-        # self.scheduler = self._create_scheduler(scheduler, parameters)
-        # self.num_samples = num_samples
-        # self.goal = goal
 
     def _check_ray_tune(self):
         if not _HAS_RAY_TUNE:
             raise ValueError("Requested Ray sampler but Ray Tune is not installed. Run `pip install ray[tune]`")
-
-    # def _create_scheduler(self, scheduler_config, parameters):
-    #     if not scheduler_config:
-    #         return None
-    #
-    #     dynamic_resource_allocation = scheduler_config.pop("dynamic_resource_allocation", False)
-    #
-    #     if scheduler_config.get("type") == "pbt":
-    #         scheduler_config.update({"hyperparam_mutations": self.search_space})
-    #
-    #     scheduler = tune.create_scheduler(scheduler_config.get("type"), **scheduler_config)
-    #
-    #     if dynamic_resource_allocation:
-    #         scheduler = ResourceChangingScheduler(scheduler, ray_resource_allocation_function)
-    #     return scheduler
 
     def _get_search_space(self, parameters):
         config = {}
@@ -212,16 +137,6 @@ class RayTuneSampler:
                         raise ValueError(f"Parameter '{arg}' not defined for {param}")
             config[param] = param_search_space(**param_search_input_args)
         return config, ctx
-
-    # TODO: remove code
-    # def sample(self) -> Dict[str, Any]:
-    #     pass
-    #
-    # def update(self, sampled_parameters: Dict[str, Any], statistics: Dict[str, Any]):
-    #     pass
-    #
-    # def finished(self) -> bool:
-    #     pass
 
     @staticmethod
     def encode_values(param, values, ctx):
@@ -292,5 +207,5 @@ search_algo_registry = {
     None: BasicVariantSA,
     "variant_generator": BasicVariantSA,
     "hyperopt": HyperoptSA,
-    "bohb": BOHBSA
+    "bohb": BOHBSA,
 }
