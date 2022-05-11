@@ -66,9 +66,9 @@ SCENARIOS = [
                 "type": "hb_bohb",
                 "time_attr": "training_iteration",
                 "reduction_factor": 4,
-            }
+            },
         },
-        "search_alg": {"type": "bohb"}
+        "search_alg": {"type": "bohb"},
     },
 ]
 
