@@ -61,7 +61,6 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
-from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
@@ -72,6 +71,8 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema import validate_config
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -85,7 +86,6 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -472,7 +472,7 @@ class LudwigModel:
                     experiment_name=experiment_name,
                     model_name=model_name,
                     output_directory=output_directory,
-                    resume=model_resume_path is not None,
+                    resume_directory=model_resume_path,
                 )
 
             # Build model if not provided
@@ -692,6 +692,7 @@ class LudwigModel:
         skip_save_predictions: bool = True,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+        callbacks: Optional[List[Callback]] = None,
         **kwargs,
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
@@ -724,6 +725,9 @@ class LudwigModel:
             model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format of the returned predictions.
+        :param callbacks: (Optional[List[Callback]], default: None)
+            optional list of callbacks to use during this predict operation. Any callbacks
+            already registered to the model will be preserved.
 
         # Return
 
@@ -743,7 +747,7 @@ class LudwigModel:
             split=split,
             include_outputs=False,
             backend=self.backend,
-            callbacks=self.callbacks,
+            callbacks=self.callbacks + (callbacks or []),
         )
 
         logger.debug("Predicting")

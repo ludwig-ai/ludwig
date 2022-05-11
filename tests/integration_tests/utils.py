@@ -606,6 +606,7 @@ def train_with_backend(
     predict=True,
     evaluate=True,
     callbacks=None,
+    skip_save_processed_input=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None
@@ -616,7 +617,7 @@ def train_with_backend(
             training_set=training_set,
             validation_set=validation_set,
             test_set=test_set,
-            skip_save_processed_input=True,
+            skip_save_processed_input=skip_save_processed_input,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,
@@ -659,7 +660,9 @@ def train_with_backend(
                     assert k1 == k2
                     for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
                         assert name1 == name2
-                        assert np.isclose(metric1, metric2, rtol=1e-04), f"metric {name1}: {metric1} != {metric2}"
+                        assert np.isclose(
+                            metric1, metric2, rtol=1e-04, atol=1e-5
+                        ), f"metric {name1}: {metric1} != {metric2}"
 
         return model
     finally:
