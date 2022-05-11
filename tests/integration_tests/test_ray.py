@@ -376,7 +376,7 @@ def predict_cpu(model_dir, dataset):
     model.predict(dataset)
 
 
-def test_tune_batch_size():
+def test_tune_batch_size_lr():
     with ray_start(num_cpus=2, num_gpus=None):
         config = {
             "input_features": [
@@ -386,7 +386,7 @@ def test_tune_batch_size():
             ],
             "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "batch_size": "auto"},
+            TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
         }
 
         backend_config = {**RAY_BACKEND_CONFIG}
