@@ -258,39 +258,30 @@ sampler_registry = {"ray": RayTuneSampler}
 class SearchAlgorithm(ABC):
     def __init__(self, search_alg_dict: Dict) -> None:
         self.search_alg_dict = search_alg_dict
+        self.random_seed_attribute_name = None
 
-    @abstractmethod
-    def set_random_seed(self):
-        pass
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        if self.random_seed_attribute_name not in self.search_alg_dict:
+            self.search_alg_dict[self.random_seed_attribute_name] = ludwig_random_seed
 
 
 class BasicVariantSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         super().__init__(search_alg_dict)
-
-    def set_random_seed(self):
-        # TODO: to be implemented
-        pass
+        self.random_seed_attribute_name = "random_state"
 
 
 class HyperoptSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         super().__init__(search_alg_dict)
-
-    def set_random_seed(self):
-        # TODO: to be implemented
-        pass
+        self.random_seed_attribute_name = "random_state_seed"
 
 
 class BOHBSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         super().__init__(search_alg_dict)
-
+        self.random_seed_attribute_name = "seed"
         # TODO: Need to setup scheduler
-
-    def set_random_seed(self):
-        # TODO: to be implemented
-        pass
 
 
 def get_search_algorithm(search_algo):

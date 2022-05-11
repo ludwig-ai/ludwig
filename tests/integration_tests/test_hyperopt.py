@@ -56,7 +56,7 @@ HYPEROPT_CONFIG = {
 
 SEARCH_ALG = [
     {"type": "variant_generator", "random_state": 13},
-    {"type": "hyperopt", "random_state_seed": 13},
+    {"type": "hyperopt"},
     {"type": "bohb", "seed": 13},
 ]
 

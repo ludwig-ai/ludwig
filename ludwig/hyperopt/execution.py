@@ -601,6 +601,8 @@ class RayTuneExecutor(HyperoptExecutor):
 
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
+        # if random seed not set, use Ludwig seed
+        self.search_algorithm.check_for_random_seed(random_seed)
         if self.search_algorithm.search_alg_dict is not None:
             if TYPE not in self.search_algorithm.search_alg_dict:
                 logger.warning("WARNING: Kindly set type param for search_alg " "to utilize Tune's Search Algorithms.")
