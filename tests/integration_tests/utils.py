@@ -521,7 +521,7 @@ def run_api_experiment(input_features, output_features, data_csv):
 
 
 def read_csv_with_nan(path, nan_percent=0.0):
-    """Converts nan_percent% of samples in each row of the CSV at `path` to NaNs."""
+    """Converts `nan_percent` of samples in each row of the CSV at `path` to NaNs."""
     df = pd.read_csv(path)
     if nan_percent > 0:
         num_rows = len(df)
