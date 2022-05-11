@@ -16,10 +16,7 @@
 import numpy as np
 import pandas as pd
 
-from ludwig.data.dataframe.base import DataFrameEngine
-
-
-TMP_COLUMN = "__TMP_COLUMN__"
+from ludwig.data.dataframe.base import DataFrameEngine, TMP_COLUMN
 
 
 class PandasEngine(DataFrameEngine):
@@ -27,14 +24,15 @@ class PandasEngine(DataFrameEngine):
         super().__init__()
 
     def df_like(self, df, proc_cols):
+        # Our goal is to preserve the index of the input dataframe but to drop
+        # all its columns. Because to_frame() creates a column from the index,
+        # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
         for col_name, col in proc_cols.items():
             if type(col) not in {pd.Series, pd.DataFrame}:
                 col = pd.Series(col)
             col.name = col_name
             dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
-
-        print(dataset)
         return dataset
 
     def parallelize(self, data):

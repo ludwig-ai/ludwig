@@ -23,9 +23,7 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
 
-from ludwig.data.dataframe.base import DataFrameEngine
-
-TMP_COLUMN = "__TMP_COLUMN__"
+from ludwig.data.dataframe.base import DataFrameEngine, TMP_COLUMN
 
 
 logger = logging.getLogger(__name__)
@@ -48,24 +46,14 @@ class DaskEngine(DataFrameEngine):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
-        print("inside dask dataset")
-
-        print(proc_cols)
-        print({col_name: col.compute() for col_name, col in proc_cols.items()})
-        print({col_name: col.compute().index for col_name, col in proc_cols.items()})
-        print("df.index.compute()")
-        print(df.index.compute())
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
-        print("dataset.index")
-        print(dataset.index)
         # TODO: address if following results in fragmented DataFrame
         # TODO: see if we can get divisions. concat (instead of iterative join) should work if divs are known. Source:
         # https://github.com/dask/dask/blob/5fbda77cfc5bc1b8f1453a2dbb034b048fc10726/dask/dataframe/multi.py#L1245
         for col_name, col in proc_cols.items():
             col.name = col_name
             dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
-
-        print(dataset.compute())
+        print(dataset.compute().index)
         return dataset
 
     def parallelize(self, data):

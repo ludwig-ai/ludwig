@@ -551,7 +551,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     if data_format == "csv":
         # Replace the original CSV with a CSV with NaNs
         dataset_to_use = raw_data
-        read_csv_with_nan(raw_data, nan_percent=nan_percent).to_csv(dataset_to_use)
+        read_csv_with_nan(raw_data, nan_percent=nan_percent).to_csv(dataset_to_use, index=False)
 
     elif data_format in {"df", "dict"}:
         dataset_to_use = read_csv_with_nan(raw_data, nan_percent=nan_percent)
