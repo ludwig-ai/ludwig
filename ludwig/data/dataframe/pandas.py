@@ -24,8 +24,19 @@ class PandasEngine(DataFrameEngine):
         super().__init__()
 
     def df_like(self, df, proc_cols):
-        # df argument unused for pandas, which can instantiate df directly
-        return pd.DataFrame(proc_cols)
+        # Our goal is to preserve the index of the input dataframe but to drop
+        # all its columns. Because to_frame() creates a column from the index,
+        # we need to drop it immediately following creation.
+        col_names, cols = zip(*proc_cols.items())
+        series_cols = []
+        for col in cols:
+            if type(col) not in {pd.Series, pd.DataFrame}:
+                series_cols.append(pd.Series(col))
+            else:
+                series_cols.append(col)
+        dataset = pd.concat(series_cols, join="inner", axis=1)  # inner join handles Series with dropped rows
+        dataset.columns = col_names
+        return dataset
 
     def parallelize(self, data):
         return data
