@@ -50,9 +50,9 @@ class DaskEngine(DataFrameEngine):
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
         # TODO: address if following results in fragmented DataFrame
-        col_names, cols = zip(*proc_cols.items())
-        dataset = dd.concat([dataset] + list(cols), axis=1)
-        dataset.columns = col_names
+        for col_name, col in proc_cols.items():
+            col.name = col_name
+            dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
         return dataset
 
     def parallelize(self, data):
