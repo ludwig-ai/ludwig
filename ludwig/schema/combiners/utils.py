@@ -1,15 +1,5 @@
+from ludwig.combiners.combiners import combiner_registry
 from ludwig.schema import utils as schema_utils
-from ludwig.utils.registry import Registry
-
-combiner_registry = Registry()
-
-
-def register_combiner(name: str):
-    def wrap(cls):
-        combiner_registry[name] = cls
-        return cls
-
-    return wrap
 
 
 def get_combiner_jsonschema():

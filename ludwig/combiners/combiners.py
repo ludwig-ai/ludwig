@@ -39,10 +39,21 @@ from ludwig.schema.combiners import (
     TabTransformerCombinerConfig,
     TransformerCombinerConfig,
 )
-from ludwig.schema.combiners.utils import combiner_registry, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
+
+combiner_registry = Registry()
+
+
+def register_combiner(name: str):
+    def wrap(cls):
+        combiner_registry[name] = cls
+        return cls
+
+    return wrap
+
 
 logger = logging.getLogger(__name__)
 
