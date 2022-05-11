@@ -53,6 +53,8 @@ class DaskEngine(DataFrameEngine):
         for col_name, col in proc_cols.items():
             col.name = col_name
             dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
+        print(dataset.compute())
+        print(dataset.compute().index)
         return dataset
 
     def parallelize(self, data):

@@ -192,7 +192,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.parametrize("dataset_type", ["csv"])
 @pytest.mark.distributed
 def test_ray_save_processed_input(dataset_type):
     input_features = [
