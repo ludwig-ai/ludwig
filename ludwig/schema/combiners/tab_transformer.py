@@ -13,4 +13,4 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
 
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed()
 
-    reduce_output: str = schema_utils.ReductionOptions(default="concat", description="TODO: Document parameters.")
+    reduce_output: str = schema_utils.ReductionOptions(default="concat", description="")

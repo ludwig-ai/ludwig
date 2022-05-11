@@ -51,6 +51,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
 
     bn_virtual_bs: Optional[int] = schema_utils.PositiveInteger(
         default=1024,
+        allow_none=True,
         description=(
             "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
             "`B_v` from the paper"
@@ -62,11 +63,11 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     )
 
     entmax_mode: str = schema_utils.StringOptions(
-        ["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax", description="TODO: Document parameters."
+        ["entmax15", "sparsemax", "constant", "adaptive"], default="sparsemax", description=""
     )
 
     entmax_alpha: float = schema_utils.FloatRange(
-        default=1.5, min=1, max=2, description="TODO: Document parameters."
+        default=1.5, min=1, max=2, description=""
     )  # 1 corresponds to softmax, 2 is sparsemax.
 
     dropout: float = schema_utils.FloatRange(

@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Dict, Optional, Tuple
+from typing import ClassVar, Optional, Tuple
 
 import torch
 from marshmallow import fields, ValidationError
@@ -54,7 +54,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
     """Points to `torch.optim.SGD`."""
 
-    type: str = StringOptions(["sgd"], default="sgd", nullable=False)
+    type: str = StringOptions(["sgd"], default="sgd", allow_none=False)
     """Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'sgd')"""
 
@@ -75,7 +75,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     """Points to `torch.optim.Adam`."""
 
-    type: str = StringOptions(["adam"], default="adam", nullable=False)
+    type: str = StringOptions(["adam"], default="adam", allow_none=False)
     """Must be 'adam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adam')"""
 
@@ -105,7 +105,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.AdamW
     """Points to `torch.optim.AdamW`."""
 
-    type: str = StringOptions(["adamw"], default="adamw", nullable=False)
+    type: str = StringOptions(["adamw"], default="adamw", allow_none=False)
     """Must be 'adamw' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamw')"""
 
@@ -135,7 +135,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
     """Points to `torch.optim.Adadelta`."""
 
-    type: str = StringOptions(["adadelta"], default="adadelta", nullable=False)
+    type: str = StringOptions(["adadelta"], default="adadelta", allow_none=False)
     """Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adadelta')"""
 
@@ -167,12 +167,12 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
     """Points to `torch.optim.Adagrad`."""
 
-    type: str = StringOptions(["adagrad"], default="adagrad", nullable=False)
+    type: str = StringOptions(["adagrad"], default="adagrad", allow_none=False)
     """Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adagrad')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
-    initial_accumulator_value: float = NonNegativeFloat(default=0, description="TODO: Document parameters.")
+    initial_accumulator_value: float = NonNegativeFloat(default=0, description="")
     lr: float = FloatRange(default=1e-2, min=0.0, max=1.0, description="Learning rate.")
     lr_decay: float = FloatRange(default=0, description="Learning rate decay.")
     weight_decay: float = FloatRange(default=0, description="Weight decay ($L2$ penalty).")
@@ -187,7 +187,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
     """Points to `torch.optim.Adamax`."""
 
-    type: str = StringOptions(["adamax"], default="adamax", nullable=False)
+    type: str = StringOptions(["adamax"], default="adamax", allow_none=False)
     """Must be 'adamax' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamax')"""
 
@@ -207,7 +207,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 @dataclass
 class FtrlOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
-    type: str = StringOptions(["ftrl"], default="ftrl", nullable=False)
+    type: str = StringOptions(["ftrl"], default="ftrl", allow_none=False)
     learning_rate_power: float = FloatRange(default=-0.5, max=0.0)
     initial_accumulator_value: float = NonNegativeFloat(default=0.1)
     l1_regularization_strength: float = NonNegativeFloat(default=0.0)
@@ -218,7 +218,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 @dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
-    type: str = StringOptions(["nadam"], default="nadam", nullable=False)
+    type: str = StringOptions(["nadam"], default="nadam", allow_none=False)
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0, description="Learning rate.")
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
@@ -239,7 +239,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
     """Points to `torch.optim.RMSprop`."""
 
-    type: str = StringOptions(["rmsprop"], default="rmsprop", nullable=False)
+    type: str = StringOptions(["rmsprop"], default="rmsprop", allow_none=False)
     """Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'rmsprop')"""
 
@@ -325,33 +325,33 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
+        load_default = opt.Schema().load(default)
+        dump_default = opt.Schema().dump(default)
 
         return field(
-            metadata={"marshmallow_field": OptimizerMarshmallowField(allow_none=False)},
-            default_factory=lambda: opt.Schema().load(default),
+            metadata={
+                "marshmallow_field": OptimizerMarshmallowField(
+                    allow_none=False,
+                    dump_default=dump_default,
+                    load_default=load_default,
+                    metadata={"description": description},
+                )
+            },
+            default_factory=lambda: load_default,
         )
     except Exception as e:
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
-
-
-def get_all_optimizer_json_schemas() -> Dict[str, str]:
-    """Return a dict of strings, wherein each key is an optimizer name pointing to its stringified JSON schema."""
-    optimizer_schemas_json = {}
-    for opt in optimizer_registry:
-        schema_cls = optimizer_registry[opt][1]
-        optimizer_schemas_json[opt] = unload_jsonschema_from_marshmallow_class(schema_cls)
-    return optimizer_schemas_json
 
 
 @dataclass
 class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
-    clipglobalnorm: Optional[float] = FloatRange(default=0.5, nullable=True, description="TODO: Document parameters.")
+    clipglobalnorm: Optional[float] = FloatRange(default=0.5, allow_none=True, description="")
 
-    clipnorm: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
+    clipnorm: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
-    clipvalue: Optional[float] = FloatRange(default=None, nullable=True, description="TODO: Document parameters.")
+    clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
 
 def GradientClippingDataclassField(default={}, allow_none=True, description="TODO"):
@@ -393,7 +393,18 @@ def GradientClippingDataclassField(default={}, allow_none=True, description="TOD
 
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
+
+    load_default = GradientClippingConfig.Schema().load(default)
+    dump_default = GradientClippingConfig.Schema().dump(default)
+
     return field(
-        metadata={"marshmallow_field": GradientClippingMarshmallowField(allow_none=allow_none)},
-        default_factory=lambda: GradientClippingConfig.Schema().load(default),
+        metadata={
+            "marshmallow_field": GradientClippingMarshmallowField(
+                allow_none=allow_none,
+                load_default=load_default,
+                dump_default=dump_default,
+                metadata={"description": description},
+            )
+        },
+        default_factory=lambda: load_default,
     )

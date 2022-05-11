@@ -11,6 +11,4 @@ from ludwig.schema.combiners.common_transformer_options import CommonTransformer
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
-    reduce_output: Optional[str] = schema_utils.ReductionOptions(
-        default="mean", description="TODO: Document parameters."
-    )
+    reduce_output: Optional[str] = schema_utils.ReductionOptions(default="mean", description="")
