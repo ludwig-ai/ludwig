@@ -16,7 +16,7 @@
 import numpy as np
 import pandas as pd
 
-from ludwig.data.dataframe.base import DataFrameEngine, TMP_COLUMN
+from ludwig.data.dataframe.base import DataFrameEngine
 
 
 class PandasEngine(DataFrameEngine):
@@ -28,8 +28,6 @@ class PandasEngine(DataFrameEngine):
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         print("inside pandas engine")
-        print(df)
-        print(proc_cols)
 
         col_names, cols = zip(*proc_cols.items())
         series_cols = []

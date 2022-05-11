@@ -46,6 +46,7 @@ class DaskEngine(DataFrameEngine):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
+        print("ASDFASDF inside DASK df_like")
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
         # TODO: address if following results in fragmented DataFrame
         # TODO: see if we can get divisions. concat (instead of iterative join) should work if divs are known. Source:
@@ -54,7 +55,8 @@ class DaskEngine(DataFrameEngine):
             col.name = col_name
             dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
         print(dataset.compute())
-        print(dataset.compute().index)
+        print(sorted(dataset.compute().index.to_list()))
+        print(len(dataset.compute().index))
         return dataset
 
     def parallelize(self, data):
