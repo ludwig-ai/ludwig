@@ -219,7 +219,7 @@ def tune_batch_size_fn(
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
-):
+) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     try:
@@ -237,6 +237,39 @@ def tune_batch_size_fn(
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
+
+
+@ray.remote
+def tune_learning_rate_fn(
+    dataset: RayDataset,
+    config: Dict[str, Any],
+    data_loader_kwargs: Dict[str, Any] = None,
+    executable_kwargs: Dict[str, Any] = None,
+    model: ECD = None,  # noqa: F821
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
+) -> float:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
+        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+        train_shard = RayDatasetShard(
+            pipe,
+            features,
+            training_set_metadata,
+        )
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model = model.to(device)
+
+        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        return trainer.tune_learning_rate(config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
@@ -322,21 +355,24 @@ class RayTrainerV2(BaseTrainer):
             )
         )
 
-        # dataset = training_set.pipeline(shuffle=False, **self.data_loader_kwargs)
-        # with self.create_runner() as runner:
-        #     batch_size = runner.run(
-        #         lambda config: tune_batch_size_fn(**config),
-        #         config={
-        #             "executable_kwargs": self.executable_kwargs,
-        #             "model_ref": ray.put(self.model),
-        #             "ludwig_config": config,
-        #             "training_set_metadata": training_set.training_set_metadata,
-        #             "features": training_set.features,
-        #             **kwargs,
-        #         },
-        #         dataset=dataset,
-        #     )[0]
-        # return batch_size
+    def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
+        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_cpus = resources_per_worker.get("CPU", 1)
+        num_gpus = resources_per_worker.get("GPU", 0)
+
+        return ray.get(
+            tune_learning_rate_fn.options(num_cpus=num_cpus, num_gpus=num_gpus).remote(
+                dataset=training_set,
+                config=config,
+                data_loader_kwargs=self.data_loader_kwargs,
+                executable_kwargs=self.executable_kwargs,
+                model=ray.put(self.model),
+                training_set_metadata=training_set.training_set_metadata,
+                features=training_set.features,
+                **kwargs,
+            )
+        )
 
     @property
     def validation_field(self):
