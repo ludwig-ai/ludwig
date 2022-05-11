@@ -179,7 +179,7 @@ class MatrixScaling(CalibrationModule):
     mu: The regularization weight for bias vector. Defaults to off_diagonal_l2 if not specified.
     """
 
-    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.001, mu: float = None):
+    def __init__(self, num_classes: int = 2, off_diagonal_l2: float = 0.01, mu: float = None):
         super().__init__()
         self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"

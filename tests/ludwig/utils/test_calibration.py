@@ -60,5 +60,5 @@ def test_matrix_scaling_category(uncalibrated_logits_and_labels):
     calibration_result = matrix_scaling.calibrate(logits, labels)
     assert calibration_result.before_calibration_nll == pytest.approx(4.90469, EPSILON)
     assert calibration_result.before_calibration_ece == pytest.approx(0.45743, EPSILON)
-    assert calibration_result.after_calibration_nll == pytest.approx(0.49138, EPSILON)
-    assert calibration_result.after_calibration_ece == pytest.approx(0.28475, EPSILON)
+    assert calibration_result.after_calibration_nll == pytest.approx(0.5131, EPSILON)
+    assert calibration_result.after_calibration_ece == pytest.approx(0.1451, EPSILON)
