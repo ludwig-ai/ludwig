@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import FILL_WITH_MEAN, PROC_COLUMN
+from ludwig.constants import BACKFILL, PROC_COLUMN
 from ludwig.features.audio_feature import AudioInputFeature, AudioFeatureMixin
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 
@@ -51,7 +51,7 @@ def test_audio_input_feature(encoder: str) -> None:
 def test_add_feature_data(feature_type, tmpdir):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
-        "missing_value_strategy": FILL_WITH_MEAN,
+        "missing_value_strategy": BACKFILL,
         "in_memory": True,
         "padding_value": 0,
         "norm": "per_file",
