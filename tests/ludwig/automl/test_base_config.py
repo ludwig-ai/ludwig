@@ -4,7 +4,7 @@ import pytest
 
 from ludwig.automl.base_config import infer_type, should_exclude
 from ludwig.automl.utils import FieldInfo
-from ludwig.constants import BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT, AUDIO
+from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.data.dataset_synthesizer import generate_string
 
 ROW_COUNT = 100
@@ -40,7 +40,6 @@ TARGET_NAME = "target"
         (ROW_COUNT, [], ROW_COUNT, 0, 0.0, IMAGE),
         # Audio.
         (ROW_COUNT, [], 0, ROW_COUNT, 0.0, AUDIO),
-
     ],
 )
 def test_infer_type(num_distinct_values, distinct_values, img_values, audio_values, missing_vals, expected):
@@ -50,7 +49,7 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, audio_valu
         num_distinct_values=num_distinct_values,
         distinct_values=distinct_values,
         image_values=img_values,
-        audio_values=audio_values
+        audio_values=audio_values,
     )
     assert infer_type(field, missing_vals, ROW_COUNT) == expected
 

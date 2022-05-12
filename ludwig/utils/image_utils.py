@@ -95,11 +95,8 @@ def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
 
 
 def is_image_score(src_path, img_entry, column: str):
-    """
-    Used for AutoML
-    For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
-    with image extensions
-    """
+    """Used for AutoML For image inference, want to bias towards both readable images, but also account for
+    unreadable (i.e. expired) urls with image extensions."""
     if is_image(src_path, img_entry, column):
         return 1
     elif isinstance(img_entry, str) and img_entry.lower().endswith(IMAGE_EXTENSIONS):
