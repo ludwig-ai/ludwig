@@ -35,10 +35,7 @@ class PandasDataset(Dataset):
         self.dataset = to_numpy_dataset(dataset)
 
     def to_df(self, features):
-        return from_numpy_dataset({
-            feature.feature_name: self.dataset[feature.proc_column]
-            for feature in features
-        })
+        return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
 
     def get(self, proc_column, idx=None):
         if idx is None:
