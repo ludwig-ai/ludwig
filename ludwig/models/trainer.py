@@ -683,9 +683,6 @@ class Trainer(BaseTrainer):
 
         metrics_names = get_metric_names(output_features)
 
-        self.batch_size = 8
-        print("TRAIN BATCH SIZE", self.batch_size)
-
         # check if validation_field is valid
         valid_validation_field = False
         if self.validation_field == "combined":
