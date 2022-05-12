@@ -94,9 +94,7 @@ from ludwig.utils.torch_utils import get_torch_device
 logger = logging.getLogger(__name__)
 
 # Set dask config to not use placement groups
-dask.config.set(
-    annotations={"ray_remote_args": {"placement_group": None}}
-)
+dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
 
 class LudwigModel:
