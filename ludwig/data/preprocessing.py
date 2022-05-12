@@ -1139,17 +1139,20 @@ def build_dataset(
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
     dataset = dataset.dropna()
-    
-    print('INSIDE PREPROCESSING')
+
+    print("INSIDE PREPROCESSING")
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     for col_name, col in proc_cols.items():
-        print('COL')
+        print("COL")
         print(col)
+        if type(col) == list:
+            print("[x.shape for x in col]")
+            print([x.shape for x in col])
         if not hasattr(col, "dtype"):  # if col is a list
-            print('inside np array')
+            print("inside np array")
             col = np.array(col)
-        print('col dtype')
+        print("col dtype")
         print(col.dtype)
         dataset[col_name] = dataset[col_name].astype(col.dtype)
 
