@@ -13,7 +13,6 @@ from ludwig.backend import LocalBackend
 from ludwig.backend.ray import RayBackend
 from tests.integration_tests.utils import create_data_set_to_use, spawn
 
-
 rs = np.random.RandomState(42)
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -154,7 +153,7 @@ def test_imbalance_ray(balance):
             "random_1": np.random.randint(0, 50, 200),
             "random_2": np.random.choice(["Type A", "Type B", "Type C", "Type D"], 200),
             "Label": np.concatenate((np.zeros(180), np.ones(20))),
-            "split": split_col
+            "split": split_col,
         }
     )
 
