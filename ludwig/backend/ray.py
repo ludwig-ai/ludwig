@@ -22,7 +22,6 @@ from functools import partial
 from typing import Any, Dict, List, Optional, Tuple
 
 import dask
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import ray
@@ -586,12 +585,7 @@ class RayPredictor(BasePredictor):
         # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        dask_predictions = dataset.ds.map_batches(
-            to_tensors,
-            batch_format="pandas",
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
-        ).map_batches(
+        dask_predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
             batch_predictor,
             batch_size=self.batch_size,
             compute="actors",
@@ -600,20 +594,12 @@ class RayPredictor(BasePredictor):
             num_gpus=num_gpus,
         )
 
-        dask_dataset = dask_dataset.to_dask()
+        dask_predictions = dask_predictions.to_dask()
 
         for of_feature in self.model.output_features.values():
             dask_predictions = of_feature.unflatten(dask_predictions)
 
         return dask_predictions
-
-    def to_dask(self, dataset: RayDataset) -> dd.DataFrame:
-        num_cpus, num_gpus = self.get_resources_per_worker()
-
-        with dask.annotate(ray_remote_args={"num_cpus": num_cpus, "num_gpus": num_gpus}):
-            dask_dataset = dataset.ds.to_dask()
-
-        return dask_dataset
 
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")

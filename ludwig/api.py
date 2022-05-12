@@ -877,15 +877,12 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 if self.backend.df_engine.partitioned:
-                    dataset = predictor.to_dask(dataset)
+                    # If using a partitioned engine, we need to convert the RayDataset into a Dask dataframe.
+                    dataset = dataset.ds.to_dask()
 
-                # TODO(shreya): This should be on the full ray cluster instead of the mini-cluster on a single worker.
-                # Currently blocks computing stats if the GPU resource is already occupied.
-                num_cpus, num_gpus = predictor.get_resources_per_worker()
-                with dask.annotate(ray_remote_args={"num_cpus": num_cpus, "num_gpus": num_gpus}):
-                    overall_stats = calculate_overall_stats(
-                        self.model.output_features, predictions, dataset, training_set_metadata, self.backend.df_engine
-                    )
+                overall_stats = calculate_overall_stats(
+                    self.model.output_features, predictions, dataset, training_set_metadata, self.backend.df_engine
+                )
                 eval_stats = {
                     of_name: {**eval_stats[of_name], **overall_stats[of_name]}
                     # account for presence of 'combined' key
