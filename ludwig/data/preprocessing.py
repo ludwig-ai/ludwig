@@ -1142,6 +1142,8 @@ def build_dataset(
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     for col_name, col in proc_cols.items():
+        if not hasattr(col, "dtype"):  # if col is a list
+            col = np.array(col)
         dataset[col_name] = dataset[col_name].astype(col.dtype)
 
     return dataset, metadata

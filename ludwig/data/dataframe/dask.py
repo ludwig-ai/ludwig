@@ -49,7 +49,8 @@ class DaskEngine(DataFrameEngine):
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
-        dataset = dataset.join([col.to_frame(name=col_name) for col_name, col in proc_cols.items()])
+        for k, v in proc_cols.items():
+            dataset[k] = v
         return dataset
 
     def parallelize(self, data):
