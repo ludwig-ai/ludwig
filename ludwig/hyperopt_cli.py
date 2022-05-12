@@ -368,8 +368,8 @@ def cli(sys_argv):
         default=3,
         choices=[0, 1, 2, 3],
         help="Controls verbosity of ray tune log messages.  Valid values: "
-             "0 = silent, 1 = only status updates, 2 = status and brief trial "
-             "results, 3 = status and detailed trial results.",
+        "0 = silent, 1 = only status updates, 2 = status and brief trial "
+        "results, 3 = status and detailed trial results.",
     )
     parser.add_argument("-g", "--gpus", nargs="+", type=int, default=None, help="list of gpus to use")
     parser.add_argument(
