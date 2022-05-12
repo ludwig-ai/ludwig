@@ -343,7 +343,6 @@ class Trainer(BaseTrainer):
     ):
         """Function to be used by tune_batch_size."""
         self.model.train()  # Sets model training mode.
-        print("BATCH SIZE", batch_size)
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
 
             step_count = 0
@@ -360,7 +359,6 @@ class Trainer(BaseTrainer):
 
                 self.train_step(inputs, targets)
                 step_count += 1
-        print("STEP COUNT", step_count)
         return self.model
 
     def tune_learning_rate(
@@ -375,6 +373,8 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
+        logger.info("Tuning learning rate...")
+
         learning_rate = self.base_learning_rate
 
         current_learning_rate = min_lr
@@ -412,6 +412,8 @@ class Trainer(BaseTrainer):
                 batcher.set_epoch(epoch, self.batch_size)
                 self.model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
+                    logger.info(f"Exploring learning_rate={current_learning_rate}")
+
                     batch = batcher.next_batch()
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
@@ -456,6 +458,10 @@ class Trainer(BaseTrainer):
         optimal_lr = get_optimal_lr(losses, learning_rates)
         if optimal_lr:
             learning_rate = optimal_lr
+        else:
+            logger.info("Could not determine optimal learning rate, falling back to base default")
+
+        logger.info(f"Selected learning_rate={learning_rate}")
         return learning_rate
 
     def tune_batch_size(
@@ -466,6 +472,8 @@ class Trainer(BaseTrainer):
         max_trials: int = 20,
         halving_limit: int = 3,
     ) -> int:
+        logger.info("Tuning batch size...")
+
         def _is_valid_batch_size(batch_size):
             # make sure that batch size is valid (e.g. less than size of ds)
             return batch_size < len(training_set)
@@ -473,7 +481,7 @@ class Trainer(BaseTrainer):
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value
-        batch_size = 8
+        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -486,6 +494,7 @@ class Trainer(BaseTrainer):
         try:
             count = 0
             while count < max_trials and _is_valid_batch_size(batch_size):
+                logger.info(f"Exploring batch_size={batch_size}")
                 gc.collect()
 
                 try:
@@ -504,6 +513,7 @@ class Trainer(BaseTrainer):
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
+        logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
 
     def run_evaluation(
@@ -826,7 +836,6 @@ class Trainer(BaseTrainer):
                     self.model.reset_metrics()
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
-                    print("START EPOCH")
 
                     # Trains over a full epoch of data.
                     should_break = self._train_loop(
@@ -849,9 +858,6 @@ class Trainer(BaseTrainer):
                         final_steps_per_checkpoint,
                         early_stopping_steps,
                     )
-
-                    print("TRAIN METRICS", progress_tracker.train_metrics)
-                    print("VAL METRICS", progress_tracker.validation_metrics)
 
                     # ================ Post Training Epoch ================
                     progress_tracker.epoch += 1

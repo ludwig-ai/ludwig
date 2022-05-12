@@ -37,7 +37,6 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
-from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -184,9 +183,6 @@ def train_fn(
                 features,
                 training_set_metadata,
             )
-
-        print("VALIDATION LEN", len(val_shard))
-        print("TEST LEN", len(test_shard))
 
         model = ray.get(model_ref)
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -499,16 +495,6 @@ class RayLegacyTrainer(BaseTrainer):
         results = self.executor.execute(lambda trainer: trainer.train_online(model, *args, **kwargs))
 
         return results[0]
-
-    def tune_batch_size(
-        self,
-        config: Dict[str, Any],
-        training_set: RayDataset,
-        random_seed: int = default_random_seed,
-        max_trials: int = 10,
-        halving_limit: int = 3,
-    ) -> int:
-        raise NotImplementedError("Use v2 trainer to tune batch size")
 
     @property
     def validation_field(self):
