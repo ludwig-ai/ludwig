@@ -21,7 +21,7 @@ from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
-from ludwig.constants import BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
+from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
@@ -183,6 +183,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         num_distinct_values, distinct_values = source.get_distinct_values(field, MAX_DISTINCT_VALUES_TO_RETURN)
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
+        audio_values = source.get_audio_values(field)
         avg_words = None
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
@@ -194,6 +195,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 num_distinct_values=num_distinct_values,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
+                audio_values=audio_values,
                 avg_words=avg_words,
             )
         )
@@ -322,6 +324,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
     if field.image_values >= 3:
         return IMAGE
+
+    if field.audio_values >= 3:
+        return AUDIO
 
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.

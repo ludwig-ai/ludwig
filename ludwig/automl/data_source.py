@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 from ludwig.automl.utils import avg_num_tokens
+from ludwig.utils.audio_utils import is_audio_score
 from ludwig.utils.image_utils import is_image_score
 from ludwig.utils.types import DataFrame
 
@@ -57,6 +58,9 @@ class DataframeSourceMixin:
 
     def get_image_values(self, column: str, sample_size: int = 10) -> int:
         return int(sum(is_image_score(None, x, column) for x in self.df[column].head(sample_size)))
+
+    def get_audio_values(self, column: str, sample_size: int = 10) -> int:
+        return int(sum(is_audio_score(x) for x in self.df[column].head(sample_size)))
 
     def get_avg_num_tokens(self, column: str) -> int:
         return avg_num_tokens(self.df[column])
