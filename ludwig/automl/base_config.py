@@ -21,7 +21,7 @@ from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
-from ludwig.constants import BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
+from ludwig.constants import BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT, AUDIO
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
@@ -324,6 +324,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
     if field.image_values >= 3:
         return IMAGE
+
+    if field.audio_values >= 3:
+        return AUDIO
 
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.
