@@ -31,10 +31,6 @@ TMP_COLUMN = "__TMP_COLUMN__"
 logger = logging.getLogger(__name__)
 
 
-def _get_index_only_df(df):
-    return
-
-
 def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
@@ -49,24 +45,11 @@ class DaskEngine(DataFrameEngine):
         self._parallelism = parallelism
 
     def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
+        # Our goal is to preserve the index of the input dataframe but to drop
+        # all its columns. Because to_frame() creates a column from the index,
+        # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
-        num_rows = len(dataset)
-
-        cols = []
-        rows_dropped_col_names = []
-        for col_name, col in proc_cols.items():
-            cols.append(col.to_frame(name=col_name))
-            # Columns with fewer rows have had rows dropped by preprocessing
-            if len(col) < num_rows:
-                rows_dropped_col_names.append(col_name)
-
-        dataset = dataset.join(cols)
-        dataset = dataset.dropna(subset=rows_dropped_col_names)
-
-        # Left join of dataset changes col dtypes if NaNs are present, so we need to reset them
-        for col_name, col in proc_cols.items():
-            dataset[col_name] = dataset[col_name].astype(col.dtype)
-
+        dataset = dataset.join([col.to_frame(name=col_name) for col_name, col in proc_cols.items()])
         return dataset
 
     def parallelize(self, data):

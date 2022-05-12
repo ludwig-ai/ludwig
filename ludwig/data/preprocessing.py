@@ -1132,12 +1132,17 @@ def build_dataset(
             if reshape is not None:
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
+    # Implements an outer join of proc_cols
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
     dataset = dataset.dropna()
+
+    # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
+    for col_name, col in proc_cols.items():
+        dataset[col_name] = dataset[col_name].astype(col.dtype)
 
     return dataset, metadata
 
