@@ -142,18 +142,6 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-@contextlib.contextmanager
-def use_horovod():
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    try:
-        initialize_pytorch(horovod=hvd)
-        yield hvd
-    finally:
-        torch.cuda.empty_cache()
-        hvd.shutdown()
-
-
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
@@ -161,7 +149,11 @@ def train_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
-    with use_horovod() as hvd:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
         train_shard = RayDatasetShard(
             rt.get_dataset_shard("train"),
             features,
@@ -207,7 +199,10 @@ def train_fn(
         torch.cuda.empty_cache()
 
         train_results = results, trainer.validation_field, trainer.validation_metric
-        return train_results
+
+    finally:
+        hvd.shutdown()
+    return train_results
 
 
 @ray.remote
@@ -221,7 +216,11 @@ def tune_batch_size_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ) -> int:
-    with use_horovod() as hvd:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
             pipe,
@@ -234,6 +233,9 @@ def tune_batch_size_fn(
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
 
 
 @ray.remote
@@ -247,7 +249,11 @@ def tune_learning_rate_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ) -> float:
-    with use_horovod() as hvd:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
             pipe,
@@ -260,6 +266,9 @@ def tune_learning_rate_fn(
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
         return trainer.tune_learning_rate(config, train_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
 
 
 class RayTrainerV2(BaseTrainer):
@@ -273,12 +282,12 @@ class RayTrainerV2(BaseTrainer):
 
     @contextlib.contextmanager
     def create_runner(self):
-        runner = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
-        runner.start()
+        trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
+        trainer.start()
         try:
-            yield runner
+            yield trainer
         finally:
-            runner.shutdown()
+            trainer.shutdown()
 
     def train(
         self,
