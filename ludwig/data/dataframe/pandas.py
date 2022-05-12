@@ -24,18 +24,16 @@ class PandasEngine(DataFrameEngine):
         super().__init__()
 
     def df_like(self, df, proc_cols):
-        # Our goal is to preserve the index of the input dataframe but to drop
-        # all its columns. Because to_frame() creates a column from the index,
-        # we need to drop it immediately following creation.
-        col_names, cols = zip(*proc_cols.items())
-        series_cols = []
-        for col in cols:
-            if type(col) not in {pd.Series, pd.DataFrame}:
-                series_cols.append(pd.Series(col))
-            else:
-                series_cols.append(col)
-        dataset = pd.concat(series_cols, join="inner", axis=1)  # inner join handles Series with dropped rows
-        dataset.columns = col_names
+        dataset = pd.DataFrame(proc_cols)
+
+        # At this point, there should be no missing values left in the dataframe, unless
+        # the DROP_ROW preprocessing option was selected, in which case we need to drop those
+        # rows.
+        dataset = dataset.dropna()
+
+        # Explicitly associate the dataset with the dtypes of the preprocessed columns.
+        dataset = dataset.astype({key: proc_cols[key].dtype for key in proc_cols})
+
         return dataset
 
     def parallelize(self, data):
