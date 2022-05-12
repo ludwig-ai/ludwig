@@ -31,6 +31,10 @@ TMP_COLUMN = "__TMP_COLUMN__"
 logger = logging.getLogger(__name__)
 
 
+def _get_index_only_df(df):
+    return
+
+
 def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
@@ -45,16 +49,40 @@ class DaskEngine(DataFrameEngine):
         self._parallelism = parallelism
 
     def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
-        # Our goal is to preserve the index of the input dataframe but to drop
-        # all its columns. Because to_frame() creates a column from the index,
-        # we need to drop it immediately following creation.
-        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
-        # TODO: address if following results in fragmented DataFrame
-        # TODO: see if we can get divisions. concat (instead of iterative join) should work if divs are known. Source:
-        # https://github.com/dask/dask/blob/5fbda77cfc5bc1b8f1453a2dbb034b048fc10726/dask/dataframe/multi.py#L1245
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
+
+        num_rows = len(dataset)
+        cols = []
+        rows_dropped_col_names = []
         for col_name, col in proc_cols.items():
-            col.name = col_name
-            dataset = dataset.join(col, how="inner")  # inner join handles Series with dropped rows
+            print("col_name, len(col)")
+            print(col_name, len(col))
+            cols.append(col.to_frame(name=col_name))
+            # Columns with fewer rows have had rows dropped
+            if len(col) < num_rows:
+                rows_dropped_col_names.append(col_name)
+
+        print("col dtypes before join")
+        for col in cols:
+            # print("col.columns", col.columns)
+            print(col.dtypes)
+
+        dataset = dataset.join(cols)
+
+        print("dataset.dtypes before dropna")
+        print(dataset.dtypes)
+
+        dataset = dataset.dropna(subset=rows_dropped_col_names)
+
+        print("dataset.dtypes after dropna")
+        print(dataset.dtypes)
+
+        # Left join of dataset changes col dtypes if NaNs are present, so we need to reset them
+        for col_name, col in proc_cols.items():
+            dataset[col_name] = dataset[col_name].astype(col.dtype)
+
+        print("dataset.dtypes after resetting dtypes")
+        print(dataset.dtypes)
         return dataset
 
     def parallelize(self, data):
