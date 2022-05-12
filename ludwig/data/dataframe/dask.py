@@ -50,39 +50,23 @@ class DaskEngine(DataFrameEngine):
 
     def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
-
         num_rows = len(dataset)
+
         cols = []
         rows_dropped_col_names = []
         for col_name, col in proc_cols.items():
-            print("col_name, len(col)")
-            print(col_name, len(col))
             cols.append(col.to_frame(name=col_name))
-            # Columns with fewer rows have had rows dropped
+            # Columns with fewer rows have had rows dropped by preprocessing
             if len(col) < num_rows:
                 rows_dropped_col_names.append(col_name)
 
-        print("col dtypes before join")
-        for col in cols:
-            # print("col.columns", col.columns)
-            print(col.dtypes)
-
         dataset = dataset.join(cols)
-
-        print("dataset.dtypes before dropna")
-        print(dataset.dtypes)
-
         dataset = dataset.dropna(subset=rows_dropped_col_names)
-
-        print("dataset.dtypes after dropna")
-        print(dataset.dtypes)
 
         # Left join of dataset changes col dtypes if NaNs are present, so we need to reset them
         for col_name, col in proc_cols.items():
             dataset[col_name] = dataset[col_name].astype(col.dtype)
 
-        print("dataset.dtypes after resetting dtypes")
-        print(dataset.dtypes)
         return dataset
 
     def parallelize(self, data):
