@@ -1137,7 +1137,7 @@ def build_dataset(
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
-    dataset = dataset.dropna()
+    dataset = dataset.dropna().astype({key: proc_cols[key].dtype for key in proc_cols})
 
     return dataset, metadata
 
