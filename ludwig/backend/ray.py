@@ -324,13 +324,8 @@ class RayTrainerV2(BaseTrainer):
         training_set: RayDataset,
         **kwargs,
     ) -> int:
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
-        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
-        num_cpus = resources_per_worker.get("CPU", 1)
-        num_gpus = resources_per_worker.get("GPU", 0)
-
         return ray.get(
-            tune_batch_size_fn.options(num_cpus=num_cpus, num_gpus=num_gpus).remote(
+            tune_batch_size_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
                 dataset=training_set,
                 data_loader_kwargs=self.data_loader_kwargs,
                 executable_kwargs=self.executable_kwargs,
@@ -343,13 +338,8 @@ class RayTrainerV2(BaseTrainer):
         )
 
     def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
-        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
-        num_cpus = resources_per_worker.get("CPU", 1)
-        num_gpus = resources_per_worker.get("GPU", 0)
-
         return ray.get(
-            tune_learning_rate_fn.options(num_cpus=num_cpus, num_gpus=num_gpus).remote(
+            tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
                 dataset=training_set,
                 config=config,
                 data_loader_kwargs=self.data_loader_kwargs,
@@ -388,6 +378,19 @@ class RayTrainerV2(BaseTrainer):
     @eval_batch_size.setter
     def eval_batch_size(self, value: int):
         self.config.eval_batch_size = value
+
+    @property
+    def resources_per_worker(self) -> Dict[str, Any]:
+        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        return trainer_kwargs.get("resources_per_worker", {})
+
+    @property
+    def num_cpus(self) -> int:
+        return self.resources_per_worker.get("CPU", 1)
+
+    @property
+    def num_gpus(self) -> int:
+        return self.resources_per_worker.get("GPU", 0)
 
     def set_base_learning_rate(self, learning_rate: float):
         self.config.learning_rate = learning_rate
