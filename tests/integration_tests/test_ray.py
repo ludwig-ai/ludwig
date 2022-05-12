@@ -423,6 +423,11 @@ def predict_cpu(model_dir, dataset):
 
 @pytest.mark.distributed
 def test_tune_batch_size_lr():
+    _run_tune_batch_size_lr()
+
+
+@spawn
+def _run_tune_batch_size_lr():
     with ray_start(num_cpus=2, num_gpus=None):
         config = {
             "input_features": [
