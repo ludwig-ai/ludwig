@@ -26,7 +26,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
+from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
@@ -260,11 +260,25 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
+@pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
 @pytest.mark.distributed
-def test_ray_audio():
+def test_ray_audio(feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:
+        preprocessing_params = {
+            "audio_file_length_limit_in_s": 3.0,
+            "missing_value_strategy": BACKFILL,
+            "in_memory": True,
+            "padding_value": 0,
+            "norm": "per_file",
+            "audio_feature": {
+                "type": feature_type,
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
+            },
+        }
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features = [audio_feature(folder=audio_dest_folder)]
+        input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
         run_test_with_features(input_features, output_features)
 
