@@ -1140,20 +1140,11 @@ def build_dataset(
     # rows.
     dataset = dataset.dropna()
 
-    print("INSIDE PREPROCESSING")
-
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     for col_name, col in proc_cols.items():
-        print("COL")
-        print(col)
-        if type(col) == list:
-            print("[x.shape for x in col]")
-            print([x.shape for x in col])
-        if not hasattr(col, "dtype"):  # if col is a list
-            print("inside np array")
-            col = np.array(col)
-        print("col dtype")
-        print(col.dtype)
+        # If the column rows are np.ndarray objects, we assume the internal dtype of each remains unchanged.
+        if isinstance(dataset[col_name].head(1).iloc[0], np.ndarray):
+            continue
         dataset[col_name] = dataset[col_name].astype(col.dtype)
 
     return dataset, metadata
