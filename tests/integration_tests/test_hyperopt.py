@@ -134,7 +134,7 @@ def test_hyperopt_executor(scenario, csv_filename, validate_output_feature=False
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
         if search_alg["type"] in {"ax"}:
-            with pytest.raises(RuntimeError):
+            with pytest.raises(ImportError):
                 get_build_hyperopt_executor(RAY)(
                     hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
                 )
