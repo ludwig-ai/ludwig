@@ -70,6 +70,8 @@ SCENARIOS = [
         },
         "search_alg": {"type": "bohb"},
     },
+    # following scenarios should generate a RuntimeError exception
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "ax"}},
 ]
 
 
@@ -131,13 +133,17 @@ def test_hyperopt_executor(scenario, csv_filename, validate_output_feature=False
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
-        hyperopt_executor = get_build_hyperopt_executor(RAY)(
-            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
-        )
-
-        raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
-
-        assert isinstance(raytune_results, RayTuneResults)
+        if search_alg["type"] in {"ax"}:
+            with pytest.raises(RuntimeError):
+                get_build_hyperopt_executor(RAY)(
+                    hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+                )
+        else:
+            hyperopt_executor = get_build_hyperopt_executor(RAY)(
+                hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+            )
+            raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
+            assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed

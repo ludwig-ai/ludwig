@@ -16,6 +16,7 @@
 import json
 import logging
 from abc import ABC
+from importlib import import_module
 from inspect import signature
 from typing import Any, Dict
 
@@ -170,6 +171,17 @@ sampler_registry = {"ray": RayTuneSampler}
 
 
 # TODO: split to separate module?
+def _is_package_installed(package_name: str, search_algo_name: str) -> bool:
+    try:
+        import_module(package_name)
+        return True
+    except ImportError:
+        raise ImportError(
+            f"Search algorithm {search_algo_name} requires package {package_name}, however package is not installed."
+            " Please refer to Ray Tune documentation for packages required for this search algorithm."
+        )
+
+
 class SearchAlgorithm(ABC):
     def __init__(self, search_alg_dict: Dict) -> None:
         self.search_alg_dict = search_alg_dict
@@ -188,14 +200,30 @@ class BasicVariantSA(SearchAlgorithm):
 
 class HyperoptSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("hyperopt", "hyperopt")
         super().__init__(search_alg_dict)
         self.random_seed_attribute_name = "random_state_seed"
 
 
 class BOHBSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("hpbandster", "bohb")
+        _is_package_installed("ConfigSpace", "bohb")
         super().__init__(search_alg_dict)
         self.random_seed_attribute_name = "seed"
+
+
+class AxSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("sqlalchemy", "ax")
+        _is_package_installed("ax", "ax")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "seed"
+
+    # override parent method, this search algorithm does not support
+    # setting random seed
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        pass
 
 
 def get_search_algorithm(search_algo):
@@ -208,4 +236,5 @@ search_algo_registry = {
     "random": BasicVariantSA,
     "hyperopt": HyperoptSA,
     "bohb": BOHBSA,
+    "ax": AxSA,
 }
