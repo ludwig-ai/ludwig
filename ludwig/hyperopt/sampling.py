@@ -196,7 +196,6 @@ class BOHBSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         super().__init__(search_alg_dict)
         self.random_seed_attribute_name = "seed"
-        # TODO: Need to setup scheduler
 
 
 def get_search_algorithm(search_algo):
