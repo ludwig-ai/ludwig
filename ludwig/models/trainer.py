@@ -19,13 +19,13 @@ import logging
 import math
 import os
 import os.path
-from pprint import pprint
 import signal
 import sys
 import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+from pprint import pprint
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
