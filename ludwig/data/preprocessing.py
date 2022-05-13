@@ -1145,7 +1145,7 @@ def build_dataset(
     col_name_to_dtype = {}
     for col_name, col in proc_cols.items():
         # if col is a list of list-like objects, we assume the internal dtype of each col[i] remains unchanged.
-        if type(col) == list and col[0] in {list, np.ndarray, torch.Tensor}:
+        if type(col) == list and type(col[0]) in {list, np.ndarray, torch.Tensor}:
             continue
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
