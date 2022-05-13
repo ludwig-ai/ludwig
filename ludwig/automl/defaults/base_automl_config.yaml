@@ -9,9 +9,6 @@ hyperopt:
     type: hyperopt
   sampler:
     type: ray
-    search_alg:
-      # Gives results like default + supports random_state_seed for sample sequence repeatability
-      type: hyperopt
     scheduler:
       type: async_hyperband
       time_attr: time_total_s
