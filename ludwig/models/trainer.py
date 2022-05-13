@@ -965,14 +965,6 @@ class Trainer(BaseTrainer):
             # obtain batch
             batch = batcher.next_batch()
 
-            print("INSIDE TRAINER")
-            from pprint import pprint
-
-            print("inputs")
-            pprint({i_feat.feature_name: batch[i_feat.proc_column] for i_feat in self.model.input_features.values()})
-            print("targets")
-            pprint({o_feat.feature_name: batch[o_feat.proc_column] for o_feat in self.model.output_features.values()})
-
             # Move tensors to cuda here.
             inputs = {
                 i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)

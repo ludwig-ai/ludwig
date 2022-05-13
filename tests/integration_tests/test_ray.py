@@ -214,24 +214,24 @@ def test_ray_save_processed_input(dataset_type):
     )
 
 
-@pytest.mark.parametrize("df_engine", ["modin"])
+@pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.distributed
 def test_ray_tabular(df_engine):
     input_features = [
         sequence_feature(reduce_output="sum"),
-        # category_feature(vocab_size=2, reduce_input="sum"),
-        # number_feature(normalization="zscore"),
-        # set_feature(),
-        # binary_feature(),
-        # bag_feature(),
-        # vector_feature(),
-        # h3_feature(),
-        # date_feature(),
+        category_feature(vocab_size=2, reduce_input="sum"),
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+        bag_feature(),
+        vector_feature(),
+        h3_feature(),
+        date_feature(),
     ]
     output_features = [
-        # binary_feature(bool2str=["No", "Yes"]),
+        binary_feature(bool2str=["No", "Yes"]),
         binary_feature(),
-        # number_feature(normalization="zscore"),
+        number_feature(normalization="zscore"),
     ]
     run_test_with_features(
         input_features,
