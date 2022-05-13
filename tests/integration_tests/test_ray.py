@@ -15,6 +15,7 @@
 import contextlib
 import os
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -343,7 +344,7 @@ def test_ray_lazy_load_image_error():
 
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
-@pytest.mark.skipIf(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
 def test_train_gpu_load_cpu():
     input_features = [
@@ -421,6 +422,7 @@ def predict_cpu(model_dir, dataset):
     model.predict(dataset)
 
 
+@pytest.mark.skipif(LooseVersion(ray.__version__) < LooseVersion("1.12"), reason="Serialization issue before Ray 1.12")
 @pytest.mark.distributed
 def test_tune_batch_size_lr():
     with ray_start(num_cpus=2, num_gpus=None):
