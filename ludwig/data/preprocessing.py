@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+import torch
 
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
@@ -1140,22 +1141,15 @@ def build_dataset(
     # rows.
     dataset = dataset.dropna()
 
-    print("INSIDE PREPROCESSING")
-
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
+    col_name_to_dtype = {}
     for col_name, col in proc_cols.items():
-        # If the column rows are np.ndarray objects, we assume the internal dtype of each remains unchanged.
-        if isinstance(dataset[col_name].head(1).iloc[0], np.ndarray):
+        first_sample = dataset[col_name].head(1).iloc[0]
+        # If the column rows are list-like objects, we assume the internal dtype of each remains unchanged.
+        if type(first_sample) in {list, np.ndarray, torch.Tensor}:
             continue
-        print("col dtype")
-        print(col.dtype)
-        print("dataset[col_name].tolist()")
-        print(dataset[col_name].tolist())
-        print("dataset[col_name].dtype")
-        print(dataset[col_name].dtype)
-        # print('dataset[col_name].astype(col.dtype)')
-        # print(dataset[col_name].astype(col.dtype))
-        dataset[col_name] = dataset[col_name].astype(col.dtype)
+        col_name_to_dtype[col_name] = col.dtype
+    dataset = dataset.astype(col_name_to_dtype)
 
     return dataset, metadata
 
