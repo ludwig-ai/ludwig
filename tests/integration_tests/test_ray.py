@@ -211,7 +211,7 @@ def test_ray_save_processed_input(dataset_type):
     )
 
 
-@pytest.mark.parametrize("df_engine", ["dask", "modin"])
+@pytest.mark.parametrize("df_engine", ["modin"])
 @pytest.mark.distributed
 def test_ray_tabular(df_engine):
     input_features = [
@@ -341,7 +341,7 @@ def test_ray_lazy_load_image_error():
 
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
-@pytest.mark.skipIf(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
 def test_train_gpu_load_cpu():
     input_features = [

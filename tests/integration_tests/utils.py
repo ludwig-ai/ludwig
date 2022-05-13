@@ -625,6 +625,7 @@ def train_with_backend(
     output_dir = None
 
     try:
+        print("BEFORE MODEL TRAIN")
         _, _, output_dir = model.train(
             dataset=dataset,
             training_set=training_set,
@@ -644,6 +645,7 @@ def train_with_backend(
             assert preds is not None
 
         if evaluate:
+            print("DISTRIBUTED MODEL EVALUATE")
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
@@ -653,6 +655,7 @@ def train_with_backend(
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
+                print("LOCAL MODEL EVALUATE")
                 local_eval_stats, _, _ = local_model.evaluate(
                     dataset=dataset, collect_overall_stats=False, collect_predictions=False
                 )
