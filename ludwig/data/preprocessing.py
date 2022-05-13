@@ -1144,7 +1144,7 @@ def build_dataset(
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
     for col_name, col in proc_cols.items():
-        first_sample = dataset[col_name].head(1).iloc[0]
+        first_sample = col[0]
         # If the column rows are list-like objects, we assume the internal dtype of each remains unchanged.
         if type(first_sample) in {list, np.ndarray, torch.Tensor}:
             continue
