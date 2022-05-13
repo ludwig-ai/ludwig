@@ -125,7 +125,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
         point_to_evaluate = {}
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, COMBINER)
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, TRAINER)
-        base_config[HYPEROPT][SAMPLER]["search_alg"]["points_to_evaluate"] = [point_to_evaluate]
+        base_config[HYPEROPT]["search_alg"]["points_to_evaluate"] = [point_to_evaluate]
     return base_config
 
 
