@@ -205,6 +205,7 @@ def get_search_algorithm(search_algo):
 search_algo_registry = {
     None: BasicVariantSA,
     "variant_generator": BasicVariantSA,
+    "random": BasicVariantSA,
     "hyperopt": HyperoptSA,
     "bohb": BOHBSA,
 }
