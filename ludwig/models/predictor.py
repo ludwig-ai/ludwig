@@ -11,7 +11,7 @@ import pandas as pd
 import psutil
 import torch
 
-from ludwig.constants import COMBINED, LAST_HIDDEN
+from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_to_dict
 from ludwig.globals import (
@@ -29,7 +29,7 @@ from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.strings_utils import make_safe_filename
 from ludwig.utils.torch_utils import get_torch_device
 
-EXCLUDE_PRED_SET = {LAST_HIDDEN}
+EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {"confusion_matrix", "roc_curve"}
 STATS_SAMPLE_SIZE = 10000
 
@@ -155,7 +155,22 @@ class Predictor(BasePredictor):
             # is a tensor that requires grad.
             predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
-    def batch_evaluation(self, dataset, collect_predictions=False, collect_labels=False, dataset_name=None):
+    def batch_evaluation(
+        self, dataset, collect_predictions=False, collect_logits=False, collect_labels=False, dataset_name=None
+    ):
+        """Batch evaluate model on dataset.
+
+        Params:
+            dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            collect_predictions: Return model predictions.
+            collect_logits: Return model logits and final layer activations.
+            collect_labels: Return dataset labels in
+
+        Returns:
+            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
+            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
+            collect_predictions, collect_logits, collect_labels.
+        """
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
@@ -196,7 +211,7 @@ class Predictor(BasePredictor):
                     if collect_predictions:
                         for of_name, of_preds in preds.items():
                             for pred_name, pred_values in of_preds.items():
-                                if pred_name not in EXCLUDE_PRED_SET:
+                                if collect_logits or pred_name not in EXCLUDE_PRED_SET:
                                     key = f"{of_name}_{pred_name}"
                                     predictions[key].append(pred_values)
                     # accumulate labels from batch for each output feature

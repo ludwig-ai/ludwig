@@ -1122,7 +1122,7 @@ class Trainer(BaseTrainer):
             return
         predictor = Predictor(self.model, batch_size=self.eval_batch_size, horovod=self.horovod)
         metrics, predictions = predictor.batch_evaluation(
-            dataset, collect_predictions=True, collect_labels=True, dataset_name=dataset_name
+            dataset, collect_predictions=True, collect_logits=True, collect_labels=True, dataset_name=dataset_name
         )
         for output_feature in self.model.output_features.values():
             feature_logits_key = "%s_logits" % output_feature.feature_name
