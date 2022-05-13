@@ -31,6 +31,7 @@ class FieldInfo:
     num_distinct_values: int = 0
     nonnull_values: int = 0
     image_values: int = 0
+    audio_values: int = 0
     avg_words: int = None
 
 

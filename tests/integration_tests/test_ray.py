@@ -15,6 +15,7 @@
 import contextlib
 import os
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -102,6 +103,8 @@ def run_api_experiment(config, dataset, backend_config, skip_save_processed_inpu
     assert isinstance(model.backend, RayBackend)
     if isinstance(model.backend.df_engine, DaskEngine):
         assert model.backend.df_engine.parallelism == backend_config["processor"]["parallelism"]
+
+    return model
 
 
 def run_split_api_experiment(config, data_parquet, backend_config):
@@ -417,3 +420,31 @@ def train_gpu(config, dataset, output_directory):
 def predict_cpu(model_dir, dataset):
     model = LudwigModel.load(model_dir, backend="local")
     model.predict(dataset)
+
+
+@pytest.mark.skipif(LooseVersion(ray.__version__) < LooseVersion("1.12"), reason="Serialization issue before Ray 1.12")
+@pytest.mark.distributed
+def test_tune_batch_size_lr():
+    with ray_start(num_cpus=2, num_gpus=None):
+        config = {
+            "input_features": [
+                number_feature(normalization="zscore"),
+                set_feature(),
+                binary_feature(),
+            ],
+            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
+        }
+
+        backend_config = {**RAY_BACKEND_CONFIG}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            dataset_csv = generate_data(
+                config["input_features"], config["output_features"], csv_filename, num_examples=100
+            )
+            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+            model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+            assert model.config[TRAINER]["batch_size"] != "auto"
+            assert model.config[TRAINER]["learning_rate"] != "auto"

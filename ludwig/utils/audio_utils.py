@@ -31,6 +31,9 @@ from ludwig.utils.fs_utils import is_http, upgrade_http
 
 logger = logging.getLogger(__name__)
 
+# https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
+AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
+
 
 def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor, int]:
     sampling_rates = [audio[1] for audio in audio_lst]
@@ -274,6 +277,11 @@ def _preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_sa
             window_data = window_data - np.mean(window_data)
         zero_padded_matrix[num_output_idx, :end_padded_idx] = window_data
     return zero_padded_matrix
+
+
+def is_audio_score(src_path):
+    # Used for AutoML
+    return int(isinstance(src_path, str) and src_path.lower().endswith(AUDIO_EXTENSIONS))
 
 
 def get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp):

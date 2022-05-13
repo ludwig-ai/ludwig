@@ -78,6 +78,17 @@ class BaseTrainer(ABC):
     ):
         raise NotImplementedError()
 
+    @abstractmethod
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: Dataset,
+        random_seed: int = default_random_seed,
+        max_trials: int = 10,
+        halving_limit: int = 3,
+    ) -> int:
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def validation_field(self):
@@ -363,6 +374,8 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
+        logger.info("Tuning learning rate...")
+
         learning_rate = self.base_learning_rate
 
         current_learning_rate = min_lr
@@ -400,6 +413,8 @@ class Trainer(BaseTrainer):
                 batcher.set_epoch(epoch, self.batch_size)
                 self.model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
+                    logger.info(f"Exploring learning_rate={current_learning_rate}")
+
                     batch = batcher.next_batch()
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
@@ -444,6 +459,10 @@ class Trainer(BaseTrainer):
         optimal_lr = get_optimal_lr(losses, learning_rates)
         if optimal_lr:
             learning_rate = optimal_lr
+        else:
+            logger.info("Could not determine optimal learning rate, falling back to base default")
+
+        logger.info(f"Selected learning_rate={learning_rate}")
         return learning_rate
 
     def tune_batch_size(
@@ -451,16 +470,19 @@ class Trainer(BaseTrainer):
         config: Dict[str, Any],
         training_set: Dataset,
         random_seed: int = default_random_seed,
-        max_trials: int = 10,
+        max_trials: int = 20,
         halving_limit: int = 3,
     ) -> int:
+        logger.info("Tuning batch size...")
+
         def _is_valid_batch_size(batch_size):
+            # make sure that batch size is valid (e.g. less than size of ds)
             return batch_size < len(training_set)
 
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value (namely, 128)
-        batch_size = 128
+        # placeholder starting value
+        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -469,55 +491,31 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        best_batch_size = None
         try:
-            high = None
             count = 0
-            halving_count = 0
-            while halving_count < halving_limit:
+            while count < max_trials and _is_valid_batch_size(batch_size):
+                logger.info(f"Exploring batch_size={batch_size}")
                 gc.collect()
 
-                low = batch_size
-                prev_batch_size = batch_size
                 try:
                     self.train_for_tuning(training_set, batch_size, total_steps=3)
+                    best_batch_size = batch_size
                     count += 1
-                    if count >= max_trials:
-                        break
-                    if high:
-                        if high - low <= 1:
-                            break
-                        midval = (high + low) // 2
-                        batch_size = midval
-                    else:
-                        batch_size *= 2  # double batch size
 
-                    if batch_size == prev_batch_size:
-                        break
-
+                    # double batch size
+                    batch_size *= 2
                 except RuntimeError:
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
-                    high = batch_size
-                    halving_count += 1
-                    midval = (high + low) // 2
-                    batch_size = midval
-                    if high - low <= 1:
-                        break
-
-                # make sure that batch size is valid (e.g. less than size of ds)
-                if not _is_valid_batch_size(batch_size):
-                    batch_size = min(batch_size, len(training_set))
-
-                # edge case where bs is no longer increasing
-                if batch_size == prev_batch_size:
-                    break
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-        return batch_size
+        logger.info(f"Selected batch_size={best_batch_size}")
+        return best_batch_size
 
     def run_evaluation(
         self,
