@@ -507,6 +507,8 @@ class Trainer(BaseTrainer):
                 except RuntimeError:
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
+                    logger.info(f"OOM at batch_size={batch_size}")
+                    break
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
