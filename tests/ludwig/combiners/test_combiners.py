@@ -8,22 +8,24 @@ import torch
 
 from ludwig.combiners.combiners import (
     ComparatorCombiner,
-    ComparatorCombinerConfig,
     ConcatCombiner,
-    ConcatCombinerConfig,
-    sequence_encoder_registry,
     SequenceCombiner,
-    SequenceCombinerConfig,
     SequenceConcatCombiner,
-    SequenceConcatCombinerConfig,
     TabNetCombiner,
-    TabNetCombinerConfig,
     TabTransformerCombiner,
-    TabTransformerCombinerConfig,
     TransformerCombiner,
+)
+from ludwig.encoders.registry import sequence_encoder_registry
+from ludwig.schema.combiners import (
+    ComparatorCombinerConfig,
+    ConcatCombinerConfig,
+    SequenceCombinerConfig,
+    SequenceConcatCombinerConfig,
+    TabNetCombinerConfig,
+    TabTransformerCombinerConfig,
     TransformerCombinerConfig,
 )
-from ludwig.marshmallow.marshmallow_schema_utils import load_config
+from ludwig.schema.utils import load_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

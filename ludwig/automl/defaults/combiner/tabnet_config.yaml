@@ -5,9 +5,10 @@ trainer:
   # validation_metric: accuracy
   batch_size: auto #2048
   learning_rate: auto #0.02
+  learning_rate_scaling: sqrt
   decay: true
-  decay_steps: 500
-  decay_rate: 0.95
+  decay_steps: 20000
+  decay_rate: 0.8
   # early_stop: 300
   optimizer:
     type: adam

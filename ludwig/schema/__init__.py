@@ -1,28 +1,23 @@
-#! /usr/bin/env python
-# Copyright (c) 2020 Uber Technologies, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Module structure:
+# ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to describing and validating
+# |                               Ludwig configs.
+# ├── utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
+# |                               elsewhere in Ludwig.
+# ├── schema.py               <-- Contains the fully assembled Ludwig schema and validate() function that is used for
+# |                               user-input YAML validation. Users should generally only need to look at this.
+# └── __init__.py
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
-from ludwig.combiners.combiners import get_combiner_jsonschema
 from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.marshmallow.marshmallow_schema_utils import create_cond
-from ludwig.models.trainer import get_trainer_jsonschema
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
+from ludwig.schema.trainer import get_trainer_jsonschema
+from ludwig.schema.utils import create_cond
 
 
 def get_schema():

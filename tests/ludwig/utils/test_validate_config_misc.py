@@ -16,8 +16,8 @@ from ludwig.features.set_feature import SetFeatureMixin
 from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin
 from ludwig.features.vector_feature import VectorFeatureMixin
+from ludwig.schema import validate_config
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.schema import validate_config
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,

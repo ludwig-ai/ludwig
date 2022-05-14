@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from typing import Dict
 
 import dask
 import dask.array as da
@@ -43,12 +44,11 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
-    def df_like(self, df, proc_cols):
+    def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
-        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
-        # TODO: address if following results in fragmented DataFrame
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
         for k, v in proc_cols.items():
             dataset[k] = v
         return dataset
@@ -74,15 +74,15 @@ class DaskEngine(DataFrameEngine):
         return dd.from_pandas(df, npartitions=parallelism).reset_index()
 
     def map_objects(self, series, map_fn, meta=None):
-        meta = meta or ("data", "object")
+        meta = meta if meta is not None else ("data", "object")
         return series.map(map_fn, meta=meta)
 
     def map_partitions(self, series, map_fn, meta=None):
-        meta = meta or ("data", "object")
+        meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
 
     def apply_objects(self, df, apply_fn, meta=None):
-        meta = meta or ("data", "object")
+        meta = meta if meta is not None else ("data", "object")
         return df.apply(apply_fn, axis=1, meta=meta)
 
     def reduce_objects(self, series, reduce_fn):
