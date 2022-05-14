@@ -401,6 +401,7 @@ class Trainer(BaseTrainer):
                 best_lr = learning_rates[best_lr_index]
                 return best_lr
             except Exception:
+                logger.exception("Failed to detect optimal learning rate")
                 return None
 
         self.model.train()  # Sets model training mode.
@@ -412,8 +413,6 @@ class Trainer(BaseTrainer):
                 batcher.set_epoch(epoch, self.batch_size)
                 self.model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
-                    logger.info(f"Exploring learning_rate={current_learning_rate}")
-
                     batch = batcher.next_batch()
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
@@ -434,7 +433,8 @@ class Trainer(BaseTrainer):
 
                     # store learning rate and loss
                     learning_rates.append(current_learning_rate)
-                    losses.append(smoothed_loss)
+                    losses.append(smoothed_loss.detach().cpu().numpy())
+                    logger.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
 
                     # check whether loss is diverging
                     if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
