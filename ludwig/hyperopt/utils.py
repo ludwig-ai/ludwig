@@ -1,9 +1,10 @@
+import dataclasses
 import json
 import logging
 import os
 
 from ludwig.constants import HYPEROPT, PARAMETERS, PREPROCESSING
-from ludwig.hyperopt.results import HyperoptResults
+from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.print_utils import print_boxed
 
@@ -30,8 +31,16 @@ def load_json_value(v):
         return v
 
 
+# define set containing names to return for TrialResults
+TRIAL_RESULTS_NAMES_SET = {f.name for f in dataclasses.fields(TrialResults)}
+
+
 def load_json_values(d):
-    return {k: load_json_value(v) for k, v in d.items()}
+    # ensure metric_score is a string for the json load to eliminate extraneous exception message
+    d["metric_score"] = str(d["metric_score"])
+
+    # load only data required for TrialResults
+    return {k: load_json_value(v) for k, v in d.items() if k in TRIAL_RESULTS_NAMES_SET}
 
 
 def should_tune_preprocessing(config):
