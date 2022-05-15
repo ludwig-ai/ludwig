@@ -137,7 +137,7 @@ def test_deprecated_field_aliases():
             },
             "goal": "minimize",
             "sampler": {"type": "grid", "num_samples": 2, "scheduler": {"type": "fifo"}},
-            "executor": {"type": "grid"},
+            "executor": {"type": "grid", "search_alg": "bohb", },
         },
     }
 

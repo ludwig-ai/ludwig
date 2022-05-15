@@ -190,6 +190,13 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
                     DeprecationWarning,
                 )
                 hpexecutor[TYPE] = RAY
+
+            # if search_alg not at top level and is present in executor, promote to top level
+            if SEARCH_ALG in hpexecutor:
+                # promote only if not in top-level, otherwise use current top-level
+                if SEARCH_ALG not in config[HYPEROPT]:
+                    config[HYPEROPT][SEARCH_ALG] = hpexecutor[SEARCH_ALG]
+                del hpexecutor[SEARCH_ALG]
         else:
             warnings.warn(
                 'Missing "executor" section, adding "ray" executor will be flagged as error in v0.6', DeprecationWarning
