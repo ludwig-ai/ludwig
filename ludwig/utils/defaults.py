@@ -176,7 +176,7 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
                     warnings.warn(
                         'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
                     )
-                    hparams["trainer." + k[len(substr):]] = v
+                    hparams["trainer." + k[len(substr) :]] = v
                     del hparams[k]
 
         # check for legacy parameters in "executor"
