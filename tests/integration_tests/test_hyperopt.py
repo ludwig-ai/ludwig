@@ -37,18 +37,19 @@ RANDOM_SEARCH_SIZE = 4
 
 HYPEROPT_CONFIG = {
     "parameters": {
+        # using only float parameter as common in all search algorithms
         "trainer.learning_rate": {
             "space": "loguniform",
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        "combiner.fc_layers": {
-            "space": "choice",
-            "categories": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
-        },
-        "utterance.cell_type": {"space": "choice", "categories": ["rnn", "gru"]},
-        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
+        # "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        # "combiner.fc_layers": {
+        #     "space": "choice",
+        #     "categories": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
+        # },
+        # "utterance.cell_type": {"space": "choice", "categories": ["rnn", "gru"]},
+        # "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
     },
     "goal": "minimize",
     "executor": {"num_samples": 2},
@@ -70,8 +71,15 @@ SCENARIOS = [
         },
         "search_alg": {"type": "bohb"},
     },
-    # following scenarios should generate a RuntimeError exception
     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "ax"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "bayesopt"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "blendsearch"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "cfo"}},
+    {
+        "executor": {"type": "ray", "num_samples": 2},
+        "search_alg": {"type": "dragonfly", "domain": "euclidean", "optimizer": "random"}
+    },
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "hebo"}},
 ]
 
 
@@ -91,7 +99,7 @@ def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("scenario", SCENARIOS)
-def test_hyperopt_executor(scenario, csv_filename, validate_output_feature=False, validation_metric=None):
+def test_hyperopt_search_alg(scenario, csv_filename, validate_output_feature=False, validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -133,7 +141,7 @@ def test_hyperopt_executor(scenario, csv_filename, validate_output_feature=False
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
-        if search_alg["type"] in {"ax"}:
+        if search_alg["type"] in {""}:
             with pytest.raises(ImportError):
                 get_build_hyperopt_executor(RAY)(
                     hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
@@ -148,7 +156,7 @@ def test_hyperopt_executor(scenario, csv_filename, validate_output_feature=False
 
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
-    test_hyperopt_executor(
+    test_hyperopt_search_alg(
         {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
         csv_filename,
         validate_output_feature=True,

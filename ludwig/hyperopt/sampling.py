@@ -226,6 +226,51 @@ class AxSA(SearchAlgorithm):
         pass
 
 
+class BayesOptSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("bayes_opt", "bayesopt")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "random_state"
+
+
+class BlendsearchSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("flaml", "blendsearch")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "seed"
+
+    # override parent method, this search algorithm does not support
+    # setting random seed
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        pass
+
+
+class CFOSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("flaml", "cfo")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "seed"
+
+    # override parent method, this search algorithm does not support
+    # setting random seed
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        pass
+
+
+class DragonflySA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("dragonfly", "dragonfly")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "random_state_seed"
+
+
+class HEBOSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("hebo", "hebo")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "random_state_seed"
+
+
 def get_search_algorithm(search_algo):
     return get_from_registry(search_algo, search_algo_registry)
 
@@ -237,4 +282,9 @@ search_algo_registry = {
     "hyperopt": HyperoptSA,
     "bohb": BOHBSA,
     "ax": AxSA,
+    "bayesopt": BayesOptSA,
+    "blendsearch": BlendsearchSA,
+    "cfo": CFOSA,
+    "dragonfly": DragonflySA,
+    "hebo": HEBOSA,
 }
