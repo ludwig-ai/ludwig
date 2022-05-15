@@ -15,7 +15,7 @@
 import contextlib
 import logging
 import os.path
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import pytest
 import ray
@@ -43,56 +43,11 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        # "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        # "combiner.fc_layers": {
-        #     "space": "choice",
-        #     "categories": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
-        # },
-        # "utterance.cell_type": {"space": "choice", "categories": ["rnn", "gru"]},
-        # "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
     },
     "goal": "minimize",
-    "executor": {"type": "ray", "num_samples": 2},
-    "search_alg": {"type": "basic_variant"},
+    "executor": {"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}},
+    "search_alg": {"type": "variant_generator"},
 }
-
-# TODO: Remove
-# SCENARIOS = [
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "hyperopt"}},
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "bohb"}},
-#     {
-#         "executor": {
-#             "type": "ray",
-#             "num_samples": 3,
-#             "scheduler": {
-#                 "type": "hb_bohb",
-#                 "time_attr": "training_iteration",
-#                 "reduction_factor": 4,
-#             },
-#         },
-#         "search_alg": {"type": "bohb"},
-#     },
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "ax"}},
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "bayesopt"}},
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "blendsearch"}},
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "cfo"}},
-#     {
-#         "executor": {"type": "ray", "num_samples": 2},
-#         "search_alg": {"type": "dragonfly", "domain": "euclidean", "optimizer": "random"},
-#     },
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "hebo"}},
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "skopt"}},
-#     # {
-#     #     "executor": {"type": "ray", "num_samples": 2},
-#     #     "search_alg": {"type": "nevergrad", "optimizer": "Optimizer"}
-#     # },
-#     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "optuna"}},
-#     # {
-#     #     "executor": {"type": "ray", "num_samples": 2},
-#     #     "search_alg": {"type": "zoopt", "algo": "Asracos", "budget": 2}
-#     # },
-# ]
 
 SEARCH_ALGS = [
     "variant_generator",
@@ -108,6 +63,41 @@ SEARCH_ALGS = [
     "skopt",
     "optuna",
 ]
+
+SCHEDULERS = [
+    "fifo",
+    "asynchyperband",
+    "async_hyperband",
+    "median_stopping_rule",
+    "medianstopping",
+    "hyperband",
+    "hb_bohb",
+    "pbt",
+    # "pb2",  commented out for now: https://github.com/ray-project/ray/issues/24815
+    "resource_changing",
+]
+
+
+def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
+    input_features = [
+        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
+
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+
+    rel_path = generate_data(input_features, output_features, dataset_fp)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+    }
+
+    config = merge_with_defaults(config)
+
+    return config, rel_path
 
 
 @contextlib.contextmanager
@@ -127,33 +117,23 @@ def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS)
 def test_hyperopt_search_alg(search_alg, csv_filename, validate_output_feature=False, validation_metric=None):
-    input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
-    ]
-
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
-
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
-    }
-
-    config = merge_with_defaults(config)
+    config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
     # finalize hyperopt config settings
     if search_alg == "dragonfly":
-        hyperopt_config["search_alg"] = {"type": search_alg, "domain": "euclidean", "optimizer": "random"}
+        hyperopt_config["search_alg"] = {
+            "type": search_alg,
+            "domain": "euclidean",
+            "optimizer": "random",
+        }
     else:
-        hyperopt_config["search_alg"] = {"type": search_alg}
+        hyperopt_config["search_alg"] = {
+            "type": search_alg,
+        }
 
     if validate_output_feature:
-        hyperopt_config["output_feature"] = output_features[0]["name"]
+        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
@@ -193,6 +173,62 @@ def test_hyperopt_executor_with_metric(csv_filename):
         validate_output_feature=True,
         validation_metric=ACCURACY,
     )
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("scheduler", SCHEDULERS)
+def test_hyperopt_scheduler(scheduler, csv_filename, validate_output_feature=False, validation_metric=None):
+    config, rel_path = _setup_ludwig_config(csv_filename)
+
+    hyperopt_config = HYPEROPT_CONFIG.copy()
+    # finalize hyperopt config settings
+    if scheduler == "pb2":
+        # setup scheduler hyperparam_bounds parameter
+        min = hyperopt_config["parameters"]["trainer.learning_rate"]["lower"]
+        max = hyperopt_config["parameters"]["trainer.learning_rate"]["upper"]
+        hyperparam_bounds = {
+            "trainer.learning_rate": [min, max],
+        }
+        hyperopt_config["executor"]["scheduler"] = {
+            "type": scheduler,
+            "hyperparam_bounds": hyperparam_bounds,
+        }
+    else:
+        hyperopt_config["executor"]["scheduler"] = {
+            "type": scheduler,
+        }
+
+    if validate_output_feature:
+        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+    if validation_metric:
+        hyperopt_config["validation_metric"] = validation_metric
+
+    update_hyperopt_params_with_defaults(hyperopt_config)
+
+    parameters = hyperopt_config["parameters"]
+    split = hyperopt_config["split"]
+    output_feature = hyperopt_config["output_feature"]
+    metric = hyperopt_config["metric"]
+    goal = hyperopt_config["goal"]
+    executor = hyperopt_config["executor"]
+    search_alg = hyperopt_config["search_alg"]
+
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
+
+    gpus = [i for i in range(torch.cuda.device_count())]
+    with ray_start(num_gpus=len(gpus)):
+        # TODO: Determine if we still need this if-then-else construct
+        if search_alg["type"] in {""}:
+            with pytest.raises(ImportError):
+                get_build_hyperopt_executor(RAY)(
+                    hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+                )
+        else:
+            hyperopt_executor = get_build_hyperopt_executor(RAY)(
+                hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+            )
+            raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
+            assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed
