@@ -210,8 +210,12 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
                 "error in v0.6",
                 DeprecationWarning,
             )
-            if SEARCH_ALG not in config[HYPEROPT]:
-                config[HYPEROPT][SEARCH_ALG] = {TYPE: "variant_generator"}
+            if SEARCH_ALG in config[HYPEROPT][SAMPLER]:
+                if SEARCH_ALG not in config[HYPEROPT]:
+                    config[HYPEROPT][SEARCH_ALG] = config[HYPEROPT][SAMPLER][SEARCH_ALG]
+                    warnings.warn(
+                        'Moved "search_alg" to hyperopt config top-level', DeprecationWarning
+                    )
 
             # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
             if "num_samples" in config[HYPEROPT][SAMPLER] and "num_samples" not in config[HYPEROPT][EXECUTOR]:
@@ -224,6 +228,14 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
 
             # remove legacy section
             del config[HYPEROPT][SAMPLER]
+
+        if SEARCH_ALG not in config[HYPEROPT]:
+            # make top-level as search_alg, if missing put in default value
+            config[HYPEROPT][SEARCH_ALG] = {TYPE: "variant_generator"}
+            warnings.warn(
+                'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error '
+                'in v0.6', DeprecationWarning
+            )
 
     if TRAINER in config:
         trainer = config[TRAINER]
