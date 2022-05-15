@@ -341,6 +341,8 @@ class Trainer(BaseTrainer):
 
         self.epochs = config.epochs
         self.train_steps = config.train_steps
+        self.total_steps = 0  # Computed during training, after batcher has been initialized.
+
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
