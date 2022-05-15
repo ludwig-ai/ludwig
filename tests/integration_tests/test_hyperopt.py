@@ -77,7 +77,7 @@ SCENARIOS = [
     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "cfo"}},
     {
         "executor": {"type": "ray", "num_samples": 2},
-        "search_alg": {"type": "dragonfly", "domain": "euclidean", "optimizer": "random"}
+        "search_alg": {"type": "dragonfly", "domain": "euclidean", "optimizer": "random"},
     },
     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "hebo"}},
 ]
