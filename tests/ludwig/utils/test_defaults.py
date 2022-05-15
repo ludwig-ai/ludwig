@@ -43,7 +43,7 @@ HYPEROPT_CONFIG = {
             ],
         },
     },
-    "sampler": {"type": "ray"},
+    "search_alg": {"type": "hyperopt"},
     "executor": {"type": "ray"},
     "goal": "minimize",
 }
@@ -88,7 +88,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
-        config[HYPEROPT]["sampler"]["scheduler"] = SCHEDULER
+        config[HYPEROPT]["executor"]["scheduler"] = SCHEDULER
 
     merged_config = merge_with_defaults(config)
 
