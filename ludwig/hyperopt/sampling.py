@@ -218,7 +218,6 @@ class AxSA(SearchAlgorithm):
         _is_package_installed("sqlalchemy", "ax")
         _is_package_installed("ax", "ax")
         super().__init__(search_alg_dict)
-        self.random_seed_attribute_name = "seed"
 
     # override parent method, this search algorithm does not support
     # setting random seed
@@ -237,7 +236,6 @@ class BlendsearchSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("flaml", "blendsearch")
         super().__init__(search_alg_dict)
-        self.random_seed_attribute_name = "seed"
 
     # override parent method, this search algorithm does not support
     # setting random seed
@@ -271,6 +269,46 @@ class HEBOSA(SearchAlgorithm):
         self.random_seed_attribute_name = "random_state_seed"
 
 
+class SkoptSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("skopt", "skopt")
+        super().__init__(search_alg_dict)
+
+    # override parent method, this search algorithm does not support
+    # setting random seed
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        pass
+
+
+class NevergradSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("nevergrad", "nevergrad")
+        super().__init__(search_alg_dict)
+
+    # override parent method, this search algorithm does not support
+    # setting random seed
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        pass
+
+
+class OptunaSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("optuna", "optuna")
+        super().__init__(search_alg_dict)
+        self.random_seed_attribute_name = "seed"
+
+
+class ZooptSA(SearchAlgorithm):
+    def __init__(self, search_alg_dict: Dict) -> None:
+        _is_package_installed("zoopt", "zoopt")
+        super().__init__(search_alg_dict)
+
+    # override parent method, this search algorithm does not support
+    # setting random seed
+    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
+        pass
+
+
 def get_search_algorithm(search_algo):
     return get_from_registry(search_algo, search_algo_registry)
 
@@ -287,4 +325,8 @@ search_algo_registry = {
     "cfo": CFOSA,
     "dragonfly": DragonflySA,
     "hebo": HEBOSA,
+    "skopt": SkoptSA,
+    "nevergrad": NevergradSA,
+    "optuna": OptunaSA,
+    "zoopt": ZooptSA
 }

@@ -26,3 +26,15 @@ dragonfly-opt
 
 # search_alg: hebo
 HEBO
+
+# search_alg: nevergrad
+nevergrad
+
+# search_alg: optuna
+optuna
+
+# search_alg: skopt
+scikit-optimize
+
+# search_alg: zoopt
+zoopt

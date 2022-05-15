@@ -80,6 +80,16 @@ SCENARIOS = [
         "search_alg": {"type": "dragonfly", "domain": "euclidean", "optimizer": "random"}
     },
     {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "hebo"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "skopt"}},
+    # {
+    #     "executor": {"type": "ray", "num_samples": 2},
+    #     "search_alg": {"type": "nevergrad", "optimizer": "Optimizer"}
+    # },
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "optuna"}},
+    # {
+    #     "executor": {"type": "ray", "num_samples": 2},
+    #     "search_alg": {"type": "zoopt", "algo": "Asracos", "budget": 2}
+    # },
 ]
 
 
