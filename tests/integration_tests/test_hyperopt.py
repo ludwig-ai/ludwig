@@ -53,7 +53,7 @@ HYPEROPT_CONFIG = {
     },
     "goal": "minimize",
     "executor": {"type": "ray", "num_samples": 2},
-    "search_alg": {"type": "basic_variant"}
+    "search_alg": {"type": "basic_variant"},
 }
 
 # TODO: Remove
