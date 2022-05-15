@@ -166,6 +166,8 @@ class Trainer(BaseTrainer):
 
         self.epochs = config.epochs
         self.train_steps = config.train_steps
+        self.total_steps = 0  # Computed during training, after batcher has been initialized.
+
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
@@ -224,9 +226,9 @@ class Trainer(BaseTrainer):
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # when training starts the sigint handler will be replaced with
-        # set_epochs_to_1_or_quit so this is needed to remember
+        # set_steps_to_1_or_quit so this is needed to remember
         # the original sigint to restore at the end of training
-        # and before set_epochs_to_1_or_quit returns
+        # and before set_steps_to_1_or_quit returns
         self.original_sigint_handler = None
 
         # TODO(Justin): Move to config validation when that's ready.
@@ -401,6 +403,7 @@ class Trainer(BaseTrainer):
                 best_lr = learning_rates[best_lr_index]
                 return best_lr
             except Exception:
+                logger.exception("Failed to detect optimal learning rate")
                 return None
 
         self.model.train()  # Sets model training mode.
@@ -412,8 +415,6 @@ class Trainer(BaseTrainer):
                 batcher.set_epoch(epoch, self.batch_size)
                 self.model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
-                    logger.info(f"Exploring learning_rate={current_learning_rate}")
-
                     batch = batcher.next_batch()
                     inputs = {
                         i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
@@ -434,7 +435,8 @@ class Trainer(BaseTrainer):
 
                     # store learning rate and loss
                     learning_rates.append(current_learning_rate)
-                    losses.append(smoothed_loss)
+                    losses.append(smoothed_loss.detach().cpu().numpy())
+                    logger.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
 
                     # check whether loss is diverging
                     if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
@@ -507,6 +509,8 @@ class Trainer(BaseTrainer):
                 except RuntimeError:
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
+                    logger.info(f"OOM at batch_size={batch_size}")
+                    break
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
@@ -679,7 +683,7 @@ class Trainer(BaseTrainer):
             # set the original sigint signal handler
             # as we want to restore it at the end of training
             self.original_sigint_handler = signal.getsignal(signal.SIGINT)
-            signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
+            signal.signal(signal.SIGINT, self.set_steps_to_1_or_quit)
 
         metrics_names = get_metric_names(output_features)
 
@@ -787,7 +791,7 @@ class Trainer(BaseTrainer):
                 horovod=self.horovod,
             ) as batcher:
                 # ================ Training Loop ================
-                total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
+                self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -801,8 +805,8 @@ class Trainer(BaseTrainer):
 
                 if self.is_coordinator():
                     logger.info(
-                        f"Training for {total_steps} step(s), approximately "
-                        f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+                        f"Training for {self.total_steps} step(s), approximately "
+                        f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
                     logger.info(
                         f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
@@ -816,12 +820,12 @@ class Trainer(BaseTrainer):
                 if self.is_coordinator():
                     progress_bar = tqdm(
                         desc="Training",
-                        total=total_steps,
+                        total=self.total_steps,
                         file=sys.stdout,
                         disable=is_progressbar_disabled(),
                     )
 
-                while progress_tracker.steps < total_steps:
+                while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
@@ -1230,21 +1234,21 @@ class Trainer(BaseTrainer):
             should_break = True
         return should_break
 
-    def set_epochs_to_1_or_quit(self, signum, frame):
+    def set_steps_to_1_or_quit(self, signum, frame):
+        """Custom SIGINT handler used to elegantly exit training.
+
+        A single SIGINT will stop training after the next training step. A second SIGINT will stop training immediately.
+        """
         if not self.received_sigint:
-            self.epochs = 1
+            self.total_steps = 1
             self.received_sigint = True
-            logger.critical("\nReceived SIGINT, will finish this epoch and then conclude " "the training")
-            logger.critical("Send another SIGINT to immediately interrupt the process")
+            logger.critical("\nReceived SIGINT, will finish this training step and then conclude training.")
+            logger.critical("Send another SIGINT to immediately interrupt the process.")
         else:
             logger.critical("\nReceived a second SIGINT, will now quit")
             if self.original_sigint_handler:
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
-
-    def quit_training(self, signum, frame):
-        logger.critical("Received SIGQUIT, will kill training")
-        sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
         if self.is_coordinator():
