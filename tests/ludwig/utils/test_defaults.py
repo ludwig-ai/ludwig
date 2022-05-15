@@ -136,6 +136,8 @@ def test_deprecated_field_aliases():
                 },
             },
             "goal": "minimize",
+            "sampler": {"type": "grid", "num_samples": 2, "scheduler": {"type": "fifo"}},
+            "executor": {"type": "grid"},
         },
     }
 
@@ -151,3 +153,9 @@ def test_deprecated_field_aliases():
     hparams = merged_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
     assert "trainer.learning_rate" in hparams
+
+    assert "sampler" not in merged_config[HYPEROPT]
+
+    assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
+    assert "num_samples" in merged_config[HYPEROPT]["executor"]
+    assert "scheduler" in merged_config[HYPEROPT]["executor"]

@@ -29,12 +29,17 @@ from ludwig.constants import (
     COMBINED,
     DROP_ROW,
     EVAL_BATCH_SIZE,
+    EXECUTOR,
     HYPEROPT,
     LOSS,
     NAME,
     NUMBER,
+    PARAMETERS,
     PREPROCESSING,
     PROC_COLUMN,
+    RAY,
+    SAMPLER,
+    SEARCH_ALG,
     TRAINER,
     TYPE,
 )
@@ -161,16 +166,57 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
             )
             feature[TYPE] = NUMBER
 
-    if HYPEROPT in config and "parameters" in config[HYPEROPT]:
-        hparams = config[HYPEROPT]["parameters"]
-        for k, v in list(hparams.items()):
-            substr = "training."
-            if k.startswith(substr):
+    if HYPEROPT in config:
+        # check for use of legacy "training" reference, if any found convert to "trainer"
+        if PARAMETERS in config[HYPEROPT]:
+            hparams = config[HYPEROPT][PARAMETERS]
+            for k, v in list(hparams.items()):
+                substr = "training."
+                if k.startswith(substr):
+                    warnings.warn(
+                        'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
+                    )
+                    hparams["trainer." + k[len(substr):]] = v
+                    del hparams[k]
+
+        # check for legacy parameters in "executor"
+        if EXECUTOR in config[HYPEROPT]:
+            hpexecutor = config[HYPEROPT][EXECUTOR]
+            executor_type = hpexecutor[TYPE]
+            if executor_type != RAY:
                 warnings.warn(
-                    'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
+                    f'executor type "{executor_type}" not supported, converted to "ray" will be flagged as error '
+                    "in v0.6",
+                    DeprecationWarning,
                 )
-                hparams["trainer." + k[len(substr) :]] = v
-                del hparams[k]
+                hpexecutor[TYPE] = RAY
+        else:
+            warnings.warn(
+                'Missing "executor" section, adding "ray" executor will be flagged as error in v0.6', DeprecationWarning
+            )
+            config[HYPEROPT][EXECUTOR] = {TYPE: RAY}
+
+        # check for legacy "sampler" section
+        if SAMPLER in config[HYPEROPT]:
+            warnings.warn(
+                f'"{SAMPLER}" is no longer supported, converted to "{SEARCH_ALG}". "{SAMPLER}" will be flagged as '
+                "error in v0.6",
+                DeprecationWarning,
+            )
+            if SEARCH_ALG not in config[HYPEROPT]:
+                config[HYPEROPT][SEARCH_ALG] = {TYPE: "variant_generator"}
+
+            # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
+            if "num_samples" in config[HYPEROPT][SAMPLER] and "num_samples" not in config[HYPEROPT][EXECUTOR]:
+                config[HYPEROPT][EXECUTOR]["num_samples"] = config[HYPEROPT][SAMPLER]["num_samples"]
+                warnings.warn('Moved "num_samples" from "sampler" to "executor"', DeprecationWarning)
+
+            if "scheduler" in config[HYPEROPT][SAMPLER] and "scheduler" not in config[HYPEROPT][EXECUTOR]:
+                config[HYPEROPT][EXECUTOR]["scheduler"] = config[HYPEROPT][SAMPLER]["scheduler"]
+                warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
+
+            # remove legacy section
+            del config[HYPEROPT][SAMPLER]
 
     if TRAINER in config:
         trainer = config[TRAINER]
