@@ -328,5 +328,5 @@ search_algo_registry = {
     "skopt": SkoptSA,
     "nevergrad": NevergradSA,
     "optuna": OptunaSA,
-    "zoopt": ZooptSA
+    "zoopt": ZooptSA,
 }
