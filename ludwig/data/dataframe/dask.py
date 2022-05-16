@@ -48,11 +48,9 @@ class DaskEngine(DataFrameEngine):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
-        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
-        # TODO: address if following results in fragmented DataFrame
-        col_names, cols = zip(*proc_cols.items())
-        dataset = dd.concat([dataset] + list(cols), axis=1)
-        dataset.columns = col_names
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
+        for k, v in proc_cols.items():
+            dataset[k] = v
         return dataset
 
     def parallelize(self, data):

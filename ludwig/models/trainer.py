@@ -25,17 +25,15 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
-from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-import ludwig.marshmallow.marshmallow_schema_utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -49,14 +47,8 @@ from ludwig.globals import (
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
-from ludwig.modules.optimization_modules import (
-    BaseOptimizerConfig,
-    create_clipper,
-    create_optimizer,
-    GradientClippingConfig,
-    GradientClippingDataclassField,
-    OptimizerDataclassField,
-)
+from ludwig.modules.optimization_modules import create_clipper, create_optimizer
+from ludwig.schema.trainer import TrainerConfig
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -86,6 +78,17 @@ class BaseTrainer(ABC):
     ):
         raise NotImplementedError()
 
+    @abstractmethod
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: Dataset,
+        random_seed: int = default_random_seed,
+        max_trials: int = 10,
+        halving_limit: int = 3,
+    ) -> int:
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def validation_field(self):
@@ -106,184 +109,6 @@ class BaseTrainer(ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
-
-
-def get_trainer_jsonschema():
-    return schema.unload_jsonschema_from_marshmallow_class(TrainerConfig)
-
-
-@dataclass
-class TrainerConfig(schema.BaseMarshmallowConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
-
-    optimizer: BaseOptimizerConfig = OptimizerDataclassField(
-        default={"type": "adam"}, description="Parameter values for selected torch optimizer."
-    )
-
-    epochs: int = schema.PositiveInteger(
-        default=100, description="Number of epochs the algorithm is intended to be run over."
-    )
-
-    train_steps: int = schema.PositiveInteger(
-        default=None,
-        description=(
-            "Maximum number of training steps the algorithm is intended to be run over. "
-            + "If unset, then `epochs` is used to determine training length."
-        ),
-    )
-
-    regularization_lambda: float = schema.FloatRange(
-        default=0.0, min=0, description="Strength of the $L2$ regularization."
-    )
-
-    regularization_type: Optional[str] = schema.RegularizerOptions(default="l2", description="Type of regularization.")
-
-    should_shuffle: bool = schema.Boolean(
-        default=True, description="Whether to shuffle batches during training when true."
-    )
-
-    learning_rate: float = schema.NumericOrStringOptionsField(
-        default=0.001,
-        min=0.0,
-        max=1.0,
-        options=["auto"],
-        default_numeric=0.001,
-        default_option="auto",
-        nullable=False,
-        description=(
-            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
-            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
-        ),
-    )
-
-    batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
-        default=128,
-        options=["auto"],
-        default_numeric=128,
-        default_option="auto",
-        nullable=False,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for training.",
-    )
-
-    eval_batch_size: Union[None, int, str] = schema.IntegerOrStringOptionsField(
-        default=None,
-        options=["auto"],
-        default_numeric=None,
-        default_option="auto",
-        nullable=True,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for evaluation.",
-    )
-
-    early_stop: int = schema.IntegerRange(
-        default=5,
-        min=-1,
-        description=(
-            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
-            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
-        ),
-    )
-
-    steps_per_checkpoint: int = schema.NonNegativeInteger(
-        default=0,
-        description=(
-            "How often the model is checkpointed. Also dictates maximum evaluation frequency. If 0 the model is "
-            "checkpointed after every epoch."
-        ),
-    )
-
-    checkpoints_per_epoch: int = schema.NonNegativeInteger(
-        default=0,
-        description=(
-            "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note "
-            "that it is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch`."
-        ),
-    )
-
-    evaluate_training_set: bool = schema.Boolean(
-        default=True, description="Whether to include the entire training set during evaluation."
-    )
-
-    reduce_learning_rate_on_plateau: float = schema.FloatRange(
-        default=0.0,
-        min=0.0,
-        max=1.0,
-        description=(
-            "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does "
-            "not improve"
-        ),
-    )
-
-    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(
-        default=5, description="How many epochs have to pass before the learning rate reduces."
-    )
-
-    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(
-        default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
-    )
-
-    reduce_learning_rate_eval_metric: str = schema.String(default=LOSS, description="TODO: Document parameters.")
-
-    reduce_learning_rate_eval_split: str = schema.String(default=TRAINING, description="TODO: Document parameters.")
-
-    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(
-        default=0, description="Number to increase the batch size by on a plateau."
-    )
-
-    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(
-        default=5, description="How many epochs to wait for before increasing the batch size."
-    )
-
-    increase_batch_size_on_plateau_rate: float = schema.NonNegativeFloat(
-        default=2.0, description="Rate at which the batch size increases."
-    )
-
-    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(
-        default=512, description="Maximum size of the batch."
-    )
-
-    increase_batch_size_eval_metric: str = schema.String(default=LOSS, description="TODO: Document parameters.")
-
-    increase_batch_size_eval_split: str = schema.String(default=TRAINING, description="TODO: Document parameters.")
-
-    decay: bool = schema.Boolean(default=False, description="Turn on exponential decay of the learning rate.")
-
-    decay_steps: int = schema.PositiveInteger(default=10000, description="TODO: Document parameters.")
-
-    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0, description="TODO: Document parameters.")
-
-    staircase: bool = schema.Boolean(default=False, description="Decays the learning rate at discrete intervals.")
-
-    gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
-        description="Parameter values for gradient clipping."
-    )
-
-    # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = schema.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
-    )
-
-    validation_metric: str = schema.String(
-        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
-    )
-
-    learning_rate_warmup_epochs: float = schema.NonNegativeFloat(
-        default=1.0, description="Number of epochs to warmup the learning rate for."
-    )
-
-    learning_rate_scaling: str = schema.StringOptions(
-        ["constant", "sqrt", "linear"],
-        default="linear",
-        description=(
-            "Scale by which to increase the learning rate as the number of distributed workers increases. "
-            "Traditionally the learning rate is scaled linearly with the number of workers to reflect the proportion by"
-            " which the effective batch size is increased. For very large batch sizes, a softer square-root scale can "
-            "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
-            "workers, setting this value to constant can be used to disable scale-up."
-        ),
-    )
 
 
 class Trainer(BaseTrainer):
@@ -351,6 +176,8 @@ class Trainer(BaseTrainer):
 
         self.epochs = config.epochs
         self.train_steps = config.train_steps
+        self.total_steps = 0  # Computed during training, after batcher has been initialized.
+
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
         self.learning_rate = config.learning_rate
@@ -420,9 +247,9 @@ class Trainer(BaseTrainer):
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # when training starts the sigint handler will be replaced with
-        # set_epochs_to_1_or_quit so this is needed to remember
+        # set_steps_to_1_or_quit so this is needed to remember
         # the original sigint to restore at the end of training
-        # and before set_epochs_to_1_or_quit returns
+        # and before set_steps_to_1_or_quit returns
         self.original_sigint_handler = None
 
         # TODO(Justin): Move to config validation when that's ready.
@@ -569,6 +396,8 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
+        logger.info("Tuning learning rate...")
+
         learning_rate = self.base_learning_rate
 
         current_learning_rate = min_lr
@@ -595,6 +424,7 @@ class Trainer(BaseTrainer):
                 best_lr = learning_rates[best_lr_index]
                 return best_lr
             except Exception:
+                logger.exception("Failed to detect optimal learning rate")
                 return None
 
         self.model.train()  # Sets model training mode.
@@ -626,7 +456,8 @@ class Trainer(BaseTrainer):
 
                     # store learning rate and loss
                     learning_rates.append(current_learning_rate)
-                    losses.append(smoothed_loss)
+                    losses.append(smoothed_loss.detach().cpu().numpy())
+                    logger.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
 
                     # check whether loss is diverging
                     if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
@@ -650,6 +481,10 @@ class Trainer(BaseTrainer):
         optimal_lr = get_optimal_lr(losses, learning_rates)
         if optimal_lr:
             learning_rate = optimal_lr
+        else:
+            logger.info("Could not determine optimal learning rate, falling back to base default")
+
+        logger.info(f"Selected learning_rate={learning_rate}")
         return learning_rate
 
     def tune_batch_size(
@@ -657,16 +492,19 @@ class Trainer(BaseTrainer):
         config: Dict[str, Any],
         training_set: Dataset,
         random_seed: int = default_random_seed,
-        max_trials: int = 10,
+        max_trials: int = 20,
         halving_limit: int = 3,
     ) -> int:
+        logger.info("Tuning batch size...")
+
         def _is_valid_batch_size(batch_size):
+            # make sure that batch size is valid (e.g. less than size of ds)
             return batch_size < len(training_set)
 
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value (namely, 128)
-        batch_size = 128
+        # placeholder starting value
+        batch_size = 2
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
@@ -675,47 +513,24 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        best_batch_size = None
         try:
-            high = None
             count = 0
-            halving_count = 0
-            while halving_count < halving_limit:
+            while count < max_trials and _is_valid_batch_size(batch_size):
+                logger.info(f"Exploring batch_size={batch_size}")
                 gc.collect()
 
-                low = batch_size
-                prev_batch_size = batch_size
                 try:
                     self.train_for_tuning(training_set, batch_size, total_steps=3)
+                    best_batch_size = batch_size
                     count += 1
-                    if count >= max_trials:
-                        break
-                    if high:
-                        if high - low <= 1:
-                            break
-                        midval = (high + low) // 2
-                        batch_size = midval
-                    else:
-                        batch_size *= 2  # double batch size
 
-                    if batch_size == prev_batch_size:
-                        break
-
+                    # double batch size
+                    batch_size *= 2
                 except RuntimeError:
                     # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
-                    high = batch_size
-                    halving_count += 1
-                    midval = (high + low) // 2
-                    batch_size = midval
-                    if high - low <= 1:
-                        break
-
-                # make sure that batch size is valid (e.g. less than size of ds)
-                if not _is_valid_batch_size(batch_size):
-                    batch_size = min(batch_size, len(training_set))
-
-                # edge case where bs is no longer increasing
-                if batch_size == prev_batch_size:
+                    logger.info(f"OOM at batch_size={batch_size}")
                     break
         finally:
             # Restore original parameters to defaults
@@ -723,7 +538,8 @@ class Trainer(BaseTrainer):
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-        return batch_size
+        logger.info(f"Selected batch_size={best_batch_size}")
+        return best_batch_size
 
     def run_evaluation(
         self,
@@ -888,7 +704,7 @@ class Trainer(BaseTrainer):
             # set the original sigint signal handler
             # as we want to restore it at the end of training
             self.original_sigint_handler = signal.getsignal(signal.SIGINT)
-            signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
+            signal.signal(signal.SIGINT, self.set_steps_to_1_or_quit)
 
         metrics_names = get_metric_names(output_features)
 
@@ -998,7 +814,7 @@ class Trainer(BaseTrainer):
                 horovod=self.horovod,
             ) as batcher:
                 # ================ Training Loop ================
-                total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
+                self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -1012,8 +828,8 @@ class Trainer(BaseTrainer):
 
                 if self.is_coordinator():
                     logger.info(
-                        f"Training for {total_steps} step(s), approximately "
-                        f"{int(total_steps / batcher.steps_per_epoch)} epoch(s)."
+                        f"Training for {self.total_steps} step(s), approximately "
+                        f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
                     logger.info(
                         f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
@@ -1027,12 +843,12 @@ class Trainer(BaseTrainer):
                 if self.is_coordinator():
                     progress_bar = tqdm(
                         desc="Training",
-                        total=total_steps,
+                        total=self.total_steps,
                         file=sys.stdout,
                         disable=is_progressbar_disabled(),
                     )
 
-                while progress_tracker.steps < total_steps:
+                while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
                     batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
@@ -1452,21 +1268,21 @@ class Trainer(BaseTrainer):
             should_break = True
         return should_break
 
-    def set_epochs_to_1_or_quit(self, signum, frame):
+    def set_steps_to_1_or_quit(self, signum, frame):
+        """Custom SIGINT handler used to elegantly exit training.
+
+        A single SIGINT will stop training after the next training step. A second SIGINT will stop training immediately.
+        """
         if not self.received_sigint:
-            self.epochs = 1
+            self.total_steps = 1
             self.received_sigint = True
-            logger.critical("\nReceived SIGINT, will finish this epoch and then conclude " "the training")
-            logger.critical("Send another SIGINT to immediately interrupt the process")
+            logger.critical("\nReceived SIGINT, will finish this training step and then conclude training.")
+            logger.critical("Send another SIGINT to immediately interrupt the process.")
         else:
             logger.critical("\nReceived a second SIGINT, will now quit")
             if self.original_sigint_handler:
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
-
-    def quit_training(self, signum, frame):
-        logger.critical("Received SIGQUIT, will kill training")
-        sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
         if self.is_coordinator():

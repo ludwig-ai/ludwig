@@ -15,6 +15,7 @@
 import contextlib
 import os
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
@@ -25,7 +26,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
+from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
@@ -103,6 +104,8 @@ def run_api_experiment(config, dataset, backend_config, skip_save_processed_inpu
     if isinstance(model.backend.df_engine, DaskEngine):
         assert model.backend.df_engine.parallelism == backend_config["processor"]["parallelism"]
 
+    return model
+
 
 def run_split_api_experiment(config, data_parquet, backend_config):
     train_fname, val_fname, test_fname = split(data_parquet)
@@ -156,6 +159,7 @@ def run_test_with_features(
     df_engine=None,
     dataset_type="parquet",
     skip_save_processed_input=True,
+    nan_percent=0.0,
 ):
     with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
         config = {
@@ -172,7 +176,7 @@ def run_test_with_features(
         with tempfile.TemporaryDirectory() as tmpdir:
             csv_filename = os.path.join(tmpdir, "dataset.csv")
             dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-            dataset = create_data_set_to_use(dataset_type, dataset_csv)
+            dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
 
             if expect_error:
                 with pytest.raises(ValueError):
@@ -191,7 +195,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("dataset_type", ["parquet", "csv"])
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_save_processed_input(dataset_type):
     input_features = [
@@ -206,6 +210,7 @@ def test_ray_save_processed_input(dataset_type):
         df_engine="dask",
         dataset_type=dataset_type,
         skip_save_processed_input=False,
+        nan_percent=0.1,
     )
 
 
@@ -255,11 +260,25 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
+@pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
 @pytest.mark.distributed
-def test_ray_audio():
+def test_ray_audio(feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:
+        preprocessing_params = {
+            "audio_file_length_limit_in_s": 3.0,
+            "missing_value_strategy": BACKFILL,
+            "in_memory": True,
+            "padding_value": 0,
+            "norm": "per_file",
+            "audio_feature": {
+                "type": feature_type,
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
+            },
+        }
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features = [audio_feature(folder=audio_dest_folder)]
+        input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
         run_test_with_features(input_features, output_features)
 
@@ -339,7 +358,7 @@ def test_ray_lazy_load_image_error():
 
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
-@pytest.mark.skipIf(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
 def test_train_gpu_load_cpu():
     input_features = [
@@ -415,3 +434,31 @@ def train_gpu(config, dataset, output_directory):
 def predict_cpu(model_dir, dataset):
     model = LudwigModel.load(model_dir, backend="local")
     model.predict(dataset)
+
+
+@pytest.mark.skipif(LooseVersion(ray.__version__) < LooseVersion("1.12"), reason="Serialization issue before Ray 1.12")
+@pytest.mark.distributed
+def test_tune_batch_size_lr():
+    with ray_start(num_cpus=2, num_gpus=None):
+        config = {
+            "input_features": [
+                number_feature(normalization="zscore"),
+                set_feature(),
+                binary_feature(),
+            ],
+            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
+        }
+
+        backend_config = {**RAY_BACKEND_CONFIG}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            dataset_csv = generate_data(
+                config["input_features"], config["output_features"], csv_filename, num_examples=100
+            )
+            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+            model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+            assert model.config[TRAINER]["batch_size"] != "auto"
+            assert model.config[TRAINER]["learning_rate"] != "auto"
