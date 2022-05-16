@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from functools import partial
 import logging
 import os
 
@@ -46,6 +47,7 @@ from ludwig.utils.audio_utils import (
     get_phase_stft_magnitude,
     get_stft_magnitude,
     read_audio,
+    read_audio_from_str,
 )
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -148,11 +150,10 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_file_length_limit_in_s,
         backend,
     ):
-        def read_audio_file(path):
-            return read_audio(path, src_path)
-
         df_engine = backend.df_engine
-        raw_audio = df_engine.map_objects(column, read_audio_file)
+        audio_filenames = df_engine.compute(column).tolist()
+
+        raw_audio = backend.read_binary_files(audio_filenames, map_fn=partial(read_audio_from_str, is_bytes=True))
 
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])

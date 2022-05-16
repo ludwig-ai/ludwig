@@ -15,15 +15,22 @@
 # ==============================================================================
 
 import contextlib
+import functools
+import io
+import logging
 import os
 import pathlib
 import tempfile
+from typing import Optional
 from urllib.parse import unquote, urlparse
 
 import fsspec
 import h5py
 from filelock import FileLock
 from fsspec.core import split_protocol
+import requests
+
+logger = logging.getLogger(__name__)
 
 
 def get_fs_and_path(url):
@@ -51,6 +58,34 @@ def upgrade_http(urlpath):
     if protocol == "http":
         return "https://" + url
     return None
+
+
+@functools.lru_cache(maxsize=32)
+def get_bytes_from_path(path: str) -> Optional[io.BytesIO]:
+    if is_http(path):
+        try:
+            get_bytes_from_http_path(path)
+        except requests.exceptions.RequestException as e:
+            logger.warning(e)
+    else:
+        try:
+            with open_file(path) as f:
+                return io.BytesIO(f.read())
+        except OSError as e:
+            logger.warning(e)
+            return None
+
+
+def get_bytes_from_http_path(path: str) -> io.BytesIO:
+    data = requests.get(path, stream=True)
+    if data.status_code == 404:
+        upgraded = upgrade_http(path)
+        if upgraded:
+            logger.info(f"reading url {path} failed. upgrading to https and retrying")
+            return get_bytes_from_http_path(upgraded)
+        else:
+            raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
+    return io.BytesIO(data.raw.read())
 
 
 def find_non_existing_dir_by_adding_suffix(directory_name):

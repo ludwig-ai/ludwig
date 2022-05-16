@@ -15,14 +15,18 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, wait
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Callable, List, Optional, Union
+
+import pandas as pd
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.ecd import ECD
+from ludwig.utils.fs_utils import get_bytes_from_path
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
@@ -83,6 +87,10 @@ class Backend(ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @abstractmethod
+    def read_binary_files(self, filepaths):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def num_nodes(self) -> int:
@@ -100,6 +108,11 @@ class LocalPreprocessingMixin:
 
     def check_lazy_load_supported(self, feature):
         pass
+
+    def read_binary_files(self, filepaths: List[str], map_fn: Optional[Callable] = None):
+        with ThreadPoolExecutor() as executor:  # number of threads is inferred
+            res = executor.map(get_bytes_from_path, filepaths)
+        return pd.Series(res)
 
 
 class LocalTrainingMixin:

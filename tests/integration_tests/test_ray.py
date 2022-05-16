@@ -260,7 +260,7 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
-@pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
+@pytest.mark.parametrize("feature_type", ["fbank"])
 @pytest.mark.distributed
 def test_ray_audio(feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:

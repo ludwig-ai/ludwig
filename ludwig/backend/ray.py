@@ -19,7 +19,7 @@ import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import dask
 import numpy as np
@@ -757,6 +757,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"RayBackend does not support lazy loading of data files at train time. "
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
+
+    def read_binary_files(self, filenames: List[str], map_fn: Optional[Callable] = None):
+        ds = ray.data.read_binary_files(filenames)
+        if map_fn is not None:
+            ds = ds.map(map_fn)
+        return self.df_engine.from_ray_dataset(ds)["value"]
 
     @property
     def num_nodes(self) -> int:

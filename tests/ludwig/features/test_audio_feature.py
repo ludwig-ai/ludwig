@@ -46,7 +46,7 @@ def test_audio_input_feature(encoder: str) -> None:
     assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape
 
 
-@pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
+@pytest.mark.parametrize("feature_type", ["fbank"])
 def test_add_feature_data(feature_type, tmpdir):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
