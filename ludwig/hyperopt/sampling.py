@@ -20,8 +20,6 @@ from importlib import import_module
 from inspect import signature
 from typing import Any, Dict
 
-import numpy as np
-
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -62,43 +60,8 @@ def ray_resource_allocation_function(
 logger = logging.getLogger(__name__)
 
 
-def int_grid_function(low: int, high: int, steps=None, **kwargs):
-    if steps is None:
-        steps = high - low + 1
-    samples = np.linspace(low, high, num=steps, dtype=int)
-    return samples.tolist()
-
-
-def float_grid_function(low: float, high: float, steps=None, space="linear", base=None, **kwargs):
-    if steps is None:
-        steps = int(high - low + 1)
-    if space == "linear":
-        samples = np.linspace(low, high, num=steps)
-    elif space == "log":
-        if base:
-            samples = np.logspace(low, high, num=steps, base=base)
-        else:
-            samples = np.geomspace(low, high, num=steps)
-    else:
-        raise ValueError(
-            'The space parameter of the float grid function is "{}". ' 'Available ones are: {"linear", "log"}'
-        )
-    return samples.tolist()
-
-
-def category_grid_function(values, **kwargs):
-    return values
-
-
 def identity(x):
     return x
-
-
-grid_functions_registry = {
-    "int": int_grid_function,
-    "float": float_grid_function,
-    "category": category_grid_function,
-}
 
 
 class RayTuneSampler:
