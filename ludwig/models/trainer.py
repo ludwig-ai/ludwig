@@ -206,7 +206,6 @@ class Trainer(BaseTrainer):
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
-
         self.random_seed = random_seed
         self.horovod = horovod
         self.received_sigint = False
@@ -880,11 +879,6 @@ class Trainer(BaseTrainer):
                         break
         finally:
             # ================ Finished Training ================
-
-            # Load the best weights from saved checkpoint
-            if self.is_coordinator() and not self.skip_save_model:
-                self.model.load_state_dict(torch.load(model_weights_path))
-
             self.callback(
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
@@ -899,6 +893,10 @@ class Trainer(BaseTrainer):
 
             if self.is_coordinator() and not self.skip_save_progress:
                 checkpoint_manager.close()
+
+            # Load the best weights from saved checkpoint
+            if self.is_coordinator() and not self.skip_save_model:
+                self.model.load_state_dict(torch.load(model_weights_path))
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
