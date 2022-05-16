@@ -88,8 +88,11 @@ class MlflowCallback(Callback):
         self.config = config
         self._log_params({TRAINER: config[TRAINER]})
 
-    def on_train_end(self, output_directory):
-        _log_artifacts(output_directory)
+    def on_train_teardown(self, output_directory, is_coordinator):
+        # Logs artifacts after the model is saved to coordinator process.
+        if is_coordinator:
+            _log_artifacts(output_directory)
+
         if self.run is not None:
             mlflow.end_run()
             self.run_ended = True
@@ -124,9 +127,6 @@ class MlflowCallback(Callback):
             self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, False))
             if self.save_thread is not None:
                 self.save_thread.join()
-
-        if self.run is not None:
-            mlflow.end_run()
 
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure

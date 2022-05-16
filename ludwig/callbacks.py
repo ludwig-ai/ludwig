@@ -148,6 +148,13 @@ class Callback(ABC):
         """
         pass
 
+    def on_train_teardown(self, output_directory: str):
+        """Called at the end of training, after the model is saved.
+
+        :param output_directory: file path to where training results are stored.
+        """
+        pass
+
     def on_trainer_train_setup(self, trainer, save_path: str, is_coordinator: bool):
         """Called in every trainer (distributed or local) before training starts.
 

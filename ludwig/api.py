@@ -370,6 +370,14 @@ class LudwigModel:
             and skip_save_inference_module
         )
 
+        # if we are skipping save model, then we skip saving inference module as well
+        if skip_save_model:
+            logger.warning(
+                "Cannot save inference module if skip_save_model is True. "
+                "Setting skip_save_inference_module to True."
+            )
+            skip_save_inference_module = True
+
         output_url = output_directory
         with upload_output_directory(output_directory) as (output_directory, upload_fn):
             train_callbacks = self.callbacks
@@ -502,8 +510,6 @@ class LudwigModel:
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
-                skip_save_inference_module=skip_save_inference_module,
-                inference_module_kwargs={"config": self.config, "training_set_metadata": self.training_set_metadata},
                 callbacks=train_callbacks,
                 random_seed=random_seed,
             ) as trainer:
@@ -618,6 +624,21 @@ class LudwigModel:
                     if not path_exists(weights_save_path):
                         with open_file(weights_save_path, "wb") as f:
                             torch.save(self.model.state_dict(), f)
+
+                    # Save inference module
+                    if not skip_save_inference_module:
+                        logger.info("Attempting to save inference module with best weights from saved checkpoint...")
+                        inference_module_path = os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME)
+                        try:
+                            self.model.save_inference_module(
+                                inference_module_path,
+                                **{"config": self.config, "training_set_metadata": self.training_set_metadata},
+                            ),
+                            logger.info(f'Saved inference module to: "{inference_module_path}"')
+                        except Exception as e:
+                            logger.warning("Unable to save inference module.")
+                            logger.warning(f"Original error: {e}")
+
                     # Adds a flag to all input features indicating that the weights are saved in the checkpoint.
                     for input_feature in self.config["input_features"]:
                         input_feature["saved_weights_in_checkpoint"] = True
@@ -625,6 +646,9 @@ class LudwigModel:
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
+
+                for callback in self.callbacks:
+                    callback.on_train_teardown(output_directory, self.backend.is_coordinator())
 
                 print_boxed("FINISHED")
                 return train_stats, preprocessed_data, output_url
