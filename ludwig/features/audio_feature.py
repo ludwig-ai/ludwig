@@ -149,17 +149,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
         backend,
     ):
 
-        print(column)
-
         df_engine = backend.df_engine
         raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_str)
-
-        print(raw_audio)
-
-        from pprint import pprint
-
-        # pprint("df_engine.compute(raw_audio).tolist()")
-        # pprint(df_engine.compute(raw_audio).tolist())
 
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])
@@ -222,9 +213,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             audio_file_length_limit_in_s,
         )
         logger.debug(print_statistics)
-
-        print("print_statistics")
-        print(print_statistics)
 
         return processed_audio
 

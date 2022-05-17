@@ -40,6 +40,7 @@ from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
 from ludwig.utils.fs_utils import get_bytes_str_from_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.types import Series
 
 _ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
 import ray.train as rt  # noqa: E402
@@ -759,16 +760,18 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
 
-    def read_binary_files(self, column, map_fn: Optional[Callable] = None):
-        print("inside RAY read_binary_files")
-        df = column.to_frame(name=column.name)
-        ds = self.df_engine.to_ray_dataset(df)
-        ds = ds.map(lambda row: get_bytes_str_from_path(row[column.name]))
+    def read_binary_files(self, column, map_fn: Optional[Callable] = None) -> Series:
+        ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+
+        def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
+            df[column.name] = df[column.name].map(fn)
+            return df
+
+        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_str_from_path), batch_format="pandas")
         if map_fn is not None:
-            ds = ds.map(map_fn)
-        new_df = self.df_engine.from_ray_dataset(ds)
-        new_df = new_df.rename(columns={"value": column.name})
-        return new_df[column.name]
+            ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
+
+        return self.df_engine.from_ray_dataset(ds)[column.name]
 
     @property
     def num_nodes(self) -> int:

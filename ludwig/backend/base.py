@@ -110,14 +110,15 @@ class LocalPreprocessingMixin:
         pass
 
     def read_binary_files(self, column, map_fn: Optional[Callable] = None):
-        print("inside LOCAL read_binary_files")
         df = column.to_frame(name=column.name)
+
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
             result = executor.map(
                 lambda idx_and_row: get_bytes_str_from_path(idx_and_row[1][column.name]), df.iterrows()
             )
             if map_fn is not None:
                 result = executor.map(map_fn, result)
+
         return pd.Series(result, index=df.index, name=column.name)
 
 
