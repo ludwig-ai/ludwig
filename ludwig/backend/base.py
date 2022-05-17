@@ -15,7 +15,7 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Callable, List, Optional, Union
 
@@ -26,7 +26,7 @@ from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.ecd import ECD
-from ludwig.utils.fs_utils import get_bytes_from_path
+from ludwig.utils.fs_utils import get_bytes_str_from_path
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
@@ -111,7 +111,9 @@ class LocalPreprocessingMixin:
 
     def read_binary_files(self, filepaths: List[str], map_fn: Optional[Callable] = None):
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
-            res = executor.map(get_bytes_from_path, filepaths)
+            res = executor.map(get_bytes_str_from_path, filepaths)
+            if map_fn is not None:
+                res = executor.map(map_fn, res)
         return pd.Series(res)
 
 

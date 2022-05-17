@@ -17,6 +17,7 @@ import functools
 import io
 import logging
 import os
+import sys
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -55,11 +56,9 @@ def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.
 @functools.lru_cache(maxsize=32)
 def read_audio(audio: Union[str, torch.Tensor], src_path):
     """Function for reading audio files.
-
     Args:
         src_path: Local file source path
         audio: Audio file input
-
     Returns: Audio converted into torch tensor.
     """
     if isinstance(audio, torch.Tensor):
@@ -68,43 +67,47 @@ def read_audio(audio: Union[str, torch.Tensor], src_path):
         return read_audio_from_str(audio, src_path)
 
 
-def read_audio_from_str(
-    path_or_bytes: str, src_path: Optional[str] = None, retry: bool = True, is_bytes: Optional[bool] = False
-) -> Tuple[torch.Tensor, int]:
-    """
-    Reads audio file from either a path-like or a file-like string.
-
-    Args:
-        path_or_bytes (str): Path to audio file or bytes of audio file.
-        src_path (str): Local file source path.
-        retry (bool): Whether to retry reading audio file if it fails.
-        is_bytes (bool): Whether the input is bytes.
-    Returns:
-        Tuple of audio tensor and sampling rate.
-    """
-
-    if is_bytes:
-        return torchaudio.backend.sox_io_backend.load(io.BytesIO(path_or_bytes))
+def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> Tuple[torch.Tensor, int]:
+    try:
+        from torchaudio.backend.sox_io_backend import load
+    except ImportError:
+        logger.error("torchaudio is not installed. " "Please install torchaudio to train models with audio features")
+        sys.exit(-1)
 
     try:
-        if is_http(path_or_bytes):
-            return torchaudio.backend.sox_io_backend.load(path_or_bytes)
+        if is_http(audio_path):
+            return load(audio_path)
         if src_path:
-            filepath = get_abs_path(src_path, path_or_bytes)
-            return torchaudio.backend.sox_io_backend.load(filepath)
-        if src_path is None and os.path.isabs(path_or_bytes):
-            return torchaudio.backend.sox_io_backend.load(path_or_bytes)
-        if src_path is None and not os.path.isabs(path_or_bytes):
+            filepath = get_abs_path(src_path, audio_path)
+            return load(filepath)
+        if src_path is None and os.path.isabs(audio_path):
+            return load(audio_path)
+        if src_path is None and not os.path.isabs(audio_path):
             raise ValueError("Audio file paths must be absolute")
     except Exception as e:
-        upgraded = upgrade_http(path_or_bytes)
+        upgraded = upgrade_http(audio_path)
         if upgraded:
             logger.info(f"{e}. upgrading to https and retrying")
             return read_audio_from_str(upgraded, src_path, False)
         if retry:
             logger.info(f"{e}, retrying...")
-            return read_audio_from_str(path_or_bytes, src_path, False)
+            return read_audio_from_str(audio_path, src_path, False)
         logger.info(e)
+        return None
+
+
+def read_audio_from_bytes_str(bytes_str: Optional[str] = None) -> Optional[Tuple[torch.Tensor, int]]:
+    """Reads audio from bytes string."""
+    if bytes_str is None:
+        return None
+
+    try:
+        f = io.BytesIO(bytes_str)
+        return torchaudio.backend.sox_io_backend.load(f)
+    except Exception as e:
+        print("ASDFASDFASDF read_audio_from_bytes_str WARNING")
+        print(e)
+        logger.warning(e)
         return None
 
 

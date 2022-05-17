@@ -16,7 +16,6 @@
 
 import contextlib
 import functools
-import io
 import logging
 import os
 import pathlib
@@ -61,31 +60,30 @@ def upgrade_http(urlpath):
 
 
 @functools.lru_cache(maxsize=32)
-def get_bytes_from_path(path: str) -> Optional[io.BytesIO]:
+def get_bytes_str_from_path(path: str) -> Optional[str]:
     if is_http(path):
         try:
-            get_bytes_from_http_path(path)
+            return get_bytes_str_from_http_path(path)
         except requests.exceptions.RequestException as e:
             logger.warning(e)
     else:
         try:
             with open_file(path) as f:
-                return io.BytesIO(f.read())
+                return f.read()
         except OSError as e:
             logger.warning(e)
-            return None
 
 
-def get_bytes_from_http_path(path: str) -> io.BytesIO:
+def get_bytes_str_from_http_path(path: str) -> str:
     data = requests.get(path, stream=True)
     if data.status_code == 404:
         upgraded = upgrade_http(path)
         if upgraded:
             logger.info(f"reading url {path} failed. upgrading to https and retrying")
-            return get_bytes_from_http_path(upgraded)
+            return get_bytes_str_from_http_path(upgraded)
         else:
             raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
-    return io.BytesIO(data.raw.read())
+    return data.raw.read()
 
 
 def find_non_existing_dir_by_adding_suffix(directory_name):
