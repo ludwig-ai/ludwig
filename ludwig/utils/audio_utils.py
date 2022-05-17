@@ -105,8 +105,6 @@ def read_audio_from_bytes_str(bytes_str: Optional[str] = None) -> Optional[Tuple
         f = io.BytesIO(bytes_str)
         return torchaudio.backend.sox_io_backend.load(f)
     except Exception as e:
-        print("ASDFASDFASDF read_audio_from_bytes_str WARNING")
-        print(e)
         logger.warning(e)
         return None
 

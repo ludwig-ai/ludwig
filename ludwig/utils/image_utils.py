@@ -28,7 +28,8 @@ from torchvision.io import decode_image
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http, get_bytes_str_from_http_path
+from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
+
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,21 @@ def get_average_image(image_lst: List[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0))
 
 
+@functools.lru_cache(maxsize=32)
+def get_image_from_http_bytes(img_entry) -> BytesIO:
+    import requests
+
+    data = requests.get(img_entry, stream=True)
+    if data.status_code == 404:
+        upgraded = upgrade_http(img_entry)
+        if upgraded:
+            logger.info(f"reading image url {img_entry} failed. upgrading to https and retrying")
+            return get_image_from_http_bytes(upgraded)
+        else:
+            raise requests.exceptions.HTTPError(f"reading image url {img_entry} failed and cannot be upgraded to https")
+    return BytesIO(data.raw.read())
+
+
 def get_image_from_path(
     src_path: Union[str, torch.Tensor], img_entry: Union[str, bytes], ret_bytes: bool = False
 ) -> Union[BytesIO, BinaryIO, TextIO, bytes, str]:
@@ -51,7 +67,7 @@ def get_image_from_path(
     if is_http(img_entry):
         if ret_bytes:
             # Returns BytesIO.
-            return get_bytes_from_http_path(img_entry)
+            return get_image_from_http_bytes(img_entry)
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)

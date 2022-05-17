@@ -17,7 +17,7 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional, Union
 
 import pandas as pd
 
