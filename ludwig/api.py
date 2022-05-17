@@ -879,7 +879,7 @@ class LudwigModel:
                 dataset = dataset.to_df()
 
                 overall_stats = calculate_overall_stats(
-                    self.model.output_features, predictions, dataset, training_set_metadata, self.backend.df_engine
+                    self.model.output_features, predictions, dataset, training_set_metadata
                 )
                 eval_stats = {
                     of_name: {**eval_stats[of_name], **overall_stats[of_name]}
