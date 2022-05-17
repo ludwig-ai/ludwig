@@ -7,6 +7,7 @@ from pprint import pformat
 from typing import Dict
 
 import numpy as np
+import pandas as pd
 import psutil
 import torch
 from tqdm import tqdm
@@ -271,7 +272,7 @@ class RemotePredictor(Predictor):
         self.batch_evaluation = return_first(self.batch_evaluation)
 
 
-def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata, df_engine):
+def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
     overall_stats = {}
     for of_name, output_feature in output_features.items():
         feature_metadata = training_set_metadata[output_feature.feature_name]
@@ -279,12 +280,19 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
 
         feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1 :])
-        feature_df = feature_df.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
+
+        target = dataset.loc[:, output_feature.proc_column]
+
+        if not isinstance(feature_df, pd.Series):
+            logger.warning(
+                'Full computation of stats only supported for pandas dataframes. '
+                'Sampling the first 10000 rows of the feature and target dataframes for computing overall stats.')
+            feature_df = feature_df.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
+            target = target.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             feature_df,  # predictions
-            dataset.loc[:, output_feature.proc_column].head(
-                n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True),  # target
+            target,
             feature_metadata,  # output feature metadata
         )
     return overall_stats

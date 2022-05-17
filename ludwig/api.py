@@ -876,9 +876,7 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
-                if self.backend.df_engine.partitioned:
-                    # If using a partitioned engine, we need to convert the RayDataset into a Dask dataframe.
-                    dataset = dataset.ds.to_dask()
+                dataset = dataset.to_df()
 
                 overall_stats = calculate_overall_stats(
                     self.model.output_features, predictions, dataset, training_set_metadata, self.backend.df_engine
