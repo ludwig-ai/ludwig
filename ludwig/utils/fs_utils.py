@@ -66,12 +66,14 @@ def get_bytes_str_from_path(path: str) -> Optional[str]:
             return get_bytes_str_from_http_path(path)
         except requests.exceptions.RequestException as e:
             logger.warning(e)
+            return None
     else:
         try:
             with open_file(path) as f:
                 return f.read()
         except OSError as e:
             logger.warning(e)
+            return None
 
 
 def get_bytes_str_from_http_path(path: str) -> str:

@@ -213,7 +213,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             audio_file_length_limit_in_s,
         )
         logger.debug(print_statistics)
-
         return processed_audio
 
     @staticmethod

@@ -760,7 +760,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
 
-    def read_binary_files(self, column, map_fn: Optional[Callable] = None) -> Series:
+    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
         ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:

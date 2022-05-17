@@ -56,9 +56,11 @@ def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.
 @functools.lru_cache(maxsize=32)
 def read_audio(audio: Union[str, torch.Tensor], src_path):
     """Function for reading audio files.
+
     Args:
         src_path: Local file source path
         audio: Audio file input
+
     Returns: Audio converted into torch tensor.
     """
     if isinstance(audio, torch.Tensor):
