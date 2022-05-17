@@ -293,7 +293,7 @@ def run_hyperopt(
     out_dir,
     experiment_name="ray_hyperopt",
 ):
-    with ray_start_4_cpus():
+    with ray_start_10_cpus():
         callback = TestCallback()
         hyperopt_results = hyperopt(
             config,
