@@ -556,7 +556,6 @@ class LudwigModel:
                         calibrator = Calibrator(
                             trainer.model,
                             batch_size=trainer.eval_batch_size,
-                            horovod=trainer.horovod,
                             skip_save_model=skip_save_model,
                         )
                         calibrator.calibration(validation_set, VALIDATION, save_path=model_dir)

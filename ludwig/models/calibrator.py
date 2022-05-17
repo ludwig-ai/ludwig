@@ -27,10 +27,9 @@ from ludwig.models.predictor import Predictor
 class Calibrator:
     """Calibrator calibrates the output probabilities of a model."""
 
-    def __init__(self, model: ECD, batch_size: int = 128, horovod=None, skip_save_model=False):
+    def __init__(self, model: ECD, batch_size: int = 128, skip_save_model=False):
         self.model = model
         self.batch_size = batch_size
-        self.horovod = horovod
         self.skip_save_model = skip_save_model
 
     def calibration(self, dataset, dataset_name: str, save_path: str):
@@ -41,7 +40,7 @@ class Calibrator:
         if all(o.calibration_module is None for o in self.model.output_features.values()):
             # Early out if no output features have calibration enabled.
             return
-        predictor = Predictor(self.model, batch_size=self.batch_size, horovod=self.horovod)
+        predictor = Predictor(self.model, batch_size=self.batch_size)
         metrics, predictions = predictor.batch_evaluation(
             dataset, collect_predictions=True, collect_logits=True, collect_labels=True, dataset_name=dataset_name
         )
