@@ -71,16 +71,17 @@ HYPEROPT_CONFIG = {
 
 SAMPLERS = [
     {"type": "ray", "num_samples": 2},
-    {
-        "type": "ray",
-        "num_samples": 1,
-        "scheduler": {
-            "type": "async_hyperband",
-            "time_attr": "training_iteration",
-            "reduction_factor": 2,
-            "dynamic_resource_allocation": True,
-        },
-    },
+    # TODO(shreya): Uncomment when https://github.com/ludwig-ai/ludwig/issues/2039 is fixed.
+    # {
+    #     "type": "ray",
+    #     "num_samples": 1,
+    #     "scheduler": {
+    #         "type": "async_hyperband",
+    #         "time_attr": "training_iteration",
+    #         "reduction_factor": 2,
+    #         "dynamic_resource_allocation": True,
+    #     },
+    # },
     {
         "type": "ray",
         "search_alg": {"type": "bohb"},
@@ -94,7 +95,7 @@ SAMPLERS = [
 ]
 
 EXECUTORS = [
-    {"type": "ray", "cpu_resources_per_trial": 0.1},
+    {"type": "ray", "cpu_resources_per_trial": 1},
 ]
 
 
@@ -137,9 +138,9 @@ class TestCallback(Callback):
 
 
 @contextlib.contextmanager
-def ray_start_4_cpus():
+def ray_start_10_cpus():
     res = ray.init(
-        num_cpus=4,
+        num_cpus=10,
         include_dashboard=False,
         object_store_memory=150 * 1024 * 1024,
     )
@@ -168,7 +169,7 @@ def run_hyperopt_executor(
     validate_output_feature=False,
     validation_metric=None,
 ):
-    with ray_start_4_cpus():
+    with ray_start_10_cpus():
         config = _get_config(sampler, executor)
 
         csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
