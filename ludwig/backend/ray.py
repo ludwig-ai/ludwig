@@ -760,12 +760,15 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
     def read_binary_files(self, column, map_fn: Optional[Callable] = None):
+        print("inside RAY read_binary_files")
         df = column.to_frame(name=column.name)
         ds = self.df_engine.to_ray_dataset(df)
         ds = ds.map(lambda row: get_bytes_str_from_path(row[column.name]))
         if map_fn is not None:
             ds = ds.map(map_fn)
-        return self.df_engine.from_ray_dataset(ds)["value"]
+        new_df = self.df_engine.from_ray_dataset(ds)
+        new_df = new_df.rename(columns={"value": column.name})
+        return new_df[column.name]
 
     @property
     def num_nodes(self) -> int:
