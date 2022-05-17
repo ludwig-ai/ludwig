@@ -109,12 +109,15 @@ class LocalPreprocessingMixin:
     def check_lazy_load_supported(self, feature):
         pass
 
-    def read_binary_files(self, filepaths: List[str], map_fn: Optional[Callable] = None):
+    def read_binary_files(self, column, map_fn: Optional[Callable] = None):
+        df = column.to_frame(name=column.name)
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
-            res = executor.map(get_bytes_str_from_path, filepaths)
+            result = executor.map(
+                lambda idx_and_row: get_bytes_str_from_path(idx_and_row[1][column.name]), df.iterrows()
+            )
             if map_fn is not None:
-                res = executor.map(map_fn, res)
-        return pd.Series(res)
+                result = executor.map(map_fn, result)
+        return pd.Series(result, index=df.index)
 
 
 class LocalTrainingMixin:

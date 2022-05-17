@@ -636,48 +636,48 @@ def train_with_backend(
             skip_save_log=True,
         )
 
-        # if dataset is None:
-        #     dataset = training_set
+        if dataset is None:
+            dataset = training_set
 
-        # if predict:
-        #     preds, _ = model.predict(dataset=dataset)
-        #     assert preds is not None
+        if predict:
+            preds, _ = model.predict(dataset=dataset)
+            assert preds is not None
 
-        # if evaluate:
-        #     eval_stats, eval_preds, _ = model.evaluate(
-        #         dataset=dataset, collect_overall_stats=False, collect_predictions=True
-        #     )
-        #     assert eval_preds is not None
+        if evaluate:
+            eval_stats, eval_preds, _ = model.evaluate(
+                dataset=dataset, collect_overall_stats=False, collect_predictions=True
+            )
+            assert eval_preds is not None
 
-        #     # Test that eval_stats are approx equal when using local backend
-        #     with tempfile.TemporaryDirectory() as tmpdir:
-        #         model.save(tmpdir)
-        #         local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-        #         local_eval_stats, _, _ = local_model.evaluate(
-        #             dataset=dataset, collect_overall_stats=False, collect_predictions=False
-        #         )
+            # Test that eval_stats are approx equal when using local backend
+            with tempfile.TemporaryDirectory() as tmpdir:
+                model.save(tmpdir)
+                local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
+                local_eval_stats, _, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
+                )
 
-        #         # Filter out metrics that are not being aggregated correctly for now
-        #         # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
-        #         def filter(stats):
-        #             return {
-        #                 k: {
-        #                     metric_name: value
-        #                     for metric_name, value in v.items()
-        #                     if metric_name not in {"loss", "root_mean_squared_percentage_error"}
-        #                 }
-        #                 for k, v in stats.items()
-        #             }
+                # Filter out metrics that are not being aggregated correctly for now
+                # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
+                def filter(stats):
+                    return {
+                        k: {
+                            metric_name: value
+                            for metric_name, value in v.items()
+                            if metric_name not in {"loss", "root_mean_squared_percentage_error"}
+                        }
+                        for k, v in stats.items()
+                    }
 
-        #         for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
-        #             assert k1 == k2
-        #             for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
-        #                 assert name1 == name2
-        #                 assert np.isclose(
-        #                     metric1, metric2, rtol=1e-04, atol=1e-5
-        #                 ), f"metric {name1}: {metric1} != {metric2}"
+                for (k1, v1), (k2, v2) in zip(filter(eval_stats).items(), filter(local_eval_stats).items()):
+                    assert k1 == k2
+                    for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
+                        assert name1 == name2
+                        assert np.isclose(
+                            metric1, metric2, rtol=1e-04, atol=1e-5
+                        ), f"metric {name1}: {metric1} != {metric2}"
 
-        # return model
+        return model
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)

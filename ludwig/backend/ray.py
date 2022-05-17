@@ -37,6 +37,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
+from ludwig.utils.fs_utils import get_bytes_str_from_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -758,8 +759,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
 
-    def read_binary_files(self, filenames: List[str], map_fn: Optional[Callable] = None):
-        ds = ray.data.read_binary_files(filenames)
+    def read_binary_files(self, column, map_fn: Optional[Callable] = None):
+        df = column.to_frame(name=column.name)
+        ds = self.df_engine.to_ray_dataset(df)
+        ds = ds.map(lambda row: get_bytes_str_from_path(row[column.name]))
         if map_fn is not None:
             ds = ds.map(map_fn)
         return self.df_engine.from_ray_dataset(ds)["value"]
