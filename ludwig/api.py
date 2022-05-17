@@ -30,7 +30,6 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-import dask
 import numpy as np
 import pandas as pd
 import torch
@@ -89,9 +88,6 @@ from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
-
-# Set dask config to not use placement groups
-dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
 
 class LudwigModel:

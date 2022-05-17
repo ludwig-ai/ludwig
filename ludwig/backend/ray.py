@@ -592,8 +592,7 @@ class RayPredictor(BasePredictor):
             num_gpus=num_gpus,
         )
 
-        with dask.annotate(ray_remote_args={"num_cpus": num_cpus, "num_gpus": num_gpus}):
-            dask_dataset = dask_dataset.to_dask()
+        dask_dataset = dask_dataset.to_dask()
 
         for of_feature in self.model.output_features.values():
             dask_dataset = of_feature.unflatten(dask_dataset)
