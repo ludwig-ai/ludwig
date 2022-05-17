@@ -285,8 +285,9 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
 
         if not isinstance(feature_df, pd.Series):
             logger.warning(
-                'Full computation of stats only supported for pandas dataframes. '
-                'Sampling the first 10000 rows of the feature and target dataframes for computing overall stats.')
+                "Full computation of stats only supported for pandas dataframes. "
+                "Sampling the first 10000 rows of the feature and target dataframes for computing overall stats."
+            )
             feature_df = feature_df.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
             target = target.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
 
