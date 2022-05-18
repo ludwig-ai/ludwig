@@ -124,6 +124,7 @@ MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
 SEARCH_ALG = "search_alg"
+SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
 
 NAME = "name"
