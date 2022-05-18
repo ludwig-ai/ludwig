@@ -8,7 +8,19 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, SAMPLER, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import (
+    COMBINED,
+    EXECUTOR,
+    HYPEROPT,
+    LOSS,
+    MINIMIZE,
+    RAY,
+    SAMPLER,
+    TEST,
+    TRAINING,
+    TYPE,
+    VALIDATION,
+)
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
@@ -179,7 +191,6 @@ def hyperopt(
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info("\n")
 
-    sampler = hyperopt_config["sampler"]  # TODO: reserach how to refactor or eliminate
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config["executor"]
     parameters = hyperopt_config["parameters"]
@@ -248,7 +259,7 @@ def hyperopt(
                 )
             )
 
-    hyperopt_sampler = get_build_hyperopt_sampler(sampler[TYPE])(parameters)
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
         hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
