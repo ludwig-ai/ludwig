@@ -101,6 +101,9 @@ class RayDataset(Dataset):
     def size(self):
         return len(self)
 
+    def to_df(self):
+        return self.ds.to_dask()
+
 
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):

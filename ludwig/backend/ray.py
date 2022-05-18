@@ -19,7 +19,7 @@ import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import dask
 import numpy as np
@@ -552,6 +552,16 @@ class RayPredictor(BasePredictor):
         self.actor_handles = []
         self.model = model.cpu()
 
+    def get_trainer_kwargs(self) -> Dict[str, Any]:
+        return {**self.trainer_kwargs, **get_trainer_kwargs()}
+
+    def get_resources_per_worker(self) -> Tuple[int, int]:
+        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_gpus = resources_per_worker.get("GPU", 0)
+        num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
+        return num_cpus, num_gpus
+
     def batch_predict(self, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
 
@@ -576,17 +586,9 @@ class RayPredictor(BasePredictor):
 
         # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.
         # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
-        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
-        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
-        num_gpus = resources_per_worker.get("GPU", 0)
-        num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
+        num_cpus, num_gpus = self.get_resources_per_worker()
 
-        dask_dataset = dataset.ds.map_batches(
-            to_tensors,
-            batch_format="pandas",
-            num_cpus=num_cpus,
-            num_gpus=num_gpus,
-        ).map_batches(
+        dask_predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
             batch_predictor,
             batch_size=self.batch_size,
             compute="actors",
@@ -595,12 +597,12 @@ class RayPredictor(BasePredictor):
             num_gpus=num_gpus,
         )
 
-        dask_dataset = dask_dataset.to_dask()
+        dask_predictions = dask_predictions.to_dask()
 
         for of_feature in self.model.output_features.values():
-            dask_dataset = of_feature.unflatten(dask_dataset)
+            dask_predictions = of_feature.unflatten(dask_predictions)
 
-        return dask_dataset
+        return dask_predictions
 
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
