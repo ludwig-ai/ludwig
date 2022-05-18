@@ -3,6 +3,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 import lightgbm as lgb
 import lightgbm_ray as lgb_ray
+import numpy as np
 import torch
 from hummingbird.ml import convert
 from lightgbm_ray.tune import _TuneLGBMRank0Mixin
@@ -20,18 +21,33 @@ from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker
 
 
-def convert_to_pytorch(gbm: lgb.Booster, tree_module: GBM):
-    """Convert a LightGBM model to a PyTorch model."""
+def convert_to_pytorch(gbm: lgb.Booster, tree_module: GBM) -> GBM:
+    """Convert a LightGBM model to a PyTorch model and return correspondig GBM."""
     hb_model = convert(gbm, "torch")
     model = hb_model.model
     tree_module.set_compiled_model(model)
     return tree_module
 
 
-def iter_feature_metrics(output_features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
-    for output_feature_name, output_feature in output_features.items():
-        for metric in output_feature.metric_functions:
-            yield output_feature_name, metric
+def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
+    """Helper for iterating feature names and metric names."""
+    for feature_name, feature in features.items():
+        for metric in feature.metric_functions:
+            yield feature_name, metric
+
+
+def lgb_accuracy(preds: np.array, train_data: lgb.Dataset) -> Tuple[str, float, bool]:
+    """Calculate accuracy for LightGBM predictions.
+
+    Args:
+        preds: LightGBM predictions.
+        train_data: LightGBM dataset.
+
+    Returns:
+        Tuple of (metric name, metric value, is_higher_better).
+    """
+    labels = train_data.get_label()
+    return "accuracy", np.mean(labels == (preds > 0.5)), True
 
 
 @register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
@@ -69,6 +85,7 @@ class LightGBMTrainer(BaseTrainer):
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
+        self.num_boost_round = config.num_boost_round
 
         self.device = device
         if self.device is None:
@@ -118,11 +135,12 @@ class LightGBMTrainer(BaseTrainer):
         gbm = lgb.train(
             params,
             lgb_train,
-            num_boost_round=100,
+            num_boost_round=self.num_boost_round,
             valid_sets=eval_sets,
             valid_names=eval_names,
             feature_name=list(self.model.input_features.keys()),
             evals_result=eval_results,
+            feval=[lgb_accuracy],
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
             callbacks=[
@@ -164,7 +182,7 @@ class LightGBMTrainer(BaseTrainer):
             elif feature.type() == BINARY:
                 output_params = {
                     "objective": "binary",
-                    "metric": ["binary_logloss", "auc"],
+                    "metric": ["binary_logloss", "accuracy", "auc"],
                 }
             elif feature.type() == NUMBER:
                 output_params = {

@@ -192,6 +192,10 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         ),
     )
 
+    num_boost_round: int = schema_utils.PositiveInteger(
+        default=100, description="Number of boosting rounds to perform with GBM trainer."
+    )
+
 
 def get_trainer_jsonschema():
     return schema_utils.unload_jsonschema_from_marshmallow_class(TrainerConfig)

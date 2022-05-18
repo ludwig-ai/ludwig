@@ -61,3 +61,4 @@ output_features:
     type: binary
 trainer:
   learning_rate: 0.1
+  num_boost_round: 50
