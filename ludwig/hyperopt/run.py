@@ -8,23 +8,11 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import (
-    COMBINED,
-    EXECUTOR,
-    HYPEROPT,
-    LOSS,
-    MINIMIZE,
-    RAY,
-    SAMPLER,
-    TEST,
-    TRAINING,
-    TYPE,
-    VALIDATION,
-)
+from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, RAY, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler, sampler_registry
+from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
@@ -368,24 +356,13 @@ def hyperopt(
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
-    set_default_value(hyperopt_params, SAMPLER, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(hyperopt_params[SAMPLER], {TYPE: "ray"})
-
-    sampler = get_from_registry(hyperopt_params[SAMPLER][TYPE], sampler_registry)
-    sampler_defaults = {k: v for k, v in sampler.__dict__.items() if k in get_class_attributes(sampler)}
-    set_default_values(
-        hyperopt_params[SAMPLER],
-        sampler_defaults,
-    )
-
     set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
-
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
     set_default_values(
