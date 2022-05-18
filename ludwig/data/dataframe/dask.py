@@ -39,12 +39,7 @@ class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, **kwargs):
         self._parallelism = parallelism
         self._persist = persist
-        self.disable_placement_groups()
         set_scheduler(ray_dask_get)
-
-    def disable_placement_groups(self):
-        # Set dask config to not use placement groups
-        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism

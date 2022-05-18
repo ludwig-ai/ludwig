@@ -46,6 +46,9 @@ from ray.train.trainer import Trainer  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
+# Disable placement groups on dask
+dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
+
 try:
     from horovod.ray import RayExecutor
 except ImportError as e:
