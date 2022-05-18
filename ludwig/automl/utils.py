@@ -7,7 +7,7 @@ from typing import Dict, List
 from dataclasses_json import dataclass_json, LetterCase
 from pandas import Series
 
-from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NAME, NUMBER, PARAMETERS, TRAINER, TYPE
+from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NAME, NUMBER, PARAMETERS, SEARCH_ALG, TRAINER, TYPE
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
@@ -126,7 +126,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
         point_to_evaluate = {}
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, COMBINER)
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, TRAINER)
-        base_config[HYPEROPT]["search_alg"]["points_to_evaluate"] = [point_to_evaluate]
+        base_config[HYPEROPT][SEARCH_ALG]["points_to_evaluate"] = [point_to_evaluate]
     return base_config
 
 
