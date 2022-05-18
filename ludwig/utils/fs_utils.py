@@ -25,9 +25,9 @@ from urllib.parse import unquote, urlparse
 
 import fsspec
 import h5py
+import requests
 from filelock import FileLock
 from fsspec.core import split_protocol
-import requests
 
 logger = logging.getLogger(__name__)
 

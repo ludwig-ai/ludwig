@@ -23,9 +23,9 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchaudio
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
-import torchaudio
 
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.data_utils import get_abs_path
