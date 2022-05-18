@@ -192,8 +192,198 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         ),
     )
 
+    # LightGBM core parameters
+    boosting_type: str = schema_utils.StringOptions(
+        ["gbdt", "rf", "dart", "goss"],
+        default="gbdt",
+        description="Type of boosting algorithm to use with GBM trainer.",
+    )
+
+    tree_learner: str = schema_utils.StringOptions(
+        ["serial", "feature", "data", "voting"],
+        default="serial",
+        description="Type of tree learner to use with GBM trainer.",
+    )
+
     num_boost_round: int = schema_utils.PositiveInteger(
         default=100, description="Number of boosting rounds to perform with GBM trainer."
+    )
+
+    num_leaves: int = schema_utils.PositiveInteger(
+        default=31, description="Number of leaves to use in the tree with GBM trainer."
+    )
+
+    # LightGBM Learning Control params
+    max_depth: int = schema_utils.Integer(
+        default=-1,
+        description="Maximum depth of a tree in the GBM trainer. A negative value means no limit.",
+    )
+
+    min_data_in_leaf: int = schema_utils.PositiveInteger(
+        default=20, description="Minimum number of data points in a leaf with GBM trainer."
+    )
+
+    min_sum_hessian_in_leaf: float = schema_utils.NonNegativeFloat(
+        default=1e-3, description="Minimum sum of hessians in a leaf with GBM trainer."
+    )
+
+    bagging_fraction: float = schema_utils.FloatRange(
+        default=1.0, min=0.0, max=1.0, description="Fraction of data to use for bagging with GBM trainer."
+    )
+
+    pos_bagging_fraction: float = schema_utils.FloatRange(
+        default=1.0, min=0.0, max=1.0, description="Fraction of positive data to use for bagging with GBM trainer."
+    )
+
+    neg_bagging_fraction: float = schema_utils.FloatRange(
+        default=1.0, min=0.0, max=1.0, description="Fraction of negative data to use for bagging with GBM trainer."
+    )
+
+    bagging_freq: int = schema_utils.NonNegativeInteger(default=0, description="Frequency of bagging with GBM trainer.")
+
+    bagging_seed: int = schema_utils.Integer(default=3, description="Random seed for bagging with GBM trainer.")
+
+    feature_fraction: float = schema_utils.FloatRange(
+        default=1.0, min=0.0, max=1.0, description="Fraction of features to use in the GBM trainer."
+    )
+
+    feature_fraction_bynode: float = schema_utils.FloatRange(
+        default=1.0, min=0.0, max=1.0, description="Fraction of features to use for each tree node with GBM trainer."
+    )
+
+    feature_fraction_seed: int = schema_utils.Integer(
+        default=2, description="Random seed for feature fraction with GBM trainer."
+    )
+
+    extra_trees: bool = schema_utils.Boolean(
+        default=False, description="Whether to use extremely randomized trees in the GBM trainer."
+    )
+
+    extra_seed: int = schema_utils.Integer(
+        default=6, description="Random seed for extremely randomized trees in the GBM trainer."
+    )
+
+    max_delta_step: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Used to limit the max output of tree leaves in the GBM trainer. A negative value means no constraint."
+        ),
+    )
+
+    lambda_l1: float = schema_utils.NonNegativeFloat(
+        default=0.0, description="L1 regularization factor for the GBM trainer."
+    )
+
+    lambda_l2: float = schema_utils.NonNegativeFloat(
+        default=0.0, description="L2 regularization factor for the GBM trainer."
+    )
+
+    linear_lambda: float = schema_utils.NonNegativeFloat(
+        default=0.0, description="Linear tree regularization in the GBM trainer."
+    )
+
+    min_gain_to_split: float = schema_utils.NonNegativeFloat(
+        default=0.0, description="Minimum gain to split a leaf in the GBM trainer."
+    )
+
+    drop_rate: float = schema_utils.FloatRange(
+        default=0.1,
+        min=0.0,
+        max=1.0,
+        description="Dropout rate for the GBM trainer. Used only with boosting_type 'dart'.",
+    )
+
+    max_drop: int = schema_utils.Integer(
+        default=50,
+        description=(
+            "Maximum number of dropped trees during one boosting iteration. "
+            "Used only with boosting_type 'dart'. A negative value means no limit."
+        ),
+    )
+
+    skip_drop: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        description=(
+            "Probability of skipping the dropout during one boosting iteration. Used only with boosting_type 'dart'."
+        ),
+    )
+
+    xgboost_dart_mode: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to use xgboost dart mode in the GBM trainer. Used only with boosting_type 'dart'.",
+    )
+
+    uniform_drop: bool = schema_utils.Boolean(
+        default=False,
+        description=("Whether to use uniform dropout in the GBM trainer. Used only with boosting_type 'dart'."),
+    )
+
+    drop_seed: int = schema_utils.Integer(
+        default=4,
+        description="Random seed to choose dropping models in the GBM trainer. Used only with boosting_type 'dart'.",
+    )
+
+    top_rate: float = schema_utils.FloatRange(
+        default=0.2,
+        min=0.0,
+        max=1.0,
+        description="The retain ratio of large gradient data in the GBM trainer. Used only with boosting_type 'goss'.",
+    )
+
+    other_rate: float = schema_utils.FloatRange(
+        default=0.1,
+        min=0.0,
+        max=1.0,
+        description="The retain ratio of small gradient data in the GBM trainer. Used only with boosting_type 'goss'.",
+    )
+
+    min_data_per_group: int = schema_utils.PositiveInteger(
+        default=100,
+        description="Minimum number of data points per categorical group for the GBM trainer.",
+    )
+
+    max_cat_threshold: int = schema_utils.PositiveInteger(
+        default=32,
+        description="Number of split points considered for categorical features for the GBM trainer.",
+    )
+
+    cat_l2: float = schema_utils.NonNegativeFloat(
+        default=10.0, description="L2 regularization factor for categorical split in the GBM trainer."
+    )
+
+    cat_smooth: float = schema_utils.NonNegativeFloat(
+        default=10.0, description="Smoothing factor for categorical split in the GBM trainer."
+    )
+
+    max_cat_to_onehot: int = schema_utils.PositiveInteger(
+        default=4,
+        description="Maximum categorical cardinality required before one-hot encoding in the GBM trainer.",
+    )
+
+    cegb_tradeoff: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Cost-effective gradient boosting multiplier for all penalties in the GBM trainer.",
+    )
+
+    cegb_penalty_split: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Cost-effective gradient boosting penalty for splitting a node in the GBM trainer.",
+    )
+
+    path_smooth: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Smoothing factor applied to tree nodes in the GBM trainer.",
+    )
+
+    verbose: int = schema_utils.IntegerRange(default=0, min=-1, max=2, description="Verbosity level for GBM trainer.")
+
+    # LightGBM IO params
+    max_bin: int = schema_utils.PositiveInteger(
+        default=255, description="Maximum number of bins to use for discretizing features with GBM trainer."
     )
 
 

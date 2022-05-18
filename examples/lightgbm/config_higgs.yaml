@@ -62,3 +62,9 @@ output_features:
 trainer:
   learning_rate: 0.1
   num_boost_round: 50
+  num_leaves: 255
+  feature_fraction: 0.9
+  bagging_fraction: 0.8
+  bagging_freq: 5
+  min_data_in_leaf: 1
+  min_sum_hessian_in_leaf: 100

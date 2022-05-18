@@ -72,6 +72,8 @@ class LightGBMTrainer(BaseTrainer):
     ):
         super().__init__()
 
+        self.random_seed = random_seed
+
         self.model = model
 
         self._validation_field = config.validation_field
@@ -85,7 +87,46 @@ class LightGBMTrainer(BaseTrainer):
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
+        self.boosting_type = config.boosting_type
+        self.tree_learner = config.tree_learner
         self.num_boost_round = config.num_boost_round
+        self.max_depth = config.max_depth
+        self.num_leaves = config.num_leaves
+        self.min_data_in_leaf = config.min_data_in_leaf
+        self.min_sum_hessian_in_leaf = config.min_sum_hessian_in_leaf
+        self.feature_fraction = config.feature_fraction
+        self.bagging_fraction = config.bagging_fraction
+        self.pos_bagging_fraction = config.pos_bagging_fraction
+        self.neg_bagging_fraction = config.neg_bagging_fraction
+        self.bagging_seed = config.bagging_seed
+        self.bagging_freq = config.bagging_freq
+        self.feature_fraction_bynode = config.feature_fraction_bynode
+        self.feature_fraction_seed = config.feature_fraction_seed
+        self.extra_trees = config.extra_trees
+        self.extra_seed = config.extra_seed
+        self.max_delta_step = config.max_delta_step
+        self.lambda_l1 = config.lambda_l1
+        self.lambda_l2 = config.lambda_l2
+        self.linear_lambda = config.linear_lambda
+        self.min_gain_to_split = config.min_gain_to_split
+        self.drop_rate = config.drop_rate
+        self.max_drop = config.max_drop
+        self.skip_drop = config.skip_drop
+        self.xgboost_dart_mode = config.xgboost_dart_mode
+        self.uniform_drop = config.uniform_drop
+        self.drop_seed = config.drop_seed
+        self.top_rate = config.top_rate
+        self.other_rate = config.other_rate
+        self.min_data_per_group = config.min_data_per_group
+        self.max_cat_threshold = config.max_cat_threshold
+        self.cat_l2 = config.cat_l2
+        self.cat_smooth = config.cat_smooth
+        self.max_cat_to_onehot = config.max_cat_to_onehot
+        self.cegb_tradeoff = config.cegb_tradeoff
+        self.cegb_penalty_split = config.cegb_penalty_split
+        self.path_smooth = config.path_smooth
+        self.verbose = config.verbose
+        self.max_bin = config.max_bin
 
         self.device = device
         if self.device is None:
@@ -194,17 +235,47 @@ class LightGBMTrainer(BaseTrainer):
 
         # from: https://github.com/microsoft/LightGBM/blob/master/examples/python-guide/advanced_example.py
         params = {
-            "boosting_type": "gbdt",
-            "num_leaves": 255,
+            "boosting_type": self.boosting_type,
+            "num_leaves": self.num_leaves,
             "learning_rate": self.base_learning_rate,
-            "feature_fraction": 0.9,
-            "bagging_fraction": 0.8,
-            "bagging_freq": 5,
-            "verbose": 0,
-            "max_bin": 255,
-            "tree_learner": "serial",
-            "min_data_in_leaf": 1,
-            "min_sum_hessian_in_leaf": 100,
+            "max_depth": self.max_depth,
+            "feature_fraction": self.feature_fraction,
+            "bagging_fraction": self.bagging_fraction,
+            "pos_bagging_fraction": self.pos_bagging_fraction,
+            "neg_bagging_fraction": self.neg_bagging_fraction,
+            "bagging_seed": self.bagging_seed,
+            "bagging_freq": self.bagging_freq,
+            "feature_fraction_bynode": self.feature_fraction_bynode,
+            "feature_fraction_seed": self.feature_fraction_seed,
+            "extra_trees": self.extra_trees,
+            "extra_seed": self.extra_seed,
+            "max_delta_step": self.max_delta_step,
+            "lambda_l1": self.lambda_l1,
+            "lambda_l2": self.lambda_l2,
+            "linear_lambda": self.linear_lambda,
+            "min_gain_to_split": self.min_gain_to_split,
+            "drop_rate": self.drop_rate,
+            "max_drop": self.max_drop,
+            "skip_drop": self.skip_drop,
+            "xgboost_dart_mode": self.xgboost_dart_mode,
+            "uniform_drop": self.uniform_drop,
+            "drop_seed": self.drop_seed,
+            "top_rate": self.top_rate,
+            "other_rate": self.other_rate,
+            "min_data_per_group": self.min_data_per_group,
+            "max_cat_threshold": self.max_cat_threshold,
+            "cat_l2": self.cat_l2,
+            "cat_smooth": self.cat_smooth,
+            "max_cat_to_onehot": self.max_cat_to_onehot,
+            "cegb_tradeoff": self.cegb_tradeoff,
+            "cegb_penalty_split": self.cegb_penalty_split,
+            "path_smooth": self.path_smooth,
+            "verbose": self.verbose,
+            "max_bin": self.max_bin,
+            "tree_learner": self.tree_learner,
+            "min_data_in_leaf": self.min_data_in_leaf,
+            "min_sum_hessian_in_leaf": self.min_sum_hessian_in_leaf,
+            "seed": self.random_seed,
             **output_params,
         }
 

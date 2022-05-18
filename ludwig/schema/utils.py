@@ -150,6 +150,29 @@ def Boolean(default: bool, description=""):
     )
 
 
+def Integer(default: Union[None, int] = None, allow_none=False, description=""):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
+    allow_none = allow_none or default is None
+
+    if default is not None:
+        try:
+            assert isinstance(default, int)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Integer(
+                strict=True,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
+            )
+        },
+        default=default,
+    )
+
+
 def PositiveInteger(default: Union[None, int] = None, allow_none=False, description=""):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
