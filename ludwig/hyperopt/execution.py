@@ -33,7 +33,7 @@ try:
     import ray
     from ray import tune
     from ray.tune import register_trainable
-    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
+    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
     from ray.tune.syncer import get_cloud_sync_client
     from ray.tune.utils import wait_for_gpu
@@ -222,7 +222,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.search_algorithm = (
             get_search_algorithm(None)(search_alg)
             if search_alg is None
-            else get_search_algorithm(search_alg[TYPE])(search_alg)
+            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
         )
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.decode_ctx = hyperopt_sampler.decode_ctx
@@ -606,7 +606,11 @@ class RayTuneExecutor(HyperoptExecutor):
         self.search_algorithm.check_for_random_seed(random_seed)
         if self.search_algorithm.search_alg_dict is not None:
             if TYPE not in self.search_algorithm.search_alg_dict:
-                logger.warning("WARNING: Kindly set type param for search_alg " "to utilize Tune's Search Algorithms.")
+                candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
+                logger.warning(
+                    "WARNING: search_alg type parameter missing, using 'variant_generator' as default. "
+                    f"These are possible values for the type parameter: {candiate_search_algs}."
+                )
                 search_alg = None
             else:
                 search_alg_type = self.search_algorithm.search_alg_dict[TYPE]

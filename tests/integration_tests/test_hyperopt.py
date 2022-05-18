@@ -50,6 +50,7 @@ HYPEROPT_CONFIG = {
 }
 
 SEARCH_ALGS = [
+    None,
     "variant_generator",
     "random",
     "hyperopt",
@@ -127,6 +128,8 @@ def test_hyperopt_search_alg(search_alg, csv_filename, validate_output_feature=F
             "domain": "euclidean",
             "optimizer": "random",
         }
+    elif search_alg is None:
+        hyperopt_config["search_alg"] = {}
     else:
         hyperopt_config["search_alg"] = {
             "type": search_alg,
@@ -151,18 +154,11 @@ def test_hyperopt_search_alg(search_alg, csv_filename, validate_output_feature=F
 
     gpus = [i for i in range(torch.cuda.device_count())]
     with ray_start(num_gpus=len(gpus)):
-        # TODO: Determine if we still need this if-then-else construct
-        if search_alg["type"] in {""}:
-            with pytest.raises(ImportError):
-                get_build_hyperopt_executor(RAY)(
-                    hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
-                )
-        else:
-            hyperopt_executor = get_build_hyperopt_executor(RAY)(
-                hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
-            )
-            raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
-            assert isinstance(raytune_results, RayTuneResults)
+        hyperopt_executor = get_build_hyperopt_executor(RAY)(
+            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        )
+        raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
+        assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed
