@@ -49,9 +49,6 @@ from ray.train.trainer import Trainer  # noqa: E402
 logger = logging.getLogger(__name__)
 
 
-READ_BINARY_FILES_BATCH_SIZE = 128
-
-
 try:
     from horovod.ray import RayExecutor
 except ImportError as e:
@@ -774,13 +771,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
         ds = ds.map_batches(
             partial(map_batches_fn, fn=get_bytes_str_from_path),
             batch_format="pandas",
-            batch_size=READ_BINARY_FILES_BATCH_SIZE,
         )
         if map_fn is not None:
             ds = ds.map_batches(
                 partial(map_batches_fn, fn=map_fn),
                 batch_format="pandas",
-                batch_size=READ_BINARY_FILES_BATCH_SIZE,
             )
 
         return self.df_engine.from_ray_dataset(ds)[column.name]
