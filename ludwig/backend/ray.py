@@ -48,7 +48,6 @@ from ray.train.trainer import Trainer  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-
 try:
     from horovod.ray import RayExecutor
 except ImportError as e:
