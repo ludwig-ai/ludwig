@@ -24,12 +24,12 @@ import pandas as pd
 from ludwig.api import kfold_cross_validate, LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
+from ludwig.constants import CONTINUE_PROMPT, FULL, HYPEROPT, HYPEROPT_WARNING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_config_from_str, load_yaml, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig, query_yes_no
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +186,10 @@ def experiment_cli(
          `(training_set, validation_set, test_set)`, `output_directory`
          filepath string to where results are stored.
     """
+    if HYPEROPT in config:
+        if not query_yes_no(HYPEROPT_WARNING + CONTINUE_PROMPT):
+            exit(1)
+
     if isinstance(config, str):
         config = load_yaml(config)
     backend = initialize_backend(backend or config.get("backend"))

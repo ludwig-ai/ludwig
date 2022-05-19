@@ -42,6 +42,8 @@ from ludwig.constants import (
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
     FULL,
+    HYPEROPT,
+    HYPEROPT_WARNING,
     LEARNING_RATE,
     PREPROCESSING,
     TEST,
@@ -336,6 +338,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         # setup directories and file names
         if model_resume_path is not None:
             if path_exists(model_resume_path):
@@ -1072,6 +1078,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,
             training_set=training_set,
