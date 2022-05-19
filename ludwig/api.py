@@ -1462,7 +1462,7 @@ class LudwigModel:
         """
         self._check_initialization()
         if model_only:
-            return torch.jit.script(self.model)
+            return self.model.to_torchscript()
         else:
             inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
             return torch.jit.script(inference_module)
