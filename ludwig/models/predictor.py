@@ -20,6 +20,7 @@ from ludwig.globals import (
     PREDICTIONS_SHAPES_FILE_NAME,
     TEST_STATISTICS_FILE_NAME,
 )
+from ludwig.models.abstractmodel import AbstractModel
 from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import return_first
@@ -64,7 +65,7 @@ class BasePredictor(ABC):
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
-    def __init__(self, model: ECD, batch_size=128, horovod=None, **kwargs):
+    def __init__(self, model: AbstractModel, batch_size=128, horovod=None, **kwargs):
         self._batch_size = batch_size
         self._horovod = horovod
 
@@ -124,11 +125,11 @@ class Predictor(BasePredictor):
         self.model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
-    def _predict(self, model: ECD, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _predict(self, model: AbstractModel, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """Predict a batch of data.
 
         Params:
-            model: ECD model
+            model: AbstractModel model
             batch: batch of data
 
         Returns:
