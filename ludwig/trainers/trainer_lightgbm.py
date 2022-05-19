@@ -199,7 +199,14 @@ class LightGBMTrainer(BaseTrainer):
         )
 
         # convert to pytorch for inference, fine tuning
-        self.model = convert_to_pytorch(gbm, self.model)
+        gbm_sklearn_cls = lgb.LGBMRegressor if output_params["objective"] == "regression" else lgb.LGBMClassifier
+        gbm_sklearn = gbm_sklearn_cls(feature_name=list(self.model.input_features.keys()), **params)
+        gbm_sklearn._Booster = gbm
+        gbm_sklearn.fitted_ = True
+        gbm_sklearn._n_features = len(self.model.input_features)
+        if isinstance(gbm_sklearn, lgb.LGBMClassifier):
+            gbm_sklearn._n_classes = output_params["num_class"] if output_params["objective"] == "multiclass" else 2
+        self.model = convert_to_pytorch(gbm_sklearn, self.model)
         self.model = self.model.to(self.device)
 
         self._save(save_path)
