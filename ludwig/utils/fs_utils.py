@@ -29,8 +29,6 @@ import requests
 from filelock import FileLock
 from fsspec.core import split_protocol
 
-logger = logging.getLogger(__name__)
-
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
@@ -65,14 +63,14 @@ def get_bytes_str_from_path(path: str) -> Optional[str]:
         try:
             return get_bytes_str_from_http_path(path)
         except requests.exceptions.RequestException as e:
-            logger.warning(e)
+            logging.warning(e)
             return None
     else:
         try:
             with open_file(path) as f:
                 return f.read()
         except OSError as e:
-            logger.warning(e)
+            logging.warning(e)
             return None
 
 
@@ -81,7 +79,7 @@ def get_bytes_str_from_http_path(path: str) -> str:
     if data.status_code == 404:
         upgraded = upgrade_http(path)
         if upgraded:
-            logger.info(f"reading url {path} failed. upgrading to https and retrying")
+            logging.info(f"reading url {path} failed. upgrading to https and retrying")
             return get_bytes_str_from_http_path(upgraded)
         else:
             raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
