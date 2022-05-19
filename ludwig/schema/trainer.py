@@ -370,12 +370,12 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     cegb_penalty_split: float = schema_utils.NonNegativeFloat(
-        default=1.0,
+        default=0.0,
         description="Cost-effective gradient boosting penalty for splitting a node in the GBM trainer.",
     )
 
     path_smooth: float = schema_utils.NonNegativeFloat(
-        default=1.0,
+        default=0.0,
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
