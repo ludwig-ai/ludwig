@@ -28,7 +28,7 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.10.2
             torchscript-version: 1.10.2
-            ray-version: 1.11.0
+            ray-version: 1.12.0
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
