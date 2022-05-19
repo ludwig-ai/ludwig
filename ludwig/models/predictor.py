@@ -284,7 +284,7 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
 
         target = dataset.loc[:, output_feature.proc_column]
 
-        if not isinstance(feature_df, pd.Series):
+        if not isinstance(feature_df, pd.DataFrame):
             logger.warning(
                 "Full computation of stats only supported for pandas dataframes. "
                 "Sampling the first 10000 rows of the feature and target dataframes for computing overall stats."

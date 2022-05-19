@@ -138,9 +138,9 @@ class TestCallback(Callback):
 
 
 @contextlib.contextmanager
-def ray_start_10_cpus():
+def ray_start_7_cpus():
     res = ray.init(
-        num_cpus=10,
+        num_cpus=7,
         include_dashboard=False,
         object_store_memory=150 * 1024 * 1024,
     )
@@ -169,7 +169,7 @@ def run_hyperopt_executor(
     validate_output_feature=False,
     validation_metric=None,
 ):
-    with ray_start_10_cpus():
+    with ray_start_7_cpus():
         config = _get_config(sampler, executor)
 
         csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
@@ -293,7 +293,7 @@ def run_hyperopt(
     out_dir,
     experiment_name="ray_hyperopt",
 ):
-    with ray_start_10_cpus():
+    with ray_start_7_cpus():
         callback = TestCallback()
         hyperopt_results = hyperopt(
             config,
