@@ -1,14 +1,23 @@
 #
 # Module structure:
 # ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to describing and validating
-# |                               Ludwig configs.
+#                                 Ludwig configs.
+# ├── __init__.py             <-- Contains fully assembled Ludwig schema (`get_schema()`), `validate_config()` for YAML
+#                                 validation, and all "top-level" schema functions.
 # ├── utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
-# |                               elsewhere in Ludwig.
-# ├── schema.py               <-- Contains the fully assembled Ludwig schema and validate() function that is used for
-# |                               user-input YAML validation. Users should generally only need to look at this.
-# └── __init__.py
+#                                 elsewhere in Ludwig.
+# ├── trainer.py              <-- Contains `TrainerConfig()` and `get_trainer_jsonschema`
+# ├── optimizers.py           <-- Contains every optimizer config (e.g. `SGDOptimizerConfig`, `AdamOptimizerConfig`,
+#                                 etc.) and related marshmallow fields/methods.
+# └── combiners/
+#     ├── __init__.py         <-- Imports for each combiner config file (making imports elsewhere more convenient).
+#     ├── utils.py            <-- Location of `combiner_registry`, `get_combiner_jsonschema()`, `get_combiner_conds()`
+#     ├── base.py             <-- Location of `BaseCombinerConfig`
+#     ├── comparator.py       <-- Location of `ComparatorCombinerConfig`
+#     ... <file for each combiner> ...
+#     └──  transformer.py     <-- Location of `TransformerCombinerConfig`
 #
-from jsonschema import Draft7Validator, validate
+from jsonschema import Draft202012Validator, validate
 from jsonschema.validators import extend
 
 from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
@@ -135,7 +144,6 @@ def validate_config(config):
     def custom_is_array(checker, instance):
         return isinstance(instance, list) or isinstance(instance, tuple)
 
-    # TODO(#1783): Change to Draft7Validator to _LATEST_VERSION or Draft202012Validator when py3.6 deprecated:
-    type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
-    CustomValidator = extend(Draft7Validator, type_checker=type_checker)
+    type_checker = Draft202012Validator.TYPE_CHECKER.redefine("array", custom_is_array)
+    CustomValidator = extend(Draft202012Validator, type_checker=type_checker)
     validate(instance=config, schema=get_schema(), cls=CustomValidator)
