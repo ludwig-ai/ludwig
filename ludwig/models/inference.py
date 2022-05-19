@@ -32,7 +32,7 @@ class InferenceModule(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any], strict=True):
+    def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
         model.cpu()
