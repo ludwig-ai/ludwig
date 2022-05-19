@@ -42,14 +42,14 @@ from ludwig.constants import (
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
     FULL,
+    HYPEROPT,
+    HYPEROPT_WARNING,
     LEARNING_RATE,
     PREPROCESSING,
     TEST,
     TRAINER,
     TRAINING,
     VALIDATION,
-    HYPEROPT,
-    HYPEROPT_WARNING
 )
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess

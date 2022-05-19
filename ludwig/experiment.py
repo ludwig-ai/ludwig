@@ -24,7 +24,7 @@ import pandas as pd
 from ludwig.api import kfold_cross_validate, LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, TEST, TRAINING, VALIDATION, HYPEROPT, HYPEROPT_WARNING, CONTINUE_PROMPT
+from ludwig.constants import CONTINUE_PROMPT, FULL, HYPEROPT, HYPEROPT_WARNING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_config_from_str, load_yaml, save_json
