@@ -33,6 +33,7 @@ def export_torchscript(model_path: str, model_only: bool = False, output_path: s
     # Inputs
 
     :param model_path: (str) filepath to pre-trained model.
+    :param model_only: (bool, default: `False`) If true, scripts and exports the model only.
     :param output_path: (str, default: `'torchscript'`) directory to store torchscript
 
     # Return
@@ -114,7 +115,7 @@ def cli_export_torchscript(sys_argv):
     parser.add_argument(
         "-mo",
         "--model_only",
-        help="whether to script the model only. Useful if scriptable pre-/post-processing is not needed.",
+        help="Script and export the model only.",
         action="store_true",
     )
 
