@@ -148,7 +148,7 @@ class Callback(ABC):
         """
         pass
 
-    def on_train_teardown(self, output_directory: str):
+    def on_train_teardown(self, output_directory: str, is_coordinator: bool):
         """Called at the end of training, after the model is saved.
 
         :param output_directory: file path to where training results are stored.
