@@ -28,6 +28,7 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.ecd import ECD
 from ludwig.utils.fs_utils import get_bytes_str_if_path
 from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.types import Series
 
 
 class Backend(ABC):
@@ -88,7 +89,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def read_binary_files(self, filepaths):
+    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
         raise NotImplementedError()
 
     @property

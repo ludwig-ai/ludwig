@@ -30,6 +30,7 @@ from scipy.signal.windows import get_window
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import is_http, upgrade_http
+from ludwig.utils.types import TorchAudioTuple
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
 
 
-def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor, int]:
+def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     sampling_rates = [audio[1] for audio in audio_lst]
     tensor_list = [audio[0] for audio in audio_lst]
 
@@ -69,7 +70,7 @@ def read_audio(audio: Union[str, torch.Tensor], src_path):
         return read_audio_from_str(audio, src_path)
 
 
-def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> Tuple[torch.Tensor, int]:
+def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> TorchAudioTuple:
     try:
         from torchaudio.backend.sox_io_backend import load
     except ImportError:
@@ -98,14 +99,14 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
         return None
 
 
-def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[Tuple[torch.Tensor, int]]]:
+def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[TorchAudioTuple]]:
     """Gets bytes string if `bytes_obj` is a bytes object). Else, return as-is."""
     if not isinstance(bytes_obj, bytes):
         return bytes_obj
     return read_audio_from_bytes_obj(bytes_obj)
 
 
-def read_audio_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[Tuple[torch.Tensor, int]]:
+def read_audio_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[TorchAudioTuple]:
     try:
         f = io.BytesIO(bytes_obj)
         return torchaudio.backend.sox_io_backend.load(f)
