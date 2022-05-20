@@ -448,8 +448,13 @@ class BERTEncoder(Encoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
+
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -1235,6 +1240,10 @@ class DistilBERTEncoder(Encoder):
 
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
+
         self.reduce_output = reduce_output
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
