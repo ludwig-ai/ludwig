@@ -152,13 +152,20 @@ class AudioFeatureMixin(BaseFeatureMixin):
         df_engine = backend.df_engine
         raw_audio = backend.read_binary_files(column, map_fn=read_audio_if_bytes_obj)
 
+        def is_torch_audio_tuple(audio):
+            if isinstance(audio, tuple):
+                if isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
+                    return True
+            return False
+
         try:
-            default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])
+            default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
         except RuntimeError:
             logger.info("Unable to process audio files provided")
             raise RuntimeError
 
-        raw_audio = df_engine.map_objects(raw_audio, lambda row: row if row is not None else default_audio)
+        raw_audio = df_engine.map_objects(raw_audio, lambda row: row if is_torch_audio_tuple(row) else default_audio)
+
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
@@ -317,9 +324,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
         set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
 
         if "audio_feature" not in preprocessing_parameters:
-            raise ValueError("audio_feature dictionary has to be present in preprocessing " "for audio.")
+            raise ValueError("audio_feature dictionary has to be present in preprocessing for audio.")
         if TYPE not in preprocessing_parameters["audio_feature"]:
-            raise ValueError("type has to be present in audio_feature dictionary " "for audio.")
+            raise ValueError("type has to be present in audio_feature dictionary for audio.")
 
         name = feature_config[NAME]
         column = feature_config[COLUMN]

@@ -291,6 +291,8 @@ class CSVPreprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
         dataset_df = read_csv(dataset, df_lib=backend.df_engine.df_lib)
+        print("ASDFASDF inside CSV preprocessor")
+        print(backend.df_engine.compute(dataset_df))
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
