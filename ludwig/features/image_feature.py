@@ -58,10 +58,6 @@ from ludwig.utils.image_utils import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series
 
-logger = logging.getLogger(__name__)
-
-IMAGE_COLUMN_SUPPORTED_TYPES = {str, torch.Tensor}
-
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -196,10 +192,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-
         img = read_image_if_bytes_obj(img_entry, num_channels)
-        if img is None:
-            logger.info(f"{img_entry} cannot be read")
+        if not isinstance(img, torch.Tensor):
+            logging.info(f"{img} cannot be read")
             return None
 
         img_num_channels = num_channels_in_image(img)
@@ -223,7 +218,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
 
             if img_num_channels != num_channels:
-                logger.warning(
+                logging.warning(
                     "Image has {} channels, where as {} "
                     "channels are expected. Dropping/adding channels "
                     "with 0s as appropriate".format(img_num_channels, num_channels)
@@ -271,7 +266,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
 
-        logger.debug(f"Inferring height: {height} and width: {width}")
+        logging.debug(f"Inferring height: {height} and width: {width}")
         return height, width
 
     @staticmethod
