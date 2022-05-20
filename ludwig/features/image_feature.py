@@ -396,7 +396,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return (should_resize, width, height, num_channels, user_specified_num_channels)
 
     @staticmethod
-    def add_abs_path_to_img_entries(column, src_path, backend):
+    def map_abs_path_to_entries(column, src_path, backend):
         def get_abs_path_if_entry_is_str(entry):
             if not isinstance(entry, str) or has_remote_protocol(entry):
                 return entry
@@ -411,12 +411,13 @@ class ImageFeatureMixin(BaseFeatureMixin):
     ):
         set_default_value(feature_config[PREPROCESSING], "in_memory", preprocessing_parameters["in_memory"])
 
+        name = feature_config[NAME]
         column = input_df[feature_config[COLUMN]]
 
         src_path = None
         if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = ImageFeatureMixin.add_abs_path_to_img_entries(column, src_path, backend)
+        abs_path_column = ImageFeatureMixin.map_abs_path_to_entries(column, src_path, backend)
 
         (
             should_resize,
@@ -426,9 +427,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels,
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
 
-        metadata[feature_config[NAME]][PREPROCESSING]["height"] = height
-        metadata[feature_config[NAME]][PREPROCESSING]["width"] = width
-        metadata[feature_config[NAME]][PREPROCESSING]["num_channels"] = num_channels
+        metadata[name][PREPROCESSING]["height"] = height
+        metadata[name][PREPROCESSING]["width"] = width
+        metadata[name][PREPROCESSING]["num_channels"] = num_channels
 
         read_image_and_resize = partial(
             ImageFeatureMixin._read_image_and_resize,
@@ -449,7 +450,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
-            metadata[feature_config[NAME]]["reshape"] = (num_channels, height, width)
+            metadata[name]["reshape"] = (num_channels, height, width)
 
             proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_and_resize)
             proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
