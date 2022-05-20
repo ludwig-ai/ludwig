@@ -27,24 +27,26 @@ from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def export_torchscript(model_path: str, output_path: str = "torchscript", **kwargs) -> None:
+def export_torchscript(model_path: str, model_only: bool = False, output_path: str = "torchscript", **kwargs) -> None:
     """Exports a model to torchscript.
 
     # Inputs
 
     :param model_path: (str) filepath to pre-trained model.
+    :param model_only: (bool, default: `False`) If true, scripts and exports the model only.
     :param output_path: (str, default: `'torchscript'`) directory to store torchscript
 
     # Return
     :returns: (`None`)
     """
     logger.info(f"Model path: {model_path}")
+    logger.info(f"Saving model only: {model_only}")
     logger.info(f"Output path: {output_path}")
     logger.info("\n")
 
     model = LudwigModel.load(model_path)
     os.makedirs(output_path, exist_ok=True)
-    model.save_torchscript(output_path)
+    model.save_torchscript(output_path, model_only=model_only)
 
     logger.info(f"Saved to: {output_path}")
 
@@ -110,6 +112,12 @@ def cli_export_torchscript(sys_argv):
     # Model parameters
     # ----------------
     parser.add_argument("-m", "--model_path", help="model to load", required=True)
+    parser.add_argument(
+        "-mo",
+        "--model_only",
+        help="Script and export the model only.",
+        action="store_true",
+    )
 
     # -----------------
     # Output parameters
