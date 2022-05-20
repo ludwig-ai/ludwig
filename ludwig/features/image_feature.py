@@ -194,7 +194,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         """
         img = read_image_if_bytes_obj(img_entry, num_channels)
         if not isinstance(img, torch.Tensor):
-            logging.info(f"{img} cannot be read")
+            logging.info(f"Image with value {img} cannot be read")
             return None
 
         img_num_channels = num_channels_in_image(img)
@@ -396,14 +396,14 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return (should_resize, width, height, num_channels, user_specified_num_channels)
 
     @staticmethod
-    def add_abs_path_to_img_entries(column, src_path):
+    def add_abs_path_to_img_entries(column, src_path, backend):
         def get_abs_path_if_entry_is_str(entry):
             if not isinstance(entry, str) or has_remote_protocol(entry):
                 return entry
             else:
                 return get_abs_path(src_path, entry)
 
-        return column.map(get_abs_path_if_entry_is_str)
+        return backend.df_engine.map_objects(column, get_abs_path_if_entry_is_str)
 
     @staticmethod
     def add_feature_data(
@@ -416,7 +416,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         src_path = None
         if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = ImageFeatureMixin.add_abs_path_to_img_entries(column, src_path)
+        abs_path_column = ImageFeatureMixin.add_abs_path_to_img_entries(column, src_path, backend)
 
         (
             should_resize,
