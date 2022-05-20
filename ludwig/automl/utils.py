@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from typing import Dict, List
 
+import numpy as np
 from dataclasses_json import dataclass_json, LetterCase
 from pandas import Series
 
@@ -58,7 +59,7 @@ def avg_num_tokens(field: Series) -> int:
     if len(field) > 5000:
         field = field.sample(n=5000, random_state=40)
     unique_entries = field.unique()
-    avg_words = round(Series(unique_entries).str.split().str.len().mean())
+    avg_words = round(np.nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
 
 
