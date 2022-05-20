@@ -57,21 +57,21 @@ def upgrade_http(urlpath):
     return None
 
 
-def get_bytes_str_if_path(path: str) -> Union[Any, Optional[str]]:
+def get_bytes_obj_if_path(path: str) -> Union[Any, Optional[bytes]]:
     """Gets bytes string if `path` is a path (e.g. a string).
 
     If it is not a path, return as-is.
     """
     if not isinstance(path, str):
         return path
-    return get_bytes_str_from_path(path)
+    return get_bytes_obj_from_path(path)
 
 
 @functools.lru_cache(maxsize=32)
-def get_bytes_str_from_path(path: str) -> Optional[str]:
+def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
     if is_http(path):
         try:
-            return get_bytes_str_from_http_path(path)
+            return get_bytes_obj_from_http_path(path)
         except requests.exceptions.RequestException as e:
             logging.warning(e)
             return None
@@ -84,13 +84,13 @@ def get_bytes_str_from_path(path: str) -> Optional[str]:
             return None
 
 
-def get_bytes_str_from_http_path(path: str) -> str:
+def get_bytes_obj_from_http_path(path: str) -> bytes:
     data = requests.get(path, stream=True)
     if data.status_code == 404:
         upgraded = upgrade_http(path)
         if upgraded:
             logging.info(f"reading url {path} failed. upgrading to https and retrying")
-            return get_bytes_str_from_http_path(upgraded)
+            return get_bytes_obj_from_http_path(upgraded)
         else:
             raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
     return data.raw.read()

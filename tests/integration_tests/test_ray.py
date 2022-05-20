@@ -215,7 +215,7 @@ def test_ray_read_binary_files(tmpdir, df_engine):
     audio_params = audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)
 
     dataset_path = generate_data([audio_params], [], "dataset.csv", num_examples=100)
-    dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.5)
+    dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.1)
 
     with ray_start(num_cpus=2, num_gpus=None):
         backend_config = {**RAY_BACKEND_CONFIG}
@@ -319,7 +319,7 @@ def test_ray_audio(feature_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features)
+        run_test_with_features(input_features, output_features, nan_percent=0.1)
 
 
 @pytest.mark.distributed
