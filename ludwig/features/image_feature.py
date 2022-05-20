@@ -427,11 +427,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
         set_default_value(feature_config[PREPROCESSING], "in_memory", preprocessing_parameters["in_memory"])
 
         column = input_df[feature_config[COLUMN]]
-        first_img_entry = ImageFeatureMixin.get_first_img_entry(column)
+        first_image_entry = ImageFeatureMixin.get_first_image_entry(column)
 
         src_path = None
         if SRC in metadata:
-            if isinstance(first_img_entry, str) and not has_remote_protocol(first_img_entry):
+            if isinstance(first_image_entry, str) and not has_remote_protocol(first_image_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
         def get_abs_path_if_entry_is_str(entry):
@@ -440,7 +440,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             else:
                 return get_abs_path(src_path, entry)
 
-        column = column.map_partitions(get_abs_path_if_entry_is_str)
+        abs_path_column = column.map_objects(get_abs_path_if_entry_is_str)
+        
+        first_image = 
 
         (
             should_resize,
@@ -450,7 +452,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels,
             first_image,
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_img_entry, src_path, input_df[feature_config[COLUMN]]
+            preprocessing_parameters, first_image_entry, src_path, column
         )
 
         metadata[feature_config[NAME]][PREPROCESSING]["height"] = height
@@ -490,15 +492,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     res_single = read_image_and_resize(img_store)
                 return res_single if res_single is not None else default_image
 
-            proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
-                input_df[feature_config[COLUMN]], _get_processed_image
-            )
+            proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(column, _get_processed_image)
         else:
-
-            all_img_entries = [
-                get_abs_path(src_path, img_entry) if isinstance(img_entry, str) else img_entry
-                for img_entry in input_df[feature_config[COLUMN]]
-            ]
+            num_images = len(abs_path_column)
 
             data_fp = backend.cache.get_cache_path(wrap(metadata.get(SRC)), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
@@ -506,7 +502,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 image_dataset = h5_file.create_dataset(
                     feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
                 )
-                for i, img_entry in enumerate(all_img_entries):
+                for i, img_entry in enumerate(abs_path_column):
                     res = read_image_and_resize(img_entry)
                     image_dataset[i, :height, :width, :] = res if res is not None else default_image
                 h5_file.flush()

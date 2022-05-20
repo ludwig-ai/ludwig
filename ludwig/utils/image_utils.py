@@ -163,6 +163,29 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
         return None
 
 
+def read_image_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[torch.Tensor]]:
+    """Gets bytes string if `bytes_obj` is a bytes object.
+
+    If it is not a bytes object, return as-is.
+    """
+    if not isinstance(bytes_obj, bytes):
+        return bytes_obj
+    return read_image_from_bytes_obj(bytes_obj)
+
+
+def read_image_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[torch.Tensor]:
+    try:
+        with BytesIO(bytes_obj) as buffer:
+            buffer_view = buffer.getbuffer()
+            image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
+            del buffer_view
+
+            return image
+    except Exception as e:
+        logger.warning(e)
+        return None
+
+
 def pad(
     img: torch.Tensor,
     new_size: Union[int, Tuple[int, int]],
