@@ -99,7 +99,10 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
 
 
 def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[Tuple[torch.Tensor, int]]]:
-    """Gets bytes string if `bytes_obj` is a bytes object). Else, return as-is."""
+    """Gets bytes string if `bytes_obj` is a bytes object).
+
+    Else, return as-is.
+    """
     if not isinstance(bytes_obj, bytes):
         return bytes_obj
     return read_audio_from_bytes_obj(bytes_obj)

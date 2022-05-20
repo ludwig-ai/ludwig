@@ -24,7 +24,7 @@ import ray
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.backend import initialize_backend, create_ray_backend, LOCAL_BACKEND
+from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, NAME, TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
