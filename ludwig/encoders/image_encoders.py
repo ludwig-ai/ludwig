@@ -342,8 +342,6 @@ class ViTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             self.model = ViTModel.from_pretrained(pretrained_model)
-            if trainable:
-                self.model.train()
         else:
             config = ViTConfig(
                 image_size=img_height,
@@ -361,6 +359,12 @@ class ViTEncoder(Encoder):
                 gradient_checkpointing=gradient_checkpointing,
             )
             self.model = ViTModel(config)
+
+        if trainable:
+            self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
 
         self._output_shape = (self.model.config.hidden_size,)
 

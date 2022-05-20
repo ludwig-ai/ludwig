@@ -113,6 +113,9 @@ class ALBERTEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -237,6 +240,9 @@ class MT5Encoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -331,6 +337,9 @@ class XLMRoBERTaEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -704,6 +713,9 @@ class GPTEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -804,6 +816,9 @@ class GPT2Encoder(Encoder):
 
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -885,6 +900,9 @@ class RoBERTaEncoder(Encoder):
             self.transformer = RobertaModel(config)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1017,6 +1035,9 @@ class TransformerXLEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1141,6 +1162,9 @@ class XLNetEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1345,6 +1369,9 @@ class CTRLEncoder(Encoder):
         self.max_sequence_length = max_sequence_length
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(self.vocab_size)
@@ -1451,6 +1478,9 @@ class CamemBERTEncoder(Encoder):
 
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1564,6 +1594,9 @@ class T5Encoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1697,6 +1730,9 @@ class FlauBERTEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1808,6 +1844,9 @@ class ELECTRAEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1890,6 +1929,9 @@ class LongformerEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(num_tokens)
         self.max_sequence_length = max_sequence_length
 
@@ -1964,6 +2006,9 @@ class AutoTransformerEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            for p in self.transformer.parameters():
+                p.requires_grad = False
         self.transformer.resize_token_embeddings(vocab_size)
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
