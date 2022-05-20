@@ -195,7 +195,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("df_engine", ["pandas", "dask"])
+@pytest.mark.parametrize("df_engine", ["pandas" "dask"])
 @pytest.mark.distributed
 def test_ray_read_binary_files(tmpdir, df_engine):
     preprocessing_params = {
@@ -214,7 +214,8 @@ def test_ray_read_binary_files(tmpdir, df_engine):
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     audio_params = audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)
 
-    dataset_path = generate_data([audio_params], [], "dataset.csv", num_examples=100)
+    dataset_path = os.path.join(tmpdir, "dataset.csv")
+    dataset_path = generate_data([audio_params], [], dataset_path, num_examples=100)
     dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.1)
 
     with ray_start(num_cpus=2, num_gpus=None):
@@ -299,9 +300,10 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
 @pytest.mark.distributed
-def test_ray_audio(feature_type):
+def test_ray_audio(dataset_type, feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:
         preprocessing_params = {
             "audio_file_length_limit_in_s": 3.0,
@@ -319,7 +321,7 @@ def test_ray_audio(feature_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, nan_percent=0.1)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.distributed

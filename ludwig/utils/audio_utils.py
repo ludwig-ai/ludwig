@@ -27,7 +27,6 @@ from scipy.signal.windows import get_window
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.types import TorchAudioTuple
 
-
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
 
@@ -48,7 +47,7 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     return default_audio_tensor, default_sampling_rate
 
 
-def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[TorchAudioTuple]]:
+def read_audio_if_bytes_obj(bytes_obj: Any) -> Union[Any, Optional[TorchAudioTuple]]:
     """Gets bytes string if `bytes_obj` is a bytes object.
 
     If it is not a bytes object, return as-is.
@@ -58,7 +57,7 @@ def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Opt
     return read_audio_from_bytes_obj(bytes_obj)
 
 
-def read_audio_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[TorchAudioTuple]:
+def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
     try:
         f = BytesIO(bytes_obj)
         return torchaudio.backend.sox_io_backend.load(f)

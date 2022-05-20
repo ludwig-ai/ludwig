@@ -57,7 +57,7 @@ def upgrade_http(urlpath):
     return None
 
 
-def get_bytes_obj_if_path(path: str) -> Union[Any, Optional[bytes]]:
+def get_bytes_obj_if_path(path: Any) -> Union[Any, Optional[bytes]]:
     """Gets bytes string if `path` is a path (e.g. a string).
 
     If it is not a path, return as-is.
