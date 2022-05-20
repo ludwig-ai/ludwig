@@ -37,7 +37,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
-from ludwig.utils.fs_utils import get_bytes_str_if_path
+from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import Series
@@ -767,7 +767,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             df[column.name] = df[column.name].map(fn)
             return df
 
-        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_str_if_path), batch_format="pandas")
+        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_if_path), batch_format="pandas")
         if map_fn is not None:
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 

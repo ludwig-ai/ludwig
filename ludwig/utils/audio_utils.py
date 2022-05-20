@@ -54,51 +54,6 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     return default_audio_tensor, default_sampling_rate
 
 
-@functools.lru_cache(maxsize=32)
-def read_audio(audio: Union[str, torch.Tensor], src_path):
-    """Function for reading audio files.
-
-    Args:
-        src_path: Local file source path
-        audio: Audio file input
-
-    Returns: Audio converted into torch tensor.
-    """
-    if isinstance(audio, torch.Tensor):
-        return audio
-    if isinstance(audio, str):
-        return read_audio_from_str(audio, src_path)
-
-
-def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> TorchAudioTuple:
-    try:
-        from torchaudio.backend.sox_io_backend import load
-    except ImportError:
-        logger.error("torchaudio is not installed. " "Please install torchaudio to train models with audio features")
-        sys.exit(-1)
-
-    try:
-        if is_http(audio_path):
-            return load(audio_path)
-        if src_path:
-            filepath = get_abs_path(src_path, audio_path)
-            return load(filepath)
-        if src_path is None and os.path.isabs(audio_path):
-            return load(audio_path)
-        if src_path is None and not os.path.isabs(audio_path):
-            raise ValueError("Audio file paths must be absolute")
-    except Exception as e:
-        upgraded = upgrade_http(audio_path)
-        if upgraded:
-            logger.info(f"{e}. upgrading to https and retrying")
-            return read_audio_from_str(upgraded, src_path, False)
-        if retry:
-            logger.info(f"{e}, retrying...")
-            return read_audio_from_str(audio_path, src_path, False)
-        logger.info(e)
-        return None
-
-
 def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[TorchAudioTuple]]:
     """Gets bytes string if `bytes_obj` is a bytes object.
 
