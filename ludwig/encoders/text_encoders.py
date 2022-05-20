@@ -23,6 +23,7 @@ from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +115,7 @@ class ALBERTEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -241,8 +241,7 @@ class MT5Encoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -338,8 +337,7 @@ class XLMRoBERTaEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -461,8 +459,7 @@ class BERTEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
 
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
@@ -714,8 +711,7 @@ class GPTEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -817,8 +813,7 @@ class GPT2Encoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -901,8 +896,7 @@ class RoBERTaEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1036,8 +1030,7 @@ class TransformerXLEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1163,8 +1156,7 @@ class XLNetEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1265,8 +1257,7 @@ class DistilBERTEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
 
         self.reduce_output = reduce_output
         self.max_sequence_length = max_sequence_length
@@ -1370,8 +1361,7 @@ class CTRLEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(self.vocab_size)
@@ -1479,8 +1469,7 @@ class CamemBERTEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1595,8 +1584,7 @@ class T5Encoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1731,8 +1719,7 @@ class FlauBERTEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1845,8 +1832,7 @@ class ELECTRAEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1930,8 +1916,7 @@ class LongformerEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(num_tokens)
         self.max_sequence_length = max_sequence_length
 
@@ -2007,8 +1992,7 @@ class AutoTransformerEncoder(Encoder):
         if trainable:
             self.transformer.train()
         else:
-            for p in self.transformer.parameters():
-                p.requires_grad = False
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
