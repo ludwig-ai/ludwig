@@ -60,7 +60,7 @@ def upgrade_http(urlpath):
 def get_bytes_str_if_path(path: str) -> Union[Any, Optional[str]]:
     """Gets bytes string if `path` is a path (e.g. a string).
 
-    Else, return as-is.
+    If it is not a path, return as-is.
     """
     if not isinstance(path, str):
         return path
