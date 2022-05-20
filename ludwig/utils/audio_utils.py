@@ -27,7 +27,6 @@ from scipy.signal.windows import get_window
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.types import TorchAudioTuple
 
-
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
 
