@@ -1,24 +1,32 @@
+import logging
 import os
-from typing import Dict, Iterable, List, Optional, Tuple
+import time
+from collections import OrderedDict
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import lightgbm as lgb
 import lightgbm_ray as lgb_ray
-import numpy as np
 import torch
 from hummingbird.ml import convert
 from lightgbm_ray.tune import _TuneLGBMRank0Mixin
+from tabulate import tabulate
+from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER
+from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.models.gbm import GBM
+from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.schema.trainer import TrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
+from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
-from ludwig.utils.metric_utils import TrainerMetric
+from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker
+
+logger = logging.getLogger(__name__)
 
 
 def convert_to_pytorch(gbm: lgb.Booster, tree_module: GBM) -> GBM:
@@ -34,20 +42,6 @@ def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str
     for feature_name, feature in features.items():
         for metric in feature.metric_functions:
             yield feature_name, metric
-
-
-def lgb_accuracy(preds: np.array, train_data: lgb.Dataset) -> Tuple[str, float, bool]:
-    """Calculate accuracy for LightGBM predictions.
-
-    Args:
-        preds: LightGBM predictions.
-        train_data: LightGBM dataset.
-
-    Returns:
-        Tuple of (metric name, metric value, is_higher_better).
-    """
-    labels = train_data.get_label()
-    return "accuracy", np.mean(labels == (preds > 0.5)), True
 
 
 @register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
@@ -73,13 +67,16 @@ class LightGBMTrainer(BaseTrainer):
         super().__init__()
 
         self.random_seed = random_seed
-
         self.model = model
+        self.horovod = horovod
+        self.callbacks = callbacks or []
 
+        self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
+        self.evaluate_training_set = config.evaluate_training_set
         try:
             base_learning_rate = float(config.learning_rate)
         except ValueError:
@@ -141,11 +138,21 @@ class LightGBMTrainer(BaseTrainer):
             output_features=self.model.output_features,
         )
 
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: "Dataset",  # noqa: F821
+        random_seed: int,
+        max_trials: int = 10,
+        halving_limit: int = 3,
+    ) -> int:
+        raise NotImplementedError("Tuning batch size is not supported for LightGBM.")
+
     def train_online(
         self,
         dataset,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError("Online training is not supported for LightGBM.")
 
     @property
     def validation_field(self):
@@ -154,6 +161,170 @@ class LightGBMTrainer(BaseTrainer):
     @property
     def validation_metric(self):
         return self._validation_metric
+
+    def append_metrics(self, dataset_name, results, metrics_log, tables, progress_tracker):
+        epoch = progress_tracker.epoch
+        steps = progress_tracker.steps
+        for output_feature in self.model.output_features:
+            scores = [dataset_name]
+
+            # collect metric names based on output features metrics to
+            # ensure consistent order of reporting metrics
+            metric_names = self.model.output_features[output_feature].metric_functions.keys()
+
+            for metric in metric_names:
+                if metric in results[output_feature]:
+                    # Some metrics may have been excepted and excluded from results.
+                    score = results[output_feature][metric]
+                    metrics_log[output_feature][metric].append(TrainerMetric(epoch=epoch, step=steps, value=score))
+                    scores.append(score)
+
+            tables[output_feature].append(scores)
+
+        metrics_log[COMBINED][LOSS].append(TrainerMetric(epoch=epoch, step=steps, value=results[COMBINED][LOSS]))
+        tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
+
+        return metrics_log, tables
+
+    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod)
+        metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
+
+        self.append_metrics(dataset_name, metrics, metrics_log, tables, progress_tracker)
+
+        return metrics_log, tables
+
+    @classmethod
+    def write_eval_summary(
+        cls,
+        summary_writer,
+        metrics,
+        step,
+    ):
+        if not summary_writer:
+            return
+
+        for feature_name, output_feature in metrics.items():
+            for metric_name, metrics in output_feature.items():
+                if metrics:
+                    metric_tag = f"{feature_name}/epoch_{metric_name}"
+                    metric_val = metrics[-1][-1]
+                    summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
+        summary_writer.flush()
+
+    def run_evaluation(
+        self,
+        training_set,
+        validation_set,
+        test_set,
+        progress_tracker,
+        train_summary_writer,
+        validation_summary_writer,
+        test_summary_writer,
+        output_features,
+        metrics_names,
+        save_path,
+        loss: torch.Tensor,
+        all_losses: Dict[str, torch.Tensor],
+    ) -> bool:
+        """Runs evaluation over training, validation, and test sets.
+
+        Also:
+        - Prints results, saves results to the progress tracker.
+        - Saves the model if the validation score is the best so far
+        - If there is no validation set, the model is always saved.
+
+        Returns whether the trainer should early stop, based on validation metrics history.
+        """
+        start_time = time.time()
+        self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
+
+        if self.is_coordinator():
+            logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
+
+        # ================ Eval ================
+        # init tables
+        tables = OrderedDict()
+        for output_feature_name, output_feature in output_features.items():
+            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
+        tables[COMBINED] = [[COMBINED, LOSS]]
+
+        # eval metrics on train
+        self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+        if self.evaluate_training_set:
+            self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            )
+
+            self.write_eval_summary(
+                summary_writer=train_summary_writer,
+                metrics=progress_tracker.train_metrics,
+                step=progress_tracker.steps,
+            )
+        else:
+            # Training set is not evaluated. Add loss to the progress tracker.
+            progress_tracker.train_metrics[COMBINED][LOSS].append(
+                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
+            )
+            for output_feature_name, loss_tensor in all_losses.items():
+                progress_tracker.train_metrics[output_feature_name][LOSS].append(
+                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
+                )
+                tables[output_feature_name].append(["train", loss_tensor.item()])
+            tables[COMBINED].append(["train", loss.item()])
+
+        self.write_eval_summary(
+            summary_writer=train_summary_writer,
+            metrics=progress_tracker.train_metrics,
+            step=progress_tracker.steps,
+        )
+
+        if validation_set is not None:
+            self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
+
+            # eval metrics on validation set
+            self.evaluation(
+                validation_set,
+                "vali",
+                progress_tracker.validation_metrics,
+                tables,
+                self.eval_batch_size,
+                progress_tracker,
+            )
+
+            self.write_eval_summary(
+                summary_writer=validation_summary_writer,
+                metrics=progress_tracker.validation_metrics,
+                step=progress_tracker.steps,
+            )
+
+            self.callback(lambda c: c.on_validation_end(self, progress_tracker, save_path))
+
+        if test_set is not None:
+            self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
+
+            # eval metrics on test set
+            self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            )
+
+            self.write_eval_summary(
+                summary_writer=test_summary_writer,
+                metrics=progress_tracker.test_metrics,
+                step=progress_tracker.steps,
+            )
+
+            self.callback(lambda c: c.on_test_end(self, progress_tracker, save_path))
+
+        elapsed_time = (time.time() - start_time) * 1000.0
+
+        if self.is_coordinator():
+            logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
+            for output_feature, table in tables.items():
+                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+
+        # Trigger eval end callback after any model weights save for complete checkpoint
+        self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         # TODO: construct new datasets by running encoders (for text, image)
@@ -164,7 +335,7 @@ class LightGBMTrainer(BaseTrainer):
 
         output_params, params = self._construct_lgb_params()
 
-        lgb_train, eval_sets, eval_names = self._construct_lgb_datasets(training_set, validation_set, test_set)
+        lgb_train, eval_sets, eval_names = self._construct_lgb_datasets(training_set, validation_set)
 
         # categorical_features = [
         #     i
@@ -181,7 +352,6 @@ class LightGBMTrainer(BaseTrainer):
             valid_names=eval_names,
             feature_name=list(self.model.input_features.keys()),
             evals_result=eval_results,
-            feval=[lgb_accuracy],
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
             callbacks=[
@@ -190,13 +360,8 @@ class LightGBMTrainer(BaseTrainer):
             ],
         )
 
-        self._update_progress(
-            output_params,
-            eval_results,
-            gbm,
-            update_valid=(validation_set is not None),
-            update_test=(test_set is not None),
-        )
+        self.progress_tracker.steps = gbm.current_iteration()
+        self.progress_tracker.last_improvement_steps = gbm.best_iteration
 
         # convert to pytorch for inference, fine tuning
         gbm_sklearn_cls = lgb.LGBMRegressor if output_params["objective"] == "regression" else lgb.LGBMClassifier
@@ -208,6 +373,36 @@ class LightGBMTrainer(BaseTrainer):
             gbm_sklearn._n_classes = output_params["num_class"] if output_params["objective"] == "multiclass" else 2
         self.model = convert_to_pytorch(gbm_sklearn, self.model)
         self.model = self.model.to(self.device)
+
+        # evaluate
+        os.makedirs(save_path, exist_ok=True)
+        tensorboard_log_dir = os.path.join(save_path, "logs")
+        train_summary_writer = None
+        validation_summary_writer = None
+        test_summary_writer = None
+        train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
+        if validation_set is not None and validation_set.size > 0:
+            validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
+        if test_set is not None and test_set.size > 0:
+            test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+
+        output_features = self.model.output_features
+        metrics_names = get_metric_names(output_features)
+
+        self.run_evaluation(
+            training_set,
+            validation_set,
+            test_set,
+            self.progress_tracker,
+            train_summary_writer,
+            validation_summary_writer,
+            test_summary_writer,
+            output_features,
+            metrics_names,
+            save_path,
+            None,
+            None,
+        )
 
         self._save(save_path)
 
@@ -224,13 +419,13 @@ class LightGBMTrainer(BaseTrainer):
             if feature.type() == CATEGORY:
                 output_params = {
                     "objective": "multiclass",
-                    "metric": ["multi_logloss", "auc_mu"],
+                    "metric": ["multi_logloss"],
                     "num_class": feature.num_classes,
                 }
             elif feature.type() == BINARY:
                 output_params = {
                     "objective": "binary",
-                    "metric": ["binary_logloss", "accuracy", "auc"],
+                    "metric": ["binary_logloss"],
                 }
             elif feature.type() == NUMBER:
                 output_params = {
@@ -288,76 +483,27 @@ class LightGBMTrainer(BaseTrainer):
 
         return output_params, params
 
-    def _construct_lgb_datasets(
-        self, training_set, validation_set, test_set
-    ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
+    def _construct_lgb_datasets(self, training_set, validation_set) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
         X_train = training_set.to_df(self.model.input_features.values())
         y_train = training_set.to_df(self.model.output_features.values())
 
         # create dataset for lightgbm
         # if you want to re-use data, remember to set free_raw_data=False
-        lgb_train = lgb.Dataset(X_train, label=y_train, free_raw_data=False)
+        lgb_train = lgb.Dataset(X_train, label=y_train)
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             X_val = validation_set.to_df(self.model.input_features.values())
             y_val = validation_set.to_df(self.model.output_features.values())
-            lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False)
+            lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train)
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
-
-        if test_set is not None:
-            X_test = test_set.to_df(self.model.input_features.values())
-            y_test = test_set.to_df(self.model.output_features.values())
-            lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False)
-            eval_sets.append(lgb_test)
-            eval_names.append(LightGBMTrainer.TEST_KEY)
+        else:
+            # TODO(joppe): take X% from train set as validation set
+            pass
 
         return lgb_train, eval_sets, eval_names
-
-    def _update_progress(
-        self,
-        output_params: dict,
-        eval_results: dict,
-        gbm: lgb.Booster,
-        update_valid: Optional[bool] = False,
-        update_test: Optional[bool] = False,
-    ):
-        for output_feature_name, metric in iter_feature_metrics(self.model.output_features):
-            if metric == LOSS:
-                self.progress_tracker.train_metrics[output_feature_name][metric] = [
-                    TrainerMetric(epoch=0, step=i, value=v)
-                    for i, v in enumerate(eval_results[LightGBMTrainer.TRAIN_KEY][output_params["metric"][0]])
-                ]
-                if update_valid:
-                    self.progress_tracker.validation_metrics[output_feature_name][metric] = [
-                        TrainerMetric(epoch=0, step=i, value=v)
-                        for i, v in enumerate(eval_results[LightGBMTrainer.VALID_KEY][output_params["metric"][0]])
-                    ]
-                if update_test:
-                    self.progress_tracker.test_metrics[output_feature_name][metric] = [
-                        TrainerMetric(epoch=0, step=i, value=v)
-                        for i, v in enumerate(eval_results[LightGBMTrainer.TEST_KEY][output_params["metric"][0]])
-                    ]
-
-        for metrics in [
-            self.progress_tracker.train_metrics,
-            self.progress_tracker.validation_metrics,
-            self.progress_tracker.test_metrics,
-        ]:
-            metrics[COMBINED][LOSS].append(TrainerMetric(epoch=0, step=0, value=0.0))
-
-        self.progress_tracker.steps = gbm.current_iteration()
-        self.progress_tracker.last_improvement_steps = gbm.best_iteration
-        if update_valid:
-            self.progress_tracker.best_eval_metric = gbm.best_score[LightGBMTrainer.VALID_KEY][
-                output_params["metric"][0]
-            ]
-        elif update_test:
-            self.progress_tracker.best_eval_metric = gbm.best_score[LightGBMTrainer.TEST_KEY][
-                output_params["metric"][0]
-            ]
 
     def _save(self, save_path: str):
         os.makedirs(save_path, exist_ok=True)
@@ -368,6 +514,16 @@ class LightGBMTrainer(BaseTrainer):
 
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         torch.save(self.model.state_dict(), model_weights_path)
+
+    def is_coordinator(self):
+        if not self.horovod:
+            return True
+        return self.horovod.rank() == 0
+
+    def callback(self, fn, coordinator_only=True):
+        if not coordinator_only or self.is_coordinator():
+            for callback in self.callbacks:
+                fn(callback)
 
 
 class LogEvalDistributed(_TuneLGBMRank0Mixin):
