@@ -47,6 +47,7 @@ from ludwig.utils.audio_utils import (
     get_stft_magnitude,
     read_audio_if_bytes_obj,
 )
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 
@@ -139,7 +140,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _process_in_memory(
         column,
-        src_path,
         audio_feature_dict,
         feature_dim,
         max_length,
@@ -318,6 +318,16 @@ class AudioFeatureMixin(BaseFeatureMixin):
             )
 
     @staticmethod
+    def map_abs_path_to_entries(column, src_path, backend):
+        def get_abs_path_if_entry_is_str(entry):
+            if not isinstance(entry, str) or has_remote_protocol(entry):
+                return entry
+            else:
+                return get_abs_path(src_path, entry)
+
+        return backend.df_engine.map_objects(column, get_abs_path_if_entry_is_str)
+
+    @staticmethod
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
@@ -329,14 +339,13 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError("type has to be present in audio_feature dictionary for audio.")
 
         name = feature_config[NAME]
-        column = feature_config[COLUMN]
-        proc_column = feature_config[PROC_COLUMN]
+        column = input_df[feature_config[COLUMN]]
 
-        num_audio_files = len(input_df[column])
+        num_audio_files = len(column)
         if num_audio_files == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        first_audio_entry = next(iter(input_df[column]))
+        first_audio_entry = next(iter(column))
         logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
 
         if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
@@ -349,6 +358,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
+        abs_path_column = AudioFeatureMixin.map_abs_path_to_entries(column, src_path, backend)
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
@@ -364,8 +374,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
-                input_df[column],
-                src_path,
+                abs_path_column,
                 audio_feature_dict,
                 feature_dim,
                 max_length,
@@ -374,7 +383,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 audio_file_length_limit_in_s,
                 backend,
             )
-            proc_df[proc_column] = audio_features
+            proc_df[feature_config[PROC_COLUMN]] = audio_features
         else:
             backend.check_lazy_load_supported(feature_config)
 
