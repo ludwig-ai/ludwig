@@ -526,8 +526,9 @@ def read_csv_with_nan(path, nan_percent=0.0):
     if nan_percent > 0:
         num_rows = len(df)
         for col in df.columns:
-            for row in random.sample(range(num_rows), int(round(nan_percent * num_rows))):
-                df[col].iloc[row] = np.nan
+            col_idx = df.columns.get_loc(col)
+            for row_idx in random.sample(range(num_rows), int(round(nan_percent * num_rows))):
+                df.iloc[row_idx, col_idx] = np.nan
     return df
 
 

@@ -13,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import functools
-import io
 import logging
-import os
-import sys
+from io import BytesIO
 from typing import Any, List, Optional, Union
 
 import numpy as np
@@ -28,11 +25,8 @@ from scipy.signal import lfilter
 from scipy.signal.windows import get_window
 
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
-from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import is_http, upgrade_http
 from ludwig.utils.types import TorchAudioTuple
 
-logger = logging.getLogger(__name__)
 
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
@@ -66,10 +60,10 @@ def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Opt
 
 def read_audio_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[TorchAudioTuple]:
     try:
-        f = io.BytesIO(bytes_obj)
+        f = BytesIO(bytes_obj)
         return torchaudio.backend.sox_io_backend.load(f)
     except Exception as e:
-        logger.warning(e)
+        logging.warning(e)
         return None
 
 
