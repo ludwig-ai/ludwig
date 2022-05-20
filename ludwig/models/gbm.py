@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torchmetrics
 
-from ludwig.constants import LOGITS, MODEL_GBM, NAME
+from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.abstractmodel import AbstractModel
@@ -55,6 +55,8 @@ class GBM(AbstractModel):
 
         output_feature_def["input_size"] = input_size
         output_feature = cls.build_single_output(output_feature_def, output_features)
+        # HACK: avoid using non-tree decoder part of the model for inference
+        output_feature.decoder_obj = nn.Identity()
         output_features[output_feature_def[NAME]] = output_feature
 
         return output_features
@@ -92,32 +94,32 @@ class GBM(AbstractModel):
             else:
                 inputs[input_feature_name] = input_values.view(-1, 1)
 
-        # concatenate inputs (TODO: concat combiner?)
-        inputs = torch.cat(list(inputs.values()), dim=1)
-
-        # Invoke output features.
-        output_logits = {}
-        # output_last_hidden = {}
-        output_feature_name = self.output_features.keys()[0]
-        # # Use the presence or absence of targets to signal training or prediction.
-        # target = targets[output_feature_name] if targets is not None else None
-        # # Add decoder outputs to overall output dictionary.
-        # for decoder_output_name, tensor in decoder_outputs.items():
-        # TODO(joppe): assert this works for regression
-        _preds, logits = self.compiled_model(inputs)
-        output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
-        # # Save the hidden state of the output feature (for feature dependencies).
-        # output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
-
-        return output_logits
-
         # TODO(travis): include encoder and decoder steps during inference
-
         # encoder_outputs = {}
         # for input_feature_name, input_values in inputs.items():
         #     encoder = self.input_features[input_feature_name]
         #     encoder_output = encoder(input_values)
         #     encoder_outputs[input_feature_name] = encoder_output
 
-        # combiner_outputs = self.combiner(encoder_outputs)
-        #
+        # concatenate inputs
+        inputs = torch.cat(list(inputs.values()), dim=1)
+
+        # Invoke output features.
+        output_logits = {}
+        output_feature_name = self.output_features.keys()[0]
+        output_feature = self.output_features[output_feature_name]
+
+        preds = self.compiled_model(inputs)
+
+        if output_feature.type() == NUMBER:
+            # regression
+            logits = preds.squeeze()
+        else:
+            # classification
+            _, probs = preds
+            # keep positive class only for binary feature
+            probs = probs[:, 1] if output_feature.type() == BINARY else probs
+            logits = torch.logit(probs)
+        output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
+
+        return output_logits
