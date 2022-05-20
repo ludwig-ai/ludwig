@@ -18,7 +18,7 @@ import io
 import logging
 import os
 import sys
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -98,13 +98,16 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
         return None
 
 
-def read_audio_from_bytes_str(bytes_str: Optional[str] = None) -> Optional[Tuple[torch.Tensor, int]]:
-    """Reads audio from bytes string."""
-    if bytes_str is None:
-        return None
+def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[Tuple[torch.Tensor, int]]]:
+    """Gets bytes string if `bytes_obj` is a bytes object). Else, return as-is."""
+    if not isinstance(bytes_obj, bytes):
+        return bytes_obj
+    return read_audio_from_bytes_obj(bytes_obj)
 
+
+def read_audio_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[Tuple[torch.Tensor, int]]:
     try:
-        f = io.BytesIO(bytes_str)
+        f = io.BytesIO(bytes_obj)
         return torchaudio.backend.sox_io_backend.load(f)
     except Exception as e:
         logger.warning(e)

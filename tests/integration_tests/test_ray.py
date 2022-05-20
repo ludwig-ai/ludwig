@@ -24,9 +24,9 @@ import ray
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.backend import create_ray_backend, LOCAL_BACKEND
+from ludwig.backend import initialize_backend, create_ray_backend, LOCAL_BACKEND
 from ludwig.backend.ray import get_trainer_kwargs, RayBackend
-from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, NAME, TRAINER
+from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, NAME, TRAINER
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
@@ -193,6 +193,45 @@ def run_test_with_features(
                     backend_config=backend_config,
                     skip_save_processed_input=skip_save_processed_input,
                 )
+
+
+@pytest.mark.parametrize("df_engine", ["dask"])
+@pytest.mark.distributed
+def test_ray_read_binary_files(tmpdir, df_engine):
+    preprocessing_params = {
+        "audio_file_length_limit_in_s": 3.0,
+        "missing_value_strategy": BACKFILL,
+        "in_memory": True,
+        "padding_value": 0,
+        "norm": "per_file",
+        "audio_feature": {
+            "type": "fbank",
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
+        },
+    }
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    audio_params = audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)
+
+    dataset_path = generate_data([audio_params], [], "dataset.csv", num_examples=100)
+    dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.5)
+
+    with ray_start(num_cpus=2, num_gpus=None):
+        backend_config = {**RAY_BACKEND_CONFIG}
+        backend_config["processor"]["type"] = df_engine
+        backend = initialize_backend(backend_config)
+        df = backend.df_engine.df_lib.read_csv(dataset_path)
+        series = df[audio_params[COLUMN]]
+        proc_col = backend.read_binary_files(series)
+        proc_col = backend.df_engine.compute(proc_col)
+
+        backend = initialize_backend(LOCAL_BACKEND)
+        df = backend.df_engine.df_lib.read_csv(dataset_path)
+        series = df[audio_params[COLUMN]]
+        proc_col_expected = backend.read_binary_files(series)
+
+        assert proc_col.equals(proc_col_expected)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])

@@ -20,7 +20,7 @@ import logging
 import os
 import pathlib
 import tempfile
-from typing import Optional
+from typing import Any, Optional, Union
 from urllib.parse import unquote, urlparse
 
 import fsspec
@@ -55,6 +55,13 @@ def upgrade_http(urlpath):
     if protocol == "http":
         return "https://" + url
     return None
+
+
+def get_bytes_str_if_path(path: str) -> Union[Any, Optional[str]]:
+    """Gets bytes string if `path` is a path (e.g. a string). Else, return as-is."""
+    if not isinstance(path, str):
+        return path
+    return get_bytes_str_from_path(path)
 
 
 @functools.lru_cache(maxsize=32)

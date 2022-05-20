@@ -45,7 +45,7 @@ from ludwig.utils.audio_utils import (
     get_non_symmetric_length,
     get_phase_stft_magnitude,
     get_stft_magnitude,
-    read_audio_from_bytes_str,
+    read_audio_if_bytes_obj,
 )
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -150,7 +150,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
 
         df_engine = backend.df_engine
-        raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_str)
+        raw_audio = backend.read_binary_files(column, map_fn=read_audio_if_bytes_obj)
 
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])
