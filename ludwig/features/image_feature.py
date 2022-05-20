@@ -47,7 +47,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import get_bytes_str_from_path, has_remote_protocol, upload_h5
+from ludwig.utils.fs_utils import get_bytes_obj_from_path, has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
@@ -60,7 +60,7 @@ from ludwig.utils.types import Series
 
 logger = logging.getLogger(__name__)
 
-IMAGE_COLUMN_SUPPORTED_TYPES = {str, np.ndarray, torch.Tensor}
+IMAGE_COLUMN_SUPPORTED_TYPES = {str, torch.Tensor}
 
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
@@ -168,7 +168,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_and_resize(
-        img_entry: Union[bytes, np.ndarray, torch.Tensor],
+        img_entry: Union[bytes, torch.Tensor],
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -201,8 +201,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if img is None:
             logger.info(f"{img_entry} cannot be read")
             return None
-        if isinstance(img, np.ndarray):
-            img = torch.tensor(img)
 
         img_num_channels = num_channels_in_image(img)
         # Convert to grayscale if needed.
@@ -315,15 +313,16 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def read_image_from_entry(
-        entry: Union[str, np.ndarray, torch.Tensor], num_channels: Optional[int] = None
+        entry: Union[str, torch.Tensor], num_channels: Optional[int] = None
     ) -> Optional[torch.Tensor]:
-        image = None
+        """Reads an image from a column entry.
+
+        If the entry is a string, then it is assumed to be a path to an image.
+        """
         if isinstance(entry, str):
-            image_bytes = get_bytes_str_from_path(entry)
+            image_bytes = get_bytes_obj_from_path(entry)
             image = read_image_if_bytes_obj(image_bytes, num_channels=num_channels)
-        elif isinstance(entry, np.ndarray):
-            image = torch.tensor(entry)
-        elif isinstance(entry, torch.Tensor):
+        else:
             image = entry
         return image
 
@@ -350,7 +349,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         for image_entry in column.head(sample_size):
             image = ImageFeatureMixin.read_image_from_entry(image_entry)
-            if image is not None:
+            if isinstance(image, torch.Tensor):
                 sample.append(image)
         if len(sample) == 0:
             raise ValueError("No readable images in sample, image dimensions cannot be inferred")
