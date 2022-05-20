@@ -336,7 +336,7 @@ def test_ray_image():
             ),
         ]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features)
+        run_test_with_features(input_features, output_features, nan_percent=0.5)
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")

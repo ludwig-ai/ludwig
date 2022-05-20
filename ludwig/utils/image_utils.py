@@ -19,12 +19,12 @@ import os
 import sys
 from collections.abc import Iterable
 from io import BytesIO
-from typing import BinaryIO, List, Optional, TextIO, Tuple, Union
+from typing import Any, BinaryIO, List, Optional, TextIO, Tuple, Union
 
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
-from torchvision.io import decode_image
+from torchvision.io import decode_image, ImageReadMode
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
@@ -163,21 +163,44 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
         return None
 
 
-def read_image_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[torch.Tensor]]:
+def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
+    """Returns the torchvision.io.ImageReadMode corresponding to the number of channels.
+
+    If num_channels is not recognized, returns ImageReadMode.UNCHANGED.
+    """
+    mode = ImageReadMode.UNCHANGED
+    if num_channels == 1:
+        mode = ImageReadMode.GRAY
+    elif num_channels == 2:
+        mode = ImageReadMode.GRAY_ALPHA
+    elif num_channels == 3:
+        mode = ImageReadMode.RGB
+    elif num_channels == 4:
+        mode = ImageReadMode.RGB_ALPHA
+    return mode
+
+
+def read_image_if_bytes_obj(
+    bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
+) -> Union[Any, Optional[torch.Tensor]]:
     """Gets bytes string if `bytes_obj` is a bytes object.
 
     If it is not a bytes object, return as-is.
     """
     if not isinstance(bytes_obj, bytes):
         return bytes_obj
-    return read_image_from_bytes_obj(bytes_obj)
+    return read_image_from_bytes_obj(bytes_obj, num_channels)
 
 
-def read_image_from_bytes_obj(bytes_obj: Optional[bytes] = None) -> Optional[torch.Tensor]:
+def read_image_from_bytes_obj(
+    bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
+) -> Optional[torch.Tensor]:
+    mode = get_image_read_mode_from_num_channels(num_channels)
+
     try:
         with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
-            image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
+            image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8), mode=mode)
             del buffer_view
 
             return image
