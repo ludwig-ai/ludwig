@@ -18,7 +18,7 @@ import io
 import logging
 import os
 import sys
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 
 import numpy as np
 import torch
@@ -100,7 +100,10 @@ def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> T
 
 
 def read_audio_if_bytes_obj(bytes_obj: Optional[bytes] = None) -> Union[Any, Optional[TorchAudioTuple]]:
-    """Gets bytes string if `bytes_obj` is a bytes object). Else, return as-is."""
+    """Gets bytes string if `bytes_obj` is a bytes object.
+
+    If it is not a bytes object, return as-is.
+    """
     if not isinstance(bytes_obj, bytes):
         return bytes_obj
     return read_audio_from_bytes_obj(bytes_obj)
