@@ -62,6 +62,8 @@ from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 
+IMAGE_COLUMN_SUPPORTED_TYPES = {str, np.ndarray, torch.Tensor}
+
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -399,41 +401,46 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return (should_resize, width, height, num_channels, user_specified_num_channels, first_image)
 
     @staticmethod
-    def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
-    ):
-        set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
-
-        in_memory = preprocessing_parameters["in_memory"]
-        if PREPROCESSING in feature_config and "in_memory" in feature_config[PREPROCESSING]:
-            in_memory = feature_config[PREPROCESSING]["in_memory"]
-
-        num_processes = preprocessing_parameters["num_processes"]
-        if PREPROCESSING in feature_config and "num_processes" in feature_config[PREPROCESSING]:
-            num_processes = feature_config[PREPROCESSING]["num_processes"]
-
-        num_images = len(input_df[feature_config[COLUMN]])
+    def get_first_img_entry(column):
+        num_images = len(column)
         if num_images == 0:
             raise ValueError("There are no images in the dataset provided.")
 
-        first_img_entry = next(iter(input_df[feature_config[COLUMN]]))
+        column_iter = iter(column)
+
+        first_img_entry = next(column_iter)
+        while torch.isnan(first_img_entry):
+            first_img_entry = next(column_iter)
         logger.debug(f"Detected image feature type is {type(first_img_entry)}")
 
-        if not isinstance(first_img_entry, str) and not isinstance(first_img_entry, torch.Tensor):
+        if not any(isinstance(first_img_entry, supported_type) for supported_type in IMAGE_COLUMN_SUPPORTED_TYPES):
             raise ValueError(
-                "Invalid image feature data type.  Detected type is {}, "
-                "expect either string for file path or numpy array.".format(type(first_img_entry))
+                f"Detected image feature type is {type(first_img_entry)}, but only "
+                f"{IMAGE_COLUMN_SUPPORTED_TYPES} are supported."
             )
+        return first_img_entry
+
+    @staticmethod
+    def add_feature_data(
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+    ):
+        set_default_value(feature_config[PREPROCESSING], "in_memory", preprocessing_parameters["in_memory"])
+
+        column = input_df[feature_config[COLUMN]]
+        first_img_entry = ImageFeatureMixin.get_first_img_entry(column)
 
         src_path = None
         if SRC in metadata:
             if isinstance(first_img_entry, str) and not has_remote_protocol(first_img_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
-        try:
-            first_img_entry = get_image_from_path(src_path, first_img_entry, ret_bytes=True)
-        except requests.exceptions.HTTPError:
-            first_img_entry = None
+        def get_abs_path_if_entry_is_str(entry):
+            if not isinstance(entry, str):
+                return entry
+            else:
+                return get_abs_path(src_path, entry)
+
+        column = column.map_partitions(get_abs_path_if_entry_is_str)
 
         (
             should_resize,
@@ -467,40 +474,25 @@ class ImageFeatureMixin(BaseFeatureMixin):
         # image features from the hdf5 cache.
         backend.check_lazy_load_supported(feature_config)
 
+        in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
-            # Number of processes to run in parallel for preprocessing
-            metadata[feature_config[NAME]][PREPROCESSING]["num_processes"] = num_processes
             metadata[feature_config[NAME]]["reshape"] = (num_channels, height, width)
 
-            # Split the dataset into pools only if we have an explicit request to use
-            # multiple processes. In case we have multiple input images use the
-            # standard code anyway.
-            if backend.supports_multiprocessing and (num_processes > 1 or num_images > 1):
-                all_img_entries = [
-                    get_abs_path(src_path, img_entry) if isinstance(img_entry, str) else img_entry
-                    for img_entry in input_df[feature_config[COLUMN]]
-                ]
+            # If we're not running multiple processes and we are only processing one
+            # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+            logger.debug("No process pool initialized. Using internal process for preprocessing images")
 
-                with Pool(num_processes) as pool:
-                    logger.debug(f"Using {num_processes} processes for preprocessing images")
-                    res = pool.map(read_image_and_resize, all_img_entries)
-                    proc_df[feature_config[PROC_COLUMN]] = [x if x is not None else default_image for x in res]
-            else:
-                # If we're not running multiple processes and we are only processing one
-                # image just use this faster shortcut, bypassing multiprocessing.Pool.map
-                logger.debug("No process pool initialized. Using internal process for preprocessing images")
+            # helper function for handling single image
+            def _get_processed_image(img_store):
+                if isinstance(img_store, str):
+                    res_single = read_image_and_resize(get_abs_path(src_path, img_store))
+                else:
+                    res_single = read_image_and_resize(img_store)
+                return res_single if res_single is not None else default_image
 
-                # helper function for handling single image
-                def _get_processed_image(img_store):
-                    if isinstance(img_store, str):
-                        res_single = read_image_and_resize(get_abs_path(src_path, img_store))
-                    else:
-                        res_single = read_image_and_resize(img_store)
-                    return res_single if res_single is not None else default_image
-
-                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
-                    input_df[feature_config[COLUMN]], _get_processed_image
-                )
+            proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
+                input_df[feature_config[COLUMN]], _get_processed_image
+            )
         else:
 
             all_img_entries = [
