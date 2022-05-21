@@ -195,7 +195,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("df_engine", ["pandas" "dask"])
+@pytest.mark.parametrize("df_engine", ["pandas", "dask"])
 @pytest.mark.distributed
 def test_ray_read_binary_files(tmpdir, df_engine):
     preprocessing_params = {
