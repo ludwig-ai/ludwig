@@ -49,19 +49,27 @@ except ImportError as e:
 try:
     from ludwig.backend.ray import RayBackend
 
+
+    # TODO: refactor this into an interface
+    def _is_ray_backend(backend) -> bool:
+        if isinstance(backend, str):
+            return backend == RAY
+        return isinstance(backend, RayBackend)
+
 except ImportError as e:
-    logger.warning(f"ImportError (execution.py) failed to import RayBackend with error: \n\t{e}")
+    logger.warning(
+        f"ImportError (execution.py) failed to import RayBackend with error: \n\t{e}. "
+        "The LocalBackend will be used instead. If you want to use the RayBackend, please install ludwig[distributed]."
+    )
     get_horovod_kwargs = None
+
 
     class RayBackend:
         pass
 
 
-# TODO: refactor this into an interface
-def _is_ray_backend(backend) -> bool:
-    if isinstance(backend, str):
-        return backend == RAY
-    return isinstance(backend, RayBackend)
+    def _is_ray_backend(backend) -> bool:
+        return False
 
 
 def _get_relative_checkpoints_dir_parts(path: Path):
