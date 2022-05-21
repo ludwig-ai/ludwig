@@ -42,6 +42,8 @@ from ludwig.constants import (
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
     FULL,
+    HYPEROPT,
+    HYPEROPT_WARNING,
     LEARNING_RATE,
     PREPROCESSING,
     TEST,
@@ -336,6 +338,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         # setup directories and file names
         if model_resume_path is not None:
             if path_exists(model_resume_path):
@@ -1072,6 +1078,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,
             training_set=training_set,
@@ -1442,7 +1452,7 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def to_torchscript(self):
+    def to_torchscript(self, model_only: bool = False):
         """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
 
         The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
@@ -1455,14 +1465,21 @@ class LudwigModel:
         Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
         outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
         tensors of varying dimensions for probabilities, logits, etc.
+
+        Args:
+            model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
+                preprocessing and postprocessing will also be converted to Torchscript.
         """
         self._check_initialization()
-        inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
-        return torch.jit.script(inference_module)
+        if model_only:
+            return self.model.to_torchscript()
+        else:
+            inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+            return torch.jit.script(inference_module)
 
-    def save_torchscript(self, save_path: str):
+    def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript model to disk."""
-        inference_module = self.to_torchscript()
+        inference_module = self.to_torchscript(model_only=model_only)
         inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
 
     def _check_initialization(self):
