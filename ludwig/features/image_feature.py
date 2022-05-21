@@ -58,7 +58,6 @@ from ludwig.utils.image_utils import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series
 
-
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
 # TODO(shreya): Confirm if ok to use imagenet means and std devs
