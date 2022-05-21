@@ -45,9 +45,6 @@ except ImportError as e:
     ray = None
     get_horovod_kwargs = None
 
-    class RayBackend:
-        pass
-
 
 try:
     from ludwig.backend.ray import RayBackend
