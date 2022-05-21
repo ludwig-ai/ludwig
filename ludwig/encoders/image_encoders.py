@@ -366,7 +366,7 @@ class ViTEncoder(Encoder):
         else:
             freeze_parameters(self.transformer)
 
-        self._output_shape = (self.model.config.hidden_size,)
+        self._output_shape = (self.transformer.config.hidden_size,)
 
     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         output = self.transformer(inputs, head_mask=head_mask)
