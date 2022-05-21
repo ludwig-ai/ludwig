@@ -40,11 +40,22 @@ try:
     from ray.tune.utils.placement_groups import PlacementGroupFactory
     from ray.util.queue import Queue as RayQueue
 
-    from ludwig.backend.ray import RayBackend
 except ImportError as e:
-    logger.warn(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
+    logger.warning(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
     get_horovod_kwargs = None
+
+
+    class RayBackend:
+        pass
+
+try:
+    from ludwig.backend.ray import RayBackend
+
+except ImportError as e:
+    logger.warning(f"ImportError (execution.py) failed to import RayBackend with error: \n\t{e}")
+    get_horovod_kwargs = None
+
 
     class RayBackend:
         pass
