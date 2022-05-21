@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 from dataclasses_json import dataclass_json, LetterCase
+from numpy import nan_to_num
 from pandas import Series
 
 from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NAME, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
@@ -58,7 +59,7 @@ def avg_num_tokens(field: Series) -> int:
     if len(field) > 5000:
         field = field.sample(n=5000, random_state=40)
     unique_entries = field.unique()
-    avg_words = round(Series(unique_entries).str.split().str.len().mean())
+    avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
 
 
