@@ -49,7 +49,6 @@ except ImportError as e:
 try:
     from ludwig.backend.ray import RayBackend
 
-
     # TODO: refactor this into an interface
     def _is_ray_backend(backend) -> bool:
         if isinstance(backend, str):
@@ -63,10 +62,8 @@ except ImportError as e:
     )
     get_horovod_kwargs = None
 
-
     class RayBackend:
         pass
-
 
     def _is_ray_backend(backend) -> bool:
         return False
