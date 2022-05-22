@@ -62,6 +62,9 @@ class PandasEngine(DataFrameEngine):
 
         return from_pandas(df)
 
+    def from_ray_dataset(self, dataset) -> pd.DataFrame:
+        return dataset.to_pandas
+
     @property
     def array_lib(self):
         return np

@@ -46,9 +46,6 @@ from ray.train.trainer import Trainer  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-# Disable placement groups on dask
-dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
-
 try:
     from horovod.ray import RayExecutor
 except ImportError as e:
@@ -588,7 +585,7 @@ class RayPredictor(BasePredictor):
         # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        dask_predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
             batch_predictor,
             batch_size=self.batch_size,
             compute="actors",
@@ -597,12 +594,12 @@ class RayPredictor(BasePredictor):
             num_gpus=num_gpus,
         )
 
-        dask_predictions = dask_predictions.to_dask()
+        predictions = self.df_engine.from_ray_dataset(predictions)
 
         for of_feature in self.model.output_features.values():
-            dask_predictions = of_feature.unflatten(dask_predictions)
+            predictions = of_feature.unflatten(predictions)
 
-        return dask_predictions
+        return predictions
 
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
@@ -721,6 +718,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
+        # TODO(shreya): Untested
+        # Disable placement groups on dask
+        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
