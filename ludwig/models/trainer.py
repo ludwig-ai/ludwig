@@ -44,6 +44,7 @@ from ludwig.globals import (
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
+from ludwig.progress_bar import LudwigProgressBar
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
@@ -824,27 +825,13 @@ class Trainer(BaseTrainer):
 
                 progress_bar = None
                 if self.is_coordinator():
-                    if self.report_tqdm_to_ray:
-                        progress_bar_id = str(uuid.uuid4())[-8:],
-                        progress_bar_config = {
-                            "desc": "Training",
-                            "total": self.total_steps,
-                            "disable": is_progressbar_disabled(),
-                        }
-                        progress_bar = {
-                            "id": progress_bar_id,
-                            "config": progress_bar_config,
-                            "update_by": 0
-                        }
-                        rt.report(progress_bar=progress_bar)
-                        progress_bar = progress_bar_id
-                    else:
-                        progress_bar = tqdm(
-                            desc="Training",
-                            total=self.total_steps,
-                            file=sys.stdout,
-                            disable=is_progressbar_disabled(),
-                        )
+                    progress_bar_config = {
+                        "desc": "Training",
+                        "total": self.total_steps,
+                        "disable": is_progressbar_disabled(),
+                        "file": sys.stdout,
+                    }
+                    progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config)
 
                 while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
@@ -1015,12 +1002,9 @@ class Trainer(BaseTrainer):
 
             progress_tracker.steps += 1
             if self.is_coordinator():
-                if self.report_tqdm_to_ray:
-                    rt.report(progress_bar={"id": progress_bar, "update_by": 1})
-                else:
-                    progress_bar.update(1)
+                progress_bar.update(1)
                 logger.debug(
-                    # f"training: completed batch {progress_bar.n} " XXX
+                    f"training: completed batch {progress_bar.total_steps} "
                     f"memory used: "
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
