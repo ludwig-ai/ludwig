@@ -43,11 +43,11 @@ from ludwig.globals import (
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
-from ludwig.progress_bar import LudwigProgressBar
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
+from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import TrainerConfig
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
@@ -127,7 +127,7 @@ class Trainer(BaseTrainer):
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         callbacks: List = None,
-        report_tqdm_to_ray = False,
+        report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
@@ -1051,7 +1051,6 @@ class Trainer(BaseTrainer):
             }
             progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config)
 
-
             while not batcher.last_batch():
                 batch = batcher.next_batch()
                 inputs = {
@@ -1107,10 +1106,7 @@ class Trainer(BaseTrainer):
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
-            self.model,
-            batch_size=batch_size,
-            horovod=self.horovod,
-            report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
