@@ -205,7 +205,7 @@ def check_imbalanced_output(base_config, features_metadata):
                 if output_feature[NAME] == feature_metadata.name:
                     if feature_metadata.imbalance_ratio < IMBALANCE_DETECTION_RATIO:
                         logging.info(
-                            f"Output feature {output_feature[NAME]} has instance count imbalance (minority/majority={feature_metadata.imbalance_ratio})"
+                            f"Imbalance in {output_feature[NAME]}: minority/majority={feature_metadata.imbalance_ratio}"
                         )
                         imbalanced_output = True
                     break
