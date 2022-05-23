@@ -33,7 +33,6 @@ import psutil
 import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
@@ -63,8 +62,6 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
-
-import ray.train as rt  # noqa: E402 XXX
 
 logger = logging.getLogger(__name__)
 
@@ -1046,12 +1043,14 @@ class Trainer(BaseTrainer):
         ) as batcher:
 
             # training step loop
-            progress_bar = tqdm(
-                desc="Training online",
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled(),
-            )
+            progress_bar_config = {
+                "desc": "Training online",
+                "total": batcher.steps_per_epoch,
+                "file": sys.stdout,
+                "disable": is_progressbar_disabled(),
+            }
+            progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config)
+
 
             while not batcher.last_batch():
                 batch = batcher.next_batch()
