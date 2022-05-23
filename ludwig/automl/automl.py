@@ -23,6 +23,7 @@ from ludwig.automl.base_config import _create_default_config, _get_reference_con
 from ludwig.automl.utils import (
     _add_transfer_config,
     _ray_init,
+    check_imbalanced_output,
     get_available_resources,
     get_model_type,
     set_output_feature_metric,
@@ -147,8 +148,8 @@ def create_auto_config(
     # Return
     :return: (dict) selected model configuration
     """
-    default_configs = _create_default_config(dataset, target, time_limit_s, random_seed)
-    model_config, model_category, row_count = _model_select(dataset, default_configs, user_config, use_reference_config)
+    default_configs, features_metadata = _create_default_config(dataset, target, time_limit_s, random_seed)
+    model_config, model_category, row_count = _model_select(dataset, default_configs, features_metadata, user_config, use_reference_config)
     if tune_for_memory:
         if ray.is_initialized():
             resources = get_available_resources()  # check if cluster has GPUS
@@ -218,6 +219,7 @@ def train_with_config(
 def _model_select(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     default_configs,
+    features_metadata,
     user_config,
     use_reference_config: bool,
 ):
@@ -270,6 +272,10 @@ def _model_select(
             if config_section in user_config.keys():
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
+
+    # check if any binary or category output feature has highly imbalanced minority vs majority values
+    # note: check is done after any relevant user_config has been applied
+    check_imbalanced_output(base_config, features_metadata)
 
     # if single output feature, set relevant metric and goal if not already set
     base_config = set_output_feature_metric(base_config)
