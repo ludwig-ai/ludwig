@@ -8,7 +8,20 @@ from dataclasses_json import dataclass_json, LetterCase
 from numpy import nan_to_num
 from pandas import Series
 
-from ludwig.constants import BINARY, CATEGORY, COMBINER, CONFIG, HYPEROPT, IMBALANCE_DETECTION_RATIO, NAME, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    COMBINER,
+    CONFIG,
+    HYPEROPT,
+    IMBALANCE_DETECTION_RATIO,
+    NAME,
+    NUMBER,
+    PARAMETERS,
+    SAMPLER,
+    TRAINER,
+    TYPE,
+)
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
@@ -183,14 +196,17 @@ def set_output_feature_metric(base_config):
 
 
 def check_imbalanced_output(base_config, features_metadata):
-    """Check binary and category output feature(s) for imbalance, i.e., low minority/majority instance count ratio"""
+    """Check binary and category output feature(s) for imbalance, i.e., low minority/majority instance count
+    ratio."""
     imbalanced_output = False
     for output_feature in base_config["output_features"]:
         if output_feature[TYPE] == BINARY or output_feature[TYPE] == CATEGORY:
             for feature_metadata in features_metadata:
                 if output_feature[NAME] == feature_metadata.name:
                     if feature_metadata.imbalance_ratio < IMBALANCE_DETECTION_RATIO:
-                        logging.info(f"Output feature {output_feature[NAME]} has instance count imbalance (minority/majority={feature_metadata.imbalance_ratio})")
-                        imbalanced_output=True
+                        logging.info(
+                            f"Output feature {output_feature[NAME]} has instance count imbalance (minority/majority={feature_metadata.imbalance_ratio})"
+                        )
+                        imbalanced_output = True
                     break
     return imbalanced_output

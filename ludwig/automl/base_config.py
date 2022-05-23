@@ -180,7 +180,9 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     fields = []
     for field in source.columns:
         dtype = source.get_dtype(field)
-        num_distinct_values, distinct_values, distinct_values_balance = source.get_distinct_values(field, MAX_DISTINCT_VALUES_TO_RETURN)
+        num_distinct_values, distinct_values, distinct_values_balance = source.get_distinct_values(
+            field, MAX_DISTINCT_VALUES_TO_RETURN
+        )
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)

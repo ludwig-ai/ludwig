@@ -149,7 +149,9 @@ def create_auto_config(
     :return: (dict) selected model configuration
     """
     default_configs, features_metadata = _create_default_config(dataset, target, time_limit_s, random_seed)
-    model_config, model_category, row_count = _model_select(dataset, default_configs, features_metadata, user_config, use_reference_config)
+    model_config, model_category, row_count = _model_select(
+        dataset, default_configs, features_metadata, user_config, use_reference_config
+    )
     if tune_for_memory:
         if ray.is_initialized():
             resources = get_available_resources()  # check if cluster has GPUS
