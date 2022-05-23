@@ -21,7 +21,21 @@ from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
-from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
+from ludwig.constants import (
+    AUDIO,
+    BINARY,
+    CATEGORY,
+    COMBINER,
+    DATE,
+    EXECUTOR,
+    HYPEROPT,
+    IMAGE,
+    NUMBER,
+    SCHEDULER,
+    SEARCH_ALG,
+    TEXT,
+    TYPE,
+)
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
@@ -121,18 +135,18 @@ def _create_default_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
     # create set of all feature types appearing in the dataset
-    feature_types = [[feat["type"] for feat in features] for features in input_and_output_feature_config.values()]
+    feature_types = [[feat[TYPE] for feat in features] for features in input_and_output_feature_config.values()]
     feature_types = set(sum(feature_types, []))
 
     model_configs = {}
 
     # read in base config and update with experiment resources
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-    base_automl_config["hyperopt"]["executor"].update(experiment_resources)
-    base_automl_config["hyperopt"]["executor"]["time_budget_s"] = time_limit_s
+    base_automl_config[HYPEROPT][EXECUTOR].update(experiment_resources)
+    base_automl_config[HYPEROPT][EXECUTOR]["time_budget_s"] = time_limit_s
     if time_limit_s is not None:
-        base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
-    base_automl_config["hyperopt"]["sampler"]["search_alg"]["random_state_seed"] = random_seed
+        base_automl_config[HYPEROPT][EXECUTOR][SCHEDULER]["max_t"] = time_limit_s
+    base_automl_config[HYPEROPT][SEARCH_ALG]["random_state_seed"] = random_seed
     base_automl_config.update(input_and_output_feature_config)
 
     model_configs["base_config"] = base_automl_config
@@ -146,10 +160,10 @@ def _create_default_config(
                 model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
 
     # read in all combiner configs
-    model_configs["combiner"] = {}
+    model_configs[COMBINER] = {}
     for combiner_type, default_config in combiner_defaults.items():
         combiner_config = load_yaml(default_config)
-        model_configs["combiner"][combiner_type] = combiner_config
+        model_configs[COMBINER][combiner_type] = combiner_config
 
     return model_configs, features_metadata
 

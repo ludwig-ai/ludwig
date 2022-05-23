@@ -269,7 +269,7 @@ def memory_tune_config(config, dataset, model_category, row_count):
     modified_config = copy.deepcopy(config)
 
     modified_config[HYPEROPT]["parameters"] = modified_hyperparam_search_space
-    modified_config[HYPEROPT]["sampler"]["num_samples"] = _update_num_samples(
-        modified_config[HYPEROPT]["sampler"]["num_samples"], modified_hyperparam_search_space
+    modified_config[HYPEROPT]["executor"]["num_samples"] = _update_num_samples(
+        modified_config[HYPEROPT]["executor"]["num_samples"], modified_hyperparam_search_space
     )
     return modified_config, fits_in_memory

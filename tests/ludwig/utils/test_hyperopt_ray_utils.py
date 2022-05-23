@@ -30,8 +30,6 @@ HYPEROPT_PARAMS = {
             "combiner.num_fc_layers": {"space": "qrandint", "lower": 3, "upper": 6, "q": 3},
             "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru", "lstm"]},
         },
-        "goal": "minimize",
-        "num_samples": 3,
     },
     "test_2": {
         "parameters": {
@@ -44,8 +42,6 @@ HYPEROPT_PARAMS = {
             "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
             "utterance.cell_type": {"space": "choice", "categories": ["rnn", "gru", "lstm"]},
         },
-        "goal": "maximize",
-        "num_samples": 4,
     },
 }
 
@@ -71,11 +67,9 @@ def test_grid_strategy(key):
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     expected_search_space = EXPECTED_SEARCH_SPACE[key]
 
-    goal = hyperopt_test_params["goal"]
-    num_samples = hyperopt_test_params["num_samples"]
     tune_sampler_params = hyperopt_test_params["parameters"]
 
-    tune_sampler = RayTuneSampler(goal=goal, parameters=tune_sampler_params, num_samples=num_samples)
+    tune_sampler = RayTuneSampler(parameters=tune_sampler_params)
     search_space = tune_sampler.search_space
 
     actual_params_keys = search_space.keys()
@@ -85,4 +79,3 @@ def test_grid_strategy(key):
         assert isinstance(search_space[param], type(expected_search_space[param]))
 
     assert actual_params_keys == expected_params_keys
-    assert tune_sampler.num_samples == num_samples
