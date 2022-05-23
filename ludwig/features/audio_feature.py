@@ -222,15 +222,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
         )
         logger.debug(print_statistics)
 
-        import time
-
-        out = np.stack(df_engine.compute(processed_audio).to_numpy(), axis=0)
-        out_path = os.path.join(
-            "/Users/geoffreyangus/Downloads",
-            f'out-{"pandas" if backend.df_engine == PANDAS else "dask"}-{time.time()}-{column.name}.npy',
-        )
-        np.save(out_path, out)
-
         return processed_audio
 
     @staticmethod

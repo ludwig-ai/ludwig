@@ -648,16 +648,6 @@ def train_with_backend(
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
-            print("RAY DISTRIBUTED EVALUATION")
-            print(model.backend.df_engine.compute(eval_preds))
-
-            import time
-
-            out_dir = "/Users/geoffreyangus/Downloads/"
-            out_path = os.path.join(out_dir, f"RAY-eval_preds-{time.time()}.npy")
-            np_eval_preds = to_numpy_dataset(model.backend.df_engine.compute(eval_preds))
-            np.save(out_path, np_eval_preds)
-
             assert eval_preds is not None
 
             # Test that eval_stats are approx equal when using local backend
@@ -667,12 +657,6 @@ def train_with_backend(
                 local_eval_stats, local_eval_preds, _ = local_model.evaluate(
                     dataset=dataset, collect_overall_stats=False, collect_predictions=True
                 )
-                print("LOCAL EVALUATION")
-                print(local_eval_preds)
-
-                out_path = os.path.join(out_dir, f"LOCAL-eval_preds-{time.time()}.npy")
-                np_local_eval_preds = to_numpy_dataset(local_eval_preds)
-                np.save(out_path, np_local_eval_preds)
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
