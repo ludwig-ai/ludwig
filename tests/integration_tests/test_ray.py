@@ -280,14 +280,15 @@ def test_ray_tabular(df_engine):
     )
 
 
-@pytest.mark.skip(reason="TODO torch")
+# @pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
 def test_ray_text():
     input_features = [
         text_feature(),
     ]
     output_features = [
-        text_feature(reduce_input=None, decoder="tagger"),
+        # text_feature(reduce_input=None, decoder="tagger"),
+        category_feature(vocab_size=3)
     ]
     run_test_with_features(input_features, output_features)
 
