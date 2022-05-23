@@ -204,7 +204,7 @@ def train_with_config(
     # TODO (ASN): Decide how we want to proceed if at least one trial has
     # completed
     for trial in hyperopt_results.ordered_trials:
-        if np.isnan(trial.metric_score):
+        if isinstance(trial.metric_score, str) or np.isnan(trial.metric_score):
             warnings.warn(
                 "There was an error running the experiment. "
                 "A trial failed to start. "
@@ -250,7 +250,7 @@ def _model_select(
                 model_category = TEXT
                 input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
                 base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
-                base_config[HYPEROPT]["sampler"]["num_samples"] = 5  # set for small hyperparameter search space
+                base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
             if input_feature["type"] == IMAGE:

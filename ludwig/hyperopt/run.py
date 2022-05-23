@@ -8,11 +8,11 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, SAMPLER, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, RAY, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler, sampler_registry
+from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
@@ -56,6 +56,7 @@ def hyperopt(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
+    hyperopt_log_verbosity: int = 3,
     **kwargs,
 ) -> HyperoptResults:
     """This method performs an hyperparameter optimization.
@@ -148,6 +149,9 @@ def hyperopt(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
+    :param hyperopt_log_verbosity: (int: default: 3) controls verbosity of
+        ray tune log messages.  Valid values: 0 = silent, 1 = only status updates,
+        2 = status and brief trial results, 3 = status and detailed trial results.
 
     # Return
 
@@ -175,7 +179,7 @@ def hyperopt(
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info("\n")
 
-    sampler = hyperopt_config["sampler"]
+    search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config["executor"]
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
@@ -243,10 +247,10 @@ def hyperopt(
                 )
             )
 
-    hyperopt_sampler = get_build_hyperopt_sampler(sampler[TYPE])(goal, parameters, **sampler)
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
-        hyperopt_sampler, output_feature, metric, split, **executor
+        hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
@@ -324,6 +328,7 @@ def hyperopt(
         callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
+        hyperopt_log_verbosity=hyperopt_log_verbosity,
         **kwargs,
     )
 
@@ -351,24 +356,13 @@ def hyperopt(
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
-    set_default_value(hyperopt_params, SAMPLER, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(hyperopt_params[SAMPLER], {TYPE: "random"})
-
-    sampler = get_from_registry(hyperopt_params[SAMPLER][TYPE], sampler_registry)
-    sampler_defaults = {k: v for k, v in sampler.__dict__.items() if k in get_class_attributes(sampler)}
-    set_default_values(
-        hyperopt_params[SAMPLER],
-        sampler_defaults,
-    )
-
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "serial"})
-
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
     set_default_values(
