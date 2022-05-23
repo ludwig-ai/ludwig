@@ -9,6 +9,7 @@ class LudwigProgressBar:
         self.config = config
         self.report_to_ray = report_to_ray
         self.total_steps = 0
+        self.progress_bar = None
         if not self.report_to_ray:
             self.progress_bar = tqdm.tqdm(**config)
         else:
@@ -20,7 +21,6 @@ class LudwigProgressBar:
                 "update_by": 0,
             })
 
-
     def update(self, steps):
         self.total_steps += steps
         if not self.report_to_ray:
@@ -30,3 +30,8 @@ class LudwigProgressBar:
                 "id": self.id,
                 "update_by": steps,
             })
+
+    def close(self):
+        if self.progress_bar:
+            self.progress_bar.close()
+

@@ -203,7 +203,7 @@ class Predictor(BasePredictor):
                     if self.is_coordinator():
                         progress_bar.update(1)
                         logger.debug(
-                            f"evaluation for {dataset_name}: completed batch {progress_bar.steps} "
+                            f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
 
