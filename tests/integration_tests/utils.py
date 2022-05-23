@@ -40,7 +40,7 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
 from ludwig.utils import image_utils
-from ludwig.utils.data_utils import read_csv, replace_file_extension, to_numpy_dataset
+from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
 
@@ -525,9 +525,10 @@ def read_csv_with_nan(path, nan_percent=0.0):
     df = pd.read_csv(path)
     if nan_percent > 0:
         num_rows = len(df)
+        num_nans_per_col = int(round(nan_percent * num_rows))
         for col in df.columns:
             col_idx = df.columns.get_loc(col)
-            for row_idx in random.sample(range(num_rows), int(round(nan_percent * num_rows))):
+            for row_idx in random.sample(range(num_rows), num_nans_per_col):
                 df.iloc[row_idx, col_idx] = np.nan
     return df
 
@@ -654,8 +655,8 @@ def train_with_backend(
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-                local_eval_stats, local_eval_preds, _ = local_model.evaluate(
-                    dataset=dataset, collect_overall_stats=False, collect_predictions=True
+                local_eval_stats, _, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
                 )
 
                 # Filter out metrics that are not being aggregated correctly for now

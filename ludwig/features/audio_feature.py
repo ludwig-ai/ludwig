@@ -32,7 +32,6 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
-from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import (
@@ -221,7 +220,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             audio_file_length_limit_in_s,
         )
         logger.debug(print_statistics)
-
         return processed_audio
 
     @staticmethod

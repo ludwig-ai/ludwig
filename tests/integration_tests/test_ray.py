@@ -287,8 +287,7 @@ def test_ray_text():
         text_feature(),
     ]
     output_features = [
-        # text_feature(reduce_input=None, decoder="tagger"),
-        category_feature(vocab_size=3)
+        text_feature(reduce_input=None, decoder="tagger"),
     ]
     run_test_with_features(input_features, output_features)
 
