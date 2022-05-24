@@ -147,11 +147,11 @@ class Embed(LudwigModule):
             self.dropout = None
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        # if inputs.ndim != 2 or inputs.shape[1] != 1:
-        #     raise RuntimeError(
-        #         f"Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}"
-        #     )
-        embedded = self.embeddings(inputs)
+        if inputs.ndim != 2 or inputs.shape[1] != 1:
+            raise RuntimeError(
+                f"Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}"
+            )
+        embedded = self.embeddings(inputs.long())
         embedded = torch.squeeze(embedded, dim=1)
         if self.dropout:
             embedded = self.dropout(embedded)
