@@ -65,7 +65,7 @@ def get_input_tensors(input_set):
 
     inputs = {name: dataset.dataset[feature.proc_column] for name, feature in model.model.input_features.items()}
     encoded_inputs = model.model.encode(inputs)
-    # print(encoded_inputs)
+    # print("ENCODED_INPUTS", encoded_inputs)
 
     # print(encoded_inputs)
 
@@ -74,16 +74,24 @@ def get_input_tensors(input_set):
     # print(preds)
 
     data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
-    return data_to_predict, inputs
+    return data_to_predict, inputs, encoded_inputs
 
 
-data_to_predict, inputs = get_input_tensors(test_set)
-baseline, _ = get_input_tensors(base_set)
+data_to_predict, inputs, encoded_inputs = get_input_tensors(test_set)
+baseline, _, _ = get_input_tensors(base_set)
 
 
-def model_fn(*args):
-    args = [{"encoder_output": arg} for arg in args]
-    return model.model.predict_from_encoded(*args)[0]
+class WrapperModule(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.model = model.model
+
+    def forward(self, *args):
+        args = [{"encoder_output": arg} for arg in args]
+        return model.model.predict_from_encoded(*args)[0]
+
+
+model_fn = WrapperModule()
 
 
 # data_to_predict = [
@@ -93,20 +101,27 @@ def model_fn(*args):
 # # print(model_ts(*data_to_predict))
 # print(data_to_predict)
 
-from captum.attr import IntegratedGradients
+from captum.attr import IntegratedGradients, NoiseTunnel, DeepLift, GradientShap, FeatureAblation
 
 # print(data_to_predict)
-ig = IntegratedGradients(model_fn)
-results = ig.attribute(
+# explainer = IntegratedGradients(model_fn)
+# explainer = NoiseTunnel(explainer)
+# explainer = DeepLift(model_fn)
+# explainer = GradientShap(model_fn)
+explainer = FeatureAblation(model_fn)
+
+results = explainer.attribute(
     tuple(data_to_predict),
     # baselines=tuple(baseline),
-    method="gausslegendre",
+    # method="gausslegendre",
     # return_convergence_delta=True,
 )
 # print(results)
 
-for (name, values), attribution in zip(inputs.items(), results):
-    print(name, values, attribution)
+# results = [t.detach().numpy().sum(1) for t in results]
+
+for (name, values), encoded, attribution in zip(inputs.items(), encoded_inputs.values(), results):
+    print(name, values, encoded, attribution, abs(attribution).sum(0))
 
 # restored_model = torch.jit.load("titanic.pt")
 
