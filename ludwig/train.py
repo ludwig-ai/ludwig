@@ -23,7 +23,7 @@ import pandas as pd
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import HYPEROPT, HYPEROPT_WARNING
+from ludwig.constants import CONTINUE_PROMPT, HYPEROPT, HYPEROPT_WARNING
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
@@ -155,7 +155,7 @@ def train_cli(
     :return: (`None`)
     """
     if HYPEROPT in config:
-        if not query_yes_no(HYPEROPT_WARNING):
+        if not query_yes_no(HYPEROPT_WARNING + CONTINUE_PROMPT):
             exit(1)
 
     if model_load_path:

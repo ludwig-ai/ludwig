@@ -23,7 +23,7 @@ from sys import platform
 import numpy as np
 import pandas as pd
 
-from ludwig.constants import TRAINING, TYPE, VALIDATION
+from ludwig.constants import SPACE, TRAINING, VALIDATION
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,10 @@ except ImportError:
 INT_QUANTILES = 10
 FLOAT_QUANTILES = 10
 
+# mapping from RayTune search space to Ludwig types (float, int, category) for hyperopt visualizations
+RAY_TUNE_FLOAT_SPACES = {"uniform", "quniform", "loguniform", "qloguniform", "randn", "qrandn"}
+RAY_TUNE_INT_SPACES = {"randint", "qrandint", "lograndint", "qlograndint"}
+RAY_TUNE_CATEGORY_SPACES = {"choice", "grid_search"}
 
 _matplotlib_34 = LooseVersion(mpl.__version__) >= LooseVersion("3.4")
 
@@ -1270,7 +1274,7 @@ def bar_plot(
 def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_template, float_precision=3):
     title = "Hyperopt Report: {}"
     for hp_name, hp_params in hyperparameters.items():
-        if hp_params[TYPE] == "int":
+        if hp_params[SPACE] in RAY_TUNE_INT_SPACES:
             hyperopt_int_plot(
                 hyperopt_results_df,
                 hp_name,
@@ -1278,7 +1282,7 @@ def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_templ
                 title.format(hp_name),
                 filename_template.format(hp_name) if filename_template else None,
             )
-        elif hp_params[TYPE] == "float":
+        elif hp_params[SPACE] in RAY_TUNE_FLOAT_SPACES:
             hyperopt_float_plot(
                 hyperopt_results_df,
                 hp_name,
@@ -1287,7 +1291,7 @@ def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_templ
                 filename_template.format(hp_name) if filename_template else None,
                 log_scale_x=hp_params["scale"] == "log" if "scale" in hp_params else False,
             )
-        elif hp_params[TYPE] == "category":
+        elif hp_params[SPACE] in RAY_TUNE_CATEGORY_SPACES:
             hyperopt_category_plot(
                 hyperopt_results_df,
                 hp_name,
@@ -1295,14 +1299,20 @@ def hyperopt_report(hyperparameters, hyperopt_results_df, metric, filename_templ
                 title.format(hp_name),
                 filename_template.format(hp_name) if filename_template else None,
             )
+        else:
+            # TODO: more research needed on how to handle RayTune "sample_from" search space
+            raise ValueError(
+                f"{hp_params[SPACE]} search space not supported in Ludwig.  "
+                f"Supported values are {RAY_TUNE_FLOAT_SPACES | RAY_TUNE_INT_SPACES | RAY_TUNE_CATEGORY_SPACES}."
+            )
 
     # quantize float and int columns
     for hp_name, hp_params in hyperparameters.items():
-        if hp_params[TYPE] == "int":
+        if hp_params[SPACE] in RAY_TUNE_INT_SPACES:
             num_distinct_values = len(hyperopt_results_df[hp_name].unique())
             if num_distinct_values > INT_QUANTILES:
                 hyperopt_results_df[hp_name] = pd.qcut(hyperopt_results_df[hp_name], q=INT_QUANTILES, precision=0)
-        elif hp_params[TYPE] == "float":
+        elif hp_params[SPACE] in RAY_TUNE_FLOAT_SPACES:
             hyperopt_results_df[hp_name] = pd.qcut(
                 hyperopt_results_df[hp_name],
                 q=FLOAT_QUANTILES,

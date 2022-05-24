@@ -31,7 +31,7 @@ class CategoricalEmbedEncoder(Encoder):
     def __init__(
         self,
         vocab: List[str],
-        embedding_size: int = 50,
+        embedding_size: Optional[int] = None,
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         embeddings_on_cpu: bool = False,
@@ -79,8 +79,7 @@ class CategoricalSparseEncoder(Encoder):
     def __init__(
         self,
         vocab: List[str],
-        embedding_size: int = 50,
-        embeddings_trainable: bool = True,
+        embeddings_trainable: bool = False,
         pretrained_embeddings: Optional[str] = None,
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
@@ -93,7 +92,7 @@ class CategoricalSparseEncoder(Encoder):
         logger.debug("  Embed")
         self.embed = Embed(
             vocab=vocab,
-            embedding_size=embedding_size,
+            embedding_size=len(vocab),
             representation="sparse",
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,

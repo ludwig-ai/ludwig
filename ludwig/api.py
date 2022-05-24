@@ -42,6 +42,8 @@ from ludwig.constants import (
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
     FULL,
+    HYPEROPT,
+    HYPEROPT_WARNING,
     LEARNING_RATE,
     PREPROCESSING,
     TEST,
@@ -343,6 +345,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         # setup directories and file names
         if model_resume_path is not None:
             if path_exists(model_resume_path):
@@ -1106,6 +1112,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,
             training_set=training_set,
@@ -1476,25 +1486,31 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def to_torchscript(self):
+    def to_torchscript(self, model_only: bool = False):
         """Returns the model as a TorchScript module.
 
         For more details, see ECD.to_inference_module.
         """
         self._check_initialization()
+
+        if model_only:
+            return self.model.to_torchscript()
+
         return self.model.to_inference_module(
             **{"config": self.config, "training_set_metadata": self.training_set_metadata}
         )
 
-    def save_torchscript(self, save_path: str):
+    def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript module to disk.
 
         # Inputs
-        :param  save_path: (str) path to the directory where the model is
-                going to be saved.
+        :param  save_path: (str) location to save the Torchscript module.
         """
+        if model_only:
+            self.model.save_torchscript(save_path)
+
         self.model.save_inference_module(
-            os.path.join(save_path, INFERENCE_MODULE_FILE_NAME),
+            save_path,
             **{"config": self.config, "training_set_metadata": self.training_set_metadata},
         )
 
