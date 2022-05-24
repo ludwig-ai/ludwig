@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
@@ -70,6 +70,8 @@ class LightGBMTrainer(BaseTrainer):
         self.model = model
         self.horovod = horovod
         self.callbacks = callbacks or []
+        self.skip_save_progress = skip_save_progress
+        self.skip_save_model = skip_save_model
 
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self._validation_field = config.validation_field
@@ -343,6 +345,14 @@ class LightGBMTrainer(BaseTrainer):
         #     if feature.type() == CATEGORY or feature.type() == BINARY
         # ]
 
+        # epoch init
+        start_time = time.time()
+
+        # Reset the metrics at the start of the next epoch
+        self.model.reset_metrics()
+
+        self.callback(lambda c: c.on_epoch_start(self, self.progress_tracker, save_path))
+
         eval_results = dict()
         gbm = lgb.train(
             params,
@@ -359,9 +369,19 @@ class LightGBMTrainer(BaseTrainer):
                 lgb.log_evaluation(),
             ],
         )
-
+        # ================ Post Training Epoch ================
         self.progress_tracker.steps = gbm.current_iteration()
         self.progress_tracker.last_improvement_steps = gbm.best_iteration
+        self.callback(lambda c: c.on_epoch_end(self, self.progress_tracker, save_path))
+
+        if self.is_coordinator():
+            # ========== Save training progress ==========
+            logging.debug(
+                f"Epoch {self.progress_tracker.epoch} took: "
+                f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+            )
+            if not self.skip_save_progress:
+                self.progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
         # convert to pytorch for inference, fine tuning
         gbm_sklearn_cls = lgb.LGBMRegressor if output_params["objective"] == "regression" else lgb.LGBMClassifier
@@ -375,36 +395,51 @@ class LightGBMTrainer(BaseTrainer):
         self.model = self.model.to(self.device)
 
         # evaluate
-        os.makedirs(save_path, exist_ok=True)
-        tensorboard_log_dir = os.path.join(save_path, "logs")
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
-        train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
-        if validation_set is not None and validation_set.size > 0:
-            validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
-        if test_set is not None and test_set.size > 0:
-            test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
+        try:
+            os.makedirs(save_path, exist_ok=True)
+            tensorboard_log_dir = os.path.join(save_path, "logs")
 
-        output_features = self.model.output_features
-        metrics_names = get_metric_names(output_features)
+            train_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TRAINING))
+            if validation_set is not None and validation_set.size > 0:
+                validation_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, VALIDATION))
+            if test_set is not None and test_set.size > 0:
+                test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
-        self.run_evaluation(
-            training_set,
-            validation_set,
-            test_set,
-            self.progress_tracker,
-            train_summary_writer,
-            validation_summary_writer,
-            test_summary_writer,
-            output_features,
-            metrics_names,
-            save_path,
-            None,
-            None,
-        )
+            output_features = self.model.output_features
+            metrics_names = get_metric_names(output_features)
 
-        self._save(save_path)
+            self.run_evaluation(
+                training_set,
+                validation_set,
+                test_set,
+                self.progress_tracker,
+                train_summary_writer,
+                validation_summary_writer,
+                test_summary_writer,
+                output_features,
+                metrics_names,
+                save_path,
+                None,
+                None,
+            )
+        finally:
+            self.callback(
+                lambda c: c.on_trainer_train_teardown(self, self.progress_tracker, save_path, self.is_coordinator()),
+                coordinator_only=False,
+            )
+
+            if train_summary_writer is not None:
+                train_summary_writer.close()
+            if validation_summary_writer is not None:
+                validation_summary_writer.close()
+            if test_summary_writer is not None:
+                test_summary_writer.close()
+
+        if self.is_coordinator() and not self.skip_save_model:
+            self._save(save_path)
 
         return (
             self.model,
@@ -511,6 +546,7 @@ class LightGBMTrainer(BaseTrainer):
         checkpoint = Checkpoint(model=self.model)
         checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1)
         checkpoint_manager.save(1)
+        checkpoint_manager.close()
 
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         torch.save(self.model.state_dict(), model_weights_path)
