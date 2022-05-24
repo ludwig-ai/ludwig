@@ -23,7 +23,7 @@ from ludwig.automl.base_config import _create_default_config, _get_reference_con
 from ludwig.automl.utils import (
     _add_transfer_config,
     _ray_init,
-    check_imbalanced_output,
+    has_imbalanced_output,
     get_available_resources,
     get_model_type,
     set_output_feature_metric,
@@ -277,7 +277,7 @@ def _model_select(
 
     # check if any binary or category output feature has highly imbalanced minority vs majority values
     # note: check is done after any relevant user_config has been applied
-    check_imbalanced_output(base_config, features_metadata)
+    has_imbalanced_output(base_config, features_metadata)
 
     # if single output feature, set relevant metric and goal if not already set
     base_config = set_output_feature_metric(base_config)

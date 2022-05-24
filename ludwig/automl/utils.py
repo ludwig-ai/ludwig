@@ -195,7 +195,7 @@ def set_output_feature_metric(base_config):
     return base_config
 
 
-def check_imbalanced_output(base_config, features_metadata):
+def has_imbalanced_output(base_config, features_metadata) -> bool:
     """Check binary and category output feature(s) for imbalance, i.e., low minority/majority instance count
     ratio."""
     imbalanced_output = False
