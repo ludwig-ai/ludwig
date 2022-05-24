@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import logging
 from io import BytesIO
 from typing import Any, List, Optional, Union
@@ -57,6 +58,7 @@ def read_audio_if_bytes_obj(bytes_obj: Any) -> Union[Any, Optional[TorchAudioTup
     return read_audio_from_bytes_obj(bytes_obj)
 
 
+@functools.lru_cache(maxsize=32)
 def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
     try:
         f = BytesIO(bytes_obj)
