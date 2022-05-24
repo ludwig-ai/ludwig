@@ -196,7 +196,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
             inputs = inputs.type(torch.int)
         encoder_output = self.encoder_obj(inputs)
 
-        return {"encoder_output": encoder_output}
+        return encoder_output
 
     @property
     def input_dtype(self):

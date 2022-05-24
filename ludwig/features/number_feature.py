@@ -317,7 +317,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
             inputs = inputs[:, None]
         inputs_encoded = self.encoder_obj(inputs)
 
-        return inputs_encoded
+        return inputs_encoded["encoder_output"]
 
     def create_sample_input(self):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.

@@ -24,7 +24,7 @@ from ludwig.utils.neuropod_utils import generate_neuropod_torchscript
 
 # Download and prepare the dataset
 training_set, test_set, _ = titanic.load(split=True)
-base_set = training_set.head(10)
+base_set = training_set.sample(n=100)
 test_set = test_set.head(10)
 
 # Define Ludwig model object that drive model training
@@ -64,21 +64,43 @@ def get_input_tensors(input_set):
     # print(dataset.get_dataset())
 
     inputs = {name: dataset.dataset[feature.proc_column] for name, feature in model.model.input_features.items()}
-    encoded_inputs = model.model.encode(inputs)
-    # print("ENCODED_INPUTS", encoded_inputs)
+    return [torch.from_numpy(t) for t in inputs.values()], inputs, {}
 
-    # print(encoded_inputs)
+    # encoded_inputs = model.model.encode(inputs)
+    # # print("ENCODED_INPUTS", encoded_inputs)
 
-    data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
-    # preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
-    # print(preds)
+    # # print(encoded_inputs)
 
-    data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
-    return data_to_predict, inputs, encoded_inputs
+    # data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
+    # # preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
+    # # print(preds)
+
+    # data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
+    # return data_to_predict, inputs, encoded_inputs
+
+
+def getmean(t):
+    import random
+
+    try:
+        return t.mean()
+    except:
+        try:
+            return torch.mode(t).values
+        except:
+            batch_size = t.shape[0]
+            idx = random.randint(0, batch_size - 1)
+            return t[idx]
 
 
 data_to_predict, inputs, encoded_inputs = get_input_tensors(test_set)
 baseline, _, _ = get_input_tensors(base_set)
+baseline = [torch.unsqueeze(getmean(t), 0) for t in baseline]
+print(baseline)
+
+# baseline = []
+# for feature in model.model.input_features.values():
+#     baseline.append(feature.create_sample_input())
 
 
 class WrapperModule(torch.nn.Module):
@@ -87,7 +109,7 @@ class WrapperModule(torch.nn.Module):
         self.model = model.model
 
     def forward(self, *args):
-        args = [{"encoder_output": arg} for arg in args]
+        # args = [{"encoder_output": arg} for arg in args]
         return model.model.predict_from_encoded(*args)[0]
 
 
@@ -101,27 +123,47 @@ model_fn = WrapperModule()
 # # print(model_ts(*data_to_predict))
 # print(data_to_predict)
 
-from captum.attr import IntegratedGradients, NoiseTunnel, DeepLift, GradientShap, FeatureAblation
+from captum.attr import (
+    configure_interpretable_embedding_layer,
+    DeepLift,
+    FeatureAblation,
+    GradientShap,
+    IntegratedGradients,
+    LayerIntegratedGradients,
+    NoiseTunnel,
+    remove_interpretable_embedding_layer,
+)
+from captum.attr._utils.input_layer_wrapper import ModelInputWrapper
 
 # print(data_to_predict)
 # explainer = IntegratedGradients(model_fn)
 # explainer = NoiseTunnel(explainer)
 # explainer = DeepLift(model_fn)
 # explainer = GradientShap(model_fn)
-explainer = FeatureAblation(model_fn)
+# explainer = FeatureAblation(model_fn)
+
+layers = [layer for layer in model_fn.model.input_features.values()]
+print(layers)
+explainer = LayerIntegratedGradients(model_fn, layers)
 
 results = explainer.attribute(
     tuple(data_to_predict),
-    # baselines=tuple(baseline),
+    # n_steps=200,
+    baselines=tuple(baseline),
     # method="gausslegendre",
     # return_convergence_delta=True,
 )
-# print(results)
 
-# results = [t.detach().numpy().sum(1) for t in results]
+results = [t.detach().numpy().sum(1) for t in results]
 
-for (name, values), encoded, attribution in zip(inputs.items(), encoded_inputs.values(), results):
-    print(name, values, encoded, attribution, abs(attribution).sum(0))
+for (name, values), attribution in zip(inputs.items(), results):
+    print(name)
+    print(values)
+    print(attribution)
+    print()
+
+# for (name, values), encoded, attribution in zip(inputs.items(), encoded_inputs.values(), results):
+#     print(name, values, encoded, attribution, abs(attribution).sum(0))
 
 # restored_model = torch.jit.load("titanic.pt")
 
