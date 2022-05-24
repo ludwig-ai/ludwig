@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 
 from ludwig.combiners.combiners import Combiner, get_combiner_class
-from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.constants import COMBINED, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -135,6 +135,23 @@ class ECD(LudwigModule):
             encoder_outputs[input_feature_name] = encoder_output
 
         return encoder_outputs
+
+    def predict_from_encoded(self, *args):
+        encoded_outputs = {}
+        for k, v in zip(self.input_features.keys(), args):
+            encoded_outputs[k] = v
+        combined_outputs = self.combine(encoded_outputs)
+        outputs = self.decode(combined_outputs, None, None)
+        print(outputs)
+
+        # return [v[LOGITS] for _, v in outputs.items()]
+
+        predictions = []
+        for of_name in self.output_features:
+            predictions.append(self.output_features[of_name].predictions(outputs, of_name)[PROBABILITIES])
+
+        print(predictions)
+        return tuple(predictions)
 
     def combine(self, encoder_outputs):
         return self.combiner(encoder_outputs)
