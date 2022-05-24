@@ -23,9 +23,9 @@ from ludwig.automl.base_config import _create_default_config, _get_reference_con
 from ludwig.automl.utils import (
     _add_transfer_config,
     _ray_init,
-    has_imbalanced_output,
     get_available_resources,
     get_model_type,
+    has_imbalanced_output,
     set_output_feature_metric,
 )
 from ludwig.constants import (
