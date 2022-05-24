@@ -25,7 +25,8 @@ from ludwig.utils.neuropod_utils import generate_neuropod_torchscript
 # Download and prepare the dataset
 training_set, test_set, _ = titanic.load(split=True)
 base_set = training_set.sample(n=100)
-test_set = test_set.head(10)
+test_set = test_set.sample(n=10)
+print(test_set)
 
 # Define Ludwig model object that drive model training
 # model = LudwigModel(config="./model1_config.yaml", logging_level=logging.INFO)
