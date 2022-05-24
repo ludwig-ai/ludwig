@@ -96,6 +96,7 @@ def getmean(t):
 data_to_predict, inputs, encoded_inputs = get_input_tensors(test_set)
 baseline, _, _ = get_input_tensors(base_set)
 baseline = [torch.unsqueeze(getmean(t), 0) for t in baseline]
+# baseline[0] = torch.tensor([3], dtype=torch.int8)
 print(baseline)
 
 # baseline = []
@@ -114,6 +115,7 @@ class WrapperModule(torch.nn.Module):
 
 
 model_fn = WrapperModule()
+print("BASELINE PREDS", model_fn(*baseline))
 
 
 # data_to_predict = [
@@ -144,7 +146,7 @@ from captum.attr._utils.input_layer_wrapper import ModelInputWrapper
 
 layers = [layer for layer in model_fn.model.input_features.values()]
 print(layers)
-explainer = LayerIntegratedGradients(model_fn, layers)
+explainer = LayerIntegratedGradients(model_fn, layers, multiply_by_inputs=True)
 
 results = explainer.attribute(
     tuple(data_to_predict),
@@ -154,7 +156,7 @@ results = explainer.attribute(
     # return_convergence_delta=True,
 )
 
-results = [t.detach().numpy().sum(1) for t in results]
+results = [t.detach().numpy().mean(1) for t in results]
 
 for (name, values), attribution in zip(inputs.items(), results):
     print(name)
