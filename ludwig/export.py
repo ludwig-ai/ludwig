@@ -51,7 +51,8 @@ def export_torchscript(model_path: str, model_only: bool = False, output_path: O
     logger.info("\n")
 
     model = LudwigModel.load(model_path)
-    os.makedirs(output_path, exist_ok=True)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     model.save_torchscript(output_path, model_only=model_only)
 
     logger.info(f"Saved to: {output_path}")

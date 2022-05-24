@@ -1495,10 +1495,10 @@ class LudwigModel:
 
         if model_only:
             return self.model.to_torchscript()
-
-        return self.model.to_inference_module(
-            **{"config": self.config, "training_set_metadata": self.training_set_metadata}
-        )
+        else:
+            return self.model.to_inference_module(
+                **{"config": self.config, "training_set_metadata": self.training_set_metadata}
+            )
 
     def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript module to disk.
@@ -1508,11 +1508,11 @@ class LudwigModel:
         """
         if model_only:
             self.model.save_torchscript(save_path)
-
-        self.model.save_inference_module(
-            save_path,
-            **{"config": self.config, "training_set_metadata": self.training_set_metadata},
-        )
+        else:
+            self.model.save_inference_module(
+                save_path,
+                **{"config": self.config, "training_set_metadata": self.training_set_metadata},
+            )
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
