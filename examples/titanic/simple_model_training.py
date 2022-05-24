@@ -24,6 +24,8 @@ from ludwig.utils.neuropod_utils import generate_neuropod_torchscript
 
 # Download and prepare the dataset
 training_set, test_set, _ = titanic.load(split=True)
+base_set = training_set.head(10)
+test_set = test_set.head(10)
 
 # Define Ludwig model object that drive model training
 # model = LudwigModel(config="./model1_config.yaml", logging_level=logging.INFO)
@@ -47,29 +49,36 @@ model = LudwigModel.load("results/simple_experiment_simple_model/model")
 
 # model_ts = torch.jit.load("titanic.pt")
 
-dataset, _ = preprocess_for_prediction(
-    model.config,
-    dataset=test_set,
-    training_set_metadata=model.training_set_metadata,
-    data_format="auto",
-    split="full",
-    include_outputs=False,
-    backend=model.backend,
-    callbacks=model.callbacks,
-)
-# print(dataset.get_dataset())
 
-inputs = {name: dataset.dataset[feature.proc_column] for name, feature in model.model.input_features.items()}
-encoded_inputs = model.model.encode(inputs)
-# print(encoded_inputs)
+def get_input_tensors(input_set):
+    dataset, _ = preprocess_for_prediction(
+        model.config,
+        dataset=input_set,
+        training_set_metadata=model.training_set_metadata,
+        data_format="auto",
+        split="full",
+        include_outputs=False,
+        backend=model.backend,
+        callbacks=model.callbacks,
+    )
+    # print(dataset.get_dataset())
 
-print(encoded_inputs)
+    inputs = {name: dataset.dataset[feature.proc_column] for name, feature in model.model.input_features.items()}
+    encoded_inputs = model.model.encode(inputs)
+    # print(encoded_inputs)
 
-data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
-# preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
-# print(preds)
+    # print(encoded_inputs)
 
-data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
+    data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
+    # preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
+    # print(preds)
+
+    data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
+    return data_to_predict, inputs
+
+
+data_to_predict, inputs = get_input_tensors(test_set)
+baseline, _ = get_input_tensors(base_set)
 
 
 def model_fn(*args):
@@ -86,15 +95,18 @@ def model_fn(*args):
 
 from captum.attr import IntegratedGradients
 
-print(data_to_predict)
+# print(data_to_predict)
 ig = IntegratedGradients(model_fn)
 results = ig.attribute(
     tuple(data_to_predict),
-    #  baselines=(baseline1, baseline2),
+    # baselines=tuple(baseline),
     method="gausslegendre",
     # return_convergence_delta=True,
 )
-print(results)
+# print(results)
+
+for (name, values), attribution in zip(inputs.items(), results):
+    print(name, values, attribution)
 
 # restored_model = torch.jit.load("titanic.pt")
 
