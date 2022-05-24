@@ -180,14 +180,14 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def forward(self, inputs):
-        assert isinstance(inputs, torch.Tensor)
-        assert (
-            inputs.dtype == torch.int8
-            or inputs.dtype == torch.int16
-            or inputs.dtype == torch.int32
-            or inputs.dtype == torch.int64
-        )
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        # assert isinstance(inputs, torch.Tensor)
+        # assert (
+        #     inputs.dtype == torch.int8
+        #     or inputs.dtype == torch.int16
+        #     or inputs.dtype == torch.int32
+        #     or inputs.dtype == torch.int64
+        # )
+        # assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs.unsqueeze(dim=1)

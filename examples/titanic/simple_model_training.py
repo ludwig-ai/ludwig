@@ -25,7 +25,7 @@ from ludwig.utils.neuropod_utils import generate_neuropod_torchscript
 # Download and prepare the dataset
 training_set, test_set, _ = titanic.load(split=True)
 base_set = training_set.sample(n=100)
-test_set = test_set.head(10)
+test_set = test_set.sample(n=10)
 
 # Define Ludwig model object that drive model training
 # model = LudwigModel(config="./model1_config.yaml", logging_level=logging.INFO)
@@ -96,7 +96,7 @@ def getmean(t):
 data_to_predict, inputs, encoded_inputs = get_input_tensors(test_set)
 baseline, _, _ = get_input_tensors(base_set)
 baseline = [torch.unsqueeze(getmean(t), 0) for t in baseline]
-# baseline[0] = torch.tensor([3], dtype=torch.int8)
+# baseline[0] = torch.tensor([0], dtype=torch.int8)
 print(baseline)
 
 # baseline = []
@@ -111,11 +111,12 @@ class WrapperModule(torch.nn.Module):
 
     def forward(self, *args):
         # args = [{"encoder_output": arg} for arg in args]
+        print(args)
         return model.model.predict_from_encoded(*args)[0]
 
 
 model_fn = WrapperModule()
-print("BASELINE PREDS", model_fn(*baseline))
+# print("BASELINE PREDS", model_fn(*baseline))
 
 
 # data_to_predict = [
@@ -128,35 +129,74 @@ print("BASELINE PREDS", model_fn(*baseline))
 from captum.attr import (
     configure_interpretable_embedding_layer,
     DeepLift,
+    DeepLiftShap,
     FeatureAblation,
     GradientShap,
     IntegratedGradients,
     LayerIntegratedGradients,
+    LayerDeepLift,
+    LayerDeepLiftShap,
+    LayerGradientShap,
+    LayerFeatureAblation,
     NoiseTunnel,
     remove_interpretable_embedding_layer,
 )
 from captum.attr._utils.input_layer_wrapper import ModelInputWrapper
 
-# print(data_to_predict)
-# explainer = IntegratedGradients(model_fn)
+print(model_fn.state_dict())
+
+pclass_embed = configure_interpretable_embedding_layer(
+    model_fn, "model.input_features.module_dict.Pclass__ludwig.encoder_obj.embed.embeddings"
+)
+sex_embed = configure_interpretable_embedding_layer(
+    model_fn, "model.input_features.module_dict.Sex__ludwig.encoder_obj.embed.embeddings"
+)
+embarked_embed = configure_interpretable_embedding_layer(
+    model_fn, "model.input_features.module_dict.Embarked__ludwig.encoder_obj.embed.embeddings"
+)
+
+data_to_predict[0] = pclass_embed.indices_to_embeddings(data_to_predict[0].int())
+data_to_predict[1] = sex_embed.indices_to_embeddings(data_to_predict[1].int())
+data_to_predict[6] = embarked_embed.indices_to_embeddings(data_to_predict[6].int())
+
+baseline[0] = pclass_embed.indices_to_embeddings(baseline[0].int())
+baseline[1] = sex_embed.indices_to_embeddings(baseline[1].int())
+baseline[6] = embarked_embed.indices_to_embeddings(baseline[6].int())
+
+print(tuple(data_to_predict))
+explainer = IntegratedGradients(model_fn)
 # explainer = NoiseTunnel(explainer)
 # explainer = DeepLift(model_fn)
+# explainer = DeepLiftShap(model_fn)
 # explainer = GradientShap(model_fn)
 # explainer = FeatureAblation(model_fn)
 
 layers = [layer for layer in model_fn.model.input_features.values()]
 print(layers)
-explainer = LayerIntegratedGradients(model_fn, layers, multiply_by_inputs=True)
+# explainer = LayerIntegratedGradients(model_fn, layers)
+# explainer = LayerDeepLift(model_fn, layers)
+# explainer = LayerDeepLiftShap(model_fn, layers)
+# explainer = LayerGradientShap(model_fn, layers)
+# explainer = LayerFeatureAblation(model_fn, layers)
 
 results = explainer.attribute(
     tuple(data_to_predict),
-    # n_steps=200,
     baselines=tuple(baseline),
+    # n_steps=200,
     # method="gausslegendre",
     # return_convergence_delta=True,
 )
+# print(results)
 
-results = [t.detach().numpy().mean(1) for t in results]
+
+def agg(t):
+    t = t.detach().numpy()
+    if len(t.shape) > 1:
+        return t.mean(1)
+    return t
+
+
+results = [agg(t) for t in results]
 
 for (name, values), attribution in zip(inputs.items(), results):
     print(name)
