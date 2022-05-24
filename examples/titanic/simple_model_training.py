@@ -24,7 +24,7 @@ from ludwig.utils.neuropod_utils import generate_neuropod_torchscript
 
 # Download and prepare the dataset
 training_set, test_set, _ = titanic.load(split=True)
-base_set = training_set.sample(n=100)
+base_set = training_set  # .sample(n=100)
 test_set = test_set.sample(n=10)
 print(test_set)
 
@@ -157,12 +157,13 @@ results = explainer.attribute(
     # return_convergence_delta=True,
 )
 
-results = [t.detach().numpy().mean(1) for t in results]
+results = [t.detach().numpy().sum(1) for t in results]
 
 for (name, values), attribution in zip(inputs.items(), results):
     print(name)
     print(values)
     print(attribution)
+    print(abs(attribution).mean(0))
     print()
 
 # for (name, values), encoded, attribution in zip(inputs.items(), encoded_inputs.values(), results):
