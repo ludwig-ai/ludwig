@@ -562,6 +562,9 @@ def split_dataset_ttv(dataset, split):
     # Obtain distinct splits from the split column. If
     # a split is not present in this set, then we can skip generating
     # the dataframe for that split.
+    if dataset[split].dtype != int:
+        dataset[split] = dataset[split].astype(int)
+
     distinct_values = dataset[split].drop_duplicates()
     if hasattr(distinct_values, "compute"):
         distinct_values = distinct_values.compute()
