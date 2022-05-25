@@ -1068,9 +1068,6 @@ def build_dataset(
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
-    print("top of build_dataset")
-    print(df_engine.compute(dataset_df))
-
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
         logger.debug(f"sample {sample_ratio} of data")
@@ -1092,16 +1089,9 @@ def build_dataset(
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
-    from pprint import pprint
-
-    pprint(feature_configs)
-
     dataset_cols = {}
     for feature_config in feature_configs:
         dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
-
-    print("after dataset_cols assign")
-    print({k: backend.df_engine.compute(v) for k, v in dataset_cols.items()})
 
     for callback in callbacks or []:
         callback.on_build_metadata_start(dataset_df, mode)
@@ -1118,24 +1108,15 @@ def build_dataset(
         preprocessing_parameters = metadata[feature_config[NAME]][PREPROCESSING]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
 
-    print("after handling missing values")
-    print({k: backend.df_engine.compute(v) for k, v in dataset_cols.items()})
-
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
     cast_columns(dataset_cols, feature_configs, backend)
-
-    print("after cast columns")
-    print({k: backend.df_engine.compute(v) for k, v in dataset_cols.items()})
 
     for callback in callbacks or []:
         callback.on_build_data_start(dataset_df, mode)
 
     logger.debug("build data")
     proc_cols = build_data(dataset_cols, feature_configs, metadata, backend, skip_save_processed_input)
-
-    print("after build_data")
-    print({k: backend.df_engine.compute(v) for k, v in proc_cols.items()})
 
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
@@ -1180,8 +1161,6 @@ def build_dataset(
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
 
-    print("bottom of build_dataset")
-    print(backend.df_engine.compute(dataset))
     return dataset, metadata
 
 
@@ -1543,10 +1522,6 @@ def preprocess_for_training(
         training_set_metadata[CHECKSUM] = cache.checksum
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
 
-        print("inside preprocess_for_training")
-        print(data_format_processor)
-        print(dataset)
-
         if cached or data_format == "hdf5":
             with use_credentials(backend.cache.credentials):
                 # Always interpret hdf5 files as preprocessed, even if missing from the cache
@@ -1578,8 +1553,6 @@ def preprocess_for_training(
                 random_seed=random_seed,
                 callbacks=callbacks,
             )
-            print("in else statement, after preprocess for training")
-            print(processed)
             training_set, test_set, validation_set, training_set_metadata = processed
             processed = (training_set, test_set, validation_set, training_set_metadata)
 
@@ -1591,9 +1564,6 @@ def preprocess_for_training(
                     # set cached=True to ensure credentials are used correctly below
                     cached = True
             training_set, test_set, validation_set, training_set_metadata = processed
-
-        print("after data_format_processor complete")
-        print(training_set)
 
         with use_credentials(backend.cache.credentials if cached else None):
             logger.debug("create training dataset")
@@ -1641,10 +1611,6 @@ def _preprocess_file_for_training(
     :param random_seed: random seed
     :return: training, test, validation datasets, training metadata
     """
-    print("dataset: ", backend.df_engine.compute(dataset))
-    print("training_set: ", backend.df_engine.compute(training_set))
-    print("validation_set: ", backend.df_engine.compute(validation_set))
-    print("test_set: ", backend.df_engine.compute(test_set))
 
     if dataset:
         # Use data and ignore _train, _validation and _test.
@@ -1699,23 +1665,15 @@ def _preprocess_file_for_training(
 
     logger.info("Building dataset: DONE")
 
-    print("after build_dataset")
-    print(backend.df_engine.compute(data))
-
     if SPLIT in data.columns:
         logger.debug("split on split column")
-        print("in ttv")
         training_data, test_data, validation_data = split_dataset_ttv(data, SPLIT)
     else:
         logger.debug("split randomly by partition")
-        print("in random split")
         training_data, test_data, validation_data = data.random_split(preprocessing_params["split_probabilities"])
 
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
         training_data = balance_data(training_data, config["output_features"], preprocessing_params, backend)
-
-    print("after split")
-    print(backend.df_engine.compute(training_data))
 
     return training_data, test_data, validation_data, training_set_metadata
 
@@ -1738,11 +1696,6 @@ def _preprocess_df_for_training(
     This doesn't have the option to save the processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
-    print("inside preprocess_df_for_training")
-    print("dataset: ", backend.df_engine.compute(dataset))
-    print("training_set: ", backend.df_engine.compute(training_set))
-    print("validation_set: ", backend.df_engine.compute(validation_set))
-    print("test_set: ", backend.df_engine.compute(test_set))
 
     if dataset is not None:
         # needs preprocessing
@@ -1752,9 +1705,6 @@ def _preprocess_df_for_training(
         logger.info("Using training dataframe")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
     logger.info("Building dataset (it may take a while)")
-
-    print("after concatenation")
-    print("dataset: ", backend.df_engine.compute(dataset))
 
     dataset, training_set_metadata = build_dataset(
         dataset,
@@ -1769,18 +1719,12 @@ def _preprocess_df_for_training(
 
     logger.info("Building dataset: DONE")
 
-    print("after build_dataset")
-    print(backend.df_engine.compute(dataset))
-
     if SPLIT in dataset.columns:
         logger.debug("split on split column")
         training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
     else:
         logger.debug("split randomly by partition")
         training_set, test_set, validation_set = dataset.random_split(preprocessing_params["split_probabilities"])
-
-    print("after split")
-    print(backend.df_engine.compute(training_set))
 
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
         training_set = balance_data(training_set, config["output_features"], preprocessing_params, backend)
