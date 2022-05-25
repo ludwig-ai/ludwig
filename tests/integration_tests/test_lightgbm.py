@@ -9,7 +9,7 @@ from ludwig.backend import initialize_backend
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
-@pytest.fixture(params=["local", "ray"], scope="module")
+@pytest.fixture(params=["local"], scope="module")
 def backend_config(request):
     backend_type = request.param
     if backend_type == "local":
