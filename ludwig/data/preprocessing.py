@@ -1093,24 +1093,31 @@ def build_dataset(
     for feature_config in feature_configs:
         dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
 
-    for callback in callbacks or []:
-        callback.on_build_metadata_start(dataset_df, mode)
+    logger.debug("build preprocessing parameters")
+    feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
+        dataset_cols, feature_configs, global_preprocessing_parameters, backend
+    )
 
-    logger.debug("build metadata")
-    metadata = build_metadata(metadata, dataset_cols, feature_configs, global_preprocessing_parameters, backend)
-
-    for callback in callbacks or []:
-        callback.on_build_metadata_end(dataset_df, mode)
-
-    # Happens after metadata is built so we can use precomputed fill values.
+    # Happens after preprocessing parameters are built so we can use precomputed fill values.
     logger.debug("handle missing values")
     for feature_config in feature_configs:
-        preprocessing_parameters = metadata[feature_config[NAME]][PREPROCESSING]
+        preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
     cast_columns(dataset_cols, feature_configs, backend)
+
+    for callback in callbacks or []:
+        callback.on_build_metadata_start(dataset_df, mode)
+
+    logger.debug("build metadata")
+    metadata = build_metadata(
+        metadata, feature_name_to_preprocessing_parameters, dataset_cols, feature_configs, backend
+    )
+
+    for callback in callbacks or []:
+        callback.on_build_metadata_end(dataset_df, mode)
 
     for callback in callbacks or []:
         callback.on_build_data_start(dataset_df, mode)
@@ -1189,17 +1196,14 @@ def merge_preprocessing(
     return merge_dict(global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING])
 
 
-def build_metadata(
-    metadata: Dict[str, Any],
+def build_preprocessing_parameters(
     dataset_cols: Dict[str, Column],
     feature_configs: List[Dict[str, Any]],
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
 ) -> Dict[str, Any]:
+    feature_name_to_preprocessing_parameters = {}
     for feature_config in feature_configs:
-        if feature_config[NAME] in metadata:
-            continue
-
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # deal with encoders that have fixed preprocessing
@@ -1217,12 +1221,25 @@ def build_metadata(
         if fill_value is not None:
             preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
 
-        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+        feature_name_to_preprocessing_parameters[feature_config[NAME]] = preprocessing_parameters
+
+    return feature_name_to_preprocessing_parameters
+
+
+def build_metadata(
+    metadata: Dict[str, Any],
+    feature_name_to_preprocessing_parameters: Dict[str, Any],
+    dataset_cols: Dict[str, Column],
+    feature_configs: List[Dict[str, Any]],
+    backend: Backend,
+) -> Dict[str, Any]:
+    for feature_config in feature_configs:
+        if feature_config[NAME] in metadata:
+            continue
+
+        preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
 
         column = dataset_cols[feature_config[COLUMN]]
-        if column.dtype == object:
-            column = column.astype(str)
-
         metadata[feature_config[NAME]] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
             column, preprocessing_parameters, backend
         )
