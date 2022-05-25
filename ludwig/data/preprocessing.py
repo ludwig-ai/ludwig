@@ -1611,7 +1611,6 @@ def _preprocess_file_for_training(
     :param random_seed: random seed
     :return: training, test, validation datasets, training metadata
     """
-
     if dataset:
         # Use data and ignore _train, _validation and _test.
         # Also ignore data and train set metadata needs preprocessing
@@ -1696,7 +1695,6 @@ def _preprocess_df_for_training(
     This doesn't have the option to save the processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
-
     if dataset is not None:
         # needs preprocessing
         logger.info("Using full dataframe")
