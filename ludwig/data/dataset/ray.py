@@ -258,6 +258,7 @@ class RayDatasetBatcher(Batcher):
         return to_tensors
 
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+        print(batch.index)
         res = {c: batch[c].to_numpy() for c in self.columns}
 
         for c in self.columns:
@@ -284,6 +285,9 @@ class RayDatasetBatcher(Batcher):
         batch_size = self.batch_size
 
         to_tensors = self._to_tensors_fn()
+
+        # print("inside RayDatasetBatcher")
+        # print("len(dataset)", len(dataset.to_dask().compute()))
 
         def producer():
             for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(

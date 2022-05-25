@@ -1065,6 +1065,13 @@ def build_dataset(
     callbacks=None,
     mode=None,
 ):
+    print("beginning of build_dataset")
+    test_df = backend.df_engine.compute(dataset_df)
+    for col in test_df.columns:
+        if "binary" in col:
+            test_series = test_df[col].tolist()
+            print(col, "len:", len(test_series), test_series)
+
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
@@ -1092,6 +1099,13 @@ def build_dataset(
     logger.debug("cast columns")
     dataset_cols = cast_columns(dataset_df, feature_configs, backend)
 
+    print("after cast_columns:")
+    for k, v in dataset_cols.items():
+        col = backend.df_engine.compute(v)
+        if "binary" in k:
+            test_series = col.tolist()
+            print(k, "len:", len(test_series), test_series)
+
     for callback in callbacks or []:
         callback.on_build_metadata_start(dataset_df, mode)
 
@@ -1106,6 +1120,12 @@ def build_dataset(
 
     logger.debug("build data")
     proc_cols = build_data(dataset_cols, feature_configs, metadata, backend, skip_save_processed_input)
+    print("after build_data:")
+    for k, v in proc_cols.items():
+        col = backend.df_engine.compute(v)
+        if "binary" in k:
+            test_series = col.tolist()
+            print(k, "len:", len(test_series), test_series)
 
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
@@ -1133,12 +1153,27 @@ def build_dataset(
             if reshape is not None:
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
+    print("before dflike()")
+    for k, v in proc_cols.items():
+        if "binary" in k:
+            print(k, len(backend.df_engine.compute(v).tolist()), backend.df_engine.compute(v).tolist())
+
     # Implements an outer join of proc_cols
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
+    from pprint import pprint
+
+    for feature in features:
+        pprint(feature)
+
+    print("before dropna()")
+    for k, v in proc_cols.items():
+        if "binary" in k:
+            print(k, len(backend.df_engine.compute(v).tolist()), backend.df_engine.compute(v).tolist())
+
     dataset = dataset.dropna()
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
@@ -1149,6 +1184,10 @@ def build_dataset(
             continue
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
+
+    print("end of preprocessing:")
+    print(backend.df_engine.compute(dataset).index)
+    print(backend.df_engine.compute(dataset))
 
     return dataset, metadata
 
@@ -1247,7 +1286,25 @@ def build_data(
     proc_cols = {}
     for feature_config in feature_configs:
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
+
+        if "binary" in feature_config[NAME]:
+            print("training set metadata")
+            print(training_set_metadata[feature_config[NAME]])
+            print("before handle missing values")
+            print(feature_config[COLUMN])
+            series_list = backend.df_engine.compute(input_cols[feature_config[COLUMN]]).tolist()
+            print("len:", len(series_list))
+            print(series_list)
+
         handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+
+        if "binary" in feature_config[NAME]:
+            print("before add feature data")
+            print(feature_config[COLUMN])
+            series_list = backend.df_engine.compute(input_cols[feature_config[COLUMN]]).tolist()
+            print("len:", len(series_list))
+            print(series_list)
+
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
             input_cols,
@@ -1610,7 +1667,17 @@ def _preprocess_file_for_training(
         logger.info("Using full raw dataset, no hdf5 and json file " "with the same name have been found")
         logger.info("Building dataset (it may take a while)")
 
+        print("inside preprocess_file_for_training")
+
         dataset_df = read_fn(dataset, backend.df_engine.df_lib)
+
+        print("dataset_df:")
+        test_df = backend.df_engine.compute(dataset_df)
+        for col_name in test_df.columns:
+            if "binary" in col_name:
+                test_series = test_df[col_name]
+                print(col_name, "len:", len(test_series), test_series.tolist())
+
         training_set_metadata[SRC] = dataset
 
         data, training_set_metadata = build_dataset(

@@ -869,6 +869,9 @@ class LudwigModel:
             callbacks=self.callbacks,
         )
 
+        print("============================== inside evaluate ==============================")
+        print("backend: ", self.backend)
+
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
             batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]

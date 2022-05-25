@@ -530,6 +530,7 @@ def read_csv_with_nan(path, nan_percent=0.0):
             col_idx = df.columns.get_loc(col)
             for row_idx in random.sample(range(num_rows), num_nans_per_col):
                 df.iloc[row_idx, col_idx] = np.nan
+            print(col, "nans:", df[col].isnull().sum())
     return df
 
 
@@ -676,7 +677,7 @@ def train_with_backend(
                     for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
                         assert name1 == name2
                         assert np.isclose(
-                            metric1, metric2, rtol=5e-03, atol=5e-4
+                            metric1, metric2, rtol=1e-04, atol=1e-5
                         ), f"metric {name1}: {metric1} != {metric2}"
 
         return model

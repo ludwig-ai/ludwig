@@ -173,6 +173,7 @@ class Predictor(BasePredictor):
                     )
 
                 predictions = defaultdict(list)
+                idx = 0
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     logger.debug(
@@ -189,6 +190,24 @@ class Predictor(BasePredictor):
                     }
 
                     preds = self.model.evaluation_step(inputs, targets)
+
+                    if batcher.last_batch():
+                        from pprint import pprint
+
+                        print("inputs:")
+                        for key, value in inputs.items():
+                            if "audio" in key:
+                                print(key, value[:, 0, :3])
+                            else:
+                                print(key, value)
+                        print("targets:")
+                        print(targets)
+                        print("preds:")
+                        pprint(preds)
+                    idx += 1
+
+                    for key, value in inputs.items():
+                        print(key, value.shape)
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
@@ -217,6 +236,9 @@ class Predictor(BasePredictor):
             self.model.reset_metrics()
 
             self.model.train(prev_model_training_mode)  # Restores previous model training mode.
+
+            print("metrics:")
+            print(metrics)
 
             return metrics, from_numpy_dataset(predictions)
 
