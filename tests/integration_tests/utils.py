@@ -530,7 +530,6 @@ def read_csv_with_nan(path, nan_percent=0.0):
             col_idx = df.columns.get_loc(col)
             for row_idx in random.sample(range(num_rows), num_nans_per_col):
                 df.iloc[row_idx, col_idx] = np.nan
-            print(col, "nans:", df[col].isnull().sum())
     return df
 
 

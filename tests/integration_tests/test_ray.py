@@ -173,30 +173,26 @@ def run_test_with_features(
         if df_engine:
             backend_config["processor"]["type"] = df_engine
 
-        csv_filename = os.path.join("/Users/geoffreyangus/Downloads/unittest2/", "dataset.csv")
-        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-        dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
-        test_df = pd.read_csv(dataset)
-        print("in test_ray:")
-        for col in test_df.columns:
-            if "binary" in col:
-                print(col, test_df[col].tolist())
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
+            dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
 
-        if expect_error:
-            with pytest.raises(ValueError):
+            if expect_error:
+                with pytest.raises(ValueError):
+                    run_fn(
+                        config,
+                        dataset=dataset,
+                        backend_config=backend_config,
+                        skip_save_processed_input=skip_save_processed_input,
+                    )
+            else:
                 run_fn(
                     config,
                     dataset=dataset,
                     backend_config=backend_config,
                     skip_save_processed_input=skip_save_processed_input,
                 )
-        else:
-            run_fn(
-                config,
-                dataset=dataset,
-                backend_config=backend_config,
-                skip_save_processed_input=skip_save_processed_input,
-            )
 
 
 @pytest.mark.parametrize("df_engine", ["pandas", "dask"])
