@@ -19,7 +19,7 @@ requests
 tables
 fsspec[http]
 dataclasses-json
-jsonschema
+jsonschema>=4.5.0
 marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.5
