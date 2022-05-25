@@ -1065,7 +1065,6 @@ def build_dataset(
     callbacks=None,
     mode=None,
 ):
-
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
@@ -1612,7 +1611,6 @@ def _preprocess_file_for_training(
         logger.info("Building dataset (it may take a while)")
 
         dataset_df = read_fn(dataset, backend.df_engine.df_lib)
-
         training_set_metadata[SRC] = dataset
 
         data, training_set_metadata = build_dataset(
