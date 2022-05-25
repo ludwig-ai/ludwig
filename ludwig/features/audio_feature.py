@@ -152,7 +152,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         def is_torch_audio_tuple(audio):
             if isinstance(audio, tuple):
-                if isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
+                if len(audio) == 2 and isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
                     return True
             return False
 
