@@ -411,7 +411,7 @@ class H3RNN(Encoder):
             num_layers=num_layers,
             bidirectional=bidirectional,
             use_bias=use_bias,
-            dropout=dropout,
+            dropout=recurrent_dropout,
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:

@@ -37,9 +37,26 @@ def test_fc_layer(
     ],
 )
 def test_fc_stack(first_layer_input_size: Optional[int], layers: Optional[List], num_layers: Optional[int]):
-    if first_layer_input_size is None:
-        first_layer_input_size = layers[0]["input_size"]
     fc_stack = FCStack(first_layer_input_size=first_layer_input_size, layers=layers, num_layers=num_layers).to(DEVICE)
     input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
     output_tensor = fc_stack(input_tensor)
+    assert output_tensor.shape[1:] == fc_stack.output_shape
+
+
+def test_fc_stack_passthrough():
+    first_layer_input_size = 10
+    layers = None
+    num_layers = 0
+    output_size = 15
+    fc_stack = FCStack(
+        first_layer_input_size=first_layer_input_size,
+        layers=layers,
+        num_layers=num_layers,
+        default_output_size=output_size,
+    ).to(DEVICE)
+    input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
+
+    output_tensor = fc_stack(input_tensor)
+
+    assert list(output_tensor.shape[1:]) == [first_layer_input_size]
     assert output_tensor.shape[1:] == fc_stack.output_shape

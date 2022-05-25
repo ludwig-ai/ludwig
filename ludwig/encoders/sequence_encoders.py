@@ -385,7 +385,7 @@ class ParallelCNN(Encoder):
             self.conv_layers = [{"filter_size": 2}, {"filter_size": 3}, {"filter_size": 4}, {"filter_size": 5}]
             self.num_conv_layers = 4
         else:
-            raise ValueError("Invalid layer parametrization, use either conv_layers or" " num_conv_layers")
+            raise ValueError("Invalid layer parametrization, use either conv_layers or num_conv_layers")
 
         # The user is expected to provide fc_layers or num_fc_layers
         # The following logic handles the case where the user either provides
@@ -395,7 +395,7 @@ class ParallelCNN(Encoder):
             fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
+            raise ValueError("Invalid layer parametrization, use either fc_layers or num_fc_layers only. Not both.")
 
         self.should_embed = should_embed
         self.embed_sequence = None
@@ -1307,7 +1307,7 @@ class StackedRNN(Encoder):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout=fc_dropout,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
             )
 
@@ -1327,8 +1327,7 @@ class StackedRNN(Encoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            dropout=dropout,
-            recurrent_dropout=recurrent_dropout,
+            dropout=recurrent_dropout,
         )
 
         self.reduce_output = reduce_output
@@ -1563,7 +1562,7 @@ class StackedCNNRNN(Encoder):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout=fc_dropout,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
             )
 
@@ -1607,7 +1606,6 @@ class StackedCNNRNN(Encoder):
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
             dropout=dropout,
-            recurrent_dropout=recurrent_dropout,
         )
 
         self.reduce_output = reduce_output

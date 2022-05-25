@@ -549,7 +549,7 @@ class Conv2DLayer(LudwigModule):
         norm: Optional[str] = None,
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",
-        dropout: int = 0,
+        dropout: float = 0,
         pool_function: int = "max",
         pool_kernel_size: Union[int, Tuple[int]] = None,
         pool_stride: Optional[int] = None,
