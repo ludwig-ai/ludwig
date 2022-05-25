@@ -260,9 +260,10 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
 @pytest.mark.distributed
-def test_ray_audio(feature_type):
+def test_ray_audio(dataset_type, feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:
         preprocessing_params = {
             "audio_file_length_limit_in_s": 3.0,
@@ -280,11 +281,12 @@ def test_ray_audio(feature_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_image():
+def test_ray_image(dataset_type):
     with tempfile.TemporaryDirectory() as tmpdir:
         image_dest_folder = os.path.join(tmpdir, "generated_images")
         input_features = [
@@ -297,7 +299,7 @@ def test_ray_image():
             ),
         ]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")

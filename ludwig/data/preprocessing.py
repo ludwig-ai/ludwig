@@ -1089,8 +1089,9 @@ def build_dataset(
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
-    logger.debug("cast columns")
-    dataset_cols = cast_columns(dataset_df, feature_configs, backend)
+    dataset_cols = {}
+    for feature_config in feature_configs:
+        dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
 
     for callback in callbacks or []:
         callback.on_build_metadata_start(dataset_df, mode)
@@ -1100,6 +1101,16 @@ def build_dataset(
 
     for callback in callbacks or []:
         callback.on_build_metadata_end(dataset_df, mode)
+
+    # Happens after metadata is built so we can use precomputed fill values.
+    logger.debug("handle missing values")
+    for feature_config in feature_configs:
+        preprocessing_parameters = metadata[feature_config[NAME]][PREPROCESSING]
+        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+
+    # Happens after missing values are handled to avoid NaN casting issues.
+    logger.debug("cast columns")
+    cast_columns(dataset_cols, feature_configs, backend)
 
     for callback in callbacks or []:
         callback.on_build_data_start(dataset_df, mode)
@@ -1153,23 +1164,20 @@ def build_dataset(
     return dataset, metadata
 
 
-def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
-    """Copies each column of the dataset to a dataframe, with potential type casting."""
-    dataset_cols = {}
+def cast_columns(dataset_cols, features, backend) -> None:
+    """Casts columns based on their feature type."""
     for feature in features:
         # todo figure out if additional parameters are needed
         #  for the cast_column function
         try:
             dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
-                dataset_df[feature[COLUMN]], backend
+                dataset_cols[feature[COLUMN]], backend
             )
         except KeyError as e:
             raise KeyError(
                 f"Feature name {e} specified in the config was not found in dataset with columns: "
-                + f"{list(dataset_df.columns)}"
+                + f"{list(dataset_cols.keys())}"
             )
-
-    return dataset_cols
 
 
 def merge_preprocessing(
@@ -1247,7 +1255,6 @@ def build_data(
     proc_cols = {}
     for feature_config in feature_configs:
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
-        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
             input_cols,
