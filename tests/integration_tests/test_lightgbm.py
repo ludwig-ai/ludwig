@@ -72,7 +72,7 @@ def test_gbm_multiple_outputs(tmpdir, backend_config):
 
 
 def test_gbm_binary(tmpdir, backend_config):
-    """Test that the GBM model can train and predict a binary variable."""
+    """Test that the GBM model can train and predict a binary variable (binary classification)."""
     with tempfile.TemporaryDirectory() as outdir:
         input_features = [number_feature(), category_feature(reduce_output="sum")]
         output_feature = binary_feature()
@@ -109,8 +109,8 @@ def test_gbm_binary(tmpdir, backend_config):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
-def test_gbm_category(tmpdir):
-    """Test that the GBM model can train and predict a categorical output."""
+def test_gbm_category(tmpdir, backend_config):
+    """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
     with tempfile.TemporaryDirectory() as outdir:
         input_features = [number_feature(), category_feature(reduce_output="sum")]
         vocab_size = 3
@@ -126,10 +126,12 @@ def test_gbm_category(tmpdir):
             "model_type": "gbm",
             "input_features": input_features,
             "output_features": output_features,
-            "trainer": {"num_boosting_rounds": 1},
+            "trainer": {"num_boost_round": 1},
         }
 
-        model = LudwigModel(config)
+        backend = initialize_backend(backend_config)
+        model = LudwigModel(config, backend=backend)
+
         _, _, output_directory = model.train(
             training_set=data_csv,
             validation_set=val_csv,
@@ -145,3 +147,41 @@ def test_gbm_category(tmpdir):
     prob_col = preds[output_feature["name"] + "_probabilities"]
     assert len(prob_col[0]) == (vocab_size + 1)
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+def test_gbm_number(tmpdir, backend_config):
+    """Test that the GBM model can train and predict a numerical output (regression)."""
+    with tempfile.TemporaryDirectory() as outdir:
+        input_features = [number_feature(), category_feature(reduce_output="sum")]
+        output_feature = number_feature()
+        output_features = [output_feature]
+
+        csv_filename = os.path.join(tmpdir, "training.csv")
+        data_csv = generate_data(input_features, output_features, csv_filename)
+        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+        config = {
+            "model_type": "gbm",
+            "input_features": input_features,
+            "output_features": output_features,
+            "trainer": {"num_boost_round": 1},
+        }
+
+        backend = initialize_backend(backend_config)
+        model = LudwigModel(config, backend=backend)
+
+        _, _, output_directory = model.train(
+            training_set=data_csv,
+            validation_set=val_csv,
+            test_set=test_csv,
+            output_directory=outdir,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True,
+            skip_save_log=True,
+        )
+        preds, _ = model.predict(dataset=test_csv, output_directory=output_directory)
+
+    pred_col = preds[output_feature["name"] + "_predictions"]
+    assert pred_col.dtype == float
