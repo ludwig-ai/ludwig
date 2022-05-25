@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.set_feature import SetInputFeature
-from ludwig.models.ecd import build_single_input
+from ludwig.models.ecd import ECD
 
 BATCH_SIZE = 2
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -48,7 +48,7 @@ def test_set_input_feature(
     SetInputFeature.populate_defaults(set_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = build_single_input(set_def, None).to(DEVICE)
+    input_feature_obj = ECD.build_single_input(set_def, None).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 2, size=(BATCH_SIZE, len(set_def["vocab"])), dtype=torch.int64).to(DEVICE)

@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.number_feature import NumberInputFeature
-from ludwig.models.ecd import build_single_input
+from ludwig.models.ecd import ECD
 
 BATCH_SIZE = 2
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -26,7 +26,7 @@ def test_number_input_feature(
     NumberInputFeature.populate_defaults(number_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = build_single_input(number_def, None).to(DEVICE)
+    input_feature_obj = ECD.build_single_input(number_def, None).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = torch.rand(2, dtype=torch.float32).to(DEVICE)

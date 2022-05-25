@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ludwig.features.category_feature import CategoryInputFeature
-from ludwig.models.ecd import build_single_input
+from ludwig.models.ecd import ECD
 
 BATCH_SIZE = 2
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -40,7 +40,7 @@ def test_category_input_feature(
     CategoryInputFeature.populate_defaults(category_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = build_single_input(category_def, None)
+    input_feature_obj = ECD.build_single_input(category_def, None)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 3, size=(BATCH_SIZE,), dtype=torch.int32).to(DEVICE)
