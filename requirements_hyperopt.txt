@@ -1,4 +1,8 @@
-bayesmark>=0.0.7
-pySOT
+
+# ray[default,tune]>=1.9.2,!=1.10  # TODO: remove
+ray[default,tune]>=1.11.0
+
+
+# required for Ray Tune Search Algorithm support for AutoML
+#search_alg: hyperopt
 hyperopt
-ray[default,tune]>=1.9.2,!=1.10

@@ -31,7 +31,7 @@ class CategoricalEmbedEncoder(Encoder):
     def __init__(
         self,
         vocab: List[str],
-        embedding_size: int = 50,
+        embedding_size: Optional[int] = None,
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         embeddings_on_cpu: bool = False,

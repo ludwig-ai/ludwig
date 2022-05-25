@@ -11,14 +11,14 @@ import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler
+from ludwig.hyperopt.sampling import get_search_algorithm, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
@@ -33,28 +33,40 @@ try:
     import ray
     from ray import tune
     from ray.tune import register_trainable
-    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
+    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
     from ray.tune.syncer import get_cloud_sync_client
     from ray.tune.utils import wait_for_gpu
     from ray.tune.utils.placement_groups import PlacementGroupFactory
     from ray.util.queue import Queue as RayQueue
 
-    from ludwig.backend.ray import RayBackend
 except ImportError as e:
-    logger.warn(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
+    logger.warning(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
+    get_horovod_kwargs = None
+
+
+try:
+    from ludwig.backend.ray import RayBackend
+
+    # TODO: refactor this into an interface
+    def _is_ray_backend(backend) -> bool:
+        if isinstance(backend, str):
+            return backend == RAY
+        return isinstance(backend, RayBackend)
+
+except ImportError as e:
+    logger.warning(
+        f"ImportError (execution.py) failed to import RayBackend with error: \n\t{e}. "
+        "The LocalBackend will be used instead. If you want to use the RayBackend, please install ludwig[distributed]."
+    )
     get_horovod_kwargs = None
 
     class RayBackend:
         pass
 
-
-# TODO: refactor this into an interface
-def _is_ray_backend(backend) -> bool:
-    if isinstance(backend, str):
-        return backend == RAY
-    return isinstance(backend, RayBackend)
+    def _is_ray_backend(backend) -> bool:
+        return False
 
 
 def _get_relative_checkpoints_dir_parts(path: Path):
@@ -63,7 +75,7 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 class HyperoptExecutor(ABC):
     def __init__(
-        self, hyperopt_sampler: Union[dict, HyperoptSampler], output_feature: str, metric: str, split: str
+        self, hyperopt_sampler: Union[dict, RayTuneSampler], output_feature: str, metric: str, split: str
     ) -> None:
         self.hyperopt_sampler = hyperopt_sampler
         self.output_feature = output_feature
@@ -184,121 +196,22 @@ class HyperoptExecutor(ABC):
         pass
 
 
-class SerialExecutor(HyperoptExecutor):
-    def __init__(
-        self, hyperopt_sampler: HyperoptSampler, output_feature: str, metric: str, split: str, **kwargs
-    ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature, metric, split)
-
-    def execute(
-        self,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs,
-    ) -> HyperoptResults:
-        trial_results = []
-        trials = 0
-        while not self.hyperopt_sampler.finished():
-            sampled_parameters = self.hyperopt_sampler.sample_batch()
-            metric_scores = []
-
-            for i, parameters in enumerate(sampled_parameters):
-                modified_config = substitute_parameters(copy.deepcopy(config), parameters)
-
-                trial_id = trials + i
-
-                model = LudwigModel(
-                    config=modified_config,
-                    backend=backend,
-                    gpus=gpus,
-                    gpu_memory_limit=gpu_memory_limit,
-                    allow_parallel_threads=allow_parallel_threads,
-                    callbacks=callbacks,
-                )
-                eval_stats, train_stats, _, _ = model.experiment(
-                    dataset=dataset,
-                    training_set=training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    training_set_metadata=training_set_metadata,
-                    data_format=data_format,
-                    experiment_name=f"{experiment_name}_{trial_id}",
-                    model_name=model_name,
-                    # model_load_path=model_load_path,
-                    # model_resume_path=model_resume_path,
-                    eval_split=self.split,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    skip_save_unprocessed_output=skip_save_unprocessed_output,
-                    skip_save_predictions=skip_save_predictions,
-                    skip_save_eval_stats=skip_save_eval_stats,
-                    output_directory=output_directory,
-                    skip_collect_predictions=True,
-                    skip_collect_overall_stats=False,
-                    random_seed=random_seed,
-                    debug=debug,
-                )
-                metric_score = self.get_metric_score(train_stats)
-                metric_scores.append(metric_score)
-
-                trial_results.append(
-                    TrialResults(
-                        parameters=parameters,
-                        metric_score=metric_score,
-                        training_stats=train_stats,
-                        eval_stats=eval_stats,
-                    )
-                )
-            trials += len(sampled_parameters)
-
-            self.hyperopt_sampler.update_batch(zip(sampled_parameters, metric_scores))
-
-        ordered_trials = self.sort_hyperopt_results(trial_results)
-        return HyperoptResults(ordered_trials=ordered_trials)
-
-
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
         self,
         hyperopt_sampler,
         output_feature: str,
         metric: str,
+        goal: str,
         split: str,
+        search_alg: Optional[Dict] = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
         time_budget_s: Union[int, float, datetime.timedelta] = None,
         max_concurrent_trials: Optional[int] = None,
+        num_samples: int = 1,
+        scheduler: Optional[Dict] = None,
         **kwargs,
     ) -> None:
         if ray is None:
@@ -316,10 +229,14 @@ class RayTuneExecutor(HyperoptExecutor):
                 logger.info("Initializing new Ray cluster...")
                 ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
-        self.num_samples = hyperopt_sampler.num_samples
-        self.goal = hyperopt_sampler.goal
-        self.search_alg_dict = hyperopt_sampler.search_alg_dict
-        self.scheduler = hyperopt_sampler.scheduler
+        self.num_samples = num_samples
+        self.goal = goal
+        self.search_algorithm = (
+            get_search_algorithm(None)(search_alg)
+            if search_alg is None
+            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
+        )
+        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.decode_ctx = hyperopt_sampler.decode_ctx
         self.output_feature = output_feature
         self.metric = metric
@@ -643,6 +560,7 @@ class RayTuneExecutor(HyperoptExecutor):
         backend=None,
         random_seed=default_random_seed,
         debug=False,
+        hyperopt_log_verbosity=3,
         **kwargs,
     ) -> RayTuneResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
@@ -696,13 +614,21 @@ class RayTuneExecutor(HyperoptExecutor):
 
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
-        if self.search_alg_dict is not None:
-            if TYPE not in self.search_alg_dict:
-                logger.warning("WARNING: Kindly set type param for search_alg " "to utilize Tune's Search Algorithms.")
+        # if random seed not set, use Ludwig seed
+        self.search_algorithm.check_for_random_seed(random_seed)
+        if self.search_algorithm.search_alg_dict is not None:
+            if TYPE not in self.search_algorithm.search_alg_dict:
+                candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
+                logger.warning(
+                    "WARNING: search_alg type parameter missing, using 'variant_generator' as default. "
+                    f"These are possible values for the type parameter: {candiate_search_algs}."
+                )
                 search_alg = None
             else:
-                search_alg_type = self.search_alg_dict[TYPE]
-                search_alg = tune.create_searcher(search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
+                search_alg_type = self.search_algorithm.search_alg_dict[TYPE]
+                search_alg = tune.create_searcher(
+                    search_alg_type, metric=metric, mode=mode, **self.search_algorithm.search_alg_dict
+                )
         else:
             search_alg = None
 
@@ -781,6 +707,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
                 trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
                 callbacks=tune_callbacks,
+                verbose=hyperopt_log_verbosity,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
@@ -842,7 +769,7 @@ def get_build_hyperopt_executor(executor_type):
     return get_from_registry(executor_type, executor_registry)
 
 
-executor_registry = {"serial": SerialExecutor, "ray": RayTuneExecutor}
+executor_registry = {"ray": RayTuneExecutor}
 
 
 def set_values(model_dict, name, parameters_dict):
