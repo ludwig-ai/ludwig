@@ -547,7 +547,7 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, model: ECD, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+    def __init__(self, model: AbstractModel, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
@@ -747,7 +747,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
-    def create_predictor(self, model: ECD, **kwargs):
+    def create_predictor(self, model: AbstractModel, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         return RayPredictor(
             model,

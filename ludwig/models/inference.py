@@ -15,7 +15,7 @@ from ludwig.utils import image_utils
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
-    from ludwig.models.ecd import ECD
+    from ludwig.models.abstractmodel import AbstractModel
 
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
@@ -32,7 +32,7 @@ class InferenceModule(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def __init__(self, model: "AbstractModel", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
         model.cpu()

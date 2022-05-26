@@ -21,7 +21,6 @@ from ludwig.globals import (
     TEST_STATISTICS_FILE_NAME,
 )
 from ludwig.models.abstractmodel import AbstractModel
-from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -263,7 +262,7 @@ class Predictor(BasePredictor):
 
 
 class RemotePredictor(Predictor):
-    def __init__(self, model: ECD, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+    def __init__(self, model: AbstractModel, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         super().__init__(model, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead

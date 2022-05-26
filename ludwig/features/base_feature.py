@@ -288,7 +288,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         if isinstance(self.eval_loss_metric, MeanMetric):
             # MeanMetric's forward() implicitly updates the running average.
             # For MeanMetrics, we use get_current_value() to compute the loss without changing the state. All metrics
-            # are updated at the ECD level as part of update_metrics().
+            # are updated at the AbstractModel level as part of update_metrics().
             return self.eval_loss_metric.get_current_value(predictions[prediction_key].detach(), targets)
         return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
 
