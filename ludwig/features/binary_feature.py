@@ -159,8 +159,8 @@ class BinaryFeatureMixin(BaseFeatureMixin):
             )
 
         # If the values in column would typically be inferred as boolean dtype, output predictions as booleans.
-        # This preserves the behavior of this feature before #2058.
-        if [v.lower() for v in sorted(distinct_values)] == ["false", "true"]:
+        # This preserves the behavior of this feature before #2058.:
+        if strings_utils.str_column_is_bool(column, backend=backend):
             return {}
 
         if "fallback_true_label" in preprocessing_parameters:

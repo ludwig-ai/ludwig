@@ -18,9 +18,13 @@ import re
 import unicodedata
 from collections import Counter
 from enum import Enum
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, TYPE_CHECKING, Union
 
 import numpy as np
+
+# Prevents circular import errors from typing.
+if TYPE_CHECKING:
+    from ludwig.backend.base import Backend
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
@@ -87,6 +91,16 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     if fallback_true_label is None:
         raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified")
     return v == fallback_true_label
+
+
+def str_column_is_bool(column: Series, backend: Optional["Backend"] = None) -> bool:
+    """Returns whether a column could have been cast by read_csv as boolean."""
+    if backend is not None:
+        column = backend.df_engine.compute(column)
+
+    distinct_values = column.drop_duplicates()
+    lowercase_distinct_values_set = {v.lower() for v in sorted(distinct_values)}
+    return lowercase_distinct_values_set.issubset({"false", "true"})
 
 
 def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
