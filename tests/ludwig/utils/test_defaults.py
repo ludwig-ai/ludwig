@@ -45,7 +45,7 @@ HYPEROPT_CONFIG = {
             ],
         },
     },
-    "sampler": {"type": "ray"},
+    "search_alg": {"type": "hyperopt"},
     "executor": {"type": "ray"},
     "goal": "minimize",
 }
@@ -90,7 +90,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
-        config[HYPEROPT]["sampler"]["scheduler"] = SCHEDULER
+        config[HYPEROPT]["executor"]["scheduler"] = SCHEDULER
 
     merged_config = merge_with_defaults(config)
 
@@ -138,6 +138,11 @@ def test_deprecated_field_aliases():
                 },
             },
             "goal": "minimize",
+            "sampler": {"type": "grid", "num_samples": 2, "scheduler": {"type": "fifo"}},
+            "executor": {
+                "type": "grid",
+                "search_alg": "bohb",
+            },
         },
     }
 
@@ -153,6 +158,12 @@ def test_deprecated_field_aliases():
     hparams = merged_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
     assert "trainer.learning_rate" in hparams
+    
+    assert "sampler" not in merged_config[HYPEROPT]
+
+    assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
+    assert "num_samples" in merged_config[HYPEROPT]["executor"]
+    assert "scheduler" in merged_config[HYPEROPT]["executor"]
 
 
 def test_default_model_type():

@@ -481,7 +481,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             validate_range(default)
             return {
                 "type": "array",
-                "prefixItems": [
+                "items": [
                     {
                         "type": "number",
                         "minimum": min,
