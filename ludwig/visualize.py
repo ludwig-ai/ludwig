@@ -69,8 +69,8 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
             # non-standard boolean representation
             ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx)
         else:
-            # If the values in column would typically be inferred as boolean dtype, cast (strings) as booleans.
-            # This preserves the behavior of this feature before #2058.:
+            # If the values in column could have been inferred as boolean dtype, cast (strings) as booleans.
+            # This preserves the behavior of this feature before #2058.
             if str_column_is_bool(ground_truth):
                 ground_truth = _vectorize_ground_truth(
                     ground_truth, {"false": False, "False": False, "true": True, "True": True}, ground_truth_apply_idx
@@ -984,6 +984,8 @@ def binary_threshold_vs_metric_cli(
 
     :return None:
     """
+    print("inside binary_threshold_vs_metric_cli")
+    print(ground_truth)
 
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)

@@ -158,8 +158,8 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 f"found: {distinct_values.values.tolist()}"
             )
 
-        # If the values in column would typically be inferred as boolean dtype, output predictions as booleans.
-        # This preserves the behavior of this feature before #2058.:
+        # If the values in column could have been inferred as boolean dtype, output predictions as booleans.
+        # This preserves the behavior of this feature before #2058.
         if strings_utils.str_column_is_bool(column, backend=backend):
             return {}
 
