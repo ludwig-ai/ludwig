@@ -8,7 +8,7 @@ from ludwig.constants import MODEL_TYPE, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
-@pytest.fixture(params=["local"], scope="module")
+@pytest.fixture(params=["local", "ray"], scope="module")
 def backend_config(request):
     backend_type = request.param
     if backend_type == "local":
@@ -93,7 +93,9 @@ def test_gbm_binary(tmpdir, backend_config):
     preds, _ = model.predict(dataset=dataset_filename, output_directory=output_directory)
 
     prob_col = preds[output_feature["name"] + "_probabilities"]
-    assert len(prob_col[0]) == 2
+    if backend_config["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
@@ -129,7 +131,9 @@ def test_gbm_category(tmpdir, backend_config):
     preds, _ = model.predict(dataset=dataset_filename, output_directory=output_directory)
 
     prob_col = preds[output_feature["name"] + "_probabilities"]
-    assert len(prob_col[0]) == (vocab_size + 1)
+    if backend_config["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == (vocab_size + 1)
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
@@ -171,4 +175,6 @@ def test_gbm_number(tmpdir, backend_config):
 
     # Then the predictions should be included in the output
     pred_col = preds[output_feature["name"] + "_predictions"]
+    if backend_config["type"] == "ray":
+        pred_col = pred_col.compute()
     assert pred_col.dtype == float
