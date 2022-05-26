@@ -156,6 +156,8 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
+    # NOTE: we read all XSV columns in as dtype=object, bypassing all type inference. This is to avoid silent issues
+    # related to incorrect type inference (e.g. NaNs in bool columns). Convert data to correct types after reading in.
     kwargs = dict(sep=separator, header=header, skiprows=skiprows, dtype=object)
 
     if nrows is not None:
