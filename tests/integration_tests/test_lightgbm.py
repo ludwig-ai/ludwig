@@ -1,11 +1,10 @@
 import os
-import shutil
-import tempfile
 
 import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
+from ludwig.constants import MODEL_TYPE, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
@@ -23,86 +22,75 @@ def backend_config(request):
         }
 
 
-# TODO: parametrize to include ray backend
 def test_gbm_output_not_supported(tmpdir, backend_config):
     """Test that an error is raised when the output feature is not supported by the model."""
-    with tempfile.TemporaryDirectory() as outdir:
-        input_features = [number_feature(), category_feature(reduce_output="sum")]
-        output_features = [text_feature()]
+    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    output_features = [text_feature()]
 
-        csv_filename = os.path.join(tmpdir, "training.csv")
-        data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    dataset_filename = generate_data(input_features, output_features, csv_filename)
 
-        config = {"model_type": "gbm", "input_features": input_features, "output_features": output_features}
+    config = {MODEL_TYPE: "gbm", "input_features": input_features, "output_features": output_features}
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Output feature must be numerical, categorical, or binary"):
-            model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=outdir)
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
+    with pytest.raises(ValueError, match="Output feature must be numerical, categorical, or binary"):
+        model.train(dataset=dataset_filename, output_directory=tmpdir)
 
 
 def test_gbm_multiple_outputs(tmpdir, backend_config):
     """Test that an error is raised when the model is trained with multiple outputs."""
-    with tempfile.TemporaryDirectory() as outdir:
-        input_features = [number_feature(), category_feature(reduce_output="sum")]
-        output_features = [
-            category_feature(vocab_size=3),
-            binary_feature(),
-            category_feature(vocab_size=3),
-        ]
+    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    output_features = [
+        category_feature(vocab_size=3),
+        binary_feature(),
+        category_feature(vocab_size=3),
+    ]
 
-        csv_filename = os.path.join(tmpdir, "training.csv")
-        data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    dataset_filename = generate_data(input_features, output_features, csv_filename)
 
-        config = {
-            "model_type": "gbm",
-            "input_features": input_features,
-            "output_features": output_features,
-            "trainer": {"num_boost_round": 1},
-        }
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"num_boost_round": 2},
+    }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Only single task currently supported"):
-            model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=outdir)
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
+    with pytest.raises(ValueError, match="Only single task currently supported"):
+        model.train(dataset=dataset_filename, output_directory=tmpdir)
 
 
 def test_gbm_binary(tmpdir, backend_config):
     """Test that the GBM model can train and predict a binary variable (binary classification)."""
-    with tempfile.TemporaryDirectory() as outdir:
-        input_features = [number_feature(), category_feature(reduce_output="sum")]
-        output_feature = binary_feature()
-        output_features = [output_feature]
+    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    output_feature = binary_feature()
+    output_features = [output_feature]
 
-        csv_filename = os.path.join(tmpdir, "training.csv")
-        data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    dataset_filename = generate_data(input_features, output_features, csv_filename)
 
-        config = {
-            "model_type": "gbm",
-            "input_features": input_features,
-            "output_features": output_features,
-            "trainer": {"num_boost_round": 1},
-        }
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"num_boost_round": 2},
+    }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
-        _, _, output_directory = model.train(
-            training_set=data_csv,
-            validation_set=val_csv,
-            test_set=test_csv,
-            output_directory=outdir,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            skip_save_log=True,
-        )
-        preds, _ = model.predict(dataset=test_csv, output_directory=output_directory)
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
+    _, _, output_directory = model.train(
+        dataset=dataset_filename,
+        output_directory=tmpdir,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_log=True,
+    )
+    model.load(os.path.join(tmpdir, "api_experiment_run", "model"))
+    preds, _ = model.predict(dataset=dataset_filename, output_directory=output_directory)
 
     prob_col = preds[output_feature["name"] + "_probabilities"]
     assert len(prob_col[0]) == 2
@@ -111,38 +99,34 @@ def test_gbm_binary(tmpdir, backend_config):
 
 def test_gbm_category(tmpdir, backend_config):
     """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
-    with tempfile.TemporaryDirectory() as outdir:
-        input_features = [number_feature(), category_feature(reduce_output="sum")]
-        vocab_size = 3
-        output_feature = category_feature(vocab_size=vocab_size)
-        output_features = [output_feature]
+    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    vocab_size = 3
+    output_feature = category_feature(vocab_size=vocab_size)
+    output_features = [output_feature]
 
-        csv_filename = os.path.join(tmpdir, "training.csv")
-        data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    dataset_filename = generate_data(input_features, output_features, csv_filename)
 
-        config = {
-            "model_type": "gbm",
-            "input_features": input_features,
-            "output_features": output_features,
-            "trainer": {"num_boost_round": 1},
-        }
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"num_boost_round": 2},
+    }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
 
-        _, _, output_directory = model.train(
-            training_set=data_csv,
-            validation_set=val_csv,
-            test_set=test_csv,
-            output_directory=outdir,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            skip_save_log=True,
-        )
-        preds, _ = model.predict(dataset=test_csv, output_directory=output_directory)
+    _, _, output_directory = model.train(
+        dataset=dataset_filename,
+        output_directory=tmpdir,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_log=True,
+    )
+    model.load(os.path.join(tmpdir, "api_experiment_run", "model"))
+    preds, _ = model.predict(dataset=dataset_filename, output_directory=output_directory)
 
     prob_col = preds[output_feature["name"] + "_probabilities"]
     assert len(prob_col[0]) == (vocab_size + 1)
@@ -151,37 +135,40 @@ def test_gbm_category(tmpdir, backend_config):
 
 def test_gbm_number(tmpdir, backend_config):
     """Test that the GBM model can train and predict a numerical output (regression)."""
-    with tempfile.TemporaryDirectory() as outdir:
-        input_features = [number_feature(), category_feature(reduce_output="sum")]
-        output_feature = number_feature()
-        output_features = [output_feature]
+    # Given a dataset with a single input feature and a single output feature,
+    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    output_feature = number_feature()
+    output_features = [output_feature]
 
-        csv_filename = os.path.join(tmpdir, "training.csv")
-        data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    dataset_filename = generate_data(input_features, output_features, csv_filename)
 
-        config = {
-            "model_type": "gbm",
-            "input_features": input_features,
-            "output_features": output_features,
-            "trainer": {"num_boost_round": 1},
-        }
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"num_boost_round": 2},
+    }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+    # When I train a model on the dataset, load the model from the output directory, and
+    # predict on the dataset
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
 
-        _, _, output_directory = model.train(
-            training_set=data_csv,
-            validation_set=val_csv,
-            test_set=test_csv,
-            output_directory=outdir,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            skip_save_log=True,
-        )
-        preds, _ = model.predict(dataset=test_csv, output_directory=output_directory)
+    model.train(
+        dataset=dataset_filename,
+        output_directory=tmpdir,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_log=True,
+    )
+    model.load(os.path.join(tmpdir, "api_experiment_run", "model"))
+    preds, _ = model.predict(
+        dataset=dataset_filename,
+        output_directory=os.path.join(tmpdir, "predictions"),
+    )
 
+    # Then the predictions should be included in the output
     pred_col = preds[output_feature["name"] + "_predictions"]
     assert pred_col.dtype == float

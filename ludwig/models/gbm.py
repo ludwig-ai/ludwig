@@ -1,12 +1,15 @@
 import copy
 from typing import Any, Dict, List, Tuple, Union
 
+import lightgbm as lgb
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torchmetrics
+from hummingbird.ml import convert
 
-from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.abstractmodel import AbstractModel
@@ -41,7 +44,24 @@ class GBM(AbstractModel):
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
-        self.compiled_model = None
+        self._init_state_dict()
+
+    def _init_state_dict(self):
+        """Creates a dummy model to initialize this module's state dict."""
+        output_feature_name = self.output_features.keys()[0]
+        output_feature = self.output_features[output_feature_name]
+        if output_feature.type() == CATEGORY:
+            output_params = {"objective": "multiclass", "num_class": output_feature.num_classes}
+        elif output_feature.type() == BINARY:
+            output_params = {"objective": "binary"}
+        elif output_feature.type() == NUMBER:
+            output_params = {"objective": "regression"}
+        else:
+            raise ValueError(f"Output feature must be numerical, categorical, or binary, found: {output_feature.type}")
+
+        df = pd.DataFrame({"label": 0.0, **{str(i): [0.0] for i in range(len(self.input_features))}})
+        gbm = lgb.train(params={"verbosity": -1, **output_params}, train_set=lgb.Dataset(df), num_boost_round=1)
+        self.compile(gbm)
 
     @classmethod
     def build_outputs(cls, output_features_def: List[Dict[str, Any]], input_size: int) -> Dict[str, OutputFeature]:
@@ -61,8 +81,23 @@ class GBM(AbstractModel):
 
         return output_features
 
-    def set_compiled_model(self, model: nn.Module):
-        self.compiled_model = model
+    def compile(self, gbm: lgb.Booster):
+        """Convert the LightGBM model to a PyTorch model and store internally."""
+        output_feature_name = self.output_features.keys()[0]
+        output_feature = self.output_features[output_feature_name]
+
+        # https://github.com/microsoft/LightGBM/issues/1942#issuecomment-453975607
+        gbm_sklearn_cls = lgb.LGBMRegressor if output_feature.type() == NUMBER else lgb.LGBMClassifier
+        gbm_sklearn = gbm_sklearn_cls(feature_name=list(self.input_features.keys()))  # , **params)
+        gbm_sklearn._Booster = gbm
+        gbm_sklearn.fitted_ = True
+        gbm_sklearn._n_features = len(self.input_features)
+        if isinstance(gbm_sklearn, lgb.LGBMClassifier):
+            gbm_sklearn._n_classes = output_feature.num_classes if output_feature.type() == CATEGORY else 2
+
+        hb_model = convert(gbm_sklearn, "torch", extra_config={"tree_implementation": "gemm"})
+
+        self.compiled_model = hb_model.model
 
     def forward(
         self,

@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 import lightgbm as lgb
 import lightgbm_ray as lgb_ray
 import torch
-from hummingbird.ml import convert
 from lightgbm_ray.tune import _TuneLGBMRank0Mixin
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
@@ -23,18 +22,11 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker
 
 logger = logging.getLogger(__name__)
-
-
-def convert_to_pytorch(gbm: lgb.Booster, tree_module: GBM) -> GBM:
-    """Convert a LightGBM model to a PyTorch model and return correspondig GBM."""
-    hb_model = convert(gbm, "torch")
-    model = hb_model.model
-    tree_module.set_compiled_model(model)
-    return tree_module
 
 
 def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
@@ -59,7 +51,7 @@ class LightGBMTrainer(BaseTrainer):
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         callbacks: List = None,
-        random_seed: float = ...,
+        random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
         **kwargs,
@@ -328,6 +320,41 @@ class LightGBMTrainer(BaseTrainer):
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
+    def _train(
+        self,
+        params: Dict[str, Any],
+        lgb_train: lgb.Dataset,
+        eval_sets: List[lgb.Dataset],
+        eval_names: List[str],
+    ) -> lgb.Booster:
+        """Trains a LightGBM model.
+
+        Args:
+            params: parameters for LightGBM
+            lgb_train: LightGBM dataset for training
+            eval_sets: LightGBM datasets for evaluation
+            eval_names: names of the evaluation datasets
+
+        Returns:
+            LightGBM Booster model
+        """
+        gbm = lgb.train(
+            params,
+            lgb_train,
+            num_boost_round=self.num_boost_round,
+            valid_sets=eval_sets,
+            valid_names=eval_names,
+            feature_name=list(self.model.input_features.keys()),
+            # NOTE: hummingbird does not support categorical features
+            # categorical_feature=categorical_features,
+            callbacks=[
+                lgb.early_stopping(stopping_rounds=self.early_stop),
+                lgb.log_evaluation(),
+            ],
+        )
+
+        return gbm
+
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         # TODO: construct new datasets by running encoders (for text, image)
 
@@ -335,15 +362,9 @@ class LightGBMTrainer(BaseTrainer):
         if len(self.model.output_features) > 1:
             raise ValueError("Only single task currently supported")
 
-        output_params, params = self._construct_lgb_params()
+        params = self._construct_lgb_params()
 
         lgb_train, eval_sets, eval_names = self._construct_lgb_datasets(training_set, validation_set)
-
-        # categorical_features = [
-        #     i
-        #     for i, feature in enumerate(self.model.input_features.values())
-        #     if feature.type() == CATEGORY or feature.type() == BINARY
-        # ]
 
         # epoch init
         start_time = time.time()
@@ -353,22 +374,8 @@ class LightGBMTrainer(BaseTrainer):
 
         self.callback(lambda c: c.on_epoch_start(self, self.progress_tracker, save_path))
 
-        eval_results = dict()
-        gbm = lgb.train(
-            params,
-            lgb_train,
-            num_boost_round=self.num_boost_round,
-            valid_sets=eval_sets,
-            valid_names=eval_names,
-            feature_name=list(self.model.input_features.keys()),
-            evals_result=eval_results,
-            # NOTE: hummingbird does not support categorical features
-            # categorical_feature=categorical_features,
-            callbacks=[
-                lgb.early_stopping(stopping_rounds=self.early_stop),
-                lgb.log_evaluation(),
-            ],
-        )
+        gbm = self._train(params, lgb_train, eval_sets, eval_names)
+
         # ================ Post Training Epoch ================
         self.progress_tracker.steps = gbm.current_iteration()
         self.progress_tracker.last_improvement_steps = gbm.best_iteration
@@ -384,14 +391,7 @@ class LightGBMTrainer(BaseTrainer):
                 self.progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
         # convert to pytorch for inference, fine tuning
-        gbm_sklearn_cls = lgb.LGBMRegressor if output_params["objective"] == "regression" else lgb.LGBMClassifier
-        gbm_sklearn = gbm_sklearn_cls(feature_name=list(self.model.input_features.keys()), **params)
-        gbm_sklearn._Booster = gbm
-        gbm_sklearn.fitted_ = True
-        gbm_sklearn._n_features = len(self.model.input_features)
-        if isinstance(gbm_sklearn, lgb.LGBMClassifier):
-            gbm_sklearn._n_classes = output_params["num_class"] if output_params["objective"] == "multiclass" else 2
-        self.model = convert_to_pytorch(gbm_sklearn, self.model)
+        self.model.compile(gbm)
         self.model = self.model.to(self.device)
 
         # evaluate
@@ -516,7 +516,7 @@ class LightGBMTrainer(BaseTrainer):
             **output_params,
         }
 
-        return output_params, params
+        return params
 
     def _construct_lgb_datasets(self, training_set, validation_set) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
         X_train = training_set.to_df(self.model.input_features.values())
@@ -588,7 +588,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         callbacks: List = None,
-        random_seed: float = ...,
+        random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
         trainer_kwargs: Optional[Dict] = None,
@@ -610,40 +610,31 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
         self.ray_kwargs = trainer_kwargs or {}
 
-    def train(
+    def _train(
         self,
-        training_set: "RayDataset",  # noqa: F821
-        validation_set: Optional["RayDataset"] = None,  # noqa: F821
-        test_set: Optional["RayDataset"] = None,  # noqa: F821
-        save_path="model",
-        **kwargs,
-    ):
-        # TODO: construct new datasets by running encoders (for text, image)
+        params: Dict[str, Any],
+        lgb_train: lgb_ray.RayDMatrix,
+        eval_sets: List[lgb_ray.RayDMatrix],
+        eval_names: List[str],
+    ) -> lgb.Booster:
+        """Trains a LightGBM model using ray.
 
-        # TODO: only single task currently
-        if len(self.model.output_features) > 1:
-            raise ValueError("Only single task currently supported")
+        Args:
+            params: parameters for LightGBM
+            lgb_train: RayDMatrix dataset for training
+            eval_sets: RayDMatrix datasets for evaluation
+            eval_names: names of the evaluation datasets
 
-        output_params, params = self._construct_lgb_params()
-
-        lgb_train, eval_sets, eval_names = self._construct_lgb_datasets(training_set, validation_set, test_set)
-
-        # categorical_features = [
-        #     i
-        #     for i, feature in enumerate(self.model.input_features.values())
-        #     if feature.type() == CATEGORY or feature.type() == BINARY
-        # ]
-
-        eval_results = dict()
-
+        Returns:
+            LightGBM Booster model
+        """
         gbm = lgb_ray.train(
             params,
             lgb_train,
-            num_boost_round=500,  # TODO: add as config param
+            num_boost_round=self.num_boost_round,
             valid_sets=eval_sets,
             valid_names=eval_names,
-            feature_name=["index"] + list(self.model.input_features.keys()) + ["split"],
-            evals_result=eval_results,
+            feature_name=list(self.model.input_features.keys()),
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
             callbacks=[
@@ -653,25 +644,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             ray_params=lgb_ray.RayParams(**self.ray_kwargs),
         )
 
-        self._update_progress(
-            output_params,
-            eval_results,
-            gbm.booster_,
-            update_valid=(validation_set is not None),
-            update_test=(test_set is not None),
-        )
-
-        # convert to pytorch for inference, fine tuning
-        self.model = convert_to_pytorch(gbm.booster_, self.model)
-
-        self._save(save_path)
-
-        return (
-            self.model,
-            self.progress_tracker.train_metrics,
-            self.progress_tracker.validation_metrics,
-            self.progress_tracker.test_metrics,
-        )
+        return gbm.booster_
 
     def _construct_lgb_datasets(
         self,
