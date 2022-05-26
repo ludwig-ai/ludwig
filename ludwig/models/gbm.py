@@ -18,7 +18,7 @@ from ludwig.utils import output_feature_utils
 
 class GBM(BaseModel):
     @staticmethod
-    def type():
+    def type() -> str:
         return MODEL_GBM
 
     def __init__(self, input_features, output_features, random_seed=None, **_kwargs):

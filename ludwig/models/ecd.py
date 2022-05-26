@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class ECD(BaseModel):
     @staticmethod
-    def type():
+    def type() -> str:
         return MODEL_ECD
 
     def __init__(

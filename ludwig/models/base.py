@@ -17,6 +17,11 @@ from ludwig.utils.torch_utils import LudwigModule, reg_loss
 
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
+    @staticmethod
+    @abstractmethod
+    def type() -> str:
+        """Returns the model type."""
+
     def __init__(self, random_seed=None):
         self._random_seed = random_seed
 
@@ -82,14 +87,15 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return output_feature_obj
 
     def get_model_inputs(self):
+        """Returns a dict of feature name -> sample model input."""
         inputs = {
             input_feature_name: input_feature.create_sample_input()
             for input_feature_name, input_feature in self.input_features.items()
         }
         return inputs
 
-    # Return total number of parameters in model
     def get_model_size(self) -> int:
+        """Returns total number of parameters in model."""
         model_tensors = self.collect_weights()
         total_size = 0
         for tnsr in model_tensors:
