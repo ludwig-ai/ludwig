@@ -28,6 +28,7 @@ torchmetrics
 torchinfo
 filelock
 psutil
+protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
 # new data format support
 xlwt            # excel
