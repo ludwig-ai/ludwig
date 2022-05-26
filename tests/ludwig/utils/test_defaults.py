@@ -158,7 +158,7 @@ def test_deprecated_field_aliases():
     hparams = merged_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
     assert "trainer.learning_rate" in hparams
-    
+
     assert "sampler" not in merged_config[HYPEROPT]
 
     assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
