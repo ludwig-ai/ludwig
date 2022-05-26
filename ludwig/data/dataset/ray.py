@@ -80,7 +80,12 @@ class RayDataset(Dataset):
             # set instance state so calls to __len__ will also use the fully_executed version
             self.ds = self.ds.fully_executed()
 
-        pipe = self.ds.repeat()
+        # pipe = self.ds.repeat()
+        # window_size = 59055800320  # Object store mem by 8
+        # window_size = 11811160064  # Object store mem by 40
+        window_size = 1476395008  # Object store mem by 320
+        # window_size = 184549376  # Object store mem by 2560
+        pipe = self.ds.window(bytes_per_window=window_size).repeat()
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
         return pipe
