@@ -17,6 +17,13 @@ from ludwig.utils.torch_utils import LudwigModule, reg_loss
 
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
+    """Base model for use in LudwigModule.
+
+    Implementations of this class should implement the following methods:
+    - type()
+    - forward()
+    """
+
     @staticmethod
     @abstractmethod
     def type() -> str:
@@ -103,17 +110,20 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return total_size
 
     def to_torchscript(self):
+        """Converts the model to TorchScript."""
         self.eval()
         model_inputs = self.get_model_inputs()
         # We set strict=False to enable dict inputs and outputs.
         return torch.jit.trace(self, model_inputs, strict=False)
 
     def save_torchscript(self, save_path):
+        """Saves the model as a TorchScript file."""
         traced = self.to_torchscript()
         traced.save(save_path)
 
     @property
     def input_shape(self):
+        """Returns the shape of the model's input."""
         # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
         return torch.Size([1, 1])
 
@@ -139,6 +149,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         """
 
     def predictions(self, inputs):
+        """Returns the model's predictions for the given inputs."""
         outputs = self(inputs)
         predictions = {}
         for of_name in self.output_features:
@@ -146,11 +157,13 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return predictions
 
     def evaluation_step(self, inputs, targets):
+        """Predict the inputs and update evaluation metrics."""
         predictions = self.predictions(inputs)
         self.update_metrics(targets, predictions)
         return predictions
 
     def predict_step(self, inputs):
+        """Predict the inputs."""
         return self.predictions(inputs)
 
     def train_loss(
@@ -192,6 +205,15 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return train_loss, of_train_losses
 
     def eval_loss(self, targets, predictions):
+        """Computes all evaluation losses for the model given targets and predictions.
+
+        Args:
+            targets: A dictionary of target names to target tensors.
+            predictions: A dictionary of output names to output tensors.
+
+        Returns:
+            A tuple of loss values for eval losses and additional losses.
+        """
         eval_loss = 0
         for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
@@ -205,6 +227,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return eval_loss, additional_loss
 
     def update_metrics(self, targets, predictions):
+        """Updates the model's metrics given targets and predictions."""
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
 
@@ -213,6 +236,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.eval_additional_losses_metrics.update(additional_losses)
 
     def get_metrics(self):
+        """Returns a dictionary of metrics for each output feature of the model."""
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
@@ -223,6 +247,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return all_of_metrics
 
     def reset_metrics(self):
+        """Resets the model's metrics."""
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
         self.eval_loss_metric.reset()
@@ -242,5 +267,6 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         tensor_set = set(tensor_names)
         return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
 
+    @abstractmethod
     def get_args(self):
-        return (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)
+        """Returns init arguments for constructing this model."""

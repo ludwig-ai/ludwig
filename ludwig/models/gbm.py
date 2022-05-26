@@ -158,3 +158,7 @@ class GBM(BaseModel):
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
         return output_logits
+
+    def get_args(self):
+        """Returns init arguments for constructing this model."""
+        return (self._input_features_df, self._output_features_df, self._random_seed)

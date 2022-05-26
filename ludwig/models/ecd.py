@@ -132,3 +132,7 @@ class ECD(BaseModel):
             # Save the hidden state of the output feature (for feature dependencies).
             output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
         return output_logits
+
+    def get_args(self):
+        """Returns init arguments for constructing this model."""
+        return (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)

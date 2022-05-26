@@ -7,6 +7,15 @@ ray_trainers_registry = Registry()
 
 
 def register_trainer(name: str, model_types: Union[str, List[str]], default=False):
+    """Register a trainer class that supports training the given model types.
+
+    Using default=True will make the trainer the default trainer for the model type.
+
+    Args:
+        name: The name of the trainer, as it can be used in the config.
+        model_types: The model types that the trainer supports.
+        default: Whether the trainer should be the default trainer for the model type.
+    """
     if isinstance(model_types, str):
         model_types = [model_types]
 
@@ -24,6 +33,15 @@ def register_trainer(name: str, model_types: Union[str, List[str]], default=Fals
 
 
 def register_ray_trainer(name: str, model_types: Union[str, List[str]], default=False):
+    """Register a trainer class that supports training the given model types with Ray backend.
+
+    Using default=True will make the trainer the default trainer for the model type.
+
+    Args:
+        name: The name of the trainer, as it can be used in the config.
+        model_types: The model types that the trainer supports.
+        default: Whether the trainer should be the default trainer for the model type.
+    """
     if isinstance(model_types, str):
         model_types = [model_types]
 
