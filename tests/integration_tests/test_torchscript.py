@@ -52,43 +52,54 @@ from tests.integration_tests.utils import (
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("should_load_model", [True, False])
-def test_torchscript(csv_filename, should_load_model):
+@pytest.mark.parametrize("model_type", ["ecd", "gbm"])
+def test_torchscript(csv_filename, should_load_model, model_type):
     #######
     # Setup
     #######
     with tempfile.TemporaryDirectory() as tmpdir:
         dir_path = tmpdir
         data_csv_path = os.path.join(tmpdir, csv_filename)
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
         # Single sequence input, single category output
         input_features = [
             binary_feature(),
             number_feature(),
             category_feature(vocab_size=3),
-            sequence_feature(vocab_size=3),
-            text_feature(vocab_size=3),
-            vector_feature(),
-            image_feature(image_dest_folder),
-            audio_feature(audio_dest_folder),
-            timeseries_feature(),
-            date_feature(),
-            date_feature(),
-            h3_feature(),
-            set_feature(vocab_size=3),
-            bag_feature(vocab_size=3),
         ]
+        if model_type == "ecd":
+            image_dest_folder = os.path.join(tmpdir, "generated_images")
+            audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+            input_features.extend(
+                [
+                    sequence_feature(vocab_size=3),
+                    text_feature(vocab_size=3),
+                    vector_feature(),
+                    image_feature(image_dest_folder),
+                    audio_feature(audio_dest_folder),
+                    timeseries_feature(),
+                    date_feature(),
+                    date_feature(),
+                    h3_feature(),
+                    set_feature(vocab_size=3),
+                    bag_feature(vocab_size=3),
+                ]
+            )
 
         output_features = [
             category_feature(vocab_size=3),
-            binary_feature(),
-            number_feature(),
-            set_feature(vocab_size=3),
-            vector_feature(),
-            sequence_feature(vocab_size=3),
-            text_feature(vocab_size=3),
         ]
+        if model_type == "ecd":
+            output_features.extend(
+                [
+                    binary_feature(),
+                    number_feature(),
+                    set_feature(vocab_size=3),
+                    vector_feature(),
+                    sequence_feature(vocab_size=3),
+                    text_feature(vocab_size=3),
+                ]
+            )
 
         predictions_column_name = "{}_predictions".format(output_features[0]["name"])
 
@@ -99,7 +110,15 @@ def test_torchscript(csv_filename, should_load_model):
         # Train model
         #############
         backend = LocalTestBackend()
-        config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+        config = {
+            "model_type": model_type,
+            "input_features": input_features,
+            "output_features": output_features,
+        }
+        if model_type == "ecd":
+            config[TRAINER] = {"epochs": 2}
+        else:
+            config[TRAINER] = {"num_boost_round": 2}
         ludwig_model = LudwigModel(config, backend=backend)
         ludwig_model.train(
             dataset=data_csv_path,
