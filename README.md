@@ -27,7 +27,7 @@ inputs and outputs, and their respective data types. Ludwig will then assemble a
 on the configuration file, determine how inputs and outputs are preprocessed, encoded, decoded and which metrics and
 loss criterion to use.
 
-![](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos.gif)
+![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
 
 Writing a configuration file for Ludwig is easy. The configuration file flexibility allows for full control of every
 aspect of the end-to-end pipeline. This includes exploring state-of-the-art model architectures, running a
