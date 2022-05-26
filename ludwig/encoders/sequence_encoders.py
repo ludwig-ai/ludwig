@@ -1153,7 +1153,6 @@ class StackedRNN(Encoder):
         recurrent_activation="sigmoid",
         unit_forget_bias=True,
         recurrent_initializer="orthogonal",
-        # recurrent_constraint=None,
         dropout=0.0,
         recurrent_dropout=0.0,
         fc_layers=None,
@@ -1265,6 +1264,8 @@ class StackedRNN(Encoder):
         :param dropout: determines if there should be a dropout layer before
                returning the encoder output.
         :type dropout: Boolean
+        :param recurrent_dropout: Dropout rate for the recurrent stack.
+        :type recurrent_dropout: float
         :param initializer: the initializer to use. If `None` it uses
                `xavier_uniform`. Options are: `constant`, `identity`,
                `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,

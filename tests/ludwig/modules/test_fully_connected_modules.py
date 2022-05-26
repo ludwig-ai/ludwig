@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+import numpy as np
 import pytest
 import torch
 
@@ -33,7 +34,7 @@ def test_fc_layer(
     [
         (2, None, 3),
         (2, [{"output_size": 4}, {"output_size": 8}], None),
-        (None, [{"input_size": 2, "output_size": 4}, {"output_size": 8}], None),
+        (2, [{"input_size": 2, "output_size": 4}, {"output_size": 8}], None),
     ],
 )
 def test_fc_stack(first_layer_input_size: Optional[int], layers: Optional[List], num_layers: Optional[int]):
@@ -43,11 +44,26 @@ def test_fc_stack(first_layer_input_size: Optional[int], layers: Optional[List],
     assert output_tensor.shape[1:] == fc_stack.output_shape
 
 
-def test_fc_stack_passthrough():
+def test_fc_stack_input_size_mismatch_fails():
+    first_layer_input_size = 10
+    layers = [{"input_size": 2, "output_size": 4}, {"output_size": 8}]
+
+    fc_stack = FCStack(
+        first_layer_input_size=first_layer_input_size,
+        layers=layers,
+    ).to(DEVICE)
+    input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
+
+    with pytest.raises(RuntimeError):
+        fc_stack(input_tensor)
+
+
+def test_fc_stack_no_layers_behaves_like_passthrough():
     first_layer_input_size = 10
     layers = None
     num_layers = 0
     output_size = 15
+
     fc_stack = FCStack(
         first_layer_input_size=first_layer_input_size,
         layers=layers,
@@ -55,8 +71,8 @@ def test_fc_stack_passthrough():
         default_output_size=output_size,
     ).to(DEVICE)
     input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
-
     output_tensor = fc_stack(input_tensor)
 
     assert list(output_tensor.shape[1:]) == [first_layer_input_size]
     assert output_tensor.shape[1:] == fc_stack.output_shape
+    assert np.all(np.isclose(input_tensor, output_tensor))
