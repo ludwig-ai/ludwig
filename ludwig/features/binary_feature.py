@@ -146,9 +146,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        # todo maybe move code from add_feature_data here
-        #  + figure out what NaN is in a bool column
-        return column
+        return column.astype(str)
 
     @staticmethod
     def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:

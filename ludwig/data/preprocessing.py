@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -98,8 +98,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers, set_random_seed
-from ludwig.utils.type_utils import Column
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)
 
@@ -1095,7 +1094,7 @@ def build_dataset(
 
     logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
-        dataset_cols, feature_configs, global_preprocessing_parameters, backend
+        dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
     )
 
     # Happens after preprocessing parameters are built so we can use precomputed fill values.
@@ -1197,13 +1196,21 @@ def merge_preprocessing(
 
 
 def build_preprocessing_parameters(
-    dataset_cols: Dict[str, Column],
+    dataset_cols: Dict[str, Series],
     feature_configs: List[Dict[str, Any]],
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     feature_name_to_preprocessing_parameters = {}
     for feature_config in feature_configs:
+        feature_name = feature_config[NAME]
+
+        # if metadata already exists, we can use it to get preprocessing parameters
+        if metadata is not None and feature_name in metadata:
+            feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
+            continue
+
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # deal with encoders that have fixed preprocessing
@@ -1221,7 +1228,7 @@ def build_preprocessing_parameters(
         if fill_value is not None:
             preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
 
-        feature_name_to_preprocessing_parameters[feature_config[NAME]] = preprocessing_parameters
+        feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
 
     return feature_name_to_preprocessing_parameters
 
@@ -1229,22 +1236,23 @@ def build_preprocessing_parameters(
 def build_metadata(
     metadata: Dict[str, Any],
     feature_name_to_preprocessing_parameters: Dict[str, Any],
-    dataset_cols: Dict[str, Column],
+    dataset_cols: Dict[str, Series],
     feature_configs: List[Dict[str, Any]],
     backend: Backend,
 ) -> Dict[str, Any]:
     for feature_config in feature_configs:
-        if feature_config[NAME] in metadata:
+        feature_name = feature_config[NAME]
+        if feature_name in metadata:
             continue
 
-        preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
+        preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_name]
 
         column = dataset_cols[feature_config[COLUMN]]
-        metadata[feature_config[NAME]] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
+        metadata[feature_name] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
             column, preprocessing_parameters, backend
         )
 
-        metadata[feature_config[NAME]][PREPROCESSING] = preprocessing_parameters
+        metadata[feature_name][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
