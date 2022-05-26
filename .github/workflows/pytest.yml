@@ -94,7 +94,6 @@ jobs:
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
           pip install ray==$RAY_VERSION
-          pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
           torch_expected=$(python -c "import torch; print(torch.__version__)")
           ray_expected=$(python -c "import ray; print(ray.__version__)")
