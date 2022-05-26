@@ -93,7 +93,7 @@ class BagFeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = BagFeatureMixin.feature_data(
-            input_df[feature_config[COLUMN]].astype(str),
+            input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
             preprocessing_parameters,
             backend,

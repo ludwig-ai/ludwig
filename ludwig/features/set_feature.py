@@ -148,7 +148,6 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
@@ -181,7 +180,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = SetFeatureMixin.feature_data(
-            input_df[feature_config[COLUMN]].astype(str),
+            input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
             preprocessing_parameters,
             backend,

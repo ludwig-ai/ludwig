@@ -125,7 +125,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        column = column.astype(str)
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -149,7 +148,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
-            input_df[feature_config[COLUMN]].astype(str),
+            input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
         )
 
