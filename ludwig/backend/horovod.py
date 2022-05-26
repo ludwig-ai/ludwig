@@ -19,7 +19,7 @@ import time
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.models.abstractmodel import AbstractModel
+from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
@@ -42,7 +42,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
             raise ValueError("Horovod backend does not support GBM models.")
         return Trainer(horovod=self._horovod, **kwargs)
 
-    def create_predictor(self, model: AbstractModel, **kwargs):
+    def create_predictor(self, model: BaseModel, **kwargs):
         return Predictor(model, horovod=self._horovod, **kwargs)
 
     def sync_model(self, model):

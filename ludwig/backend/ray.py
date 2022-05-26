@@ -34,7 +34,7 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
-from ludwig.models.abstractmodel import AbstractModel
+from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.schema.trainer import TrainerConfig
@@ -547,7 +547,7 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, model: AbstractModel, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+    def __init__(self, model: BaseModel, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
@@ -723,7 +723,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         initialize_pytorch(gpus=-1)
         self._pytorch_kwargs = kwargs
 
-    def create_trainer(self, model: AbstractModel, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
             trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
@@ -747,7 +747,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
-    def create_predictor(self, model: AbstractModel, **kwargs):
+    def create_predictor(self, model: BaseModel, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         return RayPredictor(
             model,

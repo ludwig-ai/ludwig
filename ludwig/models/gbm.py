@@ -12,11 +12,11 @@ from hummingbird.ml import convert
 from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.models.abstractmodel import AbstractModel
+from ludwig.models.base import BaseModel
 from ludwig.utils import output_feature_utils
 
 
-class GBM(AbstractModel):
+class GBM(BaseModel):
     @staticmethod
     def type():
         return MODEL_GBM

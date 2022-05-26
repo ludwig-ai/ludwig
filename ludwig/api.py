@@ -64,7 +64,7 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
-from ludwig.models.abstractmodel import AbstractModel
+from ludwig.models.base import BaseModel
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
@@ -1489,7 +1489,7 @@ class LudwigModel:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config: dict, random_seed: int = default_random_seed) -> AbstractModel:
+    def create_model(config: dict, random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates AbstractModel object.
 
         # Inputs

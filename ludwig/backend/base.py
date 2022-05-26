@@ -22,7 +22,7 @@ from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.models.abstractmodel import AbstractModel
+from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import TrainerConfig
 from ludwig.trainers.registry import trainers_registry
 from ludwig.utils.misc_utils import get_from_registry
@@ -111,7 +111,7 @@ class LocalTrainingMixin:
 
     def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
         config: TrainerConfig = kwargs["config"]
-        model: AbstractModel = kwargs["model"]
+        model: BaseModel = kwargs["model"]
 
         trainers_for_model = get_from_registry(model.type(), trainers_registry)
 
@@ -119,7 +119,7 @@ class LocalTrainingMixin:
 
         return trainer_cls(**kwargs)
 
-    def create_predictor(self, model: AbstractModel, **kwargs):
+    def create_predictor(self, model: BaseModel, **kwargs):
         from ludwig.models.predictor import Predictor
 
         return Predictor(model, **kwargs)

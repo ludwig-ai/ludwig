@@ -9,7 +9,7 @@ import torchmetrics
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD, TYPE
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.models.abstractmodel import AbstractModel
+from ludwig.models.base import BaseModel
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
@@ -17,7 +17,7 @@ from ludwig.utils.data_utils import clear_data_cache
 logger = logging.getLogger(__name__)
 
 
-class ECD(AbstractModel):
+class ECD(BaseModel):
     @staticmethod
     def type():
         return MODEL_ECD

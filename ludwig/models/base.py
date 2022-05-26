@@ -18,7 +18,7 @@ from ludwig.utils.torch_utils import LudwigModule, reg_loss
 logger = logging.getLogger(__name__)
 
 
-class AbstractModel(LudwigModule, metaclass=ABCMeta):
+class BaseModel(LudwigModule, metaclass=ABCMeta):
     def __init__(self, random_seed=None):
         self._random_seed = random_seed
 
