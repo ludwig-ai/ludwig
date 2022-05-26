@@ -1202,12 +1202,15 @@ def build_preprocessing_parameters(
     backend: Backend,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    if metadata is None:
+        metadata = {}
+
     feature_name_to_preprocessing_parameters = {}
     for feature_config in feature_configs:
         feature_name = feature_config[NAME]
 
         # if metadata already exists, we can use it to get preprocessing parameters
-        if metadata is not None and feature_name in metadata:
+        if feature_name in metadata:
             feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
             continue
 
