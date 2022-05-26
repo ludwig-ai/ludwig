@@ -15,8 +15,6 @@ from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
 
-logger = logging.getLogger(__name__)
-
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
     def __init__(self, random_seed=None):
@@ -43,7 +41,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
-        logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
+        logging.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
 
         encoder_obj = None
         if input_feature_def.get(TIED, None) is not None:
@@ -76,7 +74,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
-        logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
+        logging.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
 
         output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
         output_feature_obj = output_feature_class(output_feature_def, output_features)

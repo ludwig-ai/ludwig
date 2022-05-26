@@ -26,8 +26,6 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.trainer_utils import get_new_progress_tracker
 
-logger = logging.getLogger(__name__)
-
 
 def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
     """Helper for iterating feature names and metric names."""
@@ -234,7 +232,7 @@ class LightGBMTrainer(BaseTrainer):
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
         if self.is_coordinator():
-            logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
+            logging.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
         # init tables
@@ -313,9 +311,9 @@ class LightGBMTrainer(BaseTrainer):
         elapsed_time = (time.time() - start_time) * 1000.0
 
         if self.is_coordinator():
-            logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
+            logging.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+                logging.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
