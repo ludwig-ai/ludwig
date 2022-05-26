@@ -146,19 +146,23 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
+        # Binary features are always read as strings. column.astype(bool) for all non-empty cells returns True.
         return column.astype(str)
 
     @staticmethod
     def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
-        if column.dtype != object:
-            return {}
-
         distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
             raise ValueError(
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
+
+        # If the values in column would typically be inferred as boolean dtype, output predictions as booleans.
+        # This preserves the behavior of this feature before #2058.
+        if [v.lower() for v in sorted(distinct_values)] == ["false", "true"]:
+            return {}
+
         if "fallback_true_label" in preprocessing_parameters:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
