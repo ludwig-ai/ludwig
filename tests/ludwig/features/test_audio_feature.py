@@ -9,6 +9,7 @@ import torch
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BACKFILL, PROC_COLUMN
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
+from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 
 BATCH_SIZE = 2
@@ -17,7 +18,7 @@ AUDIO_W_SIZE = 16
 
 CHARS = ascii_uppercase + ascii_lowercase + digits
 VOCAB = ["".join(choice(CHARS) for _ in range(2)) for _ in range(256)]
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.mark.parametrize("encoder", ["rnn", "stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn"])

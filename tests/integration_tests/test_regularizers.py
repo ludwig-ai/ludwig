@@ -9,6 +9,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.utils.data_utils import read_csv
+from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -21,7 +22,7 @@ from tests.integration_tests.utils import (
     set_feature,
 )
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 BATCH_SIZE = 32
 RANDOM_SEED = 42
 IMAGE_DIR = tempfile.mkdtemp()
