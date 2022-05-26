@@ -87,8 +87,8 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
-from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
