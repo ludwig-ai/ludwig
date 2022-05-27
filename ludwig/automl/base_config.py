@@ -131,7 +131,7 @@ def _create_default_config(
     if not isinstance(dataset, DatasetInfo):
         dataset_info = get_dataset_info(dataset)
 
-    input_and_output_feature_config = get_features_config(
+    input_and_output_feature_config, features_metadata = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
     # create set of all feature types appearing in the dataset
@@ -165,7 +165,7 @@ def _create_default_config(
         combiner_config = load_yaml(default_config)
         model_configs[COMBINER][combiner_type] = combiner_config
 
-    return model_configs
+    return model_configs, features_metadata
 
 
 # Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
@@ -194,7 +194,9 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     fields = []
     for field in source.columns:
         dtype = source.get_dtype(field)
-        num_distinct_values, distinct_values = source.get_distinct_values(field, MAX_DISTINCT_VALUES_TO_RETURN)
+        num_distinct_values, distinct_values, distinct_values_balance = source.get_distinct_values(
+            field, MAX_DISTINCT_VALUES_TO_RETURN
+        )
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)
@@ -207,6 +209,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 dtype=dtype,
                 distinct_values=distinct_values,
                 num_distinct_values=num_distinct_values,
+                distinct_values_balance=distinct_values_balance,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
                 audio_values=audio_values,
@@ -241,7 +244,7 @@ def get_features_config(
     targets = set(targets)
 
     metadata = get_field_metadata(fields, row_count, resources, targets)
-    return get_config_from_metadata(metadata, targets)
+    return get_config_from_metadata(metadata, targets), metadata
 
 
 def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
@@ -297,6 +300,7 @@ def get_field_metadata(
                 excluded=should_exclude(idx, field, dtype, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
+                imbalance_ratio=field.distinct_values_balance,
             )
         )
 
