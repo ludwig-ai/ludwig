@@ -4,9 +4,10 @@ import pytest
 import torch
 
 from ludwig.modules.fully_connected_modules import FCLayer, FCStack
+from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.mark.parametrize("input_size", [2, 3])

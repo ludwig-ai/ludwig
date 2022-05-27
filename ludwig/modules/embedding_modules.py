@@ -21,11 +21,11 @@ from torch import nn
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
 logger = logging.getLogger(__name__)
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 def embedding_matrix(
