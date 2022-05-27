@@ -171,7 +171,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        return column.astype(object)
+        return column.astype(str)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

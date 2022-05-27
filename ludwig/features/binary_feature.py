@@ -188,8 +188,9 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     ) -> None:
         column = input_df[feature_config[COLUMN]]
 
+        column_np_dtype = np.dtype(column.dtype)
         # np.str_ is dtype of modin cols
-        if np.dtype(column.dtype) in {np.object_, np.str_}:
+        if any(column_np_dtype == np_dtype for np_dtype in {np.object_, np.str_}):
             metadata = metadata[feature_config[NAME]]
             if "str2bool" in metadata:
                 column = backend.df_engine.map_objects(column, lambda x: metadata["str2bool"][str(x)])
