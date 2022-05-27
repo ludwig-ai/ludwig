@@ -18,13 +18,9 @@ import re
 import unicodedata
 from collections import Counter
 from enum import Enum
-from typing import List, Optional, Set, TYPE_CHECKING, Union
+from typing import List, Optional, Set, Union
 
 import numpy as np
-
-# Prevents circular import errors from typing.
-if TYPE_CHECKING:
-    from ludwig.backend.base import Backend
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
@@ -93,11 +89,8 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     return v == fallback_true_label
 
 
-def str_column_is_bool(column: Series, backend: Optional["Backend"] = None) -> bool:
+def column_is_bool(column: Series) -> bool:
     """Returns whether a column could have been cast by read_csv as boolean."""
-    if backend is not None:
-        column = backend.df_engine.compute(column)
-
     distinct_values = column.drop_duplicates()
     return values_are_pandas_bools(distinct_values)
 

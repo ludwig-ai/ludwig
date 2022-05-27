@@ -45,7 +45,7 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.strings_utils import str_column_is_bool
+from ludwig.utils.strings_utils import column_is_bool
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
         else:
             # If the values in column could have been inferred as boolean dtype, cast (strings) as booleans.
             # This preserves the behavior of this feature before #2058.
-            if str_column_is_bool(ground_truth):
+            if column_is_bool(ground_truth):
                 ground_truth = _vectorize_ground_truth(
                     ground_truth, {"false": False, "False": False, "true": True, "True": True}, ground_truth_apply_idx
                 )
@@ -984,8 +984,6 @@ def binary_threshold_vs_metric_cli(
 
     :return None:
     """
-    print("inside binary_threshold_vs_metric_cli")
-    print(ground_truth)
 
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
