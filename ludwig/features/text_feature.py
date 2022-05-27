@@ -97,7 +97,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        return column.astype(str)
+        return column.astype(object)
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters, backend):
