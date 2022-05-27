@@ -13,8 +13,9 @@ from ludwig.encoders.sequence_encoders import (
     StackedRNN,
     StackedTransformer,
 )
+from ludwig.utils.torch_utils import get_torch_device
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.mark.parametrize("reduce_output", ["mean", "avg", "max", "last", "concat", "attention", None])

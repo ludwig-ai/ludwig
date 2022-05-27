@@ -38,7 +38,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 
 _ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
 import ray.train as rt  # noqa: E402
@@ -185,7 +185,7 @@ def train_fn(
             )
 
         model = ray.get(model_ref)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_torch_device()
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
@@ -228,7 +228,7 @@ def tune_batch_size_fn(
             training_set_metadata,
         )
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_torch_device()
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
@@ -261,7 +261,7 @@ def tune_learning_rate_fn(
             training_set_metadata,
         )
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_torch_device()
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
@@ -530,7 +530,7 @@ def eval_fn(
         )
 
         model = ray.get(model_ref)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_torch_device()
         model = model.to(device)
 
         predictor = RemotePredictor(model=model, horovod=hvd, **predictor_kwargs)
@@ -659,7 +659,7 @@ class RayPredictor(BasePredictor):
         class BatchInferModel:
             def __init__(self):
                 model = ray.get(model_ref)
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+                device = get_torch_device()
                 self.model = model.to(device)
 
                 self.output_columns = output_columns

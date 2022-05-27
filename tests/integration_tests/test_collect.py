@@ -22,9 +22,10 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights, print_model_summary
 from ludwig.constants import TRAINER
+from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature, spawn
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 def _prepare_data(csv_filename):
