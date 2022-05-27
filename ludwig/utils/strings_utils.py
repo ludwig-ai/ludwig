@@ -99,8 +99,12 @@ def str_column_is_bool(column: Series, backend: Optional["Backend"] = None) -> b
         column = backend.df_engine.compute(column)
 
     distinct_values = column.drop_duplicates()
-    lowercase_distinct_values_set = {v.lower() for v in sorted(distinct_values)}
-    return lowercase_distinct_values_set.issubset({"false", "true"})
+    return values_are_pandas_bools(distinct_values)
+
+
+def values_are_pandas_bools(values: List[Union[str, bool]]):
+    lowercase_values_set = {str(v).lower() for v in values}
+    return lowercase_values_set.issubset({"false", "true"})
 
 
 def are_conventional_bools(values: List[Union[str, bool]]) -> bool:

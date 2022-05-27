@@ -121,7 +121,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        return column.astype(str)
+        return column.astype(object)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
