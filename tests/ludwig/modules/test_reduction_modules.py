@@ -4,8 +4,9 @@ import pytest
 import torch
 
 from ludwig.modules import reduction_modules
+from ludwig.utils.torch_utils import get_torch_device
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.mark.parametrize("reduce_mode", ["last", "sum", "mean", "avg", "max", "concat", "attention", None])
