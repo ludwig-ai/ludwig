@@ -137,10 +137,16 @@ class ECD(LudwigModule):
         return encoder_outputs
 
     def predict_from_encoded(self, *args):
-        inputs = {}
+        # inputs = {}
+        # for k, v in zip(self.input_features.keys(), args):
+        #     inputs[k] = v
+        # encoded_outputs = self.encode(inputs)
+
+        encoded_outputs = {}
         for k, v in zip(self.input_features.keys(), args):
-            inputs[k] = v
-        encoded_outputs = self.encode(inputs)
+            encoded_outputs[k] = {"encoder_output": v}
+        print(encoded_outputs)
+
         combined_outputs = self.combine(encoded_outputs)
         outputs = self.decode(combined_outputs, None, None)
         # print("DECODED OUTPUTS", outputs)

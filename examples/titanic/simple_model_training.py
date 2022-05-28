@@ -65,19 +65,19 @@ def get_input_tensors(input_set):
     # print(dataset.get_dataset())
 
     inputs = {name: dataset.dataset[feature.proc_column] for name, feature in model.model.input_features.items()}
-    return [torch.from_numpy(t) for t in inputs.values()], inputs, {}
+    # return [torch.from_numpy(t) for t in inputs.values()], inputs, {}
 
-    # encoded_inputs = model.model.encode(inputs)
-    # # print("ENCODED_INPUTS", encoded_inputs)
+    encoded_inputs = model.model.encode(inputs)
+    # print("ENCODED_INPUTS", encoded_inputs)
 
-    # # print(encoded_inputs)
+    # print(encoded_inputs)
 
-    # data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
-    # # preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
-    # # print(preds)
+    data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
+    # preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
+    # print(preds)
 
-    # data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
-    # return data_to_predict, inputs, encoded_inputs
+    data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
+    return data_to_predict, inputs, encoded_inputs
 
 
 def getmean(t):
@@ -96,7 +96,7 @@ def getmean(t):
 
 data_to_predict, inputs, encoded_inputs = get_input_tensors(test_set)
 baseline, _, _ = get_input_tensors(base_set)
-baseline = [torch.unsqueeze(getmean(t), 0) for t in baseline]
+baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in baseline]
 # baseline[0] = torch.tensor([3], dtype=torch.int8)
 print(baseline)
 
@@ -139,15 +139,15 @@ from captum.attr import (
 from captum.attr._utils.input_layer_wrapper import ModelInputWrapper
 
 # print(data_to_predict)
-# explainer = IntegratedGradients(model_fn)
+explainer = IntegratedGradients(model_fn)
 # explainer = NoiseTunnel(explainer)
 # explainer = DeepLift(model_fn)
 # explainer = GradientShap(model_fn)
 # explainer = FeatureAblation(model_fn)
 
-layers = [layer for layer in model_fn.model.input_features.values()]
-print(layers)
-explainer = LayerIntegratedGradients(model_fn, layers, multiply_by_inputs=True)
+# layers = [layer for layer in model_fn.model.input_features.values()]
+# print(layers)
+# explainer = LayerIntegratedGradients(model_fn, layers, multiply_by_inputs=True)
 
 results = explainer.attribute(
     tuple(data_to_predict),
