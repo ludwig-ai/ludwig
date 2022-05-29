@@ -132,7 +132,7 @@ class ECD(LudwigModule):
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values)
-            encoder_outputs[input_feature_name] = {"encoder_output": encoder_output}
+            encoder_outputs[input_feature_name] = encoder_output
 
         return encoder_outputs
 
@@ -145,7 +145,7 @@ class ECD(LudwigModule):
         encoded_outputs = {}
         for k, v in zip(self.input_features.keys(), args):
             encoded_outputs[k] = {"encoder_output": v}
-        print(encoded_outputs)
+        # print(encoded_outputs)
 
         combined_outputs = self.combine(encoded_outputs)
         outputs = self.decode(combined_outputs, None, None)
