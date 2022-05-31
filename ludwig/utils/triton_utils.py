@@ -170,11 +170,12 @@ def _get_model_config(model: LudwigModel) -> str:
     return config
 
 
-def export_triton(model: LudwigModel, output_path: str, model_name="ludwig_model", model_version=1):
+def export_triton(model: LudwigModel, output_path: str, model_name: str = "ludwig_model", model_version: int = 1):
     model_ts = generate_triton_torchscript(model)
-    model_path = os.path.join(output_path, model_name, model_version, "model.pt")
+    model_dir = os.path.join(output_path, model_name, str(model_version))
+    os.makedirs(model_dir, exist_ok=True)
     # Save the file to <model_repository>/<model_name>/<model_version>/model.pt
-    model_ts.save(model_path)
+    model_ts.save(os.path.join(model_dir, "model.pt"))
     # Save the default onfig to <model_repository>/<model_name>/config.pbtxt
     config_path = os.path.join(output_path, model_name, "config.pbtxt")
     with open(config_path, "w") as f:
