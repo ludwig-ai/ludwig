@@ -461,6 +461,7 @@ def test_tune_batch_size_lr():
             assert model.config[TRAINER]["batch_size"] != "auto"
             assert model.config[TRAINER]["learning_rate"] != "auto"
 
+
 # This is a dummy test to just repro the progress bar stuff
 # The idea is that we just spin up a bunch of trainers that just do work haha
 # XXX
@@ -477,4 +478,3 @@ def test_ray_progress_bar():
         output_features,
         df_engine="dask",
     )
-
