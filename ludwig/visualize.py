@@ -1456,13 +1456,13 @@ def compare_classifiers_performance_from_prob(
         hits_at_k = 0
         for j in range(len(ground_truth)):
             hits_at_k += np.in1d(ground_truth[j], topk[j])
-        hits_at_ks.append(np.asscalar(hits_at_k) / len(ground_truth))
+        hits_at_ks.append(hits_at_k.item() / len(ground_truth))
 
         mrr = 0
         for j in range(len(ground_truth)):
             ground_truth_pos_in_probs = prob[j] == ground_truth[j]
             if np.any(ground_truth_pos_in_probs):
-                mrr += 1 / -(np.asscalar(np.argwhere(ground_truth_pos_in_probs)) - prob.shape[1])
+                mrr += 1 / -(np.argwhere(ground_truth_pos_in_probs).item() - prob.shape[1])
         mrrs.append(mrr / len(ground_truth))
 
     filename = None
@@ -1663,7 +1663,7 @@ def compare_classifiers_performance_subset(
         hits_at_k = 0
         for j in range(len(gt_subset)):
             hits_at_k += np.in1d(gt_subset[j], top3_subset[i, :])
-        hits_at_ks.append(np.asscalar(hits_at_k) / len(gt_subset))
+        hits_at_ks.append(hits_at_k.item() / len(gt_subset))
 
     title = None
     if subset == "ground_truth":
