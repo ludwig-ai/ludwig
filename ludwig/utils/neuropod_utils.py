@@ -48,8 +48,8 @@ def _get_output_dicts(config: Dict[str, Any]) -> str:
     results = []
     for feature in config["output_features"]:
         name = feature[NAME]
-        results.append("{" + f'"{name}": results["{name}"]["predictions"]' + "}")
-    return ", ".join(results)
+        results.append(f'"{name}": results["{name}"]["predictions"]')
+    return "{" + ", ".join(results) + "}"
 
 
 def generate_neuropod_torchscript(model: LudwigModel):
