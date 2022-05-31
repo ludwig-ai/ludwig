@@ -1,5 +1,4 @@
 import importlib.util
-import logging
 import os
 import tempfile
 from typing import Any, Dict
@@ -8,9 +7,6 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
-
-logger = logging.getLogger(__name__)
-
 
 INFERENCE_MODULE_TEMPLATE = """
 from typing import Any, Dict, List, Union
