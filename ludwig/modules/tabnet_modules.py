@@ -91,6 +91,9 @@ class TabNet(LudwigModule):
         self.register_buffer("aggregated_mask", torch.zeros(input_size))
         self.register_buffer("prior_scales", torch.ones(input_size))
 
+        print("TabNet initialized")
+        print(self)
+
     def forward(self, features: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, List[torch.Tensor]]:
         if features.dim() != 2:
             raise ValueError(f"Expecting incoming tensor to be dim 2, " f"instead dim={features.dim()}")

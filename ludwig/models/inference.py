@@ -99,10 +99,13 @@ class InferenceLudwigModel:
 
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
-        inputs = {
-            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
-            for if_config in self.config["input_features"]
-        }
+        print("inside InferenceLudwigModel.predict")
+        print(dataset)
+        # print(dataset.columns)
+        inputs = {}
+        for if_config in self.config["input_features"]:
+            print(if_config["name"], if_config[COLUMN], if_config[TYPE])
+            inputs[if_config["name"]] = to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
 
         preds = self.model(inputs)
 

@@ -642,9 +642,10 @@ class LudwigModel:
                                 **{"config": self.config, "training_set_metadata": self.training_set_metadata},
                             ),
                             logger.info(f'Saved inference module to: "{inference_module_path}"')
-                        except Exception as e:
-                            logger.warning("Unable to save inference module.")
-                            logger.warning(f"Original error: {e}")
+                        except Exception:
+                            logger.warning(
+                                "Unable to save inference module. Full exception below:\n" f"{traceback.format_exc()}"
+                            )
 
                     # Adds a flag to all input features indicating that the weights are saved in the checkpoint.
                     for input_feature in self.config["input_features"]:

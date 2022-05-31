@@ -247,7 +247,7 @@ def _load_pyfunc(path):
     return _LudwigModelWrapper(_load_model(path))
 
 
-def load_model(model_uri):
+def load_model(model_uri, model_type=None):
     """Load a Ludwig model from a local file or a run.
 
     :param model_uri: The location, in URI format, of the MLflow model. For example:
@@ -260,6 +260,8 @@ def load_model(model_uri):
                       For more information about supported URI schemes, see
                       `Referencing Artifacts <https://www.mlflow.org/docs/latest/tracking.html#
                       artifact-locations>`_.
+    :param model_type: The type of model to load. Valid values are MODEL_TYPE_LUDWIG_MODEL and MODEL_TYPE_TORCHSCRIPT.
+        If not provided, the type is inferred from the model's configuration. Used primarily for debugging/benchmarking.
 
     :return: A Ludwig model (an instance of `ludwig.api.LudwigModel`_).
     """
@@ -267,7 +269,8 @@ def load_model(model_uri):
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
 
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
-    model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
+    if model_type is None:
+        model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
 
     model = _load_model(path=lgb_model_file_path, model_type=model_type)
     logger.info(f"Model with model_type '{model_type}' loaded from MLFlow.")
