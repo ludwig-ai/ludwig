@@ -38,21 +38,17 @@ INSTANCE_SPEC = """
     {{
         count: {count}
         kind: {kind}
-    }}
-"""
+    }}"""
 
 TRITON_CONFIG_TEMPLATE = """
 name: "pytorch_raw"
 platform: "pytorch_libtorch"
 max_batch_size: 0 # Disable dynamic batching?
-input [
-{input_spec}
+input [{input_spec}
 ]
-output [
-{output_spec}
+output [{output_spec}
 ]
-instance_group [
-{instance_spec}
+instance_group [{instance_spec}
 ]
 """
 
@@ -158,8 +154,8 @@ def _get_output_spec(model: LudwigModel) -> str:
     return ",".join(spec)
 
 
-def _get_instance_spec() -> str:
-    spec = INSTANCE_SPEC.format(count=1, kind="KIND_CPU")
+def _get_instance_spec(count=1, kind="KIND_CPU") -> str:
+    spec = INSTANCE_SPEC.format(count=count, kind=kind)
     return spec
 
 
