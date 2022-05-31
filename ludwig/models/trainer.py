@@ -820,15 +820,13 @@ class Trainer(BaseTrainer):
 
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
-                progress_bar = None
-                if self.is_coordinator():
-                    progress_bar_config = {
-                        "desc": "Training",
-                        "total": self.total_steps,
-                        "disable": is_progressbar_disabled(),
-                        "file": sys.stdout,
-                    }
-                    progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config)
+                progress_bar_config = {
+                    "desc": "Training",
+                    "total": self.total_steps,
+                    "disable": is_progressbar_disabled(),
+                    "file": sys.stdout,
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
@@ -998,8 +996,8 @@ class Trainer(BaseTrainer):
                 )
 
             progress_tracker.steps += 1
+            progress_bar.update(1)
             if self.is_coordinator():
-                progress_bar.update(1)
                 logger.debug(
                     f"training: completed batch {progress_bar.total_steps} "
                     f"memory used: "
