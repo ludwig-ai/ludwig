@@ -30,7 +30,7 @@ DEVICE = get_torch_device()
 
 def embedding_matrix(
     vocab: List[str],
-    embedding_size: Optional[int] = None,
+    embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
     pretrained_embeddings: Optional[str] = None,
@@ -43,10 +43,7 @@ def embedding_matrix(
     if representation == "dense":
         if pretrained_embeddings:
             embeddings_matrix = load_pretrained_embeddings(pretrained_embeddings, vocab)
-            if embedding_size is None:
-                embedding_size = embeddings_matrix.shape[-1]
-                logger.info(f"Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.")
-            elif embeddings_matrix.shape[-1] != embedding_size:
+            if embeddings_matrix.shape[-1] != embedding_size:
                 if not force_embedding_size:
                     embedding_size = embeddings_matrix.shape[-1]
                     logger.info(f"Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.")
@@ -60,10 +57,7 @@ def embedding_matrix(
             embedding_initializer_obj = torch.tensor(embeddings_matrix, dtype=torch.float32)
 
         else:
-            if embedding_size is None:
-                # use embedding size rule of thumb
-                embedding_size = min(512, int(round(1.6 * vocab_size**0.56)))
-            elif vocab_size < embedding_size and not force_embedding_size:
+            if vocab_size < embedding_size and not force_embedding_size:
                 logger.info(
                     f"  embedding_size ({embedding_size}) is greater than "
                     f"vocab_size ({vocab_size}). Setting embedding size to be "
@@ -92,7 +86,7 @@ def embedding_matrix(
 
 def embedding_matrix_on_device(
     vocab: List[str],
-    embedding_size: Optional[int] = None,
+    embedding_size: int,
     representation: str = "dense",
     embeddings_trainable: bool = True,
     pretrained_embeddings: Optional[str] = None,
@@ -102,7 +96,7 @@ def embedding_matrix_on_device(
 ) -> Tuple[nn.Module, int]:
     embeddings, embedding_size = embedding_matrix(
         vocab,
-        embedding_size=embedding_size,
+        embedding_size,
         representation=representation,
         embeddings_trainable=embeddings_trainable,
         pretrained_embeddings=pretrained_embeddings,
@@ -123,7 +117,7 @@ class Embed(LudwigModule):
     def __init__(
         self,
         vocab: List[str],
-        embedding_size: Optional[int] = None,
+        embedding_size: int,
         representation: str = "dense",
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
