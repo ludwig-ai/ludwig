@@ -189,12 +189,7 @@ def train_fn(
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = model.to(device)
 
-        trainer = RemoteTrainer(
-            model=model,
-            horovod=hvd,
-            report_tqdm_to_ray=True,
-            **executable_kwargs
-        )
+        trainer = RemoteTrainer(model=model, horovod=hvd, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
         if results is not None:
@@ -283,14 +278,14 @@ class TqdmCallback(rt.TrainingCallback):
         self.progess_bars = {}
 
     def process_results(self, results, **info):
-        progress_bar_opts = results[0].get('progress_bar')
+        progress_bar_opts = results[0].get("progress_bar")
         if not progress_bar_opts:
             return
-        _id = progress_bar_opts['id']
-        update_by = progress_bar_opts.pop('update_by')
+        _id = progress_bar_opts["id"]
+        update_by = progress_bar_opts.pop("update_by")
         if not _id in self.progess_bars:
-            progress_bar_config = progress_bar_opts.get('config')
-            self.progess_bars[_id] =  tqdm.tqdm(**progress_bar_config)
+            progress_bar_config = progress_bar_opts.get("config")
+            self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
         self.progess_bars[_id].update(update_by)
 
 
@@ -349,7 +344,7 @@ class RayTrainerV2(BaseTrainer):
         return results
 
     def train_online(self, *args, **kwargs):
-        # TODO: When this is implemented we also need to update the 
+        # TODO: When this is implemented we also need to update the
         # Tqdm flow to report back the callback
         raise NotImplementedError()
 

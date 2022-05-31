@@ -19,8 +19,8 @@ from ludwig.globals import (
     PREDICTIONS_SHAPES_FILE_NAME,
     TEST_STATISTICS_FILE_NAME,
 )
-from ludwig.progress_bar import LudwigProgressBar
 from ludwig.models.ecd import ECD
+from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -165,7 +165,7 @@ class Predictor(BasePredictor):
 
                 progress_bar = None
                 if self.is_coordinator():
-                    progress_bar_config= {
+                    progress_bar_config = {
                         "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
                         "total": batcher.steps_per_epoch,
                         "file": sys.stdout,
