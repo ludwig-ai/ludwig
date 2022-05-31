@@ -430,7 +430,7 @@ class RayTrainerV2(BaseTrainer):
 
     @property
     def eval_batch_size(self) -> int:
-        return self.config.eval_batch_size
+        return self.config.eval_batch_size if self.config.eval_batch_size is not None else self.config.batch_size
 
     @eval_batch_size.setter
     def eval_batch_size(self, value: int):
