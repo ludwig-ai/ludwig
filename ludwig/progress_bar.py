@@ -19,7 +19,7 @@ class LudwigProgressBar:
         else:
             if "file" in self.config:
                 self.config.pop("file")
-            # TODO magdy: add a comment explaining why all processes 
+            # TODO magdy: add a comment explaining why all processes
             # need to report
             ray.train.report(
                 progress_bar={
