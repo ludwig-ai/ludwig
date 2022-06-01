@@ -462,11 +462,9 @@ def test_tune_batch_size_lr():
             assert model.config[TRAINER]["learning_rate"] != "auto"
 
 
-# This is a dummy test to just repro the progress bar stuff
-# The idea is that we just spin up a bunch of trainers that just do work haha
-# XXX
 @pytest.mark.distributed
 def test_ray_progress_bar():
+    # This is a simple test that is just meant to make sure that the progress bar isn't breaking
     input_features = [
         sequence_feature(reduce_output="sum"),
     ]
