@@ -1509,6 +1509,8 @@ class StackedCNNRNN(Encoder):
         :param dropout: determines if there should be a dropout layer before
                returning the encoder output.
         :type dropout: Boolean
+        :param recurrent_dropout: Dropout rate for the recurrent stack.
+        :type recurrent_dropout: float
         :param initializer: the initializer to use. If `None` it uses
                `xavier_uniform`. Options are: `constant`, `identity`,
                `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
@@ -1606,7 +1608,7 @@ class StackedCNNRNN(Encoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            dropout=dropout,
+            dropout=recurrent_dropout,
         )
 
         self.reduce_output = reduce_output
