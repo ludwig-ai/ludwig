@@ -24,7 +24,7 @@ marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.5
 tensorboard
-torchmetrics
+torchmetrics<0.9
 torchinfo
 filelock
 psutil
