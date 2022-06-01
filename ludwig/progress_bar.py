@@ -1,4 +1,5 @@
 import uuid
+import os
 
 import ray.train
 import tqdm
@@ -12,8 +13,9 @@ class LudwigProgressBar:
         self.total_steps = 0
         self.progress_bar = None
         self.is_coordinator = is_coordinator
-        if not self.report_to_ray and self.is_coordinator:
-            self.progress_bar = tqdm.tqdm(**config)
+        if not self.report_to_ray:
+            if self.is_coordinator:
+                self.progress_bar = tqdm.tqdm(**config)
         else:
             if "file" in self.config:
                 self.config.pop("file")
@@ -22,6 +24,7 @@ class LudwigProgressBar:
                     "id": self.id,
                     "config": self.config,
                     "update_by": 0,
+                    "pid": os.getpid(),
                 }
             )
 
@@ -34,6 +37,7 @@ class LudwigProgressBar:
                 progress_bar={
                     "id": self.id,
                     "update_by": steps,
+                    "pid": os.getpid(),
                 }
             )
 
