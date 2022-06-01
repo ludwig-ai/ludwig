@@ -1,9 +1,12 @@
+import logging
 import os
-from typing import Any, Dict, List, TYPE_CHECKING, Union
+from typing import Any, Dict, List, TYPE_CHECKING, Optional, Union
 
 import pandas as pd
 import torch
 from torch import nn
+from ludwig.backend import initialize_backend
+from ludwig.backend.base import Backend
 
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
@@ -12,6 +15,7 @@ from ludwig.features.feature_registries import input_type_registry, output_type_
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import image_utils
+from ludwig.utils.torch_utils import get_torch_device
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -87,10 +91,26 @@ class InferenceLudwigModel:
     This model is instantiated with a model_dir, which contains the model and its metadata.
     """
 
-    def __init__(self, model_dir: str):
-        self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
+    def __init__(
+        self,
+        model_dir: str,
+        logging_level: int = logging.ERROR,
+        backend: Union[Backend, str] = None,
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True,
+        **kwargs,
+    ):
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
         self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
+
+        self.backend = initialize_backend(backend or self.config.get("backend"))
+        self.backend.initialize_pytorch(
+            gpus=gpus, gpu_memory_limit=gpu_memory_limit, allow_parallel_threads=allow_parallel_threads
+        )
+        self.device = get_torch_device()
+        self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
+        self.model = self.model.to(self.device)
 
     def predict(
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
