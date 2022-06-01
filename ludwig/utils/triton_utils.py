@@ -163,7 +163,7 @@ def _get_model_config(model: LudwigModel) -> str:
 
 def export_triton(
     model: LudwigModel, output_path: str, model_name: str = "ludwig_model", model_version: Union[int, str] = 1
-) -> str:
+) -> (str, str):
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
     # Inputs
@@ -174,7 +174,7 @@ def export_triton(
     :param model_name: (Union[int,str]) The optional model verison.
 
     # Return
-    :return: (str) The saved model path.
+    :return: (str, str) The saved model path, and config path.
     """
     model_ts = generate_triton_torchscript(model)
     model_dir = os.path.join(output_path, model_name, str(model_version))
@@ -186,4 +186,4 @@ def export_triton(
     config_path = os.path.join(output_path, model_name, "config.pbtxt")
     with open(config_path, "w") as f:
         f.write(_get_model_config(model))
-    return model_path
+    return model_path, config_path

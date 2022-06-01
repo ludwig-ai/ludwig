@@ -90,11 +90,13 @@ def test_triton_torchscript(csv_filename, tmpdir):
     triton_path = os.path.join(tmpdir, "triton")
     model_name = "test_triton"
     model_version = 1
-    model_path = export_triton(ludwig_model, triton_path, model_name, model_version)
+    model_path, config_path = export_triton(ludwig_model, triton_path, model_name, model_version)
 
     # Validate relative path
     output_filename = os.path.relpath(model_path, triton_path)
     assert output_filename == f"{model_name}/{model_version}/model.pt"
+    config_filename = os.path.relpath(config_path, triton_path)
+    assert config_filename == f"{model_name}/config.pbtxt"
 
     # Restore the torchscript model
     restored_model = torch.jit.load(model_path)
