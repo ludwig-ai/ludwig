@@ -69,8 +69,11 @@ HYPEROPT_CONFIG = {
 }
 
 
-SAMPLERS = [
-    {"type": "ray", "num_samples": 2},
+SCENARIOS = [
+    {
+        "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1},
+        "search_alg": {"type": "variant_generator"}
+    },
     # TODO(shreya): Uncomment when https://github.com/ludwig-ai/ludwig/issues/2039 is fixed.
     # {
     #     "type": "ray",
@@ -83,19 +86,18 @@ SAMPLERS = [
     #     },
     # },
     {
-        "type": "ray",
-        "search_alg": {"type": "bohb"},
-        "scheduler": {
-            "type": "hb_bohb",
-            "time_attr": "training_iteration",
-            "reduction_factor": 4,
+        "executor": {
+            "type": "ray",
+            "num_samples": 3,
+            "scheduler": {
+                "type": "hb_bohb",
+                "time_attr": "training_iteration",
+                "reduction_factor": 4,
+            },
+            "cpu_resources_per_trial": 1,
         },
-        "num_samples": 3,
-    },
-]
-
-EXECUTORS = [
-    {"type": "ray", "cpu_resources_per_trial": 1},
+        "search_alg": {"type": "bohb"},
+    }
 ]
 
 
@@ -103,7 +105,7 @@ EXECUTORS = [
 RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}}
 
 
-def _get_config(sampler, executor):
+def _get_config(search_alg, executor):
     input_features = [number_feature(), number_feature()]
     output_features = [binary_feature()]
 
@@ -115,7 +117,7 @@ def _get_config(sampler, executor):
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
-            "sampler": sampler,
+            "search_alg": search_alg,
         },
     }
 
@@ -162,7 +164,7 @@ def ray_mock_dir():
 
 @spawn
 def run_hyperopt_executor(
-    sampler,
+    search_alg,
     executor,
     csv_filename,
     ray_mock_dir,
@@ -170,7 +172,7 @@ def run_hyperopt_executor(
     validation_metric=None,
 ):
     with ray_start_7_cpus():
-        config = _get_config(sampler, executor)
+        config = _get_config(search_alg, executor)
 
         csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
         dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
@@ -188,16 +190,19 @@ def run_hyperopt_executor(
         update_hyperopt_params_with_defaults(hyperopt_config)
 
         parameters = hyperopt_config["parameters"]
-        if sampler.get("search_alg", {}).get("type", "") == "bohb":
+        if search_alg.get("type", "") == "bohb":
             # bohb does not support grid_search search space
             del parameters["combiner.num_steps"]
+            hyperopt_config["parameters"] = parameters
 
         split = hyperopt_config["split"]
         output_feature = hyperopt_config["output_feature"]
         metric = hyperopt_config["metric"]
         goal = hyperopt_config["goal"]
+        search_alg = hyperopt_config["search_alg"]
 
-        hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
+        # hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
+        hyperopt_sampler = get_build_hyperopt_sampler("ray")(parameters)
 
         # preprocess
         backend = RayBackend(**RAY_BACKEND_KWARGS)
@@ -207,7 +212,7 @@ def run_hyperopt_executor(
         )
 
         # hyperopt
-        hyperopt_executor = MockRayTuneExecutor(hyperopt_sampler, output_feature, metric, split, **executor)
+        hyperopt_executor = MockRayTuneExecutor(hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor)
         hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
         hyperopt_executor.execute(
@@ -224,18 +229,21 @@ def run_hyperopt_executor(
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("sampler", SAMPLERS)
-@pytest.mark.parametrize("executor", EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir):
-    run_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir)
+@pytest.mark.parametrize("scenario", SCENARIOS)
+def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir):
+    search_alg = scenario["search_alg"]
+    executor = scenario["executor"]
+    run_hyperopt_executor(search_alg, executor, csv_filename, ray_mock_dir)
 
 
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     run_hyperopt_executor(
-        {"type": "ray", "num_samples": 2},
-        {"type": "ray"},
+        # {"type": "ray", "num_samples": 2},
+        # {"type": "ray"},
+        {"type": "variant_generator"}, # search_alg
+        {"type": "ray", "num_samples": 2}, # executor
         csv_filename,
         ray_mock_dir,
         validate_output_feature=True,
@@ -277,8 +285,8 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray"},
-        "sampler": {"type": "ray", "num_samples": 2},
+        "executor": {"type": "ray", "num_samples": 2},
+        "search_alg": {"type": "variant_generator"},
     }
 
     # add hyperopt parameter space to the config

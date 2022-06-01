@@ -34,6 +34,7 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
@@ -541,13 +542,20 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, model: ECD, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+    def __init__(
+        self,
+        model: ECD,
+        df_engine: DataFrameEngine,
+        trainer_kwargs, data_loader_kwargs,
+        **predictor_kwargs
+    ):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
         self.model = model.cpu()
+        self.df_engine = df_engine
 
     def get_trainer_kwargs(self) -> Dict[str, Any]:
         return {**self.trainer_kwargs, **get_trainer_kwargs()}
@@ -745,6 +753,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         return RayPredictor(
             model,
+            self.df_engine,
             copy.deepcopy(self._horovod_kwargs),
             self._data_loader_kwargs,
             **executable_kwargs,
