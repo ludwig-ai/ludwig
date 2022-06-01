@@ -1047,7 +1047,7 @@ class Trainer(BaseTrainer):
                 "file": sys.stdout,
                 "disable": is_progressbar_disabled(),
             }
-            progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config)
+            progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, True)
 
             while not batcher.last_batch():
                 batch = batcher.next_batch()

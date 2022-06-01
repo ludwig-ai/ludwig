@@ -554,7 +554,7 @@ def eval_fn(
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model = model.to(device)
 
-        predictor = RemotePredictor(model=model, horovod=hvd, **predictor_kwargs)
+        predictor = RemotePredictor(model=model, horovod=hvd, report_tqdm_to_ray=True, **predictor_kwargs)
         return predictor.batch_evaluation(eval_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()

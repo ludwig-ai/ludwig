@@ -95,7 +95,6 @@ class Predictor(BasePredictor):
                     batch = batcher.next_batch()
                     preds = self._predict(self.model, batch)
                     self._accumulate_preds(preds, predictions)
-
                     progress_bar.update(1)
 
                 progress_bar.close()
@@ -158,7 +157,6 @@ class Predictor(BasePredictor):
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
-
                 progress_bar_config = {
                     "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,
@@ -201,7 +199,6 @@ class Predictor(BasePredictor):
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
 
-            if self.is_coordinator():
                 progress_bar.close()
 
             # consolidate predictions from each batch to a single tensor
@@ -231,7 +228,7 @@ class Predictor(BasePredictor):
                     "file": sys.stdout,
                     "disable": is_progressbar_disabled(),
                 }
-                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config)
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, True)
 
                 collected_tensors = []
                 while not batcher.last_batch():
@@ -243,7 +240,6 @@ class Predictor(BasePredictor):
                     }
                     outputs = self.model(inputs)
                     collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
-
                     progress_bar.update(1)
 
                 progress_bar.close()

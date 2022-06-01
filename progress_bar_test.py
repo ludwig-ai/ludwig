@@ -1,4 +1,5 @@
 import logging
+import os
 
 import numpy as np
 import ray
@@ -42,10 +43,27 @@ config = {
     "trainer": {"epochs": 3, "optimizer": {"type": "adam"}},
 }
 
-# instantiate Ludwig model object
+RAY_BACKEND_CONFIG = {
+    "type": "ray",
+    "processor": {
+        "parallelism": 2,
+    },
+    "trainer": {
+        "use_gpu": False,
+        "num_workers": 2,
+        "resources_per_worker": {
+            "CPU": 0.1,
+            "GPU": 0,
+        },
+    },
+}
+
+MODEL_PATH = "~/progress_bar_model.ludwig"
+FILE_PATH = "~/progress_bar_model/model_hyperparameters.json"
+
 ray.init(address="auto")
-# model = LudwigModel(config=config, backend="ray", logging_level=logging.INFO)
-model = LudwigModel(config=config, backend="local", logging_level=logging.INFO)
+# model = LudwigModel(config=config, backend="local", logging_level=logging.INFO)
+model = LudwigModel(config=config, backend=RAY_BACKEND_CONFIG, logging_level=logging.INFO)
 train_stats, preprocessed_data, output_directory = model.train(training_set=train_df, test_set=test_df)
 # Extract subset of test data for evaluation due to limitations in amount of data displayable in colab notebook.
 np.random.seed(13)
@@ -56,8 +74,6 @@ test_stats, predictions, output_directory = model.evaluate(
     collect_predictions=True,
     skip_save_eval_stats=False,
     skip_save_predictions=False,
-    output_directory="test_results",
-    return_type="dict",
     calculate_overall_stats=False,
 )
 ray.shutdown()
