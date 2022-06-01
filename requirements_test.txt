@@ -4,8 +4,37 @@ six>=1.13.0
 wandb<0.12.11
 comet_ml
 mlflow
-whylogs
+whylogs<1.0
 
-# For testing BOHB with Ray Tune
+# For testing optional Ray Tune Search Algorithms
+# search_alg: bohb
 hpbandster
 ConfigSpace
+
+# search_alg: ax
+ax-platform
+sqlalchemy
+
+# search_alg: bayesopt
+bayesian-optimization
+
+# search_alg: cfo and blendsearch
+flaml[blendsearch]
+
+# search_alg: dragonfly
+dragonfly-opt
+
+# search_alg: hebo
+HEBO
+
+# search_alg: nevergrad
+nevergrad
+
+# search_alg: optuna
+optuna
+
+# search_alg: skopt
+scikit-optimize
+
+# search_alg: zoopt
+zoopt

@@ -123,6 +123,8 @@ EXECUTOR = "executor"
 MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
+SEARCH_ALG = "search_alg"
+SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
 
 NAME = "name"
@@ -149,6 +151,7 @@ CONFIG = "config"
 COMBINER = "combiner"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
+IMBALANCE_DETECTION_RATIO = 0.05
 
 TABULAR = "tabular"
 AUTOML_DEFAULT_TABULAR_MODEL = "tabnet"

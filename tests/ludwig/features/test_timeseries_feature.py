@@ -4,12 +4,13 @@ import pytest
 import torch
 
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
+from ludwig.utils.torch_utils import get_torch_device
 
 SEQ_SIZE = 2
 TIMESERIES_W_SIZE = 1
 MAX_LEN = 7
 EMBEDDING_SIZE = 5
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.fixture(scope="module")

@@ -4,10 +4,11 @@ import pytest
 import torch
 
 from ludwig.features.binary_feature import BinaryInputFeature, BinaryOutputFeature
+from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
 BINARY_W_SIZE = 1
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.fixture(scope="module")

@@ -59,6 +59,7 @@ def hyperopt_cli(
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
+    hyperopt_log_verbosity: int = 3,
     **kwargs,
 ):
     """Searches for optimal hyperparameters.
@@ -150,6 +151,9 @@ def hyperopt_cli(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
+    :param hyperopt_log_verbosity: (int: default: 3) Controls verbosity of ray tune log messages.  Valid values:
+        0 = silent, 1 = only status updates, 2 = status and brief trial
+        results, 3 = status and detailed trial results.
 
     # Return
     :return" (`None`)
@@ -183,6 +187,7 @@ def hyperopt_cli(
         callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
+        hyperopt_log_verbosity=hyperopt_log_verbosity,
         **kwargs,
     )
 
@@ -355,6 +360,16 @@ def cli(sys_argv):
         help="a random seed that is going to be used anywhere there is a call "
         "to a random number generator: data splitting, parameter "
         "initialization and training set shuffling",
+    )
+    parser.add_argument(
+        "-hlv",
+        "--hyperopt_log_verbosity",
+        type=int,
+        default=3,
+        choices=[0, 1, 2, 3],
+        help="Controls verbosity of ray tune log messages.  Valid values: "
+        "0 = silent, 1 = only status updates, 2 = status and brief trial "
+        "results, 3 = status and detailed trial results.",
     )
     parser.add_argument("-g", "--gpus", nargs="+", type=int, default=None, help="list of gpus to use")
     parser.add_argument(

@@ -6,9 +6,10 @@ import torch
 
 from ludwig.features.set_feature import SetInputFeature
 from ludwig.models.ecd import build_single_input
+from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.fixture(scope="module")

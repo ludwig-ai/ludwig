@@ -25,6 +25,7 @@ from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, sa
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.strings_utils import make_safe_filename
+from ludwig.utils.torch_utils import get_torch_device
 
 EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {"confusion_matrix", "roc_curve"}
@@ -69,7 +70,7 @@ class Predictor(BasePredictor):
         self._horovod = horovod
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = get_torch_device()
         self.model = model.to(self.device)
 
     def batch_predict(

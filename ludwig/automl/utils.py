@@ -8,7 +8,20 @@ from dataclasses_json import dataclass_json, LetterCase
 from numpy import nan_to_num
 from pandas import Series
 
-from ludwig.constants import COMBINER, CONFIG, HYPEROPT, NAME, NUMBER, PARAMETERS, SAMPLER, TRAINER, TYPE
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    COMBINER,
+    CONFIG,
+    HYPEROPT,
+    IMBALANCE_DETECTION_RATIO,
+    NAME,
+    NUMBER,
+    PARAMETERS,
+    SEARCH_ALG,
+    TRAINER,
+    TYPE,
+)
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
@@ -29,6 +42,7 @@ class FieldInfo:
     dtype: str
     key: str = None
     distinct_values: List = None
+    distinct_values_balance: float = 1.0
     num_distinct_values: int = 0
     nonnull_values: int = 0
     image_values: int = 0
@@ -52,6 +66,7 @@ class FieldMetadata:
     excluded: bool
     mode: str
     missing_values: float
+    imbalance_ratio: float
 
 
 def avg_num_tokens(field: Series) -> int:
@@ -127,7 +142,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
         point_to_evaluate = {}
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, COMBINER)
         _add_option_to_evaluate(point_to_evaluate, min_dataset_config, hyperopt_params, TRAINER)
-        base_config[HYPEROPT][SAMPLER]["search_alg"]["points_to_evaluate"] = [point_to_evaluate]
+        base_config[HYPEROPT][SEARCH_ALG]["points_to_evaluate"] = [point_to_evaluate]
     return base_config
 
 
@@ -178,3 +193,20 @@ def set_output_feature_metric(base_config):
         base_config[HYPEROPT]["metric"] = output_metric
         base_config[HYPEROPT]["goal"] = output_goal
     return base_config
+
+
+def has_imbalanced_output(base_config, features_metadata) -> bool:
+    """Check binary and category output feature(s) for imbalance, i.e., low minority/majority instance count
+    ratio."""
+    imbalanced_output = False
+    for output_feature in base_config["output_features"]:
+        if output_feature[TYPE] == BINARY or output_feature[TYPE] == CATEGORY:
+            for feature_metadata in features_metadata:
+                if output_feature[NAME] == feature_metadata.name:
+                    if feature_metadata.imbalance_ratio < IMBALANCE_DETECTION_RATIO:
+                        logging.info(
+                            f"Imbalance in {output_feature[NAME]}: minority/majority={feature_metadata.imbalance_ratio}"
+                        )
+                        imbalanced_output = True
+                    break
+    return imbalanced_output
