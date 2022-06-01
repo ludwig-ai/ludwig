@@ -109,10 +109,7 @@ class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
-        config: TrainerConfig = kwargs["config"]
-        model: BaseModel = kwargs["model"]
-
+    def create_trainer(self, config: TrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         trainers_for_model = get_from_registry(model.type(), trainers_registry)
 
         trainer_cls = get_from_registry(config.type, trainers_for_model)

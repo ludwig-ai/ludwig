@@ -57,7 +57,10 @@ class GBM(BaseModel):
         elif output_feature.type() == NUMBER:
             output_params = {"objective": "regression"}
         else:
-            raise ValueError(f"Output feature must be numerical, categorical, or binary, found: {output_feature.type}")
+            raise ValueError(
+                "Model type GBM only supports numerical, categorical, or binary output features,"
+                f" found: {output_feature.type}"
+            )
 
         df = pd.DataFrame({"label": 0.0, **{str(i): [0.0] for i in range(len(self.input_features))}})
         gbm = lgb.train(params={"verbosity": -1, **output_params}, train_set=lgb.Dataset(df), num_boost_round=1)
