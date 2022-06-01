@@ -79,6 +79,10 @@ class _BinaryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         bool2str = metadata.get("bool2str")
+        # If the values in column could have been inferred as boolean dtype, do not convert preds to strings.
+        # This preserves the behavior of this feature before #2058.
+        if strings_utils.values_are_pandas_bools(bool2str):
+            bool2str = None
         self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
