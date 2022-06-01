@@ -1,13 +1,13 @@
 import logging
 import os
-from typing import Any, Dict, List, TYPE_CHECKING, Optional, Union
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
 from torch import nn
+
 from ludwig.backend import initialize_backend
 from ludwig.backend.base import Backend
-
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
