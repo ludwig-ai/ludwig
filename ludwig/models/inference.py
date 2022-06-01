@@ -109,6 +109,7 @@ class InferenceLudwigModel:
             gpus=gpus, gpu_memory_limit=gpu_memory_limit, allow_parallel_threads=allow_parallel_threads
         )
         self.device = get_torch_device()
+
         self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
         self.model = self.model.to(self.device)
 
