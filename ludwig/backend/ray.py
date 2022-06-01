@@ -283,7 +283,7 @@ class TqdmCallback(rt.TrainingCallback):
             return
         _id = progress_bar_opts["id"]
         update_by = progress_bar_opts.pop("update_by")
-        if not _id in self.progess_bars:
+        if _id not in self.progess_bars:
             progress_bar_config = progress_bar_opts.get("config")
             self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
         self.progess_bars[_id].update(update_by)

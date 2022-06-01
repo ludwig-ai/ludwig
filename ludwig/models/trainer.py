@@ -23,7 +23,6 @@ import signal
 import sys
 import threading
 import time
-import uuid
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
