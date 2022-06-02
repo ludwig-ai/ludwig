@@ -264,10 +264,6 @@ class RayDatasetBatcher(Batcher):
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
         res = {c: batch[c].to_numpy() for c in self.columns}
 
-        print("inside prepare batch")
-        print({k: v for k, v in res.items()})
-        print({k: (v.shape, self.reshape_map.get(k)) for k, v in res.items()})
-
         for c in self.columns:
             reshape = self.reshape_map.get(c)
             if reshape is not None:
