@@ -1478,41 +1478,33 @@ class LudwigModel:
         save_json(model_hyperparameters_path, self.config)
 
     def to_torchscript(self, model_only: bool = False):
-        """Returns a scripted model.
+        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
 
-        The input to this model is a dictionary of input features. For every input feature, the user must provide a
-        tensor, a list of tensors or a list of strings.
+        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
+
+        More specifically, for every input feature, we provide either a Tensor of batch_size inputs, a list of Tensors
+        batch_size in length, or a list of strings batch_size in length.
+
+        Note that the dimensions of all Tensors and lengths of all lists must match.
 
         Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
         outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
         tensors of varying dimensions for probabilities, logits, etc.
 
-        :param model_only: (bool, default: `False`) if `True`, only the ECD model will be converted to torchscript. If
-            `False`, the preprocessing and postprocessing modules will be included in  the torchscript module as well.
-
-        :return: (torch.nn.Module) a scripted model.
+        Args:
+            model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
+                preprocessing and postprocessing will also be converted to Torchscript.
         """
         self._check_initialization()
-
         if model_only:
-            scripted_model = self.model.to_torchscript()
+            return self.model.to_torchscript()
         else:
-            inference_module = InferenceModule(
-                self.model,
-                config=self.config,
-                training_set_metadata=self.training_set_metadata,
-            )
-            scripted_model = torch.jit.script(inference_module)
-
-        return scripted_model
+            inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+            return torch.jit.script(inference_module)
 
     def save_torchscript(self, save_path: str, model_only: bool = False):
-        """Saves the Torchscript module to disk.
-
-        # Inputs
-        :param  save_path: (str) location to save the Torchscript module.
-        """
-        scripted_model = self.to_torchscript(model_only)
+        """Saves the Torchscript model to disk."""
+        scripted_model = self.to_torchscript(model_only=model_only)
         scripted_model.save(save_path)
 
     def _check_initialization(self):
