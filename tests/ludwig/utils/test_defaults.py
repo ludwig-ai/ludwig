@@ -6,16 +6,11 @@ from ludwig.constants import (
     CATEGORY,
     DROP_ROW,
     EVAL_BATCH_SIZE,
-    EXECUTOR,
     FILL_WITH_MODE,
     HYPEROPT,
     NUMBER,
-    PARAMETERS,
     PREPROCESSING,
-    RAY,
-    SAMPLER,
     SCHEDULER,
-    SEARCH_ALG,
     TRAINER,
     TYPE,
 )
@@ -171,6 +166,7 @@ def test_deprecated_field_aliases():
 
 
 def test_merge_with_defaults():
+    # configuration with legacy parameters
     legacy_config_format = {
         "input_features": [
             {
@@ -204,48 +200,155 @@ def test_merge_with_defaults():
         },
     }
 
+    # expected configuration content with default values after upgrading legacy configuration components
+    expected_upgraded_format = {
+        "input_features": [
+            {"type": "number", "name": "in_feat", "column": "in_feat", "proc_column": "in_feat_mZFLky", "tied": None}
+        ],
+        "output_features": [
+            {
+                "type": "number",
+                "name": "out_feat",
+                "column": "out_feat",
+                "proc_column": "out_feat_mZFLky",
+                "loss": {"type": "mean_squared_error", "weight": 1},
+                "clip": None,
+                "dependencies": [],
+                "reduce_input": "sum",
+                "reduce_dependencies": "sum",
+                "preprocessing": {"missing_value_strategy": "drop_row"},
+            }
+        ],
+        "hyperopt": {
+            "parameters": {
+                "in_feat.num_fc_layers": {},
+                "out_feat.embedding_size": {},
+                "out_feat.dropout": 0.2,
+                "trainer.learning_rate": {},
+                "trainer.early_stop": {},
+            },
+            "executor": {"type": "ray", "num_samples": 99, "scheduler": {}},
+            "search_alg": {"type": "variant_generator"},
+        },
+        "trainer": {
+            "eval_batch_size": None,
+            "optimizer": {"type": "adam", "betas": (0.9, 0.999), "eps": 1e-08},
+            "epochs": 100,
+            "regularization_lambda": 0,
+            "regularization_type": "l2",
+            "learning_rate": 0.001,
+            "batch_size": 128,
+            "early_stop": 5,
+            "steps_per_checkpoint": 0,
+            "reduce_learning_rate_on_plateau": 0,
+            "reduce_learning_rate_on_plateau_patience": 5,
+            "reduce_learning_rate_on_plateau_rate": 0.5,
+            "increase_batch_size_on_plateau": 0,
+            "increase_batch_size_on_plateau_patience": 5,
+            "increase_batch_size_on_plateau_rate": 2,
+            "increase_batch_size_on_plateau_max": 512,
+            "decay": False,
+            "decay_steps": 10000,
+            "decay_rate": 0.96,
+            "staircase": False,
+            "gradient_clipping": None,
+            "validation_field": "combined",
+            "validation_metric": "loss",
+            "learning_rate_warmup_epochs": 1,
+        },
+        "preprocessing": {
+            "force_split": False,
+            "split_probabilities": (0.7, 0.1, 0.2),
+            "stratify": None,
+            "undersample_majority": None,
+            "oversample_minority": None,
+            "sample_ratio": 1.0,
+            "text": {
+                "tokenizer": "space_punct",
+                "pretrained_model_name_or_path": None,
+                "vocab_file": None,
+                "max_sequence_length": 256,
+                "most_common": 20000,
+                "padding_symbol": "<PAD>",
+                "unknown_symbol": "<UNK>",
+                "padding": "right",
+                "lowercase": True,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "category": {
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "set": {
+                "tokenizer": "space",
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "bag": {
+                "tokenizer": "space",
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "binary": {"missing_value_strategy": "fill_with_false"},
+            "number": {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None},
+            "sequence": {
+                "max_sequence_length": 256,
+                "most_common": 20000,
+                "padding_symbol": "<PAD>",
+                "unknown_symbol": "<UNK>",
+                "padding": "right",
+                "tokenizer": "space",
+                "lowercase": False,
+                "vocab_file": None,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "timeseries": {
+                "timeseries_length_limit": 256,
+                "padding_value": 0,
+                "padding": "right",
+                "tokenizer": "space",
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "",
+            },
+            "image": {
+                "missing_value_strategy": "backfill",
+                "in_memory": True,
+                "resize_method": "interpolate",
+                "scaling": "pixel_normalization",
+                "num_processes": 1,
+                "infer_image_num_channels": True,
+                "infer_image_dimensions": True,
+                "infer_image_max_height": 256,
+                "infer_image_max_width": 256,
+                "infer_image_sample_size": 100,
+            },
+            "audio": {
+                "audio_file_length_limit_in_s": 7.5,
+                "missing_value_strategy": "backfill",
+                "in_memory": True,
+                "padding_value": 0,
+                "norm": None,
+                "audio_feature": {
+                    "type": "fbank",
+                    "window_length_in_s": 0.04,
+                    "window_shift_in_s": 0.02,
+                    "num_filter_bands": 80,
+                },
+            },
+            "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
+            "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},
+            "vector": {"missing_value_strategy": "fill_with_const", "fill_value": ""},
+        },
+        "combiner": {"type": "concat"},
+    }
+
     updated_config = merge_with_defaults(legacy_config_format)
-
-    # check for updated trainer section
-    assert TRAINER in updated_config and "training" not in updated_config
-    assert updated_config[TRAINER]["eval_batch_size"] is None and updated_config[TRAINER]["eval_batch_size"] != 0
-
-    # check for updated number type for input and output features
-    assert (
-        NUMBER == updated_config["input_features"][0][TYPE] and "numerical" != updated_config["input_features"][0][TYPE]
-    )
-    assert (
-        NUMBER == updated_config["output_features"][0][TYPE]
-        and "numerical" != updated_config["output_features"][0][TYPE]
-    )
-
-    # check for upgraded hyperparameters
-    assert (
-        "trainer.learning_rate" in updated_config[HYPEROPT][PARAMETERS]
-        and "training.learning_rate" not in updated_config[HYPEROPT][PARAMETERS]
-    )
-    assert (
-        "trainer.early_stop" in updated_config[HYPEROPT][PARAMETERS]
-        and "training.early_stop" not in updated_config[HYPEROPT][PARAMETERS]
-    )
-
-    # make sure other parameters not changed or missing
-    assert "in_feat.num_fc_layers" in updated_config[HYPEROPT][PARAMETERS]
-    assert "out_feat.embedding_size" in updated_config[HYPEROPT][PARAMETERS]
-    assert "out_feat.dropout" in updated_config[HYPEROPT][PARAMETERS]
-
-    # check hyperopt executor updates
-    assert updated_config[HYPEROPT][EXECUTOR][TYPE] == RAY and updated_config[HYPEROPT][EXECUTOR][TYPE] != "serial"
-
-    # check for search_alg
-    assert SEARCH_ALG in updated_config[HYPEROPT] and SEARCH_ALG not in updated_config[HYPEROPT][EXECUTOR]
-    assert "variant_generator" == updated_config[HYPEROPT][SEARCH_ALG][TYPE]
-
-    # ensure sampler section no longer exists
-    assert SAMPLER not in updated_config[HYPEROPT]
-
-    # check for specified sampler parameters migrated to new location
-    assert (
-        "num_samples" in updated_config[HYPEROPT][EXECUTOR] and updated_config[HYPEROPT][EXECUTOR]["num_samples"] == 99
-    )
-    assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
+    assert updated_config == expected_upgraded_format
