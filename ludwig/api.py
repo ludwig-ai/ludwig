@@ -64,7 +64,6 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -245,6 +244,7 @@ class LudwigModel:
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
+        skip_save_inference_module: bool = False,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
@@ -322,6 +322,13 @@ class LudwigModel:
             dataset is provided it is preprocessed and cached by saving an HDF5
             and JSON files to avoid running the preprocessing again. If this
             parameter is `False`, the HDF5 and JSON file are not saved.
+        :param skip_save_inference_module: (bool, default: `False`) disables
+            saving torchscript-compatible inference module. By default Ludwig
+            saves the inference module after each epoch the validation metric
+            improves. This can be time consuming. If turned off, the inference
+            module will not be loadable later on. If skip_save_model is True,
+            skip_save_inference_module is automatically set to True.
+        saves
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
@@ -367,7 +374,16 @@ class LudwigModel:
             and skip_save_progress
             and skip_save_log
             and skip_save_processed_input
+            and skip_save_inference_module
         )
+
+        # if we are skipping save model, then we skip saving inference module as well
+        if skip_save_model:
+            logger.warning(
+                "Cannot save inference module if skip_save_model is True. "
+                "Setting skip_save_inference_module to True."
+            )
+            skip_save_inference_module = True
 
         output_url = output_directory
         with upload_output_directory(output_directory) as (output_directory, upload_fn):
@@ -615,6 +631,22 @@ class LudwigModel:
                     if not path_exists(weights_save_path):
                         with open_file(weights_save_path, "wb") as f:
                             torch.save(self.model.state_dict(), f)
+
+                    # Save inference module
+                    if not skip_save_inference_module:
+                        logger.info("Attempting to save inference module with best weights from saved checkpoint...")
+                        inference_module_path = os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME)
+                        try:
+                            self.model.save_inference_module(
+                                inference_module_path,
+                                **{"config": self.config, "training_set_metadata": self.training_set_metadata},
+                            ),
+                            logger.info(f'Saved inference module to: "{inference_module_path}"')
+                        except Exception:
+                            logger.warning(
+                                "Unable to save inference module. Full exception below:\n" f"{traceback.format_exc()}"
+                            )
+
                     # Adds a flag to all input features indicating that the weights are saved in the checkpoint.
                     for input_feature in self.config["input_features"]:
                         input_feature["saved_weights_in_checkpoint"] = True
@@ -1449,34 +1481,32 @@ class LudwigModel:
         save_json(model_hyperparameters_path, self.config)
 
     def to_torchscript(self, model_only: bool = False):
-        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
+        """Returns the model as a TorchScript module.
 
-        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
-
-        More specifically, for every input feature, we provide either a Tensor of batch_size inputs, a list of Tensors
-        batch_size in length, or a list of strings batch_size in length.
-
-        Note that the dimensions of all Tensors and lengths of all lists must match.
-
-        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
-        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
-        tensors of varying dimensions for probabilities, logits, etc.
-
-        Args:
-            model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
-                preprocessing and postprocessing will also be converted to Torchscript.
+        For more details, see ECD.to_inference_module.
         """
         self._check_initialization()
+
         if model_only:
             return self.model.to_torchscript()
         else:
-            inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
-            return torch.jit.script(inference_module)
+            return self.model.to_inference_module(
+                **{"config": self.config, "training_set_metadata": self.training_set_metadata}
+            )
 
     def save_torchscript(self, save_path: str, model_only: bool = False):
-        """Saves the Torchscript model to disk."""
-        inference_module = self.to_torchscript(model_only=model_only)
-        inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
+        """Saves the Torchscript module to disk.
+
+        # Inputs
+        :param  save_path: (str) location to save the Torchscript module.
+        """
+        if model_only:
+            self.model.save_torchscript(save_path)
+        else:
+            self.model.save_inference_module(
+                save_path,
+                **{"config": self.config, "training_set_metadata": self.training_set_metadata},
+            )
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
