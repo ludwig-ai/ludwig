@@ -163,11 +163,6 @@ def test_tabnet(
     )
 
     output = tabnet(input_tensor)
-    scripted_tabnet = torch.jit.script(tabnet)
-    scripted_output = scripted_tabnet(input_tensor)
-
-    # check for torchscript parity
-    assert torch.allclose(output, scripted_output)
 
     # check for expected shape and properties
     assert isinstance(output, tuple)
