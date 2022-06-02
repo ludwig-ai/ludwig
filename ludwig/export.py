@@ -17,10 +17,11 @@ import argparse
 import logging
 import os
 import sys
+from typing import Optional
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import INFERENCE_MODULE_FILE_NAME, LUDWIG_VERSION
 from ludwig.utils.neuropod_utils import export_neuropod as utils_export_neuropod
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 from ludwig.utils.triton_utils import export_triton as utils_export_triton
@@ -28,25 +29,31 @@ from ludwig.utils.triton_utils import export_triton as utils_export_triton
 logger = logging.getLogger(__name__)
 
 
-def export_torchscript(model_path: str, model_only: bool = False, output_path: str = "torchscript", **kwargs) -> None:
+def export_torchscript(model_path: str, model_only: bool = False, output_path: Optional[str] = None, **kwargs) -> None:
     """Exports a model to torchscript.
 
     # Inputs
 
-    :param model_path: (str) filepath to pre-trained model.
+    :param model_path: (str) Directory of trained model.
     :param model_only: (bool, default: `False`) If true, scripts and exports the model only.
-    :param output_path: (str, default: `'torchscript'`) directory to store torchscript
+    :param output_path: (str, default: None) Full filepath to store module. If not provided, the module is saved in the
+        `model_path` directory as "inference_module".
 
     # Return
     :returns: (`None`)
     """
-    logger.info(f"Model path: {model_path}")
+    if output_path is None:
+        logger.info("output_path not provided, saving to model_path as 'inference_module'")
+        output_path = os.path.join(model_path, INFERENCE_MODULE_FILE_NAME)
+
+    logger.info(f"Model directory: {model_path}")
     logger.info(f"Saving model only: {model_only}")
     logger.info(f"Output path: {output_path}")
     logger.info("\n")
 
     model = LudwigModel.load(model_path)
-    os.makedirs(output_path, exist_ok=True)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     model.save_torchscript(output_path, model_only=model_only)
 
     logger.info(f"Saved to: {output_path}")
@@ -153,7 +160,13 @@ def cli_export_torchscript(sys_argv):
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("-od", "--output_path", type=str, help="path where to save the export model", required=True)
+    parser.add_argument(
+        "-od",
+        "--output_path",
+        type=str,
+        help="path where to save the export model. If not provided, the torchscript module is saved in `model_path`.",
+        required=False,
+    )
 
     # ------------------
     # Runtime parameters
