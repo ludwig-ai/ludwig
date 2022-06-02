@@ -1,6 +1,4 @@
 import uuid
-import os
-
 import tqdm
 
 try:
