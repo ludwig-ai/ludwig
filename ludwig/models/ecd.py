@@ -91,7 +91,7 @@ class ECD(LudwigModule):
     def to_torchscript(self):
         """Returns a scripted ECD model.
 
-        To get an end-to-end module, use ECD.to_inference_module.
+        To get an end-to-end module, use LudwigModel.to_torchscript.
         """
         self.eval()
         model_inputs = self.get_model_inputs()
