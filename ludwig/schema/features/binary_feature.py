@@ -2,47 +2,51 @@ from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
+from ludwig.schema.features.preprocessing import BinaryPreprocessingConfig
+
+from marshmallow import Schema, fields, post_load, ValidationError
 
 
 @dataclass
-class BinaryFeataure(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
-    """BinaryFeataure is a dataclass that configures the hyperparameters used for a binary input feature."""
+class BinaryInputFeature(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+    """BinaryInputFeature is a dataclass that configures the parameters used for a binary input feature."""
 
-    preprocessing: Optional[str] = schema_utils.StringOptions(
-        list(base.preprocessing_registry.keys()),
-        default=None,
-        description="",
+    preprocessing: Optional[str] = BinaryPreprocessingConfig(
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_false", "fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
-        default="fill_with_false",
-        allow_none=False,
-        description="What strategy to follow when there's a missing value in a binary column",
+    encoder: Optional[str] = schema_utils.StringOptions(
+        ["passthrough", "dense"],
+        default="passthrough",
+        description="Encoder to use for this binary feature.",
     )
 
-    fill_value: Union[int, float] = schema_utils.NumericOrStringOptionsField(
-        ["yes", "YES", "Yes", "y", "Y", "true", "True", "TRUE", "t", "T", "1", "1.0", "no", "NO", "No", "n", "N",
-         "false", "False", "FALSE", "f", "F", "0", "0.0"],
-        allow_none=False,
+    tied: Optional[str] = schema_utils.StringOptions(  # TODO: Get input features used
+        ["TODO", "TODO"],
         default=None,
-        default_numeric=0,
-        min=0,
-        max=1,
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
-        )
-
-
-    fallback_true_label: Optional[str] = schema_utils.NumericOrStringOptionsField(
-        ["True", "False"],
-        allow_none=True,
-        default=None,
-        default_numeric=1,
-        min=0,
-        max=1,
+        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
+                    "feature of the same type and with the same encoder parameters.",
     )
 
+    @post_load(pass_original=True)
+    def add_baz_to_bar(self, data, original_data, **kwargs):
+        baz = original_data.get("baz")
+        if baz:
+            data["bar"] = data["bar"] + baz
+        return data
 
+
+    num_layers: Optional[int] = schema_utils.Posti(
+        default=1,
+        description="Number of stacked fully connected layers that the input to the feature passes through.",
+    )
+
+    output_size: Optional[int] = schema_utils.Integer(
+        default=256,
+        description="Size of the output of the feature.",
+    )
+
+@dataclass
+class BinaryOutputFeature(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+    """BinaryOutputFeature is a dataclass that configures the parameters used for a binary output feature."""
