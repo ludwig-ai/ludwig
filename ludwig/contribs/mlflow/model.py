@@ -15,12 +15,14 @@ from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 from mlflow.utils.environment import _mlflow_conda_env
 from mlflow.utils.model_utils import _get_flavor_configuration
 
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_json
 
 FLAVOR_NAME = "ludwig"
+MODEL_TYPE_LUDWIG_MODEL = "ludwig_model"
+MODEL_TYPE_TORCHSCRIPT = "torchscript"
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_default_conda_env():
@@ -108,6 +110,11 @@ def save_model(
 
     # Save the Ludwig model
     ludwig_model.save(model_data_path)
+    model_type = (
+        MODEL_TYPE_TORCHSCRIPT
+        if os.path.isfile(os.path.join(model_data_path, INFERENCE_MODULE_FILE_NAME))
+        else MODEL_TYPE_LUDWIG_MODEL
+    )
 
     conda_env_subpath = "conda.yaml"
     if conda_env is None:
@@ -140,8 +147,10 @@ def save_model(
             ],
         },
         data=model_data_subpath,
+        model_type=model_type,
     )
     mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
+    logger.info(f"Model with model_type '{model_type}' saved to MLFlow.")
 
 
 def log_model(
@@ -216,21 +225,29 @@ def log_model(
     )
 
 
-def _load_model(path):
-    from ludwig.api import LudwigModel
+def _load_model(path, model_type=MODEL_TYPE_LUDWIG_MODEL):
+    if model_type == MODEL_TYPE_LUDWIG_MODEL:
+        from ludwig.api import LudwigModel
 
-    return LudwigModel.load(path, backend="local")
+        return LudwigModel.load(path, backend="local")
+    elif model_type == MODEL_TYPE_TORCHSCRIPT:
+        from ludwig.models.inference import InferenceLudwigModel
+
+        return InferenceLudwigModel(path)
+    raise ValueError(f'Unsupported module type: "{model_type}"')
 
 
 def _load_pyfunc(path):
     """Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
+
+    Does not currently support loading the torchscript model type.
 
     :param path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
     """
     return _LudwigModelWrapper(_load_model(path))
 
 
-def load_model(model_uri):
+def load_model(model_uri, model_type=None):
     """Load a Ludwig model from a local file or a run.
 
     :param model_uri: The location, in URI format, of the MLflow model. For example:
@@ -243,13 +260,20 @@ def load_model(model_uri):
                       For more information about supported URI schemes, see
                       `Referencing Artifacts <https://www.mlflow.org/docs/latest/tracking.html#
                       artifact-locations>`_.
+    :param model_type: The type of model to load. Valid values are MODEL_TYPE_LUDWIG_MODEL and MODEL_TYPE_TORCHSCRIPT.
+        If not provided, the type is inferred from the model's configuration. Used primarily for debugging/benchmarking.
 
     :return: A Ludwig model (an instance of `ludwig.api.LudwigModel`_).
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
-    return _load_model(path=lgb_model_file_path)
+    if model_type is None:
+        model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
+
+    model = _load_model(path=lgb_model_file_path, model_type=model_type)
+    logger.info(f"Model with model_type '{model_type}' loaded from MLFlow.")
+    return model
 
 
 class _LudwigModelWrapper:

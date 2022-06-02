@@ -126,7 +126,7 @@ class Trainer(BaseTrainer):
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        callbacks: List = None,
+        callbacks: Optional[List] = None,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
@@ -139,7 +139,7 @@ class Trainer(BaseTrainer):
         :param resume: Resume training a model that was being trained. (default: False).
         :type resume: Boolean
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
+                default Ludwig saves model weights after each epoch the validation metric improves, but if the model is
                 really big that can be time consuming. If you do not want to keep the weights and just find out what
                 performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
                 will not be loadable later on. (default: False).

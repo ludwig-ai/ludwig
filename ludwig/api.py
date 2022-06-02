@@ -652,6 +652,9 @@ class LudwigModel:
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
 
+                for callback in self.callbacks:
+                    callback.on_train_teardown(output_directory, self.backend.is_coordinator())
+
                 print_boxed("FINISHED")
                 return train_stats, preprocessed_data, output_url
 

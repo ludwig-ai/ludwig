@@ -4,19 +4,22 @@ from unittest import mock
 
 import mlflow
 import pandas as pd
+import pytest
 import yaml
 from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs import MlflowCallback
+from ludwig.contribs.mlflow.model import load_model
+from ludwig.models.inference import InferenceLudwigModel
 from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
 
 
-def test_mlflow_callback(tmpdir):
+@pytest.fixture
+def config_tuple():
     epochs = 2
     batch_size = 8
-    num_examples = 32
 
     input_features = [sequence_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
@@ -27,10 +30,12 @@ def test_mlflow_callback(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {"epochs": epochs, "batch_size": batch_size},
     }
+    return config, input_features, output_features
 
-    data_csv = generate_data(
-        input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=num_examples
-    )
+
+def test_mlflow_callback_pyfunc_load_model(tmpdir, config_tuple):
+    config, input_features, output_features = config_tuple
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=32)
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
@@ -93,3 +98,69 @@ def test_mlflow_callback(tmpdir):
     test_df = pd.read_csv(test_csv)
     pred_df = loaded_model.predict(test_df)
     assert pred_df.equals(expected_df)
+
+
+def test_mlflow_callback_ludwig_model(tmpdir, config_tuple):
+    config, input_features, output_features = config_tuple
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=32)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    mlflow_uri = f"file://{tmpdir}/mlruns"
+    mlflow.set_tracking_uri(mlflow_uri)
+
+    exp_name = "mlflow_test"
+    callback = MlflowCallback()
+    wrapped_callback = mock.Mock(wraps=callback)
+
+    model = LudwigModel(config, callbacks=[wrapped_callback], backend=FakeRemoteBackend())
+    model.train(
+        training_set=data_csv,
+        validation_set=val_csv,
+        test_set=test_csv,
+        experiment_name=exp_name,
+        skip_save_inference_module=True,  # Skips saving the inference module, forcing MLFlow to load it as LudwigModel.
+    )
+    expected_df, _ = model.predict(test_csv)
+
+    model_path = f"runs:/{callback.run.info.run_id}/model"
+    loaded_model = load_model(model_path)
+    assert isinstance(loaded_model, LudwigModel)
+
+    test_df = pd.read_csv(test_csv)
+    pred_df, _ = loaded_model.predict(test_df)
+    assert pred_df.equals(expected_df)
+
+
+def test_mlflow_callback_torchscript(tmpdir, config_tuple):
+    config, input_features, output_features = config_tuple
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=32)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    mlflow_uri = f"file://{tmpdir}/mlruns"
+    mlflow.set_tracking_uri(mlflow_uri)
+
+    exp_name = "mlflow_test"
+    callback = MlflowCallback()
+    wrapped_callback = mock.Mock(wraps=callback)
+
+    model = LudwigModel(config, callbacks=[wrapped_callback], backend=FakeRemoteBackend())
+    model.train(
+        training_set=data_csv,
+        validation_set=val_csv,
+        test_set=test_csv,
+        experiment_name=exp_name,
+    )
+    expected_df, _ = model.predict(test_csv)
+
+    model_path = f"runs:/{callback.run.info.run_id}/model"
+    loaded_model = load_model(model_path)
+    assert isinstance(loaded_model, InferenceLudwigModel)
+
+    test_df = pd.read_csv(test_csv)
+    pred_df, _ = loaded_model.predict(test_df)
+
+    # InferenceLudwigModel only outputs a subset DataFrame. See test_torchscript.py::test_torchscript_e2e for details.
+    for col in pred_df.columns:
+        assert pred_df[col].equals(expected_df[col])
