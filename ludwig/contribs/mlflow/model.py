@@ -267,7 +267,6 @@ def load_model(model_uri, model_type=None):
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
-
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
     if model_type is None:
         model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
