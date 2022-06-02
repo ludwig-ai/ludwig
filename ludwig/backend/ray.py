@@ -283,16 +283,16 @@ class TqdmCallback(rt.TrainingCallback):
         if not progress_bar_opts:
             return
         # Skip commands received by non-coordinators
-        if not progress_bar_opts['is_coordinator']:
+        if not progress_bar_opts["is_coordinator"]:
             return
         _id = progress_bar_opts["id"]
-        action = progress_bar_opts.pop('action')
-        if action == 'create':
+        action = progress_bar_opts.pop("action")
+        if action == "create":
             progress_bar_config = progress_bar_opts.get("config")
             self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
-        elif action == 'close':
+        elif action == "close":
             self.progess_bars[_id].close()
-        elif action == 'update':
+        elif action == "update":
             update_by = progress_bar_opts.pop("update_by")
             self.progess_bars[_id].update(update_by)
 
