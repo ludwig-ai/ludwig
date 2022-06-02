@@ -1,13 +1,11 @@
-import logging
 import os
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
+import time
+from typing import Any, Dict, List, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.backend import initialize_backend
-from ludwig.backend.base import Backend
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
@@ -106,18 +104,26 @@ class InferenceLudwigModel:
 
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
-        print("inside InferenceLudwigModel.predict")
-        print(dataset)
-        # print(dataset.columns)
+        print({if_config["name"] for if_config in self.config["input_features"]})
+        start_time = time.time()
         inputs = {}
         for if_config in self.config["input_features"]:
-            print(if_config["name"], if_config[COLUMN], if_config[TYPE])
+            # print(if_config["name"], if_config[COLUMN], if_config[TYPE])
             inputs[if_config["name"]] = to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
+        inputs_time = time.time()
+        # print("to_inference_module_input took {} seconds".format(inputs_time - start_time))
 
         preds = self.model(inputs)
 
+        inference_time = time.time()
+        # print("inference took {} seconds".format(inference_time - inputs_time))
+
         if return_type == pd.DataFrame:
             preds = convert_dict_to_df(preds)
+
+        preds_time = time.time()
+        # print("convert_dict_to_df took {} seconds".format(preds_time - inference_time))
+        # print("total predict took {} seconds".format(preds_time - start_time))
         return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
 
