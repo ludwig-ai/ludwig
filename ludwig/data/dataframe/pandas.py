@@ -62,7 +62,7 @@ class PandasEngine(DataFrameEngine):
 
         return from_pandas(df)
 
-    def from_ray_dataset(self, dataset):
+    def from_ray_dataset(self, dataset) -> pd.DataFrame:
         return dataset.to_pandas()
 
     @property
