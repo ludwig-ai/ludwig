@@ -12,7 +12,7 @@ from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
@@ -103,6 +103,49 @@ class ECD(LudwigModule):
         # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
         return torch.Size([1, 1])
 
+    def encode(
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+    ):
+        # Convert inputs to tensors.
+        for input_feature_name, input_values in inputs.items():
+            if not isinstance(input_values, torch.Tensor):
+                inputs[input_feature_name] = torch.from_numpy(input_values)
+            else:
+                inputs[input_feature_name] = input_values
+
+        encoder_outputs = {}
+        for input_feature_name, input_values in inputs.items():
+            encoder = self.input_features[input_feature_name]
+            encoder_output = encoder(input_values)
+            encoder_outputs[input_feature_name] = encoder_output
+
+        return encoder_outputs
+
+    def combine(self, encoder_outputs):
+        return self.combiner(encoder_outputs)
+
+    def decode(self, combiner_outputs, targets, mask):
+        # Invoke output features.
+        output_logits = {}
+        output_last_hidden = {}
+        for output_feature_name, output_feature in self.output_features.items():
+            # Use the presence or absence of targets to signal training or prediction.
+            target = targets[output_feature_name] if targets is not None else None
+            decoder_outputs = output_feature(combiner_outputs, output_last_hidden, mask=mask, target=target)
+
+            # Add decoder outputs to overall output dictionary.
+            for decoder_output_name, tensor in decoder_outputs.items():
+                output_feature_utils.set_output_feature_tensor(
+                    output_logits, output_feature_name, decoder_output_name, tensor
+                )
+
+            # Save the hidden state of the output feature (for feature dependencies).
+            output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
+        return output_logits
+
     def forward(
         self,
         inputs: Union[
@@ -136,38 +179,9 @@ class ECD(LudwigModule):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
-        # Convert inputs to tensors.
-        for input_feature_name, input_values in inputs.items():
-            if not isinstance(input_values, torch.Tensor):
-                inputs[input_feature_name] = torch.from_numpy(input_values)
-            else:
-                inputs[input_feature_name] = input_values
-
-        encoder_outputs = {}
-        for input_feature_name, input_values in inputs.items():
-            encoder = self.input_features[input_feature_name]
-            encoder_output = encoder(input_values)
-            encoder_outputs[input_feature_name] = encoder_output
-
-        combiner_outputs = self.combiner(encoder_outputs)
-
-        # Invoke output features.
-        output_logits = {}
-        output_last_hidden = {}
-        for output_feature_name, output_feature in self.output_features.items():
-            # Use the presence or absence of targets to signal training or prediction.
-            target = targets[output_feature_name] if targets is not None else None
-            decoder_outputs = output_feature(combiner_outputs, output_last_hidden, mask=mask, target=target)
-
-            # Add decoder outputs to overall output dictionary.
-            for decoder_output_name, tensor in decoder_outputs.items():
-                output_feature_utils.set_output_feature_tensor(
-                    output_logits, output_feature_name, decoder_output_name, tensor
-                )
-
-            # Save the hidden state of the output feature (for feature dependencies).
-            output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
-        return output_logits
+        encoder_outputs = self.encode(inputs)
+        combiner_outputs = self.combine(encoder_outputs)
+        return self.decode(combiner_outputs, targets, mask)
 
     def predictions(self, inputs):
         outputs = self(inputs)

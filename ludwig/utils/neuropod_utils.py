@@ -22,7 +22,7 @@ class GeneratedInferenceModule(torch.nn.Module):
         self.inference_module = inference_module
 
     def forward(self, {input_signature}):
-        inputs = {input_dict}
+        inputs: Dict[str, Union[List[str], List[torch.Tensor], torch.Tensor]] = {input_dict}
         results = self.inference_module(inputs)
         return {output_dicts}
 """
@@ -32,7 +32,7 @@ def _get_input_signature(config: Dict[str, Any]) -> str:
     args = []
     for feature in config["input_features"]:
         name = feature[NAME]
-        args.append(f"{name}: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]")
+        args.append(f"{name}: TorchscriptPreprocessingInput")
     return ", ".join(args)
 
 
@@ -48,8 +48,8 @@ def _get_output_dicts(config: Dict[str, Any]) -> str:
     results = []
     for feature in config["output_features"]:
         name = feature[NAME]
-        results.append("{" + f'"{name}": results["{name}"]["predictions"]' + "}")
-    return ", ".join(results)
+        results.append(f'"{name}": results["{name}"]["predictions"]')
+    return "{" + ", ".join(results) + "}"
 
 
 def generate_neuropod_torchscript(model: LudwigModel):

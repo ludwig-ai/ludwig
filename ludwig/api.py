@@ -42,6 +42,8 @@ from ludwig.constants import (
     BATCH_SIZE,
     EVAL_BATCH_SIZE,
     FULL,
+    HYPEROPT,
+    HYPEROPT_WARNING,
     LEARNING_RATE,
     PREPROCESSING,
     TEST,
@@ -61,7 +63,6 @@ from ludwig.globals import (
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
-from ludwig.marshmallow.marshmallow_schema_utils import load_config_with_kwargs
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
@@ -72,6 +73,8 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema import validate_config
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -85,7 +88,7 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.schema import validate_config
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -336,6 +339,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         # setup directories and file names
         if model_resume_path is not None:
             if path_exists(model_resume_path):
@@ -472,7 +479,7 @@ class LudwigModel:
                     experiment_name=experiment_name,
                     model_name=model_name,
                     output_directory=output_directory,
-                    resume=model_resume_path is not None,
+                    resume_directory=model_resume_path,
                 )
 
             # Build model if not provided
@@ -691,6 +698,7 @@ class LudwigModel:
         skip_save_predictions: bool = True,
         output_directory: str = "results",
         return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+        callbacks: Optional[List[Callback]] = None,
         **kwargs,
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
         """Using a trained model, make predictions from the provided dataset.
@@ -723,6 +731,9 @@ class LudwigModel:
             model and the training progress files.
         :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format of the returned predictions.
+        :param callbacks: (Optional[List[Callback]], default: None)
+            optional list of callbacks to use during this predict operation. Any callbacks
+            already registered to the model will be preserved.
 
         # Return
 
@@ -742,7 +753,7 @@ class LudwigModel:
             split=split,
             include_outputs=False,
             backend=self.backend,
-            callbacks=self.callbacks,
+            callbacks=self.callbacks + (callbacks or []),
         )
 
         logger.debug("Predicting")
@@ -872,12 +883,7 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
-                # TODO ray: support calculating stats on partitioned datasets
-                if self.backend.df_engine.partitioned:
-                    raise ValueError(
-                        "Cannot calculate overall stats on a partitioned DataFrame at this time. "
-                        "Set `calculate_overall_stats=False`."
-                    )
+                dataset = dataset.to_df()
 
                 overall_stats = calculate_overall_stats(
                     self.model.output_features, predictions, dataset, training_set_metadata
@@ -1068,6 +1074,10 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
+        if HYPEROPT in self.config:
+            print_boxed("WARNING")
+            logger.info(HYPEROPT_WARNING)
+
         (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,
             training_set=training_set,
@@ -1385,7 +1395,7 @@ class LudwigModel:
         """
         if self.backend.is_coordinator():
             weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device(get_torch_device())
             self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
 
         self.backend.sync_model(self.model)
@@ -1438,7 +1448,7 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def to_torchscript(self):
+    def to_torchscript(self, model_only: bool = False):
         """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
 
         The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
@@ -1451,14 +1461,21 @@ class LudwigModel:
         Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
         outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
         tensors of varying dimensions for probabilities, logits, etc.
+
+        Args:
+            model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
+                preprocessing and postprocessing will also be converted to Torchscript.
         """
         self._check_initialization()
-        inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
-        return torch.jit.script(inference_module)
+        if model_only:
+            return self.model.to_torchscript()
+        else:
+            inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+            return torch.jit.script(inference_module)
 
-    def save_torchscript(self, save_path: str):
+    def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript model to disk."""
-        inference_module = self.to_torchscript()
+        inference_module = self.to_torchscript(model_only=model_only)
         inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
 
     def _check_initialization(self):

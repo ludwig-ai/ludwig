@@ -3,8 +3,8 @@ from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
 from ludwig.models.trainer import TrainerConfig
-from ludwig.modules.optimization_modules import optimizer_registry
-from ludwig.utils.schema import validate_config
+from ludwig.schema import validate_config
+from ludwig.schema.optimizers import optimizer_registry
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 # Note: simple tests for now, but once we add dependent fields we can add tests for more complex relationships in this

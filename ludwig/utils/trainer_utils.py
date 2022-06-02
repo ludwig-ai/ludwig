@@ -146,6 +146,16 @@ class ProgressTracker:
         return log_metrics
 
 
+def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
+    """Returns train_steps if non-negative.
+
+    Otherwise, returns the number of epochs.
+    """
+    if train_steps:
+        return train_steps
+    return epochs * steps_per_epoch
+
+
 def get_final_steps_per_checkpoint(
     steps_per_epoch: int, steps_per_checkpoint: int = 0, checkpoints_per_epoch: float = 0, should_log: bool = False
 ):
@@ -156,17 +166,21 @@ def get_final_steps_per_checkpoint(
             "other, or specify neither to checkpoint/eval the model every epoch."
         )
 
-    # Set steps_per_checkpoint based on the checkpoints_per_epoch, if it was specified.
+    # Set steps_per_checkpoint based on the checkpoints_per_epoch, if checkpoints_per_epoch was specified.
     if checkpoints_per_epoch != 0:
         steps_per_checkpoint = int(steps_per_epoch / checkpoints_per_epoch)
 
-    # Check steps_per_checkpoint and cap it at steps_per_epoch.
-    if steps_per_checkpoint == 0 or steps_per_checkpoint > steps_per_epoch:
-        steps_per_checkpoint = steps_per_epoch
+    # Cap steps_per_checkpoint at steps_per_epoch.
+    if steps_per_checkpoint > steps_per_epoch:
         if should_log:
             logging.info(
                 f"Note: steps_per_checkpoint (was {steps_per_checkpoint}) is now set to the number of "
                 f"steps per epoch: {steps_per_epoch}.\n"
             )
+        return steps_per_epoch
+
+    # steps_per_checkpoint wasn't specified. Use steps_per_epoch.
+    if steps_per_checkpoint == 0:
+        return steps_per_epoch
 
     return steps_per_checkpoint

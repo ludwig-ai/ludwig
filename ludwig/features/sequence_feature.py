@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -56,8 +56,8 @@ from ludwig.utils.strings_utils import (
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
-from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
-from ludwig.utils.types import DataFrame
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +67,10 @@ class _SequencePreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
                 f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
-                f"one of {TORCHSCRIPT_ENABLED_TOKENIZERS}."
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
             )
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
@@ -84,7 +84,7 @@ class _SequencePreprocessing(torch.nn.Module):
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")

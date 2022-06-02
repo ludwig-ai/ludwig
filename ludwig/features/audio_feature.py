@@ -50,6 +50,7 @@ from ludwig.utils.audio_utils import (
 )
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class _AudioPreprocessing(torch.nn.Module):
         self.padding_value = metadata["preprocessing"]["padding_value"]
         self.normalization_type = metadata["preprocessing"]["norm"]
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         if not torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -99,7 +100,10 @@ class AudioFeatureMixin(BaseFeatureMixin):
             "padding_value": 0,
             "norm": None,
             "audio_feature": {
-                TYPE: "raw",
+                TYPE: "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
             },
         }
 
@@ -256,10 +260,10 @@ class AudioFeatureMixin(BaseFeatureMixin):
         padding_value: int,
         normalization_type: Optional[str] = None,
         type_key: str = TYPE,
-    ) -> torch.Tensor:
+    ) -> np.ndarray:
         feature_type: str = str(audio_feature_dict[type_key])
         if feature_type == "raw":
-            audio_feature = torch.unsqueeze(audio, dim=-1)
+            audio_feature = torch.unsqueeze(audio[0], dim=-1)
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
             audio_feature = AudioFeatureMixin._get_2D_feature(
                 audio, feature_type, audio_feature_dict, sampling_rate_in_hz
@@ -282,7 +286,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_feature_padded = torch.full((max_length, feature_dim), padding_value, dtype=torch.float32)
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
 
-        return audio_feature_padded
+        return audio_feature_padded.numpy()
 
     @staticmethod
     def _get_stats(audio, sampling_rate_in_hz, max_length_in_s):

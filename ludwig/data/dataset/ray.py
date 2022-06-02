@@ -59,7 +59,8 @@ class RayDataset(Dataset):
         training_set_metadata: Dict[str, Any],
         backend: Backend,
     ):
-        self.ds = backend.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
+        self.df_engine = backend.df_engine
+        self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
@@ -100,6 +101,9 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    def to_df(self):
+        return self.df_engine.from_ray_dataset(self.ds)
 
 
 class RayDatasetManager(DatasetManager):
@@ -221,10 +225,10 @@ class RayDatasetBatcher(Batcher):
         if read_parallelism == 1:
             self.dataset_batch_iter = self._create_async_reader(dataset)
         elif read_parallelism > 1:
-            self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
-        else:
             # TODO: consider removing this. doesn't work currently and read performance seems generally
             #  very good with 1 parallelism
+            self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
+        else:
             self.dataset_batch_iter = self._create_sync_reader(dataset)
 
         self._step = 0
@@ -259,6 +263,10 @@ class RayDatasetBatcher(Batcher):
 
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
         res = {c: batch[c].to_numpy() for c in self.columns}
+
+        print("inside prepare batch")
+        print({k: v for k, v in res.items()})
+        print({k: (v.shape, self.reshape_map.get(k)) for k, v in res.items()})
 
         for c in self.columns:
             reshape = self.reshape_map.get(c)

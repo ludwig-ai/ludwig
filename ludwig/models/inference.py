@@ -1,16 +1,18 @@
 import os
-from typing import Any, Dict, List, Tuple, TYPE_CHECKING, Union
+from typing import Any, Dict, List, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import NAME, TYPE
+from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.utils import audio_utils, image_utils
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -59,9 +61,7 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(
-        self, inputs: Dict[str, Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]]
-    ):
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -93,20 +93,16 @@ class InferenceLudwigModel:
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
         self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
-    def _to_input(self, s: pd.Series) -> Union[List[str], torch.Tensor]:
-        if s.dtype == "object":
-            return s.to_list()
-        return torch.from_numpy(s.to_numpy())
-
     def predict(
-        self, batch: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
+        self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
         """Predict on a batch of data.
 
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
         inputs = {
-            if_config["name"]: self._to_input(batch[if_config["column"]]) for if_config in self.config["input_features"]
+            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
+            for if_config in self.config["input_features"]
         }
 
         preds = self.model(inputs)
@@ -114,3 +110,16 @@ class InferenceLudwigModel:
         if return_type == pd.DataFrame:
             preds = convert_dict_to_df(preds)
         return preds, None  # Second return value is for compatibility with LudwigModel.predict
+
+
+def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:
+    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
+    if feature_type == "image":
+        if load_paths:
+            return [image_utils.read_image(v) for v in s]
+    elif feature_type == "audio":
+        if load_paths:
+            return [audio_utils.read_audio(v, src_path=None) for v in s]
+    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+        return s.astype(str).to_list()
+    return torch.from_numpy(s.to_numpy())

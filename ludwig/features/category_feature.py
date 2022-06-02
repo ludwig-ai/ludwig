@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -46,6 +46,7 @@ from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class _CategoryPreprocessing(torch.nn.Module):
         self.str2idx = metadata["str2idx"]
         self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -42,7 +42,8 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
-from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -56,10 +57,10 @@ class _SetPreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
         super().__init__()
-        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_ENABLED_TOKENIZERS:
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
                 f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
-                f"one of {TORCHSCRIPT_ENABLED_TOKENIZERS}."
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
             )
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
@@ -69,7 +70,7 @@ class _SetPreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.is_bag = is_bag
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         """Takes a list of strings and returns a tensor of counts for each token."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")

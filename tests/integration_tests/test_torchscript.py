@@ -21,14 +21,15 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+from ludwig.models.inference import to_inference_module_input
 from ludwig.utils import output_feature_utils
-from ludwig.utils.tokenizers import TORCHSCRIPT_ENABLED_TOKENIZERS
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
 from tests.integration_tests.utils import (
     audio_feature,
@@ -45,7 +46,6 @@ from tests.integration_tests.utils import (
     set_feature,
     text_feature,
     timeseries_feature,
-    to_inference_module_input,
     vector_feature,
 )
 
@@ -198,9 +198,6 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
-@pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
-)
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -208,24 +205,28 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
-    torchscript_enabled_text_features = [
+    transformed_number_features = [
+        number_feature(preprocessing={"normalization": numeric_transformer})
+        for numeric_transformer in numeric_transformation_registry.keys()
+    ]
+    torchscript_compatible_text_features = [
         text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
-        for tokenizer in TORCHSCRIPT_ENABLED_TOKENIZERS
+        for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
     ]
     input_features = [
         bin_str_feature,
         binary_feature(),
-        number_feature(),
+        *transformed_number_features,
         category_feature(vocab_size=3),
         image_feature(image_dest_folder),
-        *torchscript_enabled_text_features,
+        *torchscript_compatible_text_features,
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
         sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
+        timeseries_feature(),
         audio_feature(audio_dest_folder),
         # TODO: future support
         # vector_feature(),
-        # timeseries_feature(),
         # date_feature(),
         # h3_feature(),
     ]
@@ -269,9 +270,15 @@ def test_torchscript_e2e(csv_filename, tmpdir):
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
+
+    # Ensure torchscript saving/loading does not affect final predictions.
+    script_module_path = os.path.join(tmpdir, "inference_module.pt")
+    torch.jit.save(script_module, script_module_path)
+    script_module = torch.jit.load(script_module_path)
+
     df = pd.read_csv(training_data_csv_path)
     inputs = {
-        name: to_inference_module_input(df[feature.column])
+        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
         for name, feature in ludwig_model.model.input_features.items()
     }
     outputs = script_module(inputs)

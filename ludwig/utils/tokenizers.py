@@ -29,12 +29,8 @@ logger = logging.getLogger(__name__)
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
-TORCHTEXT_TOKENIZERS = {
-    "sentencepiece",
-    "clip",
-    "gpt2bpe",
-}  # requires torchtext>=0.12.0
-TORCHSCRIPT_ENABLED_TOKENIZERS = {"space", "space_punct", *TORCHTEXT_TOKENIZERS}
+TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
+TORCHTEXT_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 
 
 class BaseTokenizer:
@@ -61,10 +57,13 @@ class SpaceStringToListTokenizer(torch.nn.Module):
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
-        elif isinstance(v, str):
-            inputs = [v]
+
+        inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+        if isinstance(v, str):
+            inputs.append(v)
         else:
-            inputs = v
+            inputs.extend(v)
 
         tokens: List[List[str]] = []
         for sequence in inputs:
@@ -90,10 +89,13 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
-        elif isinstance(v, str):
-            inputs = [v]
+
+        inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+        if isinstance(v, str):
+            inputs.append(v)
         else:
-            inputs = v
+            inputs.extend(v)
 
         tokens: List[List[str]] = []
         for sequence in inputs:
@@ -936,10 +938,13 @@ try:
                 """
                 if isinstance(v, torch.Tensor):
                     raise ValueError(f"Unsupported input: {v}")
-                elif isinstance(v, str):
-                    inputs = [v]
+
+                inputs: List[str] = []
+                # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+                if isinstance(v, str):
+                    inputs.append(v)
                 else:
-                    inputs = v
+                    inputs.extend(v)
 
                 token_ids = self.tokenizer(inputs)
                 assert torch.jit.isinstance(token_ids, List[List[str]])
@@ -987,7 +992,7 @@ try:
                 "gpt2bpe": GPT2BPETokenizer,
             }
         )
-
+        TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_TOKENIZERS)
     else:
         raise ImportError
 

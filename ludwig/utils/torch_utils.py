@@ -12,7 +12,13 @@ from torch.nn import Module, ModuleDict
 from ludwig.utils.strings_utils import SpecialSymbol
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def get_torch_device():
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+DEVICE = get_torch_device()
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:

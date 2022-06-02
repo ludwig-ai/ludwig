@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -49,7 +49,7 @@ from ludwig.utils.eval_utils import (
     roc_curve,
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
         self.should_lower = str2bool is None
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 

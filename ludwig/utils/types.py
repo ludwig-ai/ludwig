@@ -1,6 +1,7 @@
-from typing import Union
+from typing import List, Union, Tuple
 
 import pandas as pd
+import torch
 
 try:
     import dask.dataframe as dd
@@ -10,3 +11,5 @@ try:
 except ImportError:
     DataFrame = pd.DataFrame
     Series = pd.Series
+
+TorchscriptPreprocessingInput = Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]

@@ -23,6 +23,7 @@ from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class ALBERTEncoder(Encoder):
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "albert-base-v2",
         saved_weights_in_checkpoint: bool = False,
-        trainable: bool = True,
+        trainable: bool = False,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30000,
         embedding_size: int = 128,
@@ -113,6 +114,8 @@ class ALBERTEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -170,7 +173,7 @@ class MT5Encoder(Encoder):
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "google/mt5-base",
         saved_weights_in_checkpoint: bool = False,
-        trainable: bool = True,
+        trainable: bool = False,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 250112,
         d_model: int = 512,
@@ -237,6 +240,8 @@ class MT5Encoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -294,7 +299,7 @@ class XLMRoBERTaEncoder(Encoder):
         pretrained_model_name_or_path: str = "xlm-roberta-base",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
@@ -331,6 +336,8 @@ class XLMRoBERTaEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -389,7 +396,7 @@ class BERTEncoder(Encoder):
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "bert-base-uncased",
         saved_weights_in_checkpoint: bool = False,
-        trainable: bool = True,
+        trainable: bool = False,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30522,
         hidden_size: int = 768,
@@ -448,8 +455,12 @@ class BERTEncoder(Encoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
+
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -508,7 +519,7 @@ class XLMEncoder(Encoder):
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
         saved_weights_in_checkpoint: bool = False,
-        trainable: bool = True,
+        trainable: bool = False,
         reduce_output: str = "cls_pooled",
         vocab_size: int = 30145,
         emb_dim: int = 2048,
@@ -648,7 +659,7 @@ class GPTEncoder(Encoder):
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "openai-gpt",
         saved_weights_in_checkpoint: bool = False,
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 30522,
         n_positions: int = 40478,
         n_ctx: int = 512,
@@ -699,6 +710,8 @@ class GPTEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -746,7 +759,7 @@ class GPT2Encoder(Encoder):
         use_pretrained: bool = True,
         pretrained_model_name_or_path: str = "gpt2",
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 50257,
         n_positions: int = 1024,
         n_ctx: int = 1024,
@@ -799,6 +812,8 @@ class GPT2Encoder(Encoder):
 
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -849,7 +864,7 @@ class RoBERTaEncoder(Encoder):
         pretrained_model_name_or_path: str = "roberta-base",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = None,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
@@ -880,10 +895,11 @@ class RoBERTaEncoder(Encoder):
             self.transformer = RobertaModel(config)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -934,7 +950,7 @@ class TransformerXLEncoder(Encoder):
         pretrained_model_name_or_path: str = "transfo-xl-wt103",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 267735,
         cutoffs: List[int] = [20000, 40000, 200000],
         d_model: int = 1024,
@@ -1012,6 +1028,8 @@ class TransformerXLEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1055,7 +1073,7 @@ class XLNetEncoder(Encoder):
         pretrained_model_name_or_path: str = "xlnet-base-cased",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 32000,
         d_model: int = 1024,
         n_layer: int = 24,
@@ -1136,6 +1154,8 @@ class XLNetEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
@@ -1235,6 +1255,9 @@ class DistilBERTEncoder(Encoder):
 
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
+
         self.reduce_output = reduce_output
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1336,6 +1359,8 @@ class CTRLEncoder(Encoder):
         self.max_sequence_length = max_sequence_length
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(self.vocab_size)
@@ -1385,7 +1410,7 @@ class CamemBERTEncoder(Encoder):
         pretrained_model_name_or_path: str = "ctrl",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 30522,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
@@ -1442,6 +1467,8 @@ class CamemBERTEncoder(Encoder):
 
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1503,7 +1530,7 @@ class T5Encoder(Encoder):
         pretrained_model_name_or_path: str = "t5-small",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 32128,
         d_model: int = 512,
         d_kv: int = 64,
@@ -1555,6 +1582,8 @@ class T5Encoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1608,7 +1637,7 @@ class FlauBERTEncoder(Encoder):
         pretrained_model_name_or_path: str = "flaubert/flaubert_small_cased",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 30145,
         pre_norm: bool = False,
         layerdrop: float = 0.0,
@@ -1688,6 +1717,8 @@ class FlauBERTEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1741,7 +1772,7 @@ class ELECTRAEncoder(Encoder):
         pretrained_model_name_or_path: str = "google/electra-small-discriminator",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 30522,
         embedding_size: int = 128,
         hidden_size: int = 256,
@@ -1799,6 +1830,8 @@ class ELECTRAEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
@@ -1854,7 +1887,7 @@ class LongformerEncoder(Encoder):
         pretrained_model_name_or_path: str = "allenai/longformer-base-4096",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: Optional[str] = "cls_pooled",
-        trainable: bool = True,
+        trainable: bool = False,
         num_tokens: Optional[int] = None,
         pretrained_kwargs: Dict = None,
         **kwargs
@@ -1881,6 +1914,8 @@ class LongformerEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(num_tokens)
         self.max_sequence_length = max_sequence_length
 
@@ -1932,7 +1967,7 @@ class AutoTransformerEncoder(Encoder):
         pretrained_model_name_or_path: str,
         max_sequence_length: int,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = None,
         pretrained_kwargs: Dict = None,
         **kwargs
@@ -1955,6 +1990,8 @@ class AutoTransformerEncoder(Encoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
         self.transformer.resize_token_embeddings(vocab_size)
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length

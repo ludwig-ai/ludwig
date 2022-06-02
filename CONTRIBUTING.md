@@ -89,7 +89,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
 
 - Use [google/yapf](https://github.com/google/yapf) to format Python code.
 - Add unit tests for any new code you write.
-- Make sure tests pass. See the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/style_guidelines_and_tests/) for more details.
+- Make sure tests pass. See the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide/style_guidelines_and_tests/) for more details.
 
 ## Attribution
 

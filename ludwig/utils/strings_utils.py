@@ -85,7 +85,7 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     if v_str in BOOL_FALSE_STRS:
         return False
     if fallback_true_label is None:
-        raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified.")
+        raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified")
     return v == fallback_true_label
 
 

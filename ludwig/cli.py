@@ -43,6 +43,7 @@ Available sub-commands:
    collect_activations   Collects tensors for each datapoint using a pretrained model
    datasets              Downloads and lists Ludwig-ready datasets
    export_torchscript    Exports Ludwig models to Torchscript
+   export_triton         Exports Ludwig models to Triton
    export_neuropod       Exports Ludwig models to Neuropod
    export_mlflow         Exports Ludwig models to MLflow
    preprocess            Preprocess data and saves it into HDF5 and JSON format
@@ -116,6 +117,11 @@ Available sub-commands:
         from ludwig import export
 
         export.cli_export_torchscript(sys.argv[2:])
+
+    def export_triton(self):
+        from ludwig import export
+
+        export.cli_export_triton(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export

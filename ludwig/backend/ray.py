@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import dask
 import numpy as np
@@ -32,12 +33,13 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 
 _ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
 import ray.train as rt  # noqa: E402
@@ -184,7 +186,7 @@ def train_fn(
             )
 
         model = ray.get(model_ref)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_torch_device()
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
@@ -204,15 +206,89 @@ def train_fn(
     return train_results
 
 
+@ray.remote
+def tune_batch_size_fn(
+    dataset: RayDataset = None,
+    data_loader_kwargs: Dict[str, Any] = None,
+    executable_kwargs: Dict[str, Any] = None,
+    model: ECD = None,  # noqa: F821
+    ludwig_config: Dict[str, Any] = None,
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
+) -> int:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
+        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+        train_shard = RayDatasetShard(
+            pipe,
+            features,
+            training_set_metadata,
+        )
+
+        device = get_torch_device()
+        model = model.to(device)
+
+        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
+
+
+@ray.remote
+def tune_learning_rate_fn(
+    dataset: RayDataset,
+    config: Dict[str, Any],
+    data_loader_kwargs: Dict[str, Any] = None,
+    executable_kwargs: Dict[str, Any] = None,
+    model: ECD = None,  # noqa: F821
+    training_set_metadata: Dict[str, Any] = None,
+    features: Dict[str, Dict] = None,
+    **kwargs,
+) -> float:
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    try:
+        initialize_pytorch(horovod=hvd)
+
+        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+        train_shard = RayDatasetShard(
+            pipe,
+            features,
+            training_set_metadata,
+        )
+
+        device = get_torch_device()
+        model = model.to(device)
+
+        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        return trainer.tune_learning_rate(config, train_shard, **kwargs)
+    finally:
+        torch.cuda.empty_cache()
+        hvd.shutdown()
+
+
 class RayTrainerV2(BaseTrainer):
     def __init__(self, model, trainer_kwargs, data_loader_kwargs, executable_kwargs):
         self.model = model.cpu()
         self.data_loader_kwargs = data_loader_kwargs
         self.executable_kwargs = executable_kwargs
-        self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
-        self.trainer.start()
+        self.trainer_kwargs = trainer_kwargs
         self._validation_field = None
         self._validation_metric = None
+
+    @contextlib.contextmanager
+    def create_runner(self):
+        trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
+        trainer.start()
+        try:
+            yield trainer
+        finally:
+            trainer.shutdown()
 
     def train(
         self,
@@ -235,11 +311,12 @@ class RayTrainerV2(BaseTrainer):
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
-        results, self._validation_field, self._validation_metric = self.trainer.run(
-            lambda config: train_fn(**config),
-            config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
-            dataset=dataset,
-        )[0]
+        with self.create_runner() as runner:
+            results, self._validation_field, self._validation_metric = runner.run(
+                lambda config: train_fn(**config),
+                config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
+                dataset=dataset,
+            )[0]
 
         # load state dict back into the model
         state_dict, *args = results
@@ -251,6 +328,39 @@ class RayTrainerV2(BaseTrainer):
     def train_online(self, *args, **kwargs):
         raise NotImplementedError()
 
+    def tune_batch_size(
+        self,
+        config: Dict[str, Any],
+        training_set: RayDataset,
+        **kwargs,
+    ) -> int:
+        return ray.get(
+            tune_batch_size_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
+                dataset=training_set,
+                data_loader_kwargs=self.data_loader_kwargs,
+                executable_kwargs=self.executable_kwargs,
+                model=ray.put(self.model),
+                ludwig_config=config,
+                training_set_metadata=training_set.training_set_metadata,
+                features=training_set.features,
+                **kwargs,
+            )
+        )
+
+    def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
+        return ray.get(
+            tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
+                dataset=training_set,
+                config=config,
+                data_loader_kwargs=self.data_loader_kwargs,
+                executable_kwargs=self.executable_kwargs,
+                model=ray.put(self.model),
+                training_set_metadata=training_set.training_set_metadata,
+                features=training_set.features,
+                **kwargs,
+            )
+        )
+
     @property
     def validation_field(self):
         return self._validation_field
@@ -259,8 +369,44 @@ class RayTrainerV2(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
+    @property
+    def config(self) -> TrainerConfig:
+        return self.executable_kwargs["config"]
+
+    @property
+    def batch_size(self) -> int:
+        return self.config.batch_size
+
+    @batch_size.setter
+    def batch_size(self, value: int):
+        self.config.batch_size = value
+
+    @property
+    def eval_batch_size(self) -> int:
+        return self.config.eval_batch_size
+
+    @eval_batch_size.setter
+    def eval_batch_size(self, value: int):
+        self.config.eval_batch_size = value
+
+    @property
+    def resources_per_worker(self) -> Dict[str, Any]:
+        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        return trainer_kwargs.get("resources_per_worker", {})
+
+    @property
+    def num_cpus(self) -> int:
+        return self.resources_per_worker.get("CPU", 1)
+
+    @property
+    def num_gpus(self) -> int:
+        return self.resources_per_worker.get("GPU", 0)
+
+    def set_base_learning_rate(self, learning_rate: float):
+        self.config.learning_rate = learning_rate
+
     def shutdown(self):
-        self.trainer.shutdown()
+        pass
 
 
 def legacy_train_fn(
@@ -385,7 +531,7 @@ def eval_fn(
         )
 
         model = ray.get(model_ref)
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_torch_device()
         model = model.to(device)
 
         predictor = RemotePredictor(model=model, horovod=hvd, **predictor_kwargs)
@@ -396,13 +542,24 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, model: ECD, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+    def __init__(self, model: ECD, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
         self.model = model.cpu()
+        self.df_engine = df_engine
+
+    def get_trainer_kwargs(self) -> Dict[str, Any]:
+        return {**self.trainer_kwargs, **get_trainer_kwargs()}
+
+    def get_resources_per_worker(self) -> Tuple[int, int]:
+        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_gpus = resources_per_worker.get("GPU", 0)
+        num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
+        return num_cpus, num_gpus
 
     def batch_predict(self, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
@@ -426,28 +583,25 @@ class RayPredictor(BasePredictor):
                 df[c] = df[c].astype(TensorDtype())
             return df
 
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
-        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
-        num_cpus = resources_per_worker.get("CPU", 1)
-        num_gpus = resources_per_worker.get("GPU", 0)
+        # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.
+        # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        num_cpus, num_gpus = self.get_resources_per_worker()
 
-        dask_dataset = (
-            dataset.ds.map_batches(to_tensors, batch_format="pandas")
-            .map_batches(
-                batch_predictor,
-                batch_size=self.batch_size,
-                compute="actors",
-                batch_format="pandas",
-                num_cpus=num_cpus,
-                num_gpus=num_gpus,
-            )
-            .to_dask()
+        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+            batch_predictor,
+            batch_size=self.batch_size,
+            compute="actors",
+            batch_format="pandas",
+            num_cpus=num_cpus,
+            num_gpus=num_gpus,
         )
 
-        for of_feature in self.model.output_features.values():
-            dask_dataset = of_feature.unflatten(dask_dataset)
+        predictions = self.df_engine.from_ray_dataset(predictions)
 
-        return dask_dataset
+        for of_feature in self.model.output_features.values():
+            predictions = of_feature.unflatten(predictions)
+
+        return predictions
 
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
@@ -514,7 +668,7 @@ class RayPredictor(BasePredictor):
         class BatchInferModel:
             def __init__(self):
                 model = ray.get(model_ref)
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+                device = get_torch_device()
                 self.model = model.to(device)
 
                 self.output_columns = output_columns
@@ -566,6 +720,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
+        # TODO(shreya): Untested
+        # Disable placement groups on dask
+        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
@@ -579,8 +736,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return RayTrainerV2(
                 model,
                 copy.deepcopy(self._horovod_kwargs),
-                copy.deepcopy(self._data_loader_kwargs),
-                copy.deepcopy(executable_kwargs),
+                self._data_loader_kwargs,
+                executable_kwargs,
             )
         else:
             # TODO: deprecated 0.5
@@ -590,9 +747,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         return RayPredictor(
             model,
+            self.df_engine,
             copy.deepcopy(self._horovod_kwargs),
-            copy.deepcopy(self._data_loader_kwargs),
-            **copy.deepcopy(executable_kwargs),
+            self._data_loader_kwargs,
+            **executable_kwargs,
         )
 
     def set_distributed_kwargs(self, **kwargs):

@@ -29,6 +29,9 @@ from ludwig.utils.fs_utils import is_http, upgrade_http
 
 logger = logging.getLogger(__name__)
 
+# https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
+AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
+
 
 def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor, int]:
     sampling_rates = [audio[1] for audio in audio_lst]
@@ -323,6 +326,11 @@ def get_window(window_type: str, window_length_in_samp: int) -> torch.Tensor:
         return torch.hann_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
     else:
         raise ValueError(f"Unknown window type: {window_type}")
+
+
+def is_audio_score(src_path):
+    # Used for AutoML
+    return int(isinstance(src_path, str) and src_path.lower().endswith(AUDIO_EXTENSIONS))
 
 
 def _weight_data_matrix(
