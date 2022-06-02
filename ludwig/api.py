@@ -329,7 +329,6 @@ class LudwigModel:
             improves. This can be time consuming. If turned off, the inference
             module will not be loadable later on. If skip_save_model is True,
             skip_save_inference_module is automatically set to True.
-        saves
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
