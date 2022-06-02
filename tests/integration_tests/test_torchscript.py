@@ -262,6 +262,7 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         skip_save_progress=True,
         skip_save_log=True,
         skip_save_processed_input=True,
+        output_directory=tmpdir,
     )
 
     # Obtain predictions from Python model
