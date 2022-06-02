@@ -281,12 +281,19 @@ class TqdmCallback(rt.TrainingCallback):
         progress_bar_opts = results[0].get("progress_bar")
         if not progress_bar_opts:
             return
+        # Skip commands received by non-coordinators
+        if not progress_bar_opts['is_coordinator']:
+            return
         _id = progress_bar_opts["id"]
-        update_by = progress_bar_opts.pop("update_by")
-        if _id not in self.progess_bars:
+        action = progress_bar_opts.pop('action')
+        if action == 'create':
             progress_bar_config = progress_bar_opts.get("config")
             self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
-        self.progess_bars[_id].update(update_by)
+        elif action == 'close':
+            self.progess_bars[_id].close()
+        elif action == 'update':
+            update_by = progress_bar_opts.pop("update_by")
+            self.progess_bars[_id].update(update_by)
 
 
 class RayTrainerV2(BaseTrainer):
