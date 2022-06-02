@@ -22,8 +22,6 @@ FLAVOR_NAME = "ludwig"
 MODEL_TYPE_LUDWIG_MODEL = "ludwig_model"
 MODEL_TYPE_TORCHSCRIPT = "torchscript"
 
-logger = logging.getLogger(__name__)
-
 
 def get_default_conda_env():
     """
@@ -150,7 +148,7 @@ def save_model(
         model_type=model_type,
     )
     mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
-    logger.info(f"Model with model_type '{model_type}' saved to MLFlow.")
+    logging.info(f"Model with model_type '{model_type}' saved to MLFlow.")
 
 
 def log_model(
@@ -272,7 +270,7 @@ def load_model(model_uri, model_type=None):
         model_type = flavor_conf.get("model_type", MODEL_TYPE_LUDWIG_MODEL)
 
     model = _load_model(path=lgb_model_file_path, model_type=model_type)
-    logger.info(f"Model with model_type '{model_type}' loaded from MLFlow.")
+    logging.info(f"Model with model_type '{model_type}' loaded from MLFlow.")
     return model
 
 
