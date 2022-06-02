@@ -405,7 +405,7 @@ class H3RNN(Encoder):
         logger.debug("  RecurrentStack")
         self.recurrent_stack = RecurrentStack(
             input_size=self.h3_embed.output_shape[0],
-            sequence_size=H3_INPUT_SIZE,
+            max_sequence_length=H3_INPUT_SIZE,
             hidden_size=hidden_size,
             cell_type=cell_type,
             num_layers=num_layers,
