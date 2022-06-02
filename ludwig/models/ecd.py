@@ -98,6 +98,10 @@ class ECD(LudwigModule):
         # We set strict=False to enable dict inputs and outputs.
         return torch.jit.trace(self, model_inputs, strict=False)
 
+    def save_torchscript(self, save_path):
+        traced = self.to_torchscript()
+        traced.save(save_path)
+
     @property
     def input_shape(self):
         # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
