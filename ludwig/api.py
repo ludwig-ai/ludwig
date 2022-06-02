@@ -883,12 +883,7 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
-                # TODO ray: support calculating stats on partitioned datasets
-                if self.backend.df_engine.partitioned:
-                    raise ValueError(
-                        "Cannot calculate overall stats on a partitioned DataFrame at this time. "
-                        "Set `calculate_overall_stats=False`."
-                    )
+                dataset = dataset.to_df()
 
                 overall_stats = calculate_overall_stats(
                     self.model.output_features, predictions, dataset, training_set_metadata
