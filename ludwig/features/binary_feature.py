@@ -72,7 +72,7 @@ class _BinaryPreprocessing(torch.nn.Module):
         if self.should_lower:
             v = [s.lower() for s in v]
         indices = [self.str2bool.get(s, False) for s in v]
-        return torch.tensor(indices, dtype=torch.bool)
+        return torch.tensor(indices, dtype=torch.float32)
 
 
 class _BinaryPostprocessing(torch.nn.Module):

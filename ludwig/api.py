@@ -638,10 +638,7 @@ class LudwigModel:
                         logger.info("Attempting to save inference module with best weights from saved checkpoint...")
                         inference_module_path = os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME)
                         try:
-                            self.model.save_inference_module(
-                                inference_module_path,
-                                **{"config": self.config, "training_set_metadata": self.training_set_metadata},
-                            ),
+                            self.save_torchscript(inference_module_path)
                             logger.info(f'Saved inference module to: "{inference_module_path}"')
                         except Exception:
                             logger.warning(
