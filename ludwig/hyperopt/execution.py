@@ -514,8 +514,7 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
                         sync_client.wait()
                     for progress_tracker, save_path in results:
-                        # TODO(shreya): Figure out why this doesn't work
-                        # checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
+                        checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
                         report(progress_tracker)
 
             while thread.is_alive():

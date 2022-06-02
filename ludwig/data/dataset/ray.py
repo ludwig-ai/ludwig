@@ -76,15 +76,14 @@ class RayDataset(Dataset):
         self,
         shuffle: bool = True,
         fully_executed: bool = True,
-        enable_windowing: bool = False,
         window_size_bytes: Optional[int] = None
     ) -> DatasetPipeline:
         """
         Args:
             shuffle: If true, the entire dataset is shuffled in memory before batching.
             fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
-            enable_windowing: If true, split dataset into windows of fixed memory size.
-            window_size_bytes: If not None, specifies the window size in bytes for the dataset.
+            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
+                    for the dataset.
         """
         if not fully_executed and not _ray112:
             raise ValueError(f"Cannot set fully_execute=False in ray {ray.__version__}")
@@ -93,11 +92,9 @@ class RayDataset(Dataset):
             # set instance state so calls to __len__ will also use the fully_executed version
             self.ds = self.ds.fully_executed()
 
-        if not enable_windowing:
+        if window_size_bytes is None:
             pipe = self.ds.repeat()
         else:
-            if window_size_bytes is None:
-                raise ValueError("window_size_bytes must not be None when enable_windowing is True.")
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
