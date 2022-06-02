@@ -448,14 +448,16 @@ class RayTuneExecutor(HyperoptExecutor):
                 progress_tracker.tune_checkpoint_num += 1
                 self.last_steps = progress_tracker.steps
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
-                # report(progress_tracker)
+                if not is_using_ray_backend:
+                    report(progress_tracker)
 
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
                     # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
                     # for some ray samplers if not steps have happened since the last eval.
                     self._checkpoint_progress(trainer, progress_tracker, save_path)
-                    # report(progress_tracker)
+                    if not is_using_ray_backend:
+                        report(progress_tracker)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
@@ -492,7 +494,6 @@ class RayTuneExecutor(HyperoptExecutor):
             stats.append((train_stats, eval_stats))
 
         sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)
-        # if is_using_ray_backend and sync_info is not None:
         if is_using_ray_backend:
             # We have to pull the results to the trial actor
             # from worker actors, as the Tune session is running
