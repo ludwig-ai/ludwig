@@ -1,5 +1,4 @@
 import os
-import time
 from typing import Any, Dict, List, TYPE_CHECKING, Union
 
 import pandas as pd
@@ -104,26 +103,15 @@ class InferenceLudwigModel:
 
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
-        print({if_config["name"] for if_config in self.config["input_features"]})
-        start_time = time.time()
-        inputs = {}
-        for if_config in self.config["input_features"]:
-            # print(if_config["name"], if_config[COLUMN], if_config[TYPE])
-            inputs[if_config["name"]] = to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
-        inputs_time = time.time()
-        # print("to_inference_module_input took {} seconds".format(inputs_time - start_time))
+        inputs = {
+            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
+            for if_config in self.config["input_features"]
+        }
 
         preds = self.model(inputs)
 
-        inference_time = time.time()
-        # print("inference took {} seconds".format(inference_time - inputs_time))
-
         if return_type == pd.DataFrame:
             preds = convert_dict_to_df(preds)
-
-        preds_time = time.time()
-        # print("convert_dict_to_df took {} seconds".format(preds_time - inference_time))
-        # print("total predict took {} seconds".format(preds_time - start_time))
         return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
 
