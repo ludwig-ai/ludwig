@@ -33,8 +33,8 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
-from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
@@ -542,13 +542,7 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(
-        self,
-        model: ECD,
-        df_engine: DataFrameEngine,
-        trainer_kwargs, data_loader_kwargs,
-        **predictor_kwargs
-    ):
+    def __init__(self, model: ECD, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs

@@ -72,7 +72,7 @@ HYPEROPT_CONFIG = {
 SCENARIOS = [
     {
         "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1},
-        "search_alg": {"type": "variant_generator"}
+        "search_alg": {"type": "variant_generator"},
     },
     # TODO(shreya): Uncomment when https://github.com/ludwig-ai/ludwig/issues/2039 is fixed.
     # {
@@ -97,7 +97,7 @@ SCENARIOS = [
             "cpu_resources_per_trial": 1,
         },
         "search_alg": {"type": "bohb"},
-    }
+    },
 ]
 
 
@@ -212,7 +212,9 @@ def run_hyperopt_executor(
         )
 
         # hyperopt
-        hyperopt_executor = MockRayTuneExecutor(hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor)
+        hyperopt_executor = MockRayTuneExecutor(
+            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        )
         hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
         hyperopt_executor.execute(
@@ -242,8 +244,8 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     run_hyperopt_executor(
         # {"type": "ray", "num_samples": 2},
         # {"type": "ray"},
-        {"type": "variant_generator"}, # search_alg
-        {"type": "ray", "num_samples": 2}, # executor
+        {"type": "variant_generator"},  # search_alg
+        {"type": "ray", "num_samples": 2},  # executor
         csv_filename,
         ray_mock_dir,
         validate_output_feature=True,
