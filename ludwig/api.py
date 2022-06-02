@@ -1478,7 +1478,7 @@ class LudwigModel:
         save_json(model_hyperparameters_path, self.config)
 
     def to_torchscript(self, model_only: bool = False):
-        """Returns a scripted ECD model.
+        """Returns a scripted model.
 
         The input to this model is a dictionary of input features. For every input feature, the user must provide a
         tensor, a list of tensors or a list of strings.
@@ -1487,7 +1487,7 @@ class LudwigModel:
         outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
         tensors of varying dimensions for probabilities, logits, etc.
 
-        :param model_only: (bool, default: `False`) if `True`, only the model will be converted to torchscript. If
+        :param model_only: (bool, default: `False`) if `True`, only the ECD model will be converted to torchscript. If
             `False`, the preprocessing and postprocessing modules will be included in  the torchscript module as well.
 
         :return: (torch.nn.Module) a scripted model.
