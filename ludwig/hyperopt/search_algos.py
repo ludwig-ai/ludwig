@@ -1,6 +1,6 @@
+import logging
 from abc import ABC
 from importlib import import_module
-import logging
 from typing import Dict
 
 from ludwig.utils.misc_utils import get_from_registry

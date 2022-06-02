@@ -173,10 +173,16 @@ def test_deprecated_field_aliases():
 def test_merge_with_defaults():
     legacy_config_format = {
         "input_features": [
-            {"type": "numerical", "name": "in_feat", },
+            {
+                "type": "numerical",
+                "name": "in_feat",
+            },
         ],
         "output_features": [
-            {"type": "numerical", "name": "out_feat", },
+            {
+                "type": "numerical",
+                "name": "out_feat",
+            },
         ],
         "training": {"eval_batch_size": 0},
         "hyperopt": {
@@ -187,29 +193,41 @@ def test_merge_with_defaults():
                 "out_feat.embedding_size": {},
                 "out_feat.dropout": 0.2,
             },
-            "executor": {"type": "serial", "search_alg": {TYPE: "variant_generator"}, },
-            "sampler": {"num_samples": 99, "scheduler": {}, },
-        }
+            "executor": {
+                "type": "serial",
+                "search_alg": {TYPE: "variant_generator"},
+            },
+            "sampler": {
+                "num_samples": 99,
+                "scheduler": {},
+            },
+        },
     }
 
     updated_config = merge_with_defaults(legacy_config_format)
 
     # check for updated trainer section
     assert TRAINER in updated_config and "training" not in updated_config
-    assert updated_config[TRAINER]["eval_batch_size"] is None \
-           and updated_config[TRAINER]["eval_batch_size"] != 0
+    assert updated_config[TRAINER]["eval_batch_size"] is None and updated_config[TRAINER]["eval_batch_size"] != 0
 
     # check for updated number type for input and output features
-    assert NUMBER == updated_config["input_features"][0][TYPE] \
-           and "numerical" != updated_config["input_features"][0][TYPE]
-    assert NUMBER == updated_config["output_features"][0][TYPE] \
-           and "numerical" != updated_config["output_features"][0][TYPE]
+    assert (
+        NUMBER == updated_config["input_features"][0][TYPE] and "numerical" != updated_config["input_features"][0][TYPE]
+    )
+    assert (
+        NUMBER == updated_config["output_features"][0][TYPE]
+        and "numerical" != updated_config["output_features"][0][TYPE]
+    )
 
     # check for upgraded hyperparameters
-    assert "trainer.learning_rate" in updated_config[HYPEROPT][PARAMETERS] \
-           and "training.learning_rate" not in updated_config[HYPEROPT][PARAMETERS]
-    assert "trainer.early_stop" in updated_config[HYPEROPT][PARAMETERS] \
-           and "training.early_stop" not in updated_config[HYPEROPT][PARAMETERS]
+    assert (
+        "trainer.learning_rate" in updated_config[HYPEROPT][PARAMETERS]
+        and "training.learning_rate" not in updated_config[HYPEROPT][PARAMETERS]
+    )
+    assert (
+        "trainer.early_stop" in updated_config[HYPEROPT][PARAMETERS]
+        and "training.early_stop" not in updated_config[HYPEROPT][PARAMETERS]
+    )
 
     # make sure other parameters not changed or missing
     assert "in_feat.num_fc_layers" in updated_config[HYPEROPT][PARAMETERS]
@@ -227,6 +245,7 @@ def test_merge_with_defaults():
     assert SAMPLER not in updated_config[HYPEROPT]
 
     # check for specified sampler parameters migrated to new location
-    assert "num_samples" in updated_config[HYPEROPT][EXECUTOR] \
-           and updated_config[HYPEROPT][EXECUTOR]["num_samples"] == 99
+    assert (
+        "num_samples" in updated_config[HYPEROPT][EXECUTOR] and updated_config[HYPEROPT][EXECUTOR]["num_samples"] == 99
+    )
     assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
