@@ -7,6 +7,7 @@ from pprint import pformat
 from typing import Dict
 
 import numpy as np
+import pandas as pd
 import psutil
 import torch
 
@@ -29,6 +30,7 @@ from ludwig.utils.torch_utils import get_torch_device
 
 EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {"confusion_matrix", "roc_curve"}
+STATS_SAMPLE_SIZE = 10000
 
 logger = logging.getLogger(__name__)
 
@@ -273,9 +275,19 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
         feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1 :])
 
+        target = dataset.loc[:, output_feature.proc_column]
+
+        if not isinstance(feature_df, pd.DataFrame):
+            logger.warning(
+                "Full computation of stats only supported for pandas dataframes. "
+                "Sampling the first 10000 rows of the feature and target dataframes for computing overall stats."
+            )
+            feature_df = feature_df.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
+            target = target.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
+
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             feature_df,  # predictions
-            dataset.get(output_feature.proc_column),  # target
+            target,
             feature_metadata,  # output feature metadata
         )
     return overall_stats
