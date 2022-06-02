@@ -7,11 +7,10 @@ except ImportError:
     rt = None
 
 
-
 class LudwigProgressBarActions:
-    CREATE = 'create'
-    UPDATE = 'update'
-    CLOSE = 'close'
+    CREATE = "create"
+    UPDATE = "update"
+    CLOSE = "close"
 
 
 class LudwigProgressBar:
@@ -34,7 +33,7 @@ class LudwigProgressBar:
         else:
             if "file" in self.config:
                 self.config.pop("file")
-            # All processes need to call ray.train.report since ray has a lock that blocks 
+            # All processes need to call ray.train.report since ray has a lock that blocks
             # a process when calling report if there are processes that haven't called it. Similar
             # to a distributed checkpoint. Therefore we pass the flag to the driver
             rt.report(
@@ -71,4 +70,3 @@ class LudwigProgressBar:
                     "action": LudwigProgressBarActions.CLOSE,
                 }
             )
-
