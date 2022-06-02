@@ -6,10 +6,16 @@ from ludwig.constants import (
     CATEGORY,
     DROP_ROW,
     EVAL_BATCH_SIZE,
+    EXECUTOR,
     FILL_WITH_MODE,
     HYPEROPT,
     NUMBER,
+    PARAMETERS,
     PREPROCESSING,
+    RAY,
+    SAMPLER,
+    SCHEDULER,
+    SEARCH_ALG,
     TRAINER,
     TYPE,
 )
@@ -48,7 +54,7 @@ HYPEROPT_CONFIG = {
     "goal": "minimize",
 }
 
-SCHEDULER = {"type": "async_hyperband", "time_attr": "time_total_s"}
+SCHEDULER_DICT = {"type": "async_hyperband", "time_attr": "time_total_s"}
 
 default_early_stop = default_training_params["early_stop"]
 
@@ -88,7 +94,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
-        config[HYPEROPT]["executor"]["scheduler"] = SCHEDULER
+        config[HYPEROPT]["executor"][SCHEDULER] = SCHEDULER_DICT
 
     merged_config = merge_with_defaults(config)
 
@@ -162,3 +168,63 @@ def test_deprecated_field_aliases():
     assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
     assert "num_samples" in merged_config[HYPEROPT]["executor"]
     assert "scheduler" in merged_config[HYPEROPT]["executor"]
+
+
+def test_merge_with_defaults():
+    legacy_config_format = {
+        "input_features": [
+            {"type": "numerical", "name": "in_feat", },
+        ],
+        "output_features": [
+            {"type": "numerical", "name": "out_feat", },
+        ],
+        "training": {"eval_batch_size": 0},
+        "hyperopt": {
+            "parameters": {
+                "training.learning_rate": {},
+                "training.early_stop": {},
+                "in_feat.num_fc_layers": {},
+                "out_feat.embedding_size": {},
+                "out_feat.dropout": {},
+            },
+            "executor": {"type": "serial", "search_alg": {}, },
+            "sampler": {"num_samples": 99, "scheduler": {}, },
+        }
+    }
+
+    updated_config = merge_with_defaults(legacy_config_format)
+
+    # check for updated trainer section
+    assert TRAINER in updated_config and "training" not in updated_config
+    assert updated_config[TRAINER]["eval_batch_size"] is None \
+           and updated_config[TRAINER]["eval_batch_size"] != 0
+
+    # check for updated number type for input and output features
+    assert NUMBER == updated_config["input_features"][0][TYPE] \
+           and "numerical" != updated_config["input_features"][0][TYPE]
+    assert NUMBER == updated_config["output_features"][0][TYPE] \
+           and "numerical" != updated_config["output_features"][0][TYPE]
+
+    # check for upgraded hyperparameters
+    assert "trainer.learning_rate" in updated_config[HYPEROPT][PARAMETERS] \
+           and "training.learning_rate" not in updated_config[HYPEROPT][PARAMETERS]
+    assert "trainer.early_stop" in updated_config[HYPEROPT][PARAMETERS] \
+           and "training.early_stop" not in updated_config[HYPEROPT][PARAMETERS]
+
+    # make sure other parameters not changed or missing
+    assert "in_feat.num_fc_layers" in updated_config[HYPEROPT][PARAMETERS]
+    assert "out_feat.embedding_size" in updated_config[HYPEROPT][PARAMETERS]
+    assert "out_feat.dropout" in updated_config[HYPEROPT][PARAMETERS]
+
+    # check hyperopt executor updates
+    assert updated_config[HYPEROPT][EXECUTOR][TYPE] == RAY and updated_config[HYPEROPT][EXECUTOR][TYPE] != "serial"
+
+    # check for search_alg
+    assert SEARCH_ALG in updated_config[HYPEROPT] and SEARCH_ALG not in updated_config[HYPEROPT][EXECUTOR]
+
+    # ensure sampler section no longer exists
+    assert SAMPLER not in updated_config[HYPEROPT]
+
+    # check for specified sampler parameters migrated to new location
+    assert "num_samples" in updated_config[HYPEROPT][EXECUTOR]
+    assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
