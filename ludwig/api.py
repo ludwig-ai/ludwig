@@ -64,6 +64,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
+from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -1481,18 +1482,33 @@ class LudwigModel:
         save_json(model_hyperparameters_path, self.config)
 
     def to_torchscript(self, model_only: bool = False):
-        """Returns the model as a TorchScript module.
+        """Returns a scripted ECD model.
 
-        For more details, see ECD.to_inference_module.
+        The input to this model is a dictionary of input features. For every input feature, the user must provide a
+        tensor, a list of tensors or a list of strings.
+
+        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
+        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
+        tensors of varying dimensions for probabilities, logits, etc.
+
+        :param model_only: (bool, default: `False`) if `True`, only the model will be converted to torchscript. If
+            `False`, the preprocessing and postprocessing modules will be included in  the torchscript module as well.
+
+        :return: (torch.nn.Module) a scripted model.
         """
         self._check_initialization()
 
         if model_only:
-            return self.model.to_torchscript()
+            scripted_model = self.model.to_torchscript()
         else:
-            return self.model.to_inference_module(
-                **{"config": self.config, "training_set_metadata": self.training_set_metadata}
+            inference_module = InferenceModule(
+                self.model,
+                config=self.config,
+                training_set_metadata=self.training_set_metadata,
             )
+            scripted_model = torch.jit.script(inference_module)
+
+        return scripted_model
 
     def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript module to disk.
@@ -1500,13 +1516,8 @@ class LudwigModel:
         # Inputs
         :param  save_path: (str) location to save the Torchscript module.
         """
-        if model_only:
-            self.model.save_torchscript(save_path)
-        else:
-            self.model.save_inference_module(
-                save_path,
-                **{"config": self.config, "training_set_metadata": self.training_set_metadata},
-            )
+        scripted_model = self.to_torchscript(model_only)
+        scripted_model.save(save_path)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:

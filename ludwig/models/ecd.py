@@ -12,7 +12,6 @@ from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.models.inference import InferenceModule
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -98,32 +97,6 @@ class ECD(LudwigModule):
         model_inputs = self.get_model_inputs()
         # We set strict=False to enable dict inputs and outputs.
         return torch.jit.trace(self, model_inputs, strict=False)
-
-    def save_torchscript(self, save_path):
-        """Saves a scripted ECD model to save_path.
-
-        To save end-to-end module, use ECD.save_inference_module.
-        """
-        traced = self.to_torchscript()
-        traced.save(save_path)
-
-    def to_inference_module(self, **inference_module_kwargs):
-        """Returns a scripted ECD model.
-
-        The input to this model is a dictionary of input features. For every input feature, the user must provide a
-        tensor, a list of tensors or a list of strings.
-
-        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
-        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
-        tensors of varying dimensions for probabilities, logits, etc.
-        """
-        inference_module = InferenceModule(self, **inference_module_kwargs)
-        return torch.jit.script(inference_module)
-
-    def save_inference_module(self, save_path, **inference_module_kwargs):
-        """Saves a scripted InferenceModule to save_path."""
-        inference_module = self.to_inference_module(**inference_module_kwargs)
-        inference_module.save(save_path)
 
     @property
     def input_shape(self):
