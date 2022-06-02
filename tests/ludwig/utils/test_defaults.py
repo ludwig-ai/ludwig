@@ -185,9 +185,9 @@ def test_merge_with_defaults():
                 "training.early_stop": {},
                 "in_feat.num_fc_layers": {},
                 "out_feat.embedding_size": {},
-                "out_feat.dropout": {},
+                "out_feat.dropout": 0.2,
             },
-            "executor": {"type": "serial", "search_alg": {}, },
+            "executor": {"type": "serial", "search_alg": {TYPE: "variant_generator"}, },
             "sampler": {"num_samples": 99, "scheduler": {}, },
         }
     }
@@ -221,10 +221,12 @@ def test_merge_with_defaults():
 
     # check for search_alg
     assert SEARCH_ALG in updated_config[HYPEROPT] and SEARCH_ALG not in updated_config[HYPEROPT][EXECUTOR]
+    assert "variant_generator" == updated_config[HYPEROPT][SEARCH_ALG][TYPE]
 
     # ensure sampler section no longer exists
     assert SAMPLER not in updated_config[HYPEROPT]
 
     # check for specified sampler parameters migrated to new location
-    assert "num_samples" in updated_config[HYPEROPT][EXECUTOR]
+    assert "num_samples" in updated_config[HYPEROPT][EXECUTOR] \
+           and updated_config[HYPEROPT][EXECUTOR]["num_samples"] == 99
     assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
