@@ -931,8 +931,8 @@ class Trainer(BaseTrainer):
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
     ) -> bool:
-        """Completes one epoch through the data."""
-        while not batcher.last_batch():
+        """Completes up to one epoch through the data."""
+        while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
             # Set learning rate for this batch

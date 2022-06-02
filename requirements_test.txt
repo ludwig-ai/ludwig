@@ -4,7 +4,7 @@ six>=1.13.0
 wandb<0.12.11
 comet_ml
 mlflow
-whylogs
+whylogs<1.0
 
 # For testing optional Ray Tune Search Algorithms
 # search_alg: bohb

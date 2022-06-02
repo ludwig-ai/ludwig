@@ -102,6 +102,9 @@ class DaskEngine(DataFrameEngine):
 
         return from_dask(df)
 
+    def from_ray_dataset(self, dataset) -> dd.DataFrame:
+        return dataset.to_dask()
+
     @property
     def array_lib(self):
         return da

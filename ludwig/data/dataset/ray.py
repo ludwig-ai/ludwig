@@ -59,7 +59,8 @@ class RayDataset(Dataset):
         training_set_metadata: Dict[str, Any],
         backend: Backend,
     ):
-        self.ds = backend.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
+        self.df_engine = backend.df_engine
+        self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
@@ -100,6 +101,9 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    def to_df(self):
+        return self.df_engine.from_ray_dataset(self.ds)
 
 
 class RayDatasetManager(DatasetManager):
