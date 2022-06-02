@@ -29,7 +29,7 @@ NUM_FILTERS = 4
 # for Conv1D related layers
 ###
 def expected_seq_size(
-    seq_size: int,  # input sequence size
+    seq_size: int,  # input max sequence length
     padding: str,  # conv1d padding: 'same' or 'valid'
     kernel_size: int,  # conv1d kernel size
     stride: int,  # conv1d stride
@@ -41,7 +41,7 @@ def expected_seq_size(
     # output shape for the convolutional layer
     output_seq_size = get_img_output_shape(
         img_height=0,  # img_height set to zero for 1D structure
-        img_width=seq_size,  # img_width equates to sequence size
+        img_width=seq_size,  # img_width equates to max sequence length
         kernel_size=kernel_size,
         stride=stride,
         padding=padding,
@@ -51,7 +51,7 @@ def expected_seq_size(
         # pooling layer present, adjust expected output shape for pooling layer
         output_seq_size = get_img_output_shape(
             img_height=0,  # img_height set to zero for 1D structure
-            img_width=output_seq_size[1],  # img_width equates to sequence size
+            img_width=output_seq_size[1],  # img_width equates to max sequence length
             kernel_size=pool_size,
             stride=pool_stride,
             padding=pool_padding,
