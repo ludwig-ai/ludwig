@@ -636,10 +636,10 @@ def test_api_save_torchscript(tmpdir):
     test_df = pd.read_csv(test_csv)
     output_df_expected, _ = model.predict(test_df, return_type=pd.DataFrame)
 
-    save_path = os.path.join(output_dir, "model")
-    os.makedirs(save_path, exist_ok=True)
-    model.save_torchscript(save_path)
-    inference_model = InferenceLudwigModel(save_path)
+    save_dir = os.path.join(output_dir, "model")
+    os.makedirs(save_dir, exist_ok=True)
+    model.save_torchscript(os.path.join(save_dir, INFERENCE_MODULE_FILE_NAME))
+    inference_model = InferenceLudwigModel(save_dir)
     output_df, _ = inference_model.predict(test_df, return_type=pd.DataFrame)
 
     for col in output_df.columns:
