@@ -62,6 +62,35 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 
+def get_sequence_ids(
+    unit_sequence: List[str],
+    max_sequence_length: int,
+    unit_to_id: Dict[str, int],
+    padding_symbol: str,
+    unknown_symbol: str,
+    start_symbol: str,
+    stop_symbol: str,
+) -> torch.Tensor:
+    out = torch.full([max_sequence_length], unit_to_id[padding_symbol])
+    out[0] = unit_to_id[start_symbol]
+
+    # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
+    if len(unit_sequence) + 1 < max_sequence_length:
+        sequence_length = len(unit_sequence)
+        out[len(unit_sequence) + 1] = unit_to_id[stop_symbol]
+    else:
+        sequence_length = max_sequence_length - 1
+
+    for i in range(sequence_length):
+        curr_unit = unit_sequence[i]
+        if curr_unit in unit_to_id:
+            curr_id = unit_to_id[curr_unit]
+        else:
+            curr_id = unit_to_id[unknown_symbol]
+        out[i + 1] = curr_id
+    return out
+
+
 class _SequencePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by SequenceFeatureMixin.add_feature_data."""
 
@@ -98,26 +127,26 @@ class _SequencePreprocessing(torch.nn.Module):
         # refines type of unit_sequences from Any to List[List[str]]
         assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
 
-        sequence_matrix = torch.full(
-            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
-        )
-        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
-        for sample_idx, unit_sequence in enumerate(unit_sequences):
-            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_length = len(unit_sequence)
-                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
-            else:
-                sequence_length = self.max_sequence_length - 1
+        futures: List[torch.jit.Future[torch.Tensor]] = []
+        for unit_sequence in unit_sequences:
+            futures.append(
+                torch.jit.fork(
+                    get_sequence_ids,
+                    unit_sequence,
+                    self.max_sequence_length,
+                    self.unit_to_id,
+                    self.padding_symbol,
+                    self.unknown_symbol,
+                    self.start_symbol,
+                    self.stop_symbol,
+                )
+            )
 
-            for i in range(sequence_length):
-                curr_unit = unit_sequence[i]
-                if curr_unit in self.unit_to_id:
-                    curr_id = self.unit_to_id[curr_unit]
-                else:
-                    curr_id = self.unit_to_id[self.unknown_symbol]
-                sequence_matrix[sample_idx][i + 1] = curr_id
+        results = []
+        for future in futures:
+            results.append(torch.jit.wait(future))
 
+        sequence_matrix = torch.stack(results)
         return sequence_matrix
 
 
