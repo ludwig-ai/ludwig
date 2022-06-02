@@ -96,6 +96,8 @@ class RayDataset(Dataset):
         if not enable_windowing:
             pipe = self.ds.repeat()
         else:
+            if window_size_bytes is None:
+                raise ValueError("window_size_bytes must not be None when enable_windowing is True.")
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
