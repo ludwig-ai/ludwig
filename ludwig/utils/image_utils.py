@@ -191,6 +191,10 @@ def read_image_if_path(path: Any, num_channels: Optional[int] = None) -> Union[A
 
 
 def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optional[torch.Tensor]:
+    """Reads image from path.
+
+    Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
+    """
     bytes_obj = get_bytes_obj_from_path(path)
     return read_image_from_bytes_obj(bytes_obj, num_channels)
 

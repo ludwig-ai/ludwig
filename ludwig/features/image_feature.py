@@ -163,7 +163,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return {PREPROCESSING: preprocessing_parameters}
 
     @staticmethod
-    def _read_image_and_resize(
+    def _read_image_if_bytes_obj_and_resize(
         img_entry: Union[bytes, torch.Tensor],
         img_width: int,
         img_height: int,
@@ -173,8 +173,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         user_specified_num_channels: bool,
     ) -> Optional[np.ndarray]:
         """
-        :param img_entry Union[str, 'numpy.array']: if str file path to the
-                image else numpy.array of the image itself
+        :param img_entry Union[bytes, torch.Tensor]: if str file path to the
+            image else torch.Tensor of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
         :param should_resize: Should the image be resized?
@@ -192,7 +192,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-        img = read_image_if_path(img_entry, num_channels)
+        img = read_image_if_bytes_obj(img_entry, num_channels)
         if not isinstance(img, torch.Tensor):
             logging.info(f"Image with value {img} cannot be read")
             return None
@@ -406,8 +406,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         metadata[name][PREPROCESSING]["width"] = width
         metadata[name][PREPROCESSING]["num_channels"] = num_channels
 
-        read_image_and_resize = partial(
-            ImageFeatureMixin._read_image_and_resize,
+        read_image_if_bytes_obj_and_resize = partial(
+            ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
             img_width=width,
             img_height=height,
             should_resize=should_resize,
@@ -427,7 +427,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if in_memory or skip_save_processed_input:
             metadata[name]["reshape"] = (num_channels, height, width)
 
-            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_and_resize)
+            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
             proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
             proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
@@ -440,7 +440,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
                 )
                 for i, img_entry in enumerate(abs_path_column):
-                    res = read_image_and_resize(img_entry)
+                    res = read_image_if_bytes_obj_and_resize(img_entry)
                     image_dataset[i, :height, :width, :] = res if res is not None else default_image
                 h5_file.flush()
 
