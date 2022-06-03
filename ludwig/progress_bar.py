@@ -32,7 +32,7 @@ class LudwigProgressBar:
     ```python
     from ludwig.progress_bar import LudwigProgressBar
 
-    config={"total": 20, "desc": "Sample progress bar"}
+    config = {"total": 20, "desc": "Sample progress bar"}
     pbar = LudwigProgressBar(report_to_ray=False, config=config, is_coordinator=True)
     for i in range(20):
         pbar.update(1)
