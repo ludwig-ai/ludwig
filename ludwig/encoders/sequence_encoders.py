@@ -1317,7 +1317,7 @@ class StackedRNN(Encoder):
             input_size=input_size,
             hidden_size=state_size,
             cell_type=cell_type,
-            sequence_size=max_sequence_length,
+            max_sequence_length=max_sequence_length,
             num_layers=num_layers,
             bidirectional=bidirectional,
             activation=activation,
@@ -1595,7 +1595,7 @@ class StackedCNNRNN(Encoder):
         self.recurrent_stack = RecurrentStack(
             input_size=self.conv1d_stack.output_shape[1],
             hidden_size=state_size,
-            sequence_size=self.conv1d_stack.output_shape[0],
+            max_sequence_length=self.conv1d_stack.output_shape[0],
             cell_type=cell_type,
             num_layers=num_rec_layers,
             bidirectional=bidirectional,
@@ -1863,7 +1863,7 @@ class StackedTransformer(Encoder):
         logger.debug("  TransformerStack")
         self.transformer_stack = TransformerStack(
             input_size=hidden_size,
-            sequence_size=max_sequence_length,
+            max_sequence_length=max_sequence_length,
             hidden_size=hidden_size,
             num_heads=num_heads,
             output_size=transformer_output_size,

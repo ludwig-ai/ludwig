@@ -91,7 +91,7 @@ class TransformerBlock(LudwigModule):
     def __init__(
         self,
         input_size: int,
-        sequence_size: int,
+        max_sequence_length: int,
         hidden_size: int,
         num_heads: int,
         output_size: int,
@@ -99,7 +99,7 @@ class TransformerBlock(LudwigModule):
     ):
         super().__init__()
         self.input_size = input_size
-        self.sequence_size = sequence_size
+        self.max_sequence_length = max_sequence_length
         self.hidden_size = hidden_size
 
         self.self_attention = MultiHeadSelfAttention(input_size, hidden_size, num_heads=num_heads)
@@ -113,7 +113,7 @@ class TransformerBlock(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.sequence_size, self.input_size])
+        return torch.Size([self.max_sequence_length, self.input_size])
 
     def forward(self, inputs, mask=None):
         # inputs [b, s, h]
@@ -126,14 +126,14 @@ class TransformerBlock(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.sequence_size, self.hidden_size])
+        return torch.Size([self.max_sequence_length, self.hidden_size])
 
 
 class TransformerStack(LudwigModule):
     def __init__(
         self,
         input_size: int,
-        sequence_size: int,
+        max_sequence_length: int,
         hidden_size: int = 256,
         num_heads: int = 8,
         output_size: int = 256,
@@ -143,7 +143,7 @@ class TransformerStack(LudwigModule):
     ):
         super().__init__()
         self.supports_masking = True
-        self.sequence_size = sequence_size
+        self.max_sequence_length = max_sequence_length
         self.input_size = input_size
         self.hidden_size = hidden_size
 
@@ -153,7 +153,7 @@ class TransformerStack(LudwigModule):
         for i in range(num_layers):
             layer = TransformerBlock(
                 input_size=prior_input_size,
-                sequence_size=sequence_size,
+                max_sequence_length=max_sequence_length,
                 hidden_size=hidden_size,
                 num_heads=num_heads,
                 output_size=output_size,
@@ -167,7 +167,7 @@ class TransformerStack(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.sequence_size, self.input_size])
+        return torch.Size([self.max_sequence_length, self.input_size])
 
     def forward(self, inputs, mask=None):
         hidden = inputs
@@ -177,7 +177,7 @@ class TransformerStack(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.sequence_size, self.hidden_size])
+        return torch.Size([self.max_sequence_length, self.hidden_size])
 
 
 # todo future: maybe reintroduce these attention function
