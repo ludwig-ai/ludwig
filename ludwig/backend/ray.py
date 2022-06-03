@@ -276,9 +276,10 @@ def tune_learning_rate_fn(
 
 
 class TqdmCallback(rt.TrainingCallback):
-    """Class for a custom ray callback that updates tqdm progress bars in the driver process"""
+    """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
+
     def __init__(self) -> None:
-        """Constructor for TqdmCallback"""
+        """Constructor for TqdmCallback."""
         super().__init__()
         self.progess_bars = {}
 
@@ -294,7 +295,6 @@ class TqdmCallback(rt.TrainingCallback):
         # Return
 
         :return: (None) `None`
-
         """
         for result in results:
             progress_bar_opts = result.get("progress_bar")

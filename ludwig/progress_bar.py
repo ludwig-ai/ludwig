@@ -16,7 +16,7 @@ class LudwigProgressBarActions:
 
 
 class LudwigProgressBar:
-    """Class for progress bars that supports distributed progress bars in ray
+    """Class for progress bars that supports distributed progress bars in ray.
 
     # Inputs
 
@@ -42,14 +42,14 @@ class LudwigProgressBar:
     pbar.close()
     ```
     """
+
     def __init__(
         self,
         report_to_ray: bool,
         config: Dict,
         is_coordinator: bool,
     ) -> None:
-        """
-        Constructor for the LudwigProgressBar class
+        """Constructor for the LudwigProgressBar class.
 
         # Inputs
 
@@ -95,8 +95,7 @@ class LudwigProgressBar:
             )
 
     def update(self, steps: int) -> None:
-        """
-        Updates the progress bar
+        """Updates the progress bar.
 
         # Inputs
 
@@ -120,8 +119,7 @@ class LudwigProgressBar:
             )
 
     def close(self) -> None:
-        """
-        Closes the progress bar
+        """Closes the progress bar.
 
         # Return
 
