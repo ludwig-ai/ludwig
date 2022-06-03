@@ -4,7 +4,7 @@ from typing import Dict
 import tqdm
 
 try:
-    import ray.train as rt  # noqa: E402
+    import ray.train as rt
 except ImportError:
     rt = None
 
