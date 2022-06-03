@@ -1,4 +1,5 @@
 import uuid
+from typing import Dict
 
 import tqdm
 
@@ -15,7 +16,50 @@ class LudwigProgressBarActions:
 
 
 class LudwigProgressBar:
-    def __init__(self, report_to_ray, config, is_coordinator):
+    """Class for progress bars that supports distributed progress bars in ray
+
+    # Inputs
+
+    :param report_to_ray: (bool) use the ray.train.report method
+        to report progress to the ray driver. If false then this behaves as a normal tqdm
+        progress bar
+    :param config: (dict) the tqdm configs used for the progress bar. See https://github.com/tqdm/tqdm#parameters
+        for list of parameters
+    :param is_coordinator: (bool) whether the calling process is the coordinator process.
+
+    # Example usage:
+
+    ```python
+    from ludwig.progress_bar import LudwigProgressBar
+
+    pbar = LudwigProgressBar(report_to_ray=False, config={"total": 20, "desc": "Sample progress bar"}, is_coordinator=True)
+    for i in range(20):
+        pbar.update(1)
+    pbar.close()
+    ```
+    """
+    def __init__(
+        self,
+        report_to_ray: bool,
+        config: Dict,
+        is_coordinator: bool,
+    ) -> None:
+        """
+        Constructor for the LudwigProgressBar class
+
+        # Inputs
+
+        :param report_to_ray: (bool) use the ray.train.report method
+            to report progress to the ray driver. If false then this behaves as a normal tqdm
+            progress bar
+        :param config: (dict) the tqdm configs used for the progress bar. See https://github.com/tqdm/tqdm#parameters
+            for list of parameters
+        :param is_coordinator: (bool) whether the calling process is the coordinator process.
+
+        # Return
+
+        :return: (None) `None`
+        """
         if report_to_ray and rt is None:
             raise ValueError("Set report_to_ray=True but ray is not installed. Run `pip install ray`")
 
@@ -46,7 +90,18 @@ class LudwigProgressBar:
                 }
             )
 
-    def update(self, steps):
+    def update(self, steps: int) -> None:
+        """
+        Updates the progress bar
+
+        # Inputs
+
+        :param steps: (int) number of steps to update the progress bar by
+
+        # Return
+
+        :return: (None) `None`
+        """
         self.total_steps += steps
         if self.progress_bar:
             self.progress_bar.update(steps)
@@ -60,7 +115,14 @@ class LudwigProgressBar:
                 }
             )
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Closes the progress bar
+
+        # Return
+
+        :return: (None) `None`
+        """
         if self.progress_bar:
             self.progress_bar.close()
         elif self.report_to_ray:
