@@ -90,7 +90,7 @@ class _BinaryPostprocessing(torch.nn.Module):
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
 
         probs = preds[self.probabilities_key]
-        probs = torch.dstack(1 - probs, probs)
+        probs = torch.dstack(1 - probs, probs).reshape(-1, 2)
 
         return {
             self.predictions_key: predictions,
