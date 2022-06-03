@@ -181,7 +181,7 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
 
 
 def read_image_if_path(path: Any, num_channels: Optional[int] = None) -> Union[Any, torch.Tensor]:
-    """Gets an image as a torch.Tensor if `path` is a path (e.g. a string).
+    """Gets an image if `path` is a path (e.g. a string).
 
     If it is not a path, return as-is.
     """
@@ -202,7 +202,7 @@ def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optio
 def read_image_if_bytes_obj(
     bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
 ) -> Union[Any, Optional[torch.Tensor]]:
-    """Gets bytes string if `bytes_obj` is a bytes object.
+    """Reads image if `bytes_obj` is a bytes object.
 
     If it is not a bytes object, return as-is.
     """
