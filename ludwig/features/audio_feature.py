@@ -206,7 +206,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 max_length=max_length,
                 padding_value=padding_value,
                 normalization_type=normalization_type,
-            ),
+            ).numpy(),  # non-torchscript preprocessing requires np.ndarray
         )
 
         audio_stats = df_engine.map_objects(
@@ -262,7 +262,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         padding_value: int,
         normalization_type: Optional[str] = None,
         type_key: str = TYPE,
-    ) -> np.ndarray:
+    ):
         feature_type: str = str(audio_feature_dict[type_key])
         if feature_type == "raw":
             audio_feature = torch.unsqueeze(audio[0], dim=-1)
@@ -288,7 +288,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_feature_padded = torch.full((max_length, feature_dim), padding_value, dtype=torch.float32)
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
 
-        return audio_feature_padded.numpy()
+        return audio_feature_padded
 
     @staticmethod
     def _get_stats(audio, sampling_rate_in_hz, max_length_in_s):

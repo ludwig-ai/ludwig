@@ -23,6 +23,7 @@ import torch.nn.functional as F
 import torchaudio
 
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
+from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.types import TorchAudioTuple
 
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
@@ -43,6 +44,11 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     default_sampling_rate = calculate_mean(sum(sampling_rates), len(sampling_rates))
 
     return default_audio_tensor, default_sampling_rate
+
+
+def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
+    bytes_obj = get_bytes_obj_from_path(path)
+    return read_audio_from_bytes_obj(bytes_obj)
 
 
 def read_audio_if_bytes_obj(bytes_obj: Any) -> Union[Any, Optional[TorchAudioTuple]]:
