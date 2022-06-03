@@ -392,7 +392,8 @@ def merge_with_defaults(config):
         set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
 
     # ===== Hyperpot =====
-    set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
+    if HYPEROPT in config:
+        set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
     return config
 
