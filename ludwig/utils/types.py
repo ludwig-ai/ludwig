@@ -12,4 +12,6 @@ except ImportError:
     DataFrame = pd.DataFrame
     Series = pd.Series
 
-TorchscriptPreprocessingInput = Union[List[str], List[torch.Tensor], List[Tuple[torch.Tensor, int]], torch.Tensor]
+# torchaudio.load returns the audio tensor and the sampling rate as a tuple.
+TorchAudioTuple = Tuple[torch.Tensor, int]
+TorchscriptPreprocessingInput = Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]
