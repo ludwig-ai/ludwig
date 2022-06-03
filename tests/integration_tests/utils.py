@@ -320,19 +320,6 @@ def vector_feature(**kwargs):
     return feature
 
 
-def to_inference_module_input(s: pd.Series) -> Union[List[str], List[torch.Tensor], torch.Tensor]:
-    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
-    if "image" in s.name:
-        return [image_utils.read_image(v) for v in s]
-    if "audio" in s.name:
-        return [torchaudio.load(v) for v in s]
-    if s.dtype == "object":
-        if "bag" in s.name or "set" in s.name:
-            s = s.astype(str)
-        return s.to_list()
-    return torch.from_numpy(s.to_numpy())
-
-
 def run_experiment(
     input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
