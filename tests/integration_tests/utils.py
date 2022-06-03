@@ -24,14 +24,13 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List, Union
+from typing import List
 
 import cloudpickle
 import numpy as np
 import pandas as pd
 import ray
 import torch
-import torchaudio
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -40,7 +39,6 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
-from ludwig.utils import image_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
