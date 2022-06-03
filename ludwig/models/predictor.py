@@ -231,7 +231,7 @@ class Predictor(BasePredictor):
                     "file": sys.stdout,
                     "disable": is_progressbar_disabled(),
                 }
-                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, True)
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 collected_tensors = []
                 while not batcher.last_batch():
