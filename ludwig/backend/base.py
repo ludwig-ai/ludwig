@@ -15,15 +15,20 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Callable, Optional, Union
+
+import pandas as pd
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.ecd import ECD
+from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.types import Series
 
 
 class Backend(ABC):
@@ -83,6 +88,10 @@ class Backend(ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @abstractmethod
+    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def num_nodes(self) -> int:
@@ -100,6 +109,16 @@ class LocalPreprocessingMixin:
 
     def check_lazy_load_supported(self, feature):
         pass
+
+    def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
+        df = column.to_frame(name=column.name)
+
+        with ThreadPoolExecutor() as executor:  # number of threads is inferred
+            result = executor.map(lambda idx_and_row: get_bytes_obj_if_path(idx_and_row[1][column.name]), df.iterrows())
+            if map_fn is not None:
+                result = executor.map(map_fn, result)
+
+        return pd.Series(result, index=df.index, name=column.name)
 
 
 class LocalTrainingMixin:

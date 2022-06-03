@@ -19,7 +19,7 @@ import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import dask
 import numpy as np
@@ -33,12 +33,15 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
+from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
+from ludwig.utils.types import Series
 
 _ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
 import ray.train as rt  # noqa: E402
@@ -541,13 +544,24 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, model: ECD, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+    def __init__(self, model: ECD, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
         self.model = model.cpu()
+        self.df_engine = df_engine
+
+    def get_trainer_kwargs(self) -> Dict[str, Any]:
+        return {**self.trainer_kwargs, **get_trainer_kwargs()}
+
+    def get_resources_per_worker(self) -> Tuple[int, int]:
+        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_gpus = resources_per_worker.get("GPU", 0)
+        num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
+        return num_cpus, num_gpus
 
     def batch_predict(self, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
@@ -571,28 +585,25 @@ class RayPredictor(BasePredictor):
                 df[c] = df[c].astype(TensorDtype())
             return df
 
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
-        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
-        num_cpus = resources_per_worker.get("CPU", 1)
-        num_gpus = resources_per_worker.get("GPU", 0)
+        # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.
+        # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        num_cpus, num_gpus = self.get_resources_per_worker()
 
-        dask_dataset = (
-            dataset.ds.map_batches(to_tensors, batch_format="pandas")
-            .map_batches(
-                batch_predictor,
-                batch_size=self.batch_size,
-                compute="actors",
-                batch_format="pandas",
-                num_cpus=num_cpus,
-                num_gpus=num_gpus,
-            )
-            .to_dask()
+        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+            batch_predictor,
+            batch_size=self.batch_size,
+            compute="actors",
+            batch_format="pandas",
+            num_cpus=num_cpus,
+            num_gpus=num_gpus,
         )
 
-        for of_feature in self.model.output_features.values():
-            dask_dataset = of_feature.unflatten(dask_dataset)
+        predictions = self.df_engine.from_ray_dataset(predictions)
 
-        return dask_dataset
+        for of_feature in self.model.output_features.values():
+            predictions = of_feature.unflatten(predictions)
+
+        return predictions
 
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
@@ -711,6 +722,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
+        # TODO(shreya): Untested
+        # Disable placement groups on dask
+        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
@@ -735,6 +749,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         return RayPredictor(
             model,
+            self.df_engine,
             copy.deepcopy(self._horovod_kwargs),
             self._data_loader_kwargs,
             **executable_kwargs,
@@ -757,6 +772,19 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"RayBackend does not support lazy loading of data files at train time. "
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
+
+    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+        ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+
+        def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
+            df[column.name] = df[column.name].map(fn)
+            return df
+
+        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_if_path), batch_format="pandas")
+        if map_fn is not None:
+            ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
+
+        return self.df_engine.from_ray_dataset(ds)[column.name]
 
     @property
     def num_nodes(self) -> int:
