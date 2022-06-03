@@ -46,13 +46,27 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     return default_audio_tensor, default_sampling_rate
 
 
+def read_audio_if_path(path: Any) -> Union[Any, TorchAudioTuple]:
+    """Reads audio if `path` is a path (e.g. a string).
+
+    If it is not a path, return as-is.
+    """
+    if not isinstance(path, str):
+        return path
+    return read_audio_from_path(path)
+
+
 def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
+    """Reads audio from path.
+
+    Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
+    """
     bytes_obj = get_bytes_obj_from_path(path)
     return read_audio_from_bytes_obj(bytes_obj)
 
 
 def read_audio_if_bytes_obj(bytes_obj: Any) -> Union[Any, Optional[TorchAudioTuple]]:
-    """Gets bytes string if `bytes_obj` is a bytes object.
+    """Reads audio if `bytes_obj` is a bytes object.
 
     If it is not a bytes object, return as-is.
     """
