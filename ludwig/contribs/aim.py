@@ -1,5 +1,4 @@
 import logging
-import os
 
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
@@ -23,22 +22,14 @@ class AimCallback(Callback):
     ):
         logger.info("aim.on_train_init() called...")
 
-        print("base config ", base_config)
-        print("experiment directory ", experiment_directory)
-        print("experiment name ", experiment_name)
-        print("model name ", model_name)
-        print("output directory ", output_directory)
-
         self.aim_run = aim.Run(repo=experiment_directory, experiment=experiment_name, run_hash=None)
         self.aim_run["base_config"] = base_config
 
         params = dict(name=model_name, dir=output_directory)
         self.aim_run["params"] = params
-        print(params)
 
     def aim_track(self, progress_tracker):
 
-        print("LogMetrics are being tracked...", progress_tracker.log_metrics())
         if self.aim_run:
             train_config = self.aim_run["train_config"]
             for key, value in progress_tracker.log_metrics().items():
@@ -59,15 +50,7 @@ class AimCallback(Callback):
             self.aim_run["train_config"] = train_config
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator: bool):
-        optimizer_config = {}
-        for index, group in enumerate(trainer.optimizer.param_groups):
-            for key in group:
-                if "param" not in key:
-                    optimizer_config[f"param_group_{index}_{key}"] = group[key]
-
-        self.aim_run["optimizer_config"] = optimizer_config
-
-        self.aim_track(progress_tracker)
+        pass
 
     def on_train_start(self, model, config, *args, **kwargs):
         logger.info("aim.on_train_start() called...")
@@ -80,31 +63,16 @@ class AimCallback(Callback):
         self.aim_run["train_config"] = config
 
     def on_train_end(self, output_directory, *args, **kwargs):
-        print("END OF TRAINING")
-        print(kwargs)
-        print("_________________")
+        pass
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
-        print("END OF EPOCH")
-        print(progress_tracker.log_metrics())
-        print("_________________")
+        optimizer_config = {}
+        for index, group in enumerate(trainer.optimizer.param_groups):
+            for key in group:
+                if "param" not in key:
+                    optimizer_config[f"param_group_{index}_{key}"] = group[key]
 
-    def on_batch_start(self, trainer, progress_tracker, save_path: str):
-        print("START OF BATCH")
-        print(progress_tracker.log_metrics())
-        print("_________________")
-
-    def on_batch_end(self, trainer, progress_tracker, save_path: str):
-        print("END OF BATCH")
-        # print(progress_tracker.train_metrics)
-        # print("___________________________")
-        print(progress_tracker.log_metrics())
-        print("_________________")
-
-    def on_epoch_end(self, trainer, progress_tracker, save_path):
-        print("END OF EVAL")
-        print(progress_tracker.log_metrics())
-        print("_________________")
+        self.aim_run["optimizer_config"] = optimizer_config
 
         self.aim_track(progress_tracker)
 
