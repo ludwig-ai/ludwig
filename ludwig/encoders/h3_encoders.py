@@ -387,6 +387,8 @@ class H3RNN(Encoder):
         :param dropout: determines if there should be a dropout layer before
                returning the encoder output.
         :type dropout: float
+        :param recurrent_dropout: Dropout rate for the RNN encoder of the H3 embeddings.
+        :type recurrent_dropout: float
         """
         super().__init__()
         logger.debug(f" {self.name}")
@@ -405,13 +407,13 @@ class H3RNN(Encoder):
         logger.debug("  RecurrentStack")
         self.recurrent_stack = RecurrentStack(
             input_size=self.h3_embed.output_shape[0],
-            sequence_size=H3_INPUT_SIZE,
+            max_sequence_length=H3_INPUT_SIZE,
             hidden_size=hidden_size,
             cell_type=cell_type,
             num_layers=num_layers,
             bidirectional=bidirectional,
             use_bias=use_bias,
-            dropout=dropout,
+            dropout=recurrent_dropout,
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
