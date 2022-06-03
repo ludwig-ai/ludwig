@@ -21,7 +21,21 @@ from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
 from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
-from ludwig.constants import BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
+from ludwig.constants import (
+    AUDIO,
+    BINARY,
+    CATEGORY,
+    COMBINER,
+    DATE,
+    EXECUTOR,
+    HYPEROPT,
+    IMAGE,
+    NUMBER,
+    SCHEDULER,
+    SEARCH_ALG,
+    TEXT,
+    TYPE,
+)
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
@@ -117,22 +131,22 @@ def _create_default_config(
     if not isinstance(dataset, DatasetInfo):
         dataset_info = get_dataset_info(dataset)
 
-    input_and_output_feature_config = get_features_config(
+    input_and_output_feature_config, features_metadata = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
     # create set of all feature types appearing in the dataset
-    feature_types = [[feat["type"] for feat in features] for features in input_and_output_feature_config.values()]
+    feature_types = [[feat[TYPE] for feat in features] for features in input_and_output_feature_config.values()]
     feature_types = set(sum(feature_types, []))
 
     model_configs = {}
 
     # read in base config and update with experiment resources
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-    base_automl_config["hyperopt"]["executor"].update(experiment_resources)
-    base_automl_config["hyperopt"]["executor"]["time_budget_s"] = time_limit_s
+    base_automl_config[HYPEROPT][EXECUTOR].update(experiment_resources)
+    base_automl_config[HYPEROPT][EXECUTOR]["time_budget_s"] = time_limit_s
     if time_limit_s is not None:
-        base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
-    base_automl_config["hyperopt"]["sampler"]["search_alg"]["random_state_seed"] = random_seed
+        base_automl_config[HYPEROPT][EXECUTOR][SCHEDULER]["max_t"] = time_limit_s
+    base_automl_config[HYPEROPT][SEARCH_ALG]["random_state_seed"] = random_seed
     base_automl_config.update(input_and_output_feature_config)
 
     model_configs["base_config"] = base_automl_config
@@ -146,12 +160,12 @@ def _create_default_config(
                 model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
 
     # read in all combiner configs
-    model_configs["combiner"] = {}
+    model_configs[COMBINER] = {}
     for combiner_type, default_config in combiner_defaults.items():
         combiner_config = load_yaml(default_config)
-        model_configs["combiner"][combiner_type] = combiner_config
+        model_configs[COMBINER][combiner_type] = combiner_config
 
-    return model_configs
+    return model_configs, features_metadata
 
 
 # Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
@@ -180,9 +194,12 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     fields = []
     for field in source.columns:
         dtype = source.get_dtype(field)
-        num_distinct_values, distinct_values = source.get_distinct_values(field, MAX_DISTINCT_VALUES_TO_RETURN)
+        num_distinct_values, distinct_values, distinct_values_balance = source.get_distinct_values(
+            field, MAX_DISTINCT_VALUES_TO_RETURN
+        )
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
+        audio_values = source.get_audio_values(field)
         avg_words = None
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
@@ -192,8 +209,10 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 dtype=dtype,
                 distinct_values=distinct_values,
                 num_distinct_values=num_distinct_values,
+                distinct_values_balance=distinct_values_balance,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
+                audio_values=audio_values,
                 avg_words=avg_words,
             )
         )
@@ -225,7 +244,7 @@ def get_features_config(
     targets = set(targets)
 
     metadata = get_field_metadata(fields, row_count, resources, targets)
-    return get_config_from_metadata(metadata, targets)
+    return get_config_from_metadata(metadata, targets), metadata
 
 
 def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
@@ -281,6 +300,7 @@ def get_field_metadata(
                 excluded=should_exclude(idx, field, dtype, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
+                imbalance_ratio=field.distinct_values_balance,
             )
         )
 
@@ -322,6 +342,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
     if field.image_values >= 3:
         return IMAGE
+
+    if field.audio_values >= 3:
+        return AUDIO
 
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.

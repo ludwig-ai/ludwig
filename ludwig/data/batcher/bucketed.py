@@ -111,7 +111,7 @@ class BucketedBatcher(Batcher):
         self.steps_per_epoch = self._compute_steps_per_epoch()
 
     def _compute_steps_per_epoch(self) -> int:
-        return int(np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size))))
+        return int(np.sum(np.ceil(self.bucket_sizes / self.batch_size)).item())
 
 
 # dynamic_length_encoders = {

@@ -27,6 +27,7 @@ from tests.integration_tests.utils import (
     generate_data,
     LocalTestBackend,
     number_feature,
+    read_csv_with_nan,
     sequence_feature,
     set_feature,
     text_feature,
@@ -86,13 +87,7 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-    df = pd.read_csv(training_data_csv_path)
-
-    # set 10% of values to NaN
-    nan_percent = 0.1
-    ix = [(row, col) for row in range(df.shape[0]) for col in range(df.shape[1])]
-    for row, col in random.sample(ix, int(round(nan_percent * len(ix)))):
-        df.iat[row, col] = np.nan
+    df = read_csv_with_nan(training_data_csv_path, nan_percent=0.1)
 
     # run preprocessing
     ludwig_model = LudwigModel(config, backend=backend)

@@ -8,28 +8,31 @@ import torch
 
 from ludwig.combiners.combiners import (
     ComparatorCombiner,
-    ComparatorCombinerConfig,
     ConcatCombiner,
-    ConcatCombinerConfig,
-    sequence_encoder_registry,
     SequenceCombiner,
-    SequenceCombinerConfig,
     SequenceConcatCombiner,
-    SequenceConcatCombinerConfig,
     TabNetCombiner,
-    TabNetCombinerConfig,
     TabTransformerCombiner,
-    TabTransformerCombinerConfig,
     TransformerCombiner,
+)
+from ludwig.encoders.registry import sequence_encoder_registry
+from ludwig.schema.combiners import (
+    ComparatorCombinerConfig,
+    ConcatCombinerConfig,
+    SequenceCombinerConfig,
+    SequenceConcatCombinerConfig,
+    TabNetCombinerConfig,
+    TabTransformerCombinerConfig,
     TransformerCombinerConfig,
 )
-from ludwig.marshmallow.marshmallow_schema_utils import load_config
+from ludwig.schema.utils import load_config
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 BATCH_SIZE = 16
 SEQ_SIZE = 12
 HIDDEN_SIZE = 24

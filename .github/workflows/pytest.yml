@@ -28,7 +28,7 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.10.2
             torchscript-version: 1.10.2
-            ray-version: 1.11.0
+            ray-version: 1.12.0
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
@@ -87,12 +87,12 @@ jobs:
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # TODO: temp fix for https://github.com/pytorch/vision/issues/5873
-            pip install --pre torch==1.12.0.dev20220421+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
+          pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
           pip install ray==$RAY_VERSION
 
           torch_expected=$(python -c "import torch; print(torch.__version__)")

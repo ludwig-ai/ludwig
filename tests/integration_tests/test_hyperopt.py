@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os.path
+from typing import Dict, Optional, Tuple
 
 import pytest
+import ray
 import torch
 
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.constants import ACCURACY, RAY, TRAINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
-from ludwig.hyperopt.results import HyperoptResults
+from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
@@ -30,47 +33,53 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
+RANDOM_SEARCH_SIZE = 4
+
 HYPEROPT_CONFIG = {
     "parameters": {
+        # using only float parameter as common in all search algorithms
         "trainer.learning_rate": {
-            "type": "float",
-            "low": 0.0001,
-            "high": 0.1,
-            "space": "log",
-            "steps": 3,
+            "space": "loguniform",
+            "lower": 0.001,
+            "upper": 0.1,
         },
-        "combiner.num_fc_layers": {
-            "type": "int",
-            "low": 1,
-            "high": 4,
-            "space": "linear",
-            "steps": 3,
-        },
-        "combiner.fc_layers": {
-            "type": "category",
-            "values": [[{"output_size": 64}, {"output_size": 32}], [{"output_size": 64}], [{"output_size": 32}]],
-        },
-        "utterance.cell_type": {"type": "category", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"type": "category", "values": [True, False]},
     },
     "goal": "minimize",
+    "executor": {"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}},
+    "search_alg": {"type": "variant_generator"},
 }
 
-SAMPLERS = [
-    {"type": "grid"},
-    {"type": "random", "num_samples": 5},
-    {"type": "pysot", "num_samples": 5},
+SEARCH_ALGS = [
+    None,
+    "variant_generator",
+    "random",
+    "hyperopt",
+    "bohb",
+    "ax",
+    "bayesopt",
+    "blendsearch",
+    "cfo",
+    "dragonfly",
+    "hebo",
+    "skopt",
+    "optuna",
 ]
 
-EXECUTORS = [
-    {"type": "serial"},
+SCHEDULERS = [
+    "fifo",
+    "asynchyperband",
+    "async_hyperband",
+    "median_stopping_rule",
+    "medianstopping",
+    "hyperband",
+    "hb_bohb",
+    "pbt",
+    # "pb2",  commented out for now: https://github.com/ray-project/ray/issues/24815
+    "resource_changing",
 ]
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize("sampler", SAMPLERS)
-@pytest.mark.parametrize("executor", EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feature=False, validation_metric=None):
+def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -78,7 +87,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, dataset_fp)
 
     config = {
         "input_features": input_features,
@@ -89,10 +98,45 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
 
     config = merge_with_defaults(config)
 
+    return config, rel_path
+
+
+@contextlib.contextmanager
+def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
+    res = ray.init(
+        num_cpus=num_cpus,
+        num_gpus=num_gpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("search_alg", SEARCH_ALGS)
+def test_hyperopt_search_alg(search_alg, csv_filename, validate_output_feature=False, validation_metric=None):
+    config, rel_path = _setup_ludwig_config(csv_filename)
+
     hyperopt_config = HYPEROPT_CONFIG.copy()
+    # finalize hyperopt config settings
+    if search_alg == "dragonfly":
+        hyperopt_config["search_alg"] = {
+            "type": search_alg,
+            "domain": "euclidean",
+            "optimizer": "random",
+        }
+    elif search_alg is None:
+        hyperopt_config["search_alg"] = {}
+    else:
+        hyperopt_config["search_alg"] = {
+            "type": search_alg,
+        }
 
     if validate_output_feature:
-        hyperopt_config["output_feature"] = output_features[0]["name"]
+        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
@@ -103,22 +147,24 @@ def test_hyperopt_executor(sampler, executor, csv_filename, validate_output_feat
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
+    executor = hyperopt_config["executor"]
+    search_alg = hyperopt_config["search_alg"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
-
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, split, **executor
-    )
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
 
     gpus = [i for i in range(torch.cuda.device_count())]
-    hyperopt_executor.execute(config, dataset=rel_path, gpus=gpus)
+    with ray_start(num_gpus=len(gpus)):
+        hyperopt_executor = get_build_hyperopt_executor(RAY)(
+            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        )
+        raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
+        assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
-    test_hyperopt_executor(
-        {"type": "random", "num_samples": 2},
-        {"type": "serial"},
+    test_hyperopt_search_alg(
+        "variant_generator",
         csv_filename,
         validate_output_feature=True,
         validation_metric=ACCURACY,
@@ -126,8 +172,64 @@ def test_hyperopt_executor_with_metric(csv_filename):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("samplers", SAMPLERS)
-def test_hyperopt_run_hyperopt(csv_filename, samplers):
+@pytest.mark.parametrize("scheduler", SCHEDULERS)
+def test_hyperopt_scheduler(scheduler, csv_filename, validate_output_feature=False, validation_metric=None):
+    config, rel_path = _setup_ludwig_config(csv_filename)
+
+    hyperopt_config = HYPEROPT_CONFIG.copy()
+    # finalize hyperopt config settings
+    if scheduler == "pb2":
+        # setup scheduler hyperparam_bounds parameter
+        min = hyperopt_config["parameters"]["trainer.learning_rate"]["lower"]
+        max = hyperopt_config["parameters"]["trainer.learning_rate"]["upper"]
+        hyperparam_bounds = {
+            "trainer.learning_rate": [min, max],
+        }
+        hyperopt_config["executor"]["scheduler"] = {
+            "type": scheduler,
+            "hyperparam_bounds": hyperparam_bounds,
+        }
+    else:
+        hyperopt_config["executor"]["scheduler"] = {
+            "type": scheduler,
+        }
+
+    if validate_output_feature:
+        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+    if validation_metric:
+        hyperopt_config["validation_metric"] = validation_metric
+
+    update_hyperopt_params_with_defaults(hyperopt_config)
+
+    parameters = hyperopt_config["parameters"]
+    split = hyperopt_config["split"]
+    output_feature = hyperopt_config["output_feature"]
+    metric = hyperopt_config["metric"]
+    goal = hyperopt_config["goal"]
+    executor = hyperopt_config["executor"]
+    search_alg = hyperopt_config["search_alg"]
+
+    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
+
+    gpus = [i for i in range(torch.cuda.device_count())]
+    with ray_start(num_gpus=len(gpus)):
+        # TODO: Determine if we still need this if-then-else construct
+        if search_alg["type"] in {""}:
+            with pytest.raises(ImportError):
+                get_build_hyperopt_executor(RAY)(
+                    hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+                )
+        else:
+            hyperopt_executor = get_build_hyperopt_executor(RAY)(
+                hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+            )
+            raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
+            assert isinstance(raytune_results, RayTuneResults)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("search_space", ["random", "grid"])
+def test_hyperopt_run_hyperopt(csv_filename, search_space):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -146,38 +248,57 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
 
     output_feature_name = output_features[0]["name"]
 
-    hyperopt_configs = {
-        "parameters": {
+    if search_space == "random":
+        # random search will be size of num_samples
+        search_parameters = {
             "trainer.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.01,
-                "space": "log",
-                "steps": 3,
+                "lower": 0.0001,
+                "upper": 0.01,
+                "space": "loguniform",
             },
             output_feature_name
             + ".fc_layers": {
-                "type": "category",
-                "values": [
+                "space": "choice",
+                "categories": [
                     [{"output_size": 64}, {"output_size": 32}],
                     [{"output_size": 64}],
                     [{"output_size": 32}],
                 ],
             },
-            output_feature_name + ".output_size": {"type": "int", "low": 16, "high": 36, "steps": 5},
-            output_feature_name + ".num_fc_layers": {"type": "int", "low": 1, "high": 5, "space": "linear", "steps": 4},
-        },
+            output_feature_name + ".output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
+        }
+    else:
+        # grid search space will be product each parameter size
+        search_parameters = {
+            "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.01]},
+            output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21, 36]},
+            output_feature_name + ".num_fc_layers": {"space": "grid_search", "values": [1, 3, 6]},
+        }
+
+    hyperopt_configs = {
+        "parameters": search_parameters,
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "serial"},
-        "sampler": {"type": samplers["type"], "num_samples": 2},
+        "executor": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "search_alg": {"type": "variant_generator"},
     }
 
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
 
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory="results_hyperopt")
+    with ray_start():
+        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory="results_hyperopt")
+
+    if search_space == "random":
+        assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
+    else:
+        # compute size of search space for grid search
+        grid_search_size = 1
+        for k, v in search_parameters.items():
+            grid_search_size *= len(v["values"])
+        assert hyperopt_results.experiment_analysis.results_df.shape[0] == grid_search_size
 
     # check for return results
     assert isinstance(hyperopt_results, HyperoptResults)
@@ -187,39 +308,3 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
 
     if os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json")):
         os.remove(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
-
-
-@pytest.mark.distributed
-def test_hyperopt_executor_get_metric_score():
-    executor = EXECUTORS[0]
-    output_feature = "of_name"
-    split = "validation"
-
-    train_stats = {
-        "training": {
-            output_feature: {
-                "loss": [0.58760345, 1.5066891],
-                "accuracy": [0.6666667, 0.33333334],
-                "hits_at_k": [1.0, 1.0],
-            },
-            "combined": {"loss": [0.58760345, 1.5066891]},
-        },
-        "validation": {
-            output_feature: {"loss": [0.30233705, 2.6505466], "accuracy": [1.0, 0.0], "hits_at_k": [1.0, 1.0]},
-            "combined": {"loss": [0.30233705, 2.6505466]},
-        },
-        "test": {
-            output_feature: {"loss": [1.0876318, 1.4353828], "accuracy": [0.7, 0.5], "hits_at_k": [1.0, 1.0]},
-            "combined": {"loss": [1.0876318, 1.4353828]},
-        },
-    }
-
-    metric = "loss"
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats)
-    assert score == 0.30233705
-
-    metric = "accuracy"
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats)
-    assert score == 1.0

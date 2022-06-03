@@ -29,9 +29,10 @@ from ludwig.encoders.sequence_encoders import (
     StackedParallelCNN,
     StackedRNN,
 )
+from ludwig.utils.torch_utils import get_torch_device
 
 DROPOUT = 0.5
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 def create_encoder(encoder_type, **encoder_kwargs):

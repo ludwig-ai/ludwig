@@ -45,12 +45,11 @@ from ludwig.utils.audio_utils import (
     get_non_symmetric_length,
     get_phase_stft_magnitude,
     get_stft_magnitude,
-    read_audio,
+    read_audio_if_bytes_obj,
 )
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-
-logger = logging.getLogger(__name__)
 
 
 class AudioFeatureMixin(BaseFeatureMixin):
@@ -67,7 +66,10 @@ class AudioFeatureMixin(BaseFeatureMixin):
             "padding_value": 0,
             "norm": None,
             "audio_feature": {
-                TYPE: "raw",
+                TYPE: "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
             },
         }
 
@@ -136,7 +138,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _process_in_memory(
         column,
-        src_path,
         audio_feature_dict,
         feature_dim,
         max_length,
@@ -145,19 +146,23 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_file_length_limit_in_s,
         backend,
     ):
-        def read_audio_file(path):
-            return read_audio(path, src_path)
 
         df_engine = backend.df_engine
-        raw_audio = df_engine.map_objects(column, read_audio_file)
+        raw_audio = backend.read_binary_files(column, map_fn=read_audio_if_bytes_obj)
+
+        def is_torch_audio_tuple(audio):
+            if isinstance(audio, tuple):
+                if len(audio) == 2 and isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
+                    return True
+            return False
 
         try:
-            default_audio = get_default_audio([audio for audio in raw_audio if audio is not None])
+            default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
         except RuntimeError:
-            logger.info("Unable to process audio files provided")
+            logging.info("Unable to process audio files provided")
             raise RuntimeError
 
-        raw_audio = df_engine.map_objects(raw_audio, lambda row: row if row is not None else default_audio)
+        raw_audio = df_engine.map_objects(raw_audio, lambda row: row if is_torch_audio_tuple(row) else default_audio)
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
@@ -211,7 +216,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             merged_stats["cropped"],
             audio_file_length_limit_in_s,
         )
-        logger.debug(print_statistics)
+        logging.debug(print_statistics)
         return processed_audio
 
     @staticmethod
@@ -220,7 +225,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
         feature_type = audio_feature_dict[TYPE]
         if feature_type == "raw":
-            audio_feature = np.expand_dims(audio, axis=-1)
+            audio_feature = np.expand_dims(audio[0], axis=-1)
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
             audio_feature = np.transpose(
                 AudioFeatureMixin._get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz)
@@ -310,26 +315,35 @@ class AudioFeatureMixin(BaseFeatureMixin):
             )
 
     @staticmethod
+    def map_abs_path_to_entries(column, src_path, backend):
+        def get_abs_path_if_entry_is_str(entry):
+            if not isinstance(entry, str) or has_remote_protocol(entry):
+                return entry
+            else:
+                return get_abs_path(src_path, entry)
+
+        return backend.df_engine.map_objects(column, get_abs_path_if_entry_is_str)
+
+    @staticmethod
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
 
         if "audio_feature" not in preprocessing_parameters:
-            raise ValueError("audio_feature dictionary has to be present in preprocessing " "for audio.")
+            raise ValueError("audio_feature dictionary has to be present in preprocessing for audio.")
         if TYPE not in preprocessing_parameters["audio_feature"]:
-            raise ValueError("type has to be present in audio_feature dictionary " "for audio.")
+            raise ValueError("type has to be present in audio_feature dictionary for audio.")
 
         name = feature_config[NAME]
-        column = feature_config[COLUMN]
-        proc_column = feature_config[PROC_COLUMN]
+        column = input_df[feature_config[COLUMN]]
 
-        num_audio_files = len(input_df[column])
+        num_audio_files = len(column)
         if num_audio_files == 0:
             raise ValueError("There are no audio files in the dataset provided.")
 
-        first_audio_entry = next(iter(input_df[column]))
-        logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
+        first_audio_entry = next(iter(column))
+        logging.debug(f"Detected audio feature type is {type(first_audio_entry)}")
 
         if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
             raise ValueError(
@@ -341,6 +355,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
+        abs_path_column = AudioFeatureMixin.map_abs_path_to_entries(column, src_path, backend)
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
@@ -356,8 +371,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
-                input_df[column],
-                src_path,
+                abs_path_column,
                 audio_feature_dict,
                 feature_dim,
                 max_length,
@@ -366,7 +380,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 audio_file_length_limit_in_s,
                 backend,
             )
-            proc_df[proc_column] = audio_features
+            proc_df[feature_config[PROC_COLUMN]] = audio_features
         else:
             backend.check_lazy_load_supported(feature_config)
 

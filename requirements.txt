@@ -6,12 +6,10 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-torch==1.9.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
-torch>=1.10.0 ; platform_system != "Windows"
+torch>=1.10.0
 torchaudio
 torchtext
-torchvision==0.10.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
-torchvision>=0.10.1 ; platform_system != "Windows"
+torchvision>=0.10.1
 transformers>=4.10.1
 spacy>=2.3
 PyYAML>=3.12
@@ -21,15 +19,16 @@ requests
 tables
 fsspec[http]
 dataclasses-json
-jsonschema
+jsonschema>=4.5.0
 marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.5
 tensorboard
-torchmetrics
+torchmetrics<0.9
 torchinfo
 filelock
 psutil
+protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
 # new data format support
 xlwt            # excel

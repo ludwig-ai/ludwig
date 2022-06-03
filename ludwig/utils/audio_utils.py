@@ -15,24 +15,24 @@
 # ==============================================================================
 import functools
 import logging
-import os
-import sys
-from typing import List, Tuple, Union
+from io import BytesIO
+from typing import Any, List, Optional, Union
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchaudio
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
 
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
-from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import is_http, upgrade_http
+from ludwig.utils.types import TorchAudioTuple
 
-logger = logging.getLogger(__name__)
+# https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
+AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
 
 
-def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.Tensor, int]:
+def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     sampling_rates = [audio[1] for audio in audio_lst]
     tensor_list = [audio[0] for audio in audio_lst]
 
@@ -48,48 +48,23 @@ def get_default_audio(audio_lst: List[Tuple[torch.Tensor, int]]) -> Tuple[torch.
     return default_audio_tensor, default_sampling_rate
 
 
-@functools.lru_cache(maxsize=32)
-def read_audio(audio: Union[str, torch.Tensor], src_path):
-    """Function for reading audio files.
+def read_audio_if_bytes_obj(bytes_obj: Any) -> Union[Any, Optional[TorchAudioTuple]]:
+    """Gets bytes string if `bytes_obj` is a bytes object.
 
-    Args:
-        src_path: Local file source path
-        audio: Audio file input
-
-    Returns: Audio converted into torch tensor.
+    If it is not a bytes object, return as-is.
     """
-    if isinstance(audio, torch.Tensor):
-        return audio
-    if isinstance(audio, str):
-        return read_audio_from_str(audio, src_path)
+    if not isinstance(bytes_obj, bytes):
+        return bytes_obj
+    return read_audio_from_bytes_obj(bytes_obj)
 
 
-def read_audio_from_str(audio_path: str, src_path: str, retry: bool = True) -> Tuple[torch.Tensor, int]:
+@functools.lru_cache(maxsize=32)
+def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
     try:
-        from torchaudio.backend.sox_io_backend import load
-    except ImportError:
-        logger.error("torchaudio is not installed. " "Please install torchaudio to train models with audio features")
-        sys.exit(-1)
-
-    try:
-        if is_http(audio_path):
-            return load(audio_path)
-        if src_path:
-            filepath = get_abs_path(src_path, audio_path)
-            return load(filepath)
-        if src_path is None and os.path.isabs(audio_path):
-            return load(audio_path)
-        if src_path is None and not os.path.isabs(audio_path):
-            raise ValueError("Audio file paths must be absolute")
+        f = BytesIO(bytes_obj)
+        return torchaudio.backend.sox_io_backend.load(f)
     except Exception as e:
-        upgraded = upgrade_http(audio_path)
-        if upgraded:
-            logger.info(f"{e}. upgrading to https and retrying")
-            return read_audio_from_str(upgraded, src_path, False)
-        if retry:
-            logger.info(f"{e}, retrying...")
-            return read_audio_from_str(audio_path, src_path, False)
-        logger.info(e)
+        logging.warning(e)
         return None
 
 
@@ -274,6 +249,11 @@ def _preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_sa
             window_data = window_data - np.mean(window_data)
         zero_padded_matrix[num_output_idx, :end_padded_idx] = window_data
     return zero_padded_matrix
+
+
+def is_audio_score(src_path):
+    # Used for AutoML
+    return int(isinstance(src_path, str) and src_path.lower().endswith(AUDIO_EXTENSIONS))
 
 
 def get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp):

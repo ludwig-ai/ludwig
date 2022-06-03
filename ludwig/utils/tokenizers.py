@@ -57,10 +57,13 @@ class SpaceStringToListTokenizer(torch.nn.Module):
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
-        elif isinstance(v, str):
-            inputs = [v]
+
+        inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+        if isinstance(v, str):
+            inputs.append(v)
         else:
-            inputs = v
+            inputs.extend(v)
 
         tokens: List[List[str]] = []
         for sequence in inputs:
@@ -86,10 +89,13 @@ class SpacePunctuationStringToListTokenizer(torch.nn.Module):
     def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
         if isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
-        elif isinstance(v, str):
-            inputs = [v]
+
+        inputs: List[str] = []
+        # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+        if isinstance(v, str):
+            inputs.append(v)
         else:
-            inputs = v
+            inputs.extend(v)
 
         tokens: List[List[str]] = []
         for sequence in inputs:
@@ -932,10 +938,13 @@ try:
                 """
                 if isinstance(v, torch.Tensor):
                     raise ValueError(f"Unsupported input: {v}")
-                elif isinstance(v, str):
-                    inputs = [v]
+
+                inputs: List[str] = []
+                # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+                if isinstance(v, str):
+                    inputs.append(v)
                 else:
-                    inputs = v
+                    inputs.extend(v)
 
                 token_ids = self.tokenizer(inputs)
                 assert torch.jit.isinstance(token_ids, List[List[str]])
