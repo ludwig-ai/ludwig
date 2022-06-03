@@ -284,8 +284,8 @@ class TqdmCallback(rt.TrainingCallback):
         self.progess_bars = {}
 
     def process_results(self, results: List[Dict], **info) -> None:
-        """Called everytime ray.train.report is called from subprocesses.
-        See https://docs.ray.io/en/latest/train/api.html#trainingcallback
+        """Called everytime ray.train.report is called from subprocesses. See
+        https://docs.ray.io/en/latest/train/api.html#trainingcallback.
 
         # Inputs
 
