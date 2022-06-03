@@ -1344,6 +1344,10 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
+    """Precomputes the fill value for a feature.
+
+    NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
+    """
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters["fill_value"]
