@@ -383,7 +383,10 @@ def unflatten_df(df, column_shapes, backend):
 def to_numpy_dataset(df):
     dataset = {}
     for col in df.columns:
-        dataset[col] = np.stack(df[col].to_numpy())
+        res = df[col]
+        if isinstance(res, dd.core.Series):
+            res = res.compute()
+        dataset[col] = np.stack(res.to_numpy())
     return dataset
 
 
