@@ -47,12 +47,13 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import map_abs_path_to_entries
-from ludwig.utils.fs_utils import get_bytes_obj_from_path, upload_h5
+from ludwig.utils.fs_utils import upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
     num_channels_in_image,
     read_image_if_bytes_obj,
+    read_image_if_path,
     resize_image,
 )
 from ludwig.utils.misc_utils import set_default_value
@@ -191,7 +192,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-        img = read_image_if_bytes_obj(img_entry, num_channels)
+        img = read_image_if_path(img_entry, num_channels)
         if not isinstance(img, torch.Tensor):
             logging.info(f"Image with value {img} cannot be read")
             return None
@@ -306,21 +307,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return num_channels
 
     @staticmethod
-    def read_image_from_entry(
-        entry: Union[str, torch.Tensor], num_channels: Optional[int] = None
-    ) -> Optional[torch.Tensor]:
-        """Reads an image from a column entry.
-
-        If the entry is a string, then it is assumed to be a path to an image.
-        """
-        if isinstance(entry, str):
-            image_bytes = get_bytes_obj_from_path(entry)
-            image = read_image_if_bytes_obj(image_bytes, num_channels=num_channels)
-        else:
-            image = entry
-        return image
-
-    @staticmethod
     def _finalize_preprocessing_parameters(
         preprocessing_parameters: dict,
         column: Series,
@@ -342,7 +328,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             sample_size = 1  # Take first image
 
         for image_entry in column.head(sample_size):
-            image = ImageFeatureMixin.read_image_from_entry(image_entry)
+            image = read_image_if_path(image_entry)
             if isinstance(image, torch.Tensor):
                 sample.append(image)
         if len(sample) == 0:

@@ -28,7 +28,7 @@ from torchvision.io import decode_image, ImageReadMode
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
+from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http, get_bytes_obj_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +178,21 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
     elif num_channels == 4:
         mode = ImageReadMode.RGB_ALPHA
     return mode
+
+
+def read_image_if_path(path: Any, num_channels: Optional[int] = None) -> Union[Any, torch.Tensor]:
+    """Gets an image as a torch.Tensor if `path` is a path (e.g. a string).
+
+    If it is not a path, return as-is.
+    """
+    if not isinstance(path, str):
+        return path
+    return read_image_from_path(path, num_channels)
+
+
+def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optional[torch.Tensor]:
+    bytes_obj = get_bytes_obj_from_path(path)
+    return read_image_from_bytes_obj(bytes_obj, num_channels)
 
 
 def read_image_if_bytes_obj(
