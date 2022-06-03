@@ -15,13 +15,17 @@
 # ==============================================================================
 
 import contextlib
+import functools
+import logging
 import os
 import pathlib
 import tempfile
+from typing import Any, Optional, Union
 from urllib.parse import unquote, urlparse
 
 import fsspec
 import h5py
+import requests
 from filelock import FileLock
 from fsspec.core import split_protocol
 
@@ -51,6 +55,46 @@ def upgrade_http(urlpath):
     if protocol == "http":
         return "https://" + url
     return None
+
+
+def get_bytes_obj_if_path(path: Any) -> Union[Any, Optional[bytes]]:
+    """Gets bytes string if `path` is a path (e.g. a string).
+
+    If it is not a path, return as-is.
+    """
+    if not isinstance(path, str):
+        return path
+    return get_bytes_obj_from_path(path)
+
+
+@functools.lru_cache(maxsize=32)
+def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
+    if is_http(path):
+        try:
+            return get_bytes_obj_from_http_path(path)
+        except requests.exceptions.RequestException as e:
+            logging.warning(e)
+            return None
+    else:
+        try:
+            with open_file(path) as f:
+                return f.read()
+        except OSError as e:
+            logging.warning(e)
+            return None
+
+
+@functools.lru_cache(maxsize=32)
+def get_bytes_obj_from_http_path(path: str) -> bytes:
+    data = requests.get(path, stream=True)
+    if data.status_code == 404:
+        upgraded = upgrade_http(path)
+        if upgraded:
+            logging.info(f"reading url {path} failed. upgrading to https and retrying")
+            return get_bytes_obj_from_http_path(upgraded)
+        else:
+            raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
+    return data.raw.read()
 
 
 def find_non_existing_dir_by_adding_suffix(directory_name):
