@@ -187,7 +187,7 @@ class SequenceConcatCombiner(Combiner):
     def concatenated_shape(self) -> torch.Size:
         # computes the effective shape of the input tensor after combining
         # all the encoder outputs
-        # determine sequence size by finding the first sequence tensor
+        # determine max sequence length by finding the first sequence tensor
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
         seq_size = None
@@ -341,7 +341,7 @@ class SequenceCombiner(Combiner):
     def concatenated_shape(self) -> torch.Size:
         # computes the effective shape of the input tensor after combining
         # all the encoder outputs
-        # determine sequence size by finding the first sequence tensor
+        # determine max sequence length by finding the first sequence tensor
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
         seq_size = None
@@ -473,8 +473,8 @@ class TransformerCombiner(Combiner):
         if self.reduce_output is None:
             self.supports_masking = True
 
-        # sequence size for Transformer layer is number of input features
-        self.sequence_size = len(self.input_features)
+        # max sequence length for Transformer layer is number of input features
+        self.max_sequence_length = len(self.input_features)
 
         logger.debug("  Projectors")
         self.projectors = ModuleList(
@@ -491,7 +491,7 @@ class TransformerCombiner(Combiner):
         logger.debug("  TransformerStack")
         self.transformer_stack = TransformerStack(
             input_size=config.hidden_size,
-            sequence_size=self.sequence_size,
+            max_sequence_length=self.max_sequence_length,
             hidden_size=config.hidden_size,
             num_heads=config.num_heads,
             output_size=config.transformer_output_size,
@@ -634,7 +634,7 @@ class TabTransformerCombiner(Combiner):
         logger.debug("  TransformerStack")
         self.transformer_stack = TransformerStack(
             input_size=config.hidden_size,
-            sequence_size=len(self.embeddable_features),
+            max_sequence_length=len(self.embeddable_features),
             hidden_size=config.hidden_size,
             # todo: can we just use projector_size? # hidden_size,
             num_heads=config.num_heads,
