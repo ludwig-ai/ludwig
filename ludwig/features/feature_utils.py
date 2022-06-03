@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
-from ludwig.utils.data_utils import hash_dict, get_abs_path
+from ludwig.utils.data_utils import get_abs_path, hash_dict
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
 
