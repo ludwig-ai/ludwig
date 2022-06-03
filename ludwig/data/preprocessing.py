@@ -558,6 +558,9 @@ class ParquetPreprocessor(DataFormatPreprocessor):
     ):
         test_set = test_set if test_set and path_exists(test_set) else None
         validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        if training_set and isinstance(training_set, str)\
+                and DATA_TRAIN_HDF5_FP not in training_set_metadata:
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = training_set
         return training_set, test_set, validation_set, training_set_metadata
 
 
