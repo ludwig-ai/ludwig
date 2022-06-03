@@ -71,7 +71,6 @@ def expected_seq_size(
 @pytest.mark.parametrize("dilation", [1, 2])
 @pytest.mark.parametrize("strides, padding", [(1, "same"), (1, "valid"), (2, "valid")])
 @pytest.mark.parametrize("kernel_size", [3, 5])
-@pytest.mark.parametrize("norm", [3, 5])
 def test_conv1d_layer(
     kernel_size: int,
     strides: int,
@@ -87,6 +86,7 @@ def test_conv1d_layer(
     conv1_layer = Conv1DLayer(
         in_channels=HIDDEN_SIZE,
         out_channels=NUM_FILTERS,
+        max_sequence_length=SEQ_SIZE,
         kernel_size=kernel_size,
         strides=strides,
         padding=padding,
