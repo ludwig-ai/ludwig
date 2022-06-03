@@ -276,14 +276,16 @@ def tune_learning_rate_fn(
 
 
 class TqdmCallback(rt.TrainingCallback):
-    """Class for a custom ray callback that updates tqdm progress bars in the driver process"""
+    """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
+
     def __init__(self) -> None:
-        """Constructor for TqdmCallback"""
+        """Constructor for TqdmCallback."""
         super().__init__()
         self.progess_bars = {}
 
     def process_results(self, results: List[Dict], **info) -> None:
-        """Called everytime ray.train.report is called from subprocesses. See https://docs.ray.io/en/latest/train/api.html#trainingcallback
+        """Called everytime ray.train.report is called from subprocesses. See
+        https://docs.ray.io/en/latest/train/api.html#trainingcallback.
 
         # Inputs
 
@@ -292,7 +294,6 @@ class TqdmCallback(rt.TrainingCallback):
         # Return
 
         :return: (None) `None`
-
         """
         for result in results:
             progress_bar_opts = result.get("progress_bar")
