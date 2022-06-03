@@ -55,6 +55,7 @@ from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     get_final_steps_per_checkpoint,
     get_new_progress_tracker,
@@ -212,7 +213,7 @@ class Trainer(BaseTrainer):
         self.callbacks = callbacks or []
         self.device = device
         if self.device is None:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.device = get_torch_device()
 
         self.model = model
         self.model = self.model.to(self.device)
@@ -930,8 +931,8 @@ class Trainer(BaseTrainer):
         final_steps_per_checkpoint: int,
         early_stopping_steps: int,
     ) -> bool:
-        """Completes one epoch through the data."""
-        while not batcher.last_batch():
+        """Completes up to one epoch through the data."""
+        while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
             # Set learning rate for this batch

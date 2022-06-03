@@ -102,7 +102,7 @@ class DaskEngine(DataFrameEngine):
 
         return from_dask(df)
 
-    def from_ray_dataset(self, dataset):
+    def from_ray_dataset(self, dataset) -> dd.DataFrame:
         return dataset.to_dask()
 
     @property

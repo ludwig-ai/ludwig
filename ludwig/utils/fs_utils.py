@@ -84,6 +84,7 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
             return None
 
 
+@functools.lru_cache(maxsize=32)
 def get_bytes_obj_from_http_path(path: str) -> bytes:
     data = requests.get(path, stream=True)
     if data.status_code == 404:

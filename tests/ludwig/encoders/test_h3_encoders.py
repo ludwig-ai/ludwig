@@ -3,9 +3,10 @@ import logging
 import torch
 
 from ludwig.encoders import h3_encoders
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 def test_h3_embed():

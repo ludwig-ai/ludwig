@@ -22,7 +22,7 @@ from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, to_numpy_dataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
 
@@ -70,6 +70,9 @@ class PandasDataset(Dataset):
         sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, horovod=horovod)
         batcher = RandomAccessBatcher(self, sampler, batch_size=batch_size, ignore_last=ignore_last)
         yield batcher
+
+    def to_df(self):
+        return from_numpy_dataset(self.dataset)
 
 
 class PandasDatasetManager(DatasetManager):

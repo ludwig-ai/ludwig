@@ -16,6 +16,7 @@
 import logging
 from collections import OrderedDict
 from pprint import pformat
+from typing import Union
 
 logging_level_registry = {
     "critical": logging.CRITICAL,
@@ -60,7 +61,7 @@ def repr_ordered_dict(d: OrderedDict):
     return "{" + ",\n  ".join(f"{x}: {pformat(y, indent=4)}" for x, y in d.items()) + "}"
 
 
-def query_yes_no(question: str, default="yes"):
+def query_yes_no(question: str, default: Union[str, None] = "yes"):
     """Ask a yes/no question via raw_input() and return their answer.
 
     Args:

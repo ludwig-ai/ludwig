@@ -60,7 +60,7 @@ class ModinEngine(DataFrameEngine):
 
         return from_modin(df)
 
-    def from_ray_dataset(self, dataset):
+    def from_ray_dataset(self, dataset) -> pd.DataFrame:
         return dataset.to_modin()
 
     @property

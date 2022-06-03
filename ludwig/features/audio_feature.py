@@ -51,8 +51,6 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 
-logger = logging.getLogger(__name__)
-
 
 class AudioFeatureMixin(BaseFeatureMixin):
     @staticmethod
@@ -154,18 +152,17 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         def is_torch_audio_tuple(audio):
             if isinstance(audio, tuple):
-                if isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
+                if len(audio) == 2 and isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
                     return True
             return False
 
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
         except RuntimeError:
-            logger.info("Unable to process audio files provided")
+            logging.info("Unable to process audio files provided")
             raise RuntimeError
 
         raw_audio = df_engine.map_objects(raw_audio, lambda row: row if is_torch_audio_tuple(row) else default_audio)
-
         processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
@@ -219,7 +216,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             merged_stats["cropped"],
             audio_file_length_limit_in_s,
         )
-        logger.debug(print_statistics)
+        logging.debug(print_statistics)
         return processed_audio
 
     @staticmethod
@@ -346,7 +343,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError("There are no audio files in the dataset provided.")
 
         first_audio_entry = next(iter(column))
-        logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
+        logging.debug(f"Detected audio feature type is {type(first_audio_entry)}")
 
         if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
             raise ValueError(

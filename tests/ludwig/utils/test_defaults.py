@@ -10,6 +10,7 @@ from ludwig.constants import (
     HYPEROPT,
     NUMBER,
     PREPROCESSING,
+    SCHEDULER,
     TRAINER,
     TYPE,
 )
@@ -43,12 +44,12 @@ HYPEROPT_CONFIG = {
             ],
         },
     },
-    "sampler": {"type": "ray"},
+    "search_alg": {"type": "hyperopt"},
     "executor": {"type": "ray"},
     "goal": "minimize",
 }
 
-SCHEDULER = {"type": "async_hyperband", "time_attr": "time_total_s"}
+SCHEDULER_DICT = {"type": "async_hyperband", "time_attr": "time_total_s"}
 
 default_early_stop = default_training_params["early_stop"]
 
@@ -88,7 +89,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
-        config[HYPEROPT]["sampler"]["scheduler"] = SCHEDULER
+        config[HYPEROPT]["executor"][SCHEDULER] = SCHEDULER_DICT
 
     merged_config = merge_with_defaults(config)
 
@@ -136,6 +137,11 @@ def test_deprecated_field_aliases():
                 },
             },
             "goal": "minimize",
+            "sampler": {"type": "grid", "num_samples": 2, "scheduler": {"type": "fifo"}},
+            "executor": {
+                "type": "grid",
+                "search_alg": "bohb",
+            },
         },
     }
 
@@ -151,3 +157,198 @@ def test_deprecated_field_aliases():
     hparams = merged_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
     assert "trainer.learning_rate" in hparams
+
+    assert "sampler" not in merged_config[HYPEROPT]
+
+    assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
+    assert "num_samples" in merged_config[HYPEROPT]["executor"]
+    assert "scheduler" in merged_config[HYPEROPT]["executor"]
+
+
+def test_merge_with_defaults():
+    # configuration with legacy parameters
+    legacy_config_format = {
+        "input_features": [
+            {
+                "type": "numerical",
+                "name": "in_feat",
+            },
+        ],
+        "output_features": [
+            {
+                "type": "numerical",
+                "name": "out_feat",
+            },
+        ],
+        "training": {"eval_batch_size": 0},
+        "hyperopt": {
+            "parameters": {
+                "training.learning_rate": {},
+                "training.early_stop": {},
+                "in_feat.num_fc_layers": {},
+                "out_feat.embedding_size": {},
+                "out_feat.dropout": 0.2,
+            },
+            "executor": {
+                "type": "serial",
+                "search_alg": {TYPE: "variant_generator"},
+            },
+            "sampler": {
+                "num_samples": 99,
+                "scheduler": {},
+            },
+        },
+    }
+
+    # expected configuration content with default values after upgrading legacy configuration components
+    expected_upgraded_format = {
+        "input_features": [
+            {"type": "number", "name": "in_feat", "column": "in_feat", "proc_column": "in_feat_mZFLky", "tied": None}
+        ],
+        "output_features": [
+            {
+                "type": "number",
+                "name": "out_feat",
+                "column": "out_feat",
+                "proc_column": "out_feat_mZFLky",
+                "loss": {"type": "mean_squared_error", "weight": 1},
+                "clip": None,
+                "dependencies": [],
+                "reduce_input": "sum",
+                "reduce_dependencies": "sum",
+                "preprocessing": {"missing_value_strategy": "drop_row"},
+            }
+        ],
+        "hyperopt": {
+            "parameters": {
+                "in_feat.num_fc_layers": {},
+                "out_feat.embedding_size": {},
+                "out_feat.dropout": 0.2,
+                "trainer.learning_rate": {},
+                "trainer.early_stop": {},
+            },
+            "executor": {"type": "ray", "num_samples": 99, "scheduler": {}},
+            "search_alg": {"type": "variant_generator"},
+        },
+        "trainer": {
+            "eval_batch_size": None,
+            "optimizer": {"type": "adam", "betas": (0.9, 0.999), "eps": 1e-08},
+            "epochs": 100,
+            "regularization_lambda": 0,
+            "regularization_type": "l2",
+            "learning_rate": 0.001,
+            "batch_size": 128,
+            "early_stop": 5,
+            "steps_per_checkpoint": 0,
+            "reduce_learning_rate_on_plateau": 0,
+            "reduce_learning_rate_on_plateau_patience": 5,
+            "reduce_learning_rate_on_plateau_rate": 0.5,
+            "increase_batch_size_on_plateau": 0,
+            "increase_batch_size_on_plateau_patience": 5,
+            "increase_batch_size_on_plateau_rate": 2,
+            "increase_batch_size_on_plateau_max": 512,
+            "decay": False,
+            "decay_steps": 10000,
+            "decay_rate": 0.96,
+            "staircase": False,
+            "gradient_clipping": None,
+            "validation_field": "combined",
+            "validation_metric": "loss",
+            "learning_rate_warmup_epochs": 1,
+        },
+        "preprocessing": {
+            "force_split": False,
+            "split_probabilities": (0.7, 0.1, 0.2),
+            "stratify": None,
+            "undersample_majority": None,
+            "oversample_minority": None,
+            "sample_ratio": 1.0,
+            "text": {
+                "tokenizer": "space_punct",
+                "pretrained_model_name_or_path": None,
+                "vocab_file": None,
+                "max_sequence_length": 256,
+                "most_common": 20000,
+                "padding_symbol": "<PAD>",
+                "unknown_symbol": "<UNK>",
+                "padding": "right",
+                "lowercase": True,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "category": {
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "set": {
+                "tokenizer": "space",
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "bag": {
+                "tokenizer": "space",
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "binary": {"missing_value_strategy": "fill_with_false"},
+            "number": {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None},
+            "sequence": {
+                "max_sequence_length": 256,
+                "most_common": 20000,
+                "padding_symbol": "<PAD>",
+                "unknown_symbol": "<UNK>",
+                "padding": "right",
+                "tokenizer": "space",
+                "lowercase": False,
+                "vocab_file": None,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "timeseries": {
+                "timeseries_length_limit": 256,
+                "padding_value": 0,
+                "padding": "right",
+                "tokenizer": "space",
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "",
+            },
+            "image": {
+                "missing_value_strategy": "backfill",
+                "in_memory": True,
+                "resize_method": "interpolate",
+                "scaling": "pixel_normalization",
+                "num_processes": 1,
+                "infer_image_num_channels": True,
+                "infer_image_dimensions": True,
+                "infer_image_max_height": 256,
+                "infer_image_max_width": 256,
+                "infer_image_sample_size": 100,
+            },
+            "audio": {
+                "audio_file_length_limit_in_s": 7.5,
+                "missing_value_strategy": "backfill",
+                "in_memory": True,
+                "padding_value": 0,
+                "norm": None,
+                "audio_feature": {
+                    "type": "fbank",
+                    "window_length_in_s": 0.04,
+                    "window_shift_in_s": 0.02,
+                    "num_filter_bands": 80,
+                },
+            },
+            "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
+            "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},
+            "vector": {"missing_value_strategy": "fill_with_const", "fill_value": ""},
+        },
+        "combiner": {"type": "concat"},
+    }
+
+    updated_config = merge_with_defaults(legacy_config_format)
+    assert updated_config == expected_upgraded_format

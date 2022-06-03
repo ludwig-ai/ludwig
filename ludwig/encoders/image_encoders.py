@@ -24,6 +24,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
+from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -341,9 +342,7 @@ class ViTEncoder(Encoder):
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained and not saved_weights_in_checkpoint:
-            self.model = ViTModel.from_pretrained(pretrained_model)
-            if trainable:
-                self.model.train()
+            self.transformer = ViTModel.from_pretrained(pretrained_model)
         else:
             config = ViTConfig(
                 image_size=img_height,
@@ -360,12 +359,17 @@ class ViTEncoder(Encoder):
                 layer_norm_eps=layer_norm_eps,
                 gradient_checkpointing=gradient_checkpointing,
             )
-            self.model = ViTModel(config)
+            self.transformer = ViTModel(config)
 
-        self._output_shape = (self.model.config.hidden_size,)
+        if trainable:
+            self.transformer.train()
+        else:
+            freeze_parameters(self.transformer)
+
+        self._output_shape = (self.transformer.config.hidden_size,)
 
     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-        output = self.model(inputs, head_mask=head_mask)
+        output = self.transformer(inputs, head_mask=head_mask)
         return {"encoder_output": output.pooler_output}
 
     @property

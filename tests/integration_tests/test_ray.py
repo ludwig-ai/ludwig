@@ -301,7 +301,7 @@ def test_ray_sequence():
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.parametrize("feature_type", ["raw", "stft", "stft_phase", "group_delay", "fbank"])
+@pytest.mark.parametrize("feature_type", ["raw", "fbank"])
 @pytest.mark.distributed
 def test_ray_audio(dataset_type, feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -321,7 +321,7 @@ def test_ray_audio(dataset_type, feature_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
