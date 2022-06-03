@@ -46,8 +46,8 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
-from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import get_bytes_obj_from_path, has_remote_protocol, upload_h5
+from ludwig.features.feature_utils import map_abs_path_to_entries
+from ludwig.utils.fs_utils import get_bytes_obj_from_path, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
@@ -395,16 +395,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return (should_resize, width, height, num_channels, user_specified_num_channels)
 
     @staticmethod
-    def map_abs_path_to_entries(column, src_path, backend):
-        def get_abs_path_if_entry_is_str(entry):
-            if not isinstance(entry, str) or has_remote_protocol(entry):
-                return entry
-            else:
-                return get_abs_path(src_path, entry)
-
-        return backend.df_engine.map_objects(column, get_abs_path_if_entry_is_str)
-
-    @staticmethod
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
@@ -416,7 +406,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         src_path = None
         if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = ImageFeatureMixin.map_abs_path_to_entries(column, src_path, backend)
+        abs_path_column = map_abs_path_to_entries(column, src_path, backend)
 
         (
             should_resize,
