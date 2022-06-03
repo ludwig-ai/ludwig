@@ -280,7 +280,7 @@ class DateWave(Encoder):
         norm: Optional[str] = None,
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
-        dropout: int = 0,
+        dropout: float = 0,
         **kwargs,
     ):
         """
