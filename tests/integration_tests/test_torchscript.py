@@ -299,6 +299,10 @@ def test_torchscript_e2e(csv_filename, tmpdir):
                     output_values == output_values_expected
                 ), f"feature: {feature_name}, output: {output_name}"
             else:
+                # Shapes and values must both match
+                assert (
+                    output_values.shape == output_values_expected.shape
+                ), f"feature: {feature_name}, output: {output_name}"
                 assert np.allclose(
                     output_values, output_values_expected
                 ), f"feature: {feature_name}, output: {output_name}"

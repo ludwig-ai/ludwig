@@ -182,8 +182,8 @@ def _upgrade_deprecated_fields(config: Dict[str, Any]):
         # check for legacy parameters in "executor"
         if EXECUTOR in config[HYPEROPT]:
             hpexecutor = config[HYPEROPT][EXECUTOR]
-            executor_type = hpexecutor[TYPE]
-            if executor_type != RAY:
+            executor_type = hpexecutor.get(TYPE, None)
+            if executor_type is not None and executor_type != RAY:
                 warnings.warn(
                     f'executor type "{executor_type}" not supported, converted to "ray" will be flagged as error '
                     "in v0.6",
@@ -390,6 +390,10 @@ def merge_with_defaults(config):
         # By default, drop rows with missing output features
         set_default_value(output_feature, PREPROCESSING, {})
         set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
+
+    # ===== Hyperpot =====
+    if HYPEROPT in config:
+        set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
     return config
 

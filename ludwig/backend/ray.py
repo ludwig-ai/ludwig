@@ -19,7 +19,7 @@ import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import dask
 import numpy as np
@@ -38,8 +38,10 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
+from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
+from ludwig.utils.types import Series
 
 _ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
 import ray.train as rt  # noqa: E402
@@ -770,6 +772,19 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"RayBackend does not support lazy loading of data files at train time. "
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
+
+    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+        ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+
+        def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
+            df[column.name] = df[column.name].map(fn)
+            return df
+
+        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_if_path), batch_format="pandas")
+        if map_fn is not None:
+            ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
+
+        return self.df_engine.from_ray_dataset(ds)[column.name]
 
     @property
     def num_nodes(self) -> int:
