@@ -385,7 +385,7 @@ class ParallelCNN(Encoder):
             self.conv_layers = [{"filter_size": 2}, {"filter_size": 3}, {"filter_size": 4}, {"filter_size": 5}]
             self.num_conv_layers = 4
         else:
-            raise ValueError("Invalid layer parametrization, use either conv_layers or" " num_conv_layers")
+            raise ValueError("Invalid layer parametrization, use either conv_layers or num_conv_layers")
 
         # The user is expected to provide fc_layers or num_fc_layers
         # The following logic handles the case where the user either provides
@@ -395,7 +395,7 @@ class ParallelCNN(Encoder):
             fc_layers = [{"output_size": 512}, {"output_size": 256}]
             num_fc_layers = 2
         elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
+            raise ValueError("Invalid layer parametrization, use either fc_layers or num_fc_layers only. Not both.")
 
         self.should_embed = should_embed
         self.embed_sequence = None
@@ -1153,7 +1153,6 @@ class StackedRNN(Encoder):
         recurrent_activation="sigmoid",
         unit_forget_bias=True,
         recurrent_initializer="orthogonal",
-        # recurrent_constraint=None,
         dropout=0.0,
         recurrent_dropout=0.0,
         fc_layers=None,
@@ -1265,6 +1264,8 @@ class StackedRNN(Encoder):
         :param dropout: determines if there should be a dropout layer before
                returning the encoder output.
         :type dropout: Boolean
+        :param recurrent_dropout: Dropout rate for the recurrent stack.
+        :type recurrent_dropout: float
         :param initializer: the initializer to use. If `None` it uses
                `xavier_uniform`. Options are: `constant`, `identity`,
                `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
@@ -1307,7 +1308,7 @@ class StackedRNN(Encoder):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout=fc_dropout,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
             )
 
@@ -1317,7 +1318,7 @@ class StackedRNN(Encoder):
             input_size=input_size,
             hidden_size=state_size,
             cell_type=cell_type,
-            sequence_size=max_sequence_length,
+            max_sequence_length=max_sequence_length,
             num_layers=num_layers,
             bidirectional=bidirectional,
             activation=activation,
@@ -1327,8 +1328,7 @@ class StackedRNN(Encoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            dropout=dropout,
-            recurrent_dropout=recurrent_dropout,
+            dropout=recurrent_dropout,
         )
 
         self.reduce_output = reduce_output
@@ -1509,6 +1509,8 @@ class StackedCNNRNN(Encoder):
         :param dropout: determines if there should be a dropout layer before
                returning the encoder output.
         :type dropout: Boolean
+        :param recurrent_dropout: Dropout rate for the recurrent stack.
+        :type recurrent_dropout: float
         :param initializer: the initializer to use. If `None` it uses
                `xavier_uniform`. Options are: `constant`, `identity`,
                `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
@@ -1563,7 +1565,7 @@ class StackedCNNRNN(Encoder):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout=fc_dropout,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
             )
 
@@ -1595,7 +1597,7 @@ class StackedCNNRNN(Encoder):
         self.recurrent_stack = RecurrentStack(
             input_size=self.conv1d_stack.output_shape[1],
             hidden_size=state_size,
-            sequence_size=self.conv1d_stack.output_shape[0],
+            max_sequence_length=self.conv1d_stack.output_shape[0],
             cell_type=cell_type,
             num_layers=num_rec_layers,
             bidirectional=bidirectional,
@@ -1606,8 +1608,7 @@ class StackedCNNRNN(Encoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            dropout=dropout,
-            recurrent_dropout=recurrent_dropout,
+            dropout=recurrent_dropout,
         )
 
         self.reduce_output = reduce_output
@@ -1863,7 +1864,7 @@ class StackedTransformer(Encoder):
         logger.debug("  TransformerStack")
         self.transformer_stack = TransformerStack(
             input_size=hidden_size,
-            sequence_size=max_sequence_length,
+            max_sequence_length=max_sequence_length,
             hidden_size=hidden_size,
             num_heads=num_heads,
             output_size=transformer_output_size,
