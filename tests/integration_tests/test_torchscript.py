@@ -198,6 +198,45 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
+def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    bin_str_feature = binary_feature()
+    input_features = [
+        bin_str_feature,
+        binary_feature(),
+    ]
+    output_features = [
+        bin_str_feature,
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    # Convert bool values to strings, e.g., {'Yes', 'No'}
+    df = pd.read_csv(training_data_csv_path)
+    false_value, true_value = "No", "Yes"
+    df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
+    df.to_csv(training_data_csv_path)
+
+    # Train Ludwig (Pythonic) model:
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=training_data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+
+    validate_torchscript_outputs(tmpdir, ludwig_model, training_data_csv_path)
+
+
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -265,15 +304,16 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
+    validate_torchscript_outputs(tmpdir, ludwig_model, training_data_csv_path)
+
+
+def validate_torchscript_outputs(tmpdir, ludwig_model, training_data_csv_path):
     # Obtain predictions from Python model
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
-    # Create graph inference model (Torchscript) from trained Ludwig model.
-    script_module = ludwig_model.to_torchscript()
-
     # Ensure torchscript saving/loading does not affect final predictions.
     script_module_path = os.path.join(tmpdir, "inference_module.pt")
-    torch.jit.save(script_module, script_module_path)
+    torch.jit.save(ludwig_model.to_torchscript(), script_module_path)
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)

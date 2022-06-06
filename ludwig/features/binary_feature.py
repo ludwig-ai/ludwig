@@ -69,13 +69,13 @@ class _BinaryPreprocessing(torch.nn.Module):
             v = torch.stack(v)
 
         if torch.jit.isinstance(v, torch.Tensor):
-            return v.to(dtype=torch.bool)
+            return v
 
         v = [s.strip() for s in v]
         if self.should_lower:
             v = [s.lower() for s in v]
         indices = [self.str2bool.get(s, False) for s in v]
-        return torch.tensor(indices, dtype=torch.bool)
+        return torch.tensor(indices, dtype=torch.float32)
 
 
 class _BinaryPostprocessing(torch.nn.Module):
