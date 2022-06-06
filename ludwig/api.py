@@ -245,7 +245,7 @@ class LudwigModel:
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        skip_save_inference_module: bool = False,
+        skip_save_inference_module: Optional[bool] = None,
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
@@ -323,12 +323,9 @@ class LudwigModel:
             dataset is provided it is preprocessed and cached by saving an HDF5
             and JSON files to avoid running the preprocessing again. If this
             parameter is `False`, the HDF5 and JSON file are not saved.
-        :param skip_save_inference_module: (bool, default: `False`) disables
-            saving torchscript-compatible inference module. By default Ludwig
-            saves the inference module after each epoch the validation metric
-            improves. This can be time consuming. If turned off, the inference
-            module will not be loadable later on. If skip_save_model is True,
-            skip_save_inference_module is automatically set to True.
+        :param skip_save_inference_module: (bool, default: `None`) if None and `skip_save_model` is False, will
+            attempt to save the inference module and fail silently if it cannot. If this parameter is `False`,
+            will fail loudly if the inference module cannot be saved.
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
@@ -349,6 +346,22 @@ class LudwigModel:
         if HYPEROPT in self.config:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
+
+        if skip_save_inference_module is None:
+            save_inference_module_fail_silently = True
+            # Determine behavior based on value of skip_save_model
+            skip_save_inference_module = skip_save_model
+            if not skip_save_model:
+                logger.warning(
+                    "skip_save_inference_module initially set to None and skip_save_model set to False. "
+                    "Will attempt to save the inference module and fail silently if it cannot. "
+                    "If this is not the expected behavior, set skip_save_inference_module to either True or False."
+                )
+        else:
+            save_inference_module_fail_silently = False
+
+        if skip_save_model and not skip_save_inference_module:
+            raise ValueError("Cannot save inference module if skip_save_model is True.")
 
         # setup directories and file names
         if model_resume_path is not None:
@@ -376,14 +389,6 @@ class LudwigModel:
             and skip_save_processed_input
             and skip_save_inference_module
         )
-
-        # if we are skipping save model, then we skip saving inference module as well
-        if skip_save_model:
-            logger.warning(
-                "Cannot save inference module if skip_save_model is True. "
-                "Setting skip_save_inference_module to True."
-            )
-            skip_save_inference_module = True
 
         output_url = output_directory
         with upload_output_directory(output_directory) as (output_directory, upload_fn):
@@ -640,9 +645,11 @@ class LudwigModel:
                             self.save_torchscript(inference_module_path)
                             logger.info(f'Saved inference module to: "{inference_module_path}"')
                         except Exception:
-                            logger.warning(
-                                "Unable to save inference module. Full exception below:\n" f"{traceback.format_exc()}"
-                            )
+                            if not save_inference_module_fail_silently:
+                                raise ValueError(
+                                    f"Unable to save inference module. Full exception below:\n"
+                                    f"{traceback.format_exc()}"
+                                )
 
                     # Adds a flag to all input features indicating that the weights are saved in the checkpoint.
                     for input_feature in self.config["input_features"]:
