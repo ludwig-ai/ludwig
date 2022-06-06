@@ -259,10 +259,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         dataset=training_data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
-        skip_save_model=False,
         skip_save_progress=True,
         skip_save_log=True,
         skip_save_processed_input=True,
+        skip_save_model=False,
+        skip_save_inference_module=False,  # Explicitly save the inference module.
         output_directory=tmpdir,
     )
 
