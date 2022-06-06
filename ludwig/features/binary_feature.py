@@ -363,7 +363,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         if probabilities_col in result:
             result[probabilities_col] = backend.df_engine.map_objects(
                 result[probabilities_col],
-                lambda prob: np.array([1 - prob, prob]).astype(result[probabilities_col].dtype),
+                lambda prob: np.array([1 - prob, prob], dtype=result[probabilities_col].dtype),
             )
 
             false_col = f"{probabilities_col}_{class_names[0]}"
