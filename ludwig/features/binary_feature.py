@@ -69,7 +69,7 @@ class _BinaryPreprocessing(torch.nn.Module):
             v = torch.stack(v)
 
         if torch.jit.isinstance(v, torch.Tensor):
-            return v
+            return v.to(dtype=torch.float32)
 
         v = [s.strip() for s in v]
         if self.should_lower:
