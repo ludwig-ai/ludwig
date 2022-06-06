@@ -476,7 +476,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 "use_gpu": use_gpu,
                 "resources_per_worker": {
                     "CPU": num_cpus,
-                    "GPU": 1,
+                    "GPU": 1 if use_gpu else 0,
                 },
             }
             hyperopt_dict["backend"].set_distributed_kwargs(**hvd_kwargs)
