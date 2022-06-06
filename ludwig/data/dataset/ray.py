@@ -73,10 +73,7 @@ class RayDataset(Dataset):
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
     def pipeline(
-        self,
-        shuffle: bool = True,
-        fully_executed: bool = True,
-        window_size_bytes: Optional[int] = None
+        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
     ) -> DatasetPipeline:
         """
         Args:
