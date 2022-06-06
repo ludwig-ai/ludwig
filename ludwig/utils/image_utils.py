@@ -220,8 +220,6 @@ def read_image_from_bytes_obj(
         with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
             image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8), mode=mode)
-            del buffer_view
-
             return image
     except Exception as e:
         logger.warning(e)
