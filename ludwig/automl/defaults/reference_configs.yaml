@@ -46,7 +46,7 @@ datasets:
         size: 8 # N_a
         output_size: 128 # N_d
         sparsity: 0.0 # lambda_sparse
-        bn_momentum: 0.6 # m_B
+        bn_momentum: 0.4 # m_B
         num_steps: 3 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 4096 # B_v
@@ -469,7 +469,7 @@ datasets:
         size: 128 # N_a
         output_size: 8 # N_d
         sparsity: 0.0 # lambda_sparse
-        bn_momentum: 0.98 # m_B
+        bn_momentum: 0.02 # m_B
         num_steps: 10 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 4096 # B_v
@@ -764,7 +764,7 @@ datasets:
         size: 32 # N_a
         output_size: 8 # N_d
         sparsity: 0.0 # lambda_sparse
-        bn_momentum: 0.98 # m_B
+        bn_momentum: 0.02 # m_B
         num_steps: 3 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 256 # B_v
@@ -1661,7 +1661,7 @@ datasets:
         size: 128 # N_a
         output_size: 24 # N_d
         sparsity: 0.000001 # lambda_sparse
-        bn_momentum: 0.98 # m_B
+        bn_momentum: 0.02 # m_B
         num_steps: 10 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 2048 # B_v
@@ -2446,7 +2446,7 @@ datasets:
         size: 128 # N_a
         output_size: 8 # N_d
         sparsity: 0.1 # lambda_sparse
-        bn_momentum: 0.9 # m_B
+        bn_momentum: 0.1 # m_B
         num_steps: 9 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 256 # B_v
@@ -2665,7 +2665,7 @@ datasets:
         size: 128 # N_a
         output_size: 128 # N_d
         sparsity: 0.0 # lambda_sparse
-        bn_momentum: 0.8 # m_B
+        bn_momentum: 0.2 # m_B
         num_steps: 3 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 512 # B_v
@@ -2718,7 +2718,7 @@ datasets:
         size: 16 # N_a
         output_size: 128 # N_d
         sparsity: 0.0 # lambda_sparse
-        bn_momentum: 0.98 # m_B
+        bn_momentum: 0.02 # m_B
         num_steps: 6 # N_steps
         relaxation_factor: 1.0 # gamma
         bn_virtual_bs: 512 # B_v
@@ -2865,7 +2865,7 @@ datasets:
         size: 32 # N_a
         output_size: 32 # N_d
         sparsity: 0.0001 # lambda_sparse
-        bn_momentum: 0.6 # m_B
+        bn_momentum: 0.4 # m_B
         num_steps: 5 # N_steps
         relaxation_factor: 1.2 # gamma
         bn_virtual_bs: 1024 # B_v
@@ -3636,7 +3636,7 @@ datasets:
         size: 24 # N_a
         output_size: 128 # N_d
         sparsity: 0.001 # lambda_sparse
-        bn_momentum: 0.8 # m_B
+        bn_momentum: 0.2 # m_B
         num_steps: 7 # N_steps
         relaxation_factor: 1.2 # gamma
         bn_virtual_bs: 256 # B_v
@@ -4069,7 +4069,7 @@ datasets:
         size: 8 # N_a
         output_size: 8 # N_d
         sparsity: 0.0 # lambda_sparse
-        bn_momentum: 0.6 # m_B
+        bn_momentum: 0.4 # m_B
         num_steps: 3 # N_steps
         relaxation_factor: 2.0 # gamma
         bn_virtual_bs: 256 # B_v
@@ -4144,7 +4144,7 @@ datasets:
         size: 128 # N_a
         output_size: 8 # N_d
         sparsity: 0.000001 # lambda_sparse
-        bn_momentum: 0.98 # m_B
+        bn_momentum: 0.02 # m_B
         num_steps: 4 # N_steps
         relaxation_factor: 1.2 # gamma
         bn_virtual_bs: 4096 # B_v
@@ -4187,7 +4187,7 @@ datasets:
         size: 32 # N_a
         output_size: 128 # N_d
         sparsity: 0.000001 # lambda_sparse
-        bn_momentum: 0.6 # m_B
+        bn_momentum: 0.4 # m_B
         num_steps: 4 # N_steps
         relaxation_factor: 1.2 # gamma
         bn_virtual_bs: 4096 # B_v
