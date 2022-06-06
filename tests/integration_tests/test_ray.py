@@ -43,7 +43,6 @@ from tests.integration_tests.utils import (
     number_feature,
     sequence_feature,
     set_feature,
-    spawn,
     text_feature,
     timeseries_feature,
     train_with_backend,
@@ -147,7 +146,6 @@ def split(data_parquet):
     return train_fname, val_fname, test_fname
 
 
-@spawn
 def run_test_with_features(
     input_features,
     output_features,
@@ -504,3 +502,19 @@ def test_tune_batch_size_lr():
             model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
             assert model.config[TRAINER]["batch_size"] != "auto"
             assert model.config[TRAINER]["learning_rate"] != "auto"
+
+
+@pytest.mark.distributed
+def test_ray_progress_bar():
+    # This is a simple test that is just meant to make sure that the progress bar isn't breaking
+    input_features = [
+        sequence_feature(reduce_output="sum"),
+    ]
+    output_features = [
+        binary_feature(bool2str=["No", "Yes"]),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+    )

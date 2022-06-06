@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict, List, Optional
 
 import torch
 from torch.nn import BatchNorm1d, BatchNorm2d, Dropout, LayerNorm, Linear, ModuleList
@@ -23,6 +24,14 @@ logger = logging.getLogger(__name__)
 
 
 class FCLayer(LudwigModule):
+    """A torch.nn.Linear wrapper that declares input and output shapes, and enables the customization of:
+
+    1. how weights and biases are initialized
+    2. normalization (layer and batch)
+    3. activations
+    4. dropout
+    """
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
@@ -33,16 +42,16 @@ class FCLayer(LudwigModule):
 
     def __init__(
         self,
-        input_size,
-        input_rank=2,
-        output_size=256,
-        use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
-        norm=None,
-        norm_params=None,
-        activation="relu",
-        dropout=0,
+        input_size: int,
+        input_rank: int = 2,
+        output_size: int = 256,
+        use_bias: bool = True,
+        weights_initializer: str = "xavier_uniform",
+        bias_initializer: str = "zeros",
+        norm: Optional[str] = None,
+        norm_params: Optional[Dict] = None,
+        activation: str = "relu",
+        dropout: float = 0,
     ):
         super().__init__()
 
@@ -92,21 +101,38 @@ class FCLayer(LudwigModule):
 
 
 class FCStack(LudwigModule):
+    """A stack of FCLayers.
+
+    The specification of each FCLayer is specified by the `layers` dictionary parameter, whose keys correspond with an
+    FCLayer's constructor arguments, i.e.
+
+    [
+        {"input_size": 2, "output_size": 4},
+        {"output_size": 4, "use_bias": False},
+    ]
+
+    `default_*` parameters dictate default values to use for each FCLayer, if not specified by `layers`. If `layers` is
+    `None`, then a stack of size `num_layers` of `FCLayer`s configured with all of the `default_*` parameters is used.
+
+    If `layers` is None and `num_layers` is 0, then there are no fully connected layers and this module serves as a
+    trivial passthrough.
+    """
+
     def __init__(
         self,
-        first_layer_input_size,
-        layers=None,
-        num_layers=1,
-        default_input_rank=2,
-        default_output_size=256,
-        default_use_bias=True,
-        default_weights_initializer="xavier_uniform",
-        default_bias_initializer="zeros",
-        default_norm=None,
-        default_norm_params=None,
-        default_activation="relu",
-        default_dropout=0,
-        residual=False,
+        first_layer_input_size: int,
+        layers: Optional[List[Dict]] = None,
+        num_layers: int = 1,
+        default_input_rank: int = 2,
+        default_output_size: int = 256,
+        default_use_bias: bool = True,
+        default_weights_initializer: str = "xavier_uniform",
+        default_bias_initializer: str = "zeros",
+        default_norm: Optional[str] = None,
+        default_norm_params: Optional[Dict] = None,
+        default_activation: str = "relu",
+        default_dropout: int = 0,
+        residual: bool = False,
         **kwargs,
     ):
         super().__init__()

@@ -201,6 +201,7 @@ def test_torchscript(csv_filename, should_load_model):
 def test_torchscript_e2e(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
     # Configure features to be tested:
     bin_str_feature = binary_feature()
@@ -221,11 +222,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         *torchscript_compatible_text_features,
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
+        sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
         timeseries_feature(),
+        audio_feature(audio_dest_folder),
         # TODO: future support
         # vector_feature(),
-        # audio_feature(audio_dest_folder),
         # date_feature(),
         # h3_feature(),
     ]

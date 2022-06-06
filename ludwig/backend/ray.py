@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import ray
 import torch
+import tqdm
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -191,7 +192,7 @@ def train_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, horovod=hvd, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
         if results is not None:
@@ -274,6 +275,46 @@ def tune_learning_rate_fn(
         hvd.shutdown()
 
 
+class TqdmCallback(rt.TrainingCallback):
+    """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
+
+    def __init__(self) -> None:
+        """Constructor for TqdmCallback."""
+        super().__init__()
+        self.progess_bars = {}
+
+    def process_results(self, results: List[Dict], **info) -> None:
+        """Called everytime ray.train.report is called from subprocesses. See
+        https://docs.ray.io/en/latest/train/api.html#trainingcallback.
+
+        # Inputs
+
+        :param results: (List[Dict]) List of results from the training function.
+            Each value in the list corresponds to the output of the training function from each worker.
+
+        # Return
+
+        :return: (None) `None`
+        """
+        for result in results:
+            progress_bar_opts = result.get("progress_bar")
+            if not progress_bar_opts:
+                continue
+            # Skip commands received by non-coordinators
+            if not progress_bar_opts["is_coordinator"]:
+                continue
+            _id = progress_bar_opts["id"]
+            action = progress_bar_opts.pop("action")
+            if action == "create":
+                progress_bar_config = progress_bar_opts.get("config")
+                self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
+            elif action == "close":
+                self.progess_bars[_id].close()
+            elif action == "update":
+                update_by = progress_bar_opts.pop("update_by")
+                self.progess_bars[_id].update(update_by)
+
+
 class RayTrainerV2(BaseTrainer):
     def __init__(self, model, trainer_kwargs, data_loader_kwargs, executable_kwargs):
         self.model = model.cpu()
@@ -317,6 +358,7 @@ class RayTrainerV2(BaseTrainer):
             results, self._validation_field, self._validation_metric = runner.run(
                 lambda config: train_fn(**config),
                 config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
+                callbacks=[TqdmCallback()],
                 dataset=dataset,
             )[0]
 
@@ -328,6 +370,8 @@ class RayTrainerV2(BaseTrainer):
         return results
 
     def train_online(self, *args, **kwargs):
+        # TODO: When this is implemented we also need to update the
+        # Tqdm flow to report back the callback
         raise NotImplementedError()
 
     def tune_batch_size(
@@ -536,7 +580,7 @@ def eval_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        predictor = RemotePredictor(model=model, horovod=hvd, **predictor_kwargs)
+        predictor = RemotePredictor(model=model, horovod=hvd, report_tqdm_to_ray=True, **predictor_kwargs)
         return predictor.batch_evaluation(eval_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
