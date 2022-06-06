@@ -46,7 +46,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     )
 
     bn_momentum: float = schema_utils.FloatRange(
-        default=0.05, description="Momentum of the batch norm. `m_B` in the paper."
+        default=0.05, description="Momentum of the batch norm. 1 - `m_B` from the TabNet paper."
     )
 
     bn_virtual_bs: Optional[int] = schema_utils.PositiveInteger(
@@ -54,7 +54,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         allow_none=True,
         description=(
             "Size of the virtual batch size used by ghost batch norm. If null, regular batch norm is used instead. "
-            "`B_v` from the paper"
+            "`B_v` from the TabNet paper"
         ),
     )
 
