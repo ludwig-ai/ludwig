@@ -766,7 +766,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
-        # TODO(shreya): Untested
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 

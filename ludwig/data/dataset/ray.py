@@ -19,7 +19,7 @@ import queue
 import threading
 from distutils.version import LooseVersion
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Union
+from typing import Any, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -73,7 +73,16 @@ class RayDataset(Dataset):
         #     return df
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
-    def pipeline(self, shuffle=True, fully_executed=True) -> DatasetPipeline:
+    def pipeline(
+        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
+    ) -> DatasetPipeline:
+        """
+        Args:
+            shuffle: If true, the entire dataset is shuffled in memory before batching.
+            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
+            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
+                    for the dataset.
+        """
         if not fully_executed and not _ray112:
             raise ValueError(f"Cannot set fully_execute=False in ray {ray.__version__}")
 
@@ -81,7 +90,10 @@ class RayDataset(Dataset):
             # set instance state so calls to __len__ will also use the fully_executed version
             self.ds = self.ds.fully_executed()
 
-        pipe = self.ds.repeat()
+        if window_size_bytes is None:
+            pipe = self.ds.repeat()
+        else:
+            pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
         return pipe
