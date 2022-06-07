@@ -86,8 +86,8 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
 def read_image_if_path(item: Any, num_channels: Optional[int] = None) -> Union[Any, torch.Tensor]:
     """Reads image if `item` is a path (e.g. a string).
 
-    If it is not a path, return as-is. For example, if item is already a torch.Tensor, we would want this function to
-    be a no-op.
+    If it is not a path, return as-is. For example, if item is already a torch.Tensor, we would want this function to be
+    a no-op.
     """
     if not isinstance(item, str):
         return item
