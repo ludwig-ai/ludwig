@@ -235,10 +235,10 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
+        set_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
         # vector_feature()
     ]
     backend = LocalTestBackend()
@@ -298,10 +298,20 @@ def test_torchscript_e2e(csv_filename, tmpdir):
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
             if isinstance(output_values, list):
-                # Strings should match exactly
-                assert np.all(
-                    output_values == output_values_expected
-                ), f"feature: {feature_name}, output: {output_name}"
+                if isinstance(output_values[0], torch.Tensor):
+                    # If list of numeric values (e.g., probabilities of SetFeature), compare as numpy arrays.
+                    for i in range(len(output_values)):
+                        assert (
+                            output_values[i].shape == output_values_expected[i].shape
+                        ), f"feature: {feature_name}, output: {output_name}"
+                        assert np.allclose(
+                            output_values[i], output_values_expected[i]
+                        ), f"feature: {feature_name}, output: {output_name}"
+                else:
+                    # Strings should match exactly
+                    assert np.all(
+                        output_values == output_values_expected
+                    ), f"feature: {feature_name}, output: {output_name}"
             else:
                 # Shapes and values must both match
                 assert (
