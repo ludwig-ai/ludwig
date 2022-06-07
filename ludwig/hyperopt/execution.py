@@ -173,8 +173,7 @@ class HyperoptExecutor(ABC):
         data_format=None,
         experiment_name="hyperopt",
         model_name="run",
-        model_load_path=None,
-        model_resume_path=None,
+        resume=None,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
         skip_save_model=False,
@@ -552,8 +551,7 @@ class RayTuneExecutor(HyperoptExecutor):
         data_format=None,
         experiment_name="hyperopt",
         model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
+        resume=None,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
         skip_save_model=False,
@@ -601,8 +599,6 @@ class RayTuneExecutor(HyperoptExecutor):
             data_format=data_format,
             experiment_name=experiment_name,
             model_name=model_name,
-            # model_load_path=model_load_path,
-            # model_resume_path=model_resume_path,
             eval_split=self.split,
             skip_save_training_description=skip_save_training_description,
             skip_save_training_statistics=skip_save_training_statistics,
@@ -711,6 +707,7 @@ class RayTuneExecutor(HyperoptExecutor):
         try:
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
+                name=experiment_name,
                 config={
                     **self.search_space,
                     **tune_config,
@@ -731,6 +728,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 callbacks=tune_callbacks,
                 stop=CallbackStopper(),
                 verbose=hyperopt_log_verbosity,
+                resume="AUTO" if resume is None else resume,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
@@ -844,7 +842,6 @@ def run_experiment(
     data_format=None,
     experiment_name="hyperopt",
     model_name="run",
-    # model_load_path=None,
     model_resume_path=None,
     eval_split=VALIDATION,
     skip_save_training_description=False,
@@ -888,7 +885,6 @@ def run_experiment(
         data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        # model_load_path=model_load_path,
         model_resume_path=model_resume_path,
         eval_split=eval_split,
         skip_save_training_description=skip_save_training_description,
