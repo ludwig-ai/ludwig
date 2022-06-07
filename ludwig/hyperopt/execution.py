@@ -782,6 +782,8 @@ class RayTuneExecutor(HyperoptExecutor):
 
 
 class CallbackStopper(Stopper):
+    """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
+
     def __init__(self, callbacks: Optional[List[Callback]]):
         self.callbacks = callbacks or []
 
