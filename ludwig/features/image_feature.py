@@ -46,7 +46,7 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
-from ludwig.features.feature_utils import map_abs_path_to_entries
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
@@ -402,7 +402,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         src_path = None
         if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = map_abs_path_to_entries(column, src_path, backend)
+        abs_path_column = backend.df_engine.map_objects(
+            column, lambda row: get_abs_path(row, src_path) if isinstance(row, str) else row
+        )
 
         (
             should_resize,

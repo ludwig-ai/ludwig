@@ -39,7 +39,7 @@ from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
 from ludwig.data.cache.types import CacheableDataset
-from ludwig.utils.fs_utils import download_h5, open_file, upload_h5
+from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -111,9 +111,11 @@ def get_split_path(dataset_fp):
     return os.path.splitext(dataset_fp)[0] + ".split.csv"
 
 
-def get_abs_path(data_csv_path, file_path):
-    if data_csv_path is not None:
-        return os.path.join(data_csv_path, file_path)
+def get_abs_path(src_path, file_path):
+    if has_remote_protocol(file_path):
+        return file_path
+    elif src_path is not None:
+        return os.path.join(src_path, file_path)
     else:
         return file_path
 

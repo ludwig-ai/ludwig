@@ -34,7 +34,6 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin
-from ludwig.features.feature_utils import map_abs_path_to_entries
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import (
     calculate_mean,
@@ -49,6 +48,7 @@ from ludwig.utils.audio_utils import (
     get_stft_magnitude,
     read_audio_if_bytes_obj,
 )
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -403,7 +403,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = map_abs_path_to_entries(column, src_path, backend)
+        abs_path_column = backend.df_engine.map_objects(
+            column, lambda row: get_abs_path(row, src_path) if isinstance(row, str) else row
+        )
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]

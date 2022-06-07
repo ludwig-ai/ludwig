@@ -24,7 +24,7 @@ import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
-from ludwig.features.feature_utils import get_abs_path_if_entry_is_str
+from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
     try:
         import imghdr
 
-        path = get_abs_path_if_entry_is_str(img_entry, src_path)
+        path = get_abs_path(img_entry, src_path)
         bytes_obj = get_bytes_obj_from_path(path)
         if isinstance(bytes_obj, bytes):
             return imghdr.what(None, bytes_obj) is not None

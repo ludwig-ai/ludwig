@@ -14,32 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 import re
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from ludwig.backend.base import Backend
 
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
-from ludwig.utils.data_utils import get_abs_path, hash_dict
-from ludwig.utils.fs_utils import has_remote_protocol
+from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
-from ludwig.utils.types import Series
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"
 FEATURE_NAME_SUFFIX_LENGTH = len(FEATURE_NAME_SUFFIX)
-
-
-def get_abs_path_if_entry_is_str(entry: Any, src_path: str):
-    if not isinstance(entry, str) or has_remote_protocol(entry):
-        return entry
-    else:
-        return get_abs_path(src_path, entry)
-
-
-def map_abs_path_to_entries(column: Series, src_path: str, backend: Backend):
-    return backend.df_engine.map_objects(column, lambda row: get_abs_path_if_entry_is_str(row, src_path))
 
 
 def should_regularize(regularize_layers):
