@@ -229,7 +229,7 @@ def test_hyperopt_scheduler(scheduler, csv_filename, validate_output_feature=Fal
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space):
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -289,7 +289,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space):
     config["hyperopt"] = hyperopt_configs
 
     with ray_start():
-        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory="results_hyperopt")
+        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
     if search_space == "random":
         assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
@@ -304,7 +304,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space):
     assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
+    assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
-    if os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json")):
-        os.remove(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
+    if os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")):
+        os.remove(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))

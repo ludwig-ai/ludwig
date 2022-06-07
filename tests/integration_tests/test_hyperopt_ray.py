@@ -277,4 +277,4 @@ def run_hyperopt(
     assert isinstance(hyperopt_results, RayTuneResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(os.path.join("results_hyperopt", "hyperopt_statistics.json"))
+    assert os.path.isfile(os.path.join("results_hyperopt", experiment_name, "hyperopt_statistics.json"))
