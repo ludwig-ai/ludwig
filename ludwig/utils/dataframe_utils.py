@@ -1,8 +1,10 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
-from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import DASK_MODULE_NAME
+from ludwig.utils.types import DataFrame
 
 
 def is_dask_lib(df_lib):
@@ -10,12 +12,12 @@ def is_dask_lib(df_lib):
     return df_lib.__name__ == DASK_MODULE_NAME
 
 
-def is_dask_backend(backend: Backend):
+def is_dask_backend(backend: "Backend"):  # noqa: F821
     """Returns whether the backend's dataframe is dask."""
     return backend.df_engine.df_lib.__name__ == DASK_MODULE_NAME
 
 
-def flatten_df(df, backend):
+def flatten_df(df: DataFrame, backend: "Backend"):  # noqa: F821
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
     column_shapes = {}
     for c in df.columns:
@@ -33,7 +35,7 @@ def flatten_df(df, backend):
     return df, column_shapes
 
 
-def unflatten_df(df, column_shapes, backend):
+def unflatten_df(df: DataFrame, column_shapes, backend: "Backend"):  # noqa: F821
     for c in df.columns:
         shape = column_shapes.get(c)
         if shape:
@@ -41,17 +43,17 @@ def unflatten_df(df, column_shapes, backend):
     return df
 
 
-def to_numpy_dataset(df, backend=LOCAL_BACKEND):
+def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None):  # noqa: F821
     dataset = {}
     for col in df.columns:
         res = df[col]
-        if is_dask_backend(backend):
+        if backend and is_dask_backend(backend):
             res = res.compute()
         dataset[col] = np.stack(res.to_numpy())
     return dataset
 
 
-def from_numpy_dataset(dataset):
+def from_numpy_dataset(dataset) -> pd.DataFrame:
     col_mapping = {}
     for k, v in dataset.items():
         if len(v.shape) > 1:
