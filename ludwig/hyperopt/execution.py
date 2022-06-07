@@ -11,7 +11,7 @@ import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
@@ -694,15 +694,10 @@ class RayTuneExecutor(HyperoptExecutor):
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
 
-        class CallbackStopper(Stopper):
-            def __call__(self, trial_id, result):
-                return False
-
-            def stop_all(self):
-                for callback in callbacks or []:
-                    if callback.should_stop_hyperopt():
-                        return True
-                return False
+        # Note that resume="AUTO" will attempt to resume the experiment if possible, and
+        # otherwise will start a new experiment:
+        # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
+        should_resume = "AUTO" if resume is None else resume
 
         try:
             analysis = tune.run(
@@ -726,9 +721,9 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
                 trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
                 callbacks=tune_callbacks,
-                stop=CallbackStopper(),
+                stop=CallbackStopper(callbacks),
                 verbose=hyperopt_log_verbosity,
-                resume="AUTO" if resume is None else resume,
+                resume=should_resume,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
@@ -784,6 +779,20 @@ class RayTuneExecutor(HyperoptExecutor):
             ordered_trials = []
 
         return RayTuneResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
+
+
+class CallbackStopper(Stopper):
+    def __init__(self, callbacks: Optional[List[Callback]]):
+        self.callbacks = callbacks or []
+
+    def __call__(self, trial_id, result):
+        return False
+
+    def stop_all(self):
+        for callback in self.callbacks:
+            if callback.should_stop_hyperopt():
+                return True
+        return False
 
 
 def get_build_hyperopt_executor(executor_type):
