@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, TRAINING
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
@@ -10,15 +10,51 @@ from ludwig.schema.optimizers import (
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
+from ludwig.utils.registry import Registry
+
+trainer_registry = Registry()
+
+
+def register_trainer(name: str):
+    def wrap(trainer_config: BaseTrainerConfig):
+        trainer_registry[name] = trainer_config
+        return trainer_config
+
+    return wrap
 
 
 @dataclass
-class TrainerConfig(schema_utils.BaseMarshmallowConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
+class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
+    """Common trainer parameter values."""
+
+    learning_rate: float = schema_utils.NumericOrStringOptionsField(
+        default=0.001,
+        min=0.0,
+        max=1.0,
+        options=["auto"],
+        default_numeric=0.001,
+        default_option="auto",
+        allow_none=False,
+        description=(
+            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
+            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
+        ),
+    )
+
+
+@register_trainer("trainer")
+@register_trainer("ray_trainer_v2")
+@dataclass
+class TrainerConfig(BaseTrainerConfig):
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for ECD model training."""
 
     type: str = schema_utils.StringOptions(
-        ["trainer", "ray_trainer_v2", "lightgbm_trainer", "lightgbm_ray_trainer"],
-        description="Trainer to use for training the model.",
+        ["trainer", "ray_trainer_v2"],
+        default="trainer",
+        description=(
+            "Trainer to use for training the model. Must be one of ['trainer', 'ray_trainer_v2'] - "
+            "corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default: 'trainer')"
+        ),
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
@@ -47,20 +83,6 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
 
     should_shuffle: bool = schema_utils.Boolean(
         default=True, description="Whether to shuffle batches during training when true."
-    )
-
-    learning_rate: float = schema_utils.NumericOrStringOptionsField(
-        default=0.001,
-        min=0.0,
-        max=1.0,
-        options=["auto"],
-        default_numeric=0.001,
-        default_option="auto",
-        allow_none=False,
-        description=(
-            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
-            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
-        ),
     )
 
     batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
@@ -189,6 +211,23 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
             " which the effective batch size is increased. For very large batch sizes, a softer square-root scale can "
             "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
             "workers, setting this value to constant can be used to disable scale-up."
+        ),
+    )
+
+
+@register_trainer("lightgbm_trainer")
+@register_trainer("lightgbm_ray_trainer")
+@dataclass
+class GBMTrainerConfig(BaseTrainerConfig):
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for GBM model training."""
+
+    type: str = schema_utils.StringOptions(
+        ["lightgbm_trainer", "lightgbm_ray_trainer"],
+        default="lightgbm_trainer",
+        description=(
+            "Trainer to use for training the model. Must be one of ['lightgbm_trainer', 'lightgbm_ray_trainer'] - "
+            "corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` "
+            "(default: 'lightgbm_trainer')"
         ),
     )
 
@@ -387,5 +426,29 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
+def get_model_type_jsonschema():
+    return {"type": "string", "enum": [MODEL_ECD, MODEL_GBM], "default": MODEL_ECD}
+
+
 def get_trainer_jsonschema():
-    return schema_utils.unload_jsonschema_from_marshmallow_class(TrainerConfig)
+    conds = []
+    for trainer in trainer_registry:
+        trainer_cls = trainer_registry[trainer]
+        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+        other_props.pop("type")
+        trainer_cond = schema_utils.create_cond(
+            {"type": trainer},
+            other_props,
+        )
+        conds.append(trainer_cond)
+
+    return {
+        "type": "object",
+        "properties": {
+            "type": {"type": "string", "enum": list(trainer_registry.keys()), "default": "trainer"},
+        },
+        "title": "trainer_options",
+        "allOf": conds,
+        "required": ["type"],
+        "description": "",
+    }

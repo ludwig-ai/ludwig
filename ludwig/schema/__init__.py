@@ -20,12 +20,12 @@
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
-from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
+from ludwig.constants import COMBINER, HYPEROPT, MODEL_TYPE, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
-from ludwig.schema.trainer import get_trainer_jsonschema
+from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
 from ludwig.schema.utils import create_cond
 
 
@@ -36,6 +36,7 @@ def get_schema():
     schema = {
         "type": "object",
         "properties": {
+            MODEL_TYPE: get_model_type_jsonschema(),
             "input_features": {
                 "type": "array",
                 "items": {
