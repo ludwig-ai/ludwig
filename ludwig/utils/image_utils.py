@@ -187,7 +187,9 @@ def read_image_if_path(path: Any, num_channels: Optional[int] = None) -> Union[A
     """
     if not isinstance(path, str):
         return path
-    return read_image_from_path(path, num_channels)
+    image = read_image_from_path(path, num_channels)
+    print(f"read_image_if_path: {path} -> {image}")
+    return image
 
 
 def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optional[torch.Tensor]:
@@ -220,9 +222,10 @@ def read_image_from_bytes_obj(
         with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
             image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8), mode=mode)
+            del buffer_view
             return image
     except Exception as e:
-        logger.warning(e)
+        logger.warning("Failed to read image from bytes object. Original exception: " + str(e))
         return None
 
 
