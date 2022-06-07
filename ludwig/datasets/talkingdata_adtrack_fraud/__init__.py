@@ -27,7 +27,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
 
 @register_dataset(name="talkingdata_adtrack_fraud")
 class TalkingdataAdtrackFraud(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
-    """TalkingData AdTracking Fraud Detection Challenge
+    """TalkingData AdTracking Fraud Detection Challenge.
 
     https://www.kaggle.com/competitions/talkingdata-adtracking-fraud-detection/overview
     """
