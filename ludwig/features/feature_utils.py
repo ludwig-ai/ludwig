@@ -19,6 +19,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import torch
 
+from ludwig.backend.base import Backend
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
