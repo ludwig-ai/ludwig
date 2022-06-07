@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 try:
     import ray
     from ray import tune
-    from ray.tune import register_trainable
+    from ray.tune import register_trainable, Stopper
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
     from ray.tune.syncer import get_cloud_sync_client
@@ -698,6 +698,16 @@ class RayTuneExecutor(HyperoptExecutor):
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
 
+        class CallbackStopper(Stopper):
+            def __call__(self, trial_id, result):
+                return False
+
+            def stop_all(self):
+                for callback in callbacks or []:
+                    if callback.should_stop_hyperopt():
+                        return True
+                return False
+
         try:
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
@@ -719,6 +729,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
                 trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
                 callbacks=tune_callbacks,
+                stop=CallbackStopper(),
                 verbose=hyperopt_log_verbosity,
             )
         except Exception as e:
