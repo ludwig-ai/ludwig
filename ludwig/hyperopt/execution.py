@@ -44,6 +44,7 @@ try:
 except ImportError as e:
     logger.warning(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
+    Stopper = object
     get_horovod_kwargs = None
 
 
