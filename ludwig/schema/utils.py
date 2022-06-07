@@ -129,6 +129,33 @@ def StringOptions(options: List[str], default: Union[None, str] = None, allow_no
     )
 
 
+def TestOptions(default: Union[None, int] = None, allow_none=False, **kwargs):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
+    positive."""
+    val = validate.Range(min=1)
+    allow_none = allow_none or default is None
+
+    if default is not None:
+        try:
+            assert isinstance(default, int)
+            val(default)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Integer(
+                strict=True,
+                validate=val,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata=kwargs,
+            )
+        },
+        default=default,
+    )
+
+
 def Boolean(default: bool, description=""):
     if default is not None:
         try:
