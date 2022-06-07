@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import functools
 import logging
-import os
-import sys
 from collections.abc import Iterable
 from io import BytesIO
-from typing import Any, BinaryIO, List, Optional, TextIO, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
