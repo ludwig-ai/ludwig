@@ -11,8 +11,8 @@ from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils.image_utils import read_image_if_path
 from ludwig.utils.audio_utils import read_audio_if_path
+from ludwig.utils.image_utils import read_image_if_path
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
