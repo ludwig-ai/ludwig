@@ -29,6 +29,7 @@ from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners import (
     ComparatorCombinerConfig,
     ConcatCombinerConfig,
@@ -39,12 +40,52 @@ from ludwig.schema.combiners import (
     TabTransformerCombinerConfig,
     TransformerCombinerConfig,
 )
-from ludwig.schema.combiners.utils import combiner_registry, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)
+
+
+combiner_registry = Registry()
+
+
+def register_combiner(name: str):
+    def wrap(cls):
+        combiner_registry[name] = cls
+        return cls
+
+    return wrap
+
+
+def get_combiner_jsonschema():
+    """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
+    combiner's field constraints."""
+    combiner_types = sorted(list(combiner_registry.keys()))
+    return {
+        "type": "object",
+        "properties": {
+            "type": {"type": "string", "enum": combiner_types, "default": "concat"},
+        },
+        "allOf": get_combiner_conds(),
+        "required": ["type"],
+    }
+
+
+def get_combiner_conds():
+    """Returns a list of if-then JSON clauses for each combiner type in `combiner_registry` and its properties'
+    constraints."""
+    combiner_types = sorted(list(combiner_registry.keys()))
+    conds = []
+    for combiner_type in combiner_types:
+        combiner_cls = combiner_registry[combiner_type]
+        schema_cls = combiner_cls.get_schema_cls()
+        combiner_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        combiner_props = combiner_schema["properties"]
+        combiner_cond = schema_utils.create_cond({"type": combiner_type}, combiner_props)
+        conds.append(combiner_cond)
+    return conds
 
 
 def get_combiner_class(combiner_type: str):

@@ -11,7 +11,6 @@
 #                                 etc.) and related marshmallow fields/methods.
 # └── combiners/
 #     ├── __init__.py         <-- Imports for each combiner config file (making imports elsewhere more convenient).
-#     ├── utils.py            <-- Location of `combiner_registry`, `get_combiner_jsonschema()`, `get_combiner_conds()`
 #     ├── base.py             <-- Location of `BaseCombinerConfig`
 #     ├── comparator.py       <-- Location of `ComparatorCombinerConfig`
 #     ... <file for each combiner> ...
@@ -20,11 +19,11 @@
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
+from ludwig.combiners.combiners import get_combiner_jsonschema
 from ludwig.constants import COMBINER, HYPEROPT, PREPROCESSING, TRAINER
 from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.trainer import get_trainer_jsonschema
 from ludwig.schema.utils import create_cond
 
