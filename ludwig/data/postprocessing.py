@@ -52,15 +52,15 @@ def postprocess(
 
     # Save any new columns but do not save the original columns again
     if not skip_save_unprocessed_output:
-        _save_as_numpy(predictions, output_directory, saved_keys)
+        _save_as_numpy(predictions, output_directory, saved_keys, backend)
 
     return predictions
 
 
-def _save_as_numpy(predictions, output_directory, saved_keys):
+def _save_as_numpy(predictions, output_directory, saved_keys, backend):
     predictions = predictions[[c for c in predictions.columns if c not in saved_keys]]
     npy_filename = os.path.join(output_directory, "{}.npy")
-    numpy_predictions = to_numpy_dataset(predictions)
+    numpy_predictions = to_numpy_dataset(predictions, backend)
     for k, v in numpy_predictions.items():
         k = k.replace("<", "[").replace(">", "]")  # Replace <UNK> and <PAD> with [UNK], [PAD]
         if k not in saved_keys:
