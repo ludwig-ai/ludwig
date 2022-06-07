@@ -18,8 +18,8 @@ from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from ludwig.backend.base import Backend
 
+from ludwig.backend.base import Backend
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.data_utils import get_abs_path, hash_dict
 from ludwig.utils.fs_utils import has_remote_protocol
