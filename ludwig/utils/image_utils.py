@@ -46,7 +46,7 @@ def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
     try:
         import imghdr
 
-        path = get_abs_path(img_entry, src_path)
+        path = get_abs_path(src_path, img_entry)
         bytes_obj = get_bytes_obj_from_path(path)
         if isinstance(bytes_obj, bytes):
             return imghdr.what(None, bytes_obj) is not None

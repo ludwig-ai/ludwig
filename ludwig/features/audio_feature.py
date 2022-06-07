@@ -404,7 +404,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
         abs_path_column = backend.df_engine.map_objects(
-            column, lambda row: get_abs_path(row, src_path) if isinstance(row, str) else row
+            column, lambda row: get_abs_path(src_path, row) if isinstance(row, str) else row
         )
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
