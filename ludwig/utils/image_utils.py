@@ -16,7 +16,7 @@
 import logging
 from collections.abc import Iterable
 from io import BytesIO
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -83,18 +83,6 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
     return mode
 
 
-def read_image_if_path(item: Any, num_channels: Optional[int] = None) -> Union[Any, torch.Tensor]:
-    """Reads image if `item` is a path (e.g. a string).
-
-    If it is not a path, return as-is. For example, if item is already a torch.Tensor, we would want this function to be
-    a no-op.
-    """
-    if not isinstance(item, str):
-        return item
-    image = read_image_from_path(item, num_channels)
-    return image
-
-
 def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optional[torch.Tensor]:
     """Reads image from path.
 
@@ -102,18 +90,6 @@ def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optio
     """
     bytes_obj = get_bytes_obj_from_path(path)
     return read_image_from_bytes_obj(bytes_obj, num_channels)
-
-
-def read_image_if_bytes_obj(
-    item: Optional[bytes] = None, num_channels: Optional[int] = None
-) -> Union[Any, Optional[torch.Tensor]]:
-    """Reads image if `item` is a bytes object.
-
-    If it is not a bytes object, return as-is.
-    """
-    if not isinstance(item, bytes):
-        return item
-    return read_image_from_bytes_obj(item, num_channels)
 
 
 def read_image_from_bytes_obj(

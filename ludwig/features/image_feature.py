@@ -52,8 +52,8 @@ from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
     num_channels_in_image,
-    read_image_if_bytes_obj,
-    read_image_if_path,
+    read_image_from_bytes_obj,
+    read_image_from_path,
     resize_image,
 )
 from ludwig.utils.misc_utils import set_default_value
@@ -194,7 +194,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-        img = read_image_if_bytes_obj(img_entry, num_channels)
+        if isinstance(img_entry, bytes):
+            img = read_image_from_bytes_obj(img_entry, num_channels)
+        else:
+            img = img_entry
+
         if not isinstance(img, torch.Tensor):
             logging.info(f"Image with value {img} cannot be read")
             return None
@@ -330,7 +334,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
             sample_size = 1  # Take first image
 
         for image_entry in column.head(sample_size):
-            image = read_image_if_path(image_entry)
+            if isinstance(image_entry, str):
+                image = read_image_from_path(image_entry)
+            else:
+                image = image_entry
+
             if isinstance(image, torch.Tensor):
                 sample.append(image)
         if len(sample) == 0:
