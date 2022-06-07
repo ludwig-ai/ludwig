@@ -29,14 +29,15 @@ FEATURE_NAME_SUFFIX = "__ludwig"
 FEATURE_NAME_SUFFIX_LENGTH = len(FEATURE_NAME_SUFFIX)
 
 
-def map_abs_path_to_entries(column, src_path, backend):
-    def get_abs_path_if_entry_is_str(entry):
-        if not isinstance(entry, str) or has_remote_protocol(entry):
-            return entry
-        else:
-            return get_abs_path(src_path, entry)
+def get_abs_path_if_entry_is_str(entry, src_path):
+    if not isinstance(entry, str) or has_remote_protocol(entry):
+        return entry
+    else:
+        return get_abs_path(src_path, entry)
 
-    return backend.df_engine.map_objects(column, get_abs_path_if_entry_is_str)
+
+def map_abs_path_to_entries(column, src_path, backend):
+    return backend.df_engine.map_objects(column, lambda row: get_abs_path_if_entry_is_str(row, src_path))
 
 
 def should_regularize(regularize_layers):

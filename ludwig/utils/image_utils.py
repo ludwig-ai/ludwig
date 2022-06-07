@@ -27,8 +27,8 @@ import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
-from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import get_bytes_obj_from_path, is_http, open_file, path_exists, upgrade_http
+from ludwig.features.feature_utils import get_abs_path_if_entry_is_str
+from ludwig.utils.fs_utils import get_bytes_obj_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -43,52 +43,17 @@ def get_average_image(image_lst: List[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0))
 
 
-@functools.lru_cache(maxsize=32)
-def get_image_from_http_bytes(img_entry) -> BytesIO:
-    import requests
-
-    data = requests.get(img_entry, stream=True)
-    if data.status_code == 404:
-        upgraded = upgrade_http(img_entry)
-        if upgraded:
-            logger.info(f"reading image url {img_entry} failed. upgrading to https and retrying")
-            return get_image_from_http_bytes(upgraded)
-        else:
-            raise requests.exceptions.HTTPError(f"reading image url {img_entry} failed and cannot be upgraded to https")
-    return BytesIO(data.raw.read())
-
-
-def get_image_from_path(
-    src_path: Union[str, torch.Tensor], img_entry: Union[str, bytes], ret_bytes: bool = False
-) -> Union[BytesIO, BinaryIO, TextIO, bytes, str]:
-    if not isinstance(img_entry, str):
-        return img_entry
-    if is_http(img_entry):
-        if ret_bytes:
-            # Returns BytesIO.
-            return get_image_from_http_bytes(img_entry)
-        return img_entry
-    if src_path or os.path.isabs(img_entry):
-        return get_abs_path(src_path, img_entry)
-    if path_exists(img_entry):
-        with open_file(img_entry, "rb") as f:
-            if ret_bytes:
-                return f.read()
-            return f
-    else:
-        return bytes(img_entry, "utf-8")
-
-
 def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
     if not isinstance(img_entry, str):
         return False
     try:
         import imghdr
 
-        img = get_image_from_path(src_path, img_entry, True)
-        if isinstance(img, bytes):
-            return imghdr.what(None, img) is not None
-        return imghdr.what(img) is not None
+        path = get_abs_path_if_entry_is_str(img_entry, src_path)
+        bytes_obj = get_bytes_obj_from_path(path)
+        if isinstance(bytes_obj, bytes):
+            return imghdr.what(None, bytes_obj) is not None
+        return imghdr.what(bytes_obj) is not None
     except Exception as e:
         logger.warning(f"While assessing potential image in is_image() for column {column}, encountered exception: {e}")
         return False
@@ -102,65 +67,6 @@ def is_image_score(src_path, img_entry, column: str):
     elif isinstance(img_entry, str) and img_entry.lower().endswith(IMAGE_EXTENSIONS):
         return 0.5
     return 0
-
-
-@functools.lru_cache(maxsize=32)
-def read_image(img: Union[str, bytes, BytesIO, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
-    """Returns a tensor with CHW format.
-
-    If num_channels is not provided, the image is read in unchanged format. Returns None if the image could not be read.
-    """
-    if isinstance(img, torch.Tensor):
-        return img
-    if isinstance(img, str):
-        return read_image_from_str(img, num_channels)
-    if isinstance(img, bytes):
-        with BytesIO(img) as buffer:
-            buffer_view = buffer.getbuffer()
-            image_tensor = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
-            del buffer_view
-            return image_tensor
-    if isinstance(img, BytesIO):
-        buffer_view = img.getbuffer()
-        try:
-            image_tensor = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
-            del buffer_view
-            return image_tensor
-        except RuntimeError as e:
-            logger.warning(f"Encountered torchvision error while reading {img}: {e}")
-    logger.warning(f"Could not read image {img}, unsupported type {type(img)}")
-
-
-@functools.lru_cache(maxsize=32)
-def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.Tensor:
-    try:
-        from torchvision.io import ImageReadMode, read_image
-    except ImportError:
-        logger.error(
-            " torchvision is not installed. "
-            "In order to install all image feature dependencies run "
-            "pip install ludwig[image]"
-        )
-        sys.exit(-1)
-
-    try:
-        if num_channels == 1:
-            return read_image(img, mode=ImageReadMode.GRAY)
-        elif num_channels == 2:
-            return read_image(img, mode=ImageReadMode.GRAY_ALPHA)
-        elif num_channels == 3:
-            return read_image(img, mode=ImageReadMode.RGB)
-        elif num_channels == 4:
-            return read_image(img, mode=ImageReadMode.RGB_ALPHA)
-        else:
-            return read_image(img)
-    except Exception as e:
-        upgraded = upgrade_http(img)
-        if upgraded:
-            logger.info(f"reading image url {img} failed due to {e}. upgrading to https and retrying")
-            return read_image_from_str(upgraded, num_channels)
-        logger.info(f"reading image url {img} failed due to {e}")
-        return None
 
 
 def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
@@ -180,15 +86,15 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
     return mode
 
 
-def read_image_if_path(path: Any, num_channels: Optional[int] = None) -> Union[Any, torch.Tensor]:
-    """Gets an image if `path` is a path (e.g. a string).
+def read_image_if_path(item: Any, num_channels: Optional[int] = None) -> Union[Any, torch.Tensor]:
+    """Reads image if `item` is a path (e.g. a string).
 
-    If it is not a path, return as-is.
+    If it is not a path, return as-is. For example, if item is already a torch.Tensor, we would want this function to
+    be a no-op.
     """
-    if not isinstance(path, str):
-        return path
-    image = read_image_from_path(path, num_channels)
-    print(f"read_image_if_path: {path} -> {image}")
+    if not isinstance(item, str):
+        return item
+    image = read_image_from_path(item, num_channels)
     return image
 
 
@@ -202,15 +108,15 @@ def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optio
 
 
 def read_image_if_bytes_obj(
-    bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
+    item: Optional[bytes] = None, num_channels: Optional[int] = None
 ) -> Union[Any, Optional[torch.Tensor]]:
-    """Reads image if `bytes_obj` is a bytes object.
+    """Reads image if `item` is a bytes object.
 
     If it is not a bytes object, return as-is.
     """
-    if not isinstance(bytes_obj, bytes):
-        return bytes_obj
-    return read_image_from_bytes_obj(bytes_obj, num_channels)
+    if not isinstance(item, bytes):
+        return item
+    return read_image_from_bytes_obj(item, num_channels)
 
 
 def read_image_from_bytes_obj(
