@@ -115,9 +115,18 @@ def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
         ray.shutdown()
 
 
+@pytest.fixture(scope="module")
+def ray_cluster():
+    gpus = [i for i in range(torch.cuda.device_count())]
+    with ray_start(num_gpus=len(gpus)):
+        yield
+
+
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS)
-def test_hyperopt_search_alg(search_alg, csv_filename, validate_output_feature=False, validation_metric=None):
+def test_hyperopt_search_alg(
+    search_alg, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
+):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
@@ -151,21 +160,20 @@ def test_hyperopt_search_alg(search_alg, csv_filename, validate_output_feature=F
     search_alg = hyperopt_config["search_alg"]
 
     hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
-
-    gpus = [i for i in range(torch.cuda.device_count())]
-    with ray_start(num_gpus=len(gpus)):
-        hyperopt_executor = get_build_hyperopt_executor(RAY)(
-            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
-        )
-        raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
-        assert isinstance(raytune_results, RayTuneResults)
+    hyperopt_executor = get_build_hyperopt_executor(RAY)(
+        hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+    )
+    raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
+    assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed
-def test_hyperopt_executor_with_metric(csv_filename):
+def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
     test_hyperopt_search_alg(
         "variant_generator",
         csv_filename,
+        tmpdir,
+        ray_cluster,
         validate_output_feature=True,
         validation_metric=ACCURACY,
     )
@@ -173,7 +181,9 @@ def test_hyperopt_executor_with_metric(csv_filename):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("scheduler", SCHEDULERS)
-def test_hyperopt_scheduler(scheduler, csv_filename, validate_output_feature=False, validation_metric=None):
+def test_hyperopt_scheduler(
+    scheduler, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
+):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
@@ -211,25 +221,23 @@ def test_hyperopt_scheduler(scheduler, csv_filename, validate_output_feature=Fal
 
     hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
 
-    gpus = [i for i in range(torch.cuda.device_count())]
-    with ray_start(num_gpus=len(gpus)):
-        # TODO: Determine if we still need this if-then-else construct
-        if search_alg["type"] in {""}:
-            with pytest.raises(ImportError):
-                get_build_hyperopt_executor(RAY)(
-                    hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
-                )
-        else:
-            hyperopt_executor = get_build_hyperopt_executor(RAY)(
+    # TODO: Determine if we still need this if-then-else construct
+    if search_alg["type"] in {""}:
+        with pytest.raises(ImportError):
+            get_build_hyperopt_executor(RAY)(
                 hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
             )
-            raytune_results = hyperopt_executor.execute(config, dataset=rel_path)
-            assert isinstance(raytune_results, RayTuneResults)
+    else:
+        hyperopt_executor = get_build_hyperopt_executor(RAY)(
+            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        )
+        raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
+        assert isinstance(raytune_results, RayTuneResults)
 
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -288,9 +296,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
 
-    with ray_start():
-        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     if search_space == "random":
         assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
     else:
