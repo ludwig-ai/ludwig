@@ -835,29 +835,25 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
             assert 2 == len(figure_cnt)
 
 
-def test_hyperopt_report_vis_api(hyperopt_results):
+def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
+    vis_dir = os.path.join(tmpdir, "visualizations")
 
-    with TemporaryDirectory() as tmpdir:
-        vis_dir = os.path.join(tmpdir, "visualizations")
+    visualize.hyperopt_report(os.path.join(hyperopt_results, "hyperopt_statistics.json"), output_directory=vis_dir)
 
-        visualize.hyperopt_report(os.path.join(hyperopt_results, "hyperopt_statistics.json"), output_directory=vis_dir)
+    # test for creation of output directory
+    assert os.path.isdir(vis_dir)
 
-        # test for creation of output directory
-        assert os.path.isdir(vis_dir)
-
-        figure_cnt = glob.glob(os.path.join(vis_dir, "*"))
-        assert 4 == len(figure_cnt)
+    figure_cnt = glob.glob(os.path.join(vis_dir, "*"))
+    assert 4 == len(figure_cnt)
 
 
-def test_hyperopt_hiplot_vis_api(hyperopt_results):
+def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
+    vis_dir = os.path.join(tmpdir, "visualizations")
 
-    with TemporaryDirectory() as tmpdir:
-        vis_dir = os.path.join(tmpdir, "visualizations")
+    visualize.hyperopt_hiplot(os.path.join(hyperopt_results, "hyperopt_statistics.json"), output_directory=vis_dir)
 
-        visualize.hyperopt_hiplot(os.path.join(hyperopt_results, "hyperopt_statistics.json"), output_directory=vis_dir)
+    # test for creation of output directory
+    assert os.path.isdir(vis_dir)
 
-        # test for creation of output directory
-        assert os.path.isdir(vis_dir)
-
-        # test for generatated html page
-        assert os.path.isfile(os.path.join(vis_dir, "hyperopt_hiplot.html"))
+    # test for generatated html page
+    assert os.path.isfile(os.path.join(vis_dir, "hyperopt_hiplot.html"))

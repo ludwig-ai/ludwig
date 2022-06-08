@@ -51,4 +51,4 @@ hyperopt:
       categories: [256, 512, 1024, 2048, 4096]
     combiner.bn_momentum:
       space: choice
-      categories: [0.6, 0.7, 0.8, 0.9, 0.95, 0.98]
+      categories: [0.4, 0.3, 0.2, 0.1, 0.05, 0.02]

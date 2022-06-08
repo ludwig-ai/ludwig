@@ -40,9 +40,8 @@ from ludwig.utils.data_utils import (
     load_from_file,
     load_json,
     replace_file_extension,
-    to_numpy_dataset,
-    unflatten_df,
 )
+from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 
@@ -259,7 +258,7 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
                 if "str2idx" in feature_metadata:
                     pred_df[col] = pred_df[col].map(lambda x: feature_metadata["str2idx"][x])
 
-        pred_df = to_numpy_dataset(pred_df)
+        pred_df = to_numpy_dataset(pred_df, LOCAL_BACKEND)
         results_per_model += [pred_df[col] for col in cols]
 
     return results_per_model

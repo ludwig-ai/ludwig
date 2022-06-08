@@ -17,8 +17,6 @@ import argparse
 import copy
 import logging
 import sys
-import warnings
-from typing import Any, Dict
 
 import yaml
 
@@ -28,18 +26,13 @@ from ludwig.constants import (
     COLUMN,
     COMBINED,
     DROP_ROW,
-    EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
     LOSS,
     NAME,
-    NUMBER,
-    PARAMETERS,
     PREPROCESSING,
     PROC_COLUMN,
     RAY,
-    SAMPLER,
-    SEARCH_ALG,
     TRAINER,
     TYPE,
 )
@@ -47,6 +40,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
@@ -153,99 +147,6 @@ def get_default_optimizer_params(optimizer_type):
         raise ValueError("Incorrect optimizer type: " + optimizer_type)
 
 
-def _upgrade_deprecated_fields(config: Dict[str, Any]):
-    if "training" in config:
-        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
-        config[TRAINER] = config["training"]
-        del config["training"]
-
-    for feature in config.get("input_features", []) + config.get("output_features", []):
-        if feature.get(TYPE) == "numerical":
-            warnings.warn(
-                'Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning
-            )
-            feature[TYPE] = NUMBER
-
-    if HYPEROPT in config:
-        # check for use of legacy "training" reference, if any found convert to "trainer"
-        if PARAMETERS in config[HYPEROPT]:
-            hparams = config[HYPEROPT][PARAMETERS]
-            for k, v in list(hparams.items()):
-                substr = "training."
-                if k.startswith(substr):
-                    warnings.warn(
-                        'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
-                    )
-                    hparams["trainer." + k[len(substr) :]] = v
-                    del hparams[k]
-
-        # check for legacy parameters in "executor"
-        if EXECUTOR in config[HYPEROPT]:
-            hpexecutor = config[HYPEROPT][EXECUTOR]
-            executor_type = hpexecutor.get(TYPE, None)
-            if executor_type is not None and executor_type != RAY:
-                warnings.warn(
-                    f'executor type "{executor_type}" not supported, converted to "ray" will be flagged as error '
-                    "in v0.6",
-                    DeprecationWarning,
-                )
-                hpexecutor[TYPE] = RAY
-
-            # if search_alg not at top level and is present in executor, promote to top level
-            if SEARCH_ALG in hpexecutor:
-                # promote only if not in top-level, otherwise use current top-level
-                if SEARCH_ALG not in config[HYPEROPT]:
-                    config[HYPEROPT][SEARCH_ALG] = hpexecutor[SEARCH_ALG]
-                del hpexecutor[SEARCH_ALG]
-        else:
-            warnings.warn(
-                'Missing "executor" section, adding "ray" executor will be flagged as error in v0.6', DeprecationWarning
-            )
-            config[HYPEROPT][EXECUTOR] = {TYPE: RAY}
-
-        # check for legacy "sampler" section
-        if SAMPLER in config[HYPEROPT]:
-            warnings.warn(
-                f'"{SAMPLER}" is no longer supported, converted to "{SEARCH_ALG}". "{SAMPLER}" will be flagged as '
-                "error in v0.6",
-                DeprecationWarning,
-            )
-            if SEARCH_ALG in config[HYPEROPT][SAMPLER]:
-                if SEARCH_ALG not in config[HYPEROPT]:
-                    config[HYPEROPT][SEARCH_ALG] = config[HYPEROPT][SAMPLER][SEARCH_ALG]
-                    warnings.warn('Moved "search_alg" to hyperopt config top-level', DeprecationWarning)
-
-            # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
-            if "num_samples" in config[HYPEROPT][SAMPLER] and "num_samples" not in config[HYPEROPT][EXECUTOR]:
-                config[HYPEROPT][EXECUTOR]["num_samples"] = config[HYPEROPT][SAMPLER]["num_samples"]
-                warnings.warn('Moved "num_samples" from "sampler" to "executor"', DeprecationWarning)
-
-            if "scheduler" in config[HYPEROPT][SAMPLER] and "scheduler" not in config[HYPEROPT][EXECUTOR]:
-                config[HYPEROPT][EXECUTOR]["scheduler"] = config[HYPEROPT][SAMPLER]["scheduler"]
-                warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
-
-            # remove legacy section
-            del config[HYPEROPT][SAMPLER]
-
-        if SEARCH_ALG not in config[HYPEROPT]:
-            # make top-level as search_alg, if missing put in default value
-            config[HYPEROPT][SEARCH_ALG] = {TYPE: "variant_generator"}
-            warnings.warn(
-                'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error '
-                "in v0.6",
-                DeprecationWarning,
-            )
-
-    if TRAINER in config:
-        trainer = config[TRAINER]
-        eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
-        if eval_batch_size == 0:
-            warnings.warn(
-                "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
-            )
-            trainer[EVAL_BATCH_SIZE] = None
-
-
 def _perform_sanity_checks(config):
     assert "input_features" in config, "config does not define any input features"
 
@@ -340,7 +241,7 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
 
 def merge_with_defaults(config):
     config = copy.deepcopy(config)
-    _upgrade_deprecated_fields(config)
+    upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)
