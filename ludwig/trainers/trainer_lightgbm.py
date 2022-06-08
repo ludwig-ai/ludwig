@@ -575,6 +575,19 @@ class LogEvalDistributed(_TuneLGBMRank0Mixin):
             lgb.callback._log_info(f"[{env.iteration + 1}]\t{result}")
 
 
+def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    ray_params = {}
+    for key, value in params.items():
+        if key == "num_workers":
+            ray_params["num_actors"] = value
+        elif key == "resources_per_worker":
+            if "CPU" in value:
+                ray_params["cpus_per_actor"] = value["CPU"]
+            if "GPU" in value:
+                ray_params["gpus_per_actor"] = value["GPU"]
+    return lgb_ray.RayParams(**ray_params)
+
+
 @register_ray_trainer("lightgbm_ray_trainer", MODEL_GBM, default=True)
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
@@ -590,6 +603,8 @@ class LightGBMRayTrainer(LightGBMTrainer):
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
         trainer_kwargs: Optional[Dict] = None,
+        data_loader_kwargs: Optional[Dict] = None,
+        executable_kwargs: Optional[Dict] = None,
         **kwargs,
     ):
         super().__init__(
@@ -606,7 +621,9 @@ class LightGBMRayTrainer(LightGBMTrainer):
             **kwargs,
         )
 
-        self.ray_kwargs = trainer_kwargs or {}
+        self.trainer_kwargs = trainer_kwargs or {}
+        self.data_loader_kwargs = data_loader_kwargs or {}
+        self.executable_kwargs = executable_kwargs or {}
 
     def _train(
         self,
@@ -632,17 +649,33 @@ class LightGBMRayTrainer(LightGBMTrainer):
             num_boost_round=self.num_boost_round,
             valid_sets=eval_sets,
             valid_names=eval_names,
-            feature_name=list(self.model.input_features.keys()),
+            feature_name=["index"] + list(self.model.input_features.keys()) + ["split"],
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
             callbacks=[
                 lgb.early_stopping(stopping_rounds=self.early_stop),
                 LogEvalDistributed(10),
             ],
-            ray_params=lgb_ray.RayParams(**self.ray_kwargs),
+            ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
         )
 
         return gbm.booster_
+
+    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+        from ludwig.backend.ray import RayPredictor
+
+        predictor = RayPredictor(
+            self.model,
+            self.trainer_kwargs,
+            self.data_loader_kwargs,
+            batch_size=batch_size,
+            **self.executable_kwargs,
+        )
+        metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
+
+        self.append_metrics(dataset_name, metrics, metrics_log, tables, progress_tracker)
+
+        return metrics_log, tables
 
     def _construct_lgb_datasets(
         self,

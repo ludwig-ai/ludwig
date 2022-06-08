@@ -6,8 +6,7 @@ import shutil
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
-from ludwig.data.cache.types import CacheableDataframe
-from ludwig.datasets import higgs  # adult_census_income
+from ludwig.datasets import adult_census_income
 
 shutil.rmtree("./results", ignore_errors=True)
 
@@ -18,22 +17,27 @@ backend_config = {
         "type": "dask",
     },
     "trainer": {
-        "num_actors": 3,
-        "cpus_per_actor": 2,
+        "use_gpu": False,
+        "num_workers": 3,
+        "resources_per_worker": {
+            "CPU": 2,
+            "GPU": 0,
+        },
     },
 }
 backend = initialize_backend(backend_config)
-model = LudwigModel(config="./config_higgs.yaml", logging_level=logging.INFO, backend=backend)
+model = LudwigModel(config="./config.yaml", logging_level=logging.INFO, backend=backend)
 
-# df = adult_census_income.load(split=False)
-df = higgs.load(split=False, add_validation_set=True)
-df = CacheableDataframe(df=df, name="cache_higgs", checksum="9YeB0J_fiQ9Dh_lL84NdZg==")
+df = adult_census_income.load(split=False)
 
 (
     train_stats,  # dictionary containing training statistics
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory,  # location of training results stored on disk
-) = model.train(dataset=df)
+) = model.train(
+    dataset=df,
+    skip_save_processed_input=True,
+)
 
 print("contents of output directory:", output_directory)
 for item in os.listdir(output_directory):
