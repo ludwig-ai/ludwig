@@ -56,7 +56,6 @@ from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.globals import (
-    INFERENCE_MODULE_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     MODEL_WEIGHTS_FILE_NAME,
@@ -64,7 +63,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import InferenceModule
+from ludwig.models.inference import init_inference_module_from_ludwig_model, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -1465,18 +1464,24 @@ class LudwigModel:
         Args:
             model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
                 preprocessing and postprocessing will also be converted to Torchscript.
+        Returns:
+            A torch.jit.ScriptModule that can be used to predict on a Tensor of batch_size inputs.
         """
         self._check_initialization()
         if model_only:
             return self.model.to_torchscript()
         else:
-            inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+            inference_module = init_inference_module_from_ludwig_model(
+                self.model, self.config, self.training_set_metadata
+            )
             return torch.jit.script(inference_module)
 
     def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript model to disk."""
-        inference_module = self.to_torchscript(model_only=model_only)
-        inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
+        if model_only:
+            self.model.save_torchscript(save_path)
+        else:
+            save_ludwig_model_for_inference(save_path, self.model, self.config, self.training_set_metadata)
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
