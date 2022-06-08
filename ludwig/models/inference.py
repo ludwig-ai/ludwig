@@ -67,7 +67,8 @@ class InferencePreprocessor(nn.Module):
         }
         self.preproc_modules = nn.ModuleDict()
         for feature_name, feature in input_features.items():
-            module_dict_key = get_module_dict_key_from_name(feature_name)  # prevents collisions with reserved keywords
+            # prevents collisions with reserved keywords
+            module_dict_key = get_module_dict_key_from_name(feature_name)
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
@@ -93,7 +94,8 @@ class InferencePredictor(nn.Module):
         self.model = model.cpu().to_torchscript()
         self.predict_modules = nn.ModuleDict()
         for feature_name, feature in model.output_features.items():
-            module_dict_key = get_module_dict_key_from_name(feature_name)  # prevents collisions with reserved keywords
+            # prevents collisions with reserved keywords
+            module_dict_key = get_module_dict_key_from_name(feature_name)
             self.predict_modules[module_dict_key] = feature.prediction_module
 
     def forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
@@ -126,7 +128,8 @@ class InferencePostprocessor(nn.Module):
         }
         self.postproc_modules = nn.ModuleDict()
         for feature_name, feature in output_features.items():
-            module_dict_key = get_module_dict_key_from_name(feature_name)  # prevents collisions with reserved keywords
+            # prevents collisions with reserved keywords
+            module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
     def forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
@@ -147,7 +150,7 @@ class InferencePostprocessor(nn.Module):
 def save_ludwig_model_for_inference(
     save_path: str, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]
 ) -> None:
-    """Saves LudwigModel (represented by model, config, and training_set_metadata) for inference."""
+    """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
     # Preprocessing modules
     preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata))
     preprocessor.save(os.path.join(save_path, INFERENCE_PREPROCESSOR_FILENAME))
@@ -162,6 +165,7 @@ def save_ludwig_model_for_inference(
 def init_inference_module_from_ludwig_model(
     model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]
 ) -> InferenceModule:
+    """Initializes an InferenceModule from a LudwigModel (an ECD model, config, and training_set_metadata)."""
     preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata))
     predictor = torch.jit.script(InferencePredictor(model))
     postprocessor = torch.jit.script(InferencePostprocessor(config, training_set_metadata))
@@ -169,6 +173,7 @@ def init_inference_module_from_ludwig_model(
 
 
 def init_inference_module_from_directory(directory: str) -> InferenceModule:
+    """Initializes an InferenceModule from a directory containing saved preproc/predict/postproc modules."""
     preprocessor = torch.jit.load(os.path.join(directory, INFERENCE_PREPROCESSOR_FILENAME))
     predictor = torch.jit.load(os.path.join(directory, INFERENCE_PREDICTOR_FILENAME))
     postprocessor = torch.jit.load(os.path.join(directory, INFERENCE_POSTPROCESSOR_FILENAME))
