@@ -24,6 +24,8 @@ def register_trainer(name: str, model_types: Union[str, List[str]], default=Fals
             _model_type_registry = trainers_registry.get(model_type, {})
             _model_type_registry[name] = cls
             if default:
+                if DEFAULT_KEYS[0] in _model_type_registry:
+                    raise ValueError(f"Default trainer already registered for model type {model_type}")
                 for key in DEFAULT_KEYS:
                     _model_type_registry[key] = cls
             trainers_registry[model_type] = _model_type_registry
