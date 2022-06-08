@@ -20,19 +20,24 @@ import uuid
 from unittest.mock import patch
 
 import pytest
-import ray
-from ray.tune.sync_client import get_sync_client
 
 from ludwig.api import LudwigModel
-from ludwig.backend.ray import RayBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, TRAINER
-from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
-from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
+
+try:
+    import ray
+    from ray.tune.sync_client import get_sync_client
+
+    from ludwig.backend.ray import RayBackend
+    from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
+    from ludwig.hyperopt.results import RayTuneResults
+except ImportError:
+    ray = None
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

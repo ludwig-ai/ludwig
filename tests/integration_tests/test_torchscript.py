@@ -50,7 +50,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("should_load_model", [True, False])
 def test_torchscript(csv_filename, should_load_model):
     #######

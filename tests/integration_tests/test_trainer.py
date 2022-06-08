@@ -4,10 +4,8 @@ import tempfile
 from unittest import mock
 
 import pytest
-import ray
 
 from ludwig.api import LudwigModel
-from ludwig.backend.horovod import HorovodBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
 from tests.integration_tests.utils import (
@@ -17,6 +15,13 @@ from tests.integration_tests.utils import (
     ray_cluster,
     sequence_feature,
 )
+
+try:
+    import ray
+
+    from ludwig.backend.horovod import HorovodBackend
+except ImportError:
+    ray = None
 
 
 @pytest.fixture(scope="module")

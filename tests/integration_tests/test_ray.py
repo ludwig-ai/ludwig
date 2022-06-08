@@ -20,14 +20,11 @@ from distutils.version import LooseVersion
 import numpy as np
 import pandas as pd
 import pytest
-import ray
 import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
-from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, NAME, TRAINER
-from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
@@ -48,6 +45,15 @@ from tests.integration_tests.utils import (
     train_with_backend,
     vector_feature,
 )
+
+try:
+    import ray
+
+    from ludwig.backend.ray import get_trainer_kwargs, RayBackend
+    from ludwig.data.dataframe.dask import DaskEngine
+except ImportError:
+    ray = None
+
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
