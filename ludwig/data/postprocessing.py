@@ -41,7 +41,7 @@ def postprocess(
 
     saved_keys = set()
     if not skip_save_unprocessed_output:
-        _save_as_numpy(predictions, output_directory, saved_keys)
+        _save_as_numpy(predictions, output_directory, saved_keys, backend)
 
     for of_name, output_feature in output_features.items():
         predictions = output_feature.postprocess_predictions(
