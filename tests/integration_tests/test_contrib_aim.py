@@ -21,6 +21,7 @@ def test_contrib_experiment(csv_filename, tmpdir):
     subprocess.call(["chmod", "-R", "a+w", os.environ["AIM_TEST_PATH"]])
 
     cmdline = [sys.executable, TEST_SCRIPT, "--csv-filename", csv_filename]
+    print(cmdline)
     exit_code = subprocess.call(" ".join(cmdline), shell=True, env=os.environ.copy())
     assert exit_code == 0
 
@@ -28,6 +29,6 @@ def test_contrib_experiment(csv_filename, tmpdir):
 if __name__ == "__main__":
     """To run tests individually, run:
 
-    ```python -m pytest tests/integration_tests/test_contrib_wandb.py::test_name```
+    ```python -m pytest tests/integration_tests/test_contrib_aim.py::test_name```
     """
     pass

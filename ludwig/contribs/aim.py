@@ -18,7 +18,7 @@ class AimCallback(Callback):
         experiment_name,
         model_name,
         output_directory,
-        resume,
+        resume_directory,
     ):
         logger.info("aim.on_train_init() called...")
 
