@@ -86,6 +86,6 @@ def hyperopt_results():
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
 
-    hyperopt(config, dataset=rel_path, output_directory="results")
+    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
 
-    return os.path.abspath("results")
+    return os.path.join(os.path.abspath("results"), "hyperopt_test")
