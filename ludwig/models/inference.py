@@ -25,6 +25,45 @@ INFERENCE_ECD_FILENAME = "inference_ecd.pt"
 INFERENCE_POSTPROCESSOR_FILENAME = "inference_postprocessor.pt"
 
 
+class _InferenceModuleV0(nn.Module):
+    """Wraps preprocessing, model forward pass, and postprocessing into a single module.
+
+    Deprecated; used for benchmarking against the new inference module.
+    """
+
+    def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+        super().__init__()
+
+        self.model = model.cpu().to_torchscript()
+
+        self.preproc_modules = nn.ModuleDict()
+        for feature_config in config["input_features"]:
+            feature_name = feature_config[NAME]
+            feature = get_from_registry(feature_config[TYPE], input_type_registry)
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
+
+        self.postproc_modules = nn.ModuleDict()
+        for feature_name, feature in model.output_features.items():
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
+
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+        with torch.no_grad():
+            preproc_inputs = {}
+            for module_dict_key, preproc in self.preproc_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                preproc_inputs[feature_name] = preproc(inputs[feature_name])
+            outputs = self.model(preproc_inputs)
+
+            postproc_outputs: Dict[str, Dict[str, Any]] = {}
+            for module_dict_key, postproc in self.postproc_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                postproc_outputs[feature_name] = postproc(outputs, feature_name)
+
+            return postproc_outputs
+
+
 class InferenceModule(nn.Module):
     """A nn.Module subclass that wraps the inference preprocessor, predictor, and postprocessor.
 
