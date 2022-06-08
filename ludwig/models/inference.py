@@ -189,6 +189,7 @@ def unflatten_dict_by_feature_name(postproc_outputs: Dict[str, Any]) -> Dict[str
 
 class InferenceLudwigModel:
     """Model for inference with the subset of the LudwigModel interface used for prediction.
+
     This model is instantiated with a model_dir, which contains the model and its metadata.
     """
 
@@ -201,6 +202,7 @@ class InferenceLudwigModel:
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
         """Predict on a batch of data.
+
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
         inputs = {
