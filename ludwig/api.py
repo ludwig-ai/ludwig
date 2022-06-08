@@ -1458,7 +1458,7 @@ class LudwigModel:
         """
         self._check_initialization()
         if model_only:
-            return self.model.to_torchscript()
+            return self.model.cpu().to_torchscript()
         else:
             inference_module = init_inference_module_from_ludwig_model(
                 self.model, self.config, self.training_set_metadata
@@ -1467,10 +1467,9 @@ class LudwigModel:
 
     def save_torchscript(self, save_path: str, model_only: bool = False):
         """Saves the Torchscript model to disk."""
-        if model_only:
-            self.model.save_torchscript(save_path)
-        else:
-            save_ludwig_model_for_inference(save_path, self.model, self.config, self.training_set_metadata)
+        save_ludwig_model_for_inference(
+            save_path, self.model, self.config, self.training_set_metadata, model_only=model_only
+        )
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
