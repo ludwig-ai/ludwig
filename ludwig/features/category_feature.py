@@ -66,19 +66,20 @@ class _CategoryPreprocessing(torch.nn.Module):
 
 
 class _CategoryPostprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, prediction_module: PredictModule, metadata: Dict[str, Any]):
         super().__init__()
+        self.prediction_module = prediction_module
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
-        self.predictions_key = PREDICTIONS
-        self.probabilities_key = PROBABILITIES
-        self.unk = ""
+        self.unk = UNKNOWN_SYMBOL
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key]
+    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        preds = self.prediction_module(inputs, feature_name)
+
+        predictions = preds[self.prediction_module.predictions_key]
         inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
         return {
-            self.predictions_key: inv_preds,
-            self.probabilities_key: preds[self.probabilities_key],
+            self.prediction_module.predictions_key: inv_preds,
+            self.prediction_module.probabilities_key: preds[self.prediction_module.probabilities_key],
         }
 
 
@@ -237,6 +238,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     def create_predict_module(self) -> PredictModule:
         return _CategoryPredict()
+
+    def create_postproc_module(self, metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _CategoryPostprocessing(self.prediction_module, metadata)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -426,7 +430,3 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
         )
-
-    @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _CategoryPostprocessing(metadata)

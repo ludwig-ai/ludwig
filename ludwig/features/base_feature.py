@@ -455,7 +455,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "string"
 
-    @staticmethod
+    @abstractmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
 
