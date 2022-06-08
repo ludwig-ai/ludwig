@@ -42,7 +42,7 @@ class InferenceModule(nn.Module):
         self.predictor = predictor
         self.postprocessor = postprocessor
 
-    def forward(self, inputs: TorchscriptPreprocessingInput) -> Dict[str, Dict[str, Any]]:
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             preproc_outputs = self.preprocessor(inputs)
             predictions_flattened = self.predictor(preproc_outputs)
