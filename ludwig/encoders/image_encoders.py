@@ -161,7 +161,7 @@ class ResNetEncoder(Encoder):
         conv_stride: Union[int, Tuple[int]] = 1,
         first_pool_kernel_size: Union[int, Tuple[int]] = None,
         first_pool_stride: Union[int, Tuple[int]] = None,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
         fc_layers: Optional[List[Dict]] = None,
         num_fc_layers: Optional[int] = 1,

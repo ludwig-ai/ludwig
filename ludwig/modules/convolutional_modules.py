@@ -859,7 +859,7 @@ class ResNetBlock(LudwigModule):
         first_in_channels: int,
         out_channels: int,
         stride: int = 1,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
         projection_shortcut: Optional[LudwigModule] = None,
     ):
@@ -948,7 +948,7 @@ class ResNetBottleneckBlock(LudwigModule):
         first_in_channels: int,
         out_channels: int,
         stride: int = 1,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
         projection_shortcut: Optional[LudwigModule] = None,
     ):
@@ -1065,7 +1065,7 @@ class ResNetBlockLayer(LudwigModule):
         block_fn: Union[ResNetBlock, ResNetBottleneckBlock],
         num_blocks: int,
         stride: Union[int, Tuple[int]] = 1,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
         super().__init__()
@@ -1147,7 +1147,7 @@ class ResNet(LudwigModule):
         first_pool_stride: Union[int, Tuple[int]] = 2,
         block_sizes: List[int] = None,
         block_strides: List[Union[int, Tuple[int]]] = None,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
         """Creates a model obtaining an image representation.
