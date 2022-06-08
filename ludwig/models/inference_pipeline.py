@@ -6,6 +6,7 @@ from torch import nn
 from ludwig.models.postprocess_module import PostprocessModule
 from ludwig.models.predict_module import PredictModule
 from ludwig.models.preprocess_module import PreprocessModule
+from ludwig.utils import output_feature_utils
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -32,4 +33,15 @@ class InferencePipelineModule(nn.Module):
             preproc_outputs = self.preprocess_module(inputs)
             predictions = self.predict_module(preproc_outputs)
             postproc_outputs = self.postprocess_module(predictions)
-            return postproc_outputs
+            # Turn flat inputs into nested predictions per feature name
+            final_outputs: Dict[str, Dict[str, Any]] = {}
+            for postproc_key, tensor_values in postproc_outputs.items():
+                feature_name = output_feature_utils.get_feature_name_from_concat_name(postproc_key)
+                tensor_name = output_feature_utils.get_tensor_name_from_concat_name(postproc_key)
+                outputs: Dict[str, Any] = {}
+                if feature_name not in final_outputs:
+                    final_outputs[feature_name] = outputs
+                else:
+                    outputs = final_outputs[feature_name]
+                outputs[tensor_name] = tensor_values
+            return final_outputs

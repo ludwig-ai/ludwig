@@ -4,6 +4,7 @@ import torch
 from torch import nn
 
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
+from ludwig.utils import output_feature_utils
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -35,9 +36,12 @@ class PredictModule(nn.Module):
     def forward(self, preproc_inputs: Dict[str, torch.Tensor]):
         with torch.no_grad():
             outputs: Dict[str, torch.Tensor] = self.model(preproc_inputs)
-            predictions: Dict[str, Dict[str, torch.Tensor]] = {}
+            predictions: Dict[str, torch.Tensor] = {}
             for module_dict_key, predict in self.predict_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
-                predictions[feature_name] = predict(outputs, feature_name)
+                # Flatten out the predictions to support Triton input/output
+                for tensor_name, predict_value in predict(outputs, feature_name).items():
+                    predict_key = output_feature_utils.get_feature_concat_name(feature_name, tensor_name)
+                    predictions[predict_key] = predict_value
 
             return predictions

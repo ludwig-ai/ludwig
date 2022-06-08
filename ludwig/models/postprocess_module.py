@@ -7,6 +7,7 @@ from ludwig.constants import LAST_HIDDEN, LOGITS, NAME, TYPE
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
+from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry
 
 EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
@@ -35,11 +36,23 @@ class PostprocessModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, predictions: Dict[str, Dict[str, torch.Tensor]]):
+    def forward(self, inputs: Dict[str, torch.Tensor]):
         with torch.no_grad():
-            postproc_outputs: Dict[str, Dict[str, Any]] = {}
+            # Turn flat inputs into nested predictions per feature name
+            predictions: Dict[str, Dict[str, torch.Tensor]] = {}
+            for predict_key, tensor_values in inputs.items():
+                feature_name = output_feature_utils.get_feature_name_from_concat_name(predict_key)
+                tensor_name = output_feature_utils.get_tensor_name_from_concat_name(predict_key)
+                if feature_name not in predictions:
+                    predictions[feature_name] = {}
+                predictions[feature_name][tensor_name] = tensor_values
+
+            postproc_outputs: Dict[str, Any] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
-                postproc_outputs[feature_name] = postproc(predictions[feature_name])
+                # Flatten out the predictions to support Triton input/output
+                for tensor_name, postproc_value in postproc(predictions[feature_name]).items():
+                    postproc_key = output_feature_utils.get_feature_concat_name(feature_name, tensor_name)
+                    postproc_outputs[postproc_key] = postproc_value
 
             return postproc_outputs
