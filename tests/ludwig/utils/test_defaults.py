@@ -171,13 +171,27 @@ def test_merge_with_defaults():
         "input_features": [
             {
                 "type": "numerical",
-                "name": "in_feat",
+                "name": "number_input_feature",
+            },
+            {
+                "type": "image",
+                "name": "image_input_feature",
+                "encoder": "stacked_cnn",
+                "conv_bias": True,
+                "conv_layers": [
+                    {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "bias": False},
+                    {
+                        "num_filters": 64,
+                        "pool_size": 2,
+                        "pool_stride": 2,
+                    },
+                ],
             },
         ],
         "output_features": [
             {
                 "type": "numerical",
-                "name": "out_feat",
+                "name": "number_output_feature",
             },
         ],
         "training": {"eval_batch_size": 0},
@@ -185,9 +199,9 @@ def test_merge_with_defaults():
             "parameters": {
                 "training.learning_rate": {},
                 "training.early_stop": {},
-                "in_feat.num_fc_layers": {},
-                "out_feat.embedding_size": {},
-                "out_feat.dropout": 0.2,
+                "number_input_feature.num_fc_layers": {},
+                "number_output_feature.embedding_size": {},
+                "number_output_feature.dropout": 0.2,
             },
             "executor": {
                 "type": "serial",
@@ -203,14 +217,43 @@ def test_merge_with_defaults():
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
         "input_features": [
-            {"type": "number", "name": "in_feat", "column": "in_feat", "proc_column": "in_feat_mZFLky", "tied": None}
+            {
+                "type": "number",
+                "name": "number_input_feature",
+                "column": "number_input_feature",
+                "proc_column": "number_input_feature_mZFLky",
+                "tied": None,
+            },
+            {
+                "type": "image",
+                "name": "image_input_feature",
+                "column": "image_input_feature",
+                "preprocessing": {},
+                "proc_column": "image_input_feature_mZFLky",
+                "tied": None,
+                "encoder": "stacked_cnn",
+                "conv_use_bias": True,
+                "conv_layers": [
+                    {
+                        "num_filters": 32,
+                        "pool_size": 2,
+                        "pool_stride": 2,
+                        "use_bias": False,
+                    },
+                    {
+                        "num_filters": 64,
+                        "pool_size": 2,
+                        "pool_stride": 2,
+                    },
+                ],
+            },
         ],
         "output_features": [
             {
                 "type": "number",
-                "name": "out_feat",
-                "column": "out_feat",
-                "proc_column": "out_feat_mZFLky",
+                "name": "number_output_feature",
+                "column": "number_output_feature",
+                "proc_column": "number_output_feature_mZFLky",
                 "loss": {"type": "mean_squared_error", "weight": 1},
                 "clip": None,
                 "dependencies": [],
@@ -221,9 +264,9 @@ def test_merge_with_defaults():
         ],
         "hyperopt": {
             "parameters": {
-                "in_feat.num_fc_layers": {},
-                "out_feat.embedding_size": {},
-                "out_feat.dropout": 0.2,
+                "number_input_feature.num_fc_layers": {},
+                "number_output_feature.embedding_size": {},
+                "number_output_feature.dropout": 0.2,
                 "trainer.learning_rate": {},
                 "trainer.early_stop": {},
             },

@@ -539,7 +539,7 @@ class Conv2DLayer(LudwigModule):
         padding: Union[int, Tuple[int], str] = "valid",
         dilation: Union[int, Tuple[int]] = 1,
         groups: int = 1,
-        bias: bool = True,
+        use_bias: bool = True,
         padding_mode: str = "zeros",
         norm: Optional[str] = None,
         norm_params: Optional[Dict[str, Any]] = None,
@@ -567,7 +567,7 @@ class Conv2DLayer(LudwigModule):
                 padding=padding,
                 dilation=dilation,
                 groups=groups,
-                bias=bias,
+                bias=use_bias,
                 padding_mode=padding_mode,
             )
         )
@@ -637,7 +637,7 @@ class Conv2DStack(LudwigModule):
         default_padding: Union[int, Tuple[int], str] = "valid",
         default_dilation: Union[int, Tuple[int]] = 1,
         default_groups: int = 1,
-        default_bias: bool = True,
+        default_use_bias: bool = True,
         default_padding_mode: str = "zeros",
         default_norm: Optional[str] = None,
         default_norm_params: Optional[Dict[str, Any]] = None,
@@ -702,8 +702,8 @@ class Conv2DStack(LudwigModule):
                 layer["dilation"] = default_dilation
             if "groups" not in layer:
                 layer["groups"] = default_groups
-            if "bias" not in layer:
-                layer["bias"] = default_bias
+            if "use_bias" not in layer:
+                layer["use_bias"] = default_use_bias
             if "padding_mode" not in layer:
                 layer["padding_mode"] = default_padding_mode
             if "norm" not in layer:
@@ -741,7 +741,7 @@ class Conv2DStack(LudwigModule):
                     padding=layer["padding"],
                     dilation=layer["dilation"],
                     groups=layer["groups"],
-                    bias=layer["bias"],
+                    use_bias=layer["use_bias"],
                     padding_mode=layer["padding_mode"],
                     norm=layer["norm"],
                     norm_params=layer["norm_params"],
@@ -797,7 +797,7 @@ class Conv2DLayerFixedPadding(LudwigModule):
         stride=1,
         dilation=1,
         groups=1,
-        bias=False,
+        use_bias=False,
     ):
         super().__init__()
 
@@ -817,7 +817,7 @@ class Conv2DLayerFixedPadding(LudwigModule):
                 padding=padding,
                 dilation=dilation,
                 groups=groups,
-                bias=bias,
+                bias=use_bias,
             )
         )
         img_height, img_width = get_img_output_shape(
