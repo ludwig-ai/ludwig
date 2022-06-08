@@ -62,9 +62,10 @@ def get_combiner_schema() -> Dict[str, Any]:
 
 # super class to house common properties
 class Combiner(LudwigModule, ABC):
-    def __init__(self, input_features: Dict[str, "InputFeature"]):
+    def __init__(self, input_features: Dict[str, "InputFeature"], combiner_config: "BaseCombinerConfig"):  # noqa 0821
         super().__init__()
         self.input_features = input_features
+        self.combiner_config = combiner_config
 
     @property
     def concatenated_shape(self) -> torch.Size:
@@ -79,6 +80,11 @@ class Combiner(LudwigModule, ABC):
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
         return {k: self.input_features[k].output_shape for k in self.input_features}
+
+    @property
+    def config(self) -> "BaseCombinerConfig":  # noqa 0821
+        """Returns the dataclass instance used to configure this combiner."""
+        return self.combiner_config
 
     @property
     @lru_cache(maxsize=1)
@@ -97,7 +103,7 @@ class Combiner(LudwigModule, ABC):
 @register_combiner(name="concat")
 class ConcatCombiner(Combiner):
     def __init__(self, input_features: Dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "ConcatCombiner"
         logger.debug(f" {self.name}")
 
@@ -173,7 +179,7 @@ class SequenceConcatCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"], config: SequenceConcatCombinerConfig = None, **kwargs
     ):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "SequenceConcatCombiner"
         logger.debug(f" {self.name}")
 
@@ -317,7 +323,7 @@ class SequenceConcatCombiner(Combiner):
 @register_combiner(name="sequence")
 class SequenceCombiner(Combiner):
     def __init__(self, input_features: Dict[str, "InputFeature"], config: SequenceCombinerConfig = None, **kwargs):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "SequenceCombiner"
         logger.debug(f" {self.name}")
 
@@ -384,7 +390,7 @@ class TabNetCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"], config: TabNetCombinerConfig = None, **kwargs
     ) -> None:
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "TabNetCombiner"
         logger.debug(f" {self.name}")
 
@@ -464,7 +470,7 @@ class TransformerCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"] = None, config: TransformerCombinerConfig = None, **kwargs
     ):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "TransformerCombiner"
         logger.debug(f" {self.name}")
 
@@ -564,7 +570,7 @@ class TabTransformerCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"] = None, config: TabTransformerCombinerConfig = None, **kwargs
     ):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "TabTransformerCombiner"
         logger.debug(f"Initializing {self.name}")
 
@@ -771,7 +777,7 @@ class ComparatorCombiner(Combiner):
         config: ComparatorCombinerConfig = None,
         **kwargs,
     ):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "ComparatorCombiner"
         logger.debug(f"Entering {self.name}")
 
@@ -915,7 +921,7 @@ class ProjectAggregateCombiner(Combiner):
     def __init__(
         self, input_features: Dict[str, "InputFeature"] = None, config: ProjectAggregateCombinerConfig = None, **kwargs
     ):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.name = "ProjectAggregateCombiner"
         logger.debug(f" {self.name}")
 
