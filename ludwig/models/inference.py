@@ -7,9 +7,10 @@ from torch import nn
 
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
+from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import image_utils, output_feature_utils
 from ludwig.utils.audio_utils import read_audio_if_path
 from ludwig.utils.data_utils import load_json
@@ -208,6 +209,8 @@ class InferenceLudwigModel:
     def __init__(self, model_dir: str):
         self.model = init_inference_module_from_directory(model_dir)
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
+        # Do not remove; used in the Predibase app
+        self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
     def predict(
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
