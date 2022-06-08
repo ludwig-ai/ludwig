@@ -30,7 +30,7 @@ class Conv1DLayer(LudwigModule):
         self,
         in_channels=1,
         out_channels=256,
-        sequence_size=None,
+        max_sequence_length=None,
         kernel_size=3,
         strides=1,
         padding="same",
@@ -52,7 +52,7 @@ class Conv1DLayer(LudwigModule):
 
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.sequence_size = sequence_size
+        self.max_sequence_length = max_sequence_length
         self.kernel_size = kernel_size
         self.stride = strides
         self.padding = padding
@@ -86,8 +86,7 @@ class Conv1DLayer(LudwigModule):
         if norm == "batch":
             self.layers.append(nn.BatchNorm1d(num_features=out_channels, **norm_params))
         elif norm == "layer":
-            # todo(jmt): confirm correct interpretation of LayerNorm parameters
-            self.layers.append(nn.LayerNorm(normalized_shape=[out_channels, self.sequence_size], **norm_params))
+            self.layers.append(nn.LayerNorm(normalized_shape=[out_channels, self.max_sequence_length], **norm_params))
 
         self.layers.append(get_activation(activation))
 
@@ -103,14 +102,10 @@ class Conv1DLayer(LudwigModule):
         for layer in self.layers:
             logger.debug(f"   {layer._get_name()}")
 
-        # todo: determine how to handle layer.name
-        # for layer in self.layers:
-        #     logger.debug('   {}'.format(layer.name))
-
     @property
     def input_shape(self):
         """Returns the size of the input tensor without the batch dimension."""
-        return torch.Size([self.sequence_size, self.in_channels])
+        return torch.Size([self.max_sequence_length, self.in_channels])
 
     def forward(self, inputs, training=None, mask=None):
         # inputs: [batch_size, seq_size, in_channels]
@@ -227,7 +222,7 @@ class Conv1DStack(LudwigModule):
                 Conv1DLayer(
                     in_channels=prior_layer_channels,
                     out_channels=layer["num_filters"],
-                    sequence_size=l_in,
+                    max_sequence_length=l_in,
                     kernel_size=layer["filter_size"],
                     strides=layer["strides"],
                     padding=layer["padding"],
@@ -357,7 +352,7 @@ class ParallelConv1D(LudwigModule):
                 Conv1DLayer(
                     in_channels=self.in_channels,
                     out_channels=layer["num_filters"],
-                    sequence_size=self.max_sequence_length,
+                    max_sequence_length=self.max_sequence_length,
                     kernel_size=layer["filter_size"],
                     strides=layer["strides"],
                     padding=layer["padding"],
@@ -549,7 +544,7 @@ class Conv2DLayer(LudwigModule):
         norm: Optional[str] = None,
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",
-        dropout: int = 0,
+        dropout: float = 0,
         pool_function: int = "max",
         pool_kernel_size: Union[int, Tuple[int]] = None,
         pool_stride: Optional[int] = None,
@@ -864,7 +859,7 @@ class ResNetBlock(LudwigModule):
         first_in_channels: int,
         out_channels: int,
         stride: int = 1,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
         projection_shortcut: Optional[LudwigModule] = None,
     ):
@@ -953,7 +948,7 @@ class ResNetBottleneckBlock(LudwigModule):
         first_in_channels: int,
         out_channels: int,
         stride: int = 1,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
         projection_shortcut: Optional[LudwigModule] = None,
     ):
@@ -1070,7 +1065,7 @@ class ResNetBlockLayer(LudwigModule):
         block_fn: Union[ResNetBlock, ResNetBottleneckBlock],
         num_blocks: int,
         stride: Union[int, Tuple[int]] = 1,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
         super().__init__()
@@ -1152,7 +1147,7 @@ class ResNet(LudwigModule):
         first_pool_stride: Union[int, Tuple[int]] = 2,
         block_sizes: List[int] = None,
         block_strides: List[Union[int, Tuple[int]]] = None,
-        batch_norm_momentum: float = 0.9,
+        batch_norm_momentum: float = 0.1,
         batch_norm_epsilon: float = 0.001,
     ):
         """Creates a model obtaining an image representation.

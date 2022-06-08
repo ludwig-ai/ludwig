@@ -36,7 +36,7 @@ class RecurrentStack(LudwigModule):
         input_size: int = None,
         hidden_size: int = 256,
         cell_type: str = "rnn",
-        sequence_size: Optional[int] = None,
+        max_sequence_length: Optional[int] = None,
         num_layers: int = 1,
         bidirectional: bool = False,
         use_bias: bool = True,
@@ -47,7 +47,7 @@ class RecurrentStack(LudwigModule):
         self.supports_masking = True
         self.input_size = input_size  # api doc: H_in
         self.hidden_size = hidden_size  # api doc: H_out
-        self.sequence_size = sequence_size  # api doc: L (sequence length)
+        self.max_sequence_length = max_sequence_length  # api doc: L (sequence length)
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
 
@@ -58,14 +58,14 @@ class RecurrentStack(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        if self.sequence_size:
-            return torch.Size([self.sequence_size, self.input_size])
+        if self.max_sequence_length:
+            return torch.Size([self.max_sequence_length, self.input_size])
         return torch.Size([self.input_size])
 
     @property
     def output_shape(self) -> torch.Size:
-        if self.sequence_size:
-            return torch.Size([self.sequence_size, self.hidden_size])
+        if self.max_sequence_length:
+            return torch.Size([self.max_sequence_length, self.hidden_size])
         return torch.Size([self.hidden_size])
 
     def forward(self, inputs: torch.Tensor, mask=None):

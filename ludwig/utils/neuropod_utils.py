@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 INFERENCE_MODULE_TEMPLATE = """
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 import torch
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 class GeneratedInferenceModule(torch.nn.Module):
     def __init__(self, inference_module):
@@ -22,7 +23,7 @@ class GeneratedInferenceModule(torch.nn.Module):
         self.inference_module = inference_module
 
     def forward(self, {input_signature}):
-        inputs: Dict[str, Union[List[str], List[torch.Tensor], torch.Tensor]] = {input_dict}
+        inputs: Dict[str, TorchscriptPreprocessingInput] = {input_dict}
         results = self.inference_module(inputs)
         return {output_dicts}
 """
@@ -32,7 +33,7 @@ def _get_input_signature(config: Dict[str, Any]) -> str:
     args = []
     for feature in config["input_features"]:
         name = feature[NAME]
-        args.append(f"{name}: Union[List[str], List[torch.Tensor], torch.Tensor]")
+        args.append(f"{name}: TorchscriptPreprocessingInput")
     return ", ".join(args)
 
 

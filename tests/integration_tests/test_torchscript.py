@@ -198,34 +198,23 @@ def test_torchscript(csv_filename, should_load_model):
         assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
-def test_torchscript_e2e(csv_filename, tmpdir):
+def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    image_dest_folder = os.path.join(tmpdir, "generated_images")
-
     # Configure features to be tested:
     bin_str_feature = binary_feature()
     transformed_number_features = [
         number_feature(preprocessing={"normalization": numeric_transformer})
         for numeric_transformer in numeric_transformation_registry.keys()
     ]
-    torchscript_compatible_text_features = [
-        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
-        for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
-    ]
     input_features = [
         bin_str_feature,
         binary_feature(),
         *transformed_number_features,
         category_feature(vocab_size=3),
-        image_feature(image_dest_folder),
-        *torchscript_compatible_text_features,
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        timeseries_feature(),
         # TODO: future support
         # vector_feature(),
-        # audio_feature(audio_dest_folder),
         # date_feature(),
         # h3_feature(),
     ]
@@ -252,6 +241,92 @@ def test_torchscript_e2e(csv_filename, tmpdir):
     df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
     df.to_csv(training_data_csv_path)
 
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_audio(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+
+    input_features = [
+        audio_feature(audio_dest_folder),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    # NOTE: audio preprocessing mismatches by very small margins ~O(1e-6) but causes flakiness in e2e test.
+    # Increasing tolerance is a workaround to reduce flakiness for now.
+    # TODO: remove this workaround when audio preprocessing is fixed.
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-6)
+
+
+def test_torchscript_e2e_image(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(image_dest_folder),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_text(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
+        for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_sequence(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        timeseries_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
@@ -302,6 +377,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
                     output_values == output_values_expected
                 ), f"feature: {feature_name}, output: {output_name}"
             else:
+                output_values = np.array(output_values)
+                # Shapes and values must both match
+                assert (
+                    output_values.shape == output_values_expected.shape
+                ), f"feature: {feature_name}, output: {output_name}"
                 assert np.allclose(
-                    output_values, output_values_expected
+                    output_values, output_values_expected, atol=tolerance
                 ), f"feature: {feature_name}, output: {output_name}"
