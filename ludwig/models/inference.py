@@ -44,11 +44,13 @@ class InferenceModule(nn.Module):
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
-            preproc_outputs = self.preprocessor(inputs)
-            predictions_flattened = self.predictor(preproc_outputs)
-            postproc_outputs_flattened = self.postprocessor(predictions_flattened)
+            preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
+            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
+            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
-            postproc_outputs = unflatten_dict_of_type_any_by_feature_name(postproc_outputs_flattened)
+            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_of_type_any_by_feature_name(
+                postproc_outputs_flattened
+            )
             return postproc_outputs
 
 
