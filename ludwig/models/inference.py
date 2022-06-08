@@ -7,11 +7,13 @@ from torch import nn
 
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
+from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
+from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import image_utils, output_feature_utils
 from ludwig.utils.audio_utils import read_audio_if_path
-from ludwig.utils.data_utils import load_json, save_json
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -22,7 +24,6 @@ if TYPE_CHECKING:
 INFERENCE_PREPROCESSOR_FILENAME = "inference_preprocessor.pt"
 INFERENCE_PREDICTOR_FILENAME = "inference_predictor.pt"
 INFERENCE_POSTPROCESSOR_FILENAME = "inference_postprocessor.pt"
-INFERENCE_METADATA_FILE_NAME = "inference_metadata.json"
 
 
 class InferenceModule(nn.Module):
@@ -160,18 +161,58 @@ def save_ludwig_model_for_inference(
 
 def init_inference_module_from_ludwig_model(
     model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]
-) -> torch.jit.ScriptModule:
+) -> InferenceModule:
     preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata))
     predictor = torch.jit.script(InferencePredictor(model))
     postprocessor = torch.jit.script(InferencePostprocessor(config, training_set_metadata))
     return InferenceModule(preprocessor, predictor, postprocessor)
 
 
-def init_inference_module_from_directory(directory: str) -> torch.jit.ScriptModule:
+def init_inference_module_from_directory(directory: str) -> InferenceModule:
     preprocessor = torch.jit.load(os.path.join(directory, INFERENCE_PREPROCESSOR_FILENAME))
     predictor = torch.jit.load(os.path.join(directory, INFERENCE_PREDICTOR_FILENAME))
     postprocessor = torch.jit.load(os.path.join(directory, INFERENCE_POSTPROCESSOR_FILENAME))
     return InferenceModule(preprocessor, predictor, postprocessor)
+
+
+def unflatten_dict_by_feature_name(postproc_outputs: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Convert a flattened dictionary of tensors to a nested dictionary of outputs per feature name."""
+    outputs: Dict[str, Dict[str, Any]] = {}
+    for postproc_key, tensor_values in postproc_outputs.items():
+        feature_name = output_feature_utils.get_feature_name_from_concat_name(postproc_key)
+        tensor_name = output_feature_utils.get_tensor_name_from_concat_name(postproc_key)
+        if feature_name not in outputs:
+            outputs[feature_name] = {}
+        outputs[feature_name][tensor_name] = tensor_values
+    return outputs
+
+
+class InferenceLudwigModel:
+    """Model for inference with the subset of the LudwigModel interface used for prediction.
+    This model is instantiated with a model_dir, which contains the model and its metadata.
+    """
+
+    def __init__(self, model_dir: str):
+        self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
+        self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
+        self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
+
+    def predict(
+        self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
+    ) -> Union[pd.DataFrame, dict]:
+        """Predict on a batch of data.
+        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
+        """
+        inputs = {
+            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
+            for if_config in self.config["input_features"]
+        }
+
+        preds = self.model(inputs)
+
+        if return_type == pd.DataFrame:
+            preds = convert_dict_to_df(preds)
+        return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
 
 def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:
@@ -185,15 +226,3 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())
-
-
-def unflatten_dict_by_feature_name(postproc_outputs: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    """Convert a flattened dictionary of tensors to a nested dictionary of outputs per feature name."""
-    outputs: Dict[str, Dict[str, Any]] = {}
-    for postproc_key, tensor_values in postproc_outputs.items():
-        feature_name = output_feature_utils.get_feature_name_from_concat_name(postproc_key)
-        tensor_name = output_feature_utils.get_tensor_name_from_concat_name(postproc_key)
-        if feature_name not in outputs:
-            outputs[feature_name] = {}
-        outputs[feature_name][tensor_name] = tensor_values
-    return outputs
