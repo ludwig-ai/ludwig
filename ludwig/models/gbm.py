@@ -21,7 +21,13 @@ class GBM(BaseModel):
     def type() -> str:
         return MODEL_GBM
 
-    def __init__(self, input_features, output_features, random_seed=None, **_kwargs):
+    def __init__(
+        self,
+        input_features: List[Dict[str, Any]],
+        output_features: List[Dict[str, Any]],
+        random_seed: int = None,
+        **_kwargs,
+    ):
         super().__init__(random_seed=random_seed)
 
         self._input_features_def = copy.deepcopy(input_features)
@@ -47,7 +53,11 @@ class GBM(BaseModel):
         self._init_state_dict()
 
     def _init_state_dict(self):
-        """Creates a dummy model to initialize this module's state dict."""
+        """Creates a dummy model to initialize this module's state dict.
+
+        This is needed for loading a model from a file. The state dict of this module is initialized with the state dict
+        of the dummy model.
+        """
         output_feature_name = self.output_features.keys()[0]
         output_feature = self.output_features[output_feature_name]
         if output_feature.type() == CATEGORY:

@@ -1,10 +1,15 @@
+from typing import Any, Dict, Union
+
+import dask.dataframe as dd
 import numpy as np
+from pandas import DataFrame
 
 
 def convert_to_dict(
-    predictions,
-    output_features,
+    predictions: Union[DataFrame, dd.core.DataFrame],
+    output_features: Dict[str, Any],
 ):
+    """Convert predictions from DataFrame format to a dictionary."""
     output = {}
     for of_name, output_feature in output_features.items():
         feature_keys = {k for k in predictions.columns if k.startswith(of_name)}

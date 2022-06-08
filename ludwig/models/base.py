@@ -29,7 +29,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def type() -> str:
         """Returns the model type."""
 
-    def __init__(self, random_seed=None):
+    def __init__(self, random_seed: int = None):
         self._random_seed = random_seed
 
         # TODO: with change to misc_utils.set_random_seed() this may be redundant

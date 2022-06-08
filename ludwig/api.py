@@ -1490,7 +1490,7 @@ class LudwigModel:
 
     @staticmethod
     def create_model(config: dict, random_seed: int = default_random_seed) -> BaseModel:
-        """Instantiates AbstractModel object.
+        """Instantiates BaseModel object.
 
         # Inputs
         :param config: (dict) Ludwig config
@@ -1499,7 +1499,7 @@ class LudwigModel:
             splits and any other random function.
 
         # Return
-        :return: (ludwig.models.AbstractModel) Instance of the Ludwig model object.
+        :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
         model_type = get_from_registry(config[MODEL_TYPE], model_type_registry)
         return model_type(**config, random_seed=random_seed)

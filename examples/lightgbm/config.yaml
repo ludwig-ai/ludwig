@@ -31,6 +31,6 @@ input_features:
 output_features:
   - name: income
     type: category
-training:
+trainer:
   learning_rate: 0.05
   num_boost_round: 2

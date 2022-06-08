@@ -2,12 +2,10 @@ import logging
 import os
 import time
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import lightgbm as lgb
-import lightgbm_ray as lgb_ray
 import torch
-from lightgbm_ray.tune import _TuneLGBMRank0Mixin
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
@@ -24,7 +22,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
-from ludwig.utils.trainer_utils import get_new_progress_tracker
+from ludwig.utils.trainer_utils import get_new_progress_tracker, ProgressTracker
 
 
 def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
@@ -147,11 +145,11 @@ class LightGBMTrainer(BaseTrainer):
         raise NotImplementedError("Online training is not supported for LightGBM.")
 
     @property
-    def validation_field(self):
+    def validation_field(self) -> str:
         return self._validation_field
 
     @property
-    def validation_metric(self):
+    def validation_metric(self) -> str:
         return self._validation_metric
 
     def append_metrics(self, dataset_name, results, metrics_log, tables, progress_tracker):
@@ -178,7 +176,15 @@ class LightGBMTrainer(BaseTrainer):
 
         return metrics_log, tables
 
-    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+    def evaluation(
+        self,
+        dataset: "Dataset",  # noqa: F821
+        dataset_name: str,
+        metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+        tables: Dict[str, List[List[str]]],
+        batch_size: int,
+        progress_tracker: ProgressTracker,
+    ):
         predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod)
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
@@ -206,16 +212,16 @@ class LightGBMTrainer(BaseTrainer):
 
     def run_evaluation(
         self,
-        training_set,
-        validation_set,
-        test_set,
-        progress_tracker,
-        train_summary_writer,
-        validation_summary_writer,
-        test_summary_writer,
-        output_features,
-        metrics_names,
-        save_path,
+        training_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        validation_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
+        test_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
+        progress_tracker: ProgressTracker,
+        train_summary_writer: SummaryWriter,
+        validation_summary_writer: SummaryWriter,
+        test_summary_writer: SummaryWriter,
+        output_features: LudwigFeatureDict,
+        metrics_names: Dict[str, List[str]],
+        save_path: str,
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
     ) -> bool:
@@ -353,7 +359,14 @@ class LightGBMTrainer(BaseTrainer):
 
         return gbm
 
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
+    def train(
+        self,
+        training_set: Union["Dataset", "RayDataset"],  # noqa: F821
+        validation_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
+        test_set: Optional[Union["Dataset", "RayDataset"]],  # noqa: F821
+        save_path="model",
+        **kwargs,
+    ):
         # TODO: construct new datasets by running encoders (for text, image)
 
         # TODO: only single task currently
@@ -516,7 +529,11 @@ class LightGBMTrainer(BaseTrainer):
 
         return params
 
-    def _construct_lgb_datasets(self, training_set, validation_set) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
+    def _construct_lgb_datasets(
+        self,
+        training_set: "Dataset",  # noqa: F821
+        validation_set: Optional["Dataset"] = None,  # noqa: F821
+    ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
         X_train = training_set.to_df(self.model.input_features.values())
         y_train = training_set.to_df(self.model.output_features.values())
 
@@ -549,7 +566,7 @@ class LightGBMTrainer(BaseTrainer):
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         torch.save(self.model.state_dict(), model_weights_path)
 
-    def is_coordinator(self):
+    def is_coordinator(self) -> bool:
         if not self.horovod:
             return True
         return self.horovod.rank() == 0
@@ -560,22 +577,29 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
 
-class LogEvalDistributed(_TuneLGBMRank0Mixin):
-    def __init__(self, period: int, show_stdv: bool = True):
-        self.period = period
-        self.show_stdv = show_stdv
+def log_eval_distributed(period: int = 1, show_stdv: bool = True) -> Callable:
+    from lightgbm_ray.tune import _TuneLGBMRank0Mixin
 
-    def __call__(self, env: lgb.callback.CallbackEnv):
-        if not self.is_rank_0:
-            return
-        if self.period > 0 and env.evaluation_result_list and (env.iteration + 1) % self.period == 0:
-            result = "\t".join(
-                [lgb.callback._format_eval_result(x, self.show_stdv) for x in env.evaluation_result_list]
-            )
-            lgb.callback._log_info(f"[{env.iteration + 1}]\t{result}")
+    class LogEvalDistributed(_TuneLGBMRank0Mixin):
+        def __init__(self, period: int, show_stdv: bool = True):
+            self.period = period
+            self.show_stdv = show_stdv
+
+        def __call__(self, env: lgb.callback.CallbackEnv):
+            if not self.is_rank_0:
+                return
+            if self.period > 0 and env.evaluation_result_list and (env.iteration + 1) % self.period == 0:
+                result = "\t".join(
+                    [lgb.callback._format_eval_result(x, self.show_stdv) for x in env.evaluation_result_list]
+                )
+                lgb.callback._log_info(f"[{env.iteration + 1}]\t{result}")
+
+    return LogEvalDistributed(period=period, show_stdv=show_stdv)
 
 
 def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    from lightgbm_ray import RayParams
+
     ray_params = {}
     for key, value in params.items():
         if key == "num_workers":
@@ -585,7 +609,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
                 ray_params["cpus_per_actor"] = value["CPU"]
             if "GPU" in value:
                 ray_params["gpus_per_actor"] = value["GPU"]
-    return lgb_ray.RayParams(**ray_params)
+    return RayParams(**ray_params)
 
 
 @register_ray_trainer("lightgbm_ray_trainer", MODEL_GBM, default=True)
@@ -628,8 +652,8 @@ class LightGBMRayTrainer(LightGBMTrainer):
     def _train(
         self,
         params: Dict[str, Any],
-        lgb_train: lgb_ray.RayDMatrix,
-        eval_sets: List[lgb_ray.RayDMatrix],
+        lgb_train: "RayDMatrix",  # noqa: F821
+        eval_sets: List["RayDMatrix"],  # noqa: F821
         eval_names: List[str],
     ) -> lgb.Booster:
         """Trains a LightGBM model using ray.
@@ -643,7 +667,9 @@ class LightGBMRayTrainer(LightGBMTrainer):
         Returns:
             LightGBM Booster model
         """
-        gbm = lgb_ray.train(
+        from lightgbm_ray import train as lgb_ray_train
+
+        gbm = lgb_ray_train(
             params,
             lgb_train,
             num_boost_round=self.num_boost_round,
@@ -654,7 +680,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             # categorical_feature=categorical_features,
             callbacks=[
                 lgb.early_stopping(stopping_rounds=self.early_stop),
-                LogEvalDistributed(10),
+                log_eval_distributed(10),
             ],
             ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
         )
@@ -681,23 +707,18 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self,
         training_set: "RayDataset",  # noqa: F821
         validation_set: Optional["RayDataset"] = None,  # noqa: F821
-        test_set: Optional["RayDataset"] = None,  # noqa: F821
-    ) -> Tuple[lgb_ray.RayDMatrix, List[lgb_ray.RayDMatrix], List[str]]:
-        label_col = self.model.output_features.values()[0].proc_column
-        # feat_names = list(self.model.input_features.keys()) + [label_col]
+    ) -> Tuple["RayDMatrix", List["RayDMatrix"], List[str]]:  # noqa: F821
+        from lightgbm_ray import RayDMatrix
 
-        lgb_train = lgb_ray.RayDMatrix(training_set.ds, label=label_col, distributed=False)
+        label_col = self.model.output_features.values()[0].proc_column
+
+        lgb_train = RayDMatrix(training_set.ds, label=label_col, distributed=False)
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
-            lgb_val = lgb_ray.RayDMatrix(validation_set.ds, label=label_col, distributed=False)
+            lgb_val = RayDMatrix(validation_set.ds, label=label_col, distributed=False)
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
-
-        if test_set is not None:
-            lgb_test = lgb_ray.RayDMatrix(test_set.ds, label=label_col, distributed=False)
-            eval_sets.append(lgb_test)
-            eval_names.append(LightGBMTrainer.TEST_KEY)
 
         return lgb_train, eval_sets, eval_names

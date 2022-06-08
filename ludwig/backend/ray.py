@@ -277,7 +277,14 @@ def tune_learning_rate_fn(
 
 @register_ray_trainer("ray_trainer_v2", MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
-    def __init__(self, model, trainer_kwargs, data_loader_kwargs, executable_kwargs, **kwargs):
+    def __init__(
+        self,
+        model: BaseModel,
+        trainer_kwargs: Dict[str, Any],
+        data_loader_kwargs: Dict[str, Any],
+        executable_kwargs: Dict[str, Any],
+        **kwargs,
+    ):
         self.model = model.cpu()
         self.data_loader_kwargs = data_loader_kwargs
         self.executable_kwargs = executable_kwargs
@@ -461,7 +468,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
 
 @register_ray_trainer("ray_legacy_trainer", MODEL_ECD)
 class RayLegacyTrainer(BaseTrainer):
-    def __init__(self, horovod_kwargs, executable_kwargs, **kwargs):
+    def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         if RayExecutor is None:
             logger.error(
