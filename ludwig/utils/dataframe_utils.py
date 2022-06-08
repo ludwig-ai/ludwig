@@ -13,6 +13,11 @@ def is_dask_lib(df_lib) -> bool:
     return df_lib.__name__ == DASK_MODULE_NAME
 
 
+def is_dask_backend(backend: "Backend") -> bool:  # noqa: F821
+    """Returns whether the backend's dataframe is dask."""
+    return is_dask_lib(backend.df_engine.df_lib)
+
+
 def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
@@ -46,7 +51,7 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict
     dataset = {}
     for col in df.columns:
         res = df[col]
-        if backend and is_dask_lib(backend.df_engine.df_lib):
+        if backend and is_dask_backend(backend):
             res = res.compute()
         dataset[col] = np.stack(res.to_numpy())
     return dataset
