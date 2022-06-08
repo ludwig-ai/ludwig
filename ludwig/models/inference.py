@@ -7,10 +7,9 @@ from torch import nn
 
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
-from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
-from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils import image_utils, output_feature_utils
 from ludwig.utils.audio_utils import read_audio_if_path
 from ludwig.utils.data_utils import load_json
@@ -49,7 +48,7 @@ class InferenceModule(nn.Module):
             predictions_flattened = self.predictor(preproc_outputs)
             postproc_outputs_flattened = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
-            postproc_outputs = unflatten_dict_by_feature_name(postproc_outputs_flattened)
+            postproc_outputs = unflatten_dict_of_type_any_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
 
 
@@ -73,7 +72,7 @@ class InferencePreprocessor(nn.Module):
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
         with torch.no_grad():
-            preproc_inputs: Dict[str, torch.Tensor] = {}
+            preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
@@ -122,6 +121,7 @@ class InferencePostprocessor(nn.Module):
     """
 
     def __init__(self, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+        super().__init__()
         output_features = {
             feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)
             for feature in config["output_features"]
@@ -132,10 +132,12 @@ class InferencePostprocessor(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
+    def forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         with torch.no_grad():
             # Turn flat inputs into nested predictions per feature name
-            predictions = unflatten_dict_by_feature_name(predictions_flattened)
+            predictions: Dict[str, Dict[str, torch.Tensor]] = unflatten_dict_of_type_tensor_by_feature_name(
+                predictions_flattened
+            )
             postproc_outputs_flattened: Dict[str, Any] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
@@ -180,15 +182,36 @@ def init_inference_module_from_directory(directory: str) -> InferenceModule:
     return InferenceModule(preprocessor, predictor, postprocessor)
 
 
-def unflatten_dict_by_feature_name(postproc_outputs: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+# TODO(geoffrey): reconcile type incompatibility and merge this function with unflatten_dict_of_type_any_by_feature_name
+def unflatten_dict_of_type_tensor_by_feature_name(
+    flattened_dict: Dict[str, torch.Tensor]
+) -> Dict[str, Dict[str, torch.Tensor]]:
     """Convert a flattened dictionary of tensors to a nested dictionary of outputs per feature name."""
-    outputs: Dict[str, Dict[str, Any]] = {}
-    for postproc_key, tensor_values in postproc_outputs.items():
-        feature_name = output_feature_utils.get_feature_name_from_concat_name(postproc_key)
-        tensor_name = output_feature_utils.get_tensor_name_from_concat_name(postproc_key)
+    outputs: Dict[str, Dict[str, torch.Tensor]] = {}
+    for concat_key, tensor_values in flattened_dict.items():
+        feature_name = output_feature_utils.get_feature_name_from_concat_name(concat_key)
+        tensor_name = output_feature_utils.get_tensor_name_from_concat_name(concat_key)
+        feature_outputs: Dict[str, torch.Tensor] = {}
         if feature_name not in outputs:
-            outputs[feature_name] = {}
-        outputs[feature_name][tensor_name] = tensor_values
+            outputs[feature_name] = feature_outputs
+        else:
+            feature_outputs = outputs[feature_name]
+        feature_outputs[tensor_name] = tensor_values
+    return outputs
+
+
+def unflatten_dict_of_type_any_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Convert a flattened dictionary of objects to a nested dictionary of outputs per feature name."""
+    outputs: Dict[str, Dict[str, Any]] = {}
+    for concat_key, tensor_values in flattened_dict.items():
+        feature_name = output_feature_utils.get_feature_name_from_concat_name(concat_key)
+        tensor_name = output_feature_utils.get_tensor_name_from_concat_name(concat_key)
+        feature_outputs: Dict[str, Any] = {}
+        if feature_name not in outputs:
+            outputs[feature_name] = feature_outputs
+        else:
+            feature_outputs = outputs[feature_name]
+        feature_outputs[tensor_name] = tensor_values
     return outputs
 
 
@@ -199,9 +222,8 @@ class InferenceLudwigModel:
     """
 
     def __init__(self, model_dir: str):
-        self.model = torch.jit.load(os.path.join(model_dir, INFERENCE_MODULE_FILE_NAME))
+        self.model = init_inference_module_from_directory(model_dir)
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
-        self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
     def predict(
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
