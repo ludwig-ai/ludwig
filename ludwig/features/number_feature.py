@@ -45,7 +45,7 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput, TorchscriptPostprocessingOutput
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +191,7 @@ class _NumberPostprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
         self.predictions_key = PREDICTIONS
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor]) -> TorchscriptPostprocessingOutput:
         return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(preds[self.predictions_key])}
 
 

@@ -225,8 +225,8 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
         timeseries_feature(),
         audio_feature(audio_dest_folder),
+        vector_feature(),
         # TODO: future support
-        # vector_feature(),
         # date_feature(),
         # h3_feature(),
     ]
@@ -235,11 +235,11 @@ def test_torchscript_e2e(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
+        vector_feature()
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
         # set_feature(vocab_size=3),
-        # vector_feature()
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}

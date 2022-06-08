@@ -49,7 +49,7 @@ from ludwig.utils.eval_utils import (
     roc_curve,
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput, TorchscriptPostprocessingOutput
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class _BinaryPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor]) -> TorchscriptPostprocessingOutput:
         predictions = preds[self.predictions_key]
         if self.bool2str is not None:
             predictions = predictions.to(dtype=torch.int32)

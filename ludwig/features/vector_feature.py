@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
@@ -41,8 +41,26 @@ from ludwig.features.base_feature import InputFeature, OutputFeature, PredictMod
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.types import TorchscriptPreprocessingInput, TorchscriptPostprocessingOutput
 
 logger = logging.getLogger(__name__)
+
+
+class _VectorPreprocessing(torch.nn.Module):
+    def forward(self, v: TorchscriptPreprocessingInput):
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        vectors = []
+        for sample in v:
+            vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
+            vectors.append(vector)
+        return torch.stack(vectors)
+
+
+class _VectorPostprocessing(torch.nn.Module):
+    def forward(self, preds: Dict[str, torch.Tensor]) -> TorchscriptPostprocessingOutput:
+        return preds
 
 
 class _VectorPredict(PredictModule):
@@ -159,6 +177,10 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "preprocessing", {})
 
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _VectorPreprocessing()
+
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = "projector"
@@ -234,3 +256,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         set_default_value(output_feature, "reduce_dependencies", None)
         set_default_value(output_feature, "decoder", "projector")
         set_default_value(output_feature, "dependencies", [])
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _VectorPostprocessing()

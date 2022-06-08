@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import COLUMN, NAME, TYPE
+from ludwig.constants import COLUMN, NAME, TYPE, BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -13,7 +13,7 @@ from ludwig.features.feature_utils import get_module_dict_key_from_name, get_nam
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import image_utils
 from ludwig.utils.audio_utils import read_audio_if_path
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput, TorchscriptPostprocessingOutput
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
+
+
+FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
 class InferenceModule(nn.Module):
@@ -62,7 +65,7 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, TorchscriptPostprocessingOutput]:
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -75,7 +78,7 @@ class InferenceModule(nn.Module):
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 predictions[feature_name] = predict(outputs, feature_name)
 
-            postproc_outputs: Dict[str, Dict[str, Any]] = {}
+            postproc_outputs: Dict[str, TorchscriptPostprocessingOutput] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 postproc_outputs[feature_name] = postproc(predictions[feature_name])
@@ -121,6 +124,6 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     elif feature_type == "audio":
         if load_paths:
             return [read_audio_if_path(v) for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+    if feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())
