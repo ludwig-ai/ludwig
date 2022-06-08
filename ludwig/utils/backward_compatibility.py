@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import warnings
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from ludwig.constants import (
     EVAL_BATCH_SIZE,
@@ -31,11 +31,45 @@ from ludwig.constants import (
 )
 
 
+def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
+    """Applies function f to every dictionary contained in config.
+
+    f should in-place modify the config dict. f will be called on leaves first, root last.
+    """
+    if isinstance(config, dict):
+        for k, v in config.items():
+            _traverse_dicts(v, f)
+        f(config)
+    elif isinstance(config, list):
+        for v in config:
+            _traverse_dicts(v, f)
+
+
+def _upgrade_use_bias(config):
+    if "bias" in config:
+        warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
+        config["use_bias"] = config["bias"]
+        del config["bias"]
+    if "conv_bias" in config:
+        warnings.warn(
+            'Parameter "conv_bias" renamed to "conv_use_bias" and will be removed in v0.6', DeprecationWarning
+        )
+        config["conv_use_bias"] = config["conv_bias"]
+        del config["conv_bias"]
+    if "default_bias" in config:
+        warnings.warn(
+            'Parameter "default_bias" renamed to "default_use_bias" and will be removed in v0.6', DeprecationWarning
+        )
+        config["default_use_bias"] = config["default_bias"]
+        del config["default_bias"]
+
+
 def _upgrade_feature(feature: Dict[str, Any]):
     """Upgrades feature config (in-place)"""
     if feature.get(TYPE) == "numerical":
         warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
         feature[TYPE] = NUMBER
+    _traverse_dicts(feature, _upgrade_use_bias)
 
 
 def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
