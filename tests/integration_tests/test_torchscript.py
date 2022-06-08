@@ -357,10 +357,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
         skip_save_processed_input=True,
     )
 
-    validate_torchscript_outputs(tmpdir, ludwig_model, training_data_csv_path)
-
-
-def validate_torchscript_outputs(tmpdir, ludwig_model, training_data_csv_path):
     # Obtain predictions from Python model
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
