@@ -20,6 +20,31 @@ try:
     import ray
 
     from ludwig.backend.horovod import HorovodBackend
+
+    @ray.remote
+    def run_scale_lr(config, data_csv, num_workers, outdir):
+        class FakeHorovodBackend(HorovodBackend):
+            def initialize(self):
+                import horovod.torch as hvd
+
+                hvd.init()
+
+                self._horovod = mock.Mock(wraps=hvd)
+                self._horovod.size.return_value = num_workers
+
+        class TestCallback(Callback):
+            def __init__(self):
+                self.lr = None
+
+            def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator: bool):
+                for g in trainer.optimizer.param_groups:
+                    self.lr = g["lr"]
+
+        callback = TestCallback()
+        model = LudwigModel(config, backend=FakeHorovodBackend(), callbacks=[callback])
+        model.train(dataset=data_csv, output_directory=outdir)
+        return callback.lr
+
 except ImportError:
     ray = None
 
@@ -85,32 +110,8 @@ def test_tune_batch_size_and_lr(tmpdir):
         check_postconditions(model)
 
 
-@ray.remote
-def run_scale_lr(config, data_csv, num_workers, outdir):
-    class FakeHorovodBackend(HorovodBackend):
-        def initialize(self):
-            import horovod.torch as hvd
-
-            hvd.init()
-
-            self._horovod = mock.Mock(wraps=hvd)
-            self._horovod.size.return_value = num_workers
-
-    class TestCallback(Callback):
-        def __init__(self):
-            self.lr = None
-
-        def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator: bool):
-            for g in trainer.optimizer.param_groups:
-                self.lr = g["lr"]
-
-    callback = TestCallback()
-    model = LudwigModel(config, backend=FakeHorovodBackend(), callbacks=[callback])
-    model.train(dataset=data_csv, output_directory=outdir)
-    return callback.lr
-
-
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
+@pytest.mark.distributed
 def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_test_cluster):
     base_lr = 1.0
     num_workers = 4

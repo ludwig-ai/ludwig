@@ -38,6 +38,7 @@ try:
     from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
     ray = None
+    RayTuneExecutor = object
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

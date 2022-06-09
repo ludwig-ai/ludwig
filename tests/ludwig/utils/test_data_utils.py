@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+import pytest
 from fsspec.config import conf
 
 from ludwig.data.cache.types import CacheableDataframe
@@ -26,6 +26,11 @@ from ludwig.utils.data_utils import (
     to_numpy_dataset,
     use_credentials,
 )
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
 
 
 def test_add_sequence_feature_column():
@@ -70,6 +75,7 @@ def test_get_abs_path():
     assert get_abs_path(None, "b.jpg") == "b.jpg"
 
 
+@pytest.mark.distributed
 def test_figure_data_format_dataset():
     assert figure_data_format_dataset({"a": "b"}) == dict
     assert figure_data_format_dataset(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"])) == pd.DataFrame
@@ -123,6 +129,7 @@ def test_use_credentials():
     assert len(conf) == 0
 
 
+@pytest.mark.distributed
 def test_to_numpy_dataset_with_dask():
     dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
     np_df = to_numpy_dataset(dd_df)
