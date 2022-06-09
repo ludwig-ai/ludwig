@@ -187,8 +187,8 @@ def merge_with_defaults(config):
             raise ValueError("Stratify feature must be binary or category")
 
     # ===== Training =====
-    full_trainer_config, _ = load_config_with_kwargs(TrainerConfig, config[TRAINER])
-    config[TRAINER].update(asdict(full_trainer_config))
+    full_trainer_config, _ = load_config_with_kwargs(TrainerConfig, config[TRAINER] if TRAINER in config else {})
+    config[TRAINER] = asdict(full_trainer_config)
 
     set_default_value(
         config[TRAINER],
@@ -205,7 +205,7 @@ def merge_with_defaults(config):
     full_combiner_config, _ = load_config_with_kwargs(
         combiner_registry[config[COMBINER][TYPE]].get_schema_cls(), config[COMBINER]
     )
-    config[COMBINER].update(asdict(full_combiner_config))
+    config[COMBINER] = asdict(full_combiner_config)
 
     # ===== Output features =====
     for output_feature in config["output_features"]:
