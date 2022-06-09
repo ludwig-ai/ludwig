@@ -1,10 +1,14 @@
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
 
 from ludwig.backend import create_backend, LOCAL_BACKEND
 from ludwig.utils.dataframe_utils import to_numpy_dataset
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
 
 
 @pytest.mark.distributed
