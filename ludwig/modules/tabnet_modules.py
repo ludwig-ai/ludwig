@@ -182,11 +182,11 @@ class FeatureBlock(LudwigModule):
         self.size = size
         units = size * 2 if apply_glu else size
 
+        # Initialize fc_layer before assigning to shared layer for torchscript compatibilty
         self.fc_layer = nn.Linear(input_size, units, bias=False)
         if shared_fc_layer is not None:
             assert shared_fc_layer.weight.shape == self.fc_layer.weight.shape
-            self.fc_layer.weight = shared_fc_layer.weight
-            self.fc_layer.bias = shared_fc_layer.bias
+            self.fc_layer = shared_fc_layer
 
         self.batch_norm = GhostBatchNormalization(
             units, virtual_batch_size=bn_virtual_bs, momentum=bn_momentum, epsilon=bn_epsilon
