@@ -33,7 +33,7 @@ class CustomTestCombinerConfig(BaseCombinerConfig):
 @register_combiner(name="custom_test")
 class CustomTestCombiner(Combiner):
     def __init__(self, input_features: Dict = None, config: CustomTestCombinerConfig = None, **kwargs):
-        super().__init__(input_features)
+        super().__init__(input_features, config)
         self.foo = config.foo
 
     def forward(self, inputs: Dict) -> Dict:  # encoder outputs
