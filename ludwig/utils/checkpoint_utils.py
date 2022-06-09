@@ -198,27 +198,9 @@ class CheckpointManager:
         save_path = os.path.join(self.directory, LATEST_FNAME)
         self.checkpoint.save(save_path, global_step)
         self.latest_checkpoint = save_path
-<<<<<<< HEAD
 
     def close(self):
         pass
-=======
-
-        # ckpts = get_files(self.directory, "*.ckpt")[::-1]
-
-        # remove until `max_to_keep` remain
-        # num_remove = len(ckpts) - self.max_to_keep
-        # while num_remove > 0:
-        #     ckpt_name = ckpts.pop()
-        #     os.remove(ckpt_name)
-        #     num_remove -= 1
-
-        # self.queue.put(True)
-
-    def close(self):
-        self.queue.put(False)
-        # self.trim_thread.join()
->>>>>>> 4e0da890... Temporary changes
 
     @staticmethod
     def load_latest_checkpoint(checkpoint: Checkpoint, directory: str, device: torch.device):

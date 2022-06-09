@@ -119,6 +119,10 @@ def get_node_name(node_ip):
 
 
 def checkpoint(progress_tracker, save_path):
+
+    def ignore_dot_files(src, files):
+        return [f for f in files if f.startswith(".")]
+
     with CHECKPOINTS_LOCK:
         with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
             checkpoint_model = os.path.join(checkpoint_dir, "model")
@@ -130,7 +134,7 @@ def checkpoint(progress_tracker, save_path):
                 tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
                 assert os.path.exists(save_path)
                 # print(f'\n\n\nRunning everything on : {get_node_name(ray.util.get_node_ip_address())}')
-                shutil.copytree(save_path, tmp_dst)
+                shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
                 try:
                     os.rename(tmp_dst, checkpoint_model)
                 except Exception:
