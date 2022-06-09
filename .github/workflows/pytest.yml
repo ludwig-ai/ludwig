@@ -90,9 +90,6 @@ jobs:
             echo > requirements-temp && mv requirements-temp requirements_distributed.txt
             echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
           fi
-          cat requirements_distributed.txt
-          cat requirements_hyperopt.txt
-          exit
 
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
