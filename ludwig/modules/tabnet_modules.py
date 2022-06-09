@@ -225,7 +225,6 @@ class AttentiveTransformer(LudwigModule):
         super().__init__()
         self.input_size = input_size
         self.size = size
-
         self.entmax_mode = entmax_mode
         if entmax_mode == "adaptive":
             self.register_buffer("trainable_alpha", torch.tensor(entmax_alpha, requires_grad=True))
@@ -309,15 +308,16 @@ class FeatureTransformer(LudwigModule):
         # build blocks
         self.blocks = nn.ModuleList()
         for n in range(num_total_blocks):
+            # Ensure the sizes fed into FeatureBlock are correct regardless of presence of shared_fc_layer
             if n == 0:
                 in_features = input_size
             else:
                 in_features = size
 
             if shared_fc_layers and n < len(shared_fc_layers):
-                kwargs.update({"shared_fc_layer": shared_fc_layers[n]})
-
-            self.blocks.append(FeatureBlock(in_features, size, **kwargs))
+                self.blocks.append(FeatureBlock(in_features, size, **kwargs, shared_fc_layer=shared_fc_layers[n]))
+            else:
+                self.blocks.append(FeatureBlock(in_features, size, **kwargs))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         # shape notation
