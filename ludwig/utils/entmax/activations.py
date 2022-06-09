@@ -140,15 +140,20 @@ def _entmax_threshold_and_support(X, dim=-1, k=None):
     return tau_star, support_size
 
 
+def _sparsemax_forward(X, dim, k):
+    max_val, _ = X.max(dim=dim, keepdim=True)
+    X = X - max_val  # same numerical stability trick as softmax
+    tau, supp_size = _sparsemax_threshold_and_support(X, dim=dim, k=k)
+    output = torch.clamp(X - tau, min=0)
+    return output, {"supp_size": supp_size}
+
+
 class SparsemaxFunction(Function):
     @classmethod
     def forward(cls, ctx, X, dim=-1, k=None):
         ctx.dim = dim
-        max_val, _ = X.max(dim=dim, keepdim=True)
-        X = X - max_val  # same numerical stability trick as softmax
-        tau, supp_size = _sparsemax_threshold_and_support(X, dim=dim, k=k)
-        output = torch.clamp(X - tau, min=0)
-        ctx.save_for_backward(supp_size, output)
+        output, backwards_kwargs = _sparsemax_forward(X, dim, k)
+        ctx.save_for_backward(backwards_kwargs["supp_size"], output)
         return output
 
     @classmethod
@@ -164,18 +169,22 @@ class SparsemaxFunction(Function):
         return grad_input, None, None
 
 
+def _entmax15_forward(X, dim, k):
+    max_val, _ = X.max(dim=dim, keepdim=True)
+    X = X - max_val  # same numerical stability trick as for softmax
+    X = X / 2  # divide by 2 to solve actual Entmax
+
+    tau_star, _ = _entmax_threshold_and_support(X, dim=dim, k=k)
+
+    Y = torch.clamp(X - tau_star, min=0) ** 2
+    return Y, {}
+
+
 class Entmax15Function(Function):
     @classmethod
     def forward(cls, ctx, X, dim=0, k=None):
         ctx.dim = dim
-
-        max_val, _ = X.max(dim=dim, keepdim=True)
-        X = X - max_val  # same numerical stability trick as for softmax
-        X = X / 2  # divide by 2 to solve actual Entmax
-
-        tau_star, _ = _entmax_threshold_and_support(X, dim=dim, k=k)
-
-        Y = torch.clamp(X - tau_star, min=0) ** 2
+        Y, _ = _entmax15_forward(X, dim, k)
         ctx.save_for_backward(Y)
         return Y
 
@@ -190,7 +199,7 @@ class Entmax15Function(Function):
         return dX, None, None
 
 
-def sparsemax(X, dim=-1, k=None):
+def sparsemax(X, dim=-1, k=None, training=True):
     """sparsemax: normalizing sparse transform (a la softmax).
 
     Solves the projection:
@@ -217,11 +226,13 @@ def sparsemax(X, dim=-1, k=None):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
-
+    if not training:
+        output, _ = _sparsemax_forward(X, dim, k)
+        return output
     return SparsemaxFunction.apply(X, dim, k)
 
 
-def entmax15(X, dim=-1, k=None):
+def entmax15(X, dim=-1, k=None, training=True):
     """1.5-entmax: normalizing sparse transform (a la softmax).
 
     Solves the optimization problem:
@@ -250,7 +261,9 @@ def entmax15(X, dim=-1, k=None):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
-
+    if not training:
+        output, _ = _entmax15_forward(X, dim, k)
+        return output
     return Entmax15Function.apply(X, dim, k)
 
 
@@ -279,7 +292,7 @@ class Sparsemax(nn.Module):
         super().__init__()
 
     def forward(self, X):
-        return sparsemax(X, dim=self.dim, k=self.k)
+        return sparsemax(X, dim=self.dim, k=self.k, training=self.training)
 
 
 class Entmax15(nn.Module):
@@ -309,4 +322,4 @@ class Entmax15(nn.Module):
         super().__init__()
 
     def forward(self, X):
-        return entmax15(X, dim=self.dim, k=self.k)
+        return entmax15(X, dim=self.dim, k=self.k, training=self.training)

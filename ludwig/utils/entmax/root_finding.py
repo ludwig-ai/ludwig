@@ -11,60 +11,64 @@ import torch.nn as nn
 from torch.autograd import Function
 
 
+def _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls):
+    if not isinstance(alpha, torch.Tensor):
+        alpha = torch.tensor(alpha, dtype=X.dtype, device=X.device)
+
+    alpha_shape = list(X.shape)
+    alpha_shape[dim] = 1
+    alpha = alpha.expand(*alpha_shape)
+
+    d = X.shape[dim]
+
+    max_val, _ = X.max(dim=dim, keepdim=True)
+    X = X * (alpha - 1)
+    max_val = max_val * (alpha - 1)
+
+    # Note: when alpha < 1, tau_lo > tau_hi. This still works since dm < 0.
+    tau_lo = max_val - cls._gp(1, alpha)
+    tau_hi = max_val - cls._gp(1 / d, alpha)
+
+    f_lo = cls._p(X - tau_lo, alpha).sum(dim) - 1
+
+    dm = tau_hi - tau_lo
+
+    for it in range(n_iter):
+
+        dm /= 2
+        tau_m = tau_lo + dm
+        p_m = cls._p(X - tau_m, alpha)
+        f_m = p_m.sum(dim) - 1
+
+        mask = (f_m * f_lo >= 0).unsqueeze(dim)
+        tau_lo = torch.where(mask, tau_m, tau_lo)
+
+    if ensure_sum_one:
+        p_m /= p_m.sum(dim=dim).unsqueeze(dim=dim)
+
+    return p_m, {"alpha": alpha, "dim": dim}
+
+
 class EntmaxBisectFunction(Function):
-    @classmethod
-    def _gp(cls, x, alpha):
+    @staticmethod
+    def _gp(x, alpha):
         return x ** (alpha - 1)
 
-    @classmethod
-    def _gp_inv(cls, y, alpha):
+    @staticmethod
+    def _gp_inv(y, alpha):
         return y ** (1 / (alpha - 1))
 
-    @classmethod
-    def _p(cls, X, alpha):
-        return cls._gp_inv(torch.clamp(X, min=0), alpha)
+    @staticmethod
+    def _p(X, alpha):
+        return EntmaxBisectFunction._gp_inv(torch.clamp(X, min=0), alpha)
 
     @classmethod
     def forward(cls, ctx, X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True):
+        p_m, backward_kwargs = _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls)
 
-        if not isinstance(alpha, torch.Tensor):
-            alpha = torch.tensor(alpha, dtype=X.dtype, device=X.device)
-
-        alpha_shape = list(X.shape)
-        alpha_shape[dim] = 1
-        alpha = alpha.expand(*alpha_shape)
-
-        ctx.alpha = alpha
-        ctx.dim = dim
-        d = X.shape[dim]
-
-        max_val, _ = X.max(dim=dim, keepdim=True)
-        X = X * (alpha - 1)
-        max_val = max_val * (alpha - 1)
-
-        # Note: when alpha < 1, tau_lo > tau_hi. This still works since dm < 0.
-        tau_lo = max_val - cls._gp(1, alpha)
-        tau_hi = max_val - cls._gp(1 / d, alpha)
-
-        f_lo = cls._p(X - tau_lo, alpha).sum(dim) - 1
-
-        dm = tau_hi - tau_lo
-
-        for it in range(n_iter):
-
-            dm /= 2
-            tau_m = tau_lo + dm
-            p_m = cls._p(X - tau_m, alpha)
-            f_m = p_m.sum(dim) - 1
-
-            mask = (f_m * f_lo >= 0).unsqueeze(dim)
-            tau_lo = torch.where(mask, tau_m, tau_lo)
-
-        if ensure_sum_one:
-            p_m /= p_m.sum(dim=dim).unsqueeze(dim=dim)
-
+        ctx.alpha = backward_kwargs["alpha"]
+        ctx.dim = backward_kwargs["dim"]
         ctx.save_for_backward(p_m)
-
         return p_m
 
     @classmethod
@@ -100,23 +104,32 @@ class EntmaxBisectFunction(Function):
         return dX, d_alpha, None, None, None
 
 
+def _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one):
+    return _entmax_bisect_forward(X, alpha=2, dim=dim, n_iter=50, ensure_sum_one=True, cls=SparsemaxBisectFunction)
+
+
 # slightly more efficient special case for sparsemax
 class SparsemaxBisectFunction(EntmaxBisectFunction):
-    @classmethod
-    def _gp(cls, x, alpha):
+    @staticmethod
+    def _gp(x, alpha):
         return x
 
-    @classmethod
-    def _gp_inv(cls, y, alpha):
+    @staticmethod
+    def _gp_inv(y, alpha):
         return y
 
-    @classmethod
-    def _p(cls, x, alpha):
+    @staticmethod
+    def _p(x, alpha):
         return torch.clamp(x, min=0)
 
     @classmethod
     def forward(cls, ctx, X, dim=-1, n_iter=50, ensure_sum_one=True):
-        return super().forward(ctx, X, alpha=2, dim=dim, n_iter=50, ensure_sum_one=True)
+        p_m, backward_kwargs = _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one)
+
+        ctx.alpha = backward_kwargs["alpha"]
+        ctx.dim = backward_kwargs["dim"]
+        ctx.save_for_backward(p_m)
+        return p_m
 
     @classmethod
     def backward(cls, ctx, dY):
@@ -129,7 +142,7 @@ class SparsemaxBisectFunction(EntmaxBisectFunction):
         return dX, None, None, None
 
 
-def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True):
+def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
     """alpha-entmax: normalizing sparse transform (a la softmax).
 
     Solves the optimization problem:
@@ -171,10 +184,13 @@ def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
+    if not training:
+        output, _ = _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls=EntmaxBisectFunction)
+        return output
     return EntmaxBisectFunction.apply(X, alpha, dim, n_iter, ensure_sum_one)
 
 
-def sparsemax_bisect(X, dim=-1, n_iter=50, ensure_sum_one=True):
+def sparsemax_bisect(X, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
     """sparsemax: normalizing sparse transform (a la softmax), via bisection.
 
     Solves the projection:
@@ -206,6 +222,9 @@ def sparsemax_bisect(X, dim=-1, n_iter=50, ensure_sum_one=True):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
+    if not training:
+        output, _ = _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one)
+        return output
     return SparsemaxBisectFunction.apply(X, dim, n_iter, ensure_sum_one)
 
 
@@ -231,7 +250,7 @@ class SparsemaxBisect(nn.Module):
         super().__init__()
 
     def forward(self, X):
-        return sparsemax_bisect(X, dim=self.dim, n_iter=self.n_iter)
+        return sparsemax_bisect(X, dim=self.dim, n_iter=self.n_iter, training=self.training)
 
 
 class EntmaxBisect(nn.Module):
@@ -270,4 +289,4 @@ class EntmaxBisect(nn.Module):
         super().__init__()
 
     def forward(self, X):
-        return entmax_bisect(X, alpha=self.alpha, dim=self.dim, n_iter=self.n_iter)
+        return entmax_bisect(X, alpha=self.alpha, dim=self.dim, n_iter=self.n_iter, training=self.training)

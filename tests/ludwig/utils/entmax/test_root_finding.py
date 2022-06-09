@@ -15,17 +15,19 @@ from ludwig.utils.entmax.root_finding import entmax_bisect, sparsemax_bisect
 # # gradcheck(f, (x,))
 
 
-def test_sparsemax():
+@pytest.mark.parametrize("training", [True, False])
+def test_sparsemax(training):
     x = 0.5 * torch.randn(4, 6, dtype=torch.float32)
-    p1 = sparsemax(x, 1)
-    p2 = sparsemax_bisect(x)
+    p1 = sparsemax(x, 1, training=training)
+    p2 = sparsemax_bisect(x, training=training)
     assert torch.sum((p1 - p2) ** 2) < 1e-7
 
 
-def test_entmax15():
+@pytest.mark.parametrize("training", [True, False])
+def test_entmax15(training):
     x = 0.5 * torch.randn(4, 6, dtype=torch.float32)
-    p1 = entmax15(x, 1)
-    p2 = entmax_bisect(x, alpha=1.5)
+    p1 = entmax15(x, 1, training=training)
+    p2 = entmax_bisect(x, alpha=1.5, training=training)
     assert torch.sum((p1 - p2) ** 2) < 1e-7
 
 
