@@ -8,6 +8,8 @@ from marshmallow_jsonschema import JSONSchema as js
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
+# JSON and marshmallow related utility functions:
+
 
 def load_config(cls, **kwargs):
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
@@ -65,40 +67,54 @@ def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
     return schema
 
 
-def InitializerOptions(default: str = "xavier_uniform", description=""):
+# Fields with open signatures (accept any kwargs):
+
+
+def InitializerOptions(default: str = "xavier_uniform", description="", **kwargs):
     """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
-    return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
+    return StringOptions(
+        list(initializer_registry.keys()), default=default, allow_none=False, description=description, **kwargs
+    )
 
 
-def ActivationOptions(default: str = "relu", description=""):
+def ActivationOptions(default: str = "relu", description="", **kwargs):
     """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
-    return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
+    return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description, **kwargs)
 
 
-def ReductionOptions(default: Union[None, str] = None, description=""):
+def ReductionOptions(default: Union[None, str] = None, description="", **kwargs):
     """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
-    return StringOptions(list(reduce_mode_registry.keys()), default=default, allow_none=True, description=description)
+    return StringOptions(
+        list(reduce_mode_registry.keys()), default=default, allow_none=True, description=description, **kwargs
+    )
 
 
-def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True, description=""):
+def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True, description="", **kwargs):
     """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
-    return StringOptions(["l1", "l2", "l1_l2"], default=default, allow_none=allow_none, description=description)
+    return StringOptions(
+        ["l1", "l2", "l1_l2"], default=default, allow_none=allow_none, description=description, **kwargs
+    )
 
 
-def String(default: Union[None, str] = None, allow_none: bool = True, description=""):
+def String(default: Union[None, str] = None, allow_none: bool = True, description="", **kwargs):
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
     )
 
 
-def StringOptions(options: List[str], default: Union[None, str] = None, allow_none: bool = True, description=""):
+def StringOptions(
+    options: List[str], default: Union[None, str] = None, allow_none: bool = True, description="", **kwargs
+):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
@@ -122,41 +138,14 @@ def StringOptions(options: List[str], default: Union[None, str] = None, allow_no
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
     )
 
 
-def TestOptions(default: Union[None, int] = None, allow_none=False, **kwargs):
-    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
-    positive."""
-    val = validate.Range(min=1)
-    allow_none = allow_none or default is None
-
-    if default is not None:
-        try:
-            assert isinstance(default, int)
-            val(default)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
-    return field(
-        metadata={
-            "marshmallow_field": fields.Integer(
-                strict=True,
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata=kwargs,
-            )
-        },
-        default=default,
-    )
-
-
-def Boolean(default: bool, description=""):
+def Boolean(default: bool, description="", **kwargs):
     if default is not None:
         try:
             assert isinstance(default, bool)
@@ -170,14 +159,14 @@ def Boolean(default: bool, description=""):
                 allow_none=False,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
     )
 
 
-def PositiveInteger(default: Union[None, int] = None, allow_none=False, description=""):
+def PositiveInteger(default: Union[None, int] = None, allow_none=False, description="", **kwargs):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
     val = validate.Range(min=1)
@@ -197,14 +186,14 @@ def PositiveInteger(default: Union[None, int] = None, allow_none=False, descript
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
     )
 
 
-def NonNegativeInteger(default: Union[None, int] = None, allow_none=False, description=""):
+def NonNegativeInteger(default: Union[None, int] = None, allow_none=False, description="", **kwargs):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
     val = validate.Range(min=0)
@@ -224,7 +213,7 @@ def NonNegativeInteger(default: Union[None, int] = None, allow_none=False, descr
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
@@ -251,14 +240,14 @@ def IntegerRange(default: Union[None, int] = None, allow_none=False, description
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
     )
 
 
-def NonNegativeFloat(default: Union[None, float] = None, allow_none=False, description=""):
+def NonNegativeFloat(default: Union[None, float] = None, allow_none=False, description="", **kwargs):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
     allow_none = allow_none or default is None
@@ -276,7 +265,7 @@ def NonNegativeFloat(default: Union[None, float] = None, allow_none=False, descr
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
@@ -302,14 +291,14 @@ def FloatRange(default: Union[None, float] = None, allow_none=False, description
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
     )
 
 
-def Dict(default: Union[None, tDict] = None, description=""):
+def Dict(default: Union[None, tDict] = None, description="", **kwargs):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
@@ -324,11 +313,14 @@ def Dict(default: Union[None, tDict] = None, description=""):
                 allow_none=True,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, **kwargs},
             )
         },
         default_factory=lambda: default,
     )
+
+
+# Closed signature fields (accept a limited number of arguments):
 
 
 def DictList(default: Union[None, List[tDict]] = None, description=""):
@@ -524,6 +516,38 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
         },
         default=default,
     )
+
+
+def FloatOrAutoField(
+    options: List[str] = ["auto"],
+    allow_none: bool = True,
+    default: Union[None, int] = True,
+    default_numeric: Union[None, int] = None,
+    default_option: Union[None, str] = "auto",
+    is_integer: bool = True,
+    min: Union[None, int] = None,
+    max: Union[None, int] = None,
+    min_exclusive: Union[None, int] = 0,
+    max_exclusive: Union[None, int] = None,
+    description="",
+):
+    return IntegerOrStringOptionsField(**locals())
+
+
+def IntegerOrAutoField(
+    options: List[str] = ["auto"],
+    allow_none: bool = True,
+    default: Union[None, int] = True,
+    default_numeric: Union[None, int] = None,
+    default_option: Union[None, str] = "auto",
+    is_integer: bool = True,
+    min: Union[None, int] = None,
+    max: Union[None, int] = None,
+    min_exclusive: Union[None, int] = 0,
+    max_exclusive: Union[None, int] = None,
+    description="",
+):
+    return IntegerOrStringOptionsField(**locals())
 
 
 def IntegerOrStringOptionsField(

@@ -23,7 +23,9 @@ excel = pd.read_excel("sprint.xlsx")
 # print(excel)
 mask = excel["Class"] == "#/definitions/TrainerConfig"
 trainer_excel = excel[mask].iloc[:, 3:-2]
-trainer_dict = trainer_excel.set_index("Parameter name").T.to_dict()
+print(trainer_excel.columns)
+trainer_excel = trainer_excel.rename(columns=lambda cname: "_".join([w.lower() for w in cname.split(" ")]))
+trainer_dict = trainer_excel.set_index("parameter_name").T.to_dict()
 
 # print(trainer_dict)
 
