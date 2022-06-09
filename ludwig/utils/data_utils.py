@@ -855,9 +855,16 @@ def use_credentials(creds):
             with open(fname, "w") as f:
                 json.dump(creds, f)
 
+            # Backup any existing credentials
+            old_conf = dict(**conf)
+
             conf.clear()
             set_conf_files(tmpdir, conf)
             try:
                 yield
             finally:
+                # Restore previous credentials
+                with open(fname, "w") as f:
+                    json.dump(old_conf, f)
                 conf.clear()
+                set_conf_files(tmpdir, conf)
