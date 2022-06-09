@@ -79,26 +79,25 @@ class _BinaryPreprocessing(torch.nn.Module):
 
 
 class _BinaryPostprocessing(torch.nn.Module):
-    def __init__(self, prediction_module: PredictModule, metadata: Dict[str, Any]):
+    def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        self.prediction_module = prediction_module
         bool2str = metadata.get("bool2str")
         self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
 
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
-        preds = self.prediction_module(inputs, feature_name)
-
-        predictions = preds[self.prediction_module.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         if self.bool2str is not None:
             predictions = predictions.to(dtype=torch.int32)
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
 
-        probs = preds[self.prediction_module.probabilities_key]
+        probs = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
         probs = torch.stack([1 - probs, probs], dim=-1)
 
         return {
-            self.prediction_module.predictions_key: predictions,
-            self.prediction_module.probabilities_key: probs,
+            self.predictions_key: predictions,
+            self.probabilities_key: probs,
         }
 
 
@@ -291,9 +290,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def create_predict_module(self) -> PredictModule:
         return _BinaryPredict(self.threshold)
 
-    def create_postproc_module(self, metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _BinaryPostprocessing(self.prediction_module, metadata)
-
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
 
@@ -408,3 +404,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "string" if metadata.get("bool2str") else "int32"
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _BinaryPostprocessing(metadata)

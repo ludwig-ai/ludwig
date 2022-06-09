@@ -186,19 +186,14 @@ class _NumberPreprocessing(torch.nn.Module):
 
 
 class _NumberPostprocessing(torch.nn.Module):
-    def __init__(self, prediction_module: PredictModule, metadata: Dict[str, Any]):
+    def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        self.prediction_module = prediction_module
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
+        self.predictions_key = PREDICTIONS
 
-    def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
-        preds = self.prediction_module(inputs, feature_name)
-
-        return {
-            self.prediction_module.predictions_key: self.numeric_transformer.inverse_transform_inference(
-                preds[self.prediction_module.predictions_key]
-            )
-        }
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(predictions)}
 
 
 class _NumberPredict(PredictModule):
@@ -381,9 +376,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
             )
         return _NumberPredict(self.clip)
 
-    def create_postproc_module(self, metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _NumberPostprocessing(self.prediction_module, metadata)
-
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 
@@ -455,3 +447,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "float32"
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _NumberPostprocessing(metadata)

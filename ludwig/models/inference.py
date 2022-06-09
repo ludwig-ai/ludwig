@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from ludwig.models.ecd import ECD
 
 INFERENCE_PREPROCESSOR_FILENAME = "inference_preprocessor.pt"
-INFERENCE_ECD_FILENAME = "inference_ecd.pt"
+INFERENCE_PREDICTOR_FILENAME = "inference_predictor.pt"
 INFERENCE_POSTPROCESSOR_FILENAME = "inference_postprocessor.pt"
 
 
@@ -35,8 +35,6 @@ class _InferenceModuleV0(nn.Module):
     def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
-        self.model = model.cpu().to_torchscript()
-
         self.preproc_modules = nn.ModuleDict()
         for feature_config in config["input_features"]:
             feature_name = feature_config[NAME]
@@ -44,23 +42,37 @@ class _InferenceModuleV0(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
 
+        self.predict_modules = nn.ModuleDict()
+        for feature_name, feature in model.output_features.items():
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.prediction_modules[module_dict_key] = feature.prediction_module
+
         self.postproc_modules = nn.ModuleDict()
         for feature_name, feature in model.output_features.items():
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
-            preproc_inputs = {}
+            preproc_inputs: Dict[str, torch.Tensor] = {}
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
-            outputs = self.model(preproc_inputs)
+
+            model_outputs = self.model(preproc_inputs)
+            predictions_flattened: Dict[str, torch.Tensor] = {}
+            for module_dict_key, predict in self.predict_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                feature_predictions = predict(model_outputs, feature_name)
+                # Flatten out the predictions to support Triton input/output
+                for predict_key, tensor_values in feature_predictions.items():
+                    predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
+                    predictions_flattened[predict_concat_key] = tensor_values
 
             postproc_outputs: Dict[str, Dict[str, Any]] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
-                postproc_outputs[feature_name] = postproc(outputs, feature_name)
+                postproc_outputs[feature_name] = postproc(predictions_flattened, feature_name)
 
             return postproc_outputs
 
@@ -73,20 +85,20 @@ class InferenceModule(nn.Module):
 
     def __init__(
         self,
-        model: torch.jit.ScriptModule,
         preprocessor: torch.jit.ScriptModule,
+        predictor: torch.jit.ScriptModule,
         postprocessor: torch.jit.ScriptModule,
     ):
         super().__init__()
-        self.model = model
         self.preprocessor = preprocessor
+        self.predictor = predictor
         self.postprocessor = postprocessor
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
-            model_outputs: Dict[str, torch.Tensor] = self.model(preproc_outputs)
-            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(model_outputs)
+            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
+            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
             postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
@@ -101,11 +113,10 @@ class InferencePreprocessor(nn.Module):
 
     def __init__(self, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
-        input_features = {
-            feature[NAME]: get_from_registry(feature[TYPE], input_type_registry) for feature in config["input_features"]
-        }
         self.preproc_modules = nn.ModuleDict()
-        for feature_name, feature in input_features.items():
+        for feature_config in config["input_features"]:
+            feature_name = feature_config[NAME]
+            feature = get_from_registry(feature_config[TYPE], input_type_registry)
             # prevents collisions with reserved keywords
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
@@ -117,6 +128,38 @@ class InferencePreprocessor(nn.Module):
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
             return preproc_inputs
+
+
+class InferencePredictor(nn.Module):
+    """Wraps model forward pass + predictions into a single nn.Module.
+
+    The forward call of this module returns a flattened dictionary in order to support Triton input/output.
+
+    TODO(geoffrey): Implement torchscript-compatible feature_utils.LudwigFeatureDict to replace
+    get_module_dict_key_from_name and get_name_from_module_dict_key usage.
+    """
+
+    def __init__(self, model: "ECD"):
+        super().__init__()
+        self.model = model.cpu().to_torchscript()
+        self.predict_modules = nn.ModuleDict()
+        for feature_name, feature in model.output_features.items():
+            # prevents collisions with reserved keywords
+            module_dict_key = get_module_dict_key_from_name(feature_name)
+            self.predict_modules[module_dict_key] = feature.prediction_module
+
+    def forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        with torch.no_grad():
+            model_outputs = self.model(preproc_inputs)
+            predictions_flattened: Dict[str, torch.Tensor] = {}
+            for module_dict_key, predict in self.predict_modules.items():
+                feature_name = get_name_from_module_dict_key(module_dict_key)
+                feature_predictions = predict(model_outputs, feature_name)
+                # Flatten out the predictions to support Triton input/output
+                for predict_key, tensor_values in feature_predictions.items():
+                    predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
+                    predictions_flattened[predict_concat_key] = tensor_values
+            return predictions_flattened
 
 
 class InferencePostprocessor(nn.Module):
@@ -157,8 +200,8 @@ def save_ludwig_model_for_inference(
     model_only: bool = False,
 ) -> None:
     """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
-    scripted_model = model.cpu().to_torchscript()
-    scripted_model.save(os.path.join(save_path, INFERENCE_ECD_FILENAME))
+    predictor = torch.jit.script(InferencePredictor(model))
+    predictor.save(os.path.join(save_path, INFERENCE_PREDICTOR_FILENAME))
     if model_only:
         return
     preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata))
@@ -171,18 +214,18 @@ def init_inference_module_from_ludwig_model(
     model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]
 ) -> InferenceModule:
     """Initializes an InferenceModule from a LudwigModel (an ECD model, config, and training_set_metadata)."""
-    scripted_model = model.cpu().to_torchscript()
     preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata))
+    predictor = torch.jit.script(InferencePredictor(model))
     postprocessor = torch.jit.script(InferencePostprocessor(model, training_set_metadata))
-    return InferenceModule(scripted_model, preprocessor, postprocessor)
+    return InferenceModule(preprocessor, predictor, postprocessor)
 
 
 def init_inference_module_from_directory(directory: str) -> InferenceModule:
     """Initializes an InferenceModule from a directory containing saved preproc/predict/postproc modules."""
-    scripted_model = torch.jit.load(os.path.join(directory, INFERENCE_ECD_FILENAME))
     preprocessor = torch.jit.load(os.path.join(directory, INFERENCE_PREPROCESSOR_FILENAME))
+    predictor = torch.jit.load(os.path.join(directory, INFERENCE_PREDICTOR_FILENAME))
     postprocessor = torch.jit.load(os.path.join(directory, INFERENCE_POSTPROCESSOR_FILENAME))
-    return InferenceModule(scripted_model, preprocessor, postprocessor)
+    return InferenceModule(preprocessor, predictor, postprocessor)
 
 
 def unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
