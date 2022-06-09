@@ -87,8 +87,8 @@ jobs:
 
           if [ $MARKERS != "distributed" ]; then
             # Skip distributed and hyperopt requirements to test optional imports
-            echo > requirements_distributed.txt
-            echo > requirements_hyperopt.txt
+            echo > requirements-temp && mv requirements-temp requirements_distributed.txt
+            echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
           fi
 
           if [ $PYTORCH == "nightly" ]; then
@@ -115,6 +115,8 @@ jobs:
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
           if [ $MARKERS == "distributed" ]; then
             python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
+          else
+            python -c "import importlib.util; assert importlib.util.find_spec('ray') is None"
           fi
         shell: bash
 
