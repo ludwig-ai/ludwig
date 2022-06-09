@@ -13,6 +13,8 @@ from typing import Any, Dict, Optional
 
 import torch
 
+LATEST_FNAME = "latest.ckpt"
+
 
 def mkdir(s):
     """Create a directory if it doesn't already exist."""
@@ -37,6 +39,19 @@ def get_files(d, pattern, sort=True):
 
         files.sort(key=lambda x: int(filter_numeric(os.path.basename(x).split(".")[0])))
     return files
+
+
+def get_latest_checkpoint_path(directory: str) -> str:
+    latest_path = os.path.join(directory, LATEST_FNAME)
+    if os.path.exists(latest_path):
+        return latest_path
+
+    # Legacy codepath for checkpoints saved by global step number
+    ckpts = get_files(directory, "*.ckpt")
+    if ckpts:
+        return ckpts[-1]
+
+    return None
 
 
 class Checkpoint:
@@ -163,9 +178,8 @@ class CheckpointManager:
           The global iteration step. This is parsed from the latest
             checkpoint file if one is found, else 0 is returned.
         """
-        ckpts = get_files(self.directory, "*.ckpt")
-        if ckpts:
-            last_ckpt = ckpts[-1]
+        last_ckpt = get_latest_checkpoint_path(self.directory)
+        if last_ckpt:
             status = self.checkpoint.restore(last_ckpt, self.device)
             if not status:
                 logging.warning("Could not restore latest checkpoint file.")
@@ -181,7 +195,7 @@ class CheckpointManager:
            global_step (int): The iteration number which will be used
              to name the checkpoint.
         """
-        save_path = os.path.join(self.directory, "latest.ckpt")
+        save_path = os.path.join(self.directory, LATEST_FNAME)
         self.checkpoint.save(save_path, global_step)
         self.latest_checkpoint = save_path
 
@@ -190,9 +204,8 @@ class CheckpointManager:
 
     @staticmethod
     def load_latest_checkpoint(checkpoint: Checkpoint, directory: str, device: torch.device):
-        ckpts = get_files(directory, "*.ckpt")
-        if ckpts:
-            last_ckpt = ckpts[-1]
+        last_ckpt = get_latest_checkpoint_path(directory)
+        if last_ckpt:
             checkpoint.restore(last_ckpt, device)
         else:
             logging.error(f"No checkpoints found in {directory}.")
