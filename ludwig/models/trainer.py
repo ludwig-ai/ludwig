@@ -747,9 +747,7 @@ class Trainer(BaseTrainer):
         checkpoint = checkpoint_manager = None
         if self.is_coordinator() and not self.skip_save_progress:
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
-            checkpoint_manager = CheckpointManager(
-                checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1
-            )
+            checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         train_summary_writer = None
         validation_summary_writer = None
