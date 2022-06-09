@@ -24,6 +24,7 @@ from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
+from ludwig.utils.checkpoint_utils import CHECKPOINTS_LOCK
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
@@ -84,6 +85,8 @@ except ImportError as e:
 def identity(x):
     return x
 
+from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
+kubernetes_syncer = NamespacedKubernetesSyncer('default')(None, None)
 
 def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
@@ -109,6 +112,29 @@ def ray_resource_allocation_function(
     bundles = [{"CPU": 0.001}] + bundles
     pgf = PlacementGroupFactory(bundles)
     return pgf
+
+
+def get_node_name(node_ip):
+    return kubernetes_syncer._get_kubernetes_node_by_ip(node_ip)
+
+
+def checkpoint(progress_tracker, save_path):
+    with CHECKPOINTS_LOCK:
+        with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
+            checkpoint_model = os.path.join(checkpoint_dir, "model")
+            # shutil.copytree(save_path, checkpoint_model)
+            # Note: A previous implementation used shutil.copytree()
+            # however, this copying method is non atomic
+            if not os.path.isdir(checkpoint_model):
+                copy_id = uuid.uuid4()
+                tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
+                assert os.path.exists(save_path)
+                # print(f'\n\n\nRunning everything on : {get_node_name(ray.util.get_node_ip_address())}')
+                shutil.copytree(save_path, tmp_dst)
+                try:
+                    os.rename(tmp_dst, checkpoint_model)
+                except Exception:
+                    shutil.rmtree(tmp_dst)
 
 
 class RayTuneExecutor:
@@ -433,22 +459,23 @@ class RayTuneExecutor:
         else:
             ray_queue = None
 
-        def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
-                checkpoint_model = os.path.join(checkpoint_dir, "model")
-                # shutil.copytree(save_path, checkpoint_model)
-                # Note: A previous implementation used shutil.copytree()
-                # however, this copying method is non atomic
-                if not os.path.isdir(checkpoint_model):
-                    copy_id = uuid.uuid4()
-                    tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
-                    assert os.path.exists(save_path)
-                    # print(f'\n\n\nRunning everything on : {get_node_name(ray.util.get_node_ip_address())}')
-                    shutil.copytree(save_path, tmp_dst)
-                    try:
-                        os.rename(tmp_dst, checkpoint_model)
-                    except Exception:
-                        shutil.rmtree(tmp_dst)
+        # def checkpoint(progress_tracker, save_path):
+        #     with CHECKPOINTS_LOCK:
+        #         with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
+        #             checkpoint_model = os.path.join(checkpoint_dir, "model")
+        #             # shutil.copytree(save_path, checkpoint_model)
+        #             # Note: A previous implementation used shutil.copytree()
+        #             # however, this copying method is non atomic
+        #             if not os.path.isdir(checkpoint_model):
+        #                 copy_id = uuid.uuid4()
+        #                 tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
+        #                 assert os.path.exists(save_path)
+        #                 # print(f'\n\n\nRunning everything on : {get_node_name(ray.util.get_node_ip_address())}')
+        #                 shutil.copytree(save_path, tmp_dst)
+        #                 try:
+        #                     os.rename(tmp_dst, checkpoint_model)
+        #                 except Exception:
+        #                     shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
@@ -487,23 +514,23 @@ class RayTuneExecutor:
                 """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
                     save_path = Path(save_path)
-                    if driver_trial_location != ray.util.get_node_ip_address():
+                    # if driver_trial_location != ray.util.get_node_ip_address():
                         # sync_info = self._get_sync_client_and_remote_checkpoint_dir()
                         # if sync_info is not None:
                         #     sync_client, remote_checkpoint_dir = sync_info
                         #     sync_client.sync_up(str(save_path.parent.parent.absolute()), (node_syncer._get_kubernetes_node_by_ip(driver_trial_location), remote_checkpoint_dir))
                         #     sync_client.wait()
 
-                        # print(f'\n\n\nChecking remote progress from: {get_node_name(ray.util.get_node_ip_address())}')
-                        # print(f'Driver trial location: {get_node_name(driver_trial_location)}')
+                    print(f'\n\n\nChecking remote progress from: {get_node_name(ray.util.get_node_ip_address())}')
+                    print(f'Driver trial location: {get_node_name(driver_trial_location)}')
 
-                        remote_checkpoint_dir = self._get_remote_checkpoint_dir()
-                        if remote_checkpoint_dir is not None:
-                            # print(f'Remote checkpoint dir: {remote_checkpoint_dir}')
-                            # print(f'Save path: {str(save_path.parent.parent.absolute())}\n\n\n')
-                            sync_client = tune_executor.sync_client
-                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                            sync_client.wait()
+                    remote_checkpoint_dir = self._get_remote_checkpoint_dir()
+                    if remote_checkpoint_dir is not None:
+                        print(f'Remote checkpoint dir: {remote_checkpoint_dir}')
+                        print(f'Save path: {str(save_path.parent.parent.absolute())}\n\n\n')
+                        sync_client = tune_executor.sync_client
+                        sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                        sync_client.wait()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
                 checkpoint(progress_tracker, save_path)
@@ -595,13 +622,13 @@ class RayTuneExecutor:
                     if self.sync_client is not None:
                         # self.sync_client.sync_down((node_syncer._get_kubernetes_node_by_ip(driver_trial_location), remote_checkpoint_dir), str(trial_dir.absolute()))
 
-                        # print(f'Running check_queue from: {get_node_name(ray.util.get_node_ip_address())}')
-                        # print(f"Syncing down from {remote_checkpoint_dir} to {trial_dir}")
+                        print(f'Running check_queue from: {get_node_name(ray.util.get_node_ip_address())}')
+                        print(f"Syncing down from {remote_checkpoint_dir} to {trial_dir}")
 
                         self.sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
                         self.sync_client.wait()
                     for progress_tracker, save_path in results:
-                        # print('\n\n\nCHECKPOINTING FROM QUEUE\n\n\n')
+                        print('\n\n\nCHECKPOINTING FROM QUEUE\n\n\n')
                         checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
                         report(progress_tracker)
 
