@@ -65,8 +65,8 @@ class _InferenceModuleV0(nn.Module):
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
-
             outputs = self.model(preproc_inputs)
+
             predictions_flattened: Dict[str, torch.Tensor] = {}
             for module_dict_key, predict in self.predict_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
@@ -259,7 +259,7 @@ class InferenceLudwigModel:
     def __init__(self, model_dir: str):
         self.model = init_inference_module_from_directory(model_dir)
         self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
-        # Do not remove; used in the Predibase app
+        # Do not remove; used in Predibase app
         self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
 
     def predict(

@@ -78,6 +78,7 @@ class _CategoryPostprocessing(torch.nn.Module):
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
         inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
+
         return {
             self.predictions_key: inv_preds,
             self.probabilities_key: probabilities,

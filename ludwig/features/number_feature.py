@@ -193,6 +193,7 @@ class _NumberPostprocessing(torch.nn.Module):
 
     def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+
         return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(predictions)}
 
 
