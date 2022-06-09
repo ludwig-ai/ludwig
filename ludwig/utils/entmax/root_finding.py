@@ -184,6 +184,8 @@ def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True, training
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
+    # Avoids call to custom autograd.Function during eval to ensure torchscript compatibility
+    # custom autograd.Function is not scriptable: https://github.com/pytorch/pytorch/issues/22329#issuecomment-506608053
     if not training:
         output, _ = _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one)
         return output
@@ -222,6 +224,8 @@ def sparsemax_bisect(X, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
+    # Avoids call to custom autograd.Function during eval to ensure torchscript compatibility
+    # custom autograd.Function is not scriptable: https://github.com/pytorch/pytorch/issues/22329#issuecomment-506608053
     if not training:
         output, _ = _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one)
         return output

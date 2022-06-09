@@ -226,6 +226,8 @@ def sparsemax(X, dim=-1, k=None, training=True):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
+    # Avoids call to custom autograd.Function during eval to ensure torchscript compatibility
+    # custom autograd.Function is not scriptable: https://github.com/pytorch/pytorch/issues/22329#issuecomment-506608053
     if not training:
         output, _ = _sparsemax_forward(X, dim, k)
         return output
@@ -261,6 +263,8 @@ def entmax15(X, dim=-1, k=None, training=True):
     P : torch tensor, same shape as X
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
+    # Avoids call to custom autograd.Function during eval to ensure torchscript compatibility
+    # custom autograd.Function is not scriptable: https://github.com/pytorch/pytorch/issues/22329#issuecomment-506608053
     if not training:
         output, _ = _entmax15_forward(X, dim, k)
         return output

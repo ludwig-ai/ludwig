@@ -267,7 +267,6 @@ def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
             "type": "tabnet",
             "num_total_blocks": 2,
             "num_shared_blocks": 2,
-            "entmax_mode": "constant",
         },
         TRAINER: {"epochs": 2},
     }
