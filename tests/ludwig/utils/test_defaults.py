@@ -1,4 +1,5 @@
 import copy
+from dataclasses import asdict
 
 import pytest
 
@@ -84,7 +85,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
     config = copy.deepcopy(config)
 
     if use_train:
-        config[TRAINER] = {"batch_size": "42"}
+        config[TRAINER] = {"batch_size": 42}
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
@@ -92,7 +93,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else TrainerConfig().asdict()["early_stop"]
+    expected = -1 if use_hyperopt_scheduler else asdict(TrainerConfig())["early_stop"]
     assert merged_config[TRAINER]["early_stop"] == expected
 
 

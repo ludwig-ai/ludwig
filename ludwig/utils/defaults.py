@@ -205,7 +205,7 @@ def merge_with_defaults(config):
     full_combiner_config, _ = load_config_with_kwargs(
         combiner_registry[config[COMBINER][TYPE]].get_schema_cls(), config[COMBINER]
     )
-    config[COMBINER] = asdict(full_combiner_config)
+    config[COMBINER].update(asdict(full_combiner_config))
 
     # ===== Output features =====
     for output_feature in config["output_features"]:
