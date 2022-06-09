@@ -23,7 +23,6 @@ from ludwig.utils.data_utils import (
     figure_data_format_dataset,
     get_abs_path,
     hash_dict,
-    to_numpy_dataset,
     use_credentials,
 )
 
@@ -127,10 +126,3 @@ def test_use_credentials():
         assert conf == s3_creds
 
     assert len(conf) == 0
-
-
-@pytest.mark.distributed
-def test_to_numpy_dataset_with_dask():
-    dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
-    np_df = to_numpy_dataset(dd_df)
-    assert np_df == {"col1": np.array([1]), "col2": np.array([2]), "col3": np.array([3])}

@@ -1,0 +1,40 @@
+import dask.dataframe as dd
+import numpy as np
+import pandas as pd
+import pytest
+
+from ludwig.backend import create_backend, LOCAL_BACKEND
+from ludwig.utils.dataframe_utils import to_numpy_dataset
+
+
+@pytest.mark.distributed
+def test_to_numpy_dataset_with_dask():
+    dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
+    ray_backend = create_backend("ray")
+
+    np_df = to_numpy_dataset(dd_df, backend=ray_backend)
+
+    assert np_df == {"col1": np.array([1]), "col2": np.array([2]), "col3": np.array([3])}
+
+
+def test_to_numpy_dataset_with_dask_backend_mismatch():
+    dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
+
+    with pytest.raises(AttributeError):
+        to_numpy_dataset(dd_df, backend=LOCAL_BACKEND)
+
+
+def test_to_numpy_dataset_with_pandas():
+    pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])
+
+    np_df = to_numpy_dataset(pd_df, backend=LOCAL_BACKEND)
+
+    assert np_df == {"col1": np.array([1]), "col2": np.array([2]), "col3": np.array([3])}
+
+
+def test_to_numpy_dataset_with_pandas_backend_mismatch():
+    pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])
+    ray_backend = create_backend("ray")
+
+    with pytest.raises(AttributeError):
+        to_numpy_dataset(pd_df, backend=ray_backend)
