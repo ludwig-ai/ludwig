@@ -8,7 +8,7 @@ from torch import nn
 from ludwig.constants import COLUMN, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
-from ludwig.features.feature_registries import input_type_registry
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import image_utils, output_feature_utils
@@ -35,35 +35,42 @@ class _InferenceModuleV0(nn.Module):
     def __init__(self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
 
+        self.model = model.cpu().to_torchscript()
+
+        input_features = {
+            feature[NAME]: get_from_registry(feature[TYPE], input_type_registry) for feature in config["input_features"]
+        }
         self.preproc_modules = nn.ModuleDict()
-        for feature_config in config["input_features"]:
-            feature_name = feature_config[NAME]
-            feature = get_from_registry(feature_config[TYPE], input_type_registry)
+        for feature_name, feature in input_features.items():
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
 
         self.predict_modules = nn.ModuleDict()
         for feature_name, feature in model.output_features.items():
             module_dict_key = get_module_dict_key_from_name(feature_name)
-            self.prediction_modules[module_dict_key] = feature.prediction_module
+            self.predict_modules[module_dict_key] = feature.prediction_module
 
+        output_features = {
+            feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)
+            for feature in config["output_features"]
+        }
         self.postproc_modules = nn.ModuleDict()
-        for feature_name, feature in model.output_features.items():
+        for feature_name, feature in output_features.items():
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
         with torch.no_grad():
-            preproc_inputs: Dict[str, torch.Tensor] = {}
+            preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
 
-            model_outputs = self.model(preproc_inputs)
+            outputs = self.model(preproc_inputs)
             predictions_flattened: Dict[str, torch.Tensor] = {}
             for module_dict_key, predict in self.predict_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
-                feature_predictions = predict(model_outputs, feature_name)
+                feature_predictions = predict(outputs, feature_name)
                 # Flatten out the predictions to support Triton input/output
                 for predict_key, tensor_values in feature_predictions.items():
                     predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
