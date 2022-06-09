@@ -11,44 +11,6 @@ import torch.nn as nn
 from torch.autograd import Function
 
 
-def _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls):
-    if not isinstance(alpha, torch.Tensor):
-        alpha = torch.tensor(alpha, dtype=X.dtype, device=X.device)
-
-    alpha_shape = list(X.shape)
-    alpha_shape[dim] = 1
-    alpha = alpha.expand(*alpha_shape)
-
-    d = X.shape[dim]
-
-    max_val, _ = X.max(dim=dim, keepdim=True)
-    X = X * (alpha - 1)
-    max_val = max_val * (alpha - 1)
-
-    # Note: when alpha < 1, tau_lo > tau_hi. This still works since dm < 0.
-    tau_lo = max_val - cls._gp(1, alpha)
-    tau_hi = max_val - cls._gp(1 / d, alpha)
-
-    f_lo = cls._p(X - tau_lo, alpha).sum(dim) - 1
-
-    dm = tau_hi - tau_lo
-
-    for it in range(n_iter):
-
-        dm /= 2
-        tau_m = tau_lo + dm
-        p_m = cls._p(X - tau_m, alpha)
-        f_m = p_m.sum(dim) - 1
-
-        mask = (f_m * f_lo >= 0).unsqueeze(dim)
-        tau_lo = torch.where(mask, tau_m, tau_lo)
-
-    if ensure_sum_one:
-        p_m /= p_m.sum(dim=dim).unsqueeze(dim=dim)
-
-    return p_m, {"alpha": alpha, "dim": dim}
-
-
 class EntmaxBisectFunction(Function):
     @classmethod
     def _gp(cls, x, alpha):
@@ -104,22 +66,56 @@ class EntmaxBisectFunction(Function):
         return dX, d_alpha, None, None, None
 
 
-def _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one):
-    return _entmax_bisect_forward(X, alpha=2, dim=dim, n_iter=50, ensure_sum_one=True, cls=SparsemaxBisectFunction)
+def _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls=EntmaxBisectFunction):
+    if not isinstance(alpha, torch.Tensor):
+        alpha = torch.tensor(alpha, dtype=X.dtype, device=X.device)
+
+    alpha_shape = list(X.shape)
+    alpha_shape[dim] = 1
+    alpha = alpha.expand(*alpha_shape)
+
+    d = X.shape[dim]
+
+    max_val, _ = X.max(dim=dim, keepdim=True)
+    X = X * (alpha - 1)
+    max_val = max_val * (alpha - 1)
+
+    # Note: when alpha < 1, tau_lo > tau_hi. This still works since dm < 0.
+    tau_lo = max_val - cls._gp(1, alpha)
+    tau_hi = max_val - cls._gp(1 / d, alpha)
+
+    f_lo = cls._p(X - tau_lo, alpha).sum(dim) - 1
+
+    dm = tau_hi - tau_lo
+
+    for it in range(n_iter):
+
+        dm /= 2
+        tau_m = tau_lo + dm
+        p_m = cls._p(X - tau_m, alpha)
+        f_m = p_m.sum(dim) - 1
+
+        mask = (f_m * f_lo >= 0).unsqueeze(dim)
+        tau_lo = torch.where(mask, tau_m, tau_lo)
+
+    if ensure_sum_one:
+        p_m /= p_m.sum(dim=dim).unsqueeze(dim=dim)
+
+    return p_m, {"alpha": alpha, "dim": dim}
 
 
 # slightly more efficient special case for sparsemax
 class SparsemaxBisectFunction(EntmaxBisectFunction):
     @classmethod
-    def _gp(x, alpha):
+    def _gp(cls, x, alpha):
         return x
 
     @classmethod
-    def _gp_inv(y, alpha):
+    def _gp_inv(cls, y, alpha):
         return y
 
     @classmethod
-    def _p(x, alpha):
+    def _p(cls, x, alpha):
         return torch.clamp(x, min=0)
 
     @classmethod
@@ -140,6 +136,10 @@ class SparsemaxBisectFunction(EntmaxBisectFunction):
         q = q.unsqueeze(ctx.dim)
         dX -= q * gppr
         return dX, None, None, None
+
+
+def _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one):
+    return _entmax_bisect_forward(X, alpha=2, dim=dim, n_iter=50, ensure_sum_one=True, cls=SparsemaxBisectFunction)
 
 
 def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True, training=True):
@@ -185,7 +185,7 @@ def entmax_bisect(X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True, training
         The projection result, such that P.sum(dim=dim) == 1 elementwise.
     """
     if not training:
-        output, _ = _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls=EntmaxBisectFunction)
+        output, _ = _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one)
         return output
     return EntmaxBisectFunction.apply(X, alpha, dim, n_iter, ensure_sum_one)
 
