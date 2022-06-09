@@ -50,17 +50,17 @@ def _entmax_bisect_forward(X, alpha, dim, n_iter, ensure_sum_one, cls):
 
 
 class EntmaxBisectFunction(Function):
-    @staticmethod
-    def _gp(x, alpha):
+    @classmethod
+    def _gp(cls, x, alpha):
         return x ** (alpha - 1)
 
-    @staticmethod
-    def _gp_inv(y, alpha):
+    @classmethod
+    def _gp_inv(cls, y, alpha):
         return y ** (1 / (alpha - 1))
 
-    @staticmethod
-    def _p(X, alpha):
-        return EntmaxBisectFunction._gp_inv(torch.clamp(X, min=0), alpha)
+    @classmethod
+    def _p(cls, X, alpha):
+        return cls._gp_inv(torch.clamp(X, min=0), alpha)
 
     @classmethod
     def forward(cls, ctx, X, alpha=1.5, dim=-1, n_iter=50, ensure_sum_one=True):
@@ -110,15 +110,15 @@ def _sparsemax_bisect_forward(X, dim, n_iter, ensure_sum_one):
 
 # slightly more efficient special case for sparsemax
 class SparsemaxBisectFunction(EntmaxBisectFunction):
-    @staticmethod
+    @classmethod
     def _gp(x, alpha):
         return x
 
-    @staticmethod
+    @classmethod
     def _gp_inv(y, alpha):
         return y
 
-    @staticmethod
+    @classmethod
     def _p(x, alpha):
         return torch.clamp(x, min=0)
 

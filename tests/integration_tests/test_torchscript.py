@@ -267,6 +267,7 @@ def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
             "type": "tabnet",
             "num_total_blocks": 2,
             "num_shared_blocks": 2,
+            "entmax_mode": "constant",
         },
         TRAINER: {"epochs": 2},
     }
@@ -374,8 +375,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
     # Obtain predictions from Python model
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
-
-    print("======================CONVERTING TO TORCHSCRIPT======================")
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
