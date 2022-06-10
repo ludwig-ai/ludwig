@@ -420,11 +420,12 @@ class LudwigModel:
                         if key != "config":  # Config is printed separately.
                             experiment_description.append([key, pformat(value, indent=4)])
 
-                    print_boxed("EXPERIMENT DESCRIPTION")
-                    logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
+                    if self.backend.is_coordinator():
+                        print_boxed("EXPERIMENT DESCRIPTION")
+                        logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
-                    print_boxed("LUDWIG CONFIG")
-                    logger.info(pformat(self.config, indent=4))
+                        print_boxed("LUDWIG CONFIG")
+                        logger.info(pformat(self.config, indent=4))
 
                 for callback in self.callbacks:
                     callback.on_preprocess_start(self.config)
@@ -492,11 +493,12 @@ class LudwigModel:
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
-            # init trainer
-            config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+            # Convert config dictionary into an instance of TrainerConfig.
+            trainer_config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+
             with self.backend.create_trainer(
                 model=self.model,
-                config=config,
+                config=trainer_config,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
