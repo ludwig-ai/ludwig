@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
+
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"
@@ -149,6 +152,8 @@ AUTO = "auto"
 CONFIG = "config"
 
 COMBINER = "combiner"
+
+ENCODER = "encoder"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05

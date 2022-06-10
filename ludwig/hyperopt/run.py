@@ -9,7 +9,22 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, RAY, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import (
+    COMBINED,
+    EXECUTOR,
+    HYPEROPT,
+    LOSS,
+    MINIMIZE,
+    RAY,
+    TEST,
+    TRAINING,
+    TYPE,
+    VALIDATION,
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
+    NAME,
+    ENCODER,
+)
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
@@ -163,11 +178,17 @@ def hyperopt(
         descending performance on the target metric.
     """
     # check if config is a path or a dict
-    if isinstance(config, str):  # assume path
+     if isinstance(config, str):  # assume path
         with open_file(config, "r") as def_file:
             config_dict = yaml.safe_load(def_file)
     else:
         config_dict = config
+
+    # Get raw input config for shared parameters 
+    # TODO: Consider output features as well?
+    shared_params_feature_groups = get_shared_param_feature_groups(
+        config_dict[INPUT_FEATURES]
+    )
 
     # merge config with defaults
     config = merge_with_defaults(config_dict)
@@ -332,6 +353,7 @@ def hyperopt(
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,
+        shared_params_feature_groups=shared_params_feature_groups,
         **kwargs,
     )
 
@@ -373,3 +395,21 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
         hyperopt_params[EXECUTOR],
         executor_defaults,
     )
+
+
+def get_shared_param_feature_groups(input_features):
+    """
+    This returns a mapping of feature_type: List[features] that don't
+    have an encoder specified in the config. They may be considered
+    for potential shared parameter search spaces depending on the 
+    parameter space defined later within the hyperopt config.
+    """
+    feature_group_to_features_map = {}
+    for feature in input_features:
+        if not feature.get(ENCODER, 0):
+            feature_name = feature[NAME]
+            feature_type = feature[TYPE]
+            if feature_type not in feature_group_to_features_map:
+                feature_group_to_features_map[feature_type] = []
+            feature_group_to_features_map.get(feature_type).append(feature_name)
+    return feature_group_to_features_map
