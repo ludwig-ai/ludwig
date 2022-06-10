@@ -15,7 +15,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PAT
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.utils import time_utils
@@ -40,7 +40,7 @@ class LightGBMTrainer(BaseTrainer):
 
     def __init__(
         self,
-        config: TrainerConfig,
+        config: GBMTrainerConfig,
         model: GBM,
         resume: float = False,
         skip_save_model: bool = False,
@@ -616,7 +616,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
-        config: TrainerConfig,
+        config: GBMTrainerConfig,
         model: GBM,
         resume: float = False,
         skip_save_model: bool = False,

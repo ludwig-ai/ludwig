@@ -23,7 +23,7 @@ from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import GBMTrainerConfig, TrainerConfig
 from ludwig.trainers.registry import trainers_registry
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import initialize_pytorch
@@ -109,7 +109,9 @@ class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
-    def create_trainer(self, config: TrainerConfig, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
+    def create_trainer(
+        self, config: Union[TrainerConfig, GBMTrainerConfig], model: BaseModel, **kwargs
+    ) -> "BaseTrainer":  # noqa: F821
         trainers_for_model = get_from_registry(model.type(), trainers_registry)
 
         trainer_cls = get_from_registry(config.type, trainers_for_model)
