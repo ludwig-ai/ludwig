@@ -359,10 +359,12 @@ class RayTuneExecutor(HyperoptExecutor):
         config = RayTuneSampler.decode_values(config, decode_ctx)
 
         trial_id = tune.get_trial_id()
-        modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
-
         trial_dir = Path(tune.get_trial_dir())
         trial_location = ray.util.get_node_ip_address()
+
+        modified_config = substitute_parameters(
+            copy.deepcopy(hyperopt_dict["config"]), config, shared_params_feature_group
+        )
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -840,7 +842,7 @@ def get_parameters_dict(parameters):
     return parameters_dict
 
 
-def substitute_parameters(config, parameters):
+def substitute_parameters(config, parameters, shared_params_feature_group):
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in config["input_features"]:
         set_values(input_feature, input_feature[COLUMN], parameters_dict)

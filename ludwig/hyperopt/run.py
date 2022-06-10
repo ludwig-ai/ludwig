@@ -21,7 +21,6 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
     INPUT_FEATURES,
-    OUTPUT_FEATURES,
     NAME,
     ENCODER,
 )
@@ -395,7 +394,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     )
 
 
-def get_shared_param_feature_groups(input_features):
+def get_shared_param_feature_groups(features):
     """
     This returns a mapping of feature_type: List[features] that don't
     have an encoder specified in the config. They may be considered
@@ -403,12 +402,10 @@ def get_shared_param_feature_groups(input_features):
     parameter space defined later within the hyperopt config.
 
     # TODO: Add a proper doc string
-    # TODO: Consider moving for loop into nested function if we include
-    # output features as well in the shared search space
     """
     feature_group_to_features_map = {}
 
-    for feature in input_features:
+    for feature in features:
         if not feature.get(ENCODER, 0):
             feature_name = feature[NAME]
             feature_type = feature[TYPE]
