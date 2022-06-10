@@ -1,5 +1,5 @@
 
-ray[default,tune]>=1.12.0,!=1.13.0
+ray[default,tune]>=1.12.0
 
 
 # required for Ray Tune Search Algorithm support for AutoML
