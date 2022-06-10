@@ -161,7 +161,9 @@ class GBM(BaseModel):
 
         if output_feature.type() == NUMBER:
             # regression
-            logits = preds.squeeze()
+            if len(preds.shape) == 2:
+                preds = preds.squeeze(1)
+            logits = preds
         else:
             # classification
             _, probs = preds

@@ -675,7 +675,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             num_boost_round=self.num_boost_round,
             valid_sets=eval_sets,
             valid_names=eval_names,
-            feature_name=["index"] + list(self.model.input_features.keys()) + ["split"],
+            feature_name=list(self.model.input_features.keys()),
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
             callbacks=[
@@ -708,16 +708,33 @@ class LightGBMRayTrainer(LightGBMTrainer):
         training_set: "RayDataset",  # noqa: F821
         validation_set: Optional["RayDataset"] = None,  # noqa: F821
     ) -> Tuple["RayDMatrix", List["RayDMatrix"], List[str]]:  # noqa: F821
+        """Prepares Ludwig RayDataset objects for use in LightGBM."""
+
         from lightgbm_ray import RayDMatrix
 
         label_col = self.model.output_features.values()[0].proc_column
 
-        lgb_train = RayDMatrix(training_set.ds, label=label_col, distributed=False)
+        def keep_feature_cols(df: "DataFrame") -> "DataFrame":  # noqa: F821
+            in_feat = [f.proc_column for f in self.model.input_features.values()]
+            out_feat = [f.proc_column for f in self.model.output_features.values()]
+            feat_cols = in_feat + out_feat
+
+            return df[feat_cols]
+
+        lgb_train = RayDMatrix(
+            training_set.ds.map_batches(keep_feature_cols),
+            label=label_col,
+            distributed=False,
+        )
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
-            lgb_val = RayDMatrix(validation_set.ds, label=label_col, distributed=False)
+            lgb_val = RayDMatrix(
+                validation_set.ds.map_batches(keep_feature_cols),
+                label=label_col,
+                distributed=False,
+            )
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
 

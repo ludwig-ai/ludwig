@@ -15,11 +15,21 @@ def backend_config(request):
     if backend_type == "local":
         return {"type": "local"}
     else:
-        num_actors = 2
+        num_workers = 2
+        num_cpus_per_worker = 2
         return {
             "type": "ray",
-            "processor": {"parallelism": num_actors},
-            "trainer": {"num_actors": num_actors},
+            "processor": {
+                "parallelism": num_cpus_per_worker * num_workers,
+            },
+            "trainer": {
+                "use_gpu": False,
+                "num_workers": num_workers,
+                "resources_per_worker": {
+                    "CPU": num_cpus_per_worker,
+                    "GPU": 0,
+                },
+            },
         }
 
 
