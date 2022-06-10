@@ -348,10 +348,13 @@ class RayTuneExecutor(HyperoptExecutor):
                 f"{traceback.format_exc()}"
             )
 
-    def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
+    def _run_experiment(
+        self, config, checkpoint_dir, hyperopt_dict, decode_ctx, shared_params_feature_group, is_using_ray_backend=False
+    ):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
+
         # Some config values may be JSON encoded as strings, so decode them here
         config = RayTuneSampler.decode_values(config, decode_ctx)
 
@@ -571,6 +574,7 @@ class RayTuneExecutor(HyperoptExecutor):
         random_seed=default_random_seed,
         debug=False,
         hyperopt_log_verbosity=3,
+        shared_params_feature_groups=None,
         **kwargs,
     ) -> RayTuneResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
@@ -662,7 +666,12 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
             return self._run_experiment(
-                config, checkpoint_dir, local_hyperopt_dict, self.decode_ctx, _is_ray_backend(backend)
+                config,
+                checkpoint_dir,
+                local_hyperopt_dict,
+                self.decode_ctx,
+                shared_params_feature_groups,
+                _is_ray_backend(backend),
             )
 
         tune_config = {}
