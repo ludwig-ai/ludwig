@@ -36,7 +36,7 @@ jobs:
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 1.13.0
+            ray-version: nightly
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -102,7 +102,12 @@ jobs:
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
           if [ "$MARKERS" == "distributed" ]; then
-            pip install ray==$RAY_VERSION
+            if [ "$RAY_VERSION" == "nightly" ]; then
+              # NOTE: hardcoded for python 3.9 on Linux
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+            else
+              pip install ray==$RAY_VERSION
+            fi
             ray_expected=$(python -c "import ray; print(ray.__version__)")
           fi
 
