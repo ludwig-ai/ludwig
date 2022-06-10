@@ -3,7 +3,7 @@ import os
 import warnings
 from abc import abstractmethod
 from functools import lru_cache
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch
 from torch import nn
@@ -19,6 +19,25 @@ def get_torch_device():
 
 
 DEVICE = get_torch_device()
+
+
+def place_on_torch_device(x: Any, device: Union[str, int, torch.device]):
+    """Recursively places torch.Tensors in `x` onto `device`.
+
+    TODO: write unit tests for this function.
+    """
+    if isinstance(x, torch.Tensor):
+        return x.to(device)
+    elif isinstance(x, dict):
+        return {k: place_on_torch_device(v, device) for k, v in x.items()}
+    elif isinstance(x, list):
+        return [place_on_torch_device(v, device) for v in x]
+    elif isinstance(x, set):
+        return set([place_on_torch_device(v, device) for v in x])
+    elif isinstance(x, tuple):
+        return tuple([place_on_torch_device(v, device) for v in x])
+    else:
+        return x
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
