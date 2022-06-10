@@ -23,7 +23,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
+from ludwig.constants import COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -240,6 +240,39 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     false_value, true_value = "No", "Yes"
     df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
     df.to_csv(training_data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    # Configure features to be tested:
+    input_features = [
+        binary_feature(),
+        number_feature(),
+        category_feature(vocab_size=3),
+        bag_feature(vocab_size=3),
+        set_feature(vocab_size=3),
+    ]
+    output_features = [
+        binary_feature(),
+        number_feature(),
+        category_feature(vocab_size=3),
+    ]
+    backend = LocalTestBackend()
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        COMBINER: {
+            "type": "tabnet",
+            "num_total_blocks": 2,
+            "num_shared_blocks": 2,
+        },
+        TRAINER: {"epochs": 2},
+    }
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
