@@ -21,6 +21,7 @@ def test_to_numpy_dataset_with_dask():
     assert np_df == {"col1": np.array([1]), "col2": np.array([2]), "col3": np.array([3])}
 
 
+@pytest.mark.distributed
 def test_to_numpy_dataset_with_dask_backend_mismatch():
     dd_df = dd.from_pandas(pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"]), npartitions=1)
 
@@ -28,6 +29,7 @@ def test_to_numpy_dataset_with_dask_backend_mismatch():
         to_numpy_dataset(dd_df, backend=LOCAL_BACKEND)
 
 
+@pytest.mark.distributed
 def test_to_numpy_dataset_with_pandas():
     pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])
 
@@ -36,6 +38,7 @@ def test_to_numpy_dataset_with_pandas():
     assert np_df == {"col1": np.array([1]), "col2": np.array([2]), "col3": np.array([3])}
 
 
+@pytest.mark.distributed
 def test_to_numpy_dataset_with_pandas_backend_mismatch():
     pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])
     ray_backend = create_backend("ray")
