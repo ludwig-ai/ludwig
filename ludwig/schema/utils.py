@@ -609,7 +609,7 @@ def NumericOrStringOptionsField(
                 else []
             )
 
-            return {"oneOf": oneof_list, "title": self.name, "description": description}
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
 
     return field(
         metadata={
