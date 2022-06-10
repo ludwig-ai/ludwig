@@ -33,6 +33,7 @@ def init_backend(backend: str):
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.distributed
 def test_sample_ratio(backend, tmpdir):
     num_examples = 100
     sample_ratio = 0.25

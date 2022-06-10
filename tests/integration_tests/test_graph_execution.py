@@ -26,7 +26,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize(
     "output_features",
     [

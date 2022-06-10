@@ -3,12 +3,16 @@ import os
 import shutil
 
 import pytest
-import ray
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs import WhyLogsCallback
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, spawn
+
+try:
+    import ray
+except ImportError:
+    ray = None
 
 
 @contextlib.contextmanager

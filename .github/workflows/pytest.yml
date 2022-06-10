@@ -32,11 +32,11 @@ jobs:
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
-            ray-version: 1.12.0
+            ray-version: 1.13.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 1.12.0
+            ray-version: nightly
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -69,9 +69,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-
 
       - name: Install dependencies
         env:
@@ -84,7 +84,14 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
-          if [ $PYTORCH == "nightly" ]; then
+
+          if [ "$MARKERS" != "distributed" ]; then
+            # Skip distributed and hyperopt requirements to test optional imports
+            echo > requirements-temp && mv requirements-temp requirements_distributed.txt
+            echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
+          fi
+
+          if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
             pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
@@ -93,17 +100,29 @@ jobs:
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           fi
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
-          pip install ray==$RAY_VERSION
+
+          if [ "$MARKERS" == "distributed" ]; then
+            if [ "$RAY_VERSION" == "nightly" ]; then
+              # NOTE: hardcoded for python 3.9 on Linux
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+            else
+              pip install ray==$RAY_VERSION
+            fi
+            ray_expected=$(python -c "import ray; print(ray.__version__)")
+          fi
 
           torch_expected=$(python -c "import torch; print(torch.__version__)")
-          ray_expected=$(python -c "import ray; print(ray.__version__)")
 
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
 
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
-          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
+          if [ "$MARKERS" == "distributed" ]; then
+            python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
+          else
+            python -c "import importlib.util; assert importlib.util.find_spec('ray') is None, \"found ray but expected it to not be installed\""
+          fi
         shell: bash
 
       - name: Install Neuropod backend
@@ -113,6 +132,7 @@ jobs:
         shell: bash
 
       - name: Reinstall Horovod if necessary
+        if: matrix.test-markers == 'distributed'
         env:
           HOROVOD_WITH_PYTORCH: 1
           HOROVOD_WITHOUT_MPI: 1
