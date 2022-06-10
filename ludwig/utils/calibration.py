@@ -28,12 +28,17 @@ class ECELoss(nn.Module):
     The input to this loss is the logits of a model, NOT the softmax scores.
     This divides the confidence outputs into equally-sized interval bins.
     In each bin, we compute the confidence gap:
-    bin_gap = | avg_confidence_in_bin - accuracy_in_bin |
-    We then return a weighted average of the gaps, based on the number
-    of samples in each bin
-    See: Naeini, Mahdi Pakdaman, Gregory F. Cooper, and Milos Hauskrecht.
-    "Obtaining Well Calibrated Probabilities Using Bayesian Binning." AAAI.
-    2015.
+
+        bin_gap = | avg_confidence_in_bin - accuracy_in_bin |
+
+    We then return an average of the gaps, weighted by the number of samples in each bin.
+
+    References:
+        Naeini, Mahdi Pakdaman, Gregory F. Cooper, and Milos Hauskrecht
+        "Obtaining Well Calibrated Probabilities Using Bayesian Binning." AAAI. 2015.
+
+        Chuan Guo, Geoff Pleiss, Yu Sun, Kilian Q. Weinberger
+        "On Calibration of Modern Neural Networks." PMLR 2017.
     """
 
     def __init__(self, n_bins: int = 15):
@@ -78,7 +83,7 @@ class CalibrationModule(nn.Module, ABC):
 
 
 class TemperatureScaling(CalibrationModule):
-    """Implements temperature scaling of logits. Based on results from On Calibration of Modern Neural Networks:
+    """Implements temperature scaling of logits. Based on results from "On Calibration of Modern Neural Networks":
     https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor. Though it
     may modify output probabilities it will never change argmax or categorical top-n predictions. In the case of
     binary classification with a threshold, however, calibration may change predictions.
