@@ -1,5 +1,4 @@
 import copy
-from dataclasses import asdict
 
 import pytest
 
@@ -93,7 +92,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else asdict(TrainerConfig())["early_stop"]
+    expected = -1 if use_hyperopt_scheduler else TrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
 
