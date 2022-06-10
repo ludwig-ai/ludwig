@@ -114,7 +114,7 @@ def test_config_tabnet():
             "output_size": 26,
             "sparsity": 0.000001,
             "bn_virtual_divider": 32,
-            "bn_momentum": 0.6,
+            "bn_momentum": 0.4,
             "num_steps": 5,
             "relaxation_factor": 1.5,
             "bn_virtual_bs": 512,

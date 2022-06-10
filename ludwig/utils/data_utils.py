@@ -39,6 +39,7 @@ from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
 from ludwig.data.cache.types import CacheableDataset
+from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -99,7 +100,6 @@ CACHEABLE_FORMATS = set.union(
 )
 
 PANDAS_DF = pd
-DASK_MODULE_NAME = "dask.dataframe"
 
 
 # Lock over the entire interpreter as we can only have one set
@@ -199,7 +199,7 @@ def read_excel(data_fp, df_lib):
         excel_engine = "openpyxl"
 
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_excel() since dask backend does not support it")
         return dd.from_pandas(pd.read_excel(data_fp, engine=excel_engine), npartitions=1)
     return df_lib.read_excel(data_fp, engine=excel_engine)
@@ -213,7 +213,7 @@ def read_parquet(data_fp, df_lib):
 @spread
 def read_pickle(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_pickle() since dask backend does not support it")
         return dd.from_pandas(pd.read_pickle(data_fp), npartitions=1)
     return df_lib.read_pickle(data_fp)
@@ -227,7 +227,7 @@ def read_fwf(data_fp, df_lib):
 @spread
 def read_feather(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_feather() since dask backend does not support it")
         return dd.from_pandas(pd.read_feather(data_fp), npartitions=1)
     return df_lib.read_feather(data_fp)
@@ -236,7 +236,7 @@ def read_feather(data_fp, df_lib):
 @spread
 def read_html(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_html() since dask backend does not support it")
         return dd.from_pandas(pd.read_html(data_fp)[0], npartitions=1)
     return df_lib.read_html(data_fp)[0]
@@ -250,7 +250,7 @@ def read_orc(data_fp, df_lib):
 @spread
 def read_sas(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_sas() since dask backend does not support it")
         return dd.from_pandas(pd.read_sas(data_fp), npartitions=1)
     return df_lib.read_sas(data_fp)
@@ -259,7 +259,7 @@ def read_sas(data_fp, df_lib):
 @spread
 def read_spss(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_spss() since dask backend does not support it")
         return dd.from_pandas(pd.read_spss(data_fp), npartitions=1)
     return df_lib.read_spss(data_fp)
@@ -268,7 +268,7 @@ def read_spss(data_fp, df_lib):
 @spread
 def read_stata(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
-    if df_lib.__name__ == DASK_MODULE_NAME:
+    if is_dask_lib(df_lib):
         logger.warning("Falling back to pd.read_stata() since dask backend does not support it")
         return dd.from_pandas(pd.read_stata(data_fp), npartitions=1)
     return df_lib.read_stata(data_fp)
@@ -355,57 +355,6 @@ def flatten_dict(d, parent_key="", sep="."):
         else:
             items.append((new_key, v))
     return dict(items)
-
-
-def flatten_df(df, backend):
-    # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
-    column_shapes = {}
-    for c in df.columns:
-        df = backend.df_engine.persist(df)
-        shape = backend.df_engine.compute(
-            backend.df_engine.map_objects(
-                df[c],
-                lambda x: np.array(x).shape,
-            ).max()
-        )
-
-        if len(shape) > 1:
-            column_shapes[c] = shape
-            df[c] = backend.df_engine.map_objects(df[c], lambda x: np.array(x).reshape(-1))
-    return df, column_shapes
-
-
-def unflatten_df(df, column_shapes, backend):
-    for c in df.columns:
-        shape = column_shapes.get(c)
-        if shape:
-            df[c] = backend.df_engine.map_objects(df[c], lambda x: np.array(x).reshape(shape))
-    return df
-
-
-def to_numpy_dataset(df):
-    dataset = {}
-    for col in df.columns:
-        res = df[col]
-        if isinstance(res, dd.core.Series):
-            res = res.compute()
-        dataset[col] = np.stack(res.to_numpy())
-    return dataset
-
-
-def from_numpy_dataset(dataset):
-    col_mapping = {}
-    for k, v in dataset.items():
-        if len(v.shape) > 1:
-            # unstacking, needed for ndarrays of dimension 2 and more
-            (*vals,) = v
-        else:
-            # not unstacking. Needed because otherwise pandas casts types
-            # the way it wants, like converting a list of float32 scalats
-            # to a column of float64
-            vals = v
-        col_mapping[k] = vals
-    return pd.DataFrame.from_dict(col_mapping)
 
 
 def save_hdf5(data_fp, data):
@@ -908,9 +857,16 @@ def use_credentials(creds):
             with open(fname, "w") as f:
                 json.dump(creds, f)
 
+            # Backup any existing credentials
+            old_conf = dict(**conf)
+
             conf.clear()
             set_conf_files(tmpdir, conf)
             try:
                 yield
             finally:
+                # Restore previous credentials
+                with open(fname, "w") as f:
+                    json.dump(old_conf, f)
                 conf.clear()
+                set_conf_files(tmpdir, conf)
