@@ -29,7 +29,6 @@ from typing import List
 import cloudpickle
 import numpy as np
 import pandas as pd
-import ray
 import torch
 
 from ludwig.api import LudwigModel
@@ -40,6 +39,12 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
 from ludwig.utils.data_utils import read_csv, replace_file_extension
+
+try:
+    import ray
+except ImportError:
+    ray = None
+
 
 logger = logging.getLogger(__name__)
 

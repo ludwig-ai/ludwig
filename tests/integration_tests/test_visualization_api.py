@@ -835,6 +835,7 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
             assert 2 == len(figure_cnt)
 
 
+@pytest.mark.distributed
 def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
@@ -847,6 +848,7 @@ def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
     assert 4 == len(figure_cnt)
 
 
+@pytest.mark.distributed
 def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 

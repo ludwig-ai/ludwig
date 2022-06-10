@@ -111,7 +111,6 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
     return dataset_filename
 
 
-@pytest.mark.distributed
 def test_train_cli_dataset(csv_filename):
     """Test training using `ludwig train --dataset`."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -120,7 +119,6 @@ def test_train_cli_dataset(csv_filename):
         _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
 
 
-@pytest.mark.distributed
 def test_train_cli_training_set(csv_filename):
     """Test training using `ludwig train --training_set`."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -163,7 +161,6 @@ def test_train_cli_horovod(csv_filename):
 
 
 @pytest.mark.skip(reason="Issue #1451: Use torchscript.")
-@pytest.mark.distributed
 def test_export_savedmodel_cli(csv_filename):
     """Test exporting Ludwig model to Tensorflows savedmodel format."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -178,7 +175,6 @@ def test_export_savedmodel_cli(csv_filename):
 
 
 @pytest.mark.skip(reason="Issue #1451: Use torchscript.")
-@pytest.mark.distributed
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -192,7 +188,6 @@ def test_export_neuropod_cli(csv_filename):
         )
 
 
-@pytest.mark.distributed
 def test_experiment_cli(csv_filename):
     """Test experiment cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -201,7 +196,6 @@ def test_experiment_cli(csv_filename):
         _run_ludwig("experiment", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
 
 
-@pytest.mark.distributed
 def test_predict_cli(csv_filename):
     """Test predict cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -216,7 +210,6 @@ def test_predict_cli(csv_filename):
         )
 
 
-@pytest.mark.distributed
 def test_evaluate_cli(csv_filename):
     """Test evaluate cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -240,7 +233,6 @@ def test_hyperopt_cli(csv_filename):
         _run_ludwig("hyperopt", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
 
 
-@pytest.mark.distributed
 def test_visualize_cli(csv_filename):
     """Test Ludwig 'visualize' cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -256,7 +248,6 @@ def test_visualize_cli(csv_filename):
         )
 
 
-@pytest.mark.distributed
 def test_collect_summary_activations_weights_cli(csv_filename):
     """Test collect_summary cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -270,7 +261,6 @@ def test_collect_summary_activations_weights_cli(csv_filename):
         assert "Parameters" in stdout
 
 
-@pytest.mark.distributed
 def test_synthesize_dataset_cli(csv_filename):
     """Test synthesize_data cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -298,7 +288,6 @@ def test_synthesize_dataset_cli(csv_filename):
         )
 
 
-@pytest.mark.distributed
 def test_preprocess_cli(csv_filename):
     """Test preprocess `ludwig preprocess."""
     with tempfile.TemporaryDirectory() as tmpdir:
