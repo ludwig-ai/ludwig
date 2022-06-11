@@ -55,6 +55,10 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def split(self, df, probabilities):
+        raise NotImplementedError()
+
+    @abstractmethod
     def to_parquet(self, df, path):
         raise NotImplementedError()
 

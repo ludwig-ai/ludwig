@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import math
+from typing import List
 
 import numpy as np
 
@@ -108,3 +109,12 @@ def round2precision(val, precision: int = 0, which: str = ""):
     if which.lower() == "down":
         round_callback = math.floor
     return "{1:.{0}f}".format(precision, round_callback(val) / 10**precision)
+
+
+def cumsum(x: List[int]) -> List[int]:
+    results = []
+    j = 0
+    for i in range(0, len(x)):
+        j += x[i]
+        results.append(j)
+    return results

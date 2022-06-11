@@ -29,7 +29,7 @@ import re
 import tempfile
 import threading
 from itertools import islice
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -41,6 +41,7 @@ from sklearn.model_selection import KFold
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5, open_file, upload_h5
+from ludwig.utils.math_utils import cumsum
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -482,6 +483,16 @@ def split_data(split: float, data: List) -> Tuple[List, List]:
     split_length = int(round(split * len(data)))
     random.shuffle(data)
     return data[:split_length], data[split_length:]
+
+
+def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> List[Any]:
+    splits = []
+    indices = cumsum([int(x * n) for x in probabilities])
+    start = 0
+    for end in indices:
+        splits.append(slices[start:end])
+        start = end
+    return splits
 
 
 def shuffle_unison_inplace(list_of_lists, random_state=None):
