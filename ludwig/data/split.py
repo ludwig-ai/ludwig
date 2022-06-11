@@ -23,10 +23,12 @@ import numpy as np
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
 from ludwig.utils.data_utils import split_dataset_ttv
+from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame, Series
 
 split_registry = Registry()
+default_random_seed = 42
 
 
 TMP_SPLIT_COL = "__SPLIT__"
@@ -35,7 +37,9 @@ DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 
 class Splitter(ABC):
     @abstractmethod
-    def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    def split(
+        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         pass
 
     def validate(self, config: Dict[str, Any]):
@@ -47,7 +51,10 @@ class RandomSplitter(Splitter):
     def __init__(self, probabilities: List[float] = DEFAULT_PROBABILITIES, **kwargs):
         self.probabilities = probabilities
 
-    def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    def split(
+        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+        set_random_seed(random_seed)
         if backend.df_engine.partitioned:
             # The below approach is very inefficient for partitioned backends, which
             # can split by partition. This may not be exact in all cases, but is much more efficient.
@@ -62,7 +69,9 @@ class FixedSplitter(Splitter):
     def __init__(self, column: str = SPLIT, **kwargs):
         self.column = column
 
-    def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    def split(
+        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         return _split_on_series(df, df[self.column])
 
 
@@ -72,11 +81,14 @@ class StratifySplitter(Splitter):
         self.column = column
         self.probabilities = probabilities
 
-    def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    def split(
+        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         if backend.df_engine.partitioned:
             # TODO dask: find a way to support this method
             raise ValueError('Split type "stratify" is not supported with a partitioned dataset.')
 
+        set_random_seed(random_seed)
         split = np.zeros(len(df))
         for val in df[self.column].unique():
             idx_list = df.index[df[self.column] == val].tolist()
@@ -116,7 +128,9 @@ class DatetimeSplitter(Splitter):
         self.datetime_format = datetime_format
         self.fill_value = fill_value
 
-    def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    def split(
+        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         # In case the split column was preprocessed by Ludwig into a list, convert it back to a
         # datetime string for the sort and split
         def list_to_date_str(x):
@@ -158,7 +172,10 @@ def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
 
 
 def split_dataset(
-    df: DataFrame, global_preprocessing_parameters: Dict[str, Any], backend: Backend
+    df: DataFrame,
+    global_preprocessing_parameters: Dict[str, Any],
+    backend: Backend,
+    random_seed: float = default_random_seed,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
     if "split" not in global_preprocessing_parameters and SPLIT in df:
         warnings.warn(
@@ -166,7 +183,7 @@ def split_dataset(
             '"random". Did you mean to set split type to "fixed"?'
         )
     splitter = get_splitter(**global_preprocessing_parameters.get("split", {}))
-    return splitter.split(df, backend)
+    return splitter.split(df, backend, random_seed)
 
 
 def _split_on_series(df: DataFrame, series: Series) -> Tuple[DataFrame, DataFrame, DataFrame]:

@@ -1617,7 +1617,7 @@ def _preprocess_file_for_training(
         )
 
         logger.debug("split train-val-test")
-        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend)
+        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
 
         # TODO(travis): see how this is used by viz, find an alternative to saving a numpy array
         # if backend.is_coordinator() and not skip_save_processed_input and not backend.df_engine.partitioned:
@@ -1647,7 +1647,7 @@ def _preprocess_file_for_training(
         )
 
         logger.debug("split train-val-test")
-        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend)
+        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
 
     else:
         raise ValueError("either data or data_train have to be not None")
@@ -1698,7 +1698,7 @@ def _preprocess_df_for_training(
     )
 
     logger.debug("split train-val-test")
-    training_set, test_set, validation_set = split_dataset(data, preprocessing_params, backend)
+    training_set, test_set, validation_set = split_dataset(data, preprocessing_params, backend, random_seed)
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
