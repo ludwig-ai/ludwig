@@ -19,7 +19,7 @@ import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import dask
 import numpy as np
@@ -37,7 +37,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import GBMTrainerConfig, TrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
@@ -292,6 +292,10 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
+    @staticmethod
+    def get_schema_cls():
+        return TrainerConfig
+
     @contextlib.contextmanager
     def create_runner(self):
         trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
@@ -479,6 +483,10 @@ class RayLegacyTrainer(BaseTrainer):
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=HorovodRemoteTrainer, executable_kwargs=executable_kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return TrainerConfig
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers
@@ -735,7 +743,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not self._use_legacy:
             trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
 
-            config: TrainerConfig = kwargs["config"]
+            config: Union[TrainerConfig, GBMTrainerConfig] = kwargs["config"]
             trainer_cls = get_from_registry(config.type, trainers_for_model)
 
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139

@@ -2,6 +2,7 @@ import os
 import tempfile
 
 import pytest
+from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
@@ -196,3 +197,40 @@ def test_gbm_number(backend_config):
     if backend_config["type"] == "ray":
         pred_col = pred_col.compute()
     assert pred_col.dtype == float
+
+
+def test_gbm_schema(backend_config):
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    # When I pass an invalid trainer configuration,
+    invalid_trainer = "trainer"
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {
+            "num_boost_round": 2,
+            "type": invalid_trainer,
+        },
+    }
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, "training.csv")
+        dataset_filename = generate_data(input_features, output_features, csv_filename)
+
+        with pytest.raises(
+            ValidationError,
+            match=r"{'type': \['Must be one of: lightgbm_trainer, lightgbm_ray_trainer.']}",
+        ):
+            # Then I should get an error
+            model.train(
+                dataset=dataset_filename,
+                output_directory=tmpdir,
+                skip_save_processed_input=True,
+                skip_save_progress=True,
+                skip_save_unprocessed_output=True,
+                skip_save_log=True,
+            )

@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, TRAINING
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
@@ -10,15 +10,87 @@ from ludwig.schema.optimizers import (
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
+from ludwig.utils.registry import Registry
+
+trainer_schema_registry = Registry()
+
+
+def register_trainer_schema(name: str):
+    def wrap(trainer_config: BaseTrainerConfig):
+        trainer_schema_registry[name] = trainer_config
+        return trainer_config
+
+    return wrap
 
 
 @dataclass
-class TrainerConfig(schema_utils.BaseMarshmallowConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for model training."""
+class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
+    """Common trainer parameter values."""
+
+    type: str
+
+    learning_rate: float = schema_utils.NumericOrStringOptionsField(
+        default=0.001,
+        min=0.0,
+        max=1.0,
+        options=["auto"],
+        default_numeric=0.001,
+        default_option="auto",
+        allow_none=False,
+        description=(
+            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
+            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
+        ),
+    )
+
+    validation_metric: str = schema_utils.String(
+        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
+    )
+
+    # TODO(#1673): Need some more logic here for validating against output features
+    validation_field: str = schema_utils.String(
+        default=COMBINED,
+        description="First output feature, by default it is set as the same field of the first output feature.",
+    )
+
+    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
+        default=None,
+        options=["auto"],
+        default_numeric=None,
+        default_option="auto",
+        allow_none=True,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for evaluation.",
+    )
+
+    early_stop: int = schema_utils.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+    )
+
+    evaluate_training_set: bool = schema_utils.Boolean(
+        default=True, description="Whether to include the entire training set during evaluation."
+    )
+
+
+@register_trainer_schema("trainer")
+@register_trainer_schema("ray_trainer_v2")
+@dataclass
+class TrainerConfig(BaseTrainerConfig):
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for ECD model training."""
 
     type: str = schema_utils.StringOptions(
-        ["trainer", "ray_trainer_v2", "lightgbm_trainer", "lightgbm_ray_trainer"],
-        description="Trainer to use for training the model.",
+        ["trainer", "ray_trainer_v2"],
+        default="trainer",
+        description=(
+            "Trainer to use for training the model. Must be one of ['trainer', 'ray_trainer_v2'] - "
+            "corresponds to name in `ludwig.trainers.registry.trainers_registry` (default: 'trainer')"
+        ),
+        allow_none=False,
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
@@ -49,20 +121,6 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=True, description="Whether to shuffle batches during training when true."
     )
 
-    learning_rate: float = schema_utils.NumericOrStringOptionsField(
-        default=0.001,
-        min=0.0,
-        max=1.0,
-        options=["auto"],
-        default_numeric=0.001,
-        default_option="auto",
-        allow_none=False,
-        description=(
-            "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
-            "`tune_learning_rate` must be called before training to estimate the optimal learning rate."
-        ),
-    )
-
     batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
         default=128,
         options=["auto"],
@@ -71,25 +129,6 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         min_exclusive=0,
         description="Size of batch to pass to the model for training.",
-    )
-
-    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
-        default=None,
-        options=["auto"],
-        default_numeric=None,
-        default_option="auto",
-        allow_none=True,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for evaluation.",
-    )
-
-    early_stop: int = schema_utils.IntegerRange(
-        default=5,
-        min=-1,
-        description=(
-            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
-            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
-        ),
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
@@ -106,10 +145,6 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
             "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note "
             "that it is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch`."
         ),
-    )
-
-    evaluate_training_set: bool = schema_utils.Boolean(
-        default=True, description="Whether to include the entire training set during evaluation."
     )
 
     reduce_learning_rate_on_plateau: float = schema_utils.FloatRange(
@@ -166,16 +201,6 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
         description="Parameter values for gradient clipping."
     )
 
-    # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = schema_utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
-    )
-
-    validation_metric: str = schema_utils.String(
-        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
-    )
-
     learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(
         default=1.0, description="Number of epochs to warmup the learning rate for."
     )
@@ -190,6 +215,24 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
             "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
             "workers, setting this value to constant can be used to disable scale-up."
         ),
+    )
+
+
+@register_trainer_schema("lightgbm_trainer")
+@register_trainer_schema("lightgbm_ray_trainer")
+@dataclass
+class GBMTrainerConfig(BaseTrainerConfig):
+    """TrainerConfig is a dataclass that configures most of the hyperparameters used for GBM model training."""
+
+    type: str = schema_utils.StringOptions(
+        ["lightgbm_trainer", "lightgbm_ray_trainer"],
+        default="lightgbm_trainer",
+        description=(
+            "Trainer to use for training the model. Must be one of ['lightgbm_trainer', 'lightgbm_ray_trainer'] - "
+            "corresponds to name in `ludwig.trainers.registry.ray_trainers_registry` "
+            "(default: 'lightgbm_trainer')"
+        ),
+        allow_none=False,
     )
 
     # LightGBM core parameters
@@ -387,5 +430,28 @@ class TrainerConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
+def get_model_type_jsonschema():
+    return {"type": "string", "enum": [MODEL_ECD, MODEL_GBM], "default": MODEL_ECD}
+
+
 def get_trainer_jsonschema():
-    return schema_utils.unload_jsonschema_from_marshmallow_class(TrainerConfig)
+    conds = []
+    for trainer in trainer_schema_registry:
+        trainer_cls = trainer_schema_registry[trainer]
+        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
+        other_props.pop("type")
+        trainer_cond = schema_utils.create_cond(
+            {"type": trainer},
+            other_props,
+        )
+        conds.append(trainer_cond)
+
+    return {
+        "type": "object",
+        "properties": {
+            "type": {"type": "string", "enum": list(trainer_schema_registry.keys())},
+        },
+        "title": "trainer_options",
+        "allOf": conds,
+        "description": "",
+    }

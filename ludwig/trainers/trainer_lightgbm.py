@@ -15,7 +15,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PAT
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.utils import time_utils
@@ -40,7 +40,7 @@ class LightGBMTrainer(BaseTrainer):
 
     def __init__(
         self,
-        config: TrainerConfig,
+        config: GBMTrainerConfig,
         model: GBM,
         resume: float = False,
         skip_save_model: bool = False,
@@ -61,11 +61,9 @@ class LightGBMTrainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_model = skip_save_model
 
-        self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
+        self.eval_batch_size = 128 if config.eval_batch_size is None else config.eval_batch_size
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
-        self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
-        self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.evaluate_training_set = config.evaluate_training_set
         try:
             base_learning_rate = float(config.learning_rate)
@@ -74,6 +72,7 @@ class LightGBMTrainer(BaseTrainer):
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
+
         self.boosting_type = config.boosting_type
         self.tree_learner = config.tree_learner
         self.num_boost_round = config.num_boost_round
@@ -123,10 +122,14 @@ class LightGBMTrainer(BaseTrainer):
             batch_size=-1,
             learning_rate=self.base_learning_rate,
             best_eval_metric=get_initial_validation_value(self.validation_metric),
-            best_reduce_learning_rate_eval_metric=get_initial_validation_value(self.reduce_learning_rate_eval_metric),
-            best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
+            best_reduce_learning_rate_eval_metric=float("inf"),
+            best_increase_batch_size_eval_metric=float("inf"),
             output_features=self.model.output_features,
         )
+
+    @staticmethod
+    def get_schema_cls() -> BaseTrainerConfig:
+        return GBMTrainerConfig
 
     def tune_batch_size(
         self,
@@ -616,7 +619,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
-        config: TrainerConfig,
+        config: GBMTrainerConfig,
         model: GBM,
         resume: float = False,
         skip_save_model: bool = False,
@@ -648,6 +651,10 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.trainer_kwargs = trainer_kwargs or {}
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs or {}
+
+    @staticmethod
+    def get_schema_cls() -> BaseTrainerConfig:
+        return GBMTrainerConfig
 
     def _train(
         self,

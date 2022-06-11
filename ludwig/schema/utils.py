@@ -16,6 +16,37 @@ def load_config(cls, **kwargs):
     return schema.load(kwargs)
 
 
+def load_trainer_with_kwargs(model_type: str, backend: "Backend", kwargs):  # noqa: F821
+    """Special case of `load_config_with_kwargs` for the trainer schemas.
+
+    In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
+    otherwise passes all other parameters through without change.
+    """
+    from ludwig.constants import TYPE
+    from ludwig.trainers.registry import ray_trainers_registry, trainers_registry
+    from ludwig.utils.misc_utils import get_default_from_registry, get_from_registry
+
+    def is_ray():
+        """Check if the backend is ray."""
+        try:
+            from ludwig.backend.ray import RayBackend
+
+            return isinstance(backend, RayBackend)
+        except ImportError:
+            return False
+
+    # Get the default trainer registered for the given model type and backend:
+    trainers_for_model_type = get_from_registry(model_type, ray_trainers_registry if is_ray() else trainers_registry)
+    default_trainer_type, default_trainer_cls = get_default_from_registry(trainers_for_model_type)
+
+    trainer_schema = default_trainer_cls.get_schema_cls()
+
+    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
+    kwargs_with_type = {**{TYPE: default_trainer_type}, **kwargs}
+
+    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+
+
 def load_config_with_kwargs(cls, kwargs):
     """Takes a marshmallow class and dict of parameter values and appropriately instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)
