@@ -24,6 +24,7 @@ from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.utils.data_utils import split_by_slices
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
@@ -87,6 +88,18 @@ class DaskEngine(DataFrameEngine):
 
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=("data", "object")).compute()[0]
+
+    def split(self, df, probabilities):
+        # First ensure that every split receives at least one partition.
+        # If not, we need to increase the number of partitions to satisfy this constraint.
+        min_prob = min(probabilities)
+        min_partitions = int(1 / min_prob)
+        if df.npartitions < min_partitions:
+            df = df.repartition(min_partitions)
+
+        n = df.npartitions
+        slices = df.partitions
+        return split_by_slices(slices, n, probabilities)
 
     def to_parquet(self, df, path):
         with ProgressBar():

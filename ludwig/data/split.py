@@ -86,6 +86,44 @@ class StratifySplitter(Splitter):
         return _split_on_series(df, split)
 
 
+@split_registry.register("datetime")
+class DatetimeSplitter(Splitter):
+    def __init__(
+        self,
+        column: str,
+        probabilities: List[float] = DEFAULT_PROBABILITIES,
+        datetime_format: Optional[str] = None,
+        fill_value: str = "",
+        **kwargs,
+    ):
+        self.column = column
+        self.probabilities = probabilities
+        self.datetime_format = datetime_format
+        self.fill_value = fill_value
+
+    def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+        # In case the split column was preprocessed by Ludwig into a list, convert it back to a
+        # datetime string for the sort and split
+        def list_to_date_str(x):
+            if not isinstance(x, list) and len(x) != 9:
+                return x
+            return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"
+
+        df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.col], list_to_date_str)
+
+        # Convert datetime to int64 to workaround Dask limitation
+        # https://github.com/dask/dask/issues/9003
+        df[TMP_SPLIT_COL] = backend.df_engine.db_lib.to_datetime(df[TMP_SPLIT_COL]).values.astype("int64")
+
+        # Sort by ascending datetime and drop the temporary column
+        df = df.sort_values(TMP_SPLIT_COL).drop(columns=TMP_SPLIT_COL)
+
+        # Split using different methods based on the underlying df engine.
+        # For Pandas, split by row index.
+        # For Dask, split by partition, as splitting by row is very inefficient.
+        return tuple(backend.df_engine.split(df, self.probabilities))
+
+
 def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
     splitter_cls = split_registry.get(type)
     if splitter_cls is None:
