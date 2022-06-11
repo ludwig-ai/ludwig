@@ -492,6 +492,7 @@ class LudwigModel:
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
+            # init trainer
             config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
             with self.backend.create_trainer(
                 model=self.model,
