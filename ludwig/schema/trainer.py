@@ -27,6 +27,8 @@ def register_trainer_schema(name: str):
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
     """Common trainer parameter values."""
 
+    type: str
+
     learning_rate: float = schema_utils.NumericOrStringOptionsField(
         default=0.001,
         min=0.0,
@@ -103,6 +105,7 @@ class TrainerConfig(BaseTrainerConfig):
             "Trainer to use for training the model. Must be one of ['trainer', 'ray_trainer_v2'] - "
             "corresponds to name in `ludwig.trainers.registry.trainers_registry` (default: 'trainer')"
         ),
+        allow_none=False,
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
@@ -230,6 +233,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
             "corresponds to name in `ludwig.trainers.registry.ray_trainers_registry` "
             "(default: 'lightgbm_trainer')"
         ),
+        allow_none=False,
     )
 
     # LightGBM core parameters

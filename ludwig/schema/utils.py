@@ -16,6 +16,55 @@ def load_config(cls, **kwargs):
     return schema.load(kwargs)
 
 
+# TODO(joppe): this function is a bit overcomplicated, in particular there are only 4 possible trainer defaults right
+# now so it would probably be cleaner to just do a manual check. I was just curious to see if I could write a more
+# generalized check, but feel free to change this.
+def load_trainer_with_kwargs(model_type, backend, kwargs):
+    """Special case of `load_config_with_kwargs` for the trainer schemas.
+
+    In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
+    otherwise passes all other parameters through without change.
+    """
+    from ludwig.backend.ray import RayBackend
+    from ludwig.constants import MODEL_ECD, RAY, TYPE
+    from ludwig.schema.trainer import GBMTrainerConfig, trainer_schema_registry, TrainerConfig
+    from ludwig.trainers.registry import ray_trainers_registry, trainers_registry
+
+    def is_ray():
+        """Check if the backend is ray."""
+        print("IS RAY")
+        if isinstance(backend, str):
+            return backend == RAY
+        return isinstance(backend, RayBackend)
+
+    def allowed_types_for_trainer_schema(cls):
+        """Returns the allowed values for the "type" field on the given trainer schema."""
+        return cls.Schema().fields[TYPE].validate.choices
+
+    # Get the trainers registered for the given model type:
+    trainers_for_model_type = (
+        allowed_types_for_trainer_schema(TrainerConfig)
+        if model_type is MODEL_ECD
+        else allowed_types_for_trainer_schema(GBMTrainerConfig)
+    )
+
+    # Get the trainers registered for the given backend:
+    trainers_for_backend = (
+        ray_trainers_registry[model_type].keys() if is_ray() else trainers_registry[model_type].keys()
+    )
+    print(trainers_for_model_type)
+    print(trainers_for_backend)
+
+    # Find the (single) intersection:
+    trainer_type = list(set(trainers_for_model_type) & set(trainers_for_backend))[0]
+    trainer_schema = trainer_schema_registry[trainer_type]
+
+    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
+    kwargs_with_type = {**{TYPE: trainer_type}, **kwargs}
+
+    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+
+
 def load_config_with_kwargs(cls, kwargs):
     """Takes a marshmallow class and dict of parameter values and appropriately instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)

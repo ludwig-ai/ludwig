@@ -45,7 +45,6 @@ from ludwig.constants import (
     HYPEROPT,
     HYPEROPT_WARNING,
     LEARNING_RATE,
-    MODEL_ECD,
     MODEL_TYPE,
     PREPROCESSING,
     TEST,
@@ -76,9 +75,7 @@ from ludwig.models.predictor import (
 from ludwig.models.registry import model_type_registry
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
-from ludwig.schema.utils import load_config_with_kwargs
-from ludwig.trainers.trainer import Trainer
-from ludwig.trainers.trainer_lightgbm import LightGBMTrainer
+from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -496,10 +493,12 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
             # init trainer
-            schema_cls = (
-                Trainer.get_schema_cls() if self.config[MODEL_TYPE] is MODEL_ECD else LightGBMTrainer.get_schema_cls()
-            )
-            config, _ = load_config_with_kwargs(schema_cls, self.config[TRAINER])
+            # schema_cls = (
+            #     Trainer.get_schema_cls() if self.config[MODEL_TYPE] is MODEL_ECD else LightGBMTrainer.get_schema_cls()
+            # )
+            # config, _ = load_config_with_kwargs(schema_cls, self.config[TRAINER])
+            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
+            print(self.backend)
             with self.backend.create_trainer(
                 model=self.model,
                 config=config,
@@ -689,10 +688,11 @@ class LudwigModel:
             self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
         if not self._online_trainer:
-            schema_cls = (
-                Trainer.get_schema_cls() if self.config[MODEL_TYPE] is MODEL_ECD else LightGBMTrainer.get_schema_cls()
-            )
-            config, _ = load_config_with_kwargs(schema_cls, self.config[TRAINER])
+            # schema_cls = (
+            #     Trainer.get_schema_cls() if self.config[MODEL_TYPE] is MODEL_ECD else LightGBMTrainer.get_schema_cls()
+            # )
+            # config, _ = load_config_with_kwargs(schema_cls, self.config[TRAINER])
+            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
             self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
