@@ -299,9 +299,7 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         "preprocessing": {
-            "force_split": False,
-            "split_probabilities": (0.7, 0.1, 0.2),
-            "stratify": None,
+            "split": {},
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,

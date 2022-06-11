@@ -59,5 +59,6 @@ trainer:
   early_stop: 0
   batch_size: 8
 preprocessing:
-  force_split: false
-  split_probabilities: [0.7, 0.1, 0.2]
+  split:
+    type: random
+    probabilities: [0.7, 0.1, 0.2]

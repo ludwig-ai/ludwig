@@ -40,7 +40,6 @@ from ludwig.constants import (
     PAD,
     PREPROCESSING,
     PROC_COLUMN,
-    SPLIT,
     SRC,
     TEST,
     TRAINING,
@@ -50,6 +49,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.split import split_dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
@@ -65,7 +65,6 @@ from ludwig.utils.data_utils import (
     FEATHER_FORMATS,
     figure_data_format,
     FWF_FORMATS,
-    get_split_path,
     HDF5_FORMATS,
     HTML_FORMATS,
     JSON_FORMATS,
@@ -89,8 +88,6 @@ from ludwig.utils.data_utils import (
     read_stata,
     read_tsv,
     SAS_FORMATS,
-    save_array,
-    split_dataset_ttv,
     SPSS_FORMATS,
     STATA_FORMATS,
     TSV_FORMATS,
@@ -98,7 +95,7 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
-from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers, set_random_seed
+from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
 from ludwig.utils.type_utils import Column
 from ludwig.utils.types import DataFrame
 
@@ -980,7 +977,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_prediction(dataset, features, preprocessing_params, training_set_metadata, backend, callbacks):
         hdf5_fp = dataset
-        dataset = load_hdf5(dataset, features, split_data=False, shuffle_training=False)
+        dataset = load_hdf5(dataset, preprocessing_params, backend, split_data=False, shuffle_training=False)
         return dataset, training_set_metadata, hdf5_fp
 
     @staticmethod
@@ -1021,10 +1018,12 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             training_set_metadata[DATA_TRAIN_HDF5_FP] = not_none_set
 
         if dataset is not None:
-            training_set, test_set, validation_set = load_hdf5(dataset, features, shuffle_training=True)
+            training_set, test_set, validation_set = load_hdf5(
+                dataset, preprocessing_params, backend, shuffle_training=True
+            )
 
         elif training_set is not None:
-            kwargs = dict(features=features, split_data=False)
+            kwargs = dict(preprocessing_params=preprocessing_params, backend=backend, split_data=False)
             training_set = load_hdf5(training_set, shuffle_training=True, **kwargs)
 
             if validation_set is not None:
@@ -1112,19 +1111,6 @@ def build_dataset(
 
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
-
-    logger.debug("get split")
-    split = get_split(
-        dataset_df,
-        force_split=global_preprocessing_parameters["force_split"],
-        split_probabilities=global_preprocessing_parameters["split_probabilities"],
-        stratify=global_preprocessing_parameters["stratify"],
-        backend=backend,
-        random_seed=random_seed,
-    )
-
-    if split is not None:
-        proc_cols[SPLIT] = split
 
     # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
     #  conversion with Tensor columns. Can remove for 1.8.
@@ -1372,45 +1358,7 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         raise ValueError("Invalid missing value strategy")
 
 
-def get_split(
-    dataset_df,
-    force_split=False,
-    split_probabilities=(0.7, 0.1, 0.2),
-    stratify=None,
-    backend=LOCAL_BACKEND,
-    random_seed=default_random_seed,
-):
-    if SPLIT in dataset_df and not force_split:
-        split = dataset_df[SPLIT]
-    else:
-        set_random_seed(random_seed)
-        if stratify is None or stratify not in dataset_df:
-            if backend.df_engine.partitioned:
-                # This approach is very inefficient for partitioned backends, which
-                # can split by partition
-                return
-
-            split = (
-                dataset_df.index.to_series()
-                .map(lambda x: np.random.choice(3, 1, p=split_probabilities))
-                .astype(np.int8)
-            )
-        else:
-            split = np.zeros(len(dataset_df))
-            for val in dataset_df[stratify].unique():
-                # TODO dask: find a way to better parallelize this operation
-                idx_list = dataset_df.index[dataset_df[stratify] == val].tolist()
-                array_lib = backend.df_engine.array_lib
-                val_list = array_lib.random.choice(
-                    3,
-                    len(idx_list),
-                    p=split_probabilities,
-                ).astype(np.int8)
-                split[idx_list] = val_list
-    return split
-
-
-def load_hdf5(hdf5_file_path, features, split_data=True, shuffle_training=False):
+def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
     # TODO dask: this needs to work with DataFrames
     logger.info(f"Loading data from: {hdf5_file_path}")
 
@@ -1423,7 +1371,7 @@ def load_hdf5(hdf5_file_path, features, split_data=True, shuffle_training=False)
             dataset = shuffle(dataset)
         return dataset
 
-    training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
+    training_set, test_set, validation_set = split_dataset(dataset, preprocessing_params, backend)
 
     if shuffle_training:
         training_set = shuffle(training_set)
@@ -1628,11 +1576,14 @@ def _preprocess_file_for_training(
             mode="training",
         )
 
-        # TODO(travis): implement saving split for Ray
-        if backend.is_coordinator() and not skip_save_processed_input and SPLIT in data.columns:
-            # save split values for use by visualization routines
-            split_fp = get_split_path(dataset)
-            save_array(split_fp, data[SPLIT])
+        logger.debug("split train-val-test")
+        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend)
+
+        # TODO(travis): see how this is used by viz, find an alternative to saving a numpy array
+        # if backend.is_coordinator() and not skip_save_processed_input and not backend.df_engine.partitioned:
+        #     # save split values for use by visualization routines
+        #     split_fp = get_split_path(dataset)
+        #     save_array(split_fp, data[SPLIT])
 
     elif training_set:
         # use data_train (including _validation and _test if they are present)
@@ -1655,18 +1606,13 @@ def _preprocess_file_for_training(
             mode="training",
         )
 
+        logger.debug("split train-val-test")
+        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend)
+
     else:
         raise ValueError("either data or data_train have to be not None")
 
     logger.info("Building dataset: DONE")
-
-    if SPLIT in data.columns:
-        logger.debug("split on split column")
-        training_data, test_data, validation_data = split_dataset_ttv(data, SPLIT)
-    else:
-        logger.debug("split randomly by partition")
-        training_data, test_data, validation_data = data.random_split(preprocessing_params["split_probabilities"])
-
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
         training_data = balance_data(training_data, config["output_features"], preprocessing_params, backend)
 
@@ -1700,7 +1646,7 @@ def _preprocess_df_for_training(
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
     logger.info("Building dataset (it may take a while)")
 
-    dataset, training_set_metadata = build_dataset(
+    training_set, test_set, validation_set, training_set_metadata = build_dataset(
         dataset,
         features,
         preprocessing_params,
@@ -1712,14 +1658,6 @@ def _preprocess_df_for_training(
     )
 
     logger.info("Building dataset: DONE")
-
-    if SPLIT in dataset.columns:
-        logger.debug("split on split column")
-        training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
-    else:
-        logger.debug("split randomly by partition")
-        training_set, test_set, validation_set = dataset.random_split(preprocessing_params["split_probabilities"])
-
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
         training_set = balance_data(training_set, config["output_features"], preprocessing_params, backend)
 
@@ -1829,7 +1767,8 @@ def preprocess_for_prediction(
             training_set_metadata[DATA_TRAIN_HDF5_FP] = new_hdf5_fp
 
         if split != FULL:
-            training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
+            logger.debug("split train-val-test")
+            training_set, test_set, validation_set = split_dataset(dataset, preprocessing_params, backend)
 
     if split == TRAINING:
         dataset = training_set
