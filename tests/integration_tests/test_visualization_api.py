@@ -18,19 +18,19 @@ import os
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, SPLIT, TEST, TRAINER, TRAINING, VALIDATION
-from ludwig.data.preprocessing import get_split
-from ludwig.utils.data_utils import read_csv, split_dataset_ttv
+from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TEST, TRAINER, TRAINING, VALIDATION
+from ludwig.data.split import get_splitter
+from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     bag_feature,
     binary_feature,
     category_feature,
     generate_data,
+    LocalTestBackend,
     number_feature,
     sequence_feature,
     set_feature,
@@ -122,12 +122,8 @@ def obtain_df_splits(data_csv):
     data_df = read_csv(data_csv)
     # Obtain data split array mapping data rows to split type
     # 0-train, 1-validation, 2-test
-    data_df[SPLIT] = get_split(data_df)
-    train_split, test_split, val_split = split_dataset_ttv(data_df, SPLIT)
-    # Splits are python dictionaries not dataframes- they need to be converted.
-    test_df = pd.DataFrame(test_split)
-    train_df = pd.DataFrame(train_split)
-    val_df = pd.DataFrame(val_split)
+    splitter = get_splitter("random")
+    train_df, test_df, val_df = splitter.split(data_df, LocalTestBackend())
     return test_df, train_df, val_df
 
 
