@@ -61,12 +61,9 @@ class LightGBMTrainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_model = skip_save_model
 
-        # TODO(joppe): is this correct?
-        self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
+        self.eval_batch_size = 128 if config.eval_batch_size is None else config.eval_batch_size
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
-        self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
-        self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.evaluate_training_set = config.evaluate_training_set
         try:
             base_learning_rate = float(config.learning_rate)
@@ -75,6 +72,7 @@ class LightGBMTrainer(BaseTrainer):
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
+
         self.boosting_type = config.boosting_type
         self.tree_learner = config.tree_learner
         self.num_boost_round = config.num_boost_round
@@ -124,8 +122,8 @@ class LightGBMTrainer(BaseTrainer):
             batch_size=-1,
             learning_rate=self.base_learning_rate,
             best_eval_metric=get_initial_validation_value(self.validation_metric),
-            best_reduce_learning_rate_eval_metric=get_initial_validation_value(self.reduce_learning_rate_eval_metric),
-            best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
+            best_reduce_learning_rate_eval_metric=float("inf"),
+            best_increase_batch_size_eval_metric=float("inf"),
             output_features=self.model.output_features,
         )
 

@@ -43,15 +43,14 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
         ),
     )
 
-    # TODO(joppe): Moved these params here to resolve failures at the section tagged in trainer_lightgbm:
-    batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
-        default=128,
-        options=["auto"],
-        default_numeric=128,
-        default_option="auto",
-        allow_none=False,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for training.",
+    validation_metric: str = schema_utils.String(
+        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
+    )
+
+    # TODO(#1673): Need some more logic here for validating against output features
+    validation_field: str = schema_utils.String(
+        default=COMBINED,
+        description="First output feature, by default it is set as the same field of the first output feature.",
     )
 
     eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
@@ -75,20 +74,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
 
     evaluate_training_set: bool = schema_utils.Boolean(
         default=True, description="Whether to include the entire training set during evaluation."
-    )
-
-    reduce_learning_rate_eval_metric: str = schema_utils.String(default=LOSS, description="")
-
-    increase_batch_size_eval_metric: str = schema_utils.String(default=LOSS, description="")
-
-    # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = schema_utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
-    )
-
-    validation_metric: str = schema_utils.String(
-        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
     )
 
 
@@ -136,6 +121,16 @@ class TrainerConfig(BaseTrainerConfig):
         default=True, description="Whether to shuffle batches during training when true."
     )
 
+    batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
+        default=128,
+        options=["auto"],
+        default_numeric=128,
+        default_option="auto",
+        allow_none=False,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for training.",
+    )
+
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
@@ -170,6 +165,8 @@ class TrainerConfig(BaseTrainerConfig):
         default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
     )
 
+    reduce_learning_rate_eval_metric: str = schema_utils.String(default=LOSS, description="")
+
     reduce_learning_rate_eval_split: str = schema_utils.String(default=TRAINING, description="")
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
@@ -187,6 +184,8 @@ class TrainerConfig(BaseTrainerConfig):
     increase_batch_size_on_plateau_max: int = schema_utils.PositiveInteger(
         default=512, description="Maximum size of the batch."
     )
+
+    increase_batch_size_eval_metric: str = schema_utils.String(default=LOSS, description="")
 
     increase_batch_size_eval_split: str = schema_utils.String(default=TRAINING, description="")
 
