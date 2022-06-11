@@ -410,7 +410,7 @@ def get_shared_param_feature_groups(features):
             feature_name = feature[NAME]
             feature_type = feature[TYPE]
             if feature_type not in feature_group_to_features_map:
-                feature_group_to_features_map[feature_type] = []
-            feature_group_to_features_map.get(feature_type).append(feature_name)
+                feature_group_to_features_map[feature_type] = set()
+            feature_group_to_features_map.get(feature_type).add(feature_name)
 
     return feature_group_to_features_map
