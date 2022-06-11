@@ -15,7 +15,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PAT
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
-from ludwig.schema.trainer import GBMTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.utils import time_utils
@@ -37,10 +37,6 @@ class LightGBMTrainer(BaseTrainer):
     TRAIN_KEY = "training"
     VALID_KEY = "validation"
     TEST_KEY = "test"
-
-    @staticmethod
-    def get_schema_cls():
-        return GBMTrainerConfig
 
     def __init__(
         self,
@@ -132,6 +128,10 @@ class LightGBMTrainer(BaseTrainer):
             best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
             output_features=self.model.output_features,
         )
+
+    @staticmethod
+    def get_schema_cls() -> BaseTrainerConfig:
+        return GBMTrainerConfig
 
     def tune_batch_size(
         self,
@@ -653,6 +653,10 @@ class LightGBMRayTrainer(LightGBMTrainer):
         self.trainer_kwargs = trainer_kwargs or {}
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs or {}
+
+    @staticmethod
+    def get_schema_cls() -> BaseTrainerConfig:
+        return GBMTrainerConfig
 
     def _train(
         self,

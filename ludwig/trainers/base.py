@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 from ludwig.data.dataset.base import Dataset
+from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.defaults import default_random_seed
 
 
@@ -51,5 +52,5 @@ class BaseTrainer(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_schema_cls():
+    def get_schema_cls() -> BaseTrainerConfig:
         raise NotImplementedError()

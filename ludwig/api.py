@@ -492,13 +492,7 @@ class LudwigModel:
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
-            # init trainer
-            # schema_cls = (
-            #     Trainer.get_schema_cls() if self.config[MODEL_TYPE] is MODEL_ECD else LightGBMTrainer.get_schema_cls()
-            # )
-            # config, _ = load_config_with_kwargs(schema_cls, self.config[TRAINER])
             config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
-            print(self.backend)
             with self.backend.create_trainer(
                 model=self.model,
                 config=config,
@@ -688,10 +682,6 @@ class LudwigModel:
             self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
         if not self._online_trainer:
-            # schema_cls = (
-            #     Trainer.get_schema_cls() if self.config[MODEL_TYPE] is MODEL_ECD else LightGBMTrainer.get_schema_cls()
-            # )
-            # config, _ = load_config_with_kwargs(schema_cls, self.config[TRAINER])
             config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
             self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
 

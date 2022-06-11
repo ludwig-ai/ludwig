@@ -292,6 +292,10 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
+    @staticmethod
+    def get_schema_cls():
+        return TrainerConfig
+
     @contextlib.contextmanager
     def create_runner(self):
         trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
@@ -479,6 +483,10 @@ class RayLegacyTrainer(BaseTrainer):
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=HorovodRemoteTrainer, executable_kwargs=executable_kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return TrainerConfig
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers

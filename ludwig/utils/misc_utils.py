@@ -18,6 +18,7 @@ import os
 import random
 from collections import OrderedDict
 from collections.abc import Mapping
+from typing import Tuple
 
 import numpy
 import torch
@@ -89,6 +90,14 @@ def get_from_registry(key, registry):
         return registry[key]
     else:
         raise ValueError(f"Key {key} not supported, available options: {registry.keys()}")
+
+
+def get_default_from_registry(registry) -> Tuple[str, object]:
+    from ludwig.utils.registry import DEFAULT_KEYS
+
+    default_v = get_from_registry(DEFAULT_KEYS[0], registry)
+    key = next(k for k, v in registry.items() if v == default_v and k not in DEFAULT_KEYS)
+    return key, default_v
 
 
 def set_default_value(dictionary, key, value):

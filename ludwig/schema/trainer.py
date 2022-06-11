@@ -450,10 +450,9 @@ def get_trainer_jsonschema():
     return {
         "type": "object",
         "properties": {
-            "type": {"type": "string", "enum": list(trainer_schema_registry.keys())},  # , "default": "trainer"},
+            "type": {"type": "string", "enum": list(trainer_schema_registry.keys())},
         },
         "title": "trainer_options",
         "allOf": conds,
-        # "required": ["type"],
         "description": "",
     }
