@@ -650,7 +650,8 @@ def test_api_save_torchscript(tmpdir):
 
 
 def test_saved_weights_in_checkpoint(tmpdir):
-    input_features = [text_feature(), image_feature()]
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [text_feature(), image_feature(image_dest_folder)]
     output_features = [category_feature(name="class")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))

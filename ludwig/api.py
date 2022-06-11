@@ -1362,6 +1362,7 @@ class LudwigModel:
         )
 
         # generate model from config
+        set_saved_weights_in_checkpoint_flag(config)
         ludwig_model.model = LudwigModel.create_model(config)
 
         # load model weights
