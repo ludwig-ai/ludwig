@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
@@ -20,7 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from ludwig.backend.base import Backend
-from ludwig.constants import SPLIT
+from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
 from ludwig.utils.data_utils import split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame, Series
@@ -35,6 +36,9 @@ DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 class Splitter(ABC):
     @abstractmethod
     def split(self, df: DataFrame, backend: Backend) -> Tuple[DataFrame, DataFrame, DataFrame]:
+        pass
+
+    def validate(self, config: Dict[str, Any]):
         pass
 
 
@@ -85,6 +89,17 @@ class StratifySplitter(Splitter):
             split[idx_list] = val_list
         return _split_on_series(df, split)
 
+    def validate(self, config: Dict[str, Any]):
+        features = config["input_features"] + config["output_features"]
+        feature_names = {f[COLUMN] for f in features}
+        if self.column not in feature_names:
+            logging.info(
+                f"Stratify column {self.column} is not among the features. "
+                f"Cannot establish if it is a binary or category"
+            )
+        elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {BINARY, CATEGORY}:
+            raise ValueError(f"Feature for stratify column {self.column} must be binary or category")
+
 
 @split_registry.register("datetime")
 class DatetimeSplitter(Splitter):
@@ -123,6 +138,17 @@ class DatetimeSplitter(Splitter):
         # For Dask, split by partition, as splitting by row is very inefficient.
         return tuple(backend.df_engine.split(df, self.probabilities))
 
+    def validate(self, config: Dict[str, Any]):
+        features = config["input_features"] + config["output_features"]
+        feature_names = {f[COLUMN] for f in features}
+        if self.column not in feature_names:
+            logging.info(
+                f"Datetime split column {self.column} is not among the features. "
+                f"Cannot establish if it is a valid datetime."
+            )
+        elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {DATE}:
+            raise ValueError(f"Feature for datetime split column {self.column} must be a datetime")
+
 
 def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
     splitter_cls = split_registry.get(type)
@@ -146,4 +172,4 @@ def split_dataset(
 def _split_on_series(df: DataFrame, series: Series) -> Tuple[DataFrame, DataFrame, DataFrame]:
     df[TMP_SPLIT_COL] = series
     dfs = split_dataset_ttv(df, TMP_SPLIT_COL)
-    return tuple(df.drop(columns=TMP_SPLIT_COL) for df in dfs)
+    return tuple(df.drop(columns=TMP_SPLIT_COL) if df is not None else None for df in dfs)

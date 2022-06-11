@@ -22,8 +22,6 @@ from dataclasses import asdict
 import yaml
 
 from ludwig.constants import (
-    BINARY,
-    CATEGORY,
     COLUMN,
     COMBINER,
     DROP_ROW,
@@ -37,6 +35,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
@@ -171,15 +170,8 @@ def merge_with_defaults(config):
 
     # ===== Preprocessing =====
     config["preprocessing"] = merge_dict(default_preprocessing_parameters, config.get("preprocessing", {}))
-
-    stratify = config["preprocessing"]["stratify"]
-    if stratify is not None:
-        features = config["input_features"] + config["output_features"]
-        feature_names = {f[COLUMN] for f in features}
-        if stratify not in feature_names:
-            logger.warning("Stratify is not among the features. " "Cannot establish if it is a binary or category")
-        elif [f for f in features if f[COLUMN] == stratify][0][TYPE] not in {BINARY, CATEGORY}:
-            raise ValueError("Stratify feature must be binary or category")
+    splitter = get_splitter(**config["preprocessing"].get("split", {}))
+    splitter.validate(config)
 
     # ===== Training =====
     full_trainer_config, _ = load_config_with_kwargs(TrainerConfig, config[TRAINER] if TRAINER in config else {})
