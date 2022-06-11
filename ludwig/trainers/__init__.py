@@ -1,3 +1,3 @@
-# import to register trainers
-from ludwig.trainers.trainer import Trainer  # noqa: F401
-from ludwig.trainers.trainer_lightgbm import LightGBMRayTrainer, LightGBMTrainer  # noqa: F401
+# register trainers
+import ludwig.trainers.trainer  # noqa: F401
+import ludwig.trainers.trainer_lightgbm  # noqa: F401
