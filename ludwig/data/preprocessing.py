@@ -1646,7 +1646,7 @@ def _preprocess_df_for_training(
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
     logger.info("Building dataset (it may take a while)")
 
-    training_set, test_set, validation_set, training_set_metadata = build_dataset(
+    data, training_set_metadata = build_dataset(
         dataset,
         features,
         preprocessing_params,
@@ -1656,6 +1656,9 @@ def _preprocess_df_for_training(
         callbacks=callbacks,
         mode="training",
     )
+
+    logger.debug("split train-val-test")
+    training_set, test_set, validation_set = split_dataset(data, preprocessing_params, backend)
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
