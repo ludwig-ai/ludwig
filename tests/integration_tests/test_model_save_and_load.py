@@ -3,13 +3,12 @@ import random
 import tempfile
 
 import numpy as np
-import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import SPLIT, TRAINER
-from ludwig.data.preprocessing import get_split
-from ludwig.utils.data_utils import read_csv, split_dataset_ttv
+from ludwig.constants import TRAINER
+from ludwig.data.split import get_splitter
+from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -73,11 +72,8 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     data_df = read_csv(data_csv_path)
-    data_df[SPLIT] = get_split(data_df)
-    training_set, test_set, validation_set = split_dataset_ttv(data_df, SPLIT)
-    training_set = pd.DataFrame(training_set)
-    validation_set = pd.DataFrame(validation_set)
-    test_set = pd.DataFrame(test_set)
+    splitter = get_splitter("random")
+    training_set, test_set, validation_set = splitter.split(data_df, LocalTestBackend())
 
     # create sub-directory to store results
     results_dir = tmp_path / "results"
