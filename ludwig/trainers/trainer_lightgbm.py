@@ -38,6 +38,10 @@ class LightGBMTrainer(BaseTrainer):
     VALID_KEY = "validation"
     TEST_KEY = "test"
 
+    @staticmethod
+    def get_schema_cls():
+        return GBMTrainerConfig
+
     def __init__(
         self,
         config: GBMTrainerConfig,
@@ -61,6 +65,7 @@ class LightGBMTrainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_model = skip_save_model
 
+        # TODO(joppe): is this correct?
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric

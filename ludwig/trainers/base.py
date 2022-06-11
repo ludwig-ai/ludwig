@@ -48,3 +48,8 @@ class BaseTrainer(ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
+
+    @staticmethod
+    @abstractmethod
+    def get_schema_cls():
+        raise NotImplementedError()

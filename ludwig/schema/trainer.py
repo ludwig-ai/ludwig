@@ -41,6 +41,54 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
         ),
     )
 
+    # TODO(joppe): Moved these params here to resolve failures at the section tagged in trainer_lightgbm:
+    batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
+        default=128,
+        options=["auto"],
+        default_numeric=128,
+        default_option="auto",
+        allow_none=False,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for training.",
+    )
+
+    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
+        default=None,
+        options=["auto"],
+        default_numeric=None,
+        default_option="auto",
+        allow_none=True,
+        min_exclusive=0,
+        description="Size of batch to pass to the model for evaluation.",
+    )
+
+    early_stop: int = schema_utils.IntegerRange(
+        default=5,
+        min=-1,
+        description=(
+            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
+            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
+        ),
+    )
+
+    evaluate_training_set: bool = schema_utils.Boolean(
+        default=True, description="Whether to include the entire training set during evaluation."
+    )
+
+    reduce_learning_rate_eval_metric: str = schema_utils.String(default=LOSS, description="")
+
+    increase_batch_size_eval_metric: str = schema_utils.String(default=LOSS, description="")
+
+    # TODO(#1673): Need some more logic here for validating against output features
+    validation_field: str = schema_utils.String(
+        default=COMBINED,
+        description="First output feature, by default it is set as the same field of the first output feature.",
+    )
+
+    validation_metric: str = schema_utils.String(
+        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
+    )
+
 
 @register_trainer_schema("trainer")
 @register_trainer_schema("ray_trainer_v2")
@@ -85,35 +133,6 @@ class TrainerConfig(BaseTrainerConfig):
         default=True, description="Whether to shuffle batches during training when true."
     )
 
-    batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
-        default=128,
-        options=["auto"],
-        default_numeric=128,
-        default_option="auto",
-        allow_none=False,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for training.",
-    )
-
-    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
-        default=None,
-        options=["auto"],
-        default_numeric=None,
-        default_option="auto",
-        allow_none=True,
-        min_exclusive=0,
-        description="Size of batch to pass to the model for evaluation.",
-    )
-
-    early_stop: int = schema_utils.IntegerRange(
-        default=5,
-        min=-1,
-        description=(
-            "Number of consecutive rounds of evaluation without any improvement on the `validation_metric` that "
-            "triggers training to stop. Can be set to -1, which disables early stopping entirely."
-        ),
-    )
-
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
@@ -128,10 +147,6 @@ class TrainerConfig(BaseTrainerConfig):
             "Number of checkpoints per epoch. For example, 2 -> checkpoints are written every half of an epoch. Note "
             "that it is invalid to specify both non-zero `steps_per_checkpoint` and non-zero `checkpoints_per_epoch`."
         ),
-    )
-
-    evaluate_training_set: bool = schema_utils.Boolean(
-        default=True, description="Whether to include the entire training set during evaluation."
     )
 
     reduce_learning_rate_on_plateau: float = schema_utils.FloatRange(
@@ -152,8 +167,6 @@ class TrainerConfig(BaseTrainerConfig):
         default=0.5, min=0.0, max=1.0, description="Rate at which we reduce the learning rate."
     )
 
-    reduce_learning_rate_eval_metric: str = schema_utils.String(default=LOSS, description="")
-
     reduce_learning_rate_eval_split: str = schema_utils.String(default=TRAINING, description="")
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
@@ -172,8 +185,6 @@ class TrainerConfig(BaseTrainerConfig):
         default=512, description="Maximum size of the batch."
     )
 
-    increase_batch_size_eval_metric: str = schema_utils.String(default=LOSS, description="")
-
     increase_batch_size_eval_split: str = schema_utils.String(default=TRAINING, description="")
 
     decay: bool = schema_utils.Boolean(default=False, description="Turn on exponential decay of the learning rate.")
@@ -186,16 +197,6 @@ class TrainerConfig(BaseTrainerConfig):
 
     gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
         description="Parameter values for gradient clipping."
-    )
-
-    # TODO(#1673): Need some more logic here for validating against output features
-    validation_field: str = schema_utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
-    )
-
-    validation_metric: str = schema_utils.String(
-        default=LOSS, description="Metric used on `validation_field`, set by default to accuracy."
     )
 
     learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(
@@ -445,10 +446,10 @@ def get_trainer_jsonschema():
     return {
         "type": "object",
         "properties": {
-            "type": {"type": "string", "enum": list(trainer_schema_registry.keys()), "default": "trainer"},
+            "type": {"type": "string", "enum": list(trainer_schema_registry.keys())},  # , "default": "trainer"},
         },
         "title": "trainer_options",
         "allOf": conds,
-        "required": ["type"],
+        # "required": ["type"],
         "description": "",
     }
