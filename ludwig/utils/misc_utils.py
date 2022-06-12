@@ -139,3 +139,13 @@ def get_proc_features(config):
 
 def get_proc_features_from_lists(*args):
     return {feature[PROC_COLUMN]: feature for features in args for feature in features}
+
+
+def set_saved_weights_in_checkpoint_flag(config):
+    """Adds a flag to all input features indicating that the weights are saved in the checkpoint.
+
+    Next time the model is loaded we will restore pre-trained encoder weights from ludwig model (and not load from cache
+    or model hub).
+    """
+    for input_feature in config.get("input_features", []):
+        input_feature["saved_weights_in_checkpoint"] = True
