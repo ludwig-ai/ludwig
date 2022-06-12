@@ -4,8 +4,9 @@ import pytest
 import torch
 
 from ludwig.modules.embedding_modules import Embed, EmbedSequence, EmbedSet, EmbedWeighted, TokenAndPositionEmbedding
+from ludwig.utils.torch_utils import get_torch_device
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c"]])

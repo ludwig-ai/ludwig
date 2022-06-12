@@ -215,22 +215,8 @@ def test_gbm_schema(backend_config):
         },
     }
     backend = initialize_backend(backend_config)
-    model = LudwigModel(config, backend=backend)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        csv_filename = os.path.join(tmpdir, "training.csv")
-        dataset_filename = generate_data(input_features, output_features, csv_filename)
-
-        with pytest.raises(
-            ValidationError,
-            match=r"{'type': \['Must be one of: lightgbm_trainer, lightgbm_ray_trainer.']}",
-        ):
-            # Then I should get an error
-            model.train(
-                dataset=dataset_filename,
-                output_directory=tmpdir,
-                skip_save_processed_input=True,
-                skip_save_progress=True,
-                skip_save_unprocessed_output=True,
-                skip_save_log=True,
-            )
+    with pytest.raises(
+        ValidationError, match=r"{'type': \['Must be one of: lightgbm_trainer, lightgbm_ray_trainer.']}"
+    ):
+        # Then I should get an error
+        LudwigModel(config, backend=backend)

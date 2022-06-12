@@ -7,9 +7,9 @@ from pprint import pformat
 from typing import Dict
 
 import numpy as np
+import pandas as pd
 import psutil
 import torch
-from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
@@ -21,13 +21,18 @@ from ludwig.globals import (
     TEST_STATISTICS_FILE_NAME,
 )
 from ludwig.models.base import BaseModel
-from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_csv, save_json
+from ludwig.models.ecd import ECD
+from ludwig.progress_bar import LudwigProgressBar
+from ludwig.utils.data_utils import save_csv, save_json
+from ludwig.utils.dataframe_utils import flatten_df, from_numpy_dataset
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.strings_utils import make_safe_filename
+from ludwig.utils.torch_utils import get_torch_device
 
 EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {"confusion_matrix", "roc_curve"}
+STATS_SAMPLE_SIZE = 10000
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +69,12 @@ class BasePredictor(ABC):
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
-    def __init__(self, model: BaseModel, batch_size=128, horovod=None, **kwargs):
+    def __init__(self, model: BaseModel, batch_size=128, horovod=None, report_tqdm_to_ray=False, **kwargs):
         self._batch_size = batch_size
         self._horovod = horovod
+        self.report_tqdm_to_ray = report_tqdm_to_ray
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = get_torch_device()
         self.model = model.to(self.device)
 
     def batch_predict(
@@ -82,26 +88,21 @@ class Predictor(BasePredictor):
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
 
-                progress_bar = None
-                if self.is_coordinator():
-                    progress_bar = tqdm(
-                        desc="Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
-                        total=batcher.steps_per_epoch,
-                        file=sys.stdout,
-                        disable=is_progressbar_disabled(),
-                    )
-
+                progress_bar_config = {
+                    "desc": "Prediction" if dataset_name is None else f"Prediction {dataset_name: <5.5}",
+                    "total": batcher.steps_per_epoch,
+                    "file": sys.stdout,
+                    "disable": is_progressbar_disabled(),
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
                 predictions = defaultdict(list)
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     preds = self._predict(self.model, batch)
                     self._accumulate_preds(preds, predictions)
+                    progress_bar.update(1)
 
-                    if self.is_coordinator():
-                        progress_bar.update(1)
-
-                if self.is_coordinator():
-                    progress_bar.close()
+                progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
         self._concat_preds(predictions)
@@ -161,16 +162,14 @@ class Predictor(BasePredictor):
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
-
-                progress_bar = None
-                if self.is_coordinator():
-                    progress_bar = tqdm(
-                        desc="Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
-                        total=batcher.steps_per_epoch,
-                        file=sys.stdout,
-                        disable=is_progressbar_disabled(),
-                        position=0,  # Necessary to disable extra new line artifacts in training logs.
-                    )
+                progress_bar_config = {
+                    "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
+                    "total": batcher.steps_per_epoch,
+                    "file": sys.stdout,
+                    "disable": is_progressbar_disabled(),
+                    "position": 0,  # Necessary to disable extra new line artifacts in training logs.
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 predictions = defaultdict(list)
                 while not batcher.last_batch():
@@ -198,14 +197,13 @@ class Predictor(BasePredictor):
                                     key = f"{of_name}_{pred_name}"
                                     predictions[key].append(pred_values)
 
+                    progress_bar.update(1)
                     if self.is_coordinator():
-                        progress_bar.update(1)
                         logger.debug(
-                            f"evaluation for {dataset_name}: completed batch {progress_bar.n} "
+                            f"evaluation for {dataset_name}: completed batch {progress_bar.total_steps} "
                             f"memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                         )
 
-            if self.is_coordinator():
                 progress_bar.close()
 
             # consolidate predictions from each batch to a single tensor
@@ -229,12 +227,13 @@ class Predictor(BasePredictor):
 
         with torch.no_grad():
             with dataset.initialize_batcher(self._batch_size, should_shuffle=False) as batcher:
-                progress_bar = tqdm(
-                    desc="Collecting Tensors",
-                    total=batcher.steps_per_epoch,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled(),
-                )
+                progress_bar_config = {
+                    "desc": "Collecting Tensors",
+                    "total": batcher.steps_per_epoch,
+                    "file": sys.stdout,
+                    "disable": is_progressbar_disabled(),
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 collected_tensors = []
                 while not batcher.last_batch():
@@ -246,7 +245,6 @@ class Predictor(BasePredictor):
                     }
                     outputs = self.model(inputs)
                     collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]
-
                     progress_bar.update(1)
 
                 progress_bar.close()
@@ -279,9 +277,19 @@ def calculate_overall_stats(output_features, predictions, dataset, training_set_
         feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1 :])
 
+        target = dataset.loc[:, output_feature.proc_column]
+
+        if not isinstance(feature_df, pd.DataFrame):
+            logger.warning(
+                "Full computation of stats only supported for pandas dataframes. "
+                "Sampling the first 10000 rows of the feature and target dataframes for computing overall stats."
+            )
+            feature_df = feature_df.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
+            target = target.head(n=STATS_SAMPLE_SIZE, npartitions=-1, compute=True)
+
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             feature_df,  # predictions
-            dataset.get(output_feature.proc_column),  # target
+            target,
             feature_metadata,  # output feature metadata
         )
     return overall_stats

@@ -19,7 +19,7 @@ import queue
 import threading
 from distutils.version import LooseVersion
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Union
+from typing import Any, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -33,12 +33,12 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
-_ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
+_ray113 = LooseVersion(ray.__version__) == LooseVersion("1.13.0")
 
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
@@ -59,10 +59,12 @@ class RayDataset(Dataset):
         training_set_metadata: Dict[str, Any],
         backend: Backend,
     ):
-        self.ds = backend.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
+        self.df_engine = backend.df_engine
+        self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -71,15 +73,29 @@ class RayDataset(Dataset):
         #     return df
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
-    def pipeline(self, shuffle=True, fully_executed=True) -> DatasetPipeline:
-        if not fully_executed and not _ray112:
-            raise ValueError(f"Cannot set fully_execute=False in ray {ray.__version__}")
+    def pipeline(
+        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
+    ) -> DatasetPipeline:
+        """
+        Args:
+            shuffle: If true, the entire dataset is shuffled in memory before batching.
+            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
+            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
+                    for the dataset.
+        """
+        if fully_executed:
+            if _ray113:
+                # Workaround for: https://github.com/ray-project/ray/issues/25643
+                # TODO(travis): remove after 1.13.1
+                self.ds = self.ds.map_batches(lambda x: x, batch_size=None)
 
-        if fully_executed and _ray112:
             # set instance state so calls to __len__ will also use the fully_executed version
             self.ds = self.ds.fully_executed()
 
-        pipe = self.ds.repeat()
+        if window_size_bytes is None:
+            pipe = self.ds.repeat()
+        else:
+            pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
         return pipe
@@ -100,6 +116,9 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    def to_df(self):
+        return self.df_engine.from_ray_dataset(self.ds)
 
 
 class RayDatasetManager(DatasetManager):

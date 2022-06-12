@@ -8,9 +8,10 @@ import torchtext
 from ludwig.constants import LAST_HIDDEN, LOGITS
 from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
 from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
+from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 BATCH_SIZE = 8
 SEQ_SIZE = 6
 VOCAB_SIZE = 64

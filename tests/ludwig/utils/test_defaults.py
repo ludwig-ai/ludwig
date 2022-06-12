@@ -12,11 +12,13 @@ from ludwig.constants import (
     MODEL_TYPE,
     NUMBER,
     PREPROCESSING,
+    SCHEDULER,
     TRAINER,
     TYPE,
 )
 from ludwig.data.preprocessing import merge_preprocessing
-from ludwig.utils.defaults import default_training_params, merge_with_defaults
+from ludwig.schema.trainer import TrainerConfig
+from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -50,9 +52,7 @@ HYPEROPT_CONFIG = {
     "goal": "minimize",
 }
 
-SCHEDULER = {"type": "async_hyperband", "time_attr": "time_total_s"}
-
-default_early_stop = default_training_params["early_stop"]
+SCHEDULER_DICT = {"type": "async_hyperband", "time_attr": "time_total_s"}
 
 
 @pytest.mark.parametrize(
@@ -86,15 +86,15 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
     config = copy.deepcopy(config)
 
     if use_train:
-        config[TRAINER] = {"batch_size": "42"}
+        config[TRAINER] = {"batch_size": 42}
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
-        config[HYPEROPT]["executor"]["scheduler"] = SCHEDULER
+        config[HYPEROPT]["executor"][SCHEDULER] = SCHEDULER_DICT
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else default_early_stop
+    expected = -1 if use_hyperopt_scheduler else TrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
 
@@ -179,3 +179,252 @@ def test_default_model_type():
     merged_config = merge_with_defaults(config)
 
     assert merged_config[MODEL_TYPE] == MODEL_ECD
+
+
+def test_merge_with_defaults():
+    # configuration with legacy parameters
+    legacy_config_format = {
+        "input_features": [
+            {
+                "type": "numerical",
+                "name": "number_input_feature",
+            },
+            {
+                "type": "image",
+                "name": "image_input_feature",
+                "encoder": "stacked_cnn",
+                "conv_bias": True,
+                "conv_layers": [
+                    {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "bias": False},
+                    {
+                        "num_filters": 64,
+                        "pool_size": 2,
+                        "pool_stride": 2,
+                    },
+                ],
+            },
+        ],
+        "output_features": [
+            {
+                "type": "numerical",
+                "name": "number_output_feature",
+            },
+        ],
+        "training": {"eval_batch_size": 0, "optimizer": {"type": "adadelta"}},
+        "hyperopt": {
+            "parameters": {
+                "training.learning_rate": {},
+                "training.early_stop": {},
+                "number_input_feature.num_fc_layers": {},
+                "number_output_feature.embedding_size": {},
+                "number_output_feature.dropout": 0.2,
+            },
+            "executor": {
+                "type": "serial",
+                "search_alg": {TYPE: "variant_generator"},
+            },
+            "sampler": {
+                "num_samples": 99,
+                "scheduler": {},
+            },
+        },
+    }
+
+    # expected configuration content with default values after upgrading legacy configuration components
+    expected_upgraded_format = {
+        "model_type": "ecd",
+        "input_features": [
+            {
+                "type": "number",
+                "name": "number_input_feature",
+                "column": "number_input_feature",
+                "proc_column": "number_input_feature_mZFLky",
+                "tied": None,
+            },
+            {
+                "type": "image",
+                "name": "image_input_feature",
+                "encoder": "stacked_cnn",
+                "conv_layers": [
+                    {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
+                    {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
+                ],
+                "conv_use_bias": True,
+                "column": "image_input_feature",
+                "proc_column": "image_input_feature_mZFLky",
+                "tied": None,
+                "preprocessing": {},
+            },
+        ],
+        "output_features": [
+            {
+                "type": "number",
+                "name": "number_output_feature",
+                "column": "number_output_feature",
+                "proc_column": "number_output_feature_mZFLky",
+                "loss": {"type": "mean_squared_error", "weight": 1},
+                "clip": None,
+                "dependencies": [],
+                "reduce_input": "sum",
+                "reduce_dependencies": "sum",
+                "preprocessing": {"missing_value_strategy": "drop_row"},
+            }
+        ],
+        "hyperopt": {
+            "parameters": {
+                "number_input_feature.num_fc_layers": {},
+                "number_output_feature.embedding_size": {},
+                "number_output_feature.dropout": 0.2,
+                "trainer.learning_rate": {},
+                "trainer.early_stop": {},
+            },
+            "executor": {"type": "ray", "num_samples": 99, "scheduler": {}},
+            "search_alg": {"type": "variant_generator"},
+        },
+        "trainer": {
+            "type": "trainer",
+            "eval_batch_size": None,
+            "optimizer": {"type": "adadelta", "rho": 0.9, "eps": 1e-06, "lr": 1.0, "weight_decay": 0.0},
+            "epochs": 100,
+            "train_steps": None,
+            "regularization_lambda": 0.0,
+            "regularization_type": "l2",
+            "should_shuffle": True,
+            "learning_rate": 0.001,
+            "batch_size": 128,
+            "early_stop": 5,
+            "steps_per_checkpoint": 0,
+            "checkpoints_per_epoch": 0,
+            "evaluate_training_set": True,
+            "reduce_learning_rate_on_plateau": 0.0,
+            "reduce_learning_rate_on_plateau_patience": 5,
+            "reduce_learning_rate_on_plateau_rate": 0.5,
+            "reduce_learning_rate_eval_metric": "loss",
+            "reduce_learning_rate_eval_split": "training",
+            "increase_batch_size_on_plateau": 0,
+            "increase_batch_size_on_plateau_patience": 5,
+            "increase_batch_size_on_plateau_rate": 2.0,
+            "increase_batch_size_on_plateau_max": 512,
+            "increase_batch_size_eval_metric": "loss",
+            "increase_batch_size_eval_split": "training",
+            "decay": False,
+            "decay_steps": 10000,
+            "decay_rate": 0.96,
+            "staircase": False,
+            "gradient_clipping": {"clipglobalnorm": 0.5, "clipnorm": None, "clipvalue": None},
+            "validation_field": "combined",
+            "validation_metric": "loss",
+            "learning_rate_warmup_epochs": 1.0,
+            "learning_rate_scaling": "linear",
+        },
+        "preprocessing": {
+            "force_split": False,
+            "split_probabilities": (0.7, 0.1, 0.2),
+            "stratify": None,
+            "undersample_majority": None,
+            "oversample_minority": None,
+            "sample_ratio": 1.0,
+            "text": {
+                "tokenizer": "space_punct",
+                "pretrained_model_name_or_path": None,
+                "vocab_file": None,
+                "max_sequence_length": 256,
+                "most_common": 20000,
+                "padding_symbol": "<PAD>",
+                "unknown_symbol": "<UNK>",
+                "padding": "right",
+                "lowercase": True,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "category": {
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "set": {
+                "tokenizer": "space",
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "bag": {
+                "tokenizer": "space",
+                "most_common": 10000,
+                "lowercase": False,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "binary": {"missing_value_strategy": "fill_with_false"},
+            "number": {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None},
+            "sequence": {
+                "max_sequence_length": 256,
+                "most_common": 20000,
+                "padding_symbol": "<PAD>",
+                "unknown_symbol": "<UNK>",
+                "padding": "right",
+                "tokenizer": "space",
+                "lowercase": False,
+                "vocab_file": None,
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "<UNK>",
+            },
+            "timeseries": {
+                "timeseries_length_limit": 256,
+                "padding_value": 0,
+                "padding": "right",
+                "tokenizer": "space",
+                "missing_value_strategy": "fill_with_const",
+                "fill_value": "",
+            },
+            "image": {
+                "missing_value_strategy": "backfill",
+                "in_memory": True,
+                "resize_method": "interpolate",
+                "scaling": "pixel_normalization",
+                "num_processes": 1,
+                "infer_image_num_channels": True,
+                "infer_image_dimensions": True,
+                "infer_image_max_height": 256,
+                "infer_image_max_width": 256,
+                "infer_image_sample_size": 100,
+            },
+            "audio": {
+                "audio_file_length_limit_in_s": 7.5,
+                "missing_value_strategy": "backfill",
+                "in_memory": True,
+                "padding_value": 0,
+                "norm": None,
+                "audio_feature": {
+                    "type": "fbank",
+                    "window_length_in_s": 0.04,
+                    "window_shift_in_s": 0.02,
+                    "num_filter_bands": 80,
+                },
+            },
+            "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
+            "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},
+            "vector": {"missing_value_strategy": "fill_with_const", "fill_value": ""},
+        },
+        "combiner": {
+            "type": "concat",
+            "fc_layers": None,
+            "num_fc_layers": 0,
+            "output_size": 256,
+            "use_bias": True,
+            "weights_initializer": "xavier_uniform",
+            "bias_initializer": "zeros",
+            "norm": None,
+            "norm_params": None,
+            "activation": "relu",
+            "dropout": 0.0,
+            "flatten_inputs": False,
+            "residual": False,
+        },
+    }
+
+    updated_config = merge_with_defaults(legacy_config_format)
+
+    assert updated_config == expected_upgraded_format

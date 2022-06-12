@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -49,7 +49,7 @@ from ludwig.utils.eval_utils import (
     roc_curve,
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,10 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
         self.should_lower = str2bool is None
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
+        if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
+            raise ValueError(f"Unsupported input: {v}")
+
         if torch.jit.isinstance(v, List[torch.Tensor]):
             v = torch.stack(v)
 
@@ -90,7 +93,7 @@ class _BinaryPostprocessing(torch.nn.Module):
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
 
         probs = preds[self.probabilities_key]
-        probs = torch.dstack(1 - probs, probs)
+        probs = torch.stack([1 - probs, probs], dim=-1)
 
         return {
             self.predictions_key: predictions,
@@ -358,18 +361,19 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
+            result[probabilities_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                lambda prob: np.array([1 - prob, prob], dtype=result[probabilities_col].dtype),
+            )
+
             false_col = f"{probabilities_col}_{class_names[0]}"
-            result[false_col] = backend.df_engine.map_objects(result[probabilities_col], lambda prob: 1 - prob)
+            result[false_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[0])
 
             true_col = f"{probabilities_col}_{class_names[1]}"
-            result[true_col] = result[probabilities_col]
+            result[true_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[1])
 
             prob_col = f"{self.feature_name}_{PROBABILITY}"
             result[prob_col] = result[[false_col, true_col]].max(axis=1)
-
-            result[probabilities_col] = backend.df_engine.map_objects(
-                result[probabilities_col], lambda prob: [1 - prob, prob]
-            )
 
         return result
 

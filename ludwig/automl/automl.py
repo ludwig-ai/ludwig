@@ -108,12 +108,13 @@ def auto_train(
                         parameter initialization and training set shuffling
     :param use_reference_config: (bool) refine hyperopt search space by setting first
                                  search point from reference model config, if any
+    :param kwargs: additional keyword args passed down to `ludwig.hyperopt.run.hyperopt`.
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config, **kwargs
+        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config
     )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
@@ -194,6 +195,7 @@ def train_with_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param kwargs: additional keyword args passed down to `ludwig.hyperopt.run.hyperopt`.
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
@@ -305,7 +307,6 @@ def _train(
         output_directory=output_directory,
         model_name=model_name,
         random_seed=random_seed,
-        backend="local",
         skip_save_log=True,  # avoid per-step log overhead by default
         **kwargs,
     )

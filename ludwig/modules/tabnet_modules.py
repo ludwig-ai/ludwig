@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from ludwig.modules.normalization_modules import GhostBatchNormalization
-from ludwig.utils.entmax import entmax15, entmax_bisect, sparsemax
+from ludwig.utils.entmax import Entmax15, EntmaxBisect, Sparsemax
 from ludwig.utils.torch_utils import LudwigModule
 
 
@@ -18,7 +18,7 @@ class TabNet(LudwigModule):
         num_total_blocks: int = 4,
         num_shared_blocks: int = 2,
         relaxation_factor: float = 1.5,
-        bn_momentum: float = 0.7,
+        bn_momentum: float = 0.3,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: Optional[int] = None,
         sparsity: float = 1e-5,
@@ -171,7 +171,7 @@ class FeatureBlock(LudwigModule):
         input_size: int,
         size: int,
         apply_glu: bool = True,
-        bn_momentum: float = 0.9,
+        bn_momentum: float = 0.1,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
         shared_fc_layer: LudwigModule = None,
@@ -182,10 +182,11 @@ class FeatureBlock(LudwigModule):
         self.size = size
         units = size * 2 if apply_glu else size
 
-        if shared_fc_layer:
+        # Initialize fc_layer before assigning to shared layer for torchscript compatibilty
+        self.fc_layer = nn.Linear(input_size, units, bias=False)
+        if shared_fc_layer is not None:
+            assert shared_fc_layer.weight.shape == self.fc_layer.weight.shape
             self.fc_layer = shared_fc_layer
-        else:
-            self.fc_layer = nn.Linear(input_size, units, bias=False)
 
         self.batch_norm = GhostBatchNormalization(
             units, virtual_batch_size=bn_virtual_bs, momentum=bn_momentum, epsilon=bn_epsilon
@@ -215,7 +216,7 @@ class AttentiveTransformer(LudwigModule):
         self,
         input_size: int,
         size: int,
-        bn_momentum: float = 0.9,
+        bn_momentum: float = 0.1,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
         entmax_mode: str = "sparsemax",
@@ -229,6 +230,13 @@ class AttentiveTransformer(LudwigModule):
             self.register_buffer("trainable_alpha", torch.tensor(entmax_alpha, requires_grad=True))
         else:
             self.trainable_alpha = entmax_alpha
+
+        if self.entmax_mode == "sparsemax":
+            self.entmax_module = Sparsemax()
+        elif self.entmax_mode == "entmax15":
+            self.entmax_module = Entmax15()
+        else:
+            self.entmax_module = EntmaxBisect(alpha=self.trainable_alpha)
 
         self.feature_block = FeatureBlock(
             input_size,
@@ -258,13 +266,7 @@ class AttentiveTransformer(LudwigModule):
         # from the z_cumsum. Substacting the mean will cause z_cumsum to be close
         # to zero.
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
-
-        if self.entmax_mode == "sparsemax":
-            return sparsemax(hidden)
-        elif self.entmax_mode == "entmax15":
-            return entmax15(hidden)
-        else:
-            return entmax_bisect(hidden, self.trainable_alpha)
+        return self.entmax_module(hidden)
 
     @property
     def input_shape(self) -> torch.Size:
@@ -282,14 +284,16 @@ class FeatureTransformer(LudwigModule):
         self,
         input_size: int,
         size: int,
-        shared_fc_layers: List = [],
+        shared_fc_layers: Optional[List] = None,
         num_total_blocks: int = 4,
         num_shared_blocks: int = 2,
-        bn_momentum: float = 0.9,
+        bn_momentum: float = 0.1,
         bn_epsilon: float = 1e-3,
         bn_virtual_bs: int = None,
     ):
         super().__init__()
+        if shared_fc_layers is None:
+            shared_fc_layers = []
         self.input_size = input_size
         self.num_total_blocks = num_total_blocks
         self.num_shared_blocks = num_shared_blocks
@@ -304,17 +308,16 @@ class FeatureTransformer(LudwigModule):
         # build blocks
         self.blocks = nn.ModuleList()
         for n in range(num_total_blocks):
-            if shared_fc_layers and n < len(shared_fc_layers):
-                # add shared blocks
-                self.blocks.append(FeatureBlock(input_size, size, **kwargs, shared_fc_layer=shared_fc_layers[n]))
+            # Ensure the sizes fed into FeatureBlock are correct regardless of presence of shared_fc_layer
+            if n == 0:
+                in_features = input_size
             else:
-                # build new blocks
-                if n == 0:
-                    # first block
-                    self.blocks.append(FeatureBlock(input_size, size, **kwargs))
-                else:
-                    # subsequent blocks
-                    self.blocks.append(FeatureBlock(size, size, **kwargs))
+                in_features = size
+
+            if shared_fc_layers and n < len(shared_fc_layers):
+                self.blocks.append(FeatureBlock(in_features, size, **kwargs, shared_fc_layer=shared_fc_layers[n]))
+            else:
+                self.blocks.append(FeatureBlock(in_features, size, **kwargs))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         # shape notation

@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 
 from ludwig.modules.initializer_modules import get_initializer
+from ludwig.utils.torch_utils import get_torch_device
 
-DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
+DEVICE = "cuda:0" if get_torch_device() == "cuda" else "cpu"
 
 
 def test_get_initializer():

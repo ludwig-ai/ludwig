@@ -11,14 +11,15 @@ import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import get_search_algorithm, RayTuneSampler
+from ludwig.hyperopt.sampling import RayTuneSampler
+from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 try:
     import ray
     from ray import tune
-    from ray.tune import register_trainable
+    from ray.tune import register_trainable, Stopper
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
     from ray.tune.syncer import get_cloud_sync_client
@@ -43,6 +44,7 @@ try:
 except ImportError as e:
     logger.warning(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
     ray = None
+    Stopper = object
     get_horovod_kwargs = None
 
 
@@ -172,8 +174,7 @@ class HyperoptExecutor(ABC):
         data_format=None,
         experiment_name="hyperopt",
         model_name="run",
-        model_load_path=None,
-        model_resume_path=None,
+        resume=None,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
         skip_save_model=False,
@@ -251,11 +252,11 @@ class RayTuneExecutor(HyperoptExecutor):
 
     @property
     def _cpu_resources_per_trial_non_none(self):
-        return self.cpu_resources_per_trial or 1
+        return self.cpu_resources_per_trial if self.cpu_resources_per_trial is not None else 1
 
     @property
     def _gpu_resources_per_trial_non_none(self):
-        return self.gpu_resources_per_trial or 0
+        return self.gpu_resources_per_trial if self.gpu_resources_per_trial is not None else 0
 
     def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Tuple["CommandBasedClient", str]]:
         """Get the Ray sync client and path to remote checkpoint directory."""
@@ -447,14 +448,16 @@ class RayTuneExecutor(HyperoptExecutor):
                 progress_tracker.tune_checkpoint_num += 1
                 self.last_steps = progress_tracker.steps
                 self._checkpoint_progress(trainer, progress_tracker, save_path)
-                report(progress_tracker)
+                if not is_using_ray_backend:
+                    report(progress_tracker)
 
             def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
                 if is_coordinator and progress_tracker.steps > self.last_steps:
                     # Note: Calling tune.report in both on_eval_end() and here can cause multiprocessing issues
                     # for some ray samplers if not steps have happened since the last eval.
                     self._checkpoint_progress(trainer, progress_tracker, save_path)
-                    report(progress_tracker)
+                    if not is_using_ray_backend:
+                        report(progress_tracker)
 
         callbacks = hyperopt_dict.get("callbacks") or []
         hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
@@ -465,11 +468,16 @@ class RayTuneExecutor(HyperoptExecutor):
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
-            current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
+            num_gpus = resources.required_resources.get("GPU", 0)
+            num_cpus = resources.required_resources.get("CPU", 1) if num_gpus == 0 else 0
 
             hvd_kwargs = {
-                "num_workers": int(current_resources),
+                "num_workers": int(num_gpus) if use_gpu else 1,
                 "use_gpu": use_gpu,
+                "resources_per_worker": {
+                    "CPU": num_cpus,
+                    "GPU": 1 if use_gpu else 0,
+                },
             }
             hyperopt_dict["backend"].set_distributed_kwargs(**hvd_kwargs)
 
@@ -486,7 +494,7 @@ class RayTuneExecutor(HyperoptExecutor):
             stats.append((train_stats, eval_stats))
 
         sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)
-        if is_using_ray_backend and sync_info is not None:
+        if is_using_ray_backend:
             # We have to pull the results to the trial actor
             # from worker actors, as the Tune session is running
             # only on the trial actor
@@ -494,14 +502,17 @@ class RayTuneExecutor(HyperoptExecutor):
             thread.daemon = True
             thread.start()
 
-            sync_client, remote_checkpoint_dir = sync_info
+            sync_client = None
+            if sync_info is not None:
+                sync_client, remote_checkpoint_dir = sync_info
 
             def check_queue():
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
-                    sync_client.wait()
+                    if sync_client is not None:
+                        sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
+                        sync_client.wait()
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
                         report(progress_tracker)
@@ -541,8 +552,7 @@ class RayTuneExecutor(HyperoptExecutor):
         data_format=None,
         experiment_name="hyperopt",
         model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
+        resume=None,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
         skip_save_model=False,
@@ -590,8 +600,6 @@ class RayTuneExecutor(HyperoptExecutor):
             data_format=data_format,
             experiment_name=experiment_name,
             model_name=model_name,
-            # model_load_path=model_load_path,
-            # model_resume_path=model_resume_path,
             eval_split=self.split,
             skip_save_training_description=skip_save_training_description,
             skip_save_training_statistics=skip_save_training_statistics,
@@ -667,11 +675,12 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         if _is_ray_backend(backend):
-            # we can't set Trial actor's CPUs to 0 so we just go very low
+            # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
+            # but we do want to enable it when GPUs are specified
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
+                [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
                 if self._gpu_resources_per_trial_non_none
-                else [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none
+                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}]
             )
 
         if has_remote_protocol(output_directory):
@@ -686,9 +695,15 @@ class RayTuneExecutor(HyperoptExecutor):
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
 
+        # Note that resume="AUTO" will attempt to resume the experiment if possible, and
+        # otherwise will start a new experiment:
+        # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
+        should_resume = "AUTO" if resume is None else resume
+
         try:
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
+                name=experiment_name,
                 config={
                     **self.search_space,
                     **tune_config,
@@ -707,7 +722,9 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
                 trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
                 callbacks=tune_callbacks,
+                stop=CallbackStopper(callbacks),
                 verbose=hyperopt_log_verbosity,
+                resume=should_resume,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
@@ -763,6 +780,22 @@ class RayTuneExecutor(HyperoptExecutor):
             ordered_trials = []
 
         return RayTuneResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
+
+
+class CallbackStopper(Stopper):
+    """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
+
+    def __init__(self, callbacks: Optional[List[Callback]]):
+        self.callbacks = callbacks or []
+
+    def __call__(self, trial_id, result):
+        return False
+
+    def stop_all(self):
+        for callback in self.callbacks:
+            if callback.should_stop_hyperopt():
+                return True
+        return False
 
 
 def get_build_hyperopt_executor(executor_type):
@@ -821,7 +854,6 @@ def run_experiment(
     data_format=None,
     experiment_name="hyperopt",
     model_name="run",
-    # model_load_path=None,
     model_resume_path=None,
     eval_split=VALIDATION,
     skip_save_training_description=False,
@@ -865,7 +897,6 @@ def run_experiment(
         data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        # model_load_path=model_load_path,
         model_resume_path=model_resume_path,
         eval_split=eval_split,
         skip_save_training_description=skip_save_training_description,

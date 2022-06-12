@@ -59,6 +59,7 @@ from ludwig.utils.image_utils import (
     resize_image,
 )
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -84,13 +85,15 @@ class _ImagePreprocessing(torch.nn.Module):
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]) -> torch.Tensor:
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
 
         If `v` is already a torch.Tensor, we assume that the images are already preprocessed to be the same size.
         """
-        if torch.jit.isinstance(v, List[str]):
-            raise ValueError(f"Unsupported input: {v}")
+        # Nested conditional is a workaround to short-circuit boolean evaluation.
+        if not torch.jit.isinstance(v, List[torch.Tensor]):
+            if not torch.jit.isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
 
         if torch.jit.isinstance(v, List[torch.Tensor]):
             imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]

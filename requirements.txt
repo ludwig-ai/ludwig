@@ -24,10 +24,11 @@ marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.5
 tensorboard
-torchmetrics
+torchmetrics<0.9
 torchinfo
 filelock
 psutil
+protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 
 # new data format support
 xlwt            # excel

@@ -17,8 +17,7 @@ import argparse
 import copy
 import logging
 import sys
-import warnings
-from typing import Any, Dict
+from dataclasses import asdict
 
 import yaml
 
@@ -26,22 +25,16 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
-    COMBINED,
+    COMBINER,
     DROP_ROW,
-    EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
-    LOSS,
     MODEL_ECD,
     MODEL_TYPE,
     NAME,
-    NUMBER,
-    PARAMETERS,
     PREPROCESSING,
     PROC_COLUMN,
     RAY,
-    SAMPLER,
-    SEARCH_ALG,
     TRAINER,
     TYPE,
 )
@@ -49,6 +42,9 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.combiners.utils import combiner_registry
+from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
+from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
@@ -79,175 +75,6 @@ default_preprocessing_parameters.update(
 default_model_type = MODEL_ECD
 
 default_combiner_type = "concat"
-
-default_training_params = {
-    "optimizer": {TYPE: "adam"},
-    "epochs": 100,
-    "regularization_lambda": 0,
-    "regularization_type": "l2",
-    "learning_rate": 0.001,
-    "batch_size": 128,
-    "eval_batch_size": None,
-    "early_stop": 5,
-    "steps_per_checkpoint": 0,
-    "reduce_learning_rate_on_plateau": 0,
-    "reduce_learning_rate_on_plateau_patience": 5,
-    "reduce_learning_rate_on_plateau_rate": 0.5,
-    "increase_batch_size_on_plateau": 0,
-    "increase_batch_size_on_plateau_patience": 5,
-    "increase_batch_size_on_plateau_rate": 2,
-    "increase_batch_size_on_plateau_max": 512,
-    "decay": False,
-    "decay_steps": 10000,
-    "decay_rate": 0.96,
-    "staircase": False,
-    "gradient_clipping": None,
-    "validation_field": COMBINED,
-    "validation_metric": LOSS,
-    "learning_rate_warmup_epochs": 1,
-}
-
-default_optimizer_params_registry = {
-    "sgd": {},
-    "stochastic_gradient_descent": {},
-    "gd": {},
-    "gradient_descent": {},
-    "adam": {
-        "betas": (0.9, 0.999),
-        # 'beta_1': 0.9,
-        # 'beta_2': 0.999,
-        # 'epsilon': 1e-08
-        "eps": 1e-08,
-    },
-    "adamw": {
-        "betas": (0.9, 0.999),
-        "eps": 1e-08,
-    },
-    "adadelta": {
-        "rho": 0.95,
-        "eps": 1e-08
-        # 'epsilon': 1e-08
-    },
-    "adagrad": {"initial_accumulator_value": 0.1},
-    "adamax": {},
-    "ftrl": {
-        "learning_rate_power": -0.5,
-        "initial_accumulator_value": 0.1,
-        "l1_regularization_strength": 0.0,
-        "l2_regularization_strength": 0.0,
-    },
-    "nadam": {},
-    "rmsprop": {
-        "weight_decay": 0.9,
-        "momentum": 0.0,
-        # 'epsilon': 1e-10,
-        "eps": 1e-10,
-        "centered": False,
-    },
-}
-default_optimizer_params_registry["stochastic_gradient_descent"] = default_optimizer_params_registry["sgd"]
-default_optimizer_params_registry["gd"] = default_optimizer_params_registry["sgd"]
-default_optimizer_params_registry["gradient_descent"] = default_optimizer_params_registry["sgd"]
-
-
-def get_default_optimizer_params(optimizer_type):
-    if optimizer_type in default_optimizer_params_registry:
-        return default_optimizer_params_registry[optimizer_type]
-    else:
-        raise ValueError("Incorrect optimizer type: " + optimizer_type)
-
-
-def _upgrade_deprecated_fields(config: Dict[str, Any]):
-    if "training" in config:
-        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
-        config[TRAINER] = config["training"]
-        del config["training"]
-
-    for feature in config.get("input_features", []) + config.get("output_features", []):
-        if feature.get(TYPE) == "numerical":
-            warnings.warn(
-                'Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning
-            )
-            feature[TYPE] = NUMBER
-
-    if HYPEROPT in config:
-        # check for use of legacy "training" reference, if any found convert to "trainer"
-        if PARAMETERS in config[HYPEROPT]:
-            hparams = config[HYPEROPT][PARAMETERS]
-            for k, v in list(hparams.items()):
-                substr = "training."
-                if k.startswith(substr):
-                    warnings.warn(
-                        'Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning
-                    )
-                    hparams["trainer." + k[len(substr) :]] = v
-                    del hparams[k]
-
-        # check for legacy parameters in "executor"
-        if EXECUTOR in config[HYPEROPT]:
-            hpexecutor = config[HYPEROPT][EXECUTOR]
-            executor_type = hpexecutor[TYPE]
-            if executor_type != RAY:
-                warnings.warn(
-                    f'executor type "{executor_type}" not supported, converted to "ray" will be flagged as error '
-                    "in v0.6",
-                    DeprecationWarning,
-                )
-                hpexecutor[TYPE] = RAY
-
-            # if search_alg not at top level and is present in executor, promote to top level
-            if SEARCH_ALG in hpexecutor:
-                # promote only if not in top-level, otherwise use current top-level
-                if SEARCH_ALG not in config[HYPEROPT]:
-                    config[HYPEROPT][SEARCH_ALG] = hpexecutor[SEARCH_ALG]
-                del hpexecutor[SEARCH_ALG]
-        else:
-            warnings.warn(
-                'Missing "executor" section, adding "ray" executor will be flagged as error in v0.6', DeprecationWarning
-            )
-            config[HYPEROPT][EXECUTOR] = {TYPE: RAY}
-
-        # check for legacy "sampler" section
-        if SAMPLER in config[HYPEROPT]:
-            warnings.warn(
-                f'"{SAMPLER}" is no longer supported, converted to "{SEARCH_ALG}". "{SAMPLER}" will be flagged as '
-                "error in v0.6",
-                DeprecationWarning,
-            )
-            if SEARCH_ALG in config[HYPEROPT][SAMPLER]:
-                if SEARCH_ALG not in config[HYPEROPT]:
-                    config[HYPEROPT][SEARCH_ALG] = config[HYPEROPT][SAMPLER][SEARCH_ALG]
-                    warnings.warn('Moved "search_alg" to hyperopt config top-level', DeprecationWarning)
-
-            # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
-            if "num_samples" in config[HYPEROPT][SAMPLER] and "num_samples" not in config[HYPEROPT][EXECUTOR]:
-                config[HYPEROPT][EXECUTOR]["num_samples"] = config[HYPEROPT][SAMPLER]["num_samples"]
-                warnings.warn('Moved "num_samples" from "sampler" to "executor"', DeprecationWarning)
-
-            if "scheduler" in config[HYPEROPT][SAMPLER] and "scheduler" not in config[HYPEROPT][EXECUTOR]:
-                config[HYPEROPT][EXECUTOR]["scheduler"] = config[HYPEROPT][SAMPLER]["scheduler"]
-                warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
-
-            # remove legacy section
-            del config[HYPEROPT][SAMPLER]
-
-        if SEARCH_ALG not in config[HYPEROPT]:
-            # make top-level as search_alg, if missing put in default value
-            config[HYPEROPT][SEARCH_ALG] = {TYPE: "variant_generator"}
-            warnings.warn(
-                'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error '
-                "in v0.6",
-                DeprecationWarning,
-            )
-
-    if TRAINER in config:
-        trainer = config[TRAINER]
-        eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
-        if eval_batch_size == 0:
-            warnings.warn(
-                "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
-            )
-            trainer[EVAL_BATCH_SIZE] = None
 
 
 def _perform_sanity_checks(config):
@@ -281,8 +108,8 @@ def _perform_sanity_checks(config):
             "as a dictionary. Please check your config format."
         )
 
-    if "combiner" in config:
-        assert isinstance(config["combiner"], dict), (
+    if COMBINER in config:
+        assert isinstance(config[COMBINER], dict), (
             "There is an issue while reading the combiner section of the "
             "config. The parameters are expected to be read"
             "as a dictionary. Please check your config format."
@@ -347,9 +174,9 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def merge_with_defaults(config):
+def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
-    _upgrade_deprecated_fields(config)
+    upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)
@@ -367,11 +194,17 @@ def merge_with_defaults(config):
         elif [f for f in features if f[COLUMN] == stratify][0][TYPE] not in {BINARY, CATEGORY}:
             raise ValueError("Stratify feature must be binary or category")
 
-    # ===== Training =====
-    set_default_value(config, TRAINER, default_training_params)
+    # ===== Model Type =====
+    set_default_value(config, MODEL_TYPE, default_model_type)
 
-    for param, value in default_training_params.items():
-        set_default_value(config[TRAINER], param, value)
+    # ===== Training =====
+    # Convert config dictionary into an instance of BaseTrainerConfig.
+    # NOTE: not passing backend here as to not introduce dependency on backend for merge_with_defaults.
+    #   TODO(joppe): Figure out a better way to load the correct trainer config.
+    full_trainer_config, _ = load_trainer_with_kwargs(
+        config[MODEL_TYPE], None, config[TRAINER] if TRAINER in config else {}
+    )
+    config[TRAINER] = asdict(full_trainer_config)
 
     set_default_value(
         config[TRAINER],
@@ -379,21 +212,16 @@ def merge_with_defaults(config):
         output_type_registry[config["output_features"][0][TYPE]].default_validation_metric,
     )
 
-    # ===== Training Optimizer =====
-    optimizer = config[TRAINER]["optimizer"]
-    default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
-    for param in default_optimizer_params:
-        set_default_value(optimizer, param, default_optimizer_params[param])
-
-    # ===== Model Type =====
-    set_default_value(config, MODEL_TYPE, default_model_type)
-
     # ===== Input Features =====
     for input_feature in config["input_features"]:
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
     # ===== Combiner =====
-    set_default_value(config, "combiner", {TYPE: default_combiner_type})
+    set_default_value(config, COMBINER, {TYPE: default_combiner_type})
+    full_combiner_config, _ = load_config_with_kwargs(
+        combiner_registry[config[COMBINER][TYPE]].get_schema_cls(), config[COMBINER]
+    )
+    config[COMBINER].update(asdict(full_combiner_config))
 
     # ===== Output features =====
     for output_feature in config["output_features"]:
@@ -402,6 +230,10 @@ def merge_with_defaults(config):
         # By default, drop rows with missing output features
         set_default_value(output_feature, PREPROCESSING, {})
         set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
+
+    # ===== Hyperpot =====
+    if HYPEROPT in config:
+        set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
     return config
 

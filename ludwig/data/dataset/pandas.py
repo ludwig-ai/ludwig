@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-from typing import Iterable
+from typing import Iterable, Optional
 
 import numpy as np
 from pandas import DataFrame
@@ -24,8 +24,8 @@ from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
 from ludwig.features.base_feature import BaseFeature
-from ludwig.utils import data_utils
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, save_hdf5
+from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
 
@@ -37,9 +37,11 @@ class PandasDataset(Dataset):
         self.size = len(dataset)
         self.dataset = to_numpy_dataset(dataset)
 
-    def to_df(self, features: Iterable[BaseFeature]) -> DataFrame:
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
         """Convert the dataset to a Pandas DataFrame."""
-        return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
+        if features:
+            return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
+        return from_numpy_dataset(self.dataset)
 
     def get(self, proc_column, idx=None):
         if idx is None:
@@ -87,7 +89,7 @@ class PandasDatasetManager(DatasetManager):
         return PandasDataset(dataset, get_proc_features(config), training_set_metadata.get(DATA_TRAIN_HDF5_FP))
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
-        data_utils.save_hdf5(cache_path, dataset)
+        save_hdf5(cache_path, dataset)
         if tag == TRAINING:
             training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path
         return dataset

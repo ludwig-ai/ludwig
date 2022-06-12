@@ -89,6 +89,7 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_from_registry, get_output_directory
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -420,11 +421,12 @@ class LudwigModel:
                         if key != "config":  # Config is printed separately.
                             experiment_description.append([key, pformat(value, indent=4)])
 
-                    print_boxed("EXPERIMENT DESCRIPTION")
-                    logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
+                    if self.backend.is_coordinator():
+                        print_boxed("EXPERIMENT DESCRIPTION")
+                        logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
-                    print_boxed("LUDWIG CONFIG")
-                    logger.info(pformat(self.config, indent=4))
+                        print_boxed("LUDWIG CONFIG")
+                        logger.info(pformat(self.config, indent=4))
 
                 for callback in self.callbacks:
                     callback.on_preprocess_start(self.config)
@@ -492,11 +494,12 @@ class LudwigModel:
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
-            # init trainer
-            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
+            # Convert config dictionary into an instance of BaseTrainerConfig.
+            trainer_config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
+
             with self.backend.create_trainer(
                 model=self.model,
-                config=config,
+                config=trainer_config,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -505,7 +508,7 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                if self.config[TRAINER][BATCH_SIZE] == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
+                if self.config[TRAINER].get(BATCH_SIZE, None) == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(self.config, training_set, random_seed=random_seed)
 
@@ -883,12 +886,7 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
-                # TODO ray: support calculating stats on partitioned datasets
-                if self.backend.df_engine.partitioned:
-                    raise ValueError(
-                        "Cannot calculate overall stats on a partitioned DataFrame at this time. "
-                        "Set `calculate_overall_stats=False`."
-                    )
+                dataset = dataset.to_df()
 
                 overall_stats = calculate_overall_stats(
                     self.model.output_features, predictions, dataset, training_set_metadata
@@ -1400,7 +1398,7 @@ class LudwigModel:
         """
         if self.backend.is_coordinator():
             weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device(get_torch_device())
             self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
 
         self.backend.sync_model(self.model)

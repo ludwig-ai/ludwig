@@ -176,3 +176,4 @@ DEFAULT_AUDIO_TENSOR_LENGTH = 70000
 MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
+DASK_MODULE_NAME = "dask.dataframe"

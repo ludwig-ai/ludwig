@@ -65,7 +65,7 @@ combiner:
   output_size: 96 # N_d
   sparsity: 0.000001 # lambda_sparse
   bn_virtual_divider: 32 # factor to divide batch_size B to get B_v from the paper
-  bn_momentum: 0.9 # m_B
+  bn_momentum: 0.1 # m_B
   num_steps: 8 # N_steps
   relaxation_factor: 2 # gamma
   bn_virtual_bs: 256 # B_v

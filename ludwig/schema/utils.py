@@ -1,6 +1,6 @@
 from dataclasses import field
 from typing import Dict as tDict
-from typing import List, Tuple, Union
+from typing import List, Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
@@ -9,7 +9,7 @@ from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
-def load_config(cls, **kwargs):
+def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs):  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
@@ -47,13 +47,15 @@ def load_trainer_with_kwargs(model_type: str, backend: "Backend", kwargs):  # no
     return load_config_with_kwargs(trainer_schema, kwargs_with_type)
 
 
-def load_config_with_kwargs(cls, kwargs):
-    """Takes a marshmallow class and dict of parameter values and appropriately instantiantes the schema."""
+def load_config_with_kwargs(
+    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
+) -> "BaseMarshmallowConfig":  # noqa 0821
+    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     fields = schema.fields.keys()
-    return load_config(cls, **{k: v for k, v in kwargs.items() if k in fields}), {
-        k: v for k, v in kwargs.items() if k not in fields
+    return load_config(cls, **{k: v for k, v in kwargs_overrides.items() if k in fields}), {
+        k: v for k, v in kwargs_overrides.items() if k not in fields
     }
 
 
@@ -663,7 +665,7 @@ def NumericOrStringOptionsField(
                 else []
             )
 
-            return {"oneOf": oneof_list, "title": self.name, "description": description}
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
 
     return field(
         metadata={

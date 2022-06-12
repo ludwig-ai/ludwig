@@ -4,8 +4,9 @@ import pytest
 import torch
 
 from ludwig.encoders.set_encoders import SetSparseEncoder
+from ludwig.utils.torch_utils import get_torch_device
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = get_torch_device()
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c", "d", "e", "f", "g", "h"]])

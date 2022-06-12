@@ -47,6 +47,7 @@ class LightGBMTrainer(BaseTrainer):
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         callbacks: List = None,
+        report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
@@ -57,6 +58,7 @@ class LightGBMTrainer(BaseTrainer):
         self.random_seed = random_seed
         self.model = model
         self.horovod = horovod
+        self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
         self.skip_save_progress = skip_save_progress
         self.skip_save_model = skip_save_model
@@ -188,7 +190,9 @@ class LightGBMTrainer(BaseTrainer):
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
-        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod)
+        predictor = Predictor(
+            self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
+        )
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         self.append_metrics(dataset_name, metrics, metrics_log, tables, progress_tracker)
@@ -562,7 +566,7 @@ class LightGBMTrainer(BaseTrainer):
         os.makedirs(save_path, exist_ok=True)
         training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
         checkpoint = Checkpoint(model=self.model)
-        checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1)
+        checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
         checkpoint_manager.save(1)
         checkpoint_manager.close()
 
