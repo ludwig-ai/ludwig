@@ -92,14 +92,6 @@ def get_from_registry(key, registry):
         raise ValueError(f"Key {key} not supported, available options: {registry.keys()}")
 
 
-def get_default_from_registry(registry) -> Tuple[str, object]:
-    from ludwig.utils.registry import DEFAULT_KEYS
-
-    default_v = get_from_registry(DEFAULT_KEYS[0], registry)
-    key = next(k for k, v in registry.items() if v == default_v and k not in DEFAULT_KEYS)
-    return key, default_v
-
-
 def set_default_value(dictionary, key, value):
     if key not in dictionary:
         dictionary[key] = value
