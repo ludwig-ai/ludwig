@@ -619,7 +619,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
     return RayParams(**ray_params)
 
 
-@register_ray_trainer("lightgbm_ray_trainer", MODEL_GBM, default=True)
+@register_ray_trainer("lightgbm_trainer", MODEL_GBM, default=True)
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
@@ -699,12 +699,13 @@ class LightGBMRayTrainer(LightGBMTrainer):
         return gbm.booster_
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
-        from ludwig.backend.ray import RayPredictor
+        from ludwig.backend.ray import _get_df_engine, RayPredictor
 
         predictor = RayPredictor(
-            self.model,
-            self.trainer_kwargs,
-            self.data_loader_kwargs,
+            model=self.model,
+            df_engine=_get_df_engine(None),
+            trainer_kwargs=self.trainer_kwargs,
+            data_loader_kwargs=self.data_loader_kwargs,
             batch_size=batch_size,
             **self.executable_kwargs,
         )

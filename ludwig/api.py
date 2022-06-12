@@ -495,7 +495,7 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
             # Convert config dictionary into an instance of BaseTrainerConfig.
-            trainer_config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
+            trainer_config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
 
             with self.backend.create_trainer(
                 model=self.model,
@@ -686,7 +686,7 @@ class LudwigModel:
             self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
         if not self._online_trainer:
-            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.backend, self.config[TRAINER])
+            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
             self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)

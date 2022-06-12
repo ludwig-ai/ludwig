@@ -1,8 +1,8 @@
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
@@ -78,17 +78,16 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @register_trainer_schema("trainer")
-@register_trainer_schema("ray_trainer_v2")
 @dataclass
 class TrainerConfig(BaseTrainerConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for ECD model training."""
 
     type: str = schema_utils.StringOptions(
-        ["trainer", "ray_trainer_v2"],
+        ["trainer", "ray_legacy_trainer"],
         default="trainer",
         description=(
-            "Trainer to use for training the model. Must be one of ['trainer', 'ray_trainer_v2'] - "
-            "corresponds to name in `ludwig.trainers.registry.trainers_registry` (default: 'trainer')"
+            "Trainer to use for training the model. Must be one of ['trainer', 'ray_legacy_trainer'] - "
+            "corresponds to name in `ludwig.trainers.registry.(ray_)trainers_registry` (default: 'trainer')"
         ),
         allow_none=False,
     )
@@ -219,17 +218,16 @@ class TrainerConfig(BaseTrainerConfig):
 
 
 @register_trainer_schema("lightgbm_trainer")
-@register_trainer_schema("lightgbm_ray_trainer")
 @dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for GBM model training."""
 
     type: str = schema_utils.StringOptions(
-        ["lightgbm_trainer", "lightgbm_ray_trainer"],
+        ["lightgbm_trainer"],
         default="lightgbm_trainer",
         description=(
-            "Trainer to use for training the model. Must be one of ['lightgbm_trainer', 'lightgbm_ray_trainer'] - "
-            "corresponds to name in `ludwig.trainers.registry.ray_trainers_registry` "
+            "Trainer to use for training the model. Must be one of ['lightgbm_trainer'] - "
+            "corresponds to name in `ludwig.trainers.registry.(ray_)trainers_registry` "
             "(default: 'lightgbm_trainer')"
         ),
         allow_none=False,
@@ -435,22 +433,33 @@ def get_model_type_jsonschema():
 
 
 def get_trainer_jsonschema():
+    def allowed_types_for_trainer_schema(cls) -> List[str]:
+        """Returns the allowed values for the "type" field on the given trainer schema."""
+        return cls.Schema().fields[TYPE].validate.choices
+
     conds = []
+    all_trainer_types = []
     for trainer in trainer_schema_registry:
         trainer_cls = trainer_schema_registry[trainer]
+
+        allowed_trainer_types = allowed_types_for_trainer_schema(trainer_cls)
+        all_trainer_types.extend(allowed_trainer_types)
+
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
         other_props.pop("type")
-        trainer_cond = schema_utils.create_cond(
-            {"type": trainer},
-            other_props,
-        )
-        conds.append(trainer_cond)
+        for trainer_type in allowed_trainer_types:
+            trainer_cond = schema_utils.create_cond(
+                {"type": trainer_type},
+                other_props,
+            )
+            conds.append(trainer_cond)
 
     return {
         "type": "object",
         "properties": {
-            "type": {"type": "string", "enum": list(trainer_schema_registry.keys())},
+            "type": {"type": "string", "enum": all_trainer_types},
         },
+        "required": ["type"],
         "title": "trainer_options",
         "allOf": conds,
         "description": "",

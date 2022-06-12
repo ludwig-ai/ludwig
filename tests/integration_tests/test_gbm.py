@@ -215,8 +215,6 @@ def test_gbm_schema(backend_config):
         },
     }
     backend = initialize_backend(backend_config)
-    with pytest.raises(
-        ValidationError, match=r"{'type': \['Must be one of: lightgbm_trainer, lightgbm_ray_trainer.']}"
-    ):
-        # Then I should get an error
+    with pytest.raises(ValidationError):
+        # Then I should get a schema validation error
         LudwigModel(config, backend=backend)

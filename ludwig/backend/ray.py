@@ -19,7 +19,7 @@ import copy
 import logging
 from distutils.version import LooseVersion
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
@@ -319,7 +319,7 @@ class TqdmCallback(rt.TrainingCallback):
                 self.progess_bars[_id].update(update_by)
 
 
-@register_ray_trainer("ray_trainer_v2", MODEL_ECD, default=True)
+@register_ray_trainer("trainer", MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
