@@ -18,7 +18,6 @@ import os
 import random
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Tuple
 
 import numpy
 import torch
