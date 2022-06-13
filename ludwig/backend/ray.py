@@ -44,7 +44,7 @@ from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
-_ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
+_ray112 = LooseVersion("1.12") <= LooseVersion(ray.__version__) < LooseVersion("1.13")
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
