@@ -17,6 +17,7 @@ import argparse
 import copy
 import logging
 import sys
+from dataclasses import asdict
 
 import yaml
 
@@ -24,11 +25,10 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
-    COMBINED,
+    COMBINER,
     DROP_ROW,
     EXECUTOR,
     HYPEROPT,
-    LOSS,
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
@@ -40,6 +40,9 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.combiners.utils import combiner_registry
+from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
@@ -69,82 +72,6 @@ default_preprocessing_parameters.update(
 )
 
 default_combiner_type = "concat"
-
-default_training_params = {
-    "optimizer": {TYPE: "adam"},
-    "epochs": 100,
-    "regularization_lambda": 0,
-    "regularization_type": "l2",
-    "learning_rate": 0.001,
-    "batch_size": 128,
-    "eval_batch_size": None,
-    "early_stop": 5,
-    "steps_per_checkpoint": 0,
-    "reduce_learning_rate_on_plateau": 0,
-    "reduce_learning_rate_on_plateau_patience": 5,
-    "reduce_learning_rate_on_plateau_rate": 0.5,
-    "increase_batch_size_on_plateau": 0,
-    "increase_batch_size_on_plateau_patience": 5,
-    "increase_batch_size_on_plateau_rate": 2,
-    "increase_batch_size_on_plateau_max": 512,
-    "decay": False,
-    "decay_steps": 10000,
-    "decay_rate": 0.96,
-    "staircase": False,
-    "gradient_clipping": None,
-    "validation_field": COMBINED,
-    "validation_metric": LOSS,
-    "learning_rate_warmup_epochs": 1,
-}
-
-default_optimizer_params_registry = {
-    "sgd": {},
-    "stochastic_gradient_descent": {},
-    "gd": {},
-    "gradient_descent": {},
-    "adam": {
-        "betas": (0.9, 0.999),
-        # 'beta_1': 0.9,
-        # 'beta_2': 0.999,
-        # 'epsilon': 1e-08
-        "eps": 1e-08,
-    },
-    "adamw": {
-        "betas": (0.9, 0.999),
-        "eps": 1e-08,
-    },
-    "adadelta": {
-        "rho": 0.95,
-        "eps": 1e-08
-        # 'epsilon': 1e-08
-    },
-    "adagrad": {"initial_accumulator_value": 0.1},
-    "adamax": {},
-    "ftrl": {
-        "learning_rate_power": -0.5,
-        "initial_accumulator_value": 0.1,
-        "l1_regularization_strength": 0.0,
-        "l2_regularization_strength": 0.0,
-    },
-    "nadam": {},
-    "rmsprop": {
-        "weight_decay": 0.9,
-        "momentum": 0.0,
-        # 'epsilon': 1e-10,
-        "eps": 1e-10,
-        "centered": False,
-    },
-}
-default_optimizer_params_registry["stochastic_gradient_descent"] = default_optimizer_params_registry["sgd"]
-default_optimizer_params_registry["gd"] = default_optimizer_params_registry["sgd"]
-default_optimizer_params_registry["gradient_descent"] = default_optimizer_params_registry["sgd"]
-
-
-def get_default_optimizer_params(optimizer_type):
-    if optimizer_type in default_optimizer_params_registry:
-        return default_optimizer_params_registry[optimizer_type]
-    else:
-        raise ValueError("Incorrect optimizer type: " + optimizer_type)
 
 
 def _perform_sanity_checks(config):
@@ -178,8 +105,8 @@ def _perform_sanity_checks(config):
             "as a dictionary. Please check your config format."
         )
 
-    if "combiner" in config:
-        assert isinstance(config["combiner"], dict), (
+    if COMBINER in config:
+        assert isinstance(config[COMBINER], dict), (
             "There is an issue while reading the combiner section of the "
             "config. The parameters are expected to be read"
             "as a dictionary. Please check your config format."
@@ -260,10 +187,8 @@ def merge_with_defaults(config):
             raise ValueError("Stratify feature must be binary or category")
 
     # ===== Training =====
-    set_default_value(config, TRAINER, default_training_params)
-
-    for param, value in default_training_params.items():
-        set_default_value(config[TRAINER], param, value)
+    full_trainer_config, _ = load_config_with_kwargs(TrainerConfig, config[TRAINER] if TRAINER in config else {})
+    config[TRAINER] = asdict(full_trainer_config)
 
     set_default_value(
         config[TRAINER],
@@ -271,18 +196,16 @@ def merge_with_defaults(config):
         output_type_registry[config["output_features"][0][TYPE]].default_validation_metric,
     )
 
-    # ===== Training Optimizer =====
-    optimizer = config[TRAINER]["optimizer"]
-    default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
-    for param in default_optimizer_params:
-        set_default_value(optimizer, param, default_optimizer_params[param])
-
     # ===== Input Features =====
     for input_feature in config["input_features"]:
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
     # ===== Combiner =====
-    set_default_value(config, "combiner", {TYPE: default_combiner_type})
+    set_default_value(config, COMBINER, {TYPE: default_combiner_type})
+    full_combiner_config, _ = load_config_with_kwargs(
+        combiner_registry[config[COMBINER][TYPE]].get_schema_cls(), config[COMBINER]
+    )
+    config[COMBINER].update(asdict(full_combiner_config))
 
     # ===== Output features =====
     for output_feature in config["output_features"]:

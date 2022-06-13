@@ -15,19 +15,15 @@
 import contextlib
 import os
 import tempfile
-from distutils.version import LooseVersion
 
 import numpy as np
 import pandas as pd
 import pytest
-import ray
 import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
-from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, NAME, TRAINER
-from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
@@ -48,6 +44,27 @@ from tests.integration_tests.utils import (
     train_with_backend,
     vector_feature,
 )
+
+try:
+    import ray
+
+    from ludwig.backend.ray import get_trainer_kwargs, RayBackend
+    from ludwig.data.dataframe.dask import DaskEngine
+
+    @ray.remote(num_cpus=1, num_gpus=1)
+    def train_gpu(config, dataset, output_directory):
+        model = LudwigModel(config, backend="local")
+        _, _, output_dir = model.train(dataset, output_directory=output_directory)
+        return os.path.join(output_dir, "model")
+
+    @ray.remote(num_cpus=1, num_gpus=0)
+    def predict_cpu(model_dir, dataset):
+        model = LudwigModel.load(model_dir, backend="local")
+        model.predict(dataset)
+
+except ImportError:
+    ray = None
+
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -463,20 +480,6 @@ def _run_train_gpu_load_cpu(config, data_parquet):
         ray.get(predict_cpu.remote(model_dir, data_parquet))
 
 
-@ray.remote(num_cpus=1, num_gpus=1)
-def train_gpu(config, dataset, output_directory):
-    model = LudwigModel(config, backend="local")
-    _, _, output_dir = model.train(dataset, output_directory=output_directory)
-    return os.path.join(output_dir, "model")
-
-
-@ray.remote(num_cpus=1, num_gpus=0)
-def predict_cpu(model_dir, dataset):
-    model = LudwigModel.load(model_dir, backend="local")
-    model.predict(dataset)
-
-
-@pytest.mark.skipif(LooseVersion(ray.__version__) < LooseVersion("1.12"), reason="Serialization issue before Ray 1.12")
 @pytest.mark.distributed
 def test_tune_batch_size_lr():
     with ray_start(num_cpus=2, num_gpus=None):

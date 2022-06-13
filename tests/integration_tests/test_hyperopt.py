@@ -18,7 +18,6 @@ import os.path
 from typing import Dict, Optional, Tuple
 
 import pytest
-import ray
 import torch
 
 from ludwig.constants import ACCURACY, RAY, TRAINER
@@ -28,6 +27,12 @@ from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+try:
+    import ray
+except ImportError:
+    ray = None
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
