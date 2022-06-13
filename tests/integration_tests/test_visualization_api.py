@@ -123,7 +123,7 @@ def obtain_df_splits(data_csv):
     # Obtain data split array mapping data rows to split type
     # 0-train, 1-validation, 2-test
     splitter = get_splitter("random")
-    train_df, test_df, val_df = splitter.split(data_df, LocalTestBackend())
+    train_df, val_df, test_df = splitter.split(data_df, LocalTestBackend())
     return test_df, train_df, val_df
 
 

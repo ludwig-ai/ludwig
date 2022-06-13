@@ -73,7 +73,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     data_df = read_csv(data_csv_path)
     splitter = get_splitter("random")
-    training_set, test_set, validation_set = splitter.split(data_df, LocalTestBackend())
+    training_set, validation_set, test_set = splitter.split(data_df, LocalTestBackend())
 
     # create sub-directory to store results
     results_dir = tmp_path / "results"
