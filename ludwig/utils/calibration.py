@@ -115,7 +115,7 @@ class CalibrationResult:
 
 class CalibrationModule(nn.Module, ABC):
     @abstractmethod
-    def calibrate(self, logits, labels) -> CalibrationResult:
+    def train_calibration(self, logits, labels) -> CalibrationResult:
         """Calibrate output probabilities using logits and labels from validation set."""
         return NotImplementedError()
 
@@ -142,7 +142,7 @@ class TemperatureScaling(CalibrationModule):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.temperature = nn.Parameter(torch.ones(1), requires_grad=False).to(self.device)
 
-    def calibrate(self, logits, labels) -> CalibrationResult:
+    def train_calibration(self, logits, labels) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
         one_hot_labels = nn.functional.one_hot(labels, self.num_classes).float()
@@ -238,7 +238,7 @@ class MatrixScaling(CalibrationModule):
         eps = torch.finfo(torch.float32).eps  # ~ 1e-16
         return torch.log(torch.clamp(x, eps, 1 - eps))
 
-    def calibrate(self, logits, labels) -> CalibrationResult:
+    def train_calibration(self, logits, labels) -> CalibrationResult:
         logits = torch.as_tensor(logits, dtype=torch.float32, device=self.device)
         labels = torch.as_tensor(labels, dtype=torch.int64, device=self.device)
         one_hot_labels = nn.functional.one_hot(labels, self.num_classes).float()

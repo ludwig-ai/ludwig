@@ -555,18 +555,19 @@ class LudwigModel:
                     if self.backend.is_coordinator():
                         calibrator = Calibrator(
                             trainer.model,
+                            self.backend,
                             batch_size=trainer.eval_batch_size,
                             skip_save_model=skip_save_model,
                         )
                         if validation_set is not None:
                             # Use backend.createPredictor to ensure we get ray predictor with ray backend
-                            calibrator.calibration(validation_set, VALIDATION, save_path=model_dir)
+                            calibrator.train_calibration(validation_set, VALIDATION, save_path=model_dir)
                         else:
                             logger.warning(
                                 "Calibration uses validation set, but not validation split specified. "
                                 "Will use training set for calibration."
                             )
-                            calibrator.calibration(training_set, TRAINING, save_path=model_dir)
+                            calibrator.train_calibration(training_set, TRAINING, save_path=model_dir)
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->

@@ -452,15 +452,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def default_validation_metric(self):
         pass
 
-    def calibrate(self, logits, labels):
-        """Calibrate this feature's output probabilities given the feature logits and labels.
-
-        The default behavior is to do nothing, calibration (i.e. temperature scaling, vector scaling, etc..) may be
-        optionally supported for some feature types.
-        """
-        if self.calibration_module:
-            self.calibration_module.calibrate(logits, labels)
-
     @abstractmethod
     def postprocess_predictions(
         self,
