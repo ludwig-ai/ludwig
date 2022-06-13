@@ -21,7 +21,7 @@ def get_torch_device():
 DEVICE = get_torch_device()
 
 
-def place_on_torch_device(x: Any, device: Union[str, int, torch.device]):
+def place_on_torch_device(x: Any, device: Optional[torch.device] = None):
     """Recursively places torch.Tensors in `x` onto `device`.
 
     TODO: write unit tests for this function.
