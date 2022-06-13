@@ -49,7 +49,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.cache.types import wrap
-from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files
+from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.encoders.registry import get_encoder_cls
@@ -67,6 +67,7 @@ from ludwig.utils.data_utils import (
     FEATHER_FORMATS,
     figure_data_format,
     FWF_FORMATS,
+    get_split_path,
     HDF5_FORMATS,
     HTML_FORMATS,
     JSON_FORMATS,
@@ -1584,12 +1585,6 @@ def _preprocess_file_for_training(
             mode="training",
         )
 
-        # TODO(travis): see how this is used by viz, find an alternative to saving a numpy array
-        # if backend.is_coordinator() and not skip_save_processed_input and not backend.df_engine.partitioned:
-        #     # save split values for use by visualization routines
-        #     split_fp = get_split_path(dataset)
-        #     save_array(split_fp, data[SPLIT])
-
     elif training_set:
         # use data_train (including _validation and _test if they are present)
         # and ignore data and train set metadata
@@ -1599,7 +1594,6 @@ def _preprocess_file_for_training(
 
         concatenated_df = concatenate_files(training_set, validation_set, test_set, read_fn, backend)
         training_set_metadata[SRC] = training_set
-        print(concatenated_df.columns)
 
         # Data is pre-split, so we override whatever split policy the user specified
         if preprocessing_params["split"]:
@@ -1632,6 +1626,12 @@ def _preprocess_file_for_training(
 
     logger.debug("split train-val-test")
     training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
+
+    if dataset and backend.is_coordinator() and not skip_save_processed_input:
+        logger.debug("writing split file")
+        splits_df = concatenate_splits(training_set, validation_set, test_set, backend)
+        split_fp = get_split_path(dataset or training_set)
+        backend.df_engine.to_parquet(splits_df, split_fp, index=True)
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:

@@ -75,6 +75,17 @@ def concatenate_df(train_df, vali_df, test_df, backend):
     return concatenated_df
 
 
+def concatenate_splits(train_df, vali_df, test_df, backend):
+    def to_frame(df, split):
+        df = df.index.to_frame(name=SPLIT)
+        df[SPLIT] = split
+        return df
+
+    dfs = [train_df, vali_df, test_df]
+    dfs = [to_frame(df, split) for split, df in enumerate(dfs)]
+    return backend.df_engine.df_lib.concat([df for df in dfs if df is not None])
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Concatenate train validation and test set")
 

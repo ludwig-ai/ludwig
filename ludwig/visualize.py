@@ -234,8 +234,22 @@ def _extract_ground_truth_values(
         gt = gt_df[output_feature_name][split == ground_truth_split]
     elif split_file is not None:
         # retrieve from split file
-        split = load_array(split_file)
-        gt = gt_df[output_feature_name][split == ground_truth_split]
+        if split_file.endswith(".csv"):
+            # Legacy code path for previous split file format
+            split = load_array(split_file)
+            mask = split == ground_truth_split
+        else:
+            data_format = figure_data_format_dataset(split_file)
+            reader = get_from_registry(data_format, external_data_reader_registry)
+            split = reader(split_file)
+
+            # Realign index from the split file with the ground truth to account for
+            # dropped rows during preprocessing.
+            # https://stackoverflow.com/a/65731168
+            mask = split.iloc[:, 0] == ground_truth_split
+            mask = mask.reindex(gt_df.index, fill_value=False)
+
+        gt = gt_df[output_feature_name][mask]
     else:
         # use all the data in ground_truth
         gt = gt_df[output_feature_name]

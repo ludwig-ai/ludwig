@@ -59,7 +59,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def to_parquet(self, df, path):
+    def to_parquet(self, df, path, index=False):
         raise NotImplementedError()
 
     @abstractmethod

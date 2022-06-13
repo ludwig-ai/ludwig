@@ -539,7 +539,7 @@ def split_dataset_ttv(dataset, split):
 
 def split_dataset(dataset, split, value_to_split=0):
     split_df = dataset[dataset[split] == value_to_split]
-    return split_df.reset_index()
+    return split_df
 
 
 def collapse_rare_labels(labels, labels_limit):

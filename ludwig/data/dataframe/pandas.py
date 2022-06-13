@@ -58,8 +58,8 @@ class PandasEngine(DataFrameEngine):
     def split(self, df, probabilities):
         return split_by_slices(df.iloc, len(df), probabilities)
 
-    def to_parquet(self, df, path):
-        df.to_parquet(path, engine="pyarrow")
+    def to_parquet(self, df, path, index=False):
+        df.to_parquet(path, engine="pyarrow", index=index)
 
     def to_ray_dataset(self, df):
         from ray.data import from_pandas
