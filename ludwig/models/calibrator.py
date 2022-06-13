@@ -14,26 +14,21 @@
 # limitations under the License.
 # ==============================================================================
 
-import os
-
 import numpy as np
-import torch
 
 from ludwig.backend import Backend
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.ecd import ECD
 
 
 class Calibrator:
     """Calibrator calibrates the output probabilities of a model."""
 
-    def __init__(self, model: ECD, backend: Backend, batch_size: int = 128, skip_save_model=False):
+    def __init__(self, model: ECD, backend: Backend, batch_size: int = 128):
         self.model = model
         self.backend = backend
         self.batch_size = batch_size
-        self.skip_save_model = skip_save_model
 
-    def train_calibration(self, dataset, dataset_name: str, save_path: str):
+    def train_calibration(self, dataset, dataset_name: str):
         """Calibrates model output probabilities on validation set after training.
 
         This works well for most datasets, though it may fail for some difficult or extremely imbalanced datasets.
@@ -54,6 +49,3 @@ class Calibrator:
                     output_feature.calibration_module.train_calibration(
                         np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
                     )
-        if not self.skip_save_model:
-            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-            torch.save(self.model.state_dict(), model_weights_path)
