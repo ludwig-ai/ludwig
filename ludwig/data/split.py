@@ -65,10 +65,12 @@ class RandomSplitter(Splitter):
         if backend.df_engine.partitioned:
             # The below approach is very inefficient for partitioned backends, which
             # can split by partition. This may not be exact in all cases, but is much more efficient.
-            return df.random_split(self.probabilities)
+            return df.random_split(self.probabilities, random_state=random_seed)
 
-        split = df.index.to_series().map(lambda x: np.random.choice(3, 1, p=self.probabilities)).astype(np.int8)
-        return _split_on_series(df, split)
+        n = len(df)
+        d1 = int(self.probabilities[0] * n)
+        d2 = d1 + int(self.probabilities[1] * n)
+        return np.split(df.sample(frac=1, random_state=random_seed), [d1, d2])
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
