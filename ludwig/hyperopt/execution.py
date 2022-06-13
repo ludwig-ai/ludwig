@@ -16,7 +16,20 @@ from typing import Dict, List, Optional, Tuple, Union
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
-from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION, DEFAULTS
+from ludwig.constants import (
+    COLUMN,
+    INPUT_FEATURES,
+    MAXIMIZE,
+    OUTPUT_FEATURES,
+    COMBINER,
+    TEST,
+    TRAINER,
+    TRAINING,
+    TYPE,
+    VALIDATION,
+    DEFAULTS,
+    PREPROCESSING,
+)
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
 from ludwig.hyperopt.sampling import RayTuneSampler
 from ludwig.hyperopt.search_algos import get_search_algorithm
@@ -362,9 +375,6 @@ class RayTuneExecutor(HyperoptExecutor):
         trial_id = tune.get_trial_id()
         trial_dir = Path(tune.get_trial_dir())
         trial_location = ray.util.get_node_ip_address()
-
-        # print(f"RayTuneSampler Config [{trial_id}]: ", config)
-        # time.sleep(5)
 
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config, shared_params_feature_group
@@ -821,11 +831,23 @@ executor_registry = {"ray": RayTuneExecutor}
 
 
 def set_values(model_dict, feature_name, parameters_dict, feature_type=None, shared_params_dict=None):
-    """
-    shared_params_dict[Dict]:
-    """
+    # Update shared params
+    if shared_params_dict and feature_type in shared_params_dict:
+        features_with_shared_parameters = shared_params_dict[feature_type]
+        if (
+            DEFAULTS in parameters_dict
+            and feature_type in parameters_dict[DEFAULTS]
+            and feature_name in features_with_shared_parameters
+        ):
+            params = parameters_dict[DEFAULTS][feature_type]
+            for key, value in params.items():
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        model_dict[key][sub_key] = sub_value
+                else:
+                    model_dict[key] = value
 
-    # Update any feature specific hyperopt params
+    # Update or overwrite any feature specific hyperopt params
     if feature_name in parameters_dict:
         params = parameters_dict[feature_name]
         for key, value in params.items():
@@ -834,18 +856,6 @@ def set_values(model_dict, feature_name, parameters_dict, feature_type=None, sha
                     model_dict[key][sub_key] = sub_value
             else:
                 model_dict[key] = value
-
-    # Update shared params
-    if shared_params_dict and feature_type in shared_params_dict:
-        allowed_features = shared_params_dict[feature_type]
-        if feature_name in allowed_features:
-            params = parameters_dict[DEFAULTS][feature_type]
-            for key, value in params.items():
-                if isinstance(value, dict):
-                    for sub_key, sub_value in value.items():
-                        model_dict[key][sub_key] = sub_value
-                else:
-                    model_dict[key] = value
 
 
 def get_parameters_dict(parameters):
@@ -865,8 +875,7 @@ def get_parameters_dict(parameters):
 
 def substitute_parameters(config, parameters, shared_params_dict):
     parameters_dict = get_parameters_dict(parameters)
-    # print("Parameters Dict ", parameters_dict)
-    for input_feature in config["input_features"]:
+    for input_feature in config[INPUT_FEATURES]:
         set_values(
             input_feature,
             input_feature[COLUMN],
@@ -874,20 +883,17 @@ def substitute_parameters(config, parameters, shared_params_dict):
             feature_type=input_feature[TYPE],
             shared_params_dict=shared_params_dict,
         )
-    for output_feature in config["output_features"]:
-        feature_name = output_feature[COLUMN]
-        feature_type = output_feature[TYPE]
+    for output_feature in config[OUTPUT_FEATURES]:
         set_values(
             output_feature,
-            feature_name,
+            output_feature[COLUMN],
             parameters_dict,
-            feature_type=feature_type,
+            feature_type=output_feature[TYPE],
             shared_params_dict=shared_params_dict,
         )
-    set_values(config["combiner"], "combiner", parameters_dict)
+    set_values(config[COMBINER], COMBINER, parameters_dict)
     set_values(config[TRAINER], TRAINER, parameters_dict)
-    set_values(config["preprocessing"], "preprocessing", parameters_dict)
-    # print("RayTuneSampler Updated Config: ", config)
+    set_values(config[PREPROCESSING], PREPROCESSING, parameters_dict)
     return config
 
 
