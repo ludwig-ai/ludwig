@@ -47,7 +47,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import upload_h5
+from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
     grayscale,
@@ -403,7 +403,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
         abs_path_column = backend.df_engine.map_objects(
-            column, lambda row: get_abs_path(src_path, row) if isinstance(row, str) else row
+            column,
+            lambda row: get_abs_path(src_path, row) if isinstance(row, str) and not has_remote_protocol(row) else row,
         )
 
         (
