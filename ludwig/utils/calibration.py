@@ -48,8 +48,15 @@ def register_calibration(name: str, features: Union[str, List[str]], default=Fal
 
 def get_calibration_cls(feature: str, calibration_method: str) -> Type["CalibrationModule"]:
     """Get calibration class for specified feature type and calibration method."""
+    if not calibration_method:
+        return None
     if feature in calibration_registry:
-        return calibration_registry[feature].get(calibration_method)
+        if calibration_method in calibration_registry[feature]:
+            return calibration_registry[feature][calibration_method]
+        else:
+            raise ValueError(f"Calibration method {calibration_method} not supported for {feature} output features")
+    else:
+        raise ValueError(f"Calibration not yet supported for {feature} output features")
     return None
 
 
