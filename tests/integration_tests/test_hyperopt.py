@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import json
 import logging
 import os.path
 from typing import Dict, Optional, Tuple
@@ -20,9 +21,8 @@ from typing import Dict, Optional, Tuple
 import pytest
 import ray
 import torch
-import json
 
-from ludwig.constants import ACCURACY, RAY, TEXT, TRAINER, INPUT_FEATURES, TYPE
+from ludwig.constants import ACCURACY, INPUT_FEATURES, RAY, TEXT, TRAINER, TYPE
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
@@ -403,7 +403,7 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space, tm
             assert len(text_input_cell_types) == 1
             params_fd.close()
         # Likely unable to open trial dir so fail this test
-        except IOError:
+        except OSError:
             assert 1 == 0
 
     if os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")):
