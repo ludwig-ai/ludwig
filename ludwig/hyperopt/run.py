@@ -183,9 +183,10 @@ def hyperopt(
     else:
         config_dict = config
 
-    # Get raw input config for shared parameters
+    # Get mapping of features that don't have an encoder for shared parameters
+    # share
     # TODO: Consider output features as well?
-    shared_params_feature_groups = get_shared_param_feature_groups(config_dict[INPUT_FEATURES])
+    shared_params_dict = get_shared_params_dict(config_dict[INPUT_FEATURES])
 
     # merge config with defaults
     config = merge_with_defaults(config_dict)
@@ -350,7 +351,7 @@ def hyperopt(
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,
-        shared_params_feature_groups=shared_params_feature_groups,
+        shared_params_dict=shared_params_dict,
         **kwargs,
     )
 
@@ -394,7 +395,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     )
 
 
-def get_shared_param_feature_groups(features):
+def get_shared_params_dict(features):
     """
     This returns a mapping of feature_type: List[features] that don't
     have an encoder specified in the config. They may be considered

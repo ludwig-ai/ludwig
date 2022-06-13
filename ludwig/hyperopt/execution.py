@@ -205,7 +205,7 @@ class HyperoptExecutor(ABC):
         backend=None,
         random_seed=default_random_seed,
         debug=False,
-        shared_params_feature_groups=None,
+        shared_params_dict=None,
         **kwargs,
     ) -> HyperoptResults:
         pass
@@ -363,7 +363,7 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
     def _run_experiment(
-        self, config, checkpoint_dir, hyperopt_dict, decode_ctx, shared_params_feature_group, is_using_ray_backend=False
+        self, config, checkpoint_dir, hyperopt_dict, decode_ctx, shared_params_dict, is_using_ray_backend=False
     ):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
@@ -376,9 +376,7 @@ class RayTuneExecutor(HyperoptExecutor):
         trial_dir = Path(tune.get_trial_dir())
         trial_location = ray.util.get_node_ip_address()
 
-        modified_config = substitute_parameters(
-            copy.deepcopy(hyperopt_dict["config"]), config, shared_params_feature_group
-        )
+        modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config, shared_params_dict)
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -590,7 +588,7 @@ class RayTuneExecutor(HyperoptExecutor):
         random_seed=default_random_seed,
         debug=False,
         hyperopt_log_verbosity=3,
-        shared_params_feature_groups=None,
+        shared_params_dict=None,
         **kwargs,
     ) -> RayTuneResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
@@ -686,7 +684,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 checkpoint_dir,
                 local_hyperopt_dict,
                 self.decode_ctx,
-                shared_params_feature_groups,
+                shared_params_dict,
                 _is_ray_backend(backend),
             )
 
