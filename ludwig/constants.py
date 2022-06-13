@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from unittest.mock import DEFAULT
-
-
 INPUT_FEATURES = "input_features"
 OUTPUT_FEATURES = "output_features"
 
