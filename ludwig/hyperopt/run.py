@@ -10,6 +10,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, RAY, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
@@ -194,8 +195,9 @@ def hyperopt(
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
+    splitter = get_splitter(**config["preprocessing"]["split"])
     if split == TRAINING:
-        if training_set is None and (config["preprocessing"]["split_probabilities"][0] <= 0):
+        if training_set is None and not splitter.has_split(0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 "was not provided, "
@@ -203,7 +205,7 @@ def hyperopt(
                 "of the config is not greater than 0".format(split)
             )
     elif split == VALIDATION:
-        if validation_set is None and (config["preprocessing"]["split_probabilities"][1] <= 0):
+        if validation_set is None and not splitter.has_split(1):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 "was not provided, "
@@ -211,7 +213,7 @@ def hyperopt(
                 "of the config is not greater than 0".format(split)
             )
     elif split == TEST:
-        if test_set is None and (config["preprocessing"]["split_probabilities"][2] <= 0):
+        if test_set is None and not splitter.has_split(2):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 "was not provided, "

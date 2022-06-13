@@ -45,6 +45,9 @@ class Splitter(ABC):
     def validate(self, config: Dict[str, Any]):
         pass
 
+    def has_split(self, split_index: int) -> bool:
+        return True
+
     @property
     def required_columns(self) -> List[str]:
         return []
@@ -66,6 +69,9 @@ class RandomSplitter(Splitter):
 
         split = df.index.to_series().map(lambda x: np.random.choice(3, 1, p=self.probabilities)).astype(np.int8)
         return _split_on_series(df, split)
+
+    def has_split(self, split_index: int) -> bool:
+        return self.probabilities[split_index] > 0
 
 
 @split_registry.register("fixed")
@@ -119,6 +125,9 @@ class StratifySplitter(Splitter):
             )
         elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {BINARY, CATEGORY}:
             raise ValueError(f"Feature for stratify column {self.column} must be binary or category")
+
+    def has_split(self, split_index: int) -> bool:
+        return self.probabilities[split_index] > 0
 
     @property
     def required_columns(self) -> List[str]:
@@ -174,6 +183,9 @@ class DatetimeSplitter(Splitter):
             )
         elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {DATE}:
             raise ValueError(f"Feature for datetime split column {self.column} must be a datetime")
+
+    def has_split(self, split_index: int) -> bool:
+        return self.probabilities[split_index] > 0
 
     @property
     def required_columns(self) -> List[str]:
