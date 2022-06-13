@@ -63,7 +63,11 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import init_inference_module_from_ludwig_model, save_ludwig_model_for_inference
+from ludwig.models.inference import (
+    get_stage_to_device_dict,
+    init_inference_module_from_ludwig_model,
+    save_ludwig_model_for_inference,
+)
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -88,6 +92,7 @@ from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_outpu
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
 
@@ -1465,31 +1470,28 @@ class LudwigModel:
             )
             return torch.jit.script(inference_module)
 
-    def save_torchscript(self, save_path: str, model_only: bool = False, device: str = "cpu", cpu_only: bool = False):
+    def save_torchscript(
+        self,
+        save_path: str,
+        model_only: bool = False,
+        device: Union[TorchDevice, Dict[str, TorchDevice]] = "cpu",
+    ):
         """Saves the Torchscript model to disk.
 
         model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else, the
             preprocessing and postprocessing steps will also be converted to Torchscript.
-        device (str, optional): The device to save the model to.
-        cpu_only (bool, optional): If True, the model will only be saved to the CPU. Only used if device is not "cpu".
+        device (dict or str, default: "cpu"): The device to save the model to. If a dictionary, it must have keys that
+            correspond to ludwig.models.inference.INFERENCE_STAGES and values that are strings or torch.device objects.
         """
+        stage_to_device = get_stage_to_device_dict(device)
         save_ludwig_model_for_inference(
             save_path,
             self.model,
             self.config,
             self.training_set_metadata,
             model_only=model_only,
-            device="cpu",
+            device=stage_to_device,
         )
-        if not cpu_only and torch.device(device) != torch.device("cpu"):
-            save_ludwig_model_for_inference(
-                save_path,
-                self.model,
-                self.config,
-                self.training_set_metadata,
-                model_only=model_only,
-                device=device,
-            )
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
