@@ -101,12 +101,12 @@ class DaskEngine(DataFrameEngine):
         slices = df.partitions
         return split_by_slices(slices, n, probabilities)
 
-    def to_parquet(self, df, path):
+    def to_parquet(self, df, path, index=False):
         with ProgressBar():
             df.to_parquet(
                 path,
                 engine="pyarrow",
-                write_index=False,
+                write_index=index,
                 schema="infer",
             )
 
