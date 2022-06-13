@@ -33,9 +33,9 @@ def place_on_torch_device(x: Any, device: Optional[torch.device] = None):
     elif isinstance(x, list):
         return [place_on_torch_device(v, device) for v in x]
     elif isinstance(x, set):
-        return set([place_on_torch_device(v, device) for v in x])
+        return {place_on_torch_device(v, device) for v in x}
     elif isinstance(x, tuple):
-        return tuple([place_on_torch_device(v, device) for v in x])
+        return tuple(place_on_torch_device(v, device) for v in x)
     else:
         return x
 

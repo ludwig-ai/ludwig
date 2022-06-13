@@ -1469,9 +1469,9 @@ class LudwigModel:
         """Saves the Torchscript model to disk.
 
         model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else, the
-            preprocessing and postprocessing steps will also be converted to Torchscript.
-        device (str, optional): The device to save the model to.
-        cpu_only (bool, optional): If True, the model will only be saved to the CPU. Only used if device is not "cpu".
+        preprocessing and postprocessing steps will also be converted to Torchscript. device (str, optional): The device
+        to save the model to. cpu_only (bool, optional): If True, the model will only be saved to the CPU. Only used if
+        device is not "cpu".
         """
         save_ludwig_model_for_inference(
             save_path,
