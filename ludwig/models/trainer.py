@@ -1112,30 +1112,6 @@ class Trainer(BaseTrainer):
 
         return metrics_log, tables
 
-    def calibration(self, dataset, dataset_name: str, save_path: str):
-        """Calibrates model output probabilities on validation set after training.
-
-        This works well for most datasets, though it may fail for some difficult or extremely imbalanced datasets.
-        """
-        if all(o.calibration_module is None for o in self.model.output_features.values()):
-            # Early out if no output features have calibration enabled.
-            return
-        predictor = Predictor(self.model, batch_size=self.eval_batch_size, horovod=self.horovod)
-        metrics, predictions = predictor.batch_evaluation(
-            dataset, collect_predictions=True, collect_logits=True, collect_labels=True, dataset_name=dataset_name
-        )
-        for output_feature in self.model.output_features.values():
-            feature_logits_key = "%s_logits" % output_feature.feature_name
-            if feature_logits_key in predictions:
-                feature_logits = predictions[feature_logits_key]
-                feature_labels = predictions["%s_labels" % output_feature.feature_name]
-                output_feature.calibrate(
-                    np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
-                )
-        if self.is_coordinator() and not self.skip_save_model:
-            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-            torch.save(self.model.state_dict(), model_weights_path)
-
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
             self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
