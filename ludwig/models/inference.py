@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, TYPE_CHECKING, Optional, Union
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
@@ -16,7 +16,7 @@ from ludwig.utils.audio_utils import read_audio_if_path
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import DEVICE, place_on_torch_device
-from ludwig.utils.types import TorchscriptPreprocessingInput, TorchDevice
+from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
