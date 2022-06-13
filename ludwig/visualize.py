@@ -44,6 +44,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.strings_utils import column_is_bool
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,15 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
             # non-standard boolean representation
             ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx)
         else:
-            # standard boolean representation
-            ground_truth = ground_truth.values
+            # If the values in column could have been inferred as boolean dtype, cast (strings) as booleans.
+            # This preserves the behavior of this feature before #2058.
+            if column_is_bool(ground_truth):
+                ground_truth = _vectorize_ground_truth(
+                    ground_truth, {"false": False, "False": False, "true": True, "True": True}, ground_truth_apply_idx
+                )
+            else:
+                # standard boolean representation
+                ground_truth = ground_truth.values
 
         # ensure positive_label is 1 for binary feature
         positive_label = 1
