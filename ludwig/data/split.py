@@ -45,6 +45,10 @@ class Splitter(ABC):
     def validate(self, config: Dict[str, Any]):
         pass
 
+    @property
+    def required_columns(self) -> List[str]:
+        return []
+
 
 @split_registry.register("random", default=True)
 class RandomSplitter(Splitter):
@@ -73,6 +77,10 @@ class FixedSplitter(Splitter):
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         return _split_on_series(df, df[self.column])
+
+    @property
+    def required_columns(self) -> List[str]:
+        return [self.column]
 
 
 @split_registry.register("stratify")
@@ -111,6 +119,10 @@ class StratifySplitter(Splitter):
             )
         elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {BINARY, CATEGORY}:
             raise ValueError(f"Feature for stratify column {self.column} must be binary or category")
+
+    @property
+    def required_columns(self) -> List[str]:
+        return [self.column]
 
 
 @split_registry.register("datetime")
@@ -162,6 +174,10 @@ class DatetimeSplitter(Splitter):
             )
         elif [f for f in features if f[COLUMN] == self.column][0][TYPE] not in {DATE}:
             raise ValueError(f"Feature for datetime split column {self.column} must be a datetime")
+
+    @property
+    def required_columns(self) -> List[str]:
+        return [self.column]
 
 
 def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:

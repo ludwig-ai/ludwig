@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple
 
@@ -40,6 +41,7 @@ from ludwig.constants import (
     PAD,
     PREPROCESSING,
     PROC_COLUMN,
+    SPLIT,
     SRC,
     TEST,
     TRAINING,
@@ -49,7 +51,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files
 from ludwig.data.dataset.base import Dataset
-from ludwig.data.split import split_dataset
+from ludwig.data.split import get_splitter, split_dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
@@ -1112,6 +1114,12 @@ def build_dataset(
     for callback in callbacks or []:
         callback.on_build_data_end(dataset_df, mode)
 
+    # Get any additional columns needed for splitting downstream, otherwise they will not be
+    # included in the preprocessed output.
+    splitter = get_splitter(**global_preprocessing_parameters.get("split", {}))
+    for col in splitter.required_columns:
+        proc_cols[col] = dataset_df[col]
+
     # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
     #  conversion with Tensor columns. Can remove for 1.8.
     if backend.df_engine.partitioned:
@@ -1576,9 +1584,6 @@ def _preprocess_file_for_training(
             mode="training",
         )
 
-        logger.debug("split train-val-test")
-        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
-
         # TODO(travis): see how this is used by viz, find an alternative to saving a numpy array
         # if backend.is_coordinator() and not skip_save_processed_input and not backend.df_engine.partitioned:
         #     # save split values for use by visualization routines
@@ -1594,6 +1599,22 @@ def _preprocess_file_for_training(
 
         concatenated_df = concatenate_files(training_set, validation_set, test_set, read_fn, backend)
         training_set_metadata[SRC] = training_set
+        print(concatenated_df.columns)
+
+        # Data is pre-split, so we override whatever split policy the user specified
+        if preprocessing_params["split"]:
+            warnings.warn(
+                'Preprocessing "split" section provided, but pre-split dataset given as input. '
+                "Ignoring split configuration."
+            )
+
+        preprocessing_params = {
+            **preprocessing_params,
+            "split": {
+                "type": "fixed",
+                "column": SPLIT,
+            },
+        }
 
         data, training_set_metadata = build_dataset(
             concatenated_df,
@@ -1606,11 +1627,11 @@ def _preprocess_file_for_training(
             mode="training",
         )
 
-        logger.debug("split train-val-test")
-        training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
-
     else:
         raise ValueError("either data or data_train have to be not None")
+
+    logger.debug("split train-val-test")
+    training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
