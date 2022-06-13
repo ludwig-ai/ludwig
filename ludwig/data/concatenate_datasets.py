@@ -77,6 +77,9 @@ def concatenate_df(train_df, vali_df, test_df, backend):
 
 def concatenate_splits(train_df, vali_df, test_df, backend):
     def to_frame(df, split):
+        if df is None:
+            return None
+
         df = df.index.to_frame(name=SPLIT)
         df[SPLIT] = split
         return df
