@@ -45,10 +45,10 @@ class Calibrator:
             dataset, collect_predictions=True, collect_logits=True, collect_labels=True, dataset_name=dataset_name
         )
         for output_feature in self.model.output_features.values():
-            feature_logits_key = "%s_logits" % output_feature.feature_name
+            feature_logits_key = f"{output_feature.feature_name}_logits"
             if feature_logits_key in predictions:
                 feature_logits = predictions[feature_logits_key]
-                feature_labels = predictions["%s_labels" % output_feature.feature_name]
+                feature_labels = predictions[f"{output_feature.feature_name}_labels"]
                 output_feature.calibrate(
                     np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
                 )
