@@ -161,11 +161,11 @@ class DatetimeSplitter(Splitter):
                 return x
             return f"{x[0]}-{x[1]}-{x[2]} {x[5]}:{x[6]}:{x[7]}"
 
-        df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.col], list_to_date_str)
+        df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.column], list_to_date_str)
 
         # Convert datetime to int64 to workaround Dask limitation
         # https://github.com/dask/dask/issues/9003
-        df[TMP_SPLIT_COL] = backend.df_engine.db_lib.to_datetime(df[TMP_SPLIT_COL]).values.astype("int64")
+        df[TMP_SPLIT_COL] = backend.df_engine.df_lib.to_datetime(df[TMP_SPLIT_COL]).values.astype("int64")
 
         # Sort by ascending datetime and drop the temporary column
         df = df.sort_values(TMP_SPLIT_COL).drop(columns=TMP_SPLIT_COL)

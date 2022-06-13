@@ -1,5 +1,4 @@
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from random import randrange
 from unittest.mock import Mock
 
@@ -158,11 +157,12 @@ def test_datetime_split(df_engine):
         random_second = randrange(int_delta)
         return str(start + timedelta(seconds=random_second))
 
-    df["datetime"] = df["C"].map(random_date)
+    df["date_col"] = df["C"].map(random_date)
 
     probs = (0.7, 0.1, 0.2)
     split_params = {
-        "type": "random",
+        "type": "datetime",
+        "column": "date_col",
         "probabilities": probs,
     }
     splitter = get_splitter(**split_params)
@@ -172,9 +172,15 @@ def test_datetime_split(df_engine):
     splits = splitter.split(df, backend)
 
     assert len(splits) == 3
+
+    min_datestr = "1990-01-01 00:00:00"
     for split, p in zip(splits, probs):
         if isinstance(df_engine, DaskEngine):
             # Dask splitting is not exact, so apply soft constraint here
-            assert np.isclose(len(split), int(nrows * p), atol=5)
+            split = split.compute()
+            assert np.isclose(len(split), int(nrows * p), atol=15)
         else:
             assert len(split) == int(nrows * p)
+
+        assert np.all(split["date_col"] > min_datestr)
+        min_datestr = split["date_col"].max()
