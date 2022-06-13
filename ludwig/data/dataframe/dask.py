@@ -37,10 +37,11 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self, parallelism=None, persist=True, **kwargs):
+    def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
         self._parallelism = parallelism
         self._persist = persist
-        set_scheduler(ray_dask_get)
+        if _use_ray:
+            set_scheduler(ray_dask_get)
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
