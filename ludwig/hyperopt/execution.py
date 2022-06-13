@@ -893,13 +893,7 @@ def substitute_parameters(config, parameters, shared_params_dict):
             shared_params_dict=shared_params_dict,
         )
     for output_feature in config[OUTPUT_FEATURES]:
-        set_values(
-            output_feature,
-            output_feature[COLUMN],
-            parameters_dict,
-            feature_type=output_feature[TYPE],
-            shared_params_dict=shared_params_dict,
-        )
+        set_values(output_feature, output_feature[COLUMN], parameters_dict)
     set_values(config[COMBINER], COMBINER, parameters_dict)
     set_values(config[TRAINER], TRAINER, parameters_dict)
     set_values(config[PREPROCESSING], PREPROCESSING, parameters_dict)
