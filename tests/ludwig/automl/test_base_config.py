@@ -2,10 +2,15 @@ import random
 
 import pytest
 
-from ludwig.automl.base_config import infer_type, should_exclude
-from ludwig.automl.utils import FieldInfo
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.data.dataset_synthesizer import generate_string
+
+try:
+    from ludwig.automl.base_config import infer_type, should_exclude
+    from ludwig.automl.utils import FieldInfo
+except ImportError:
+    pass
+
 
 ROW_COUNT = 100
 TARGET_NAME = "target"
@@ -42,6 +47,7 @@ TARGET_NAME = "target"
         (ROW_COUNT, [], 0, ROW_COUNT, 0.0, AUDIO),
     ],
 )
+@pytest.mark.distributed
 def test_infer_type(num_distinct_values, distinct_values, img_values, audio_values, missing_vals, expected):
     field = FieldInfo(
         name="foo",
@@ -54,6 +60,7 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, audio_valu
     assert infer_type(field, missing_vals, ROW_COUNT) == expected
 
 
+@pytest.mark.distributed
 def test_infer_type_explicit_date():
     field = FieldInfo(
         name="foo",
@@ -76,6 +83,7 @@ def test_infer_type_explicit_date():
         (0, 0, CATEGORY, "empty_col", True),
     ],
 )
+@pytest.mark.distributed
 def test_should_exclude(idx, num_distinct_values, dtype, name, expected):
     field = FieldInfo(name=name, dtype=dtype, num_distinct_values=num_distinct_values)
     assert should_exclude(idx, field, dtype, ROW_COUNT, TARGET_NAME) == expected

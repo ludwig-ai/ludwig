@@ -38,7 +38,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
-_ray112 = LooseVersion(ray.__version__) >= LooseVersion("1.12")
+_ray113 = LooseVersion(ray.__version__) == LooseVersion("1.13.0")
 
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
@@ -83,10 +83,12 @@ class RayDataset(Dataset):
             window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
                     for the dataset.
         """
-        if not fully_executed and not _ray112:
-            raise ValueError(f"Cannot set fully_execute=False in ray {ray.__version__}")
+        if fully_executed:
+            if _ray113:
+                # Workaround for: https://github.com/ray-project/ray/issues/25643
+                # TODO(travis): remove after 1.13.1
+                self.ds = self.ds.map_batches(lambda x: x, batch_size=None)
 
-        if fully_executed and _ray112:
             # set instance state so calls to __len__ will also use the fully_executed version
             self.ds = self.ds.fully_executed()
 

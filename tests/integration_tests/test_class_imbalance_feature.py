@@ -6,12 +6,17 @@ import tempfile
 import numpy as np
 import pandas as pd
 import pytest
-import ray
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.backend.ray import RayBackend
 from tests.integration_tests.utils import create_data_set_to_use, spawn
+
+try:
+    import ray
+
+    from ludwig.backend.ray import RayBackend
+except ImportError:
+    ray = None
 
 rs = np.random.RandomState(42)
 RAY_BACKEND_CONFIG = {
