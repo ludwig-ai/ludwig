@@ -17,9 +17,40 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import List, Type, Union
 
 import torch
 import torch.nn as nn
+
+from ludwig.constants import BINARY, CATEGORY
+from ludwig.utils.registry import DEFAULT_KEYS, Registry
+
+calibration_registry = Registry()
+
+
+def register_calibration(name: str, features: Union[str, List[str]], default=False):
+    """Registers a calibration implementation for a list of features."""
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            feature_registry = calibration_registry.get(feature, {})
+            feature_registry[name] = cls
+            if default:
+                for key in DEFAULT_KEYS:
+                    feature_registry[key] = cls
+            calibration_registry[feature] = feature_registry
+        return cls
+
+    return wrap
+
+
+def get_calibration_cls(feature: str, calibration_method: str) -> Type["CalibrationModule"]:
+    """Get calibration class for specified feature type and calibration method."""
+    if feature in calibration_registry:
+        return calibration_registry[feature].get(calibration_method)
+    return None
 
 
 class ECELoss(nn.Module):
@@ -82,6 +113,7 @@ class CalibrationModule(nn.Module, ABC):
         return NotImplementedError()
 
 
+@register_calibration("temperature_scaling", [BINARY, CATEGORY], default=True)
 class TemperatureScaling(CalibrationModule):
     """Implements temperature scaling of logits. Based on results from "On Calibration of Modern Neural Networks":
     https://arxiv.org/abs/1706.04599. Temperature scaling scales all logits by the same constant factor. Though it
@@ -170,6 +202,7 @@ class TemperatureScaling(CalibrationModule):
             return torch.softmax(scaled_logits, -1)
 
 
+@register_calibration("matrix_scaling", CATEGORY, default=False)
 class MatrixScaling(CalibrationModule):
     """Implements matrix scaling of logits, as described in Beyond temperature scaling: Obtaining well-calibrated
     multiclass probabilities with Dirichlet calibration https://arxiv.org/abs/1910.12656.
