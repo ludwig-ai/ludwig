@@ -830,20 +830,16 @@ executor_registry = {"ray": RayTuneExecutor}
 
 def set_values(model_dict, feature_name, parameters_dict, feature_type=None, shared_params_dict=None):
     # Update shared params
-    if shared_params_dict and feature_type in shared_params_dict:
-        features_with_shared_parameters = shared_params_dict[feature_type]
-        if (
-            DEFAULTS in parameters_dict
-            and feature_type in parameters_dict[DEFAULTS]
-            and feature_name in features_with_shared_parameters
-        ):
-            params = parameters_dict[DEFAULTS][feature_type]
-            for key, value in params.items():
-                if isinstance(value, dict):
-                    for sub_key, sub_value in value.items():
-                        model_dict[key][sub_key] = sub_value
-                else:
-                    model_dict[key] = value
+    if DEFAULTS in parameters_dict and shared_params_dict:
+        if feature_type in shared_params_dict and feature_name in shared_params_dict[feature_type]:
+            if feature_type in parameters_dict[DEFAULTS]:
+                shared_params = parameters_dict[DEFAULTS][feature_type]
+                for key, value in shared_params.items():
+                    if isinstance(value, dict):
+                        for sub_key, sub_value in value.items():
+                            model_dict[key][sub_key] = sub_value
+                    else:
+                        model_dict[key] = value
 
     # Update or overwrite any feature specific hyperopt params
     if feature_name in parameters_dict:
