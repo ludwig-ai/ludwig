@@ -18,17 +18,17 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     COLUMN,
+    COMBINER,
+    DEFAULTS,
     INPUT_FEATURES,
     MAXIMIZE,
     OUTPUT_FEATURES,
-    COMBINER,
+    PREPROCESSING,
     TEST,
     TRAINER,
     TRAINING,
     TYPE,
     VALIDATION,
-    DEFAULTS,
-    PREPROCESSING,
 )
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
 from ludwig.hyperopt.sampling import RayTuneSampler
@@ -829,9 +829,8 @@ executor_registry = {"ray": RayTuneExecutor}
 
 
 def set_values(model_dict, feature_name, parameters_dict, feature_type=None, shared_params_dict=None):
-    """
-    Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled
-    for each trial stored in parameters_dict
+    """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled for each trial
+    stored in parameters_dict.
 
     # Inputs
 
