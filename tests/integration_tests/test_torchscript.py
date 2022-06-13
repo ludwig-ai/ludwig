@@ -392,9 +392,12 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
     # Obtain predictions from Python model
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
+    # Create graph inference model (Torchscript) from trained Ludwig model.
+    script_module = ludwig_model.to_torchscript()
+
     # Ensure torchscript saving/loading does not affect final predictions.
     script_module_path = os.path.join(tmpdir, "inference_module.pt")
-    torch.jit.save(ludwig_model.to_torchscript(), script_module_path)
+    torch.jit.save(script_module, script_module_path)
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
