@@ -109,7 +109,7 @@ GLOBAL_CRED_LOCK = threading.Lock()
 
 
 def get_split_path(dataset_fp):
-    return os.path.splitext(dataset_fp)[0] + ".split.csv"
+    return os.path.splitext(dataset_fp)[0] + ".split.parquet"
 
 
 def get_abs_path(data_csv_path, file_path):

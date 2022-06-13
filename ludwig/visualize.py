@@ -239,9 +239,7 @@ def _extract_ground_truth_values(
             split = load_array(split_file)
             mask = split == ground_truth_split
         else:
-            data_format = figure_data_format_dataset(split_file)
-            reader = get_from_registry(data_format, external_data_reader_registry)
-            split = reader(split_file)
+            split = pd.read_parquet(split_file)
 
             # Realign index from the split file with the ground truth to account for
             # dropped rows during preprocessing.

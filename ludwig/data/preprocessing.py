@@ -1629,7 +1629,7 @@ def _preprocess_file_for_training(
 
     if dataset and backend.is_coordinator() and not skip_save_processed_input:
         logger.debug("writing split file")
-        splits_df = concatenate_splits(training_set, validation_set, test_set, backend)
+        splits_df = concatenate_splits(training_data, validation_data, test_data, backend)
         split_fp = get_split_path(dataset or training_set)
         backend.df_engine.to_parquet(splits_df, split_fp, index=True)
 
