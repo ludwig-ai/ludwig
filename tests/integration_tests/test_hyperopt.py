@@ -20,8 +20,9 @@ from typing import Dict, Optional, Tuple
 import pytest
 import ray
 import torch
+import json
 
-from ludwig.constants import ACCURACY, RAY, TRAINER
+from ludwig.constants import ACCURACY, RAY, TEXT, TRAINER, INPUT_FEATURES, TYPE
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
@@ -311,6 +312,99 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
+
+    if os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")):
+        os.remove(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("search_space", ["random"])
+def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space, tmpdir, ray_cluster):
+    input_features = [
+        text_feature(name="title", cell_type="rnn", reduce_output="sum"),
+        text_feature(name="body", cell_type="rnn"),
+        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(vocab_size=6),
+    ]
+
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+    }
+
+    categorical_feature_name = input_features[2]["name"]
+    output_feature_name = output_features[0]["name"]
+
+    cell_types = ["lstm", "gru"]
+
+    # Create default search space for text features with various cell types
+    search_parameters = {
+        "trainer.learning_rate": {
+            "lower": 0.0001,
+            "upper": 0.01,
+            "space": "loguniform",
+        },
+        categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 2, "upper": 8},
+        "defaults.text.cell_type": {"space": "choice", "categories": cell_types},
+    }
+
+    hyperopt_configs = {
+        "parameters": search_parameters,
+        "goal": "minimize",
+        "output_feature": output_feature_name,
+        "validation_metrics": "loss",
+        "executor": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "search_alg": {"type": "variant_generator"},
+    }
+
+    # add hyperopt parameter space to the config
+    config["hyperopt"] = hyperopt_configs
+
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+
+    # check for return results
+    assert isinstance(hyperopt_results, HyperoptResults)
+
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
+
+    # check if trials match random_search_size
+    assert hyperopt_results_df.shape[0] == RANDOM_SEARCH_SIZE
+
+    # Check that the trials did sample from defaults in the search space
+    for _, trial_row in hyperopt_results_df.iterrows():
+        cell_type = trial_row["config.defaults.text.cell_type"].replace('"', "")
+        assert cell_type in cell_types
+
+    # check for existence of the hyperopt statistics file
+    assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
+
+    # Check that each trial's text input configs got updated correctly
+    for _, trial_row in hyperopt_results_df.iterrows():
+        trial_dir = trial_row["trial_dir"]
+        parameters_file_path = os.path.join(trial_dir, "test_hyperopt_run", "model", "model_hyperparameters.json")
+        try:
+            params_fd = open(parameters_file_path)
+            model_parameters = json.load(params_fd)
+            input_features = model_parameters[INPUT_FEATURES]
+            text_input_cell_types = set()  # Used to track that all text features have the same cell_type
+            for input_feature in input_features:
+                if input_feature[TYPE] == TEXT:
+                    cell_type = input_feature["cell_type"]
+                    # Check that cell type got updated from the sampler
+                    assert cell_type in cell_types
+                    text_input_cell_types.add(cell_type)
+            # All text features with defaults should have the same cell type for this trial
+            assert len(text_input_cell_types) == 1
+            params_fd.close()
+        # Likely unable to open trial dir so fail this test
+        except IOError:
+            assert 1 == 0
 
     if os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")):
         os.remove(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
