@@ -11,18 +11,18 @@ from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     COMBINED,
+    ENCODER,
     EXECUTOR,
     HYPEROPT,
+    INPUT_FEATURES,
     LOSS,
     MINIMIZE,
+    NAME,
     RAY,
     TEST,
     TRAINING,
     TYPE,
     VALIDATION,
-    INPUT_FEATURES,
-    NAME,
-    ENCODER,
 )
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
@@ -395,11 +395,9 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
 
 def get_shared_params_dict(features):
-    """
-    This returns a mapping of feature type to list of features
-    without an encoder. They may be considered for potential shared
-    parameter search spaces depending on the parameter space defined
-    later within the hyperopt config.
+    """This returns a mapping of feature type to list of features without an encoder. They may be considered for
+    potential shared parameter search spaces depending on the parameter space defined later within the hyperopt
+    config.
 
     # Inputs
 

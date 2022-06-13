@@ -15,7 +15,6 @@
 # ==============================================================================
 from unittest.mock import DEFAULT
 
-
 INPUT_FEATURES = "input_features"
 OUTPUT_FEATURES = "output_features"
 
