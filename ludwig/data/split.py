@@ -219,4 +219,5 @@ def split_dataset(
 def _split_on_series(df: DataFrame, series: Series) -> Tuple[DataFrame, DataFrame, DataFrame]:
     df[TMP_SPLIT_COL] = series
     dfs = split_dataset_ttv(df, TMP_SPLIT_COL)
-    return tuple(df.drop(columns=TMP_SPLIT_COL) if df is not None else None for df in dfs)
+    train, test, val = tuple(df.drop(columns=TMP_SPLIT_COL) if df is not None else None for df in dfs)
+    return train, val, test

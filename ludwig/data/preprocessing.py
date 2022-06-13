@@ -1380,7 +1380,7 @@ def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, sh
             dataset = shuffle(dataset)
         return dataset
 
-    training_set, test_set, validation_set = split_dataset(dataset, preprocessing_params, backend)
+    training_set, validation_set, test_set = split_dataset(dataset, preprocessing_params, backend)
 
     if shuffle_training:
         training_set = shuffle(training_set)
@@ -1625,7 +1625,7 @@ def _preprocess_file_for_training(
         raise ValueError("either data or data_train have to be not None")
 
     logger.debug("split train-val-test")
-    training_data, test_data, validation_data = split_dataset(data, preprocessing_params, backend, random_seed)
+    training_data, validation_data, test_data = split_dataset(data, preprocessing_params, backend, random_seed)
 
     if dataset and backend.is_coordinator() and not skip_save_processed_input:
         logger.debug("writing split file")
@@ -1679,7 +1679,7 @@ def _preprocess_df_for_training(
     )
 
     logger.debug("split train-val-test")
-    training_set, test_set, validation_set = split_dataset(data, preprocessing_params, backend, random_seed)
+    training_set, validation_set, test_set = split_dataset(data, preprocessing_params, backend, random_seed)
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
@@ -1792,7 +1792,7 @@ def preprocess_for_prediction(
 
         if split != FULL:
             logger.debug("split train-val-test")
-            training_set, test_set, validation_set = split_dataset(dataset, preprocessing_params, backend)
+            training_set, validation_set, test_set = split_dataset(dataset, preprocessing_params, backend)
 
     if split == TRAINING:
         dataset = training_set
