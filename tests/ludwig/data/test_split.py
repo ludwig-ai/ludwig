@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.split import get_splitter
 
 try:
     from ludwig.data.dataframe.dask import DaskEngine
-    from ludwig.data.dataframe.pandas import PandasEngine
 except ImportError:
     DaskEngine = Mock
 
