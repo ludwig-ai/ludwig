@@ -24,6 +24,7 @@ import os
 import random
 import subprocess
 
+import numpy as np
 import pytest
 
 from ludwig.constants import TRAINER
@@ -1501,6 +1502,6 @@ def test_load_ground_truth_split_from_file(csv_filename):
     target_predictions_from_val = val_df[output_feature_name]
     target_predictions_from_test = test_df[output_feature_name]
 
-    assert str(ground_truth_train_split.values) == str(target_predictions_from_train.values)
-    assert str(ground_truth_val_split.values) == str(target_predictions_from_val.values)
-    assert str(ground_truth_test_split.values) == str(target_predictions_from_test.values)
+    assert np.all(ground_truth_train_split.eq(target_predictions_from_train))
+    assert np.all(ground_truth_val_split.eq(target_predictions_from_val))
+    assert np.all(ground_truth_test_split.eq(target_predictions_from_test))

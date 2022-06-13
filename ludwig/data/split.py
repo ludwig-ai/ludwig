@@ -61,7 +61,6 @@ class RandomSplitter(Splitter):
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
-        set_random_seed(random_seed)
         if backend.df_engine.partitioned:
             # The below approach is very inefficient for partitioned backends, which
             # can split by partition. This may not be exact in all cases, but is much more efficient.
