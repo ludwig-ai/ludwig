@@ -64,7 +64,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     ]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, csv_filename)
+    data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=50)
 
     #############
     # Train model
