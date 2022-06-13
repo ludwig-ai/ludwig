@@ -162,6 +162,7 @@ def test_imbalance_ray(balance):
             "split": split_col,
         }
     )
+
     config["preprocessing"][balance] = 0.5
     run_test_imbalance_ray(df, config, balance)
 
