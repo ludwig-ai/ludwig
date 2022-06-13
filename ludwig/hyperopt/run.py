@@ -184,8 +184,7 @@ def hyperopt(
         config_dict = config
 
     # Get mapping of features that don't have an encoder for shared parameters
-    # share
-    # TODO: Consider output features as well?
+    # TODO: Consider output features as well
     shared_params_dict = get_shared_params_dict(config_dict[INPUT_FEATURES])
 
     # merge config with defaults
@@ -397,12 +396,20 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
 def get_shared_params_dict(features):
     """
-    This returns a mapping of feature_type: List[features] that don't
-    have an encoder specified in the config. They may be considered
-    for potential shared parameter search spaces depending on the
-    parameter space defined later within the hyperopt config.
+    This returns a mapping of feature type to list of features
+    without an encoder. They may be considered for potential shared
+    parameter search spaces depending on the parameter space defined
+    later within the hyperopt config.
 
-    # TODO: Add a proper doc string
+    # Inputs
+
+    :param features: (dict) config which defines the different feature
+    related parameters of the model (either input or output)
+
+    # Returns
+
+    :return: feature_group_to_features_map (dict) that maps each feature
+    type to a set of feature names without encoders
     """
     feature_group_to_features_map = {}
 

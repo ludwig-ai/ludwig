@@ -829,6 +829,21 @@ executor_registry = {"ray": RayTuneExecutor}
 
 
 def set_values(model_dict, feature_name, parameters_dict, feature_type=None, shared_params_dict=None):
+    """
+    Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled
+    for each trial stored in parameters_dict
+
+    # Inputs
+
+    :param model_dict: (dict) contains the parameters for the specific input feature from config
+    :param feature_name: (str) name of the feature to update
+    :param parameters_dict: (dict) parameters from the hyperopt sampler to be used to overwrite
+         default params in model_dict
+    :param feature_type: (str, default: none) type of the feature to update
+    :param shared_params_dict: (dict, default: none) mapping of feature type to feature names that
+         can be considered for shared parameter updates based on original config
+    """
+
     # Update shared params
     if DEFAULTS in parameters_dict and shared_params_dict:
         if feature_type in shared_params_dict and feature_name in shared_params_dict[feature_type]:
