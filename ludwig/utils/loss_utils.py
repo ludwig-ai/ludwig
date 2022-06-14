@@ -3,7 +3,10 @@ import torch
 
 def rmspe_loss(targets: torch.Tensor, predictions: torch.Tensor) -> torch.Tensor:
     """Root mean square percentage error."""
-    loss = torch.sqrt(torch.mean(((targets - predictions).float() / targets) ** 2))
+    epsilon = 1e-4
+    # add epsilon if targets are zero to avoid division by zero
+    denominator = targets + epsilon * (targets == 0).float()
+    loss = torch.sqrt(torch.mean(((targets - predictions).float() / denominator) ** 2))
     return loss
 
 
