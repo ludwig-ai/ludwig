@@ -46,7 +46,9 @@ class BasePredictor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def batch_evaluation(self, dataset, collect_predictions=False, dataset_name=None):
+    def batch_evaluation(
+        self, dataset, collect_predictions=False, collect_logits=False, collect_labels=False, dataset_name=None
+    ):
         raise NotImplementedError()
 
     @abstractmethod
@@ -76,11 +78,7 @@ class Predictor(BasePredictor):
         self.device = get_torch_device()
         self.model = model.to(self.device)
 
-    def batch_predict(
-        self,
-        dataset: Dataset,
-        dataset_name: str = None,
-    ):
+    def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
@@ -99,6 +97,8 @@ class Predictor(BasePredictor):
                     batch = batcher.next_batch()
                     preds = self._predict(self.model, batch)
                     self._accumulate_preds(preds, predictions)
+                    if collect_logits:
+                        self._accumulate_logits(preds, predictions)
                     progress_bar.update(1)
 
                 progress_bar.close()
@@ -110,7 +110,7 @@ class Predictor(BasePredictor):
 
         return from_numpy_dataset(predictions)
 
-    def predict_single(self, batch):
+    def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
@@ -118,6 +118,8 @@ class Predictor(BasePredictor):
             predictions = defaultdict(list)
             preds = self._predict(self.model, batch)
             self._accumulate_preds(preds, predictions)
+            if collect_logits:
+                self._accumulate_logits(preds, predictions)
             self._concat_preds(predictions)
 
         # reset model to its original training mode
@@ -146,6 +148,14 @@ class Predictor(BasePredictor):
         for of_name, of_preds in preds.items():
             for pred_name, pred_values in of_preds.items():
                 if pred_name not in EXCLUDE_PRED_SET:
+                    key = f"{of_name}_{pred_name}"
+                    predictions[key].append(pred_values)
+
+    def _accumulate_logits(self, preds, predictions):
+        # accumulate logits from batch for each output feature
+        for of_name, of_preds in preds.items():
+            for pred_name, pred_values in of_preds.items():
+                if pred_name == LOGITS:
                     key = f"{of_name}_{pred_name}"
                     predictions[key].append(pred_values)
 
@@ -357,10 +367,10 @@ def print_evaluation_stats(test_stats):
                     logger.info(f"{metric}: {value_repr}")
 
 
-def get_output_columns(output_features):
+def get_output_columns(output_features, include_logits: bool = False):
     output_columns = []
     for of_name, feature in output_features.items():
         for pred in feature.get_prediction_set():
-            if pred not in EXCLUDE_PRED_SET:
+            if pred not in EXCLUDE_PRED_SET or (pred == LOGITS and include_logits):
                 output_columns.append(f"{of_name}_{pred}")
     return output_columns
