@@ -657,7 +657,7 @@ class RayPredictor(BasePredictor):
             labels = labels.rename(
                 columns={f.proc_column: f"{f.feature_name}_labels" for f in self.model.output_features.values()}
             )
-            predictions = dask.dataframe.concat([predictions, labels])
+            predictions = predictions.merge(labels, how="left", left_index=True, right_index=True)
 
         return predictions
 
