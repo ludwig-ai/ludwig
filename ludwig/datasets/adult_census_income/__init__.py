@@ -92,7 +92,7 @@ class AdultCensusIncome(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset
         df = pd.concat([train_df, test_df])
         # remove trailing space
         df["income"] = df["income"].str.strip()
-    
+
         makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename), index=False)
 
