@@ -27,6 +27,8 @@ from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 
+from ludwig.schema.features.utils import register_input_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,6 +103,7 @@ class BagFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("bag")
 class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []

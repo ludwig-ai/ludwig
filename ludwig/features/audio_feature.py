@@ -53,6 +53,8 @@ from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature
+
 
 class _AudioPreprocessing(torch.nn.Module):
 
@@ -463,6 +465,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f"{feature_type} is not recognized.")
 
 
+@register_input_feature("audio")
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None

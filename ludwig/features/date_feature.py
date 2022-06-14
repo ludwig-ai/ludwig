@@ -26,6 +26,8 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature
+
 logger = logging.getLogger(__name__)
 
 DATE_VECTOR_LENGTH = 9
@@ -115,6 +117,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("date")
 class DateInputFeature(DateFeatureMixin, InputFeature):
     encoder = "embed"
 

@@ -51,6 +51,8 @@ from ludwig.utils.eval_utils import (
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -230,6 +232,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("binary")
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     encoder = "passthrough"
     norm = None
@@ -285,6 +288,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return _BinaryPreprocessing(metadata)
 
 
+@register_output_feature("binary")
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}

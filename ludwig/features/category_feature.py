@@ -48,6 +48,8 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -168,6 +170,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("category")
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = "dense"
 
@@ -223,6 +226,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return _CategoryPreprocessing(metadata)
 
 
+@register_output_feature("category")
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}

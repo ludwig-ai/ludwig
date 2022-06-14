@@ -2,11 +2,19 @@ from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
 input_type_registry = Registry()
+output_type_registry = Registry()
 
 
 def register_input_feature(name: str):
     def wrap(cls):
         input_type_registry[name] = cls
+        return cls
+    return wrap
+
+
+def register_output_feature(name: str):
+    def wrap(cls):
+        output_type_registry[name] = cls
         return cls
     return wrap
 

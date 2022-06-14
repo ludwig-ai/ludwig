@@ -25,6 +25,8 @@ from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature
+
 logger = logging.getLogger(__name__)
 
 MAX_H3_RESOLUTION = 15
@@ -120,6 +122,7 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("h3")
 class H3InputFeature(H3FeatureMixin, InputFeature):
     encoder = "embed"
 

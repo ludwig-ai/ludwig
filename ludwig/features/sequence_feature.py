@@ -61,6 +61,8 @@ from ludwig.utils.strings_utils import (
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -275,6 +277,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("sequence")
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -328,6 +331,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
+@register_output_feature("sequence")
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
     loss = {TYPE: "sequence_softmax_cross_entropy"}

@@ -45,6 +45,8 @@ from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UN
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -223,6 +225,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("set")
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []
@@ -268,6 +271,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return _SetPreprocessing(metadata)
 
 
+@register_output_feature("set")
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}

@@ -35,6 +35,8 @@ from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -199,6 +201,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("timeseries")
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None

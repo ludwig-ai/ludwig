@@ -60,6 +60,8 @@ from ludwig.utils.strings_utils import (
 from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -204,6 +206,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature("text")
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -264,6 +267,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return _SequencePreprocessing(metadata)
 
 
+@register_output_feature("text")
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}

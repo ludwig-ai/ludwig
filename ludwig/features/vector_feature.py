@@ -43,6 +43,8 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
@@ -154,6 +156,7 @@ class VectorFeatureMixin:
         return proc_df
 
 
+@register_input_feature("vector")
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = "dense"
     vector_size = 0
@@ -199,6 +202,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return _VectorPreprocessing()
 
 
+@register_output_feature("vector")
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = "projector"
     loss = {TYPE: MEAN_SQUARED_ERROR}
