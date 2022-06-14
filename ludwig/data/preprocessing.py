@@ -1350,6 +1350,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     """Precomputes the fill value for a feature.
 
     NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
+    NOTE: this is called before columns are cast. Modifications here must handle dtype conversion gracefully.
     """
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
     if missing_value_strategy == FILL_WITH_CONST:
@@ -1362,7 +1363,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
                 f"Filling missing values with mean is supported "
                 f"only for number types, not for type {feature[TYPE]}.",
             )
-        return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
+        return backend.df_engine.compute(dataset_cols[feature[COLUMN]].astype(float).mean())
     elif missing_value_strategy == FILL_WITH_FALSE:
         distinct_values = backend.df_engine.compute(
             dataset_cols[feature[COLUMN]].drop_duplicates().dropna()
