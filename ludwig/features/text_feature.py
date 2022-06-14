@@ -60,6 +60,8 @@ from ludwig.utils.strings_utils import (
 )
 from ludwig.utils.types import DataFrame
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 

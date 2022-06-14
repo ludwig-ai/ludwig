@@ -44,6 +44,8 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 
