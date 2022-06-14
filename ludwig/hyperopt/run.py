@@ -1,8 +1,8 @@
 import logging
 import os
+from collections import defaultdict
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Set, Union
-from collections import defaultdict
 
 import pandas as pd
 import yaml
@@ -397,8 +397,9 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
 def get_shared_params_dict(features: Dict[str, Any]) -> Dict[str, Set]:
     """Generates a mapping of feature type to list of features without an encoder.
-    They may be considered for potential shared parameter search spaces depending
-    on the parameter space defined later within the hyperopt config.
+
+    They may be considered for potential shared parameter search spaces depending on the parameter space defined later
+    within the hyperopt config.
     """
     feature_group_to_features_map = defaultdict(set)
     for feature in features:
