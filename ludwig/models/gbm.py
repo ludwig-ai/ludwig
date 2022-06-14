@@ -88,8 +88,6 @@ class GBM(BaseModel):
 
         output_feature_def["input_size"] = input_size
         output_feature = cls.build_single_output(output_feature_def, output_features)
-        # HACK: avoid using non-tree decoder part of the model for inference
-        output_feature.decoder_obj = nn.Identity()
         output_features[output_feature_def[NAME]] = output_feature
 
         return output_features

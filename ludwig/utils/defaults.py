@@ -30,6 +30,7 @@ from ludwig.constants import (
     EXECUTOR,
     HYPEROPT,
     MODEL_ECD,
+    MODEL_GBM,
     MODEL_TYPE,
     NAME,
     PREPROCESSING,
@@ -199,8 +200,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
     # ===== Training =====
     # Convert config dictionary into an instance of BaseTrainerConfig.
-    # NOTE: not passing backend here as to not introduce dependency on backend for merge_with_defaults.
-    #   TODO(joppe): Figure out a better way to load the correct trainer config.
     full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config[TRAINER] if TRAINER in config else {})
     config[TRAINER] = asdict(full_trainer_config)
 
@@ -212,6 +211,9 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
     # ===== Input Features =====
     for input_feature in config["input_features"]:
+        if config[MODEL_TYPE] == MODEL_GBM:
+            input_feature["encoder"] = "passthrough"
+            remove_ecd_params(input_feature)
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
     # ===== Combiner =====
@@ -223,6 +225,9 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
     # ===== Output features =====
     for output_feature in config["output_features"]:
+        if config[MODEL_TYPE] == MODEL_GBM:
+            output_feature["decoder"] = "passthrough"
+            remove_ecd_params(output_feature)
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
 
         # By default, drop rows with missing output features
@@ -234,6 +239,34 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
     return config
+
+
+def remove_ecd_params(feature):
+    feature.pop("tied", None)
+    feature.pop("fc_layers", None)
+    feature.pop("num_layers", None)
+    feature.pop("output_size", None)
+    feature.pop("use_bias", None)
+    feature.pop("weights_initializer", None)
+    feature.pop("bias_initializer", None)
+    feature.pop("norm", None)
+    feature.pop("norm_params", None)
+    feature.pop("activation", None)
+    feature.pop("dropout", None)
+    feature.pop("embedding_size", None)
+    feature.pop("embeddings_on_cpu", None)
+    feature.pop("pretrained_embeddings", None)
+    feature.pop("embeddings_trainable", None)
+    feature.pop("embedding_initializer", None)
+    # decoder params
+    feature.pop("reduce_input", None)
+    feature.pop("dependencies", None)
+    feature.pop("reduce_dependencies", None)
+    feature.pop("loss", None)
+    feature.pop("num_fc_layers", None)
+    feature.pop("threshold", None)
+    feature.pop("clip", None)
+    feature.pop("top_k", None)
 
 
 def render_config(config=None, output=None, **kwargs):

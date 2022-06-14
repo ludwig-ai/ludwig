@@ -18,12 +18,32 @@ from functools import partial
 
 import torch
 
-from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SET, TYPE, VECTOR
+from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.utils.torch_utils import Dense, get_activation
 
 logger = logging.getLogger(__name__)
+
+
+@register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
+class PassthroughDecoder(Decoder):
+    def __init__(self, input_size: int = 1, num_classes: int = None, **kwargs):
+        super().__init__()
+        logger.debug(f" {self.name}")
+        self.input_size = input_size
+        self.num_classes = num_classes
+
+    def forward(self, inputs, **kwargs):
+        return inputs
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
 
 
 @register_decoder("regressor", [BINARY, NUMBER], default=True)
