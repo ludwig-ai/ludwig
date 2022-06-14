@@ -159,7 +159,9 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
-    kwargs = dict(sep=separator, header=header, skiprows=skiprows)
+    # NOTE: we read all XSV columns in as dtype=object, bypassing all type inference. This is to avoid silent issues
+    # related to incorrect type inference (e.g. NaNs in bool columns). Convert data to correct types after reading in.
+    kwargs = dict(sep=separator, header=header, skiprows=skiprows, dtype=object)
 
     if nrows is not None:
         kwargs["nrows"] = nrows
@@ -517,6 +519,9 @@ def split_dataset_ttv(dataset, split):
     # Obtain distinct splits from the split column. If
     # a split is not present in this set, then we can skip generating
     # the dataframe for that split.
+    if dataset[split].dtype != int:
+        dataset[split] = dataset[split].astype(int)
+
     distinct_values = dataset[split].drop_duplicates()
     if hasattr(distinct_values, "compute"):
         distinct_values = distinct_values.compute()

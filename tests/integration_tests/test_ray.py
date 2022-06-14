@@ -336,7 +336,7 @@ def test_ray_audio(dataset_type, feature_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
@@ -354,7 +354,7 @@ def test_ray_image(dataset_type):
             ),
         ]
         output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
