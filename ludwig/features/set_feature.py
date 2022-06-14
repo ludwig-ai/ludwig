@@ -46,6 +46,8 @@ from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UN
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+
 logger = logging.getLogger(__name__)
 
 

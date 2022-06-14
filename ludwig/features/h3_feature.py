@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +25,8 @@ from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import TorchscriptPreprocessingInput
+
+from ludwig.schema.features.utils import register_input_feature
 
 logger = logging.getLogger(__name__)
 
