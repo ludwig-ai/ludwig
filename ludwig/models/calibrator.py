@@ -38,16 +38,16 @@ class Calibrator:
             return
         with self.backend.create_predictor(self.model, batch_size=self.batch_size) as predictor:
             metrics, predictions = predictor.batch_evaluation(
-                dataset, collect_predictions=True, collect_logits=True, collect_labels=True, dataset_name=dataset_name
+                dataset, collect_predictions=True, collect_logits=True, dataset_name=dataset_name
             )
+
+        dataset_df = dataset.to_df()
         for output_feature in self.model.output_features.values():
             if output_feature.calibration_module is not None:
                 feature_logits_key = f"{output_feature.feature_name}_logits"
                 if feature_logits_key in predictions:
                     feature_logits = self.backend.df_engine.compute(predictions[feature_logits_key])
-                    feature_labels = self.backend.df_engine.compute(
-                        predictions[f"{output_feature.feature_name}_labels"]
-                    )
+                    feature_labels = self.backend.df_engine.compute(dataset_df[output_feature.proc_column])
                     output_feature.calibration_module.train_calibration(
                         np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
                     )

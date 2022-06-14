@@ -46,9 +46,7 @@ class BasePredictor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def batch_evaluation(
-        self, dataset, collect_predictions=False, collect_logits=False, collect_labels=False, dataset_name=None
-    ):
+    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         raise NotImplementedError()
 
     @abstractmethod
@@ -165,21 +163,18 @@ class Predictor(BasePredictor):
             # is a tensor that requires grad.
             predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
-    def batch_evaluation(
-        self, dataset, collect_predictions=False, collect_logits=False, collect_labels=False, dataset_name=None
-    ):
+    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         """Batch evaluate model on dataset.
 
         Params:
             dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
             collect_predictions: Return model predictions.
             collect_logits: Return model logits and final layer activations.
-            collect_labels: Return dataset labels in predictions dictionary.
 
         Returns:
             Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
             model config. The keys of the predictions dictionary depend on which values are requested by the caller:
-            collect_predictions, collect_logits, collect_labels.
+            collect_predictions, collect_logits.
         """
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
@@ -224,11 +219,6 @@ class Predictor(BasePredictor):
                                 if collect_logits or pred_name not in EXCLUDE_PRED_SET:
                                     key = f"{of_name}_{pred_name}"
                                     predictions[key].append(pred_values)
-                    # accumulate labels from batch for each output feature
-                    if collect_labels:
-                        for of_name, of_labels in targets.items():
-                            key = f"{of_name}_labels"
-                            predictions[key].append(of_labels)
 
                     progress_bar.update(1)
                     if self.is_coordinator():

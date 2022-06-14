@@ -608,9 +608,7 @@ class RayPredictor(BasePredictor):
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
 
-    def batch_predict(
-        self, dataset: RayDataset, *args, collect_logits: bool = False, collect_labels: bool = False, **kwargs
-    ):
+    def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
@@ -651,14 +649,6 @@ class RayPredictor(BasePredictor):
         for of_feature in self.model.output_features.values():
             predictions = of_feature.unflatten(predictions)
 
-        if collect_labels:
-            columns = [f.proc_column for f in self.model.output_features.values()]
-            labels = self.df_engine.from_ray_dataset(dataset.ds)[columns]
-            labels = labels.rename(
-                columns={f.proc_column: f"{f.feature_name}_labels" for f in self.model.output_features.values()}
-            )
-            predictions = predictions.merge(labels, how="left", left_index=True, right_index=True)
-
         return predictions
 
     def predict_single(self, batch):
@@ -669,7 +659,6 @@ class RayPredictor(BasePredictor):
         dataset: RayDataset,
         collect_predictions: bool = False,
         collect_logits=False,
-        collect_labels=False,
         **kwargs,
     ):
         # We need to be in a Horovod context to collect the aggregated metrics, since it relies on collective
@@ -702,7 +691,7 @@ class RayPredictor(BasePredictor):
         predictions = None
         if collect_predictions:
             # Collect eval predictions by using Ray Datasets to transform partitions of the data in parallel
-            predictions = self.batch_predict(dataset, collect_logits=collect_logits, collect_labels=collect_labels)
+            predictions = self.batch_predict(dataset, collect_logits=collect_logits)
 
         return eval_stats, predictions
 
