@@ -26,6 +26,7 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
+    init_backend,
     LocalTestBackend,
     number_feature,
     read_csv_with_nan,
@@ -33,7 +34,6 @@ from tests.integration_tests.utils import (
     set_feature,
     text_feature,
     vector_feature,
-    init_backend,
 )
 
 

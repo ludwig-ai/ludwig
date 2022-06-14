@@ -10,9 +10,9 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
+    init_backend,
     LocalTestBackend,
     sequence_feature,
-    init_backend,
 )
 
 
