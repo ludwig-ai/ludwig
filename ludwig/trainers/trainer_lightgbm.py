@@ -63,7 +63,7 @@ class LightGBMTrainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_model = skip_save_model
 
-        self.eval_batch_size = 128 if config.eval_batch_size is None else config.eval_batch_size
+        self.eval_batch_size = config.eval_batch_size
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.evaluate_training_set = config.evaluate_training_set

@@ -233,6 +233,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
         allow_none=False,
     )
 
+    eval_batch_size: int = schema_utils.PositiveInteger(
+        default=128,
+        description="Size of batch to pass to the model for evaluation.",
+    )
+
     # LightGBM core parameters
     boosting_type: str = schema_utils.StringOptions(
         ["gbdt", "rf", "dart", "goss"],
