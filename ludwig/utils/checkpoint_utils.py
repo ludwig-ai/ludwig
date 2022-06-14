@@ -2,24 +2,23 @@
 
 https://gist.github.com/kevinzakka/5d345421f7abefd5dbaf6a77f829e70a.
 """
+
 import logging
 import os
-import os.path as osp
-import queue
 import re
 import signal
-import threading
+import tempfile
 from glob import glob
+from typing import Any, Dict, Optional
 
-import numpy as np
 import torch
 
-CHECKPOINTS_LOCK = threading.Lock()
+LATEST_FNAME = "latest.ckpt"
 
 
 def mkdir(s):
     """Create a directory if it doesn't already exist."""
-    if not osp.exists(s):
+    if not os.path.exists(s):
         os.makedirs(s)
 
 
@@ -31,8 +30,8 @@ def get_files(d, pattern, sort=True):
       pattern (str): The wildcard to filter files with.
       sort (bool): Whether to sort the returned list. Assumes filenames contain a number value to sort by (tmp-001).
     """
-    files = glob(osp.join(d, pattern))
-    files = [f for f in files if osp.isfile(f)]
+    files = glob(os.path.join(d, pattern))
+    files = [f for f in files if os.path.isfile(f)]
     if sort:
 
         def filter_numeric(s):
@@ -42,24 +41,17 @@ def get_files(d, pattern, sort=True):
     return files
 
 
-def traim_checkpoints_loop(q: queue.Queue, directory: str, max_to_keep: int):
-    """Trim older checkpoints until `max_to_keep` remain."""
-    while True:
-        should_continue = q.get()
-        if should_continue is False:
-            return
+def get_latest_checkpoint_path(directory: str) -> str:
+    latest_path = os.path.join(directory, LATEST_FNAME)
+    if os.path.exists(latest_path):
+        return latest_path
 
-        with CHECKPOINTS_LOCK:
-            # get a list of checkpoints in reverse
-            # chronological order
-            ckpts = get_files(directory, "*.ckpt")[::-1]
+    # Legacy codepath for checkpoints saved by global step number
+    ckpts = get_files(directory, "*.ckpt")
+    if ckpts:
+        return ckpts[-1]
 
-            # remove until `max_to_keep` remain
-            num_remove = len(ckpts) - max_to_keep
-            while num_remove > 0:
-                ckpt_name = ckpts.pop()
-                os.remove(ckpt_name)
-                num_remove -= 1
+    return None
 
 
 class Checkpoint:
@@ -69,18 +61,24 @@ class Checkpoint:
         """Constructor."""
         self.model = model
         self.optimizer = optimizer
+        self.global_step = 0
 
-    def restore(self, save_path, device=None):
+    def restore(self, save_path: str, device: Optional[torch.device] = None) -> bool:
         """Restore a state from a saved checkpoint.
 
         Args:
           save_path (str): The filepath to the saved checkpoint.
           device (torch.device): The device on which to
             restore the state.
+
+        Returns:
+          True if the checkpoint was sucessfully restored, False if the checkpoint file
+            could not be found.
         """
         try:
             state = torch.load(save_path, map_location=device)
             try:
+                self.global_step = self._get_global_step(state, save_path)
                 self.model.load_state_dict(state["model_weights"])
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
@@ -98,14 +96,20 @@ class Checkpoint:
             logging.error(e)
             return False
 
-    def save(self, save_path):
+    def save(self, save_path: str, global_step: int):
         """Save a state to disk.
 
         Modified from brentyi/fannypack.
+
         Args:
           save_path (str): The name of the checkpoint to save.
+          global_step (int): The iteration number which will be used
+             to name the checkpoint.
         """
-        state = {"model_weights": self.model.state_dict()}
+        state = {
+            "global_step": global_step,
+            "model_weights": self.model.state_dict(),
+        }
         if self.optimizer is not None:
             state["optim_state"] = self.optimizer.state_dict()
 
@@ -117,25 +121,39 @@ class Checkpoint:
             # signal throws a ValueError if we're not in the main thread
             orig_handler = None
 
-        # atomic save
-        save_dir = osp.dirname(save_path)
-        tmp_path = osp.join(save_dir, f"tmp-{np.random.randint(1e9)}.ckpt")
-        torch.save(state, tmp_path)
-        # replace is an atomic operation in python
-        # it is POSIX compliant according to docs
-        # https://docs.python.org/3/library/os.html#os.replace
-        os.replace(tmp_path, save_path)
-        logging.debug(f"Saved checkpoint at {save_path}.")
+        try:
+            # atomic save
+            with tempfile.TemporaryDirectory() as tmpdir:
+                # Save to a temporary directory outside of the checkpoint dir so
+                # async processes do not try and copy a partially-written checkpoint.
+                # See Ray Tune and MLFlow for examples of background processes that
+                # are affected by this.
+                tmp_path = os.path.join(tmpdir, "temp.ckpt")
+                torch.save(state, tmp_path)
 
-        # restore SIGINT handler
-        if orig_handler is not None:
-            signal.signal(signal.SIGINT, orig_handler)
+                # replace is an atomic operation in python
+                # it is POSIX compliant according to docs
+                # https://docs.python.org/3/library/os.html#os.replace
+                os.replace(tmp_path, save_path)
+                logging.debug(f"Saved checkpoint at {save_path}.")
+        finally:
+            # restore SIGINT handler
+            if orig_handler is not None:
+                signal.signal(signal.SIGINT, orig_handler)
+
+    def _get_global_step(self, state: Dict[str, Any], save_path: str) -> int:
+        global_step = state.get("global_step")
+        if global_step is None:
+            # Legacy step detection for older checkpoint format which encoded the
+            # step number in the checkpoint filename.
+            return int(os.path.basename(save_path).split(".")[0])
+        return global_step
 
 
 class CheckpointManager:
     """A model and optimizer checkpoint manager."""
 
-    def __init__(self, checkpoint, directory, device, max_to_keep=10):
+    def __init__(self, checkpoint: Checkpoint, directory: str, device: torch.device):
         """Constructor.
 
         Args:
@@ -143,15 +161,9 @@ class CheckpointManager:
           directory (str): The directory in which checkpoints will be saved.
           device (torch.device): The computing device on which to restore
             checkpoints.
-          max_to_keep (int): The maximum number of checkpoints to keep.
-            Amongst all saved checkpoints, checkpoints will be deleted
-            oldest first, until `max_to_keep` remain.
         """
-        assert max_to_keep > 0, "max_to_keep should be a positive integer."
-
         self.checkpoint = checkpoint
         self.directory = directory
-        self.max_to_keep = max_to_keep
         self.device = device
         self.latest_checkpoint = None
 
@@ -159,51 +171,41 @@ class CheckpointManager:
         # already exist
         mkdir(self.directory)
 
-        self.queue = queue.Queue()
-        self.trim_thread = threading.Thread(
-            target=traim_checkpoints_loop, args=(self.queue, self.directory, self.max_to_keep)
-        )
-        self.trim_thread.start()
-
-    def restore_or_initialize(self):
+    def restore_or_initialize(self) -> int:
         """Restore items in checkpoint from the latest checkpoint file.
 
         Returns:
           The global iteration step. This is parsed from the latest
             checkpoint file if one is found, else 0 is returned.
         """
-        ckpts = get_files(self.directory, "*.ckpt")
-        if ckpts:
-            last_ckpt = ckpts[-1]
+        last_ckpt = get_latest_checkpoint_path(self.directory)
+        if last_ckpt:
             status = self.checkpoint.restore(last_ckpt, self.device)
             if not status:
-                logging.info("Could not restore latest checkpoint file.")
+                logging.warning("Could not restore latest checkpoint file.")
                 return 0
             self.latest_checkpoint = last_ckpt
-            return int(osp.basename(last_ckpt).split(".")[0])
+            return self.checkpoint.global_step
         return 0
 
-    def save(self, global_step):
+    def save(self, global_step: int):
         """Create a new checkpoint.
 
         Args:
-          global_step (int): The iteration number which will be used
-            to name the checkpoint.
+           global_step (int): The iteration number which will be used
+             to name the checkpoint.
         """
-        save_path = osp.join(self.directory, f"{global_step:09d}.ckpt")
-        self.checkpoint.save(save_path)
+        save_path = os.path.join(self.directory, LATEST_FNAME)
+        self.checkpoint.save(save_path, global_step)
         self.latest_checkpoint = save_path
-        self.queue.put(True)
 
     def close(self):
-        self.queue.put(False)
-        self.trim_thread.join()
+        pass
 
     @staticmethod
-    def load_latest_checkpoint(checkpoint, directory, device):
-        ckpts = get_files(directory, "*.ckpt")
-        if ckpts:
-            last_ckpt = ckpts[-1]
+    def load_latest_checkpoint(checkpoint: Checkpoint, directory: str, device: torch.device):
+        last_ckpt = get_latest_checkpoint_path(directory)
+        if last_ckpt:
             checkpoint.restore(last_ckpt, device)
         else:
             logging.error(f"No checkpoints found in {directory}.")

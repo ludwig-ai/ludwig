@@ -32,7 +32,6 @@ import psutil
 import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
@@ -47,6 +46,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
+from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import TrainerConfig
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
@@ -127,6 +127,7 @@ class Trainer(BaseTrainer):
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         callbacks: List = None,
+        report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
@@ -155,6 +156,7 @@ class Trainer(BaseTrainer):
         :param callbacks: List of `ludwig.callbacks.Callback` objects that provide hooks into the Ludwig pipeline.
                 (default: None).
         :type callbacks: list
+        :param report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting
         :param random_seed: Default initialization for the random seeds (default: 42).
         :type random_seed: Float
         :param horovod: Horovod parameters (default: None).
@@ -210,6 +212,7 @@ class Trainer(BaseTrainer):
         self.random_seed = random_seed
         self.horovod = horovod
         self.received_sigint = False
+        self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
         self.device = device
         if self.device is None:
@@ -744,9 +747,7 @@ class Trainer(BaseTrainer):
         checkpoint = checkpoint_manager = None
         if self.is_coordinator() and not self.skip_save_progress:
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
-            checkpoint_manager = CheckpointManager(
-                checkpoint, training_checkpoints_path, device=self.device, max_to_keep=1
-            )
+            checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         train_summary_writer = None
         validation_summary_writer = None
@@ -817,14 +818,13 @@ class Trainer(BaseTrainer):
 
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
-                progress_bar = None
-                if self.is_coordinator():
-                    progress_bar = tqdm(
-                        desc="Training",
-                        total=self.total_steps,
-                        file=sys.stdout,
-                        disable=is_progressbar_disabled(),
-                    )
+                progress_bar_config = {
+                    "desc": "Training",
+                    "total": self.total_steps,
+                    "disable": is_progressbar_disabled(),
+                    "file": sys.stdout,
+                }
+                progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
                 while progress_tracker.steps < self.total_steps:
                     # note that batch size may change over epochs
@@ -994,10 +994,10 @@ class Trainer(BaseTrainer):
                 )
 
             progress_tracker.steps += 1
+            progress_bar.update(1)
             if self.is_coordinator():
-                progress_bar.update(1)
                 logger.debug(
-                    f"training: completed batch {progress_bar.n} "
+                    f"training: completed batch {progress_bar.total_steps} "
                     f"memory used: "
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
@@ -1039,12 +1039,13 @@ class Trainer(BaseTrainer):
         ) as batcher:
 
             # training step loop
-            progress_bar = tqdm(
-                desc="Training online",
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled(),
-            )
+            progress_bar_config = {
+                "desc": "Training online",
+                "total": batcher.steps_per_epoch,
+                "file": sys.stdout,
+                "disable": is_progressbar_disabled(),
+            }
+            progress_bar = LudwigProgressBar(self.report_tqdm_to_ray, progress_bar_config, self.is_coordinator())
 
             while not batcher.last_batch():
                 batch = batcher.next_batch()
@@ -1100,7 +1101,9 @@ class Trainer(BaseTrainer):
         return metrics_log, tables
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
-        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod)
+        predictor = Predictor(
+            self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
+        )
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         self.append_metrics(dataset_name, metrics, metrics_log, tables, progress_tracker)

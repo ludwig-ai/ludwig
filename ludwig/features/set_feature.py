@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -43,6 +43,7 @@ from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class _SetPreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.is_bag = is_bag
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         """Takes a list of strings and returns a tensor of counts for each token."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
@@ -144,11 +145,10 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        return column
+        return column.astype(str)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
@@ -181,7 +181,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = SetFeatureMixin.feature_data(
-            input_df[feature_config[COLUMN]].astype(str),
+            input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
             preprocessing_parameters,
             backend,

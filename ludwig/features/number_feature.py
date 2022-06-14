@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import random
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -45,6 +45,7 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,7 @@ class _NumberPreprocessing(torch.nn.Module):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         v = v.to(dtype=torch.float32)

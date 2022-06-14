@@ -9,7 +9,7 @@ from ludwig.utils.torch_utils import LudwigModule
 # implementation adapted from https://github.com/dreamquark-ai/tabnet
 class GhostBatchNormalization(LudwigModule):
     def __init__(
-        self, num_features: int, momentum: float = 0.9, epsilon: float = 1e-3, virtual_batch_size: Optional[int] = None
+        self, num_features: int, momentum: float = 0.1, epsilon: float = 1e-3, virtual_batch_size: Optional[int] = None
     ):
         super().__init__()
         self.num_features = num_features

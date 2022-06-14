@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -46,6 +46,7 @@ from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class _CategoryPreprocessing(torch.nn.Module):
         self.str2idx = metadata["str2idx"]
         self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, v: Union[List[str], List[torch.Tensor], torch.Tensor]):
+    def forward(self, v: TorchscriptPreprocessingInput):
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -121,11 +122,10 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        return column
+        return column.astype(str)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        column = column.astype(str)
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -149,7 +149,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
-            input_df[feature_config[COLUMN]].astype(str),
+            input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
         )
 

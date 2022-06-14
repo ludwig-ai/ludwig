@@ -1,0 +1,7 @@
+version: 1.0
+competition: talkingdata-adtracking-fraud-detection
+archive_filename: talkingdata-adtracking-fraud-detection.zip
+split_filenames:
+  train_file: train.csv
+csv_filename: train.csv
+download_file_type: csv
