@@ -3,6 +3,10 @@ from ludwig.encoders.registry import get_encoder_classes
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
+from ludwig.decoders.registry import get_decoder_classes
+from ludwig.encoders.registry import get_encoder_classes
+from ludwig.schema.utils import create_cond
+
 input_type_registry = Registry()
 output_type_registry = Registry()
 
@@ -136,4 +140,21 @@ def get_output_feature_conds():
         update_decoders(feature_props, feature_type)
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
+    return conds
+
+
+def get_output_preproc_conds(output_feature_types):
+    conds = []
+    for feature_type in output_feature_types:
+        feature_cls = output_type_registry[feature_type]
+        preproc_spec = {
+            "type": "object",
+            "properties": feature_cls.preprocessing_schema(),
+            "additionalProperties": False,
+        }
+        preproc_cond = create_cond(
+            {"type": feature_type},
+            {"preprocessing": preproc_spec},
+        )
+        conds.append(preproc_cond)
     return conds
