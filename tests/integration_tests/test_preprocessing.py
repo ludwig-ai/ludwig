@@ -1,4 +1,3 @@
-import contextlib
 import os
 
 import numpy as np
@@ -11,25 +10,10 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
+    init_backend,
     LocalTestBackend,
-    ray_cluster,
     sequence_feature,
 )
-
-
-@contextlib.contextmanager
-def init_backend(backend: str):
-    if backend == "local":
-        with contextlib.nullcontext():
-            yield
-            return
-
-    if backend == "ray":
-        with ray_cluster():
-            yield
-            return
-
-    raise ValueError(f"Unrecognized backend: {backend}")
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
