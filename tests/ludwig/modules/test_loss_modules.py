@@ -36,11 +36,11 @@ def test_rmspe_loss(preds: torch.Tensor, target: torch.Tensor, output: torch.Ten
     assert torch.isclose(loss(preds, target), output, rtol=0.0001)
 
 
-def test_rmspe_loss_zero_targets():
+@pytest.mark.parametrize("preds", [torch.tensor([[0.1, 0.2]]).float()])
+@pytest.mark.parametrize("target", [torch.tensor([[0.0, 0.2]]).float()])
+@pytest.mark.parametrize("output", [torch.tensor(707.1068).float()])
+def test_rmspe_loss_zero_targets(preds: torch.Tensor, target: torch.Tensor, output: torch.Tensor):
     loss = loss_modules.RMSPELoss()
-    preds = torch.tensor([[0.1, 0.2]]).float()
-    target = torch.tensor([[0.0, 0.2]]).float()
-    output = torch.tensor(707.1068).float()
     assert torch.isclose(loss(preds, target), output, rtol=0.0001)
 
 
