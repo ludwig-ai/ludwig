@@ -1420,7 +1420,7 @@ def get_split(
     random_seed=default_random_seed,
 ):
     if SPLIT in dataset_df and not force_split:
-        split = dataset_df[SPLIT]
+        split = dataset_df[SPLIT].astype(np.int8)
     else:
         set_random_seed(random_seed)
         if stratify is None or stratify not in dataset_df:
