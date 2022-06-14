@@ -164,7 +164,7 @@ class Predictor(BasePredictor):
             dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
             collect_predictions: Return model predictions.
             collect_logits: Return model logits and final layer activations.
-            collect_labels: Return dataset labels in
+            collect_labels: Return dataset labels in predictions dictionary.
 
         Returns:
             Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the

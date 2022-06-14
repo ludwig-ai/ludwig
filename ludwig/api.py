@@ -557,7 +557,6 @@ class LudwigModel:
                             trainer.model,
                             self.backend,
                             batch_size=trainer.eval_batch_size,
-                            skip_save_model=skip_save_model,
                         )
                         if validation_set is not None:
                             # Use backend.createPredictor to ensure we get ray predictor with ray backend
@@ -568,7 +567,7 @@ class LudwigModel:
                                 "Will use training set for calibration."
                             )
                             calibrator.train_calibration(training_set, TRAINING)
-                        if not self.skip_save_model:
+                        if not skip_save_model:
                             model_weights_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
                             torch.save(self.model.state_dict(), model_weights_path)
 
