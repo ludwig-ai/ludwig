@@ -611,7 +611,6 @@ class RayPredictor(BasePredictor):
     def batch_predict(
         self, dataset: RayDataset, *args, collect_logits: bool = False, collect_labels: bool = False, **kwargs
     ):
-        # TODO: implement collect_labels
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
@@ -651,6 +650,11 @@ class RayPredictor(BasePredictor):
 
         for of_feature in self.model.output_features.values():
             predictions = of_feature.unflatten(predictions)
+
+        if collect_labels:
+            columns = [f.proc_column for f in self.model.output_features.values()]
+            labels = self.df_engine.from_ray_dataset(dataset.ds)[columns]
+            predictions = dask.dataframe.concat([predictions, labels])
 
         return predictions
 
