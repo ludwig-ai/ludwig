@@ -89,7 +89,7 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
-from ludwig.utils.misc_utils import get_file_names, get_output_directory
+from ludwig.utils.misc_utils import get_file_names, get_output_directory, set_saved_weights_in_checkpoint_flag
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.types import TorchDevice
@@ -424,11 +424,12 @@ class LudwigModel:
                         if key != "config":  # Config is printed separately.
                             experiment_description.append([key, pformat(value, indent=4)])
 
-                    print_boxed("EXPERIMENT DESCRIPTION")
-                    logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
+                    if self.backend.is_coordinator():
+                        print_boxed("EXPERIMENT DESCRIPTION")
+                        logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
-                    print_boxed("LUDWIG CONFIG")
-                    logger.info(pformat(self.config, indent=4))
+                        print_boxed("LUDWIG CONFIG")
+                        logger.info(pformat(self.config, indent=4))
 
                 for callback in self.callbacks:
                     callback.on_preprocess_start(self.config)
@@ -495,12 +496,14 @@ class LudwigModel:
                 update_config_with_metadata(self.config, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
+                set_saved_weights_in_checkpoint_flag(self.config)
 
-            # init trainer
-            config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+            # Convert config dictionary into an instance of TrainerConfig.
+            trainer_config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+
             with self.backend.create_trainer(
                 model=self.model,
-                config=config,
+                config=trainer_config,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -619,10 +622,6 @@ class LudwigModel:
                     if not path_exists(weights_save_path):
                         with open_file(weights_save_path, "wb") as f:
                             torch.save(self.model.state_dict(), f)
-                    # Adds a flag to all input features indicating that the weights are saved in the checkpoint.
-                    for input_feature in self.config["input_features"]:
-                        input_feature["saved_weights_in_checkpoint"] = True
-                    self.save_config(model_dir)
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
@@ -685,6 +684,7 @@ class LudwigModel:
         if not self.model:
             update_config_with_metadata(self.config, training_set_metadata)
             self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
+            set_saved_weights_in_checkpoint_flag(self.config)
 
         if not self._online_trainer:
             config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
@@ -1366,6 +1366,7 @@ class LudwigModel:
         )
 
         # generate model from config
+        set_saved_weights_in_checkpoint_flag(config)
         ludwig_model.model = LudwigModel.create_model(config)
 
         # load model weights

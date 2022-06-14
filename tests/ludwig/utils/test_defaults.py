@@ -15,7 +15,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.data.preprocessing import merge_preprocessing
-from ludwig.utils.defaults import default_training_params, merge_with_defaults
+from ludwig.schema.trainer import TrainerConfig
+from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -51,8 +52,6 @@ HYPEROPT_CONFIG = {
 
 SCHEDULER_DICT = {"type": "async_hyperband", "time_attr": "time_total_s"}
 
-default_early_stop = default_training_params["early_stop"]
-
 
 @pytest.mark.parametrize(
     "use_train,use_hyperopt_scheduler",
@@ -85,7 +84,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
     config = copy.deepcopy(config)
 
     if use_train:
-        config[TRAINER] = {"batch_size": "42"}
+        config[TRAINER] = {"batch_size": 42}
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
@@ -93,7 +92,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else default_early_stop
+    expected = -1 if use_hyperopt_scheduler else TrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
 
@@ -194,7 +193,7 @@ def test_merge_with_defaults():
                 "name": "number_output_feature",
             },
         ],
-        "training": {"eval_batch_size": 0},
+        "training": {"eval_batch_size": 0, "optimizer": {"type": "adadelta"}},
         "hyperopt": {
             "parameters": {
                 "training.learning_rate": {},
@@ -227,25 +226,16 @@ def test_merge_with_defaults():
             {
                 "type": "image",
                 "name": "image_input_feature",
+                "encoder": "stacked_cnn",
+                "conv_layers": [
+                    {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
+                    {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
+                ],
+                "conv_use_bias": True,
                 "column": "image_input_feature",
-                "preprocessing": {},
                 "proc_column": "image_input_feature_mZFLky",
                 "tied": None,
-                "encoder": "stacked_cnn",
-                "conv_use_bias": True,
-                "conv_layers": [
-                    {
-                        "num_filters": 32,
-                        "pool_size": 2,
-                        "pool_stride": 2,
-                        "use_bias": False,
-                    },
-                    {
-                        "num_filters": 64,
-                        "pool_size": 2,
-                        "pool_stride": 2,
-                    },
-                ],
+                "preprocessing": {},
             },
         ],
         "output_features": [
@@ -275,29 +265,38 @@ def test_merge_with_defaults():
         },
         "trainer": {
             "eval_batch_size": None,
-            "optimizer": {"type": "adam", "betas": (0.9, 0.999), "eps": 1e-08},
+            "optimizer": {"type": "adadelta", "rho": 0.9, "eps": 1e-06, "lr": 1.0, "weight_decay": 0.0},
             "epochs": 100,
-            "regularization_lambda": 0,
+            "train_steps": None,
+            "regularization_lambda": 0.0,
             "regularization_type": "l2",
+            "should_shuffle": True,
             "learning_rate": 0.001,
             "batch_size": 128,
             "early_stop": 5,
             "steps_per_checkpoint": 0,
-            "reduce_learning_rate_on_plateau": 0,
+            "checkpoints_per_epoch": 0,
+            "evaluate_training_set": True,
+            "reduce_learning_rate_on_plateau": 0.0,
             "reduce_learning_rate_on_plateau_patience": 5,
             "reduce_learning_rate_on_plateau_rate": 0.5,
+            "reduce_learning_rate_eval_metric": "loss",
+            "reduce_learning_rate_eval_split": "training",
             "increase_batch_size_on_plateau": 0,
             "increase_batch_size_on_plateau_patience": 5,
-            "increase_batch_size_on_plateau_rate": 2,
+            "increase_batch_size_on_plateau_rate": 2.0,
             "increase_batch_size_on_plateau_max": 512,
+            "increase_batch_size_eval_metric": "loss",
+            "increase_batch_size_eval_split": "training",
             "decay": False,
             "decay_steps": 10000,
             "decay_rate": 0.96,
             "staircase": False,
-            "gradient_clipping": None,
+            "gradient_clipping": {"clipglobalnorm": 0.5, "clipnorm": None, "clipvalue": None},
             "validation_field": "combined",
             "validation_metric": "loss",
-            "learning_rate_warmup_epochs": 1,
+            "learning_rate_warmup_epochs": 1.0,
+            "learning_rate_scaling": "linear",
         },
         "preprocessing": {
             "force_split": False,
@@ -390,8 +389,23 @@ def test_merge_with_defaults():
             "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},
             "vector": {"missing_value_strategy": "fill_with_const", "fill_value": ""},
         },
-        "combiner": {"type": "concat"},
+        "combiner": {
+            "type": "concat",
+            "fc_layers": None,
+            "num_fc_layers": 0,
+            "output_size": 256,
+            "use_bias": True,
+            "weights_initializer": "xavier_uniform",
+            "bias_initializer": "zeros",
+            "norm": None,
+            "norm_params": None,
+            "activation": "relu",
+            "dropout": 0.0,
+            "flatten_inputs": False,
+            "residual": False,
+        },
     }
 
     updated_config = merge_with_defaults(legacy_config_format)
+
     assert updated_config == expected_upgraded_format
