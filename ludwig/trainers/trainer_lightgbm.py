@@ -616,7 +616,9 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
                 ray_params["cpus_per_actor"] = value["CPU"]
             if "GPU" in value:
                 ray_params["gpus_per_actor"] = value["GPU"]
-    return RayParams(**ray_params)
+    ray_params = RayParams(**ray_params)
+    ray_params.allow_less_than_two_cpus = True
+    return ray_params
 
 
 @register_ray_trainer("lightgbm_trainer", MODEL_GBM, default=True)
