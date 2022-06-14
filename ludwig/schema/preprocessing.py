@@ -177,7 +177,7 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 @register_preprocessor(BINARY)
 @dataclass
-class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+class BinaryGlobalPreprocessing(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     missing_value_strategy: str = schema_utils.StringOptions(
