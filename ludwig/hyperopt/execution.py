@@ -11,7 +11,7 @@ import traceback
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
@@ -828,19 +828,16 @@ def get_build_hyperopt_executor(executor_type):
 executor_registry = {"ray": RayTuneExecutor}
 
 
-def set_values(model_dict, feature_name, parameters_dict, feature_type=None, shared_params_dict=None):
-    """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled for each trial
-    stored in parameters_dict.
-
-    # Inputs
-
-    :param model_dict: (dict) contains the parameters for the specific input feature from config
-    :param feature_name: (str) name of the feature to update
-    :param parameters_dict: (dict) parameters from the hyperopt sampler to be used to overwrite
-         default params in model_dict
-    :param feature_type: (str, default: none) type of the feature to update
-    :param shared_params_dict: (dict, default: none) mapping of feature type to feature names that
-         can be considered for shared parameter updates based on original config
+def set_values(
+    model_dict: Dict[str, Any],
+    feature_name: str,
+    parameters_dict: Dict[str, Dict[str, Any]],
+    feature_type: str = None,
+    shared_params_dict: Dict[str, Set] = None,
+):
+    """
+    Updates the parameters of feature_name in model_dict based on hyperopt parameters
+    sampled for each trial stored in parameters_dict.
     """
 
     # Update shared params
