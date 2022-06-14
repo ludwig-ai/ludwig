@@ -44,8 +44,10 @@ class Calibrator:
             if output_feature.calibration_module is not None:
                 feature_logits_key = f"{output_feature.feature_name}_logits"
                 if feature_logits_key in predictions:
-                    feature_logits = predictions[feature_logits_key]
-                    feature_labels = predictions[f"{output_feature.feature_name}_labels"]
+                    feature_logits = self.backend.df_engine.compute(predictions[feature_logits_key])
+                    feature_labels = self.backend.df_engine.compute(
+                        predictions[f"{output_feature.feature_name}_labels"]
+                    )
                     output_feature.calibration_module.train_calibration(
                         np.stack(feature_logits.values, axis=0), np.stack(feature_labels.values, axis=0)
                     )
