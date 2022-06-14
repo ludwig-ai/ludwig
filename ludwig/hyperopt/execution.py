@@ -24,7 +24,6 @@ from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
-from ludwig.utils.checkpoint_utils import CHECKPOINTS_LOCK
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
@@ -117,21 +116,18 @@ def checkpoint(progress_tracker, save_path):
     def ignore_dot_files(src, files):
         return [f for f in files if f.startswith(".")]
 
-    with CHECKPOINTS_LOCK:
-        with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
-            checkpoint_model = os.path.join(checkpoint_dir, "model")
-            # shutil.copytree(save_path, checkpoint_model)
-            # Note: A previous implementation used shutil.copytree()
-            # however, this copying method is non atomic
-            if not os.path.isdir(checkpoint_model):
-                copy_id = uuid.uuid4()
-                tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
-                assert os.path.exists(save_path)
-                shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
-                try:
-                    os.rename(tmp_dst, checkpoint_model)
-                except Exception:
-                    shutil.rmtree(tmp_dst)
+    with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
+        checkpoint_model = os.path.join(checkpoint_dir, "model")
+        # Atomic copying of the checkpoints
+        if not os.path.isdir(checkpoint_model):
+            copy_id = uuid.uuid4()
+            tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
+            assert os.path.exists(save_path)
+            shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
+            try:
+                os.rename(tmp_dst, checkpoint_model)
+            except Exception:
+                shutil.rmtree(tmp_dst)
 
 
 class RayTuneExecutor:
