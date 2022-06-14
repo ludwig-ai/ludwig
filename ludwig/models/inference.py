@@ -226,14 +226,16 @@ def save_ludwig_model_for_inference(
     stage_to_device = get_stage_to_device_dict(device)
     stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage, device in stage_to_device.items()}
 
-    predictor = torch.jit.script(InferencePredictor(model, device))
+    predictor = torch.jit.script(InferencePredictor(model, stage_to_device[PREDICTOR]))
     predictor.save(os.path.join(save_path, stage_to_filenames[PREDICTOR]))
     if model_only:
         return
 
-    preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata, device))
+    preprocessor = torch.jit.script(InferencePreprocessor(config, training_set_metadata, stage_to_device[PREPROCESSOR]))
     preprocessor.save(os.path.join(save_path, stage_to_filenames[PREPROCESSOR]))
-    postprocessor = torch.jit.script(InferencePostprocessor(model, training_set_metadata, device))
+    postprocessor = torch.jit.script(
+        InferencePostprocessor(model, training_set_metadata, stage_to_device[POSTPROCESSOR])
+    )
     postprocessor.save(os.path.join(save_path, stage_to_filenames[POSTPROCESSOR]))
 
 
