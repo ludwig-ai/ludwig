@@ -380,6 +380,10 @@ class LightGBMTrainer(BaseTrainer):
         if len(self.model.output_features) > 1:
             raise ValueError("Only single task currently supported")
 
+        self.callback(
+            lambda c: c.on_trainer_train_setup(self, save_path, self.is_coordinator()), coordinator_only=False
+        )
+
         params = self._construct_lgb_params()
 
         lgb_train, eval_sets, eval_names = self._construct_lgb_datasets(training_set, validation_set)
