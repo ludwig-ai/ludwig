@@ -1,7 +1,6 @@
 from typing import Optional, Union, List
 
 from marshmallow_dataclass import dataclass
-from marshmallow import Schema, fields, post_load
 
 from ludwig.schema import utils as schema_utils
 
@@ -21,9 +20,9 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="Probabilities for splitting the input data into train, validation, and test sets.",
     )
 
-    stratify: Optional[bool] = schema_utils.StringOptions(
-        ["TODO", "TODO"],
+    stratify: Optional[bool] = schema_utils.String(
         default=None,
+        allow_none=True,
         description="Selection of categorical column to stratify the data on during data splitting.",
     )
 
@@ -47,7 +46,7 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+class BinaryGlobalPreprocessing(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -78,4 +77,34 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         max=1,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
                     "conventional boolean value"
+    )
+
+
+@dataclass
+class CategoryGlobalPreprocessing(schema_utils.BaseMarshmallowConfig):
+    """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
+
+    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        default="fill_with_const",
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a category column",
+    )
+
+    fill_value: Optional[str] = schema_utils.String(
+        default="<UNK>",
+        allow_none=False,
+        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    lowercase: Optional[bool] = schema_utils.Boolean(
+        default=False,
+        description="Whether the string has to be lowercased before being handled by the tokenizer.",
+    )
+
+    most_common_label: Optional[int] = schema_utils.PositiveInteger(
+        default=10000,
+        allow_none=True,
+        description="The maximum number of most common tokens to be considered. if the data contains more than this "
+                    "amount, the most infrequent tokens will be treated as unknown.",
     )

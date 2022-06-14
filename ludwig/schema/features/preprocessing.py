@@ -9,7 +9,7 @@ from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class BasePreprocessingConfig(BaseMarshmallowConfig, ABC):
+class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for input feature preprocessing. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
@@ -57,6 +57,61 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
+@dataclass
+class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+    """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
+
+    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        default="fill_with_const",
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a category column",
+    )
+
+    fill_value: Optional[str] = schema_utils.String(
+        default="<UNK>",
+        allow_none=False,
+        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    lowercase: Optional[bool] = schema_utils.Boolean(
+        default=False,
+        description="Whether the string has to be lowercased before being handled by the tokenizer.",
+    )
+
+    most_common_label: Optional[int] = schema_utils.PositiveInteger(
+        default=10000,
+        allow_none=True,
+        description="The maximum number of most common tokens to be considered. if the data contains more than this "
+                    "amount, the most infrequent tokens will be treated as unknown.",
+    )
+
+
+@dataclass
+class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+    """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
+
+    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        default="fill_with_const",
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a number column",
+    )
+
+    fill_value: Optional[float] = schema_utils.NonNegativeFloat(
+        default=0.0,
+        allow_none=False,
+        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    normalization: Optional[str] = schema_utils.StringOptions(
+        ["zscore", "minmax", "log1p"],
+        default=None,
+        allow_none=True,
+        description="Normalization strategy to use for this number feature.",
+    )
+
+
 def PreprocessingDataclassField(description="TODO"):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
@@ -68,7 +123,7 @@ def PreprocessingDataclassField(description="TODO"):
     :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
     """
 
-    class OptimizerMarshmallowField(fields.Field):
+    class PreprocesingMarshmallowField(fields.Field):
         """Custom marshmallow field that deserializes a dict to a valid optimizer from
         `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema
         for external usage."""
