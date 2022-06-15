@@ -1,5 +1,6 @@
 import copy
 import datetime
+from functools import lru_cache
 import glob
 import json
 import logging
@@ -11,7 +12,7 @@ import traceback
 import uuid
 from inspect import signature
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from packaging import version
 
@@ -32,7 +33,6 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 try:
-    import kubernetes
     import ray
     from ray import tune
     from ray.tune import register_trainable, Stopper
@@ -55,7 +55,6 @@ except ImportError as e:
     ray = None
     Stopper = object
     get_horovod_kwargs = None
-    kubernetes = None
 
 
 try:
@@ -175,6 +174,7 @@ class RayTuneExecutor:
         self.max_concurrent_trials = max_concurrent_trials
         self.sync_config = None
         self.sync_client = None
+        # Head node is the node to which all checkpoints are synced if running on a K8s cluster.
         self.head_node_ip = ray.util.get_node_ip_address()
 
     def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
@@ -332,19 +332,21 @@ class RayTuneExecutor:
         else:
             # Kubernetes sync config. Returns driver node name and path.
             # When running on kubernetes, each trial is rsynced to the node running the main process.
-
             assert self.kubernetes_namespace is not None
-            # Snippet from https://github.com/ray-project/ray/blob/master/python/ray/tune/integration/kubernetes.py
-            kubernetes.config.load_incluster_config()
-            api = kubernetes.client.CoreV1Api()
-            pods = api.list_namespaced_pod(self.kubernetes_namespace)
-            node_name = None
-            for pod in pods.items:
-                if pod.status.host_ip == self.head_node_ip or pod.status.pod_ip == self.head_node_ip:
-                    node_name = pod.metadata.name
-                    break
+            node_name = self._get_node_address_by_ip()(self.head_node_ip)
 
             return (node_name, trial_dir)
+
+    @lru_cache(maxsize=1)
+    def _get_kubernetes_node_address_by_ip(self) -> Callable:
+        """ Returns a method to get the node name by IP address within a K8s cluster. """
+        assert self.kubernetes_namespace is not None
+        from ray.tune.integration.kubernetes import KubernetesSyncer
+
+        # Initialized with null local and remote directories as we only need to use get_node_address_by_ip.
+        kubernetes_syncer = KubernetesSyncer(None, None)
+
+        return kubernetes_syncer.get_node_address_by_ip
 
     # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
