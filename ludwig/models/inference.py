@@ -111,6 +111,7 @@ class InferenceModule(nn.Module):
         self.predictor = predictor
         self.postprocessor = postprocessor
         self.config = config
+        # Do not remove – used by Predibase app
         self.training_set_metadata = training_set_metadata
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
