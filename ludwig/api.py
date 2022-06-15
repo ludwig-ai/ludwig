@@ -64,8 +64,8 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import (
+    InferenceModule,
     get_stage_to_device_dict,
-    init_inference_module_from_ludwig_model,
     save_ludwig_model_for_inference,
 )
 from ludwig.models.predictor import (
@@ -939,9 +939,7 @@ class LudwigModel:
 
             if collect_predictions:
                 postproc_predictions = convert_predictions(
-                    postproc_predictions,
-                    self.model.output_features,
-                    return_type=return_type,
+                    postproc_predictions, self.model.output_features, return_type=return_type
                 )
 
             for callback in self.callbacks:
@@ -1466,7 +1464,7 @@ class LudwigModel:
         if model_only:
             return self.model.to_torchscript("cpu")
         else:
-            inference_module = init_inference_module_from_ludwig_model(
+            inference_module = InferenceModule.from_ludwig_model(
                 self.model, self.config, self.training_set_metadata, device="cpu"
             )
             return torch.jit.script(inference_module)
