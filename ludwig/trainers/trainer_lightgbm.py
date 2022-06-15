@@ -732,15 +732,12 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
         label_col = self.model.output_features.values()[0].proc_column
 
-        def keep_feature_cols(df: "DataFrame") -> "DataFrame":  # noqa: F821
-            in_feat = [f.proc_column for f in self.model.input_features.values()]
-            out_feat = [f.proc_column for f in self.model.output_features.values()]
-            feat_cols = in_feat + out_feat
-
-            return df[feat_cols]
+        in_feat = [f.proc_column for f in self.model.input_features.values()]
+        out_feat = [f.proc_column for f in self.model.output_features.values()]
+        feat_cols = in_feat + out_feat
 
         lgb_train = RayDMatrix(
-            training_set.ds.map_batches(keep_feature_cols),
+            training_set.ds.map_batches(lambda df: df[feat_cols]),
             label=label_col,
             distributed=False,
         )
@@ -749,7 +746,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             lgb_val = RayDMatrix(
-                validation_set.ds.map_batches(keep_feature_cols),
+                validation_set.ds.map_batches(lambda df: df[feat_cols]),
                 label=label_col,
                 distributed=False,
             )
