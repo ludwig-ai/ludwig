@@ -172,6 +172,7 @@ class InferenceModule(nn.Module):
         stage_to_module = init_inference_stages_from_ludwig_model(
             model, config, training_set_metadata, device=device, scripted=True
         )
+
         return cls(
             stage_to_module[PREPROCESSOR],
             stage_to_module[PREDICTOR],
@@ -308,6 +309,7 @@ def save_ludwig_model_for_inference(
     """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
     stage_to_device = get_stage_to_device_dict(device)
     stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage, device in stage_to_device.items()}
+
     stage_to_module = init_inference_stages_from_ludwig_model(
         model, config, training_set_metadata, device, scripted=True
     )
@@ -395,7 +397,7 @@ def get_stage_to_device_dict(
     elif isinstance(device, str) or isinstance(device, torch.device):
         stage_to_device = {stage: torch.device(device) for stage in INFERENCE_STAGES}
     elif isinstance(device, dict):
-        if not list(device.keys()) == INFERENCE_STAGES:
+        if not set(device.keys()) == set(INFERENCE_STAGES):
             raise ValueError(f"Invalid device keys: {device}. Use {INFERENCE_STAGES}.")
         stage_to_device = {stage: torch.device(d) for stage, d in device.items()}
     else:
