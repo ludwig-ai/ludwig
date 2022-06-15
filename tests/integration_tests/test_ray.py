@@ -523,15 +523,18 @@ def test_ray_progress_bar():
     )
 
 
-@pytest.mark.parametrize("calibration", ["temperature_scaling", "matrix_scaling"])
+@pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed
-def test_ray_categorical_calibration(calibration):
+def test_ray_calibration(calibration):
     input_features = [
         number_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
     ]
-    output_features = [category_feature(vocab_size=3, calibration=calibration)]
+    output_features = [
+        binary_feature(calibration=calibration),
+        category_feature(vocab_size=3, calibration=calibration),
+    ]
     run_test_with_features(
         input_features,
         output_features,
