@@ -832,8 +832,8 @@ def set_values(
     model_dict: Dict[str, Any],
     feature_name: str,
     parameters_dict: Dict[str, Dict[str, Any]],
-    feature_type: str = None,
-    shared_params_dict: Dict[str, Set] = None,
+    feature_type: Optional[str] = None,
+    shared_params_dict: Optional[Dict[str, Set]] = None,
 ):
     """
     Updates the parameters of feature_name in model_dict based on hyperopt parameters
