@@ -106,16 +106,16 @@ class _BinaryPostprocessing(torch.nn.Module):
 
 
 class _BinaryPredict(PredictModule):
-    def __init__(self, threshold, calibration=None):
+    def __init__(self, threshold, calibration_module=None):
         super().__init__()
         self.threshold = threshold
-        self.calibration = calibration
+        self.calibration_module = calibration_module
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
-        if self.calibration is not None:
-            probabilities = self.calibration(logits)
+        if self.calibration_module is not None:
+            probabilities = self.calibration_module(logits)
         else:
             probabilities = torch.sigmoid(logits)
 
@@ -296,13 +296,18 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         )
 
     def create_calibration_module(self, feature) -> torch.nn.Module:
-        calibration_cls = calibration.get_calibration_cls(BINARY, feature.get("calibration"))
-        if calibration_cls:
+        """Creates the appropriate calibration module based on the feature config.
+
+        Today, only one type of calibration ("temperature_scaling") is in use, but more options may be supported in the
+        future.
+        """
+        if feature.get("calibration"):
+            calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")
             return calibration_cls(binary=True)
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold, calibration=self.calibration_module)
+        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

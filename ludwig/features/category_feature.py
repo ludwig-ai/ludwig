@@ -83,15 +83,15 @@ class _CategoryPostprocessing(torch.nn.Module):
 
 
 class _CategoryPredict(PredictModule):
-    def __init__(self, calibration=None):
+    def __init__(self, calibration_module=None):
         super().__init__()
-        self.calibration = calibration
+        self.calibration_module = calibration_module
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
 
-        if self.calibration is not None:
-            probabilities = self.calibration(logits)
+        if self.calibration_module is not None:
+            probabilities = self.calibration_module(logits)
         else:
             probabilities = torch.softmax(logits, -1)
 
@@ -244,13 +244,18 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
     def create_calibration_module(self, feature) -> torch.nn.Module:
-        calibration_cls = calibration.get_calibration_cls(CATEGORY, feature.get("calibration"))
-        if calibration_cls:
+        """Creates the appropriate calibration module based on the feature config.
+
+        Today, only one type of calibration ("temperature_scaling") is in use, but more options may be supported in the
+        future.
+        """
+        if feature.get("calibration"):
+            calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
             return calibration_cls(num_classes=feature["num_classes"])
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict(calibration=self.calibration_module)
+        return _CategoryPredict(calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
