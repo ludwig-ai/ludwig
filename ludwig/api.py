@@ -63,7 +63,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import get_stage_to_device_dict, InferenceModule, save_ludwig_model_for_inference
+from ludwig.models.inference import InferenceModule, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -935,7 +935,9 @@ class LudwigModel:
 
             if collect_predictions:
                 postproc_predictions = convert_predictions(
-                    postproc_predictions, self.model.output_features, return_type=return_type
+                    postproc_predictions,
+                    self.model.output_features,
+                    return_type=return_type,
                 )
 
             for callback in self.callbacks:
@@ -1469,7 +1471,7 @@ class LudwigModel:
         self,
         save_path: str,
         model_only: bool = False,
-        device: Union[TorchDevice, Dict[str, TorchDevice]] = "cpu",
+        device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = "cpu",
     ):
         """Saves the Torchscript model to disk.
 
@@ -1478,14 +1480,13 @@ class LudwigModel:
         "cpu"): The device to save the model to. If a dictionary, it must have keys that     correspond to
         ludwig.models.inference.INFERENCE_STAGES and values that are strings or torch.device objects.
         """
-        stage_to_device = get_stage_to_device_dict(device)
         save_ludwig_model_for_inference(
             save_path,
             self.model,
             self.config,
             self.training_set_metadata,
             model_only=model_only,
-            device=stage_to_device,
+            device=device,
         )
 
     def _check_initialization(self):
