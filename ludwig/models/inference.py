@@ -307,7 +307,7 @@ class InferenceLudwigModel:
         self, model_dir: str, device: Optional[Union[Dict[str, Union[str, torch.device]], str, torch.device]] = None
     ):
         self.stage_to_device = get_stage_to_device_dict(device)
-        stage_to_module = init_inference_stages_from_directory(model_dir, device="cpu")
+        stage_to_module = init_inference_stages_from_directory(model_dir, device=device)
         self.preprocessor = stage_to_module[PREPROCESSOR].to(self.stage_to_device[PREPROCESSOR])
         self.predictor = stage_to_module[PREDICTOR].to(self.stage_to_device[PREDICTOR])
         self.postprocessor = stage_to_module[POSTPROCESSOR].to(self.stage_to_device[POSTPROCESSOR])
