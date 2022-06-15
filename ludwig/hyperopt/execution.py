@@ -835,10 +835,8 @@ def set_values(
     feature_type: Optional[str] = None,
     shared_params_dict: Optional[Dict[str, Set]] = None,
 ):
-    """
-    Updates the parameters of feature_name in model_dict based on hyperopt parameters
-    sampled for each trial stored in parameters_dict.
-    """
+    """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled for each trial
+    stored in parameters_dict."""
 
     # Update shared params
     if DEFAULTS in parameters_dict and shared_params_dict:
