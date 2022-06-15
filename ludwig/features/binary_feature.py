@@ -298,8 +298,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def create_calibration_module(self, feature) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
-        Today, only one type of calibration ("temperature_scaling") is in use, but more options may be supported in the
-        future.
+        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
+        the future.
         """
         if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")

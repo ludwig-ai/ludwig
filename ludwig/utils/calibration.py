@@ -218,6 +218,8 @@ class MatrixScaling(CalibrationModule):
     parameters. Use this only with a large validation set, as matrix scaling has a tendency to overfit small datasets.
     Also, unlike temperature scaling, matrix scaling can change the argmax or top-n predictions.
 
+    NOTE: Matrix Scaling is not exposed in the UI or config yet, though it may be in a future release after testing.
+
     Args:
     num_classes: The number of classes.
     off_diagonal_l2: The regularization weight for off-diagonal matrix entries.
