@@ -103,11 +103,15 @@ class InferenceModule(nn.Module):
         preprocessor: torch.jit.ScriptModule,
         predictor: torch.jit.ScriptModule,
         postprocessor: torch.jit.ScriptModule,
+        config: Optional[Dict[str, Any]] = None,
+        training_set_metadata: Optional[Dict[str, Any]] = None,
     ):
         super().__init__()
         self.preprocessor = preprocessor
         self.predictor = predictor
         self.postprocessor = postprocessor
+        self.config = config
+        self.training_set_metadata = training_set_metadata
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
@@ -117,6 +121,43 @@ class InferenceModule(nn.Module):
             # Turn flat inputs into nested predictions per feature name
             postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
+
+    @torch.jit.unused
+    def forward_with_device_placement(
+        self, inputs: Dict[str, TorchscriptPreprocessingInput]
+    ) -> Dict[str, Dict[str, Any]]:
+        with torch.no_grad():
+            inputs = place_on_torch_device(inputs, self.preprocessor.device)
+            preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
+
+            preproc_outputs = place_on_torch_device(preproc_outputs, self.predictor.device)
+            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
+
+            predictions_flattened = place_on_torch_device(predictions_flattened, self.postprocessor.device)
+            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
+
+            # Turn flat inputs into nested predictions per feature name
+            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
+            return postproc_outputs
+
+    @torch.jit.unused
+    def predict(
+        self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
+    ) -> Union[pd.DataFrame, dict]:
+        """Predict on a batch of data with an interface similar to LudwigModel.predict.
+
+        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
+        """
+        inputs = {
+            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
+            for if_config in self.config["input_features"]
+        }
+
+        preds = self.forward_with_device_placement(inputs)
+
+        if return_type == pd.DataFrame:
+            preds = convert_dict_to_df(preds)
+        return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
     @torch.jit.unused
     @classmethod
@@ -130,7 +171,13 @@ class InferenceModule(nn.Module):
         stage_to_module = init_inference_stages_from_ludwig_model(
             model, config, training_set_metadata, device=device, scripted=True
         )
-        return cls(stage_to_module[PREPROCESSOR], stage_to_module[PREDICTOR], stage_to_module[POSTPROCESSOR])
+        return cls(
+            stage_to_module[PREPROCESSOR],
+            stage_to_module[PREDICTOR],
+            stage_to_module[POSTPROCESSOR],
+            config=config,
+            training_set_metadata=training_set_metadata,
+        )
 
     @torch.jit.unused
     @classmethod
@@ -140,7 +187,20 @@ class InferenceModule(nn.Module):
         device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None,
     ):
         stage_to_module = init_inference_stages_from_directory(directory, device=device)
-        return cls(stage_to_module[PREPROCESSOR], stage_to_module[PREDICTOR], stage_to_module[POSTPROCESSOR])
+
+        config_path = os.path.join(directory, MODEL_HYPERPARAMETERS_FILE_NAME)
+        config = load_json(config_path) if os.path.exists(config_path) else None
+
+        metadata_path = os.path.join(directory, TRAIN_SET_METADATA_FILE_NAME)
+        training_set_metadata = load_metadata(metadata_path) if os.path.exists(metadata_path) else None
+
+        return cls(
+            stage_to_module[PREPROCESSOR],
+            stage_to_module[PREDICTOR],
+            stage_to_module[POSTPROCESSOR],
+            config=config,
+            training_set_metadata=training_set_metadata,
+        )
 
 
 class InferencePreprocessor(nn.Module):
@@ -257,6 +317,22 @@ def save_ludwig_model_for_inference(
             module.save(os.path.join(save_path, stage_to_filenames[stage]))
 
 
+def init_inference_stages_from_directory(
+    directory: str, device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None
+) -> Dict[str, torch.nn.Module]:
+    """Initializes inference stage modules from directory."""
+    stage_to_device = get_stage_to_device_dict(device)
+    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage, device in stage_to_device.items()}
+
+    stage_to_module = {}
+    for stage in INFERENCE_STAGES:
+        stage_to_module[stage] = torch.jit.load(
+            os.path.join(directory, stage_to_filenames[stage]),
+            map_location=stage_to_device[stage],
+        )
+    return stage_to_module
+
+
 def init_inference_stages_from_ludwig_model(
     model: "ECD",
     config: Dict[str, Any],
@@ -278,80 +354,6 @@ def init_inference_stages_from_ludwig_model(
     if scripted:
         stage_to_module = {stage: torch.jit.script(module) for stage, module in stage_to_module.items()}
     return stage_to_module
-
-
-def init_inference_stages_from_directory(
-    directory: str, device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None
-) -> Dict[str, torch.nn.Module]:
-    """Initializes inference stage modules from directory."""
-    stage_to_device = get_stage_to_device_dict(device)
-    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage, device in stage_to_device.items()}
-
-    stage_to_module = {}
-    for stage in INFERENCE_STAGES:
-        stage_to_module[stage] = torch.jit.load(
-            os.path.join(directory, stage_to_filenames[stage]),
-            map_location=stage_to_device[stage],
-        )
-    return stage_to_module
-
-
-class InferenceLudwigModel:
-    """Model for inference with the subset of the LudwigModel interface used for prediction.
-
-    This model is instantiated with a model_dir, which contains the model and its metadata.
-
-    This class is not intended to scriptable; instead, it is a wrapper around scripted modules with some additional
-    functionality. If you need a fully scriptable module for end-to-end inference, use InferenceModule instead.
-
-    Args:
-        model_dir: Directory containing the model and its metadata.
-        device: Device to use for inference. If None, use the default device. If `str` or `torch.device`, use the device
-            specified. If `dict`, use the device specified for each of the preprocessor, predictor, and postprocessor.
-    """
-
-    def __init__(
-        self, model_dir: str, device: Optional[Union[Dict[str, Union[str, torch.device]], str, torch.device]] = None
-    ):
-        self.stage_to_device = get_stage_to_device_dict(device)
-        stage_to_module = init_inference_stages_from_directory(model_dir, device=self.stage_to_device)
-        self.preprocessor = stage_to_module[PREPROCESSOR]
-        self.predictor = stage_to_module[PREDICTOR]
-        self.postprocessor = stage_to_module[POSTPROCESSOR]
-
-        self.config = load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
-        # Do not remove; used in Predibase app
-        self.training_set_metadata = load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME))
-
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
-        with torch.no_grad():
-            inputs = place_on_torch_device(inputs, self.preprocessor.device)
-            preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
-            preproc_outputs = place_on_torch_device(preproc_outputs, self.predictor.device)
-            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
-            predictions_flattened = place_on_torch_device(predictions_flattened, self.postprocessor.device)
-            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
-            # Turn flat inputs into nested predictions per feature name
-            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
-            return postproc_outputs
-
-    def predict(
-        self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
-    ) -> Union[pd.DataFrame, dict]:
-        """Predict on a batch of data.
-
-        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
-        """
-        inputs = {
-            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
-            for if_config in self.config["input_features"]
-        }
-
-        preds = self.forward(inputs)
-
-        if return_type == pd.DataFrame:
-            preds = convert_dict_to_df(preds)
-        return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
 
 def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:

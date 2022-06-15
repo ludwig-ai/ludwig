@@ -26,7 +26,7 @@ from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.models.inference import InferenceLudwigModel
+from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     category_feature,
@@ -642,7 +642,7 @@ def test_api_save_torchscript(tmpdir):
     save_path = os.path.join(output_dir, "model")
     os.makedirs(save_path, exist_ok=True)
     model.save_torchscript(save_path)
-    inference_model = InferenceLudwigModel(save_path)
+    inference_model = InferenceModule.from_directory(save_path)
     output_df, _ = inference_model.predict(test_df, return_type=pd.DataFrame)
 
     for col in output_df.columns:
