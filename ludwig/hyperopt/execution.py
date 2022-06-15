@@ -329,13 +329,19 @@ class RayTuneExecutor:
                 syncer = get_cloud_sync_client(remote_checkpoint_dir)
 
             return syncer, remote_checkpoint_dir
-        else:
+        elif self.kubernetes_namespace is not None:
             # Kubernetes sync config. Returns driver node name and path.
             # When running on kubernetes, each trial is rsynced to the node running the main process.
-            assert self.kubernetes_namespace is not None
             node_name = self._get_node_address_by_ip()(self.head_node_ip)
-
+            # TODO(shreya): Return kubernetes syncer here
             return (node_name, trial_dir)
+        else:
+            logger.warning(
+                "Checkpoint syncing disabled as syncing is only supported to remote cloud storage or on Kubernetes "
+                "clusters is supported. To use syncing, set the kubernetes_namespace in the config or use a cloud URI "
+                "as the output directory."
+            )
+            return None
 
     @lru_cache(maxsize=1)
     def _get_kubernetes_node_address_by_ip(self) -> Callable:
