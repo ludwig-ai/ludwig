@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 import os
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 
@@ -28,9 +29,6 @@ PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
 INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
-INFERENCE_PREPROCESSOR_PREFIX = "inference_preprocessor"
-INFERENCE_PREDICTOR_PREFIX = "inference_predictor"
-INFERENCE_POSTPROCESSOR_PREFIX = "inference_postprocessor"
 
 
 class _InferenceModuleV0(nn.Module):
@@ -397,11 +395,6 @@ def get_filename_from_stage(stage: str, device: Optional[TorchDevice] = None) ->
     """Returns the filename for a stage of inference."""
     if device is None:
         device = "cpu"
-    if stage == PREPROCESSOR:
-        return f"{INFERENCE_PREPROCESSOR_PREFIX}-{device}.pt"
-    elif stage == PREDICTOR:
-        return f"{INFERENCE_PREDICTOR_PREFIX}-{device}.pt"
-    elif stage == POSTPROCESSOR:
-        return f"{INFERENCE_POSTPROCESSOR_PREFIX}-{device}.pt"
-    else:
-        raise ValueError(f"Unknown stage: {stage}. Choose from: {INFERENCE_STAGES}.")
+    if stage not in INFERENCE_STAGES:
+        raise ValueError(f"Invalid stage: {stage}.")
+    return f"inference_{stage}-{device}.pt"
