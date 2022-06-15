@@ -1,5 +1,3 @@
-from ludwig.decoders.registry import get_decoder_classes
-from ludwig.encoders.registry import get_encoder_classes
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
