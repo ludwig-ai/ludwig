@@ -94,9 +94,9 @@ class Predictor(BasePredictor):
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     preds = self._predict(self.model, batch)
-                    self._accumulate_preds(preds, predictions)
-                    if collect_logits:
-                        self._accumulate_logits(preds, predictions)
+                    self._accumulate_preds(
+                        preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+                    )
                     progress_bar.update(1)
 
                 progress_bar.close()
@@ -115,9 +115,9 @@ class Predictor(BasePredictor):
         with torch.no_grad():
             predictions = defaultdict(list)
             preds = self._predict(self.model, batch)
-            self._accumulate_preds(preds, predictions)
-            if collect_logits:
-                self._accumulate_logits(preds, predictions)
+            self._accumulate_preds(
+                preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+            )
             self._concat_preds(predictions)
 
         # reset model to its original training mode
@@ -141,19 +141,11 @@ class Predictor(BasePredictor):
 
         return model.predict_step(inputs)
 
-    def _accumulate_preds(self, preds, predictions):
+    def _accumulate_preds(self, preds, predictions, exclude_pred_set=EXCLUDE_PRED_SET):
         # accumulate predictions from batch for each output feature
         for of_name, of_preds in preds.items():
             for pred_name, pred_values in of_preds.items():
-                if pred_name not in EXCLUDE_PRED_SET:
-                    key = f"{of_name}_{pred_name}"
-                    predictions[key].append(pred_values)
-
-    def _accumulate_logits(self, preds, predictions):
-        # accumulate logits from batch for each output feature
-        for of_name, of_preds in preds.items():
-            for pred_name, pred_values in of_preds.items():
-                if pred_name == LOGITS:
+                if pred_name not in exclude_pred_set:
                     key = f"{of_name}_{pred_name}"
                     predictions[key].append(pred_values)
 
@@ -214,11 +206,9 @@ class Predictor(BasePredictor):
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
-                        for of_name, of_preds in preds.items():
-                            for pred_name, pred_values in of_preds.items():
-                                if collect_logits or pred_name not in EXCLUDE_PRED_SET:
-                                    key = f"{of_name}_{pred_name}"
-                                    predictions[key].append(pred_values)
+                        self._accumulate_preds(
+                            preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+                        )
 
                     progress_bar.update(1)
                     if self.is_coordinator():
