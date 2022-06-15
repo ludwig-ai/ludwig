@@ -18,9 +18,37 @@ from typing import Dict, List, Optional
 import torch
 from torch.nn import BatchNorm1d, BatchNorm2d, Dropout, LayerNorm, Linear, ModuleList
 
-from ludwig.utils.torch_utils import activations, initializer_registry, LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule
+from ludwig.utils.torch_utils import activations, initializer_registry
 
 logger = logging.getLogger(__name__)
+
+
+class Dense(LudwigModule):
+    def __init__(
+        self,
+        input_size,
+        output_size,
+        use_bias=True,
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
+    ):
+        super().__init__()
+        self.dense = Linear(in_features=input_size, out_features=output_size, bias=use_bias)
+        weights_initializer = initializer_registry[weights_initializer]
+        weights_initializer(self.dense.weight)
+
+        if use_bias:
+            bias_initializer = initializer_registry[bias_initializer]
+            bias_initializer(self.dense.bias)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return self.dense.input_shape
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        output = torch.squeeze(self.dense(input), dim=-1)
+        return output
 
 
 class FCLayer(LudwigModule):

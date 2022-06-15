@@ -11,6 +11,7 @@ from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD, TYPE
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache

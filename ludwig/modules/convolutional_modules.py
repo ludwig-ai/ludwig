@@ -19,8 +19,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.utils.image_utils import get_img_output_shape
-from ludwig.utils.torch_utils import get_activation, LudwigModule
+from ludwig.utils.torch_utils import get_activation
 
 logger = logging.getLogger(__name__)
 

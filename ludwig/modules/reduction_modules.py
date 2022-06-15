@@ -17,8 +17,9 @@ import logging
 import torch
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 

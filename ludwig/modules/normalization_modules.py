@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import torch
 
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule
 
 
 # implementation adapted from https://github.com/dreamquark-ai/tabnet

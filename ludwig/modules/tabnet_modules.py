@@ -3,9 +3,9 @@ from typing import List, Optional, Tuple
 import torch
 import torch.nn as nn
 
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.entmax import Entmax15, EntmaxBisect, Sparsemax
-from ludwig.utils.torch_utils import LudwigModule
 
 
 class TabNet(LudwigModule):

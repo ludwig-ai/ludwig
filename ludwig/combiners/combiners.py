@@ -27,6 +27,7 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
@@ -39,7 +40,7 @@ from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry, get_combiner_jsonschema, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)

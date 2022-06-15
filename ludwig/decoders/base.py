@@ -16,7 +16,7 @@
 
 from abc import ABC, abstractmethod
 
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule
 
 
 class Decoder(LudwigModule, ABC):

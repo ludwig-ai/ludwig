@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule
 
 
 def assert_output_shapes(module: LudwigModule, input_shape: Tuple[int]):

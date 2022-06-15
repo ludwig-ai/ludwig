@@ -1,13 +1,10 @@
 import math
 import os
 import warnings
-from abc import abstractmethod
-from functools import lru_cache
 from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import nn
-from torch.nn import Module, ModuleDict
 
 from ludwig.utils.strings_utils import SpecialSymbol
 
@@ -145,95 +142,6 @@ def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0
         l1_reg = l1 * sum(torch.abs(p).sum() for p in model.parameters())
         l2_reg = l2 * sum(torch.square(p).sum() for p in model.parameters())
         return l1_reg + l2_reg
-
-
-class LudwigModule(Module):
-    def __init__(self):
-        super().__init__()
-        self._losses = {}
-        self.register_buffer("device_tensor", torch.zeros(0))
-
-    @property
-    def device(self):
-        return self.device_tensor.device
-
-    def losses(self):
-        collected_losses = []
-        for loss in self._losses.values():
-            collected_losses.append(loss)
-
-        for child in self.children():
-            if isinstance(child, LudwigModule):
-                collected_losses.extend(child.losses())
-            elif isinstance(child, ModuleDict):
-                for c in child.values():
-                    if hasattr(c, "losses"):  # Some modules, i.e. SequenceReducers, don't have losses.
-                        collected_losses.extend(c.losses())
-            elif isinstance(child, Module):
-                pass
-            else:
-                raise ValueError
-
-        return collected_losses
-
-    def update_loss(self, key: str, loss: torch.Tensor):
-        """This should be called in the forward pass to add a custom loss term to the combined loss."""
-        self._losses[key] = loss
-
-    @property
-    def input_dtype(self):
-        return torch.float32
-
-    @property
-    @abstractmethod
-    def input_shape(self) -> torch.Size:
-        """Returns size of the input tensor without the batch dimension."""
-        pass
-        # raise NotImplementedError("Abstract class.")
-
-    @property
-    def output_shape(self) -> torch.Size:
-        """Returns size of the output tensor without the batch dimension."""
-        return self._compute_output_shape()
-
-    @lru_cache(maxsize=1)
-    def _compute_output_shape(self) -> torch.Size:
-        dummy_input = torch.rand(2, *self.input_shape, device=self.device)
-        output_tensor = self.forward(dummy_input.type(self.input_dtype))
-
-        if isinstance(output_tensor, torch.Tensor):
-            return output_tensor.size()[1:]
-        elif isinstance(output_tensor, dict) and "encoder_output" in output_tensor:
-            return output_tensor["encoder_output"].size()[1:]
-        else:
-            raise ValueError("Unknown output tensor type.")
-
-
-class Dense(LudwigModule):
-    def __init__(
-        self,
-        input_size,
-        output_size,
-        use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
-    ):
-        super().__init__()
-        self.dense = nn.Linear(in_features=input_size, out_features=output_size, bias=use_bias)
-        weights_initializer = initializer_registry[weights_initializer]
-        weights_initializer(self.dense.weight)
-
-        if use_bias:
-            bias_initializer = initializer_registry[bias_initializer]
-            bias_initializer(self.dense.bias)
-
-    @property
-    def input_shape(self) -> torch.Size:
-        return self.dense.input_shape
-
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        output = torch.squeeze(self.dense(input), dim=-1)
-        return output
 
 
 def initialize_pytorch(

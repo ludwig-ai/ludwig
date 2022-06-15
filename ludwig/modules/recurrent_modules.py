@@ -18,8 +18,8 @@ from typing import Optional
 import torch
 from torch.nn import GRU, LSTM, RNN
 
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
 

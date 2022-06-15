@@ -22,7 +22,8 @@ from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
-from ludwig.utils.torch_utils import Dense, get_activation
+from ludwig.modules.fully_connected_modules import Dense
+from ludwig.utils.torch_utils import get_activation
 
 logger = logging.getLogger(__name__)
 

@@ -17,7 +17,7 @@ from typing import Tuple, Union
 import torch
 import torch.nn as nn
 
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule
 
 
 class MLP(LudwigModule):
