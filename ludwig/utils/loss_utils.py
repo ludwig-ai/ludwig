@@ -2,12 +2,10 @@ import torch
 
 
 def rmspe_loss(targets: torch.Tensor, predictions: torch.Tensor) -> torch.Tensor:
-    """
-    Root mean square percentage error.
-    
-    Bad predictions can lead to arbitrarily large RMSPE values, 
-    especially if some values of targets are very close to zero. 
-    We return a large value instead of inf when (some) targets are zero.
+    """Root mean square percentage error.
+
+    Bad predictions can lead to arbitrarily large RMSPE values, especially if some values of targets are very close to
+    zero. We return a large value instead of inf when (some) targets are zero.
     """
     epsilon = 1e-4
     # add epsilon if targets are zero to avoid division by zero
