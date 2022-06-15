@@ -63,11 +63,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import (
-    InferenceModule,
-    get_stage_to_device_dict,
-    save_ludwig_model_for_inference,
-)
+from ludwig.models.inference import get_stage_to_device_dict, InferenceModule, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
