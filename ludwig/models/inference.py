@@ -109,13 +109,41 @@ class InferenceModule(nn.Module):
         # Do not remove – used by Predibase app
         self.training_set_metadata = training_set_metadata
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
+    def preprocessor_forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
+        if self.preprocessor.device != torch.device("cpu"):
+            non_tensor_inputs: List[str] = []
+            for k, v in inputs.items():
+                if torch.jit.isinstance(v, torch.Tensor):
+                    inputs[k] = v.to(self.preprocessor.device)
+                else:
+                    non_tensor_inputs.append(f'"{k}"')
+            if len(non_tensor_inputs) > 0:
+                non_tensor_inputs_repr = ", ".join(non_tensor_inputs)
+                raise ValueError(
+                    f"Preprocessor must be run on CPU when input is not a Tensor. "
+                    f"Found the following non-tensor inputs: {non_tensor_inputs_repr}."
+                )
         with torch.no_grad():
-            preproc_inputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
-            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_inputs)
-            postproc_outputs_flattened = self.postprocessor(predictions_flattened)
+            return self.preprocessor(inputs)
+
+    def predictor_forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        preproc_inputs = {k: v.to(self.predictor.device) for k, v in preproc_inputs.items()}
+        with torch.no_grad():
+            return self.predictor(preproc_inputs)
+
+    def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
+        predictions_flattened = {k: v.to(self.postprocessor.device) for k, v in predictions_flattened.items()}
+        with torch.no_grad():
+            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
             postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
+            return postproc_outputs
+
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
+        with torch.no_grad():
+            preproc_inputs: Dict[str, torch.Tensor] = self.preprocessor_forward(inputs)
+            predictions_flattened: Dict[str, torch.Tensor] = self.predictor_forward(preproc_inputs)
+            postproc_outputs: Dict[str, Dict[str, Any]] = self.postprocessor_forward(predictions_flattened)
             return postproc_outputs
 
     @torch.jit.unused
@@ -199,20 +227,6 @@ class InferencePreprocessor(nn.Module):
             self.preproc_modules[module_dict_key] = feature_preproc_module.to(device=self.device)
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
-        if self.device != torch.device("cpu"):
-            non_tensor_inputs: List[str] = []
-            for k, v in inputs.items():
-                if torch.jit.isinstance(v, torch.Tensor):
-                    inputs[k] = v.to(self.device)
-                else:
-                    non_tensor_inputs.append(f'"{k}"')
-            if len(non_tensor_inputs) > 0:
-                non_tensor_inputs_repr = ", ".join(non_tensor_inputs)
-                raise ValueError(
-                    f"Preprocessor must be run on CPU when input is not a Tensor. "
-                    f"Found the following non-tensor inputs: {non_tensor_inputs_repr}."
-                )
-
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -241,8 +255,6 @@ class InferencePredictor(nn.Module):
             self.predict_modules[module_dict_key] = feature.prediction_module.to(device=self.device)
 
     def forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        preproc_inputs = {k: v.to(self.device) for k, v in preproc_inputs.items()}
-
         with torch.no_grad():
             model_outputs = self.model(preproc_inputs)
             predictions_flattened: Dict[str, torch.Tensor] = {}
