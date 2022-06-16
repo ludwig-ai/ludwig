@@ -64,9 +64,9 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import (
-    PREDICTOR,
-    InferenceModule,
     get_stage_to_device_dict,
+    InferenceModule,
+    PREDICTOR,
     save_ludwig_model_for_inference,
 )
 from ludwig.models.predictor import (
