@@ -61,6 +61,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
