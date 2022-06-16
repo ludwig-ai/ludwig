@@ -61,6 +61,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -258,6 +259,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         if hasattr(encoder_class, "default_params"):
             set_default_values(input_feature, encoder_class.default_params)
 
+    @staticmethod
+    def get_schema_cls():
+        return TextInputFeatureConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
@@ -380,6 +385,10 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         SequenceOutputFeature.populate_defaults(output_feature)
+
+    @staticmethod
+    def get_schema_cls():
+        return TextOutputFeatureConfig
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"

@@ -8,16 +8,8 @@ from ludwig.schema.features.preprocessing import CategoryPreprocessingConfig
 
 
 @dataclass
-class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """CategoryInputFeature is a dataclass that configures the parameters used for a category input feature."""
-
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=False,
-        description="Name of the feature. Must be unique within the model.",
-    )
-
-    type: str = "category"
 
     preprocessing: Optional[str] = CategoryPreprocessingConfig(
     )
@@ -38,13 +30,12 @@ class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseIn
 
 
 @dataclass
-class CategoryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+class CategoryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """CategoryOutputFeature is a dataclass that configures the parameters used for a category output feature."""
 
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=False,
-        description="Name of the feature. Must be unique within the model.",
+    decoder: Optional[str] = schema_utils.StringOptions(
+        ["classifier"],
+        default="classifier",
+        allow_none=True,
+        description="Decoder to use for this category feature.",
     )
-
-    type: str = "category"

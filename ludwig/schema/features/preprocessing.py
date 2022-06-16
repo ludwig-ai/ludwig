@@ -6,6 +6,16 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
+from ludwig.utils.registry import Registry
+
+preprocessing_registry = Registry()
+
+
+def register_preprocessor(name: str):
+    def wrap(preprocessing_config: BasePreprocessingConfig):
+        preprocessing_registry[name] = preprocessing_config
+        return preprocessing_config
+    return wrap
 
 
 @dataclass
@@ -19,10 +29,12 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     feature_type: ClassVar[Optional[str]] = None
     "Class variable pointing to the corresponding preprocessor."
+
     type: str
 
 
 @dataclass
+@register_preprocessor("text")
 class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -94,6 +106,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("number")
 class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -119,6 +132,7 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("binary")
 class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -154,6 +168,7 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("category")
 class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
 
@@ -184,6 +199,7 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("set")
 class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -222,6 +238,7 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("sequence")
 class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -292,6 +309,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("image")
 class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     height: Optional[int] = schema_utils.PositiveInteger(
@@ -381,6 +399,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("audio")
 class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     audio_file_length_limit_in_s: Optional[int] = schema_utils.NonNegativeFloat(
@@ -468,6 +487,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("timeseries")
 class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -538,6 +558,7 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("bag")
 class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: Optional[str] = schema_utils.String(
@@ -576,6 +597,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("h3")
 class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -593,6 +615,7 @@ class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("date")
 class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -617,6 +640,7 @@ class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
+@register_preprocessor("vector")
 class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     vector_size: Optional[int] = schema_utils.PositiveInteger(
@@ -640,28 +664,25 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-def PreprocessingDataclassField(description="TODO"):
-    """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
-    `ludwig.modules.optimization_modules.optimizer_registry`.
+def PreprocessingDataclassField(feature_type: str):
+    """
+    Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing config.
 
-    Sets default optimizer to 'adam'.
-
-    :param default: Dict specifying an optimizer with a `type` field and its associated parameters. Will attempt to use
-           `type` to load optimizer from registry with given params. (default: {"type": "adam"}).
-    :return: Initialized dataclass field that converts untyped dicts with params to optimizer dataclass instances.
+    Returns: Inialized dataclass field that converts an untyped dict with params to a preprocessing config.
     """
 
-    class PreprocesingMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict to a valid optimizer from
-        `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema
-        for external usage."""
+    class PreprocessingMarshmallowField(fields.Field):
+        """
+        Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
+        preprocessing_registry and creates a corresponding `oneOf` JSON schema for external usage.
+        """
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
                 return None
             if isinstance(value, dict):
-                if "type" in value and value["type"] in optimizer_registry:
-                    opt = optimizer_registry[value["type"].lower()][1]
+                if "type" in value and value["type"] in preprocessing_registry:
+                    opt = preprocessing_registry[value["type"].lower()][1]
                     try:
                         return opt.Schema().load(value)
                     except (TypeError, ValidationError) as e:
@@ -673,36 +694,28 @@ def PreprocessingDataclassField(description="TODO"):
                 )
             raise ValidationError("Field should be None or dict")
 
-        def _jsonschema_type_mapping(self):
-            # Note that this uses the same conditional pattern as combiners:
+        @staticmethod
+        def _jsonschema_type_mapping():
             return {
                 "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": list(optimizer_registry.keys()), "default": default["type"]},
-                },
-                "title": "optimizer_options",
-                "allOf": get_optimizer_conds(),
-                "required": ["type"],
-                "description": description,
+                "properties": preprocessing_registry[feature_type].Schema(),
+                "additionalProperties": False,
             }
 
-    if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
-        raise ValidationError(f"Invalid default: `{default}`")
     try:
-        opt = optimizer_registry[default["type"].lower()][1]
-        load_default = opt.Schema().load(default)
-        dump_default = opt.Schema().dump(default)
+        preprocessor = preprocessing_registry[feature_type]
+        load_default = preprocessor.Schema().load(default)
+        dump_default = preprocessor.Schema().dump(default)
 
         return field(
             metadata={
-                "marshmallow_field": OptimizerMarshmallowField(
+                "marshmallow_field": PreprocessingMarshmallowField(
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,
-                    metadata={"description": description},
                 )
             },
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
+        raise ValidationError(f"Unsupported preprocessing type: {feature_type}. See optimizer_registry. Details: {e}")

@@ -4,22 +4,22 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BagPreprocessingConfig
+from ludwig.schema.features.preprocessing import TimeseriesPreprocessingConfig
 
 
 @dataclass
-class BagInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class TimeseriesInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """
-    BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature.
+    TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input feature.
     """
 
-    preprocessing: Optional[str] = BagPreprocessingConfig(
+    preprocessing: Optional[str] = TimeseriesPreprocessingConfig(
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        ["embed"],
-        default="embed",
-        description="Encoder to use for this bag feature.",
+        ["passthrough", "parallel_cnn", "stacked_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "transformer"],
+        default="parallel_cnn",
+        description="Encoder to use for this timeseries feature.",
     )
 
     # TODO(#1673): Need some more logic here for validating against input features
@@ -29,4 +29,3 @@ class BagInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeature
         description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
                     "feature of the same type and with the same encoder parameters.",
     )
-

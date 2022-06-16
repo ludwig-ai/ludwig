@@ -26,6 +26,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -166,3 +167,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _H3Preprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return H3InputFeatureConfig

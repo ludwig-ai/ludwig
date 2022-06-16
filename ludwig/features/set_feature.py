@@ -46,6 +46,7 @@ from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -262,6 +263,10 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return SetInputFeatureConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
@@ -401,3 +406,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, "dependencies", [])
         set_default_value(output_feature, "reduce_input", SUM)
         set_default_value(output_feature, "reduce_dependencies", SUM)
+
+    @staticmethod
+    def get_schema_cls():
+        return SetOutputFeatureConfig

@@ -52,6 +52,7 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -276,6 +277,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return BinaryInputFeatureConfig
+
     def create_sample_input(self):
         return torch.Tensor([True, False])
 
@@ -438,6 +443,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return BinaryOutputFeatureConfig
 
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:

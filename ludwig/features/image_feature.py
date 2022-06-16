@@ -60,6 +60,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -511,6 +512,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
+
+    @staticmethod
+    def get_schema_cls():
+        return ImageInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

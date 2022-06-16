@@ -62,6 +62,7 @@ from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -318,6 +319,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "encoder", "parallel_cnn")
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceInputFeatureConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -541,6 +546,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceOutputFeatureConfig
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"

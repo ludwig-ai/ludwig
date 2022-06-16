@@ -48,6 +48,7 @@ from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_de
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -342,6 +343,10 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return NumberInputFeatureConfig
+
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "float32"
@@ -452,6 +457,10 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return NumberOutputFeatureConfig
 
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:

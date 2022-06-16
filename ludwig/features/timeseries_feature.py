@@ -36,6 +36,7 @@ from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +246,10 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
                 "encoder": "parallel_cnn",
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return TimeseriesInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

@@ -28,6 +28,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +140,10 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def get_schema_cls():
+        return BagInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

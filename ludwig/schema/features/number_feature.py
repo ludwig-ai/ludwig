@@ -8,16 +8,8 @@ from ludwig.schema.features.preprocessing import NumberPreprocessingConfig
 
 
 @dataclass
-class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """NumberInputFeature is a dataclass that configures the parameters used for a number input feature."""
-
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=False,
-        description="Name of the feature. Must be unique within the model.",
-    )
-
-    type: str = "number"
 
     preprocessing: Optional[str] = NumberPreprocessingConfig(
     )
@@ -38,12 +30,12 @@ class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInpu
 
 
 @dataclass
-class NumberOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+class NumberOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
 
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=False,
-        description="Name of the feature. Must be unique within the model.",
+    decoder: Optional[str] = schema_utils.StringOptions(
+        ["regressor"],
+        default="regressor",
+        allow_none=True,
+        description="Decoder to use for this number feature.",
     )
 
-    type: str = "number"

@@ -49,6 +49,7 @@ from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_S
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -220,6 +221,10 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
@@ -454,5 +459,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
 
     @staticmethod
+    def get_schema_cls():
+        return CategoryOutputFeatureConfig
+
+    @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
+

@@ -8,16 +8,8 @@ from ludwig.schema.features.preprocessing import BinaryPreprocessingConfig
 
 
 @dataclass
-class BinaryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+class BinaryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """BinaryInputFeature is a dataclass that configures the parameters used for a binary input feature."""
-
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=False,
-        description="Name of the feature. Must be unique within the model.",
-    )
-
-    type: str = "binary"
 
     preprocessing: Optional[str] = BinaryPreprocessingConfig(
     )
@@ -38,13 +30,12 @@ class BinaryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInpu
 
 
 @dataclass
-class BinaryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseInputFeatureConfig):
+class BinaryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """BinaryOutputFeature is a dataclass that configures the parameters used for a binary output feature."""
 
-    name: str = schema_utils.String(
-        default=None,
-        allow_none=False,
-        description="Name of the feature. Must be unique within the model.",
+    decoder: Optional[str] = schema_utils.StringOptions(
+        ["regressor"],
+        default="classifier",
+        allow_none=True,
+        description="Decoder to use for this binary feature.",
     )
-
-    type: str = "binary"

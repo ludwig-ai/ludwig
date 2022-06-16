@@ -1,7 +1,7 @@
 from ludwig.schema import utils as schema_utils
 
 
-class BaseInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base input feature config class."""
 
     name: str = schema_utils.String(

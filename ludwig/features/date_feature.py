@@ -27,6 +27,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.date_feature import DateInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
         return create_vector_from_datetime_obj(datetime_obj)
 
+    @staticmethod
     def add_feature_data(
         feature_config: Dict[str, Any],
         input_df: DataFrame,
@@ -157,6 +159,10 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def get_schema_cls():
+        return DateInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
