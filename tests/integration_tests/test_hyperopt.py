@@ -22,7 +22,7 @@ import pytest
 import ray
 import torch
 
-from ludwig.constants import ACCURACY, INPUT_FEATURES, RAY, TEXT, TRAINER, TYPE
+from ludwig.constants import ACCURACY, INPUT_FEATURES, OUTPUT_FEATURES, RAY, TEXT, TRAINER, TYPE, COMBINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
@@ -91,9 +91,9 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {"type": "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
@@ -249,9 +249,9 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {"type": "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
@@ -332,9 +332,9 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space, tm
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
@@ -403,8 +403,8 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space, tm
             assert len(text_input_cell_types) == 1
             params_fd.close()
         # Likely unable to open trial dir so fail this test
-        except OSError:
-            assert 1 == 0
+        except Exception as e:
+            raise RuntimeError(f"Failed to open hyperopt trial dir with error: \n\t {e}")
 
     if os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")):
         os.remove(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
