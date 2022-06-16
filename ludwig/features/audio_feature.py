@@ -56,6 +56,7 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
 
 
 class _AudioPreprocessing(torch.nn.Module):

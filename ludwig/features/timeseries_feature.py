@@ -30,6 +30,7 @@ from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 

@@ -30,6 +30,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 

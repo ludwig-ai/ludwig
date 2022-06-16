@@ -27,6 +27,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
