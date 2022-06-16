@@ -235,7 +235,7 @@ def tune_batch_size_fn(
 
         train_shard = RayDatasetShard(
             pipe,
-            len(pipe),
+            len(dataset),
             features,
             training_set_metadata,
         )
@@ -271,7 +271,7 @@ def tune_learning_rate_fn(
         # Expensive blocking call
         train_shard = RayDatasetShard(
             pipe,
-            len(pipe),
+            len(dataset),
             features,
             training_set_metadata,
         )
@@ -371,9 +371,9 @@ class RayTrainerV2(BaseTrainer):
                 config={
                     "executable_kwargs": executable_kwargs,
                     "model_ref": ray.put(self.model),
-                    "train_dataset_size": len(dataset.get("train", 0)),
-                    "val_dataset_size": len(dataset.get("val", 0)),
-                    "test_dataset_size": len(dataset.get("test", 0)),
+                    "train_dataset_size": len(training_set),
+                    "val_dataset_size": len(validation_set) if validation_set else 0,
+                    "test_dataset_size": len(test_set) if test_set else 0,
                     **kwargs,
                 },
                 callbacks=[TqdmCallback()],
@@ -551,8 +551,8 @@ class RayLegacyTrainer(BaseTrainer):
         )
 
         train_dataset_size = len(training_set)
-        val_dataset_size = len(val_shards) if val_shards else 0
-        test_dataset_size = len(test_shards) if test_shards else 0
+        val_dataset_size = len(validation_set) if validation_set else 0
+        test_dataset_size = len(test_set) if test_set else 0
 
         results = self.executor.execute(
             lambda trainer: legacy_train_fn(
