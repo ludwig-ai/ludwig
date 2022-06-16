@@ -88,6 +88,21 @@ def ray_cluster():
         ray.shutdown()
 
 
+@contextlib.contextmanager
+def init_backend(backend: str):
+    if backend == "local":
+        with contextlib.nullcontext():
+            yield
+            return
+
+    if backend == "ray":
+        with ray_cluster():
+            yield
+            return
+
+    raise ValueError(f"Unrecognized backend: {backend}")
+
+
 class LocalTestBackend(LocalBackend):
     @property
     def supports_multiprocessing(self):

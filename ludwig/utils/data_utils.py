@@ -40,7 +40,7 @@ from sklearn.model_selection import KFold
 
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
-from ludwig.utils.fs_utils import download_h5, open_file, upload_h5
+from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -111,9 +111,11 @@ def get_split_path(dataset_fp):
     return os.path.splitext(dataset_fp)[0] + ".split.csv"
 
 
-def get_abs_path(data_csv_path, file_path):
-    if data_csv_path is not None:
-        return os.path.join(data_csv_path, file_path)
+def get_abs_path(src_path, file_path):
+    if has_remote_protocol(file_path):
+        return file_path
+    elif src_path is not None:
+        return os.path.join(src_path, file_path)
     else:
         return file_path
 
@@ -157,7 +159,9 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
-    kwargs = dict(sep=separator, header=header, skiprows=skiprows)
+    # NOTE: we read all XSV columns in as dtype=object, bypassing all type inference. This is to avoid silent issues
+    # related to incorrect type inference (e.g. NaNs in bool columns). Convert data to correct types after reading in.
+    kwargs = dict(sep=separator, header=header, skiprows=skiprows, dtype=object)
 
     if nrows is not None:
         kwargs["nrows"] = nrows
@@ -515,6 +519,9 @@ def split_dataset_ttv(dataset, split):
     # Obtain distinct splits from the split column. If
     # a split is not present in this set, then we can skip generating
     # the dataframe for that split.
+    if dataset[split].dtype != int:
+        dataset[split] = dataset[split].astype(int)
+
     distinct_values = dataset[split].drop_duplicates()
     if hasattr(distinct_values, "compute"):
         distinct_values = distinct_values.compute()

@@ -262,6 +262,24 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    input_features = [
+        binary_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
 def test_torchscript_e2e_tabnet_combiner(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:

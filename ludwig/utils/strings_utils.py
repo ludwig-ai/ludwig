@@ -30,6 +30,9 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import Series
 
+PANDAS_TRUE_STRS = {"true"}
+PANDAS_FALSE_STRS = {"false"}
+
 BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
 BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
 
@@ -87,6 +90,17 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     if fallback_true_label is None:
         raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified")
     return v == fallback_true_label
+
+
+def column_is_bool(column: Series) -> bool:
+    """Returns whether a column could have been cast by read_csv as boolean."""
+    distinct_values = column.drop_duplicates()
+    return values_are_pandas_bools(distinct_values)
+
+
+def values_are_pandas_bools(values: List[Union[str, bool]]):
+    lowercase_values_set = {str(v).lower() for v in values}
+    return lowercase_values_set.issubset(PANDAS_FALSE_STRS | PANDAS_TRUE_STRS)
 
 
 def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
