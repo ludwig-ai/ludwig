@@ -20,3 +20,4 @@ class AudioInputFeatureConfig(BaseInputFeatureConfig):
         default="parallel_cnn",
         description="Encoder to use for this audio feature.",
     )
+
