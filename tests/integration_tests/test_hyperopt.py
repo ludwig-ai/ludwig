@@ -22,7 +22,7 @@ import pytest
 import ray
 import torch
 
-from ludwig.constants import ACCURACY, INPUT_FEATURES, OUTPUT_FEATURES, RAY, TEXT, TRAINER, TYPE, COMBINER
+from ludwig.constants import ACCURACY, COMBINER, INPUT_FEATURES, OUTPUT_FEATURES, RAY, TEXT, TRAINER, TYPE
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
