@@ -149,6 +149,9 @@ def _get_df_engine(processor):
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    train_dataset_size: int = 0,
+    val_dataset_size: int = 0,
+    test_dataset_size: int = 0,
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -160,6 +163,7 @@ def train_fn(
 
         train_shard = RayDatasetShard(
             rt.get_dataset_shard("train"),
+            train_dataset_size,
             features,
             training_set_metadata,
         )
@@ -172,6 +176,7 @@ def train_fn(
         if val_shard is not None:
             val_shard = RayDatasetShard(
                 val_shard,
+                val_dataset_size,
                 features,
                 training_set_metadata,
             )
@@ -184,6 +189,7 @@ def train_fn(
         if test_shard is not None:
             test_shard = RayDatasetShard(
                 test_shard,
+                test_dataset_size,
                 features,
                 training_set_metadata,
             )
@@ -226,8 +232,10 @@ def tune_batch_size_fn(
         initialize_pytorch(horovod=hvd)
 
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+
         train_shard = RayDatasetShard(
             pipe,
+            len(pipe),
             features,
             training_set_metadata,
         )
@@ -259,8 +267,11 @@ def tune_learning_rate_fn(
         initialize_pytorch(horovod=hvd)
 
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
+
+        # Expensive blocking call
         train_shard = RayDatasetShard(
             pipe,
+            len(pipe),
             features,
             training_set_metadata,
         )
@@ -357,7 +368,14 @@ class RayTrainerV2(BaseTrainer):
         with self.create_runner() as runner:
             results, self._validation_field, self._validation_metric = runner.run(
                 lambda config: train_fn(**config),
-                config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
+                config={
+                    "executable_kwargs": executable_kwargs,
+                    "model_ref": ray.put(self.model),
+                    "train_dataset_size": len(dataset.get("train", 0)),
+                    "val_dataset_size": len(dataset.get("val", 0)),
+                    "test_dataset_size": len(dataset.get("test", 0)),
+                    **kwargs,
+                },
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
             )[0]
@@ -463,6 +481,9 @@ def legacy_train_fn(
     train_shards: List[DatasetPipeline] = None,
     val_shards: List[DatasetPipeline] = None,
     test_shards: List[DatasetPipeline] = None,
+    train_dataset_size: int = 0,
+    val_dataset_size: int = 0,
+    test_dataset_size: int = 0,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -471,6 +492,7 @@ def legacy_train_fn(
 
     train_shard = RayDatasetShard(
         train_shards[hvd.rank()],
+        train_dataset_size,
         features,
         training_set_metadata,
     )
@@ -479,6 +501,7 @@ def legacy_train_fn(
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
+            val_dataset_size,
             features,
             training_set_metadata,
         )
@@ -487,6 +510,7 @@ def legacy_train_fn(
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
+            test_dataset_size,
             features,
             training_set_metadata,
         )
@@ -526,6 +550,10 @@ class RayLegacyTrainer(BaseTrainer):
             test_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers) if test_set else None
         )
 
+        train_dataset_size = len(training_set)
+        val_dataset_size = len(val_shards) if val_shards else 0
+        test_dataset_size = len(test_shards) if test_shards else 0
+
         results = self.executor.execute(
             lambda trainer: legacy_train_fn(
                 trainer,
@@ -535,6 +563,9 @@ class RayLegacyTrainer(BaseTrainer):
                 train_shards,
                 val_shards,
                 test_shards,
+                train_dataset_size,
+                val_dataset_size,
+                test_dataset_size,
                 **kwargs,
             )
         )
@@ -563,6 +594,7 @@ def eval_fn(
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
+    eval_dataset_size: int = 0,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -572,6 +604,7 @@ def eval_fn(
 
         eval_shard = RayDatasetShard(
             rt.get_dataset_shard("eval"),
+            eval_dataset_size,
             features,
             training_set_metadata,
         )
@@ -662,6 +695,7 @@ class RayPredictor(BasePredictor):
         try:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
+            eval_dataset_size = len(dataset)
             predictor_kwargs = {
                 **self.predictor_kwargs,
                 "collect_predictions": False,
@@ -673,6 +707,7 @@ class RayPredictor(BasePredictor):
                     "model_ref": ray.put(self.model),
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
+                    "eval_dataset_size": eval_dataset_size,
                     **kwargs,
                 },
                 dataset=datasets,

@@ -151,10 +151,12 @@ class RayDatasetShard(Dataset):
     def __init__(
         self,
         dataset_shard: DatasetPipeline,
+        dataset_shard_size: int,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
+        self.dataset_shard_size = dataset_shard_size
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.dataset_iter = dataset_shard.iter_datasets()
@@ -172,7 +174,8 @@ class RayDatasetShard(Dataset):
     @lru_cache(1)
     def __len__(self):
         # TODO(travis): find way to avoid calling this, as it's expensive
-        return next(self.dataset_iter).count()
+        # return next(self.dataset_iter).count()
+        return self.dataset_shard_size
 
     @property
     def size(self):
