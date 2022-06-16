@@ -4,14 +4,15 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BinaryPreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
 class BinaryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """BinaryInputFeature is a dataclass that configures the parameters used for a binary input feature."""
 
-    preprocessing: Optional[str] = BinaryPreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='binary'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(

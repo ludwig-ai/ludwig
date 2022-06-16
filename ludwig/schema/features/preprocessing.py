@@ -668,7 +668,7 @@ def PreprocessingDataclassField(feature_type: str):
     """
     Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing config.
 
-    Returns: Inialized dataclass field that converts an untyped dict with params to a preprocessing config.
+    Returns: Initialized dataclass field that converts an untyped dict with params to a preprocessing config.
     """
 
     class PreprocessingMarshmallowField(fields.Field):
@@ -681,13 +681,13 @@ def PreprocessingDataclassField(feature_type: str):
             if value is None:
                 return None
             if isinstance(value, dict):
-                if "type" in value and value["type"] in preprocessing_registry:
-                    opt = preprocessing_registry[value["type"].lower()][1]
+                if feature_type in preprocessing_registry:
+                    pre = preprocessing_registry[feature_type]
                     try:
-                        return opt.Schema().load(value)
-                    except (TypeError, ValidationError) as e:
+                        return pre.Schema().load(value)
+                    except (TypeError, ValidationError) as error:
                         raise ValidationError(
-                            f"Invalid params for optimizer: {value}, see `{opt}` definition. Error: {e}"
+                            f"Invalid preprocessing params: {value}, see `{pre}` definition. Error: {error}"
                         )
                 raise ValidationError(
                     f"Invalid params for optimizer: {value}, expect dict with at least a valid `type` attribute."
@@ -704,8 +704,8 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = preprocessor.Schema().load(default)
-        dump_default = preprocessor.Schema().dump(default)
+        load_default = preprocessor.Schema().load(feature_type)
+        dump_default = preprocessor.Schema().dump(feature_type)
 
         return field(
             metadata={

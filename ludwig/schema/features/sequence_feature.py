@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import SequencePreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
@@ -13,7 +13,8 @@ class SequenceInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFe
     SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input feature.
     """
 
-    preprocessing: Optional[str] = SequencePreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='sequence'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(

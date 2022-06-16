@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import DatePreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
@@ -13,7 +13,8 @@ class DateInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatur
     DateInputFeature is a dataclass that configures the parameters used for a date input feature.
     """
 
-    preprocessing: Optional[str] = DatePreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='date'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(

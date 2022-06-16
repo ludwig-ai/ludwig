@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import SetPreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
@@ -13,7 +13,8 @@ class SetInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeature
     SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature.
     """
 
-    preprocessing: Optional[str] = SetPreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='category'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(

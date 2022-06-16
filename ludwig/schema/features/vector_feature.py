@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import VectorPreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
@@ -13,7 +13,8 @@ class VectorInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeat
     VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature.
     """
 
-    preprocessing: Optional[str] = VectorPreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='vector'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(

@@ -4,14 +4,15 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import CategoryPreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
 class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
     """CategoryInputFeature is a dataclass that configures the parameters used for a category input feature."""
 
-    preprocessing: Optional[str] = CategoryPreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='category'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(

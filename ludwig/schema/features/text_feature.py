@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import TextPreprocessingConfig
+from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
@@ -13,7 +13,8 @@ class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatur
     TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature.
     """
 
-    preprocessing: Optional[str] = TextPreprocessingConfig(
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type='text'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
