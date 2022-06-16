@@ -16,7 +16,7 @@ from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.image_utils import read_image_from_path
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import DEVICE, place_on_torch_device
+from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
@@ -110,34 +110,10 @@ class InferenceModule(nn.Module):
         self.training_set_metadata = training_set_metadata
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
-        if torch.jit.is_scripting():
-            return self._forward(inputs)
-        else:
-            return self._forward_with_device_placement(inputs)
-
-    def _forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
-            preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
-            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
-            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
-            # Turn flat inputs into nested predictions per feature name
-            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
-            return postproc_outputs
-
-    @torch.jit.unused
-    def _forward_with_device_placement(
-        self, inputs: Dict[str, TorchscriptPreprocessingInput]
-    ) -> Dict[str, Dict[str, Any]]:
-        with torch.no_grad():
-            inputs = place_on_torch_device(inputs, self.preprocessor.device)
-            preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
-
-            preproc_outputs = place_on_torch_device(preproc_outputs, self.predictor.device)
-            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
-
-            predictions_flattened = place_on_torch_device(predictions_flattened, self.postprocessor.device)
-            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
-
+            preproc_inputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
+            predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_inputs)
+            postproc_outputs_flattened = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
             postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
@@ -202,22 +178,6 @@ class InferenceModule(nn.Module):
             training_set_metadata=training_set_metadata,
         )
 
-    @torch.jit.unused
-    def to_torchscript(self):
-        if self.preprocessor.device != self.predictor.device or self.predictor.device != self.postprocessor.device:
-            device_repr = str(
-                {
-                    PREPROCESSOR: self.preprocessor.device,
-                    PREDICTOR: self.predictor.device,
-                    POSTPROCESSOR: self.postprocessor.device,
-                }
-            )
-            raise ValueError(
-                f"All modules must be on the same device. Got {device_repr}. If interested in a "
-                f"mixed device deployment, consider using the inference stage files directly."
-            )
-        return torch.jit.script(self)
-
 
 class InferencePreprocessor(nn.Module):
     """Wraps preprocessing modules into a single nn.Module.
@@ -239,6 +199,20 @@ class InferencePreprocessor(nn.Module):
             self.preproc_modules[module_dict_key] = feature_preproc_module.to(device=self.device)
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
+        if self.device != torch.device("cpu"):
+            non_tensor_inputs: List[str] = []
+            for k, v in inputs.items():
+                if torch.jit.isinstance(v, torch.Tensor):
+                    inputs[k] = v.to(self.device)
+                else:
+                    non_tensor_inputs.append(f'"{k}"')
+            if len(non_tensor_inputs) > 0:
+                non_tensor_inputs_repr = ", ".join(non_tensor_inputs)
+                raise ValueError(
+                    f"Preprocessor must be run on CPU when input is not a Tensor. "
+                    f"Found the following non-tensor inputs: {non_tensor_inputs_repr}."
+                )
+
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -267,6 +241,8 @@ class InferencePredictor(nn.Module):
             self.predict_modules[module_dict_key] = feature.prediction_module.to(device=self.device)
 
     def forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        preproc_inputs = {k: v.to(self.device) for k, v in preproc_inputs.items()}
+
         with torch.no_grad():
             model_outputs = self.model(preproc_inputs)
             predictions_flattened: Dict[str, torch.Tensor] = {}
@@ -300,6 +276,8 @@ class InferencePostprocessor(nn.Module):
             self.postproc_modules[module_dict_key] = feature_postproc_module.to(self.device)
 
     def forward(self, model_outputs: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        model_outputs = {k: v.to(self.device) for k, v in model_outputs.items()}
+
         with torch.no_grad():
             postproc_outputs_flattened: Dict[str, Any] = {}
             for module_dict_key, postproc in self.postproc_modules.items():

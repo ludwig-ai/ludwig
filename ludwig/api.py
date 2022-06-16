@@ -63,7 +63,12 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import InferenceModule, save_ludwig_model_for_inference
+from ludwig.models.inference import (
+    PREDICTOR,
+    InferenceModule,
+    get_stage_to_device_dict,
+    save_ludwig_model_for_inference,
+)
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -1449,7 +1454,11 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def to_torchscript(self, model_only: bool = False):
+    def to_torchscript(
+        self,
+        model_only: bool = False,
+        device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = "cpu",
+    ):
         """Converts the trained model to Torchscript.
 
         Args:
@@ -1460,12 +1469,13 @@ class LudwigModel:
         """
         self._check_initialization()
         if model_only:
-            return self.model.to_torchscript("cpu")
+            stage_to_device = get_stage_to_device_dict(device)
+            return self.model.to_torchscript(stage_to_device[PREDICTOR])
         else:
             inference_module = InferenceModule.from_ludwig_model(
-                self.model, self.config, self.training_set_metadata, device="cpu"
+                self.model, self.config, self.training_set_metadata, device=device
             )
-            return inference_module.to_torchscript()
+            return torch.jit.script(inference_module)
 
     def save_torchscript(
         self,
