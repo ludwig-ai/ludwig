@@ -91,12 +91,7 @@ class _InferenceModuleV0(nn.Module):
 
 
 class InferenceModule(nn.Module):
-    """A nn.Module subclass that wraps the inference preprocessor, predictor, and postprocessor.
-
-    Note that if torch.jit.script is called on this class, all modules are packaged into a monolithic object. This is
-    useful if deploying the model in a pure PyTorch/C++ backend. However, there are limitations, including the inability
-    to place modules on different devices. If this functionality is required, use InferenceLudwigModel instead.
-    """
+    """A nn.Module subclass that wraps the inference preprocessor, predictor, and postprocessor."""
 
     def __init__(
         self,
@@ -115,6 +110,12 @@ class InferenceModule(nn.Module):
         self.training_set_metadata = training_set_metadata
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
+        if torch.jit.is_scripting():
+            return self._forward(inputs)
+        else:
+            return self._forward_with_device_placement(inputs)
+
+    def _forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             preproc_outputs: Dict[str, torch.Tensor] = self.preprocessor(inputs)
             predictions_flattened: Dict[str, torch.Tensor] = self.predictor(preproc_outputs)
@@ -124,7 +125,7 @@ class InferenceModule(nn.Module):
             return postproc_outputs
 
     @torch.jit.unused
-    def forward_with_device_placement(
+    def _forward_with_device_placement(
         self, inputs: Dict[str, TorchscriptPreprocessingInput]
     ) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
@@ -145,16 +146,13 @@ class InferenceModule(nn.Module):
     def predict(
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
-        """Predict on a batch of data with an interface similar to LudwigModel.predict.
-
-        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
-        """
+        """Predict on a batch of data with an interface similar to LudwigModel.predict."""
         inputs = {
             if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
             for if_config in self.config["input_features"]
         }
 
-        preds = self.forward_with_device_placement(inputs)
+        preds = self(inputs)
 
         if return_type == pd.DataFrame:
             preds = convert_dict_to_df(preds)
@@ -203,6 +201,22 @@ class InferenceModule(nn.Module):
             config=config,
             training_set_metadata=training_set_metadata,
         )
+
+    @torch.jit.unused
+    def to_torchscript(self):
+        if self.preprocessor.device != self.predictor.device or self.predictor.device != self.postprocessor.device:
+            device_repr = str(
+                {
+                    PREPROCESSOR: self.preprocessor.device,
+                    PREDICTOR: self.predictor.device,
+                    POSTPROCESSOR: self.postprocessor.device,
+                }
+            )
+            raise ValueError(
+                f"All modules must be on the same device. Got {device_repr}. If interested in a "
+                f"mixed device deployment, consider using the inference stage files directly."
+            )
+        return torch.jit.script(self)
 
 
 class InferencePreprocessor(nn.Module):

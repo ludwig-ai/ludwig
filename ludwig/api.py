@@ -1465,7 +1465,7 @@ class LudwigModel:
             inference_module = InferenceModule.from_ludwig_model(
                 self.model, self.config, self.training_set_metadata, device="cpu"
             )
-            return torch.jit.script(inference_module)
+            return inference_module.to_torchscript()
 
     def save_torchscript(
         self,

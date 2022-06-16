@@ -642,8 +642,21 @@ def test_api_save_torchscript(tmpdir):
     save_path = os.path.join(output_dir, "model")
     os.makedirs(save_path, exist_ok=True)
     model.save_torchscript(save_path)
-    inference_model = InferenceModule.from_directory(save_path)
-    output_df, _ = inference_model.predict(test_df, return_type=pd.DataFrame)
+    inference_module = InferenceModule.from_directory(save_path)
+    from pprint import pprint
+
+    pprint(inference_module.__dict__)
+    output_df, _ = inference_module.predict(test_df, return_type=pd.DataFrame)
+
+    scripted_module = inference_module.to_torchscript()
+    scripted_module.save(os.path.join(save_path, "inference_module.pt"))
+    scripted_module = torch.jit.load(os.path.join(save_path, "inference_module.pt"))
+    print(scripted_module)
+
+    inputs = test_df.reset_index().to_dict(orient="list")
+    inputs.pop("index")
+    res = scripted_module(inputs)
+    print(res)
 
     for col in output_df.columns:
         assert output_df[col].equals(output_df_expected[col])
