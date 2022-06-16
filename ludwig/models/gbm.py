@@ -5,7 +5,6 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 import torchmetrics
 from hummingbird.ml import convert
 
