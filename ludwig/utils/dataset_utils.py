@@ -7,8 +7,8 @@ from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 def get_repeatable_train_val_test_split(
     df_input, stratify_colname, random_seed, frac_train=0.7, frac_val=0.1, frac_test=0.2
 ):
-    """Return df_input with split column containing (if possible) non-zero rows in the train, validation,
-    and test data subset categories.
+    """Return df_input with split column containing (if possible) non-zero rows in the train, validation, and test
+    data subset categories.
 
     If the input dataframe does not contain an existing split column or if the
     number of rows in both the validation and test split is 0, return df_input
