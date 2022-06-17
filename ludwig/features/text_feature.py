@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from functools import partial
 import logging
 from typing import Any, Dict
 
@@ -40,8 +41,13 @@ from ludwig.constants import (
 )
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
-from ludwig.features.feature_utils import compute_sequence_probability
-from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
+from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.features.sequence_feature import (
+    _SequencePreprocessing,
+    _SequencePostprocessing,
+    SequenceInputFeature,
+    SequenceOutputFeature,
+)
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import (
@@ -344,25 +350,28 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
-
+            # currently does not return full probabilties because usually it is huge:
+            # dataset x length x classes
+            # TODO: add a mechanism for letting the user decide to save it
+            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],
-                compute_sequence_probability,
+                partial(
+                    compute_sequence_probability,
+                    max_sequence_length=metadata["max_sequence_length"],
+                    return_log_prob=True,
+                ),
             )
-
-            # commenting probabilities out because usually it is huge:
-            # dataset x length x classes
-            # todo: add a mechanism for letting the user decide to save it
-            # result[probs_col] = backend.df_engine.map_objects(
-            #     result[probs_col],
-            #     lambda prob: np.amax(prob, axis=-1),
-            # )
 
         lengths_col = f"{self.feature_name}_{LENGTHS}"
         if lengths_col in result:
             del result[lengths_col]
 
         return result
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SequencePostprocessing(metadata)
 
     @staticmethod
     def populate_defaults(output_feature):

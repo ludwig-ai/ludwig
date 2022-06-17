@@ -223,8 +223,6 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         number_feature(),
         category_feature(vocab_size=3),
         # TODO: future support
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
         # set_feature(vocab_size=3),
         # vector_feature()
     ]
@@ -337,7 +335,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
         for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
     ]
     output_features = [
-        binary_feature(),
+        text_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -352,7 +350,7 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
         sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
     ]
     output_features = [
-        binary_feature(),
+        sequence_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
