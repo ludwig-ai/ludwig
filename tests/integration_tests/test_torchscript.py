@@ -212,13 +212,6 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
-<<<<<<< HEAD
-        sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
-        timeseries_feature(),
-        audio_feature(audio_dest_folder),
-        vector_feature(),
-=======
->>>>>>> master
         # TODO: future support
         # date_feature(),
         # h3_feature(),
