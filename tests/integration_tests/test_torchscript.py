@@ -222,10 +222,10 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
+        set_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
         # vector_feature()
     ]
     backend = LocalTestBackend()
@@ -421,17 +421,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
-            if isinstance(output_values, list):
-                # Strings should match exactly
-                assert np.all(
-                    output_values == output_values_expected
-                ), f"feature: {feature_name}, output: {output_name}"
-            else:
-                output_values = np.array(output_values)
-                # Shapes and values must both match
-                assert (
-                    output_values.shape == output_values_expected.shape
-                ), f"feature: {feature_name}, output: {output_name}"
-                assert np.allclose(
-                    output_values, output_values_expected, atol=tolerance
-                ), f"feature: {feature_name}, output: {output_name}"
+            assert utils.is_all_close(
+                output_values, output_values_expected
+            ), f"feature: {feature_name}, output: {output_name}"
