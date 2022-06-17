@@ -971,11 +971,11 @@ class Trainer(BaseTrainer):
 
             # Move tensors to cuda here.
             inputs = {
-                i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
                 for i_feat in self.model.input_features.values()
             }
             targets = {
-                o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
                 for o_feat in self.model.output_features.values()
             }
 
