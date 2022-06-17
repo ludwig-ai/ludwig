@@ -64,9 +64,7 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.inference import (
-    get_stage_to_device_dict,
     InferenceModule,
-    PREDICTOR,
     save_ludwig_model_for_inference,
 )
 from ludwig.models.predictor import (
@@ -1457,7 +1455,7 @@ class LudwigModel:
     def to_torchscript(
         self,
         model_only: bool = False,
-        device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = "cpu",
+        device: TorchDevice = "cpu",
     ):
         """Converts the trained model to Torchscript.
 
@@ -1469,8 +1467,7 @@ class LudwigModel:
         """
         self._check_initialization()
         if model_only:
-            stage_to_device = get_stage_to_device_dict(device)
-            return self.model.to_torchscript(stage_to_device[PREDICTOR])
+            return self.model.to_torchscript(device)
         else:
             inference_module = InferenceModule.from_ludwig_model(
                 self.model, self.config, self.training_set_metadata, device=device
@@ -1481,7 +1478,7 @@ class LudwigModel:
         self,
         save_path: str,
         model_only: bool = False,
-        device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = "cpu",
+        device: TorchDevice = "cpu",
     ):
         """Saves the Torchscript model to disk.
 

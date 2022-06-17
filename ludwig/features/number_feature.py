@@ -63,6 +63,7 @@ class ZScoreTransformer(nn.Module):
         return x * self.sigma + self.mu
 
     def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        print("INSIDE TRANSFORM_INFERENCE")
         return (x - self.mu) / self.sigma
 
     def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
@@ -181,8 +182,15 @@ class _NumberPreprocessing(torch.nn.Module):
     def forward(self, v: TorchscriptPreprocessingInput):
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
+        print("v.device")
+        print(v.device)
         v = v.to(dtype=torch.float32)
-        return self.numeric_transformer.transform_inference(v)
+        print("v.device after cast")
+        print(v.device)
+        out = self.numeric_transformer.transform_inference(v)
+        print("out.device")
+        print(out.device)
+        return out
 
 
 class _NumberPostprocessing(torch.nn.Module):

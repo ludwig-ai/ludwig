@@ -110,29 +110,33 @@ class InferenceModule(nn.Module):
         self.training_set_metadata = training_set_metadata
 
     def preprocessor_forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
-        if self.preprocessor.device != torch.device("cpu"):
-            non_tensor_inputs: List[str] = []
-            for k, v in inputs.items():
-                if torch.jit.isinstance(v, torch.Tensor):
-                    inputs[k] = v.to(self.preprocessor.device)
-                else:
-                    non_tensor_inputs.append(f'"{k}"')
-            if len(non_tensor_inputs) > 0:
-                non_tensor_inputs_repr = ", ".join(non_tensor_inputs)
-                raise ValueError(
-                    f"Preprocessor must be run on CPU when input is not a Tensor. "
-                    f"Found the following non-tensor inputs: {non_tensor_inputs_repr}."
-                )
+        """Forward pass through the preprocessor."""
         with torch.no_grad():
             return self.preprocessor(inputs)
 
     def predictor_forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        preproc_inputs = {k: v.to(self.predictor.device) for k, v in preproc_inputs.items()}
+        """Forward pass through the predictor. Ensures that the inputs/outputs are on the correct device."""
+        print("preproc_inputs before device placement")
+        for k, v in preproc_inputs.items():
+            print(k, v.device)
+        input_device = preproc_inputs[list(preproc_inputs.keys())[0]].device
+        preproc_inputs = {key: value.to(self.predictor.device) for key, value in preproc_inputs.items()}
+        print("preproc_inputs after device placement")
+        for k, v in preproc_inputs.items():
+            print(k, v.device)
         with torch.no_grad():
-            return self.predictor(preproc_inputs)
+            predictions_flattened = self.predictor(preproc_inputs)
+            print("predictions_flattened before device placement")
+            for k, v in predictions_flattened.items():
+                print(k, v.device)
+            predictions_flattened = {k: v.to(input_device) for k, v in predictions_flattened.items()}
+            print("predictions_flattened after device placement")
+            for k, v in predictions_flattened.items():
+                print(k, v.device)
+            return predictions_flattened
 
     def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
-        predictions_flattened = {k: v.to(self.postprocessor.device) for k, v in predictions_flattened.items()}
+        """Forward pass through the postprocessor."""
         with torch.no_grad():
             postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
@@ -152,7 +156,7 @@ class InferenceModule(nn.Module):
     ) -> Union[pd.DataFrame, dict]:
         """Predict on a batch of data with an interface similar to LudwigModel.predict."""
         inputs = {
-            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
+            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE], load_paths=True)
             for if_config in self.config["input_features"]
         }
 
@@ -214,17 +218,15 @@ class InferencePreprocessor(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, config: Dict[str, Any], training_set_metadata: Dict[str, Any], device: TorchDevice):
+    def __init__(self, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
         super().__init__()
-        self.device = torch.device(device)
         self.preproc_modules = nn.ModuleDict()
         for feature_config in config["input_features"]:
             feature_name = feature_config[NAME]
             feature = get_from_registry(feature_config[TYPE], input_type_registry)
             # prevents collisions with reserved keywords
             module_dict_key = get_module_dict_key_from_name(feature_name)
-            feature_preproc_module = feature.create_preproc_module(training_set_metadata[feature_name])
-            self.preproc_modules[module_dict_key] = feature_preproc_module.to(device=self.device)
+            self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
         with torch.no_grad():
@@ -277,19 +279,15 @@ class InferencePostprocessor(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: "ECD", training_set_metadata: Dict[str, Any], device: TorchDevice):
+    def __init__(self, model: "ECD", training_set_metadata: Dict[str, Any]):
         super().__init__()
-        self.device = torch.device(device)
         self.postproc_modules = nn.ModuleDict()
         for feature_name, feature in model.output_features.items():
             # prevents collisions with reserved keywords
             module_dict_key = get_module_dict_key_from_name(feature_name)
-            feature_postproc_module = feature.create_postproc_module(training_set_metadata[feature_name])
-            self.postproc_modules[module_dict_key] = feature_postproc_module.to(self.device)
+            self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
     def forward(self, model_outputs: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        model_outputs = {k: v.to(self.device) for k, v in model_outputs.items()}
-
         with torch.no_grad():
             postproc_outputs_flattened: Dict[str, Any] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
@@ -348,10 +346,10 @@ def init_inference_stages_from_ludwig_model(
     scripted: bool = True,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from a LudwigModel (an ECD model, config, and training_set_metadata)."""
-    stage_to_device = get_stage_to_device_dict(device)
-    preprocessor = InferencePreprocessor(config, training_set_metadata, stage_to_device[PREPROCESSOR])
-    predictor = InferencePredictor(model, stage_to_device[PREDICTOR])
-    postprocessor = InferencePostprocessor(model, training_set_metadata, stage_to_device[POSTPROCESSOR])
+    # HACK: overriding device to be cpu for development
+    preprocessor = InferencePreprocessor(config, training_set_metadata)
+    predictor = InferencePredictor(model, device=device)
+    postprocessor = InferencePostprocessor(model, training_set_metadata)
 
     stage_to_module = {
         PREPROCESSOR: preprocessor,
@@ -361,19 +359,6 @@ def init_inference_stages_from_ludwig_model(
     if scripted:
         stage_to_module = {stage: torch.jit.script(module) for stage, module in stage_to_module.items()}
     return stage_to_module
-
-
-def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:
-    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
-    if feature_type == "image":
-        if load_paths:
-            return [read_image_from_path(v) if isinstance(v, str) else v for v in s]
-    elif feature_type == "audio":
-        if load_paths:
-            return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
-        return s.astype(str).to_list()
-    return torch.from_numpy(s.to_numpy())
 
 
 def unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
@@ -415,4 +400,21 @@ def get_filename_from_stage(stage: str, device: Optional[TorchDevice] = None) ->
         device = "cpu"
     if stage not in INFERENCE_STAGES:
         raise ValueError(f"Invalid stage: {stage}.")
-    return f"inference_{stage}-{device}.pt"
+    # device is only tracked for predictor stage
+    if stage == PREDICTOR:
+        return f"inference_{stage}-{device}.pt"
+    else:
+        return f"inference_{stage}.pt"
+
+
+def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:
+    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
+    if feature_type == "image":
+        if load_paths:
+            return [read_image_from_path(v) if isinstance(v, str) else v for v in s]
+    elif feature_type == "audio":
+        if load_paths:
+            return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
+    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+        return s.astype(str).to_list()
+    return torch.from_numpy(s.to_numpy()).to(device=DEVICE)
