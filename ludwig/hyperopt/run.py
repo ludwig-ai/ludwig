@@ -187,8 +187,8 @@ def hyperopt(
 
     # Get mapping of input/output features that don't have an encoder for shared parameters
     shared_params_dict = {
-        INPUT_FEATURES: get_shared_params_dict(config_dict[INPUT_FEATURES]),
-        OUTPUT_FEATURES: get_shared_params_dict(config_dict[OUTPUT_FEATURES]),
+        INPUT_FEATURES: get_shared_params_dict(config_dict.get(INPUT_FEATURES, [])),
+        OUTPUT_FEATURES: get_shared_params_dict(config_dict.get(OUTPUT_FEATURES, [])),
     }
 
     # merge config with defaults
