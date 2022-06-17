@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from functools import partial
 import logging
+from functools import partial
 from typing import Any, Dict
 
 import torch
@@ -43,8 +43,8 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
-    _SequencePreprocessing,
     _SequencePostprocessing,
+    _SequencePreprocessing,
     SequenceInputFeature,
     SequenceOutputFeature,
 )
