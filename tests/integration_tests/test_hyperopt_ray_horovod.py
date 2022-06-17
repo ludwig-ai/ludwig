@@ -61,12 +61,12 @@ logger = logging.getLogger(__name__)
 
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
+    os.makedirs(path, exist_ok=True)
     if _ray_114:
         syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     else:
         syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
-    os.makedirs(path, exist_ok=True)
-    syncer.set_logdir(path)
+        syncer.set_logdir(path)
     return syncer
 
 
