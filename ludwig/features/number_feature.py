@@ -191,7 +191,7 @@ class _NumberPostprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
         self.predictions_key = PREDICTIONS
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(preds[self.predictions_key])}
 
 

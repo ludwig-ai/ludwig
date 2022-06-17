@@ -90,7 +90,7 @@ class _BinaryPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         predictions = preds[self.predictions_key]
         if self.bool2str is not None:
             predictions = predictions.to(dtype=torch.int32)

@@ -65,7 +65,7 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, torch.Tensor]]:
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -78,7 +78,7 @@ class InferenceModule(nn.Module):
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 predictions[feature_name] = predict(outputs, feature_name)
 
-            postproc_outputs: Dict[str, Dict[str, torch.Tensor]] = {}
+            postproc_outputs: Dict[str, Dict[str, Any]] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 postproc_outputs[feature_name] = postproc(predictions[feature_name])
