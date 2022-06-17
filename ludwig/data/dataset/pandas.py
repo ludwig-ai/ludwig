@@ -21,8 +21,8 @@ from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
-from ludwig.utils import data_utils
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, save_hdf5
+from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
 
@@ -83,7 +83,7 @@ class PandasDatasetManager(DatasetManager):
         return PandasDataset(dataset, get_proc_features(config), training_set_metadata.get(DATA_TRAIN_HDF5_FP))
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
-        data_utils.save_hdf5(cache_path, dataset)
+        save_hdf5(cache_path, dataset)
         if tag == TRAINING:
             training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path
         return dataset
