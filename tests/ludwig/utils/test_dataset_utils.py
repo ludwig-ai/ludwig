@@ -48,7 +48,7 @@ def test_get_repeatable_train_val_test_split():
         ],
         columns=["input", "target"],
     )
-    split_df = get_repeatable_train_val_test_split(df, 'target', random_seed=42)
+    split_df = get_repeatable_train_val_test_split(df, "target", random_seed=42)
     assert split_df.equals(
         pd.DataFrame(
             [
@@ -103,7 +103,7 @@ def test_get_repeatable_train_val_test_split():
         ],
         columns=["input", "target", "split"],
     )
-    split_df = get_repeatable_train_val_test_split(df, 'target', random_seed=42)
+    split_df = get_repeatable_train_val_test_split(df, "target", random_seed=42)
     assert split_df.equals(
         pd.DataFrame(
             [
@@ -158,7 +158,7 @@ def test_get_repeatable_train_val_test_split():
         ],
         columns=["input", "target", "split"],
     )
-    split_df = get_repeatable_train_val_test_split(df, 'target', random_seed=42)
+    split_df = get_repeatable_train_val_test_split(df, "target", random_seed=42)
     assert split_df.equals(
         pd.DataFrame(
             [
@@ -186,4 +186,3 @@ def test_get_repeatable_train_val_test_split():
             columns=["input", "target", "split"],
         )
     )
-

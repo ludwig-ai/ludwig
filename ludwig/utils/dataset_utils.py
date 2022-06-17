@@ -5,13 +5,10 @@ from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 
 
 def get_repeatable_train_val_test_split(
-    df_input,
-    stratify_colname,
-    random_seed,
-    frac_train=0.7, frac_val=0.1, frac_test=0.2):
-    """
-    Return df_input with split column containing (if possible) non-zero rows
-    in the train split, validation split, and test split categories.
+    df_input, stratify_colname, random_seed, frac_train=0.7, frac_val=0.1, frac_test=0.2
+):
+    """Return df_input with split column containing (if possible) non-zero rows in the train split, validation
+    split, and test split categories.
 
     If the input dataframe does not contain an existing split column or if the
     number of rows in both the validation and test split is 0, return df_input
@@ -45,10 +42,9 @@ def get_repeatable_train_val_test_split(
     """
 
     if frac_train + frac_val + frac_test != 1.0:
-        raise ValueError('fractions %f, %f, %f do not add up to 1.0' % \
-                         (frac_train, frac_val, frac_test))
+        raise ValueError("fractions %f, %f, %f do not add up to 1.0" % (frac_train, frac_val, frac_test))
     if stratify_colname not in df_input.columns:
-        raise ValueError('%s is not a column in the dataframe' % (stratify_colname))
+        raise ValueError("%s is not a column in the dataframe" % (stratify_colname))
 
     do_stratify_split = True
     if "split" in df_input.columns:
@@ -66,23 +62,19 @@ def get_repeatable_train_val_test_split(
 
     if do_stratify_split:
         # Split original dataframe into train and temp dataframes.
-        y = df_input[[stratify_colname]] # Dataframe of just the column on which to stratify.
-        df_train, df_temp, y_train, y_temp = train_test_split(df_input,
-                                                              y,
-                                                              stratify=y,
-                                                              test_size=(1.0 - frac_train),
-                                                              random_state=random_seed)
+        y = df_input[[stratify_colname]]  # Dataframe of just the column on which to stratify.
+        df_train, df_temp, y_train, y_temp = train_test_split(
+            df_input, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
+        )
         # Split the temp dataframe into val and test dataframes.
         relative_frac_test = frac_test / (frac_val + frac_test)
-        df_val, df_test, y_val, y_test = train_test_split(df_temp,
-                                                          y_temp,
-                                                          stratify=y_temp,
-                                                          test_size=relative_frac_test,
-                                                          random_state=random_seed)
+        df_val, df_test, y_val, y_test = train_test_split(
+            df_temp, y_temp, stratify=y_temp, test_size=relative_frac_test, random_state=random_seed
+        )
 
     assert len(df_input) == len(df_train) + len(df_val) + len(df_test)
-    df_train['split'] = TRAIN_SPLIT
-    df_val['split'] = VALIDATION_SPLIT
-    df_test['split'] = TEST_SPLIT
+    df_train["split"] = TRAIN_SPLIT
+    df_val["split"] = VALIDATION_SPLIT
+    df_test["split"] = TEST_SPLIT
     df_split = pd.concat([df_train, df_val, df_test], ignore_index=True)
     return df_split
