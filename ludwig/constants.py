@@ -114,6 +114,9 @@ VALIDATION = "validation"
 TEST = "test"
 SPLIT = "split"
 FULL = "full"
+TRAIN_SPLIT = 0
+VALIDATION_SPLIT = 1
+TEST_SPLIT = 2
 
 META = "meta"
 
