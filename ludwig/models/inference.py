@@ -115,7 +115,10 @@ class InferenceModule(nn.Module):
             return self.preprocessor(inputs)
 
     def predictor_forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        """Forward pass through the predictor. Ensures that the inputs/outputs are on the correct device."""
+        """Forward pass through the predictor.
+
+        Ensures that the inputs/outputs are on the correct device.
+        """
         input_device = preproc_inputs[list(preproc_inputs.keys())[0]].device
         preproc_inputs = {key: value.to(self.predictor.device) for key, value in preproc_inputs.items()}
         with torch.no_grad():
