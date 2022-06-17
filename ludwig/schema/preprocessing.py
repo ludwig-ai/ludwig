@@ -35,7 +35,6 @@ def register_preprocessor(name: str):
     def wrap(preprocessing_config: BasePreprocessingConfig):
         preprocessing_registry[name] = preprocessing_config
         return preprocessing_config
-
     return wrap
 
 
@@ -177,7 +176,8 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 @register_preprocessor(BINARY)
 @dataclass
-class BinaryGlobalPreprocessing(schema_utils.BaseMarshmallowConfig):
+@register_preprocessor("binary")
+class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     missing_value_strategy: str = schema_utils.StringOptions(
