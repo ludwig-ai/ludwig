@@ -124,6 +124,6 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     elif feature_type == "audio":
         if load_paths:
             return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries", "vector"}:
+    if feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())

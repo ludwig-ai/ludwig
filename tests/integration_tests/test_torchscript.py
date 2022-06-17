@@ -212,6 +212,7 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        vector_feature(),
         # TODO: future support
         # date_feature(),
         # h3_feature(),
@@ -367,21 +368,6 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     ]
     output_features = [
         binary_feature(),
-    ]
-    backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
-
-
-def test_torchscript_e2e_vector(tmpdir, csv_filename):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [
-        vector_feature(),
-    ]
-    output_features = [
-        vector_feature(),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
