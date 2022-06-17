@@ -111,8 +111,3 @@ if __name__ == "__main__":
     print(components)
     print(h3)
     print(components2)
-
-    import torch
-
-    components3 = torch.jit.script(h3_to_components)(value)
-    print(components3)
