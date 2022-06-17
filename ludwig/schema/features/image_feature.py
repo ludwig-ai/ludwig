@@ -3,12 +3,11 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class ImageInputFeatureConfig(base.BaseFeatureConfig):
+class ImageInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
     ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature.
     """

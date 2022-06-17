@@ -3,12 +3,11 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class NumberInputFeatureConfig(base.BaseFeatureConfig):
+class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """NumberInputFeature is a dataclass that configures the parameters used for a number input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
@@ -31,7 +30,7 @@ class NumberInputFeatureConfig(base.BaseFeatureConfig):
 
 
 @dataclass
-class NumberOutputFeatureConfig(base.BaseFeatureConfig):
+class NumberOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
     decoder: Optional[str] = schema_utils.StringOptions(
         ["regressor"],

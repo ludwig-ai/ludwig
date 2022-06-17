@@ -3,12 +3,11 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class BinaryInputFeatureConfig(base.BaseFeatureConfig):
+class BinaryInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryInputFeature is a dataclass that configures the parameters used for a binary input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
@@ -31,7 +30,7 @@ class BinaryInputFeatureConfig(base.BaseFeatureConfig):
 
 
 @dataclass
-class BinaryOutputFeatureConfig(base.BaseFeatureConfig):
+class BinaryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryOutputFeature is a dataclass that configures the parameters used for a binary output feature."""
 
     decoder: Optional[str] = schema_utils.StringOptions(

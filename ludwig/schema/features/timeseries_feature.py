@@ -3,12 +3,11 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class TimeseriesInputFeatureConfig(base.BaseFeatureConfig):
+class TimeseriesInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
     TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input feature.
     """

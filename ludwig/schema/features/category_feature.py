@@ -3,12 +3,11 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features import base
-from ludwig.schema.features.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class CategoryInputFeatureConfig(base.BaseFeatureConfig):
+class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryInputFeature is a dataclass that configures the parameters used for a category input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
@@ -31,7 +30,7 @@ class CategoryInputFeatureConfig(base.BaseFeatureConfig):
 
 
 @dataclass
-class CategoryOutputFeatureConfig(base.BaseFeatureConfig):
+class CategoryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryOutputFeature is a dataclass that configures the parameters used for a category output feature."""
 
     decoder: Optional[str] = schema_utils.StringOptions(

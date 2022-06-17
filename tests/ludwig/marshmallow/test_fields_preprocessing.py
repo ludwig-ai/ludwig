@@ -1,13 +1,7 @@
 #! /usr/bin/env python
-from typing import Optional
 
-import pytest
-from marshmallow.exceptions import ValidationError as MarshmallowValidationError
-from marshmallow_dataclass import dataclass
 
-import ludwig.schema.features as lsf
-import ludwig.schema.features.preprocessing as lsp
-from ludwig.schema import utils as schema_utils
+import ludwig.schema.preprocessing as lsp
 
 
 def get_marshmallow_from_dataclass_field(dfield):
