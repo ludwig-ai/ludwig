@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import COLUMN, NAME, TYPE, BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR
+from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET, TEXT, TIMESERIES, TYPE, VECTOR
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
-
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
