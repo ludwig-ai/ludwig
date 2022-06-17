@@ -188,8 +188,8 @@ def test_torchscript(csv_filename, should_load_model):
         ###############################################
 
         # Check to weight values match the original model.
-        assert utils.is_all_close(original_weights, loaded_weights)
-        assert utils.is_all_close(original_weights, restored_weights)
+        assert all(utils.is_all_close(original_weights[i], loaded_weights[i]) for i in range(len(original_weights)))
+        assert all(utils.is_all_close(original_weights[i], restored_weights[i]) for i in range(len(original_weights)))
 
         # Check that predictions are identical to the original model.
         assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
@@ -421,27 +421,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
-            if isinstance(output_values, list):
-                if isinstance(output_values[0], torch.Tensor):
-                    # If list of numeric values (e.g., probabilities of SetFeature), compare as numpy arrays.
-                    for i in range(len(output_values)):
-                        assert (
-                            output_values[i].shape == output_values_expected[i].shape
-                        ), f"feature: {feature_name}, output: {output_name}"
-                        assert np.allclose(
-                            output_values[i], output_values_expected[i]
-                        ), f"feature: {feature_name}, output: {output_name}"
-                else:
-                    # Strings should match exactly
-                    assert np.all(
-                        output_values == output_values_expected
-                    ), f"feature: {feature_name}, output: {output_name}"
-            else:
-                output_values = np.array(output_values)
-                # Shapes and values must both match
-                assert (
-                    output_values.shape == output_values_expected.shape
-                ), f"feature: {feature_name}, output: {output_name}"
-                assert np.allclose(
-                    output_values, output_values_expected, atol=tolerance
-                ), f"feature: {feature_name}, output: {output_name}"
+            assert utils.is_all_close(
+                output_values, output_values_expected
+            ), f"feature: {feature_name}, output: {output_name}"
