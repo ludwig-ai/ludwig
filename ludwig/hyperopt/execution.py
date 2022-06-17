@@ -363,7 +363,7 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
     def _run_experiment(
-        self, config, checkpoint_dir, hyperopt_dict, decode_ctx, shared_params_dict, is_using_ray_backend=False
+        self, config, checkpoint_dir, hyperopt_dict, decode_ctx, shared_params_features_dict, is_using_ray_backend=False
     ):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
@@ -376,7 +376,9 @@ class RayTuneExecutor(HyperoptExecutor):
         trial_dir = Path(tune.get_trial_dir())
         trial_location = ray.util.get_node_ip_address()
 
-        modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config, shared_params_dict)
+        modified_config = substitute_parameters(
+            copy.deepcopy(hyperopt_dict["config"]), config, shared_params_features_dict
+        )
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -588,7 +590,7 @@ class RayTuneExecutor(HyperoptExecutor):
         random_seed=default_random_seed,
         debug=False,
         hyperopt_log_verbosity=3,
-        shared_params_dict=None,
+        shared_params_features_dict=None,
         **kwargs,
     ) -> RayTuneResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
@@ -684,7 +686,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 checkpoint_dir,
                 local_hyperopt_dict,
                 self.decode_ctx,
-                shared_params_dict,
+                shared_params_features_dict,
                 _is_ray_backend(backend),
             )
 
@@ -830,30 +832,36 @@ executor_registry = {"ray": RayTuneExecutor}
 
 def set_values(
     model_dict: Dict[str, Any],
-    feature_name: str,
+    name: str,
     parameters_dict: Dict[str, Dict[str, Any]],
     feature_type: Optional[str] = None,
     shared_params_type: Optional[str] = None,
-    shared_params_dict: Optional[Dict[str, Set]] = None,
+    shared_params_features_dict: Optional[Dict[str, Set]] = None,
 ):
     """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled for each trial
     stored in parameters_dict."""
 
     # Update shared params
-    if DEFAULTS in parameters_dict and shared_params_dict:
-        if feature_type in shared_params_dict and feature_name in shared_params_dict[feature_type]:
-            if feature_type in parameters_dict[DEFAULTS][shared_params_type]:
-                shared_params = parameters_dict[DEFAULTS][shared_params_type][feature_type]
-                for key, value in shared_params.items():
-                    if isinstance(value, dict):
-                        for sub_key, sub_value in value.items():
-                            model_dict[key][sub_key] = sub_value
-                    else:
-                        model_dict[key] = value
+    if DEFAULTS in parameters_dict and name not in {COMBINER, TRAINER, PREPROCESSING}:
+        if shared_params_features_dict:
+            if feature_type in shared_params_features_dict and name in shared_params_features_dict[feature_type]:
+                if feature_type in parameters_dict[DEFAULTS][shared_params_type]:
+                    shared_params = parameters_dict[DEFAULTS][shared_params_type][feature_type]
+                    for key, value in shared_params.items():
+                        if isinstance(value, dict):
+                            for sub_key, sub_value in value.items():
+                                model_dict[key][sub_key] = sub_value
+                        else:
+                            model_dict[key] = value
+        else:
+            logger.warning(
+                """Defaults specified in hyperopt parameter search space but all features in config override default
+                encoders or decoders"""
+            )
 
     # Update or overwrite any feature specific hyperopt params
-    if feature_name in parameters_dict:
-        params = parameters_dict[feature_name]
+    if name in parameters_dict:
+        params = parameters_dict[name]
         for key, value in params.items():
             if isinstance(value, dict):
                 for sub_key, sub_value in value.items():
@@ -877,7 +885,7 @@ def get_parameters_dict(parameters):
     return parameters_dict
 
 
-def substitute_parameters(config, parameters, shared_params_dict):
+def substitute_parameters(config, parameters, shared_params_features_dict):
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in config[INPUT_FEATURES]:
         set_values(
@@ -886,7 +894,7 @@ def substitute_parameters(config, parameters, shared_params_dict):
             parameters_dict,
             feature_type=input_feature[TYPE],
             shared_params_type=INPUT_FEATURES,
-            shared_params_dict=shared_params_dict[INPUT_FEATURES],
+            shared_params_features_dict=shared_params_features_dict[INPUT_FEATURES],
         )
     for output_feature in config[OUTPUT_FEATURES]:
         set_values(
@@ -895,7 +903,7 @@ def substitute_parameters(config, parameters, shared_params_dict):
             parameters_dict,
             feature_type=output_feature[TYPE],
             shared_params_type=OUTPUT_FEATURES,
-            shared_params_dict=shared_params_dict[OUTPUT_FEATURES],
+            shared_params_features_dict=shared_params_features_dict[OUTPUT_FEATURES],
         )
     set_values(config[COMBINER], COMBINER, parameters_dict)
     set_values(config[TRAINER], TRAINER, parameters_dict)

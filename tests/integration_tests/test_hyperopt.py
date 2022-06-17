@@ -118,8 +118,8 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
 
 def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="title", cell_type="rnn", reduce_output="sum"),
-        text_feature(name="body", cell_type="rnn"),
+        text_feature(name="title", cell_type="rnn", reduce_output="sum", encoder="parallel_cnn"),
+        text_feature(name="summary", cell_type="rnn"),
         category_feature(vocab_size=2, reduce_input="sum"),
         category_feature(vocab_size=3),
     ]

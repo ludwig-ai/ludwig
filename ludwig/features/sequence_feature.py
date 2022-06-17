@@ -226,7 +226,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = "embed"
+    encoder = "parallel_cnn"
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):

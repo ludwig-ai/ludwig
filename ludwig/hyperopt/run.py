@@ -12,6 +12,7 @@ from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     COMBINED,
+    DECODER,
     ENCODER,
     EXECUTOR,
     HYPEROPT,
@@ -26,7 +27,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
-from ludwig.features.feature_registries import output_type_registry
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
@@ -186,9 +187,9 @@ def hyperopt(
         config_dict = config
 
     # Get mapping of input/output features that don't have an encoder for shared parameters
-    shared_params_dict = {
-        INPUT_FEATURES: get_shared_params_dict(config_dict.get(INPUT_FEATURES, [])),
-        OUTPUT_FEATURES: get_shared_params_dict(config_dict.get(OUTPUT_FEATURES, [])),
+    shared_params_features_dict = {
+        INPUT_FEATURES: get_shared_params_dict(INPUT_FEATURES, config_dict.get(INPUT_FEATURES, [])),
+        OUTPUT_FEATURES: get_shared_params_dict(OUTPUT_FEATURES, config_dict.get(OUTPUT_FEATURES, [])),
     }
 
     # merge config with defaults
@@ -202,7 +203,14 @@ def hyperopt(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
+    logging.info("Hyperopt config")
     logging.info(pformat(hyperopt_config, indent=4))
+    logging.info("\n")
+
+    logging.info(
+        "Features that may be updated in hyperopt trials if default parameters are specified in the search space"
+    )
+    logging.info(pformat(dict(shared_params_features_dict), indent=4))
     logging.info("\n")
 
     search_alg = hyperopt_config["search_alg"]
@@ -354,7 +362,7 @@ def hyperopt(
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,
-        shared_params_dict=shared_params_dict,
+        shared_params_features_dict=shared_params_features_dict,
         **kwargs,
     )
 
@@ -398,17 +406,32 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     )
 
 
-def get_shared_params_dict(features: Dict[str, Any]) -> Dict[str, Set]:
-    """Generates a mapping of feature type to the corresponding set of features without an encoder.
+def get_shared_params_dict(config_feature_type: str, features: Dict[str, Any]) -> Dict[str, Set]:
+    """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
+    default encoder for that feature type.
 
     They may be considered for potential shared parameter search spaces depending on the parameter space defined later
     within the hyperopt config.
     """
 
     feature_group_to_features_map = defaultdict(set)
+
+    def update_feature_group_mapping(feature):
+        feature_name = feature[NAME]
+        feature_type = feature[TYPE]
+        feature_group_to_features_map[feature_type].add(feature_name)
+
     for feature in features:
-        if not feature.get(ENCODER, 0):
-            feature_name = feature[NAME]
-            feature_type = feature[TYPE]
-            feature_group_to_features_map[feature_type].add(feature_name)
+        if TYPE in feature:
+            if config_feature_type == INPUT_FEATURES:
+                default_encoder = get_from_registry(feature[TYPE], input_type_registry).encoder
+                if not feature.get(ENCODER, 0) or feature.get(ENCODER) == default_encoder:
+                    update_feature_group_mapping(feature)
+            else:
+                default_decoder = get_from_registry(feature[TYPE], output_type_registry).decoder
+                if not feature.get(DECODER, 0) or feature.get(DECODER) == default_decoder:
+                    update_feature_group_mapping(feature)
+        else:
+            raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
+
     return feature_group_to_features_map

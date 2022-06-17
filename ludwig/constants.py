@@ -154,6 +154,7 @@ CONFIG = "config"
 COMBINER = "combiner"
 
 ENCODER = "encoder"
+DECODER = "decoder"
 
 DEFAULTS = "defaults"
 
