@@ -15,4 +15,3 @@ except ImportError:
 # torchaudio.load returns the audio tensor and the sampling rate as a tuple.
 TorchAudioTuple = Tuple[torch.Tensor, int]
 TorchscriptPreprocessingInput = Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]
-TorchscriptPostprocessingOutput = Union[Dict[str, Any], Dict[str, torch.Tensor]]

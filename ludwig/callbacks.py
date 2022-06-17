@@ -106,6 +106,13 @@ class Callback(ABC):
         """
         pass
 
+    def should_stop_hyperopt(self):
+        """Returns true if the entire hyperopt run (all trials) should be stopped.
+
+        See: https://docs.ray.io/en/latest/tune/api_docs/stoppers.html#ray.tune.Stopper
+        """
+        return False
+
     def on_train_init(
         self,
         base_config: Dict[str, Any],

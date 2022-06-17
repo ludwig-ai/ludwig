@@ -41,7 +41,7 @@ from ludwig.features.base_feature import InputFeature, OutputFeature, PredictMod
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
-from ludwig.utils.types import TorchscriptPreprocessingInput, TorchscriptPostprocessingOutput
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class _VectorPreprocessing(torch.nn.Module):
 
 
 class _VectorPostprocessing(torch.nn.Module):
-    def forward(self, preds: Dict[str, torch.Tensor]) -> TorchscriptPostprocessingOutput:
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         return preds
 
 

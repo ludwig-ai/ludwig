@@ -1,6 +1,7 @@
 import logging
+import os
 from pprint import pformat
-from typing import List, Union
+from typing import List, Optional, Union
 
 import pandas as pd
 import yaml
@@ -26,9 +27,6 @@ except ImportError:
         pass
 
 
-logger = logging.getLogger(__name__)
-
-
 def hyperopt(
     config: Union[str, dict],
     dataset: Union[str, dict, pd.DataFrame] = None,
@@ -39,6 +37,7 @@ def hyperopt(
     data_format: str = None,
     experiment_name: str = "hyperopt",
     model_name: str = "run",
+    resume: Optional[bool] = None,
     skip_save_training_description: bool = False,
     skip_save_training_statistics: bool = False,
     skip_save_model: bool = False,
@@ -93,6 +92,11 @@ def hyperopt(
         the experiment.
     :param model_name: (str, default: `'run'`) name of the model that is
         being used.
+    :param resume: (bool) If true, continue hyperopt from the state of the previous
+        run in the output directory with the same experiment name. If false, will create
+        new trials, ignoring any previous state, even if they exist in the output_directory.
+        By default, will attempt to resume if there is already an existing experiment with
+        the same name, and will create new trials if not.
     :param skip_save_training_description: (bool, default: `False`) disables
         saving the description JSON file.
     :param skip_save_training_statistics: (bool, default: `False`) disables
@@ -176,8 +180,8 @@ def hyperopt(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
-    logger.info(pformat(hyperopt_config, indent=4))
-    logger.info("\n")
+    logging.info(pformat(hyperopt_config, indent=4))
+    logging.info("\n")
 
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config["executor"]
@@ -310,8 +314,7 @@ def hyperopt(
         data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        # model_load_path=None,
-        # model_resume_path=None,
+        resume=resume,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
@@ -336,21 +339,22 @@ def hyperopt(
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            makedirs(output_directory, exist_ok=True)
+            results_directory = os.path.join(output_directory, experiment_name)
+            makedirs(results_directory, exist_ok=True)
 
             hyperopt_stats = {
                 "hyperopt_config": hyperopt_config,
                 "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
             }
 
-            save_hyperopt_stats(hyperopt_stats, output_directory)
-            logger.info(f"Hyperopt stats saved to: {output_directory}")
+            save_hyperopt_stats(hyperopt_stats, results_directory)
+            logging.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
         callback.on_hyperopt_finish(experiment_name)
 
-    logger.info("Finished hyperopt")
+    logging.info("Finished hyperopt")
 
     return hyperopt_results
 
