@@ -25,7 +25,9 @@ import torch
 
 from ludwig.constants import (
     ACCURACY,
+    CATEGORY,
     COMBINER,
+    DEFAULTS,
     HYPEROPT,
     INPUT_FEATURES,
     NAME,
@@ -119,7 +121,7 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
         text_feature(name="title", cell_type="rnn", reduce_output="sum"),
         text_feature(name="body", cell_type="rnn"),
         category_feature(vocab_size=2, reduce_input="sum"),
-        category_feature(vocab_size=6),
+        category_feature(vocab_size=3),
     ]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
@@ -357,7 +359,8 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
     categorical_feature_name = config[INPUT_FEATURES][2][NAME]
     output_feature_name = config[OUTPUT_FEATURES][0][NAME]
 
-    cell_types = ["lstm", "gru"]
+    cell_types_search_space = ["lstm", "gru"]
+    vocab_size_search_space = list(range(4, 9))
 
     # Create default search space for text features with various cell types
     search_parameters = {
@@ -366,8 +369,14 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
             "upper": 0.01,
             "space": "loguniform",
         },
-        categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 2, "upper": 8},
-        "defaults.text.cell_type": {"space": "choice", "categories": cell_types},
+        categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
+        DEFAULTS
+        + "."
+        + INPUT_FEATURES
+        + "."
+        + TEXT
+        + ".cell_type": {"space": "choice", "categories": cell_types_search_space},
+        DEFAULTS + "." + OUTPUT_FEATURES + "." + CATEGORY + ".vocab_size": {"space": "randint", "lower": 4, "upper": 8},
     }
 
     # add hyperopt parameter space to the config
@@ -393,13 +402,15 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
 
         # Check that the trials did sample from defaults in the search space
         for _, trial_row in hyperopt_results_df.iterrows():
-            cell_type = trial_row["config.defaults.text.cell_type"].replace('"', "")
-            assert cell_type in cell_types
+            cell_type = trial_row["config.defaults.input_features.text.cell_type"].replace('"', "")
+            vocab_size = trial_row["config.defaults.output_features.category.vocab_size"]
+            assert cell_type in cell_types_search_space
+            assert vocab_size in vocab_size_search_space
 
         # check for existence of the hyperopt statistics file
         assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
-        # Check that each trial's text input configs got updated correctly
+        # Check that each trial's text input/output configs got updated correctly
         for _, trial_row in hyperopt_results_df.iterrows():
             trial_dir = trial_row["trial_dir"]
             parameters_file_path = os.path.join(trial_dir, "test_hyperopt_run", "model", "model_hyperparameters.json")
@@ -407,15 +418,26 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
                 params_fd = open(parameters_file_path)
                 model_parameters = json.load(params_fd)
                 input_features = model_parameters[INPUT_FEATURES]
+                output_features = model_parameters[OUTPUT_FEATURES]
                 text_input_cell_types = set()  # Used to track that all text features have the same cell_type
                 for input_feature in input_features:
                     if input_feature[TYPE] == TEXT:
                         cell_type = input_feature["cell_type"]
-                        # Check that cell type got updated from the sampler
-                        assert cell_type in cell_types
+                        # Check that cell_type got updated from the sampler
+                        assert cell_type in cell_types_search_space
                         text_input_cell_types.add(cell_type)
-                # All text features with defaults should have the same cell type for this trial
+                    elif input_feature[TYPE] == CATEGORY:
+                        vocab_size = input_feature["vocab_size"]
+                        # Check that vocab_size is not in the output category search space
+                        # Category input features have vocab_size in range [1,3] inclusive
+                        assert vocab_size not in vocab_size_search_space
+                # All text features with defaults should have the same cell_type for this trial
                 assert len(text_input_cell_types) == 1
+                for output_feature in output_features:
+                    if output_feature[TYPE] == CATEGORY:
+                        vocab_size = output_feature["vocab_size"]
+                        # Check that vocab_size got updated from the sampler
+                        assert vocab_size in vocab_size_search_space
                 params_fd.close()
             # Likely unable to open trial dir so fail this test
             except Exception as e:

@@ -833,6 +833,7 @@ def set_values(
     feature_name: str,
     parameters_dict: Dict[str, Dict[str, Any]],
     feature_type: Optional[str] = None,
+    shared_params_type: Optional[str] = None,
     shared_params_dict: Optional[Dict[str, Set]] = None,
 ):
     """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled for each trial
@@ -841,8 +842,8 @@ def set_values(
     # Update shared params
     if DEFAULTS in parameters_dict and shared_params_dict:
         if feature_type in shared_params_dict and feature_name in shared_params_dict[feature_type]:
-            if feature_type in parameters_dict[DEFAULTS]:
-                shared_params = parameters_dict[DEFAULTS][feature_type]
+            if feature_type in parameters_dict[DEFAULTS][shared_params_type]:
+                shared_params = parameters_dict[DEFAULTS][shared_params_type][feature_type]
                 for key, value in shared_params.items():
                     if isinstance(value, dict):
                         for sub_key, sub_value in value.items():
@@ -884,10 +885,18 @@ def substitute_parameters(config, parameters, shared_params_dict):
             input_feature[COLUMN],
             parameters_dict,
             feature_type=input_feature[TYPE],
-            shared_params_dict=shared_params_dict,
+            shared_params_type=INPUT_FEATURES,
+            shared_params_dict=shared_params_dict[INPUT_FEATURES],
         )
     for output_feature in config[OUTPUT_FEATURES]:
-        set_values(output_feature, output_feature[COLUMN], parameters_dict)
+        set_values(
+            output_feature,
+            output_feature[COLUMN],
+            parameters_dict,
+            feature_type=output_feature[TYPE],
+            shared_params_type=OUTPUT_FEATURES,
+            shared_params_dict=shared_params_dict[OUTPUT_FEATURES],
+        )
     set_values(config[COMBINER], COMBINER, parameters_dict)
     set_values(config[TRAINER], TRAINER, parameters_dict)
     set_values(config[PREPROCESSING], PREPROCESSING, parameters_dict)
@@ -939,6 +948,7 @@ def run_experiment(
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
     )
+
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,
         training_set=training_set,
