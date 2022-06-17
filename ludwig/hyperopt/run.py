@@ -186,7 +186,10 @@ def hyperopt(
         config_dict = config
 
     # Get mapping of input/output features that don't have an encoder for shared parameters
-    shared_params_dict = get_shared_params_dict(config_dict)
+    shared_params_dict = {
+        INPUT_FEATURES: get_shared_params_dict(config_dict[INPUT_FEATURES]),
+        OUTPUT_FEATURES: get_shared_params_dict(config_dict[OUTPUT_FEATURES]),
+    }
 
     # merge config with defaults
     config = merge_with_defaults(config_dict)
@@ -395,27 +398,19 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     )
 
 
-def get_shared_params_dict(config: Dict[str, Any]) -> Dict[str, Set]:
+def get_shared_params_dict(features: Dict[str, Any]) -> Dict[str, Set]:
     """
-    Generates a mapping of input and output feature type to the corresponding
-    set of features without an encoder.
+    Generates a mapping of feature type to the corresponding set of features
+    without an encoder.
 
     They may be considered for potential shared parameter search spaces depending
     on the parameter space defined later within the hyperopt config.
     """
 
-    def shared_params_mapping_fn(features):
-        feature_group_to_features_map = defaultdict(set)
-        for feature in features:
-            if not feature.get(ENCODER, 0):
-                feature_name = feature[NAME]
-                feature_type = feature[TYPE]
-                feature_group_to_features_map[feature_type].add(feature_name)
-        return feature_group_to_features_map
-
-    feature_group_mapping = {
-        INPUT_FEATURES: shared_params_mapping_fn(config[INPUT_FEATURES]),
-        OUTPUT_FEATURES: shared_params_mapping_fn(config[OUTPUT_FEATURES]),
-    }
-
-    return feature_group_mapping
+    feature_group_to_features_map = defaultdict(set)
+    for feature in features:
+        if not feature.get(ENCODER, 0):
+            feature_name = feature[NAME]
+            feature_type = feature[TYPE]
+            feature_group_to_features_map[feature_type].add(feature_name)
+    return feature_group_to_features_map
