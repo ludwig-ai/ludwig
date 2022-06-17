@@ -83,17 +83,16 @@ def compute_sequence_probability(
         max_sequence_length: The maximum sequence length to use. If None, use the length of the longest sequence.
         return_log_prob: Whether to return the log probability. Defaults to True.
     """
-
     if max_sequence_length is None:
-        mask = np.ones_like(sequence_probabilities)
-    else:
-        mask = np.arange(sequence_probabilities.shape[0]) < max_sequence_length
+        max_sequence_length = sequence_probabilities.shape[0]
+
+    sequence_probabilities = sequence_probabilities[:max_sequence_length]
 
     if return_log_prob:
-        out = np.sum(np.log(sequence_probabilities) * mask)
-        return out
+        return np.sum(np.log(sequence_probabilities))
     else:
-        return np.prod(sequence_probabilities * mask)
+        print(sequence_probabilities)
+        return np.prod(sequence_probabilities)
 
 
 def sanitize(name):

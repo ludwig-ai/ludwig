@@ -40,7 +40,7 @@ def test_ludwig_feature_dict_with_periods():
 
 
 @pytest.mark.parametrize("sequence_type", [list, tuple, np.array])
-def test_compute_sequence_probability(sequence_type):
+def test_compute_token_probabilities(sequence_type):
     inputs = sequence_type(
         [
             [0.1, 0.2, 0.7],
@@ -49,6 +49,15 @@ def test_compute_sequence_probability(sequence_type):
         ]
     )
 
-    sequence_probability = feature_utils.compute_sequence_probability(inputs)
+    token_probabilities = feature_utils.compute_token_probabilities(inputs)
+    assert np.allclose(token_probabilities, [0.7, 0.4, 0.6])
 
-    assert sequence_probability == pytest.approx(0.168)  # 0.7 * 0.4 * 0.6
+
+def test_compute_sequence_probability():
+    inputs = np.array([0.7, 0.4, 0.6])
+
+    sequence_probability = feature_utils.compute_sequence_probability(
+        inputs, max_sequence_length=2, return_log_prob=False
+    )
+
+    assert np.allclose(sequence_probability, [0.28])  # 0.7 * 0.4
