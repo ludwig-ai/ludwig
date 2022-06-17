@@ -116,23 +116,11 @@ class InferenceModule(nn.Module):
 
     def predictor_forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Forward pass through the predictor. Ensures that the inputs/outputs are on the correct device."""
-        print("preproc_inputs before device placement")
-        for k, v in preproc_inputs.items():
-            print(k, v.device)
         input_device = preproc_inputs[list(preproc_inputs.keys())[0]].device
         preproc_inputs = {key: value.to(self.predictor.device) for key, value in preproc_inputs.items()}
-        print("preproc_inputs after device placement")
-        for k, v in preproc_inputs.items():
-            print(k, v.device)
         with torch.no_grad():
             predictions_flattened = self.predictor(preproc_inputs)
-            print("predictions_flattened before device placement")
-            for k, v in predictions_flattened.items():
-                print(k, v.device)
             predictions_flattened = {k: v.to(input_device) for k, v in predictions_flattened.items()}
-            print("predictions_flattened after device placement")
-            for k, v in predictions_flattened.items():
-                print(k, v.device)
             return predictions_flattened
 
     def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
