@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 class _VectorPreprocessing(torch.nn.Module):
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
