@@ -665,6 +665,15 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
+def get_props(feature_type: str):
+    """
+    Returns the preprocessing properties for the given feature type.
+    """
+    preprocessor_cls = preprocessing_registry[feature_type]
+    props = schema_utils.unload_jsonschema_from_marshmallow_class(preprocessor_cls)["properties"]
+    return props
+
+
 def PreprocessingDataclassField(feature_type: str):
     """
     Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing config.
@@ -691,7 +700,7 @@ def PreprocessingDataclassField(feature_type: str):
                             f"Invalid preprocessing params: {value}, see `{pre}` definition. Error: {error}"
                         )
                 raise ValidationError(
-                    f"Invalid params for optimizer: {value}, expect dict with at least a valid `type` attribute."
+                    f"Invalid params for preprocessor: {value}, expect dict with at least a valid `type` attribute."
                 )
             raise ValidationError("Field should be None or dict")
 
@@ -699,14 +708,13 @@ def PreprocessingDataclassField(feature_type: str):
         def _jsonschema_type_mapping():
             return {
                 "type": "object",
-                "properties": preprocessing_registry[feature_type].Schema(),
+                "properties": get_props(feature_type),
                 "additionalProperties": False,
             }
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        cls = preprocessor.Schema()
-        load_default = cls.load({'feature_type': feature_type})
+        load_default = preprocessor.Schema().load({'feature_type': feature_type})
         dump_default = preprocessor.Schema().dump({'feature_type': feature_type})
 
         return field(
