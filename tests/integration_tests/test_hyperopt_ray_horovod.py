@@ -66,7 +66,6 @@ def mock_storage_client(path):
         syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     else:
         syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
-        syncer.set_logdir(path)
     return syncer
 
 
