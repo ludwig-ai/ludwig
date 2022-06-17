@@ -91,7 +91,6 @@ def compute_sequence_probability(
     if return_log_prob:
         return np.sum(np.log(sequence_probabilities))
     else:
-        print(sequence_probabilities)
         return np.prod(sequence_probabilities)
 
 
