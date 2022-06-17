@@ -61,7 +61,10 @@ class _VectorPreprocessing(torch.nn.Module):
 class _VectorPostprocessing(torch.nn.Module):
     def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         # Workaround to convert type annotation from Dict[str, torch.Tensor] to Dict[str, Any]
-        return {k: v for k, v in preds.items()}
+        preds_any: Dict[str, Any] = {}
+        for k, v in preds.items():
+            preds_any[k] = v
+        return preds_any
 
 
 class _VectorPredict(PredictModule):
