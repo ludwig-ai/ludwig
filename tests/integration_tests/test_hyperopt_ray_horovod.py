@@ -17,6 +17,7 @@ import logging
 import os.path
 import shutil
 import uuid
+from distutils.version import LooseVersion
 from unittest.mock import patch
 
 import pytest
@@ -31,7 +32,12 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 
 try:
     import ray
-    from ray.tune.sync_client import get_sync_client
+
+    _ray_114 = LooseVersion(ray.__version__) >= LooseVersion("1.14")
+    if _ray_114:
+        from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
+    else:
+        from ray.tune.syncer import get_sync_client
 
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
@@ -55,10 +61,12 @@ logger = logging.getLogger(__name__)
 
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
-    client = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
     os.makedirs(path, exist_ok=True)
-    client.set_logdir(path)
-    return client
+    if _ray_114:
+        syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
+    else:
+        syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
+    return syncer
 
 
 HYPEROPT_CONFIG = {
