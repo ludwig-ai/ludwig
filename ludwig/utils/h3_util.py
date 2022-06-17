@@ -53,11 +53,6 @@ def components_to_h3(components):
     return h3
 
 
-def h3_octal_components(h3_long):
-    res = h3_resolution(h3_long)
-    return "{0:0{w}o}".format(bitslice(h3_long + 2**63, 64 - 19 - 3 * res, 3 * res), w=res)
-
-
 def bitslice(x: int, start_bit: int, slice_length: int) -> int:
     ones_mask: int = int(2**slice_length - 1)
     return (x & (ones_mask << start_bit)) >> start_bit
@@ -77,6 +72,11 @@ def h3_resolution(h3_long: int) -> int:
 
 def h3_base_cell(h3_long: int) -> int:
     return bitslice(h3_long, 64 - 19, 7)
+
+
+def h3_octal_components(h3_long):
+    res = h3_resolution(h3_long)
+    return "{0:0{w}o}".format(bitslice(h3_long + 2**63, 64 - 19 - 3 * res, 3 * res), w=res)
 
 
 def h3_component(h3_long: int, i: int) -> int:
