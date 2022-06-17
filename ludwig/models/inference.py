@@ -119,8 +119,12 @@ class InferenceModule(nn.Module):
 
         Ensures that the inputs/outputs are on the correct device.
         """
-        input_device = preproc_inputs[list(preproc_inputs.keys())[0]].device
-        preproc_inputs = {key: value.to(self.predictor.device) for key, value in preproc_inputs.items()}
+        input_devices: List[torch.device] = []
+        for k, v in preproc_inputs.items():
+            input_devices.append(v.device)
+            preproc_inputs[k] = v.to(self.predictor.device)
+        input_device = input_devices[0]  # Assumes all of the inputs are on the same device as the first input
+
         with torch.no_grad():
             predictions_flattened = self.predictor(preproc_inputs)
             predictions_flattened = {k: v.to(input_device) for k, v in predictions_flattened.items()}
