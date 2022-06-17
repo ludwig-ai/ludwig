@@ -146,9 +146,10 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     fill_value: Union[int, float] = schema_utils.NumericOrStringOptionsField(
         ["yes", "YES", "Yes", "y", "Y", "true", "True", "TRUE", "t", "T", "1", "1.0", "no", "NO", "No", "n", "N",
          "false", "False", "FALSE", "f", "F", "0", "0.0"],
-        allow_none=False,
         default=None,
-        default_numeric=0,
+        default_numeric=None,
+        default_option=None,
+        allow_none=False,
         min=0,
         max=1,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
@@ -704,8 +705,9 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = preprocessor.Schema().load(feature_type)
-        dump_default = preprocessor.Schema().dump(feature_type)
+        cls = preprocessor.Schema()
+        load_default = cls.load({'feature_type': feature_type})
+        dump_default = preprocessor.Schema().dump({'feature_type': feature_type})
 
         return field(
             metadata={
@@ -718,4 +720,4 @@ def PreprocessingDataclassField(feature_type: str):
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported preprocessing type: {feature_type}. See optimizer_registry. Details: {e}")
+        raise ValidationError(f"Unsupported preprocessing type: {feature_type}. See preprocessing_registry. Details: {e}")
