@@ -42,6 +42,7 @@ def get_input_feature_jsonschema():
                 "type": {"type": "string", "enum": input_feature_types},
                 "column": {"type": "string"},
             },
+            "additionalProperties": True,
             "allOf": get_input_feature_conds(),
             "required": ["name", "type"],
         }
@@ -59,7 +60,7 @@ def get_input_feature_conds():
     conds = []
     for feature_type in input_feature_types:
         feature_cls = input_type_registry[feature_type]
-        schema_cls = feature_cls.schema_class()
+        schema_cls = feature_cls.get_schema_cls()
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
@@ -84,6 +85,7 @@ def get_output_feature_jsonschema():
                 "type": {"type": "string", "enum": output_feature_types},
                 "column": {"type": "string"},
             },
+            "additionalProperties": True,
             "allOf": get_output_feature_conds(),
             "required": ["name", "type"],
         }
@@ -101,7 +103,7 @@ def get_output_feature_conds():
     conds = []
     for feature_type in output_feature_types:
         feature_cls = output_type_registry[feature_type]
-        schema_cls = feature_cls.schema_class()
+        schema_cls = feature_cls.get_schema_cls()
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
@@ -133,21 +135,21 @@ def get_output_feature_conds():
 #     return conds
 #
 #
-def get_input_preproc_conds(input_feature_types):
-    conds = []
-    for feature_type in input_feature_types:
-        feature_cls = input_type_registry[feature_type]
-        preproc_spec = {
-            "type": "object",
-            "properties": feature_cls.preprocessing_schema(),
-            "additionalProperties": False,
-        }
-        preproc_cond = create_cond(
-            {"type": feature_type},
-            {"preprocessing": preproc_spec},
-        )
-        conds.append(preproc_cond)
-    return conds
+# def get_input_preproc_conds(input_feature_types):
+#     conds = []
+#     for feature_type in input_feature_types:
+#         feature_cls = input_type_registry[feature_type]
+#         preproc_spec = {
+#             "type": "object",
+#             "properties": feature_cls.preprocessing_schema(),
+#             "additionalProperties": False,
+#         }
+#         preproc_cond = create_cond(
+#             {"type": feature_type},
+#             {"preprocessing": preproc_spec},
+#         )
+#         conds.append(preproc_cond)
+#     return conds
 #
 #
 # def get_output_preproc_conds(output_feature_types):
