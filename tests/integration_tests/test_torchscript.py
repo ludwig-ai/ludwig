@@ -188,8 +188,8 @@ def test_torchscript(csv_filename, should_load_model):
         ###############################################
 
         # Check to weight values match the original model.
-        assert all(utils.is_all_close(original_weights[i], loaded_weights[i]) for i in range(len(original_weights)))
-        assert all(utils.is_all_close(original_weights[i], restored_weights[i]) for i in range(len(original_weights)))
+        assert utils.is_all_close(original_weights, loaded_weights)
+        assert utils.is_all_close(original_weights, restored_weights)
 
         # Check that predictions are identical to the original model.
         assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
