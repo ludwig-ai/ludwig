@@ -297,8 +297,7 @@ def save_ludwig_model_for_inference(
     device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None,
 ) -> None:
     """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
-    stage_to_device = get_stage_to_device_dict(device)
-    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage, device in stage_to_device.items()}
+    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
 
     stage_to_module = init_inference_stages_from_ludwig_model(
         model, config, training_set_metadata, device, scripted=True
@@ -314,15 +313,11 @@ def init_inference_stages_from_directory(
     directory: str, device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from directory."""
-    stage_to_device = get_stage_to_device_dict(device)
-    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage, device in stage_to_device.items()}
+    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
 
     stage_to_module = {}
     for stage in INFERENCE_STAGES:
-        stage_to_module[stage] = torch.jit.load(
-            os.path.join(directory, stage_to_filenames[stage]),
-            map_location=stage_to_device[stage],
-        )
+        stage_to_module[stage] = torch.jit.load(os.path.join(directory, stage_to_filenames[stage]))
     return stage_to_module
 
 
@@ -334,7 +329,6 @@ def init_inference_stages_from_ludwig_model(
     scripted: bool = True,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from a LudwigModel (an ECD model, config, and training_set_metadata)."""
-    # HACK: overriding device to be cpu for development
     preprocessor = InferencePreprocessor(config, training_set_metadata)
     predictor = InferencePredictor(model, device=device)
     postprocessor = InferencePostprocessor(model, training_set_metadata)
@@ -362,24 +356,6 @@ def unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, 
             feature_outputs = outputs[feature_name]
         feature_outputs[tensor_name] = tensor_values
     return outputs
-
-
-def get_stage_to_device_dict(
-    device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None
-) -> Dict[str, torch.device]:
-    """Returns a dict where each stage in INFERENCE_STAGES maps to a torch.device object."""
-    stage_to_device = None
-    if device is None:
-        stage_to_device = {stage: torch.device(DEVICE) for stage in INFERENCE_STAGES}
-    elif isinstance(device, str) or isinstance(device, torch.device):
-        stage_to_device = {stage: torch.device(device) for stage in INFERENCE_STAGES}
-    elif isinstance(device, dict):
-        if not set(device.keys()) == set(INFERENCE_STAGES):
-            raise ValueError(f"Invalid device keys: {device}. Use {INFERENCE_STAGES}.")
-        stage_to_device = {stage: torch.device(d) for stage, d in device.items()}
-    else:
-        raise ValueError(f"Invalid device: {device}.")
-    return stage_to_device
 
 
 def get_filename_from_stage(stage: str, device: Optional[TorchDevice] = None) -> str:

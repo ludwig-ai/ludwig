@@ -63,7 +63,6 @@ class ZScoreTransformer(nn.Module):
         return x * self.sigma + self.mu
 
     def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        print("INSIDE TRANSFORM_INFERENCE")
         return (x - self.mu) / self.sigma
 
     def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
