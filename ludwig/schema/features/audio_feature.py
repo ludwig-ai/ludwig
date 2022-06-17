@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class AudioInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class AudioInputFeatureConfig(base.BaseFeatureConfig):
     """AudioFeatureInputFeature is a dataclass that configures the parameters used for an audio input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(

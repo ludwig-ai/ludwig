@@ -1,6 +1,7 @@
 from dataclasses import field
 from typing import Dict as tDict
-from typing import List, Tuple, Type, Union
+from typing import List as tList
+from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
@@ -627,7 +628,7 @@ def IntegerOrAutoField(
 
 
 def IntegerOrStringOptionsField(
-    options: List[str],
+    options: tList[str],
     allow_none: bool,
     description: str,
     parameter_metadata: ParameterMetadata,
@@ -646,7 +647,7 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: List[str],
+    options: tList[str],
     allow_none: bool,
     description: str,
     parameter_metadata: ParameterMetadata,

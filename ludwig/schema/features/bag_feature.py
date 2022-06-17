@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class BagInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class BagInputFeatureConfig(base.BaseFeatureConfig):
     """
     BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature.
     """

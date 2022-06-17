@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class H3InputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class H3InputFeatureConfig(base.BaseFeatureConfig):
     """
     H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature.
     """

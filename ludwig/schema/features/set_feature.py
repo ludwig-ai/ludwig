@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class SetInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class SetInputFeatureConfig(base.BaseFeatureConfig):
     """
     SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature.
     """
@@ -33,7 +33,7 @@ class SetInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeature
 
 
 @dataclass
-class SetOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class SetOutputFeatureConfig(base.BaseFeatureConfig):
     """
     SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature.
     """

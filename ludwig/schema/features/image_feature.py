@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class ImageInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class ImageInputFeatureConfig(base.BaseFeatureConfig):
     """
     ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature.
     """

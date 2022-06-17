@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class TextInputFeatureConfig(base.BaseFeatureConfig):
     """
     TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature.
     """
@@ -35,7 +35,7 @@ class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatur
 
 
 @dataclass
-class TextOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class TextOutputFeatureConfig(base.BaseFeatureConfig):
     """
     TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature.
     """

@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class CategoryInputFeatureConfig(base.BaseFeatureConfig):
     """CategoryInputFeature is a dataclass that configures the parameters used for a category input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
@@ -31,7 +31,7 @@ class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFe
 
 
 @dataclass
-class CategoryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class CategoryOutputFeatureConfig(base.BaseFeatureConfig):
     """CategoryOutputFeature is a dataclass that configures the parameters used for a category output feature."""
 
     decoder: Optional[str] = schema_utils.StringOptions(

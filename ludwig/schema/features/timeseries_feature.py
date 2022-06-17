@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class TimeseriesInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class TimeseriesInputFeatureConfig(base.BaseFeatureConfig):
     """
     TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input feature.
     """

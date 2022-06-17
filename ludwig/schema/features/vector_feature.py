@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class VectorInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class VectorInputFeatureConfig(base.BaseFeatureConfig):
     """
     VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature.
     """
@@ -33,7 +33,7 @@ class VectorInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeat
 
 
 @dataclass
-class VectorOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class VectorOutputFeatureConfig(base.BaseFeatureConfig):
     """
     VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature.
     """

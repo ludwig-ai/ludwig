@@ -8,7 +8,7 @@ from ludwig.schema.features.preprocessing import BasePreprocessingConfig, Prepro
 
 
 @dataclass
-class SequenceInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class SequenceInputFeatureConfig(base.BaseFeatureConfig):
     """
     SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input feature.
     """
@@ -33,7 +33,7 @@ class SequenceInputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFe
 
 
 @dataclass
-class SequenceOutputFeatureConfig(schema_utils.BaseMarshmallowConfig, base.BaseFeatureConfig):
+class SequenceOutputFeatureConfig(base.BaseFeatureConfig):
     """
     SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output feature.
     """
