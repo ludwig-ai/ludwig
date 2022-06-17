@@ -24,7 +24,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List
+from typing import List, Union
 
 import cloudpickle
 import numpy as np
@@ -468,14 +468,22 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
-def is_all_close(list_tensors_1, list_tensors_2):
-    """Returns whether all of list_tensors_1 is close to list_tensors_2."""
-    assert len(list_tensors_1) == len(list_tensors_2)
-    for i in range(len(list_tensors_1)):
-        assert list_tensors_1[i].size() == list_tensors_2[i].size()
+def is_all_close(
+    val1: Union[np.ndarray, torch.Tensor, str, list],
+    val2: Union[np.ndarray, torch.Tensor, str, list],
+    tolerance=1e-8,
+):
+    """Checks if two values are close to each other."""
+    if isinstance(val1, list):
+        return all(is_all_close(v1, v2, tolerance) for v1, v2 in zip(val1, val2))
 
-    is_close_values = [torch.isclose(list_tensors_1[i], list_tensors_2[i]) for i in range(len(list_tensors_1))]
-    return torch.all(torch.Tensor([torch.all(is_close_value) for is_close_value in is_close_values]))
+    if isinstance(val1, str):
+        return val1 == val2
+    if isinstance(val1, torch.Tensor):
+        val1 = val1.detach().numpy()
+    if isinstance(val2, torch.Tensor):
+        val2 = val2.detach().numpy()
+    return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
 
 
 def run_api_experiment(input_features, output_features, data_csv):

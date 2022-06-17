@@ -102,6 +102,40 @@ class _SetPreprocessing(torch.nn.Module):
         return set_matrix
 
 
+class _SetPostprocessing(torch.nn.Module):
+    """Torchscript-enabled version of postprocessing done by SetFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.unk = UNKNOWN_SYMBOL
+
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        predictions = preds[self.predictions_key]
+        probabilities = preds[self.probabilities_key]
+
+        inv_preds: List[List[str]] = []
+        filtered_probs: List[torch.Tensor] = []
+        for sample_idx, sample in enumerate(predictions):
+            sample_preds: List[str] = []
+            pos_sample_idxs: List[int] = []
+            pos_class_idxs: List[int] = []
+            for class_idx, is_positive in enumerate(sample):
+                if is_positive == 1:
+                    sample_preds.append(self.idx2str.get(class_idx, self.unk))
+                    pos_sample_idxs.append(sample_idx)
+                    pos_class_idxs.append(class_idx)
+            inv_preds.append(sample_preds)
+            filtered_probs.append(probabilities[pos_sample_idxs, pos_class_idxs])
+
+        return {
+            self.predictions_key: inv_preds,
+            self.probabilities_key: filtered_probs,
+        }
+
+
 class _SetPredict(PredictModule):
     def __init__(self, threshold):
         super().__init__()
@@ -339,7 +373,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             threshold = self.threshold
 
             def get_prob(prob_set):
-                return [prob for prob in prob_set if prob >= threshold]
+                return np.array([prob for prob in prob_set if prob >= threshold])
 
             result[probabilities_col] = backend.df_engine.map_objects(
                 result[probabilities_col],
@@ -347,6 +381,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             )
 
         return result
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SetPostprocessing(metadata)
 
     @staticmethod
     def populate_defaults(output_feature):
