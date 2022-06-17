@@ -42,7 +42,7 @@ def get_repeatable_train_val_test_split(
     """
 
     if frac_train + frac_val + frac_test != 1.0:
-        raise ValueError("fractions %f, %f, %f do not add up to 1.0" % (frac_train, frac_val, frac_test))
+        raise ValueError("fractions {:f}, {:f}, {:f} do not add up to 1.0".format(frac_train, frac_val, frac_test))
     if stratify_colname not in df_input.columns:
         raise ValueError("%s is not a column in the dataframe" % (stratify_colname))
 
