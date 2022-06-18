@@ -633,6 +633,12 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
+    )
+
 
 @register_preprocessor(BAG)
 @dataclass
