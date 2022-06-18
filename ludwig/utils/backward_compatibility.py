@@ -188,7 +188,7 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
             DeprecationWarning,
         )
 
-        if force_split and "type" not in split_params:
+        if "type" not in split_params:
             split_params["type"] = "random"
 
         del preprocessing["force_split"]
@@ -217,4 +217,4 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
         _upgrade_trainer(config[TRAINER])
 
     if PREPROCESSING in config:
-        _upgrade_preprocessing(config["PREPROCESSING"])
+        _upgrade_preprocessing(config[PREPROCESSING])
