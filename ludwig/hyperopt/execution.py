@@ -20,6 +20,7 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
+
 # from ludwig.hyperopt.sampling import RayTuneSampler   TODO: Remove
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
@@ -72,10 +73,8 @@ except ImportError as e:
     )
     get_horovod_kwargs = None
 
-
     class RayBackend:
         pass
-
 
     def _is_ray_backend(backend) -> bool:
         return False
@@ -91,9 +90,7 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 # todo: hyperopt_sampler: Union[dict, RayTuneSampler],
 class HyperoptExecutor(ABC):
-    def __init__(
-            self, output_feature: str, metric: str, split: str
-    ) -> None:
+    def __init__(self, output_feature: str, metric: str, split: str) -> None:
         # self.hyperopt_sampler = hyperopt_sampler  # todo: remove
         self.output_feature = output_feature
         self.metric = metric
@@ -214,19 +211,19 @@ class HyperoptExecutor(ABC):
 
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
-            self,
-            # hyperopt_sampler,  # todo: remove
-            parameters: dict,
-            output_feature: str,
-            metric: str,
-            goal: str,
-            split: str,
-            search_alg: Optional[Dict] = None,
-            cpu_resources_per_trial: int = None,
-            gpu_resources_per_trial: int = None,
-            kubernetes_namespace: str = None,
-            time_budget_s: Union[int, float, datetime.timedelta] = None,
-            max_concurrent_trials: Optional[int] = None,
+        self,
+        # hyperopt_sampler,  # todo: remove
+        parameters: dict,
+        output_feature: str,
+        metric: str,
+        goal: str,
+        split: str,
+        search_alg: Optional[Dict] = None,
+        cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
         num_samples: int = 1,
         scheduler: Optional[Dict] = None,
         **kwargs,
