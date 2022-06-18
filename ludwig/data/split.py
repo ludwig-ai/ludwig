@@ -208,12 +208,12 @@ def split_dataset(
     backend: Backend,
     random_seed: float = default_random_seed,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
-    if "split" not in global_preprocessing_parameters and SPLIT in df:
+    if SPLIT not in global_preprocessing_parameters and SPLIT in df:
         warnings.warn(
             'Detected "split" column in the data, but using default split type '
             '"random". Did you mean to set split type to "fixed"?'
         )
-    splitter = get_splitter(**global_preprocessing_parameters.get("split", {}))
+    splitter = get_splitter(**global_preprocessing_parameters.get(SPLIT, {}))
     return splitter.split(df, backend, random_seed)
 
 
