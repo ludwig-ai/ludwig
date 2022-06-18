@@ -9,7 +9,6 @@ import threading
 import time
 import traceback
 import uuid
-from abc import ABC, abstractmethod
 from distutils.version import LooseVersion
 from inspect import signature
 from pathlib import Path
@@ -19,7 +18,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
+from ludwig.hyperopt.results import RayTuneResults, TrialResults
 
 # from ludwig.hyperopt.sampling import RayTuneSampler   TODO: Remove
 from ludwig.hyperopt.search_algos import get_search_algorithm
