@@ -39,7 +39,7 @@ def test_random_split(df_engine):
 
     backend = Mock()
     backend.df_engine = df_engine
-    splits = splitter.split(df, backend)
+    splits = splitter.split(df, backend, random_seed=42)
 
     assert len(splits) == 3
     for split, p in zip(splits, probs):
@@ -48,6 +48,19 @@ def test_random_split(df_engine):
             assert np.isclose(len(split), int(nrows * p), atol=5)
         else:
             assert len(split) == int(nrows * p)
+
+    # Test determinism
+    def compute(dfs):
+        return [df.compute() if isinstance(backend.df_engine, DaskEngine) else df for df in dfs]
+
+    splits = compute(splits)
+    splits2 = compute(splitter.split(df, backend, random_seed=7))
+    for s1, s2 in zip(splits, splits2):
+        assert not s1.equals(s2)
+
+    splits3 = compute(splitter.split(df, backend, random_seed=42))
+    for s1, s3 in zip(splits, splits3):
+        assert s1.equals(s3)
 
 
 @pytest.mark.parametrize(
