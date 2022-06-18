@@ -71,7 +71,11 @@ def test_grid_strategy(key):
     tune_sampler_params = hyperopt_test_params["parameters"]
 
     hyperopt_executor = get_build_hyperopt_executor(RAY)(
-        tune_sampler_params, "output_feature", "mse", "minimize", "validation",
+        tune_sampler_params,
+        "output_feature",
+        "mse",
+        "minimize",
+        "validation",
         search_alg={TYPE: "variant_generator"},
         **{"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}}
     )
