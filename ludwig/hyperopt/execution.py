@@ -89,12 +89,230 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 
 # todo: hyperopt_sampler: Union[dict, RayTuneSampler],
-class HyperoptExecutor(ABC):
-    def __init__(self, output_feature: str, metric: str, split: str) -> None:
-        # self.hyperopt_sampler = hyperopt_sampler  # todo: remove
+# class HyperoptExecutor(ABC):
+#     def __init__(self, output_feature: str, metric: str, split: str) -> None:
+#         # self.hyperopt_sampler = hyperopt_sampler  # todo: remove
+#         self.output_feature = output_feature
+#         self.metric = metric
+#         self.split = split
+#
+#     def _has_metric(self, stats, split):
+#         if not stats:
+#             return False
+#
+#         if split is not None:
+#             if split not in stats:
+#                 return False
+#             stats = stats[split]
+#
+#         if self.output_feature not in stats:
+#             return False
+#         stats = stats[self.output_feature]
+#
+#         if self.metric not in stats:
+#             return False
+#         stats = stats[self.metric]
+#         return len(stats) > 0
+#
+#     def _has_eval_metric(self, stats):
+#         if stats is None:
+#             return False
+#
+#         if self.output_feature not in stats:
+#             return False
+#         stats = stats[self.output_feature]
+#
+#         for metric_part in self.metric.split("."):
+#             if not isinstance(stats, dict) or metric_part not in stats:
+#                 return False
+#             stats = stats[metric_part]
+#         return isinstance(stats, float)
+#
+#     def get_metric_score(self, train_stats) -> float:
+#         if self._has_metric(train_stats, VALIDATION):
+#             logger.info("Returning metric score from training (validation) statistics")
+#             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
+#         elif self._has_metric(train_stats, TRAINING):
+#             logger.info("Returning metric score from training split statistics, " "as no validation was given")
+#             return self.get_metric_score_from_train_stats(train_stats, TRAINING)
+#         else:
+#             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
+#
+#     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
+#         stats = eval_stats[self.output_feature]
+#         for metric_part in self.metric.split("."):
+#             if isinstance(stats, dict):
+#                 if metric_part in stats:
+#                     stats = stats[metric_part]
+#                 else:
+#                     raise ValueError(f"Evaluation statistics do not contain the metric {self.metric}")
+#             else:
+#                 raise ValueError(f"Evaluation statistics do not contain the metric {self.metric}")
+#
+#         if not isinstance(stats, float):
+#             raise ValueError(f"The metric {self.metric} in evaluation statistics is not a numerical value: {stats}")
+#         return stats
+#
+#     def get_metric_score_from_train_stats(self, train_stats, select_split=None) -> float:
+#         select_split = select_split or VALIDATION
+#
+#         # grab the results of the model with highest validation test performance
+#         train_valiset_stats = train_stats[select_split]
+#
+#         validation_field_result = train_valiset_stats[self.output_feature]
+#         best_function = get_best_function(self.metric)
+#
+#         # results of the model with highest validation test performance
+#         epoch_best_validation_metric, best_validation_metric = best_function(
+#             enumerate(validation_field_result[self.metric]), key=lambda pair: pair[1]
+#         )
+#
+#         return best_validation_metric
+#
+#     def sort_hyperopt_results(self, hyperopt_results):
+#         return sorted(
+#             hyperopt_results, key=lambda hp_res: hp_res.metric_score, reverse=self.hyperopt_sampler.goal == MAXIMIZE
+#         )
+#
+#     @abstractmethod
+#     def execute(
+#         self,
+#         config,
+#         dataset=None,
+#         training_set=None,
+#         validation_set=None,
+#         test_set=None,
+#         training_set_metadata=None,
+#         data_format=None,
+#         experiment_name="hyperopt",
+#         model_name="run",
+#         resume=None,
+#         skip_save_training_description=False,
+#         skip_save_training_statistics=False,
+#         skip_save_model=False,
+#         skip_save_progress=False,
+#         skip_save_log=False,
+#         skip_save_processed_input=True,
+#         skip_save_unprocessed_output=False,
+#         skip_save_predictions=False,
+#         skip_save_eval_stats=False,
+#         output_directory="results",
+#         gpus=None,
+#         gpu_memory_limit=None,
+#         allow_parallel_threads=True,
+#         callbacks=None,
+#         backend=None,
+#         random_seed=default_random_seed,
+#         debug=False,
+#         **kwargs,
+#     ) -> HyperoptResults:
+#         pass
+
+class RayTuneExecutor:
+    def __init__(
+            self,
+            # hyperopt_sampler,  # todo: remove
+            parameters: dict,
+            output_feature: str,
+            metric: str,
+            goal: str,
+            split: str,
+            search_alg: Optional[Dict] = None,
+            cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
+        num_samples: int = 1,
+        scheduler: Optional[Dict] = None,
+        **kwargs,
+    ) -> None:
+        if ray is None:
+            raise ImportError("ray module is not installed. To install it, try running pip install ray")
+        # todo: remove
+        # if not isinstance(hyperopt_sampler, RayTuneSampler):
+        #     raise ValueError(
+        #         "Sampler {} is not compatible with RayTuneExecutor, "
+        #         "please use the RayTuneSampler".format(hyperopt_sampler)
+        #     )
+        # HyperoptExecutor.__init__(self, output_feature, metric, split)
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
+        if not ray.is_initialized():
+            try:
+                ray.init("auto", ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info("Initializing new Ray cluster...")
+                ray.init(ignore_reinit_error=True)
+        self.search_space, self.decode_ctx = self._get_search_space(parameters)
+        self.num_samples = num_samples
+        self.goal = goal
+        self.search_algorithm = (
+            get_search_algorithm(None)(search_alg)
+            if search_alg is None
+            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
+        )
+        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
+        self.decode_ctx = self.decode_ctx
+        self.output_feature = output_feature
+        self.metric = metric
+        self.split = split
+        self.trial_id = 0
+        self.cpu_resources_per_trial = cpu_resources_per_trial
+        self.gpu_resources_per_trial = gpu_resources_per_trial
+        self.kubernetes_namespace = kubernetes_namespace
+        self.time_budget_s = time_budget_s
+        self.max_concurrent_trials = max_concurrent_trials
+        self.sync_config = None
+
+    def _get_search_space(self, parameters):
+        config = {}
+        ctx = {}
+        for param, values in parameters.items():
+            # Encode list and dict types as JSON encoded strings to
+            # workaround type limitations of the underlying frameworks
+            values = self.encode_values(param, values, ctx)
+
+            param_search_type = values["space"].lower()
+            if hasattr(tune, param_search_type):
+                param_search_space = getattr(tune, param_search_type)
+            else:
+                raise ValueError(f"'{param_search_type}' is not a supported Ray Tune search space")
+
+            param_search_input_args = {}
+            param_search_space_sig = signature(param_search_space)
+            for arg in param_search_space_sig.parameters.values():
+                if arg.name in values:
+                    param_search_input_args[arg.name] = values[arg.name]
+                else:
+                    if arg.default is arg.empty:
+                        raise ValueError(f"Parameter '{arg}' not defined for {param}")
+            config[param] = param_search_space(**param_search_input_args)
+        return config, ctx
+
+    @staticmethod
+    def encode_values(param, values, ctx):
+        """JSON encodes any search spaces whose values are lists / dicts.
+
+        Only applies to grid search and choice options.  See here for details:
+
+        https://docs.ray.io/en/master/tune/api_docs/search_space.html#random-distributions-api
+        """
+        values = values.copy()
+        for key in ["values", "categories"]:
+            if key in values and not isinstance(values[key][0], (int, float)):
+                values[key] = [json.dumps(v) for v in values[key]]
+                ctx[param] = json.loads
+        return values
+
+    @staticmethod
+    def decode_values(config, ctx):
+        """Decode config values with the decode function in the context.
+
+        Uses the identity function if no encoding is needed.
+        """
+        return {key: ctx.get(key, identity)(value) for key, value in config.items()}
 
     def _has_metric(self, stats, split):
         if not stats:
@@ -173,144 +391,6 @@ class HyperoptExecutor(ABC):
         return sorted(
             hyperopt_results, key=lambda hp_res: hp_res.metric_score, reverse=self.hyperopt_sampler.goal == MAXIMIZE
         )
-
-    @abstractmethod
-    def execute(
-        self,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        resume=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs,
-    ) -> HyperoptResults:
-        pass
-
-
-class RayTuneExecutor(HyperoptExecutor):
-    def __init__(
-        self,
-        # hyperopt_sampler,  # todo: remove
-        parameters: dict,
-        output_feature: str,
-        metric: str,
-        goal: str,
-        split: str,
-        search_alg: Optional[Dict] = None,
-        cpu_resources_per_trial: int = None,
-        gpu_resources_per_trial: int = None,
-        kubernetes_namespace: str = None,
-        time_budget_s: Union[int, float, datetime.timedelta] = None,
-        max_concurrent_trials: Optional[int] = None,
-        num_samples: int = 1,
-        scheduler: Optional[Dict] = None,
-        **kwargs,
-    ) -> None:
-        if ray is None:
-            raise ImportError("ray module is not installed. To install it, try running pip install ray")
-        # todo: remove
-        # if not isinstance(hyperopt_sampler, RayTuneSampler):
-        #     raise ValueError(
-        #         "Sampler {} is not compatible with RayTuneExecutor, "
-        #         "please use the RayTuneSampler".format(hyperopt_sampler)
-        #     )
-        HyperoptExecutor.__init__(self, output_feature, metric, split)
-        if not ray.is_initialized():
-            try:
-                ray.init("auto", ignore_reinit_error=True)
-            except ConnectionError:
-                logger.info("Initializing new Ray cluster...")
-                ray.init(ignore_reinit_error=True)
-        self.search_space, self.decode_ctx = self._get_search_space(parameters)
-        self.num_samples = num_samples
-        self.goal = goal
-        self.search_algorithm = (
-            get_search_algorithm(None)(search_alg)
-            if search_alg is None
-            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
-        )
-        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
-        self.decode_ctx = self.decode_ctx
-        self.output_feature = output_feature
-        self.metric = metric
-        self.split = split
-        self.trial_id = 0
-        self.cpu_resources_per_trial = cpu_resources_per_trial
-        self.gpu_resources_per_trial = gpu_resources_per_trial
-        self.kubernetes_namespace = kubernetes_namespace
-        self.time_budget_s = time_budget_s
-        self.max_concurrent_trials = max_concurrent_trials
-        self.sync_config = None
-
-    def _get_search_space(self, parameters):
-        config = {}
-        ctx = {}
-        for param, values in parameters.items():
-            # Encode list and dict types as JSON encoded strings to
-            # workaround type limitations of the underlying frameworks
-            values = self.encode_values(param, values, ctx)
-
-            param_search_type = values["space"].lower()
-            if hasattr(tune, param_search_type):
-                param_search_space = getattr(tune, param_search_type)
-            else:
-                raise ValueError(f"'{param_search_type}' is not a supported Ray Tune search space")
-
-            param_search_input_args = {}
-            param_search_space_sig = signature(param_search_space)
-            for arg in param_search_space_sig.parameters.values():
-                if arg.name in values:
-                    param_search_input_args[arg.name] = values[arg.name]
-                else:
-                    if arg.default is arg.empty:
-                        raise ValueError(f"Parameter '{arg}' not defined for {param}")
-            config[param] = param_search_space(**param_search_input_args)
-        return config, ctx
-
-    @staticmethod
-    def encode_values(param, values, ctx):
-        """JSON encodes any search spaces whose values are lists / dicts.
-
-        Only applies to grid search and choice options.  See here for details:
-
-        https://docs.ray.io/en/master/tune/api_docs/search_space.html#random-distributions-api
-        """
-        values = values.copy()
-        for key in ["values", "categories"]:
-            if key in values and not isinstance(values[key][0], (int, float)):
-                values[key] = [json.dumps(v) for v in values[key]]
-                ctx[param] = json.loads
-        return values
-
-    @staticmethod
-    def decode_values(config, ctx):
-        """Decode config values with the decode function in the context.
-
-        Uses the identity function if no encoding is needed.
-        """
-        return {key: ctx.get(key, identity)(value) for key, value in config.items()}
 
     @property
     def _cpu_resources_per_trial_non_none(self):
