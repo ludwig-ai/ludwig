@@ -131,7 +131,7 @@ def test_stratify_split():
         for idx, r in enumerate(ratios):
             actual = np.sum(split["category"] == idx)
             expected = int(r * p)
-            assert np.isclose(actual, expected, atol=5)
+            assert np.isclose(actual, expected, atol=1)
 
 
 @pytest.mark.parametrize(
