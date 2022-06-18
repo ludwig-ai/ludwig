@@ -211,9 +211,12 @@ def split_dataset(
     split_params = global_preprocessing_parameters.get(SPLIT, {})
     if "type" not in split_params and SPLIT in df:
         warnings.warn(
-            'Detected "split" column in the data, but using default split type '
-            '"random". Did you mean to set split type to "fixed"?'
+            'Detected "split" column in the data, but split type has not been set to "fixed". '
+            'Splitting on the "split" column without setting `preprocessing.split.type` to "fixed" '
+            'is deprecated and will be replaced by "random" splitting in v0.7',
+            DeprecationWarning,
         )
+        split_params["type"] = "fixed"
     splitter = get_splitter(**split_params)
     return splitter.split(df, backend, random_seed)
 
