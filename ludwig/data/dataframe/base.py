@@ -56,10 +56,15 @@ class DataFrameEngine(ABC):
 
     @abstractmethod
     def split(self, df, probabilities):
+        """Splits the input DataFrame into sections with the given proportions."""
         raise NotImplementedError()
 
     @abstractmethod
     def to_parquet(self, df, path, index=False):
+        """Write the input DataFrame to the path in the Parquet format.
+
+        Optionally includes the DataFrame index in the Parquet file.
+        """
         raise NotImplementedError()
 
     @abstractmethod
