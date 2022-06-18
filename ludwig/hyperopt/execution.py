@@ -208,17 +208,18 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 #     ) -> HyperoptResults:
 #         pass
 
+
 class RayTuneExecutor:
     def __init__(
-            self,
-            # hyperopt_sampler,  # todo: remove
-            parameters: dict,
-            output_feature: str,
-            metric: str,
-            goal: str,
-            split: str,
-            search_alg: Optional[Dict] = None,
-            cpu_resources_per_trial: int = None,
+        self,
+        # hyperopt_sampler,  # todo: remove
+        parameters: dict,
+        output_feature: str,
+        metric: str,
+        goal: str,
+        split: str,
+        search_alg: Optional[Dict] = None,
+        cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
         time_budget_s: Union[int, float, datetime.timedelta] = None,
