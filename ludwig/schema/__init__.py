@@ -25,7 +25,6 @@ from ludwig.constants import MODEL_TYPE, INPUT_FEATURES, OUTPUT_FEATURES, COMBIN
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.trainer import get_trainer_jsonschema
-from ludwig.schema.utils import create_cond
 
 
 def get_schema():
