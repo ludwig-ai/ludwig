@@ -106,7 +106,7 @@ class StratifySplitter(Splitter):
         frac_train, frac_val, frac_test = self.probabilities
 
         # Dataframe of just the column on which to stratify
-        y = df[[self.column]]
+        y = df[[self.column]].astype(np.int8)
         df_train, df_temp, _, y_temp = train_test_split(
             df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
         )
