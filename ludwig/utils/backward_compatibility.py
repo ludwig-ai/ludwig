@@ -23,6 +23,7 @@ from ludwig.constants import (
     HYPEROPT,
     NUMBER,
     PARAMETERS,
+    PREPROCESSING,
     RAY,
     SAMPLER,
     SEARCH_ALG,
@@ -153,6 +154,49 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
         trainer[EVAL_BATCH_SIZE] = None
 
 
+def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
+    split_params = {}
+
+    force_split = preprocessing.get("force_split")
+    split_probabilities = preprocessing.get("split_probabilities")
+    stratify = preprocessing.get("stratify")
+
+    if split_probabilities is not None:
+        split_params["probabilities"] = split_probabilities
+        warnings.warn(
+            "`preprocessing.split_probabilities` has been replaced by `preprocessing.split.probabilities`, "
+            "will be flagged as error in v0.7",
+            DeprecationWarning,
+        )
+        del preprocessing["split_probabilities"]
+
+    if stratify is not None:
+        split_params["type"] = "stratify"
+        split_params["column"] = stratify
+        warnings.warn(
+            "`preprocessing.stratify` has been replaced by `preprocessing.split.column` "
+            'when setting `preprocessing.split.type` to "stratify", '
+            "will be flagged as error in v0.7",
+            DeprecationWarning,
+        )
+        del preprocessing["stratify"]
+
+    if force_split is not None:
+        warnings.warn(
+            "`preprocessing.force_split` has been replaced by `preprocessing.split.type`, "
+            "will be flagged as error in v0.7",
+            DeprecationWarning,
+        )
+
+        if force_split and "type" not in split_params:
+            split_params["type"] = "random"
+
+        del preprocessing["force_split"]
+
+    if split_params:
+        preprocessing["split"] = split_params
+
+
 def upgrade_deprecated_fields(config: Dict[str, Any]):
     """Updates config (in-place) to use fields from earlier versions of Ludwig.
 
@@ -171,3 +215,6 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
 
     if TRAINER in config:
         _upgrade_trainer(config[TRAINER])
+
+    if PREPROCESSING in config:
+        _upgrade_preprocessing(config["PREPROCESSING"])
