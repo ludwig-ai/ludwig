@@ -11,8 +11,8 @@ from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils import image_utils
-from ludwig.utils.audio_utils import read_audio_if_path
+from ludwig.utils.audio_utils import read_audio_from_path
+from ludwig.utils.image_utils import read_image_from_path
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
@@ -117,10 +117,10 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
     if feature_type == "image":
         if load_paths:
-            return [image_utils.read_image(v) for v in s]
+            return [read_image_from_path(v) if isinstance(v, str) else v for v in s]
     elif feature_type == "audio":
         if load_paths:
-            return [read_audio_if_path(v) for v in s]
+            return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
     if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())

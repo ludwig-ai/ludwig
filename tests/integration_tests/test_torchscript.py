@@ -222,10 +222,10 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
+        set_feature(vocab_size=3),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
         # vector_feature()
     ]
     backend = LocalTestBackend()
@@ -239,6 +239,24 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     false_value, true_value = "No", "Yes"
     df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
     df.to_csv(training_data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_binary_only(csv_filename, tmpdir):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    input_features = [
+        binary_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
@@ -403,17 +421,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
-            if isinstance(output_values, list):
-                # Strings should match exactly
-                assert np.all(
-                    output_values == output_values_expected
-                ), f"feature: {feature_name}, output: {output_name}"
-            else:
-                output_values = np.array(output_values)
-                # Shapes and values must both match
-                assert (
-                    output_values.shape == output_values_expected.shape
-                ), f"feature: {feature_name}, output: {output_name}"
-                assert np.allclose(
-                    output_values, output_values_expected, atol=tolerance
-                ), f"feature: {feature_name}, output: {output_name}"
+            assert utils.is_all_close(
+                output_values, output_values_expected
+            ), f"feature: {feature_name}, output: {output_name}"

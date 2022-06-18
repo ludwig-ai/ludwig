@@ -17,11 +17,9 @@ import logging
 import os
 from collections import Counter
 from functools import partial
-from multiprocessing import Pool
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import requests
 import torch
 import torchvision
 
@@ -52,17 +50,14 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
-    get_image_from_path,
     grayscale,
     num_channels_in_image,
-    read_image,
+    read_image_from_bytes_obj,
+    read_image_from_path,
     resize_image,
 )
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.types import TorchscriptPreprocessingInput
-
-logger = logging.getLogger(__name__)
-
+from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -170,8 +165,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return {PREPROCESSING: preprocessing_parameters}
 
     @staticmethod
-    def _read_image_and_resize(
-        img_entry: Union[str, torch.Tensor],
+    def _read_image_if_bytes_obj_and_resize(
+        img_entry: Union[bytes, torch.Tensor],
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -180,8 +175,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         user_specified_num_channels: bool,
     ) -> Optional[np.ndarray]:
         """
-        :param img_entry Union[str, 'numpy.array']: if str file path to the
-                image else numpy.array of the image itself
+        :param img_entry Union[bytes, torch.Tensor]: if str file path to the
+            image else torch.Tensor of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
         :param should_resize: Should the image be resized?
@@ -199,11 +194,15 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
+        if isinstance(img_entry, bytes):
+            img = read_image_from_bytes_obj(img_entry, num_channels)
+        else:
+            img = img_entry
 
-        img = read_image(img_entry, num_channels)
-        if img is None:
-            logger.info(f"{img_entry} cannot be read")
+        if not isinstance(img, torch.Tensor):
+            logging.info(f"Image with value {img} cannot be read")
             return None
+
         img_num_channels = num_channels_in_image(img)
         # Convert to grayscale if needed.
         if num_channels == 1 and img_num_channels != 1:
@@ -225,7 +224,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
 
             if img_num_channels != num_channels:
-                logger.warning(
+                logging.warning(
                     "Image has {} channels, where as {} "
                     "channels are expected. Dropping/adding channels "
                     "with 0s as appropriate".format(img_num_channels, num_channels)
@@ -273,7 +272,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
 
-        logger.debug(f"Inferring height: {height} and width: {width}")
+        logging.debug(f"Inferring height: {height} and width: {width}")
         return height, width
 
     @staticmethod
@@ -316,9 +315,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _finalize_preprocessing_parameters(
         preprocessing_parameters: dict,
-        first_img_entry: Optional[Union[str, torch.Tensor]],
-        src_path: str,
-        input_feature_col: np.array,
+        column: Series,
     ) -> Tuple:
         """Helper method to determine the height, width and number of channels for preprocessing the image data.
 
@@ -327,30 +324,25 @@ class ImageFeatureMixin(BaseFeatureMixin):
         expected be of the same size with the same number of channels
         """
 
-        explicit_height_width = (
-            HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        ) and first_img_entry is not None
-        explicit_num_channels = (
-            NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
-        ) and first_img_entry is not None
+        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
-        if explicit_num_channels:
-            first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
-        else:
-            first_image = read_image(first_img_entry)
-
-        inferred_sample = None
+        sample = []
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
-            sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = []
-            for img in input_feature_col.head(sample_size):
-                try:
-                    sample.append(read_image(get_image_from_path(src_path, img, ret_bytes=True)))
-                except requests.exceptions.HTTPError:
-                    pass
-            inferred_sample = [img for img in sample if img is not None]
-            if not inferred_sample:
-                raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+            sample_size = min(len(column), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+        else:
+            sample_size = 1  # Take first image
+
+        for image_entry in column.head(sample_size):
+            if isinstance(image_entry, str):
+                image = read_image_from_path(image_entry)
+            else:
+                image = image_entry
+
+            if isinstance(image, torch.Tensor):
+                sample.append(image)
+        if len(sample) == 0:
+            raise ValueError("No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
         if explicit_height_width:
@@ -368,12 +360,10 @@ class ImageFeatureMixin(BaseFeatureMixin):
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
                 height, width = ImageFeatureMixin._infer_image_size(
-                    inferred_sample,
+                    sample,
                     max_height=preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT],
                     max_width=preprocessing_parameters[INFER_IMAGE_MAX_WIDTH],
                 )
-            elif first_image is not None:
-                height, width = first_image.shape[0], first_image.shape[1]
             else:
                 raise ValueError(
                     "Explicit image width/height are not set, infer_image_dimensions is false, "
@@ -388,9 +378,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             user_specified_num_channels = False
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 user_specified_num_channels = True
-                num_channels = ImageFeatureMixin._infer_number_of_channels(inferred_sample)
-            elif first_image is not None:
-                num_channels = num_channels_in_image(first_image)
+                num_channels = ImageFeatureMixin._infer_number_of_channels(sample)
+            elif len(sample) > 0:
+                num_channels = num_channels_in_image(sample[0])
             else:
                 raise ValueError(
                     "Explicit image num channels is not set, infer_image_dimensions is false, "
@@ -398,45 +388,24 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
 
         assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
-
-        return (should_resize, width, height, num_channels, user_specified_num_channels, first_image)
+        return (should_resize, width, height, num_channels, user_specified_num_channels)
 
     @staticmethod
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
-        set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
+        set_default_value(feature_config[PREPROCESSING], "in_memory", preprocessing_parameters["in_memory"])
 
-        in_memory = preprocessing_parameters["in_memory"]
-        if PREPROCESSING in feature_config and "in_memory" in feature_config[PREPROCESSING]:
-            in_memory = feature_config[PREPROCESSING]["in_memory"]
-
-        num_processes = preprocessing_parameters["num_processes"]
-        if PREPROCESSING in feature_config and "num_processes" in feature_config[PREPROCESSING]:
-            num_processes = feature_config[PREPROCESSING]["num_processes"]
-
-        num_images = len(input_df[feature_config[COLUMN]])
-        if num_images == 0:
-            raise ValueError("There are no images in the dataset provided.")
-
-        first_img_entry = next(iter(input_df[feature_config[COLUMN]]))
-        logger.debug(f"Detected image feature type is {type(first_img_entry)}")
-
-        if not isinstance(first_img_entry, str) and not isinstance(first_img_entry, torch.Tensor):
-            raise ValueError(
-                "Invalid image feature data type.  Detected type is {}, "
-                "expect either string for file path or numpy array.".format(type(first_img_entry))
-            )
+        name = feature_config[NAME]
+        column = input_df[feature_config[COLUMN]]
 
         src_path = None
         if SRC in metadata:
-            if isinstance(first_img_entry, str) and not has_remote_protocol(first_img_entry):
-                src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-
-        try:
-            first_img_entry = get_image_from_path(src_path, first_img_entry, ret_bytes=True)
-        except requests.exceptions.HTTPError:
-            first_img_entry = None
+            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
+        abs_path_column = backend.df_engine.map_objects(
+            column,
+            lambda row: get_abs_path(src_path, row) if isinstance(row, str) and not has_remote_protocol(row) else row,
+        )
 
         (
             should_resize,
@@ -444,17 +413,14 @@ class ImageFeatureMixin(BaseFeatureMixin):
             height,
             num_channels,
             user_specified_num_channels,
-            first_image,
-        ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_img_entry, src_path, input_df[feature_config[COLUMN]]
-        )
+        ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
 
-        metadata[feature_config[NAME]][PREPROCESSING]["height"] = height
-        metadata[feature_config[NAME]][PREPROCESSING]["width"] = width
-        metadata[feature_config[NAME]][PREPROCESSING]["num_channels"] = num_channels
+        metadata[name][PREPROCESSING]["height"] = height
+        metadata[name][PREPROCESSING]["width"] = width
+        metadata[name][PREPROCESSING]["num_channels"] = num_channels
 
-        read_image_and_resize = partial(
-            ImageFeatureMixin._read_image_and_resize,
+        read_image_if_bytes_obj_and_resize = partial(
+            ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
             img_width=width,
             img_height=height,
             should_resize=should_resize,
@@ -470,46 +436,15 @@ class ImageFeatureMixin(BaseFeatureMixin):
         # image features from the hdf5 cache.
         backend.check_lazy_load_supported(feature_config)
 
+        in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
-            # Number of processes to run in parallel for preprocessing
-            metadata[feature_config[NAME]][PREPROCESSING]["num_processes"] = num_processes
-            metadata[feature_config[NAME]]["reshape"] = (num_channels, height, width)
+            metadata[name]["reshape"] = (num_channels, height, width)
 
-            # Split the dataset into pools only if we have an explicit request to use
-            # multiple processes. In case we have multiple input images use the
-            # standard code anyway.
-            if backend.supports_multiprocessing and (num_processes > 1 or num_images > 1):
-                all_img_entries = [
-                    get_abs_path(src_path, img_entry) if isinstance(img_entry, str) else img_entry
-                    for img_entry in input_df[feature_config[COLUMN]]
-                ]
-
-                with Pool(num_processes) as pool:
-                    logger.debug(f"Using {num_processes} processes for preprocessing images")
-                    res = pool.map(read_image_and_resize, all_img_entries)
-                    proc_df[feature_config[PROC_COLUMN]] = [x if x is not None else default_image for x in res]
-            else:
-                # If we're not running multiple processes and we are only processing one
-                # image just use this faster shortcut, bypassing multiprocessing.Pool.map
-                logger.debug("No process pool initialized. Using internal process for preprocessing images")
-
-                # helper function for handling single image
-                def _get_processed_image(img_store):
-                    if isinstance(img_store, str):
-                        res_single = read_image_and_resize(get_abs_path(src_path, img_store))
-                    else:
-                        res_single = read_image_and_resize(img_store)
-                    return res_single if res_single is not None else default_image
-
-                proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
-                    input_df[feature_config[COLUMN]], _get_processed_image
-                )
+            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
+            proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
+            proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
-
-            all_img_entries = [
-                get_abs_path(src_path, img_entry) if isinstance(img_entry, str) else img_entry
-                for img_entry in input_df[feature_config[COLUMN]]
-            ]
+            num_images = len(abs_path_column)
 
             data_fp = backend.cache.get_cache_path(wrap(metadata.get(SRC)), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
@@ -517,8 +452,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 image_dataset = h5_file.create_dataset(
                     feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
                 )
-                for i, img_entry in enumerate(all_img_entries):
-                    res = read_image_and_resize(img_entry)
+                for i, img_entry in enumerate(abs_path_column):
+                    res = read_image_if_bytes_obj_and_resize(img_entry)
                     image_dataset[i, :height, :width, :] = res if res is not None else default_image
                 h5_file.flush()
 
