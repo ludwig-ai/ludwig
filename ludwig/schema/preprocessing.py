@@ -38,6 +38,12 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
+    pretrained_model_name_or_path: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded",
+    )
+
     tokenizer: Optional[str] = schema_utils.String(
         default='space_punct',
         allow_none=False,
@@ -191,7 +197,7 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="Whether the string has to be lowercased before being handled by the tokenizer.",
     )
 
-    most_common_label: Optional[int] = schema_utils.PositiveInteger(
+    most_common: Optional[int] = schema_utils.PositiveInteger(
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. if the data contains more than this "
@@ -230,7 +236,7 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
-    most_common_label: Optional[int] = schema_utils.PositiveInteger(
+    most_common: Optional[int] = schema_utils.PositiveInteger(
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
@@ -313,6 +319,13 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 @register_preprocessor("image")
 class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
+    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        default="backfill",
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in an image column",
+    )
+
     height: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
@@ -378,7 +391,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The sample size used for inferring dimensions of images in infer_image_dimensions.",
     )
 
-    scaling_method: Optional[str] = schema_utils.StringOptions(
+    scaling: Optional[str] = schema_utils.StringOptions(
         ["pixel_normalization", "pixel_standardization"],
         default="pixel_normalization",
         allow_none=False,
@@ -497,39 +510,16 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
     )
 
-    vocab_file: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
-                    "first string until \t or \n is considered a word.",
-    )
-
-    max_sequence_length: Optional[int] = schema_utils.PositiveInteger(
+    timeseries_length_limit: Optional[int] = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
-        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-                    "truncated, while texts that are shorter will be padded.",
+        description="Defines the maximum length of the timeseries. All timeseries longer than this limit are cut off.",
     )
 
-    most_common: Optional[int] = schema_utils.PositiveInteger(
-        default=20000,
+    padding_value: Optional[float] = schema_utils.NonNegativeFloat(
+        default=0.0,
         allow_none=False,
-        description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
-                    "amount, the most infrequent symbols will be treated as unknown.",
-    )
-
-    padding_symbol: Optional[str] = schema_utils.String(
-        default="<PAD>",
-        allow_none=False,
-        description="The string used as a padding symbol. This special token is mapped to the integer ID 0 in the "
-                    "vocabulary.",
-    )
-
-    unknown_symbol: Optional[str] = schema_utils.String(
-        default="<UNK>",
-        allow_none=False,
-        description="The string used as an unknown placeholder. This special token is mapped to the integer ID 1 in "
-                    "the vocabulary.",
+        description="Float value that is used for padding.",
     )
 
     padding: Optional[str] = schema_utils.StringOptions(
@@ -537,11 +527,6 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="right",
         allow_none=False,
         description="the direction of the padding. right and left are available options.",
-    )
-
-    lowercase: Optional[bool] = schema_utils.Boolean(
-        default=False,
-        description="If true, converts the string to lowercase before tokenizing.",
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
@@ -555,6 +540,12 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="",
         allow_none=False,
         description="The value to replace the missing values with in case the missing_value_strategy is fill_value",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
 
@@ -589,7 +580,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
-    most_common_label: Optional[int] = schema_utils.PositiveInteger(
+    most_common: Optional[int] = schema_utils.PositiveInteger(
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "

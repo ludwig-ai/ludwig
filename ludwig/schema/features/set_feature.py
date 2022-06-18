@@ -13,7 +13,7 @@ class SetInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='category'
+        feature_type='set'
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
