@@ -19,11 +19,11 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
 from ludwig.utils.data_utils import split_dataset_ttv
-from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame, Series
 
@@ -103,18 +103,20 @@ class StratifySplitter(Splitter):
             # TODO dask: find a way to support this method
             raise ValueError('Split type "stratify" is not supported with a partitioned dataset.')
 
-        set_random_seed(random_seed)
-        split = np.zeros(len(df))
-        for val in df[self.column].unique():
-            idx_list = df.index[df[self.column] == val].tolist()
-            array_lib = backend.df_engine.array_lib
-            val_list = array_lib.random.choice(
-                3,
-                len(idx_list),
-                p=self.probabilities,
-            ).astype(np.int8)
-            split[idx_list] = val_list
-        return _split_on_series(df, split)
+        frac_train, frac_val, frac_test = self.probabilities
+
+        # Dataframe of just the column on which to stratify
+        y = df[[self.column]]
+        df_train, df_temp, _, y_temp = train_test_split(
+            df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
+        )
+        # Split the temp dataframe into val and test dataframes.
+        relative_frac_test = frac_test / (frac_val + frac_test)
+        df_val, df_test, _, _ = train_test_split(
+            df_temp, y_temp, stratify=y_temp, test_size=relative_frac_test, random_state=random_seed
+        )
+
+        return df_train, df_val, df_test
 
     def validate(self, config: Dict[str, Any]):
         features = config["input_features"] + config["output_features"]
