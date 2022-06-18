@@ -136,7 +136,7 @@ def test_stratify_split():
 
     backend = Mock()
     backend.df_engine = PandasEngine()
-    splits = splitter.split(df, backend)
+    splits = splitter.split(df, backend, random_seed=42)
     assert len(splits) == 3
 
     ratios = [60, 20, 20]
@@ -145,6 +145,15 @@ def test_stratify_split():
             actual = np.sum(split["category"] == idx)
             expected = int(r * p)
             assert np.isclose(actual, expected, atol=1)
+
+    # Test determinism
+    splits2 = splitter.split(df, backend, random_seed=7)
+    for s1, s2 in zip(splits, splits2):
+        assert not s1.equals(s2)
+
+    splits3 = splitter.split(df, backend, random_seed=42)
+    for s1, s3 in zip(splits, splits3):
+        assert s1.equals(s3)
 
 
 @pytest.mark.parametrize(
