@@ -88,10 +88,10 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 # Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
 def ray_resource_allocation_function(
-        trial_runner: "trial_runner.TrialRunner",  # noqa
-        trial: "Trial",  # noqa
-        result: Dict[str, Any],
-        scheduler: "ResourceChangingScheduler",
+    trial_runner: "trial_runner.TrialRunner",  # noqa
+    trial: "Trial",  # noqa
+    result: Dict[str, Any],
+    scheduler: "ResourceChangingScheduler",
 ):
     """Determine resources to allocate to running trials."""
     pgf = DistributeResources(trial_runner, trial, result, scheduler)
@@ -110,21 +110,21 @@ def ray_resource_allocation_function(
 
 class RayTuneExecutor:
     def __init__(
-            self,
-            parameters: dict,
-            output_feature: str,
-            metric: str,
-            goal: str,
-            split: str,
-            search_alg: Optional[Dict] = None,
-            cpu_resources_per_trial: int = None,
-            gpu_resources_per_trial: int = None,
-            kubernetes_namespace: str = None,
-            time_budget_s: Union[int, float, datetime.timedelta] = None,
-            max_concurrent_trials: Optional[int] = None,
-            num_samples: int = 1,
-            scheduler: Optional[Dict] = None,
-            **kwargs,
+        self,
+        parameters: dict,
+        output_feature: str,
+        metric: str,
+        goal: str,
+        split: str,
+        search_alg: Optional[Dict] = None,
+        cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
+        num_samples: int = 1,
+        scheduler: Optional[Dict] = None,
+        **kwargs,
     ) -> None:
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
