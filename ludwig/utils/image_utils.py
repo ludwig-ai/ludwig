@@ -13,22 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import functools
 import logging
-import os
-import sys
 from collections.abc import Iterable
 from io import BytesIO
-from typing import BinaryIO, List, Optional, TextIO, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
-from torchvision.io import decode_image
+from torchvision.io import decode_image, ImageReadMode
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import is_http, open_file, path_exists, upgrade_http
+from ludwig.utils.fs_utils import get_bytes_obj_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -43,52 +40,17 @@ def get_average_image(image_lst: List[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0))
 
 
-@functools.lru_cache(maxsize=32)
-def get_image_from_http_bytes(img_entry) -> BytesIO:
-    import requests
-
-    data = requests.get(img_entry, stream=True)
-    if data.status_code == 404:
-        upgraded = upgrade_http(img_entry)
-        if upgraded:
-            logger.info(f"reading image url {img_entry} failed. upgrading to https and retrying")
-            return get_image_from_http_bytes(upgraded)
-        else:
-            raise requests.exceptions.HTTPError(f"reading image url {img_entry} failed and cannot be upgraded to https")
-    return BytesIO(data.raw.read())
-
-
-def get_image_from_path(
-    src_path: Union[str, torch.Tensor], img_entry: Union[str, bytes], ret_bytes: bool = False
-) -> Union[BytesIO, BinaryIO, TextIO, bytes, str]:
-    if not isinstance(img_entry, str):
-        return img_entry
-    if is_http(img_entry):
-        if ret_bytes:
-            # Returns BytesIO.
-            return get_image_from_http_bytes(img_entry)
-        return img_entry
-    if src_path or os.path.isabs(img_entry):
-        return get_abs_path(src_path, img_entry)
-    if path_exists(img_entry):
-        with open_file(img_entry, "rb") as f:
-            if ret_bytes:
-                return f.read()
-            return f
-    else:
-        return bytes(img_entry, "utf-8")
-
-
 def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
     if not isinstance(img_entry, str):
         return False
     try:
         import imghdr
 
-        img = get_image_from_path(src_path, img_entry, True)
-        if isinstance(img, bytes):
-            return imghdr.what(None, img) is not None
-        return imghdr.what(img) is not None
+        path = get_abs_path(src_path, img_entry)
+        bytes_obj = get_bytes_obj_from_path(path)
+        if isinstance(bytes_obj, bytes):
+            return imghdr.what(None, bytes_obj) is not None
+        return imghdr.what(bytes_obj) is not None
     except Exception as e:
         logger.warning(f"While assessing potential image in is_image() for column {column}, encountered exception: {e}")
         return False
@@ -104,62 +66,45 @@ def is_image_score(src_path, img_entry, column: str):
     return 0
 
 
-@functools.lru_cache(maxsize=32)
-def read_image(img: Union[str, bytes, BytesIO, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
-    """Returns a tensor with CHW format.
+def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
+    """Returns the torchvision.io.ImageReadMode corresponding to the number of channels.
 
-    If num_channels is not provided, the image is read in unchanged format. Returns None if the image could not be read.
+    If num_channels is not recognized, returns ImageReadMode.UNCHANGED.
     """
-    if isinstance(img, torch.Tensor):
-        return img
-    if isinstance(img, str):
-        return read_image_from_str(img, num_channels)
-    if isinstance(img, bytes):
-        with BytesIO(img) as buffer:
+    mode = ImageReadMode.UNCHANGED
+    if num_channels == 1:
+        mode = ImageReadMode.GRAY
+    elif num_channels == 2:
+        mode = ImageReadMode.GRAY_ALPHA
+    elif num_channels == 3:
+        mode = ImageReadMode.RGB
+    elif num_channels == 4:
+        mode = ImageReadMode.RGB_ALPHA
+    return mode
+
+
+def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optional[torch.Tensor]:
+    """Reads image from path.
+
+    Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
+    """
+    bytes_obj = get_bytes_obj_from_path(path)
+    return read_image_from_bytes_obj(bytes_obj, num_channels)
+
+
+def read_image_from_bytes_obj(
+    bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
+) -> Optional[torch.Tensor]:
+    mode = get_image_read_mode_from_num_channels(num_channels)
+
+    try:
+        with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
-            image_tensor = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
+            image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8), mode=mode)
             del buffer_view
-            return image_tensor
-    if isinstance(img, BytesIO):
-        buffer_view = img.getbuffer()
-        try:
-            image_tensor = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
-            del buffer_view
-            return image_tensor
-        except RuntimeError as e:
-            logger.warning(f"Encountered torchvision error while reading {img}: {e}")
-    logger.warning(f"Could not read image {img}, unsupported type {type(img)}")
-
-
-@functools.lru_cache(maxsize=32)
-def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.Tensor:
-    try:
-        from torchvision.io import ImageReadMode, read_image
-    except ImportError:
-        logger.error(
-            " torchvision is not installed. "
-            "In order to install all image feature dependencies run "
-            "pip install ludwig[image]"
-        )
-        sys.exit(-1)
-
-    try:
-        if num_channels == 1:
-            return read_image(img, mode=ImageReadMode.GRAY)
-        elif num_channels == 2:
-            return read_image(img, mode=ImageReadMode.GRAY_ALPHA)
-        elif num_channels == 3:
-            return read_image(img, mode=ImageReadMode.RGB)
-        elif num_channels == 4:
-            return read_image(img, mode=ImageReadMode.RGB_ALPHA)
-        else:
-            return read_image(img)
+            return image
     except Exception as e:
-        upgraded = upgrade_http(img)
-        if upgraded:
-            logger.info(f"reading image url {img} failed due to {e}. upgrading to https and retrying")
-            return read_image_from_str(upgraded, num_channels)
-        logger.info(f"reading image url {img} failed due to {e}")
+        logger.warning("Failed to read image from bytes object. Original exception: " + str(e))
         return None
 
 

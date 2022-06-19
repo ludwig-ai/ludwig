@@ -97,7 +97,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        return column
+        return column.astype(str)
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters, backend):
@@ -134,7 +134,6 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
         (
             idx2str,
@@ -191,7 +190,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = TextFeatureMixin.feature_data(
-            input_df[feature_config[COLUMN]].astype(str),
+            input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
             preprocessing_parameters,
             backend,

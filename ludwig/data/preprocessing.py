@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -99,8 +99,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers, set_random_seed
-from ludwig.utils.type_utils import Column
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)
 
@@ -1092,14 +1091,32 @@ def build_dataset(
             feature_configs.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
+    dataset_cols = {}
+    for feature_config in feature_configs:
+        dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
+
+    logger.debug("build preprocessing parameters")
+    feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
+        dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
+    )
+
+    # Happens after preprocessing parameters are built so we can use precomputed fill values.
+    logger.debug("handle missing values")
+    for feature_config in feature_configs:
+        preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
+        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+
+    # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
-    dataset_cols = cast_columns(dataset_df, feature_configs, backend)
+    cast_columns(dataset_cols, feature_configs, backend)
 
     for callback in callbacks or []:
         callback.on_build_metadata_start(dataset_df, mode)
 
     logger.debug("build metadata")
-    metadata = build_metadata(metadata, dataset_cols, feature_configs, global_preprocessing_parameters, backend)
+    metadata = build_metadata(
+        metadata, feature_name_to_preprocessing_parameters, dataset_cols, feature_configs, backend
+    )
 
     for callback in callbacks or []:
         callback.on_build_metadata_end(dataset_df, mode)
@@ -1156,23 +1173,20 @@ def build_dataset(
     return dataset, metadata
 
 
-def cast_columns(dataset_df, features, backend) -> Dict[str, DataFrame]:
-    """Copies each column of the dataset to a dataframe, with potential type casting."""
-    dataset_cols = {}
+def cast_columns(dataset_cols, features, backend) -> None:
+    """Casts columns based on their feature type."""
     for feature in features:
         # todo figure out if additional parameters are needed
         #  for the cast_column function
         try:
             dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
-                dataset_df[feature[COLUMN]], backend
+                dataset_cols[feature[COLUMN]], backend
             )
         except KeyError as e:
             raise KeyError(
                 f"Feature name {e} specified in the config was not found in dataset with columns: "
-                + f"{list(dataset_df.columns)}"
+                + f"{list(dataset_cols.keys())}"
             )
-
-    return dataset_cols
 
 
 def merge_preprocessing(
@@ -1184,15 +1198,23 @@ def merge_preprocessing(
     return merge_dict(global_preprocessing_parameters[feature_config[TYPE]], feature_config[PREPROCESSING])
 
 
-def build_metadata(
-    metadata: Dict[str, Any],
-    dataset_cols: Dict[str, Column],
+def build_preprocessing_parameters(
+    dataset_cols: Dict[str, Series],
     feature_configs: List[Dict[str, Any]],
     global_preprocessing_parameters: Dict[str, Any],
     backend: Backend,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    if metadata is None:
+        metadata = {}
+
+    feature_name_to_preprocessing_parameters = {}
     for feature_config in feature_configs:
-        if feature_config[NAME] in metadata:
+        feature_name = feature_config[NAME]
+
+        # if metadata already exists, we can use it to get preprocessing parameters
+        if feature_name in metadata:
+            feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
             continue
 
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
@@ -1212,17 +1234,31 @@ def build_metadata(
         if fill_value is not None:
             preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
 
-        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+        feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
+
+    return feature_name_to_preprocessing_parameters
+
+
+def build_metadata(
+    metadata: Dict[str, Any],
+    feature_name_to_preprocessing_parameters: Dict[str, Any],
+    dataset_cols: Dict[str, Series],
+    feature_configs: List[Dict[str, Any]],
+    backend: Backend,
+) -> Dict[str, Any]:
+    for feature_config in feature_configs:
+        feature_name = feature_config[NAME]
+        if feature_name in metadata:
+            continue
+
+        preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_name]
 
         column = dataset_cols[feature_config[COLUMN]]
-        if column.dtype == object:
-            column = column.astype(str)
-
-        metadata[feature_config[NAME]] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
+        metadata[feature_name] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
             column, preprocessing_parameters, backend
         )
 
-        metadata[feature_config[NAME]][PREPROCESSING] = preprocessing_parameters
+        metadata[feature_name][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
@@ -1250,7 +1286,6 @@ def build_data(
     proc_cols = {}
     for feature_config in feature_configs:
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
-        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
             input_cols,
@@ -1312,6 +1347,11 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
+    """Precomputes the fill value for a feature.
+
+    NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
+    NOTE: this is called before columns are cast. Modifications here must handle dtype conversion gracefully.
+    """
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters["fill_value"]
@@ -1323,7 +1363,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
                 f"Filling missing values with mean is supported "
                 f"only for number types, not for type {feature[TYPE]}.",
             )
-        return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
+        return backend.df_engine.compute(dataset_cols[feature[COLUMN]].astype(float).mean())
     elif missing_value_strategy == FILL_WITH_FALSE:
         distinct_values = backend.df_engine.compute(
             dataset_cols[feature[COLUMN]].drop_duplicates().dropna()
@@ -1381,7 +1421,7 @@ def get_split(
     random_seed=default_random_seed,
 ):
     if SPLIT in dataset_df and not force_split:
-        split = dataset_df[SPLIT]
+        split = dataset_df[SPLIT].astype(np.int8)
     else:
         set_random_seed(random_seed)
         if stratify is None or stratify not in dataset_df:
