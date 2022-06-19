@@ -34,7 +34,7 @@ try:
     import ray
     from ray import tune
     from ray.tune import register_trainable, Stopper
-    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources
+    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
 
