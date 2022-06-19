@@ -12,7 +12,7 @@ import uuid
 from distutils.version import LooseVersion
 from inspect import signature
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
@@ -34,6 +34,7 @@ try:
     import ray
     from ray import tune
     from ray.tune import register_trainable, Stopper
+    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
 
@@ -85,14 +86,36 @@ def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
 
 
+# Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
+def ray_resource_allocation_function(
+        trial_runner: "trial_runner.TrialRunner",  # noqa
+        trial: "Trial",  # noqa
+        result: Dict[str, Any],
+        scheduler: "ResourceChangingScheduler",
+):
+    """Determine resources to allocate to running trials."""
+    pgf = DistributeResources(trial_runner, trial, result, scheduler)
+    # restore original base trial resources
+
+    # create bundles
+    if scheduler.base_trial_resources.required_resources.get("GPU", 0):
+        bundles = [{"CPU": 1, "GPU": 1}] * int(pgf.required_resources["GPU"])
+    else:
+        bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"] - 0.001))
+    # we can't set Trial actor's CPUs to 0 so we just go very low
+    bundles = [{"CPU": 0.001}] + bundles
+    pgf = PlacementGroupFactory(bundles)
+    return pgf
+
+
 class RayTuneExecutor:
     def __init__(
-        self,
-        parameters: dict,
-        output_feature: str,
-        metric: str,
-        goal: str,
-        split: str,
+            self,
+            parameters: dict,
+            output_feature: str,
+            metric: str,
+            goal: str,
+            split: str,
         search_alg: Optional[Dict] = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
