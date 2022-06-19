@@ -157,9 +157,9 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
 def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
     split_params = {}
 
-    force_split = preprocessing.get("force_split")
-    split_probabilities = preprocessing.get("split_probabilities")
-    stratify = preprocessing.get("stratify")
+    force_split = preprocessing.pop("force_split", None)
+    split_probabilities = preprocessing.pop("split_probabilities", None)
+    stratify = preprocessing.pop("stratify", None)
 
     if split_probabilities is not None:
         split_params["probabilities"] = split_probabilities
@@ -168,7 +168,6 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
             "will be flagged as error in v0.7",
             DeprecationWarning,
         )
-        del preprocessing["split_probabilities"]
 
     if stratify is not None:
         split_params["type"] = "stratify"
@@ -179,7 +178,6 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
             "will be flagged as error in v0.7",
             DeprecationWarning,
         )
-        del preprocessing["stratify"]
 
     if force_split is not None:
         warnings.warn(
@@ -189,9 +187,7 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
         )
 
         if "type" not in split_params:
-            split_params["type"] = "random"
-
-        del preprocessing["force_split"]
+            split_params["type"] = "random" if force_split else "fixed"
 
     if split_params:
         preprocessing["split"] = split_params

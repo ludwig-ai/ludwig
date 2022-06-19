@@ -91,6 +91,11 @@ class DaskEngine(DataFrameEngine):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=("data", "object")).compute()[0]
 
     def split(self, df, probabilities):
+        # Split the DataFrame proprotionately along partitions. This is an inexact solution designed
+        # to speed up the split process, as splitting within partitions would be significantly
+        # more expensive.
+        # TODO(travis): revisit in the future to make this more precise
+
         # First ensure that every split receives at least one partition.
         # If not, we need to increase the number of partitions to satisfy this constraint.
         min_prob = min(probabilities)
