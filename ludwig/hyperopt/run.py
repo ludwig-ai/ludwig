@@ -14,7 +14,6 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
 
-# from ludwig.hyperopt.sampling import get_build_hyperopt_sampler  TODO: Remove
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
@@ -251,8 +250,6 @@ def hyperopt(
                     metric, output_feature, output_feature_type, feature_class.metric_functions.keys()
                 )
             )
-
-    # hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)  todo: remove
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor

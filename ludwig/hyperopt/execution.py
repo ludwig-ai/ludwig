@@ -20,7 +20,6 @@ from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import RayTuneResults, TrialResults
 
-# from ludwig.hyperopt.sampling import RayTuneSampler   TODO: Remove
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
@@ -87,131 +86,9 @@ def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
 
 
-# todo: hyperopt_sampler: Union[dict, RayTuneSampler],
-# class HyperoptExecutor(ABC):
-#     def __init__(self, output_feature: str, metric: str, split: str) -> None:
-#         # self.hyperopt_sampler = hyperopt_sampler  # todo: remove
-#         self.output_feature = output_feature
-#         self.metric = metric
-#         self.split = split
-#
-#     def _has_metric(self, stats, split):
-#         if not stats:
-#             return False
-#
-#         if split is not None:
-#             if split not in stats:
-#                 return False
-#             stats = stats[split]
-#
-#         if self.output_feature not in stats:
-#             return False
-#         stats = stats[self.output_feature]
-#
-#         if self.metric not in stats:
-#             return False
-#         stats = stats[self.metric]
-#         return len(stats) > 0
-#
-#     def _has_eval_metric(self, stats):
-#         if stats is None:
-#             return False
-#
-#         if self.output_feature not in stats:
-#             return False
-#         stats = stats[self.output_feature]
-#
-#         for metric_part in self.metric.split("."):
-#             if not isinstance(stats, dict) or metric_part not in stats:
-#                 return False
-#             stats = stats[metric_part]
-#         return isinstance(stats, float)
-#
-#     def get_metric_score(self, train_stats) -> float:
-#         if self._has_metric(train_stats, VALIDATION):
-#             logger.info("Returning metric score from training (validation) statistics")
-#             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
-#         elif self._has_metric(train_stats, TRAINING):
-#             logger.info("Returning metric score from training split statistics, " "as no validation was given")
-#             return self.get_metric_score_from_train_stats(train_stats, TRAINING)
-#         else:
-#             raise RuntimeError("Unable to obtain metric score from missing training (validation) statistics")
-#
-#     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
-#         stats = eval_stats[self.output_feature]
-#         for metric_part in self.metric.split("."):
-#             if isinstance(stats, dict):
-#                 if metric_part in stats:
-#                     stats = stats[metric_part]
-#                 else:
-#                     raise ValueError(f"Evaluation statistics do not contain the metric {self.metric}")
-#             else:
-#                 raise ValueError(f"Evaluation statistics do not contain the metric {self.metric}")
-#
-#         if not isinstance(stats, float):
-#             raise ValueError(f"The metric {self.metric} in evaluation statistics is not a numerical value: {stats}")
-#         return stats
-#
-#     def get_metric_score_from_train_stats(self, train_stats, select_split=None) -> float:
-#         select_split = select_split or VALIDATION
-#
-#         # grab the results of the model with highest validation test performance
-#         train_valiset_stats = train_stats[select_split]
-#
-#         validation_field_result = train_valiset_stats[self.output_feature]
-#         best_function = get_best_function(self.metric)
-#
-#         # results of the model with highest validation test performance
-#         epoch_best_validation_metric, best_validation_metric = best_function(
-#             enumerate(validation_field_result[self.metric]), key=lambda pair: pair[1]
-#         )
-#
-#         return best_validation_metric
-#
-#     def sort_hyperopt_results(self, hyperopt_results):
-#         return sorted(
-#             hyperopt_results, key=lambda hp_res: hp_res.metric_score, reverse=self.hyperopt_sampler.goal == MAXIMIZE
-#         )
-#
-#     @abstractmethod
-#     def execute(
-#         self,
-#         config,
-#         dataset=None,
-#         training_set=None,
-#         validation_set=None,
-#         test_set=None,
-#         training_set_metadata=None,
-#         data_format=None,
-#         experiment_name="hyperopt",
-#         model_name="run",
-#         resume=None,
-#         skip_save_training_description=False,
-#         skip_save_training_statistics=False,
-#         skip_save_model=False,
-#         skip_save_progress=False,
-#         skip_save_log=False,
-#         skip_save_processed_input=True,
-#         skip_save_unprocessed_output=False,
-#         skip_save_predictions=False,
-#         skip_save_eval_stats=False,
-#         output_directory="results",
-#         gpus=None,
-#         gpu_memory_limit=None,
-#         allow_parallel_threads=True,
-#         callbacks=None,
-#         backend=None,
-#         random_seed=default_random_seed,
-#         debug=False,
-#         **kwargs,
-#     ) -> HyperoptResults:
-#         pass
-
-
 class RayTuneExecutor:
     def __init__(
         self,
-        # hyperopt_sampler,  # todo: remove
         parameters: dict,
         output_feature: str,
         metric: str,
@@ -229,13 +106,6 @@ class RayTuneExecutor:
     ) -> None:
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
-        # todo: remove
-        # if not isinstance(hyperopt_sampler, RayTuneSampler):
-        #     raise ValueError(
-        #         "Sampler {} is not compatible with RayTuneExecutor, "
-        #         "please use the RayTuneSampler".format(hyperopt_sampler)
-        #     )
-        # HyperoptExecutor.__init__(self, output_feature, metric, split)
         self.output_feature = output_feature
         self.metric = metric
         self.split = split

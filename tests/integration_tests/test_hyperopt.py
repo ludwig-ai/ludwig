@@ -25,7 +25,6 @@ from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 
-# rom ludwig.hyperopt.sampling import get_build_hyperopt_sampler  # TODO: REmove
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -165,7 +164,6 @@ def test_hyperopt_search_alg(
     executor = hyperopt_config["executor"]
     search_alg = hyperopt_config["search_alg"]
 
-    # hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)  # TODO: remove
     hyperopt_executor = get_build_hyperopt_executor(RAY)(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
@@ -224,8 +222,6 @@ def test_hyperopt_scheduler(
     goal = hyperopt_config["goal"]
     executor = hyperopt_config["executor"]
     search_alg = hyperopt_config["search_alg"]
-
-    # hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)  TODO: rmove
 
     # TODO: Determine if we still need this if-then-else construct
     if search_alg["type"] in {""}:
