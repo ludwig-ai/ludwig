@@ -93,6 +93,7 @@ def test_with_split(backend, csv_filename, tmpdir):
         "trainer": {
             "epochs": 2,
         },
+        "preprocessing": {"split": {"type": "fixed"}},
     }
 
     with init_backend(backend):

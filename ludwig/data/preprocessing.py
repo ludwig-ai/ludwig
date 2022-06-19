@@ -1134,7 +1134,14 @@ def build_dataset(
 
     # Get any additional columns needed for splitting downstream, otherwise they will not be
     # included in the preprocessed output.
-    splitter = get_splitter(**global_preprocessing_parameters.get("split", {}))
+    split_params = global_preprocessing_parameters.get(SPLIT, {})
+    if "type" not in split_params and SPLIT in dataset_df:
+        warnings.warn(
+            'Detected "split" column in the data, but using default split type '
+            '"random". Did you mean to set split type to "fixed"?'
+        )
+
+    splitter = get_splitter(**split_params)
     for col in splitter.required_columns:
         proc_cols[col] = dataset_df[col]
 

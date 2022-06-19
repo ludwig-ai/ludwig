@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import logging
-import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -25,7 +24,7 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
 from ludwig.utils.data_utils import split_dataset_ttv
 from ludwig.utils.registry import Registry
-from ludwig.utils.types import DataFrame, Series
+from ludwig.utils.types import DataFrame
 
 split_registry = Registry()
 default_random_seed = 42
@@ -83,7 +82,10 @@ class FixedSplitter(Splitter):
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
-        return _split_on_series(df, df[self.column])
+        df[self.column] = df[self.column].astype(np.int8)
+        dfs = split_dataset_ttv(df, self.column)
+        train, test, val = tuple(df.drop(columns=self.column) if df is not None else None for df in dfs)
+        return train, val, test
 
     @property
     def required_columns(self) -> List[str]:
@@ -208,21 +210,5 @@ def split_dataset(
     backend: Backend,
     random_seed: float = default_random_seed,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
-    split_params = global_preprocessing_parameters.get(SPLIT, {})
-    if "type" not in split_params and SPLIT in df:
-        warnings.warn(
-            'Detected "split" column in the data, but split type has not been set to "fixed". '
-            'Splitting on the "split" column without setting `preprocessing.split.type` to "fixed" '
-            'is deprecated and will be replaced by "random" splitting in v0.7',
-            DeprecationWarning,
-        )
-        split_params["type"] = "fixed"
-    splitter = get_splitter(**split_params)
+    splitter = get_splitter(**global_preprocessing_parameters.get(SPLIT, {}))
     return splitter.split(df, backend, random_seed)
-
-
-def _split_on_series(df: DataFrame, series: Series) -> Tuple[DataFrame, DataFrame, DataFrame]:
-    df[TMP_SPLIT_COL] = series
-    dfs = split_dataset_ttv(df, TMP_SPLIT_COL)
-    train, test, val = tuple(df.drop(columns=TMP_SPLIT_COL) if df is not None else None for df in dfs)
-    return train, val, test
