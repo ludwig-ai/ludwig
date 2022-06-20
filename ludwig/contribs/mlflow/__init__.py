@@ -9,7 +9,6 @@ from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils.checkpoint_utils import CHECKPOINTS_LOCK
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
 
@@ -175,8 +174,7 @@ def _log_mlflow_loop(q: queue.Queue):
             # if we're about to do it again
             continue
 
-        with CHECKPOINTS_LOCK:
-            _log_model(save_path)
+        _log_model(save_path)
 
 
 def _log_mlflow(log_metrics, steps, save_path, should_continue):

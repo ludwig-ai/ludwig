@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import os
 import shutil
 import tempfile
@@ -24,6 +25,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceLudwigModel
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -31,8 +33,10 @@ from tests.integration_tests.utils import (
     ENCODERS,
     generate_data,
     get_weights,
+    image_feature,
     run_api_experiment,
     sequence_feature,
+    text_feature,
 )
 
 
@@ -643,3 +647,30 @@ def test_api_save_torchscript(tmpdir):
 
     for col in output_df.columns:
         assert output_df[col].equals(output_df_expected[col])
+
+
+def test_saved_weights_in_checkpoint(tmpdir):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [text_feature(), image_feature(image_dest_folder)]
+    output_features = [category_feature(name="class")]
+
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+    }
+    model = LudwigModel(config)
+    _, _, output_dir = model.train(
+        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
+    )
+
+    config_save_path = os.path.join(output_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+    with open(config_save_path) as f:
+        saved_config = json.load(f)
+    saved_input_features = saved_config["input_features"]
+    for saved_input_feature in saved_input_features:
+        assert "saved_weights_in_checkpoint" in saved_input_feature
+        assert saved_input_feature["saved_weights_in_checkpoint"]
