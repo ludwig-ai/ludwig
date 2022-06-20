@@ -12,9 +12,6 @@ trainer:
   # early_stop: 300
   optimizer:
     type: adam
-  tune_batch_size:
-    type: bin_search
-    substitute_with_max: True
 
 hyperopt:
   # goal: maximize

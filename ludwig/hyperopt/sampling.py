@@ -23,14 +23,14 @@ from ludwig.utils.misc_utils import get_from_registry
 try:
     from ray import tune
     from ray.tune.schedulers.resource_changing_scheduler import (
-        evenly_distribute_cpus_gpus,
+        DistributeResources,
         PlacementGroupFactory,
         ResourceChangingScheduler,
     )
 
     _HAS_RAY_TUNE = True
 except ImportError:
-    evenly_distribute_cpus_gpus = None
+    logging.exception("ImportError (sampling.py) failed to import ray tune")
     _HAS_RAY_TUNE = False
 
 
@@ -41,7 +41,7 @@ def ray_resource_allocation_function(
     scheduler: "ResourceChangingScheduler",
 ):
     """Determine resources to allocate to running trials."""
-    pgf = evenly_distribute_cpus_gpus(trial_runner, trial, result, scheduler)
+    pgf = DistributeResources(trial_runner, trial, result, scheduler)
     # restore original base trial resources
 
     # create bundles

@@ -373,16 +373,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f'feature_type "{feature_type}" is not recognized.')
 
     @staticmethod
-    def map_abs_path_to_entries(column, src_path, backend):
-        def get_abs_path_if_entry_is_str(entry):
-            if not isinstance(entry, str) or has_remote_protocol(entry):
-                return entry
-            else:
-                return get_abs_path(src_path, entry)
-
-        return backend.df_engine.map_objects(column, get_abs_path_if_entry_is_str)
-
-    @staticmethod
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
@@ -413,7 +403,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if SRC in metadata:
             if isinstance(first_audio_entry, str) and not has_remote_protocol(first_audio_entry):
                 src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
-        abs_path_column = AudioFeatureMixin.map_abs_path_to_entries(column, src_path, backend)
+        abs_path_column = backend.df_engine.map_objects(
+            column, lambda row: get_abs_path(src_path, row) if isinstance(row, str) else row
+        )
 
         num_audio_utterances = len(input_df[feature_config[COLUMN]])
         padding_value = preprocessing_parameters["padding_value"]
