@@ -205,7 +205,7 @@ class HyperoptExecutor(ABC):
         backend=None,
         random_seed=default_random_seed,
         debug=False,
-        shared_params_dict=None,
+        shared_params_features_dict=None,
         **kwargs,
     ) -> HyperoptResults:
         pass
