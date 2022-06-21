@@ -408,16 +408,13 @@ def test_torchscript_e2e_h3(tmpdir, csv_filename):
         # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
         # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
         # vector_feature(), # Does not have a missing_value_strategy
-        # date_feature(),
+        # date_feature(),   # default fill with datetime.now() strategy is not scriptable
     ],
 )
 def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
-    input_features = [
-        audio_feature(audio_dest_folder),
-    ]
+    input_features = [feature]
     output_features = [
         binary_feature(),
     ]
