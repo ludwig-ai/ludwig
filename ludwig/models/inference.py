@@ -62,25 +62,36 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+    def preprocess(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
-            outputs = self.model(preproc_inputs)
+            return preproc_inputs
 
+    def predict(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        with torch.no_grad():
+            outputs = self.model(preproc_inputs)
             predictions: Dict[str, Dict[str, torch.Tensor]] = {}
             for module_dict_key, predict in self.predict_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 predictions[feature_name] = predict(outputs, feature_name)
+            return predictions
 
+    def postprocess(self, predictions: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
+        with torch.no_grad():
             postproc_outputs: Dict[str, Dict[str, Any]] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 postproc_outputs[feature_name] = postproc(predictions[feature_name])
-
             return postproc_outputs
+
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
+        preproc_inputs = self.preprocess(inputs)
+        predictions = self.predict(preproc_inputs)
+        postproc_outputs = self.postprocess(predictions)
+        return postproc_outputs
 
 
 class InferenceLudwigModel:

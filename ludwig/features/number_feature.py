@@ -183,7 +183,7 @@ class _NumberPreprocessing(torch.nn.Module):
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
         v = v.to(dtype=torch.float32)
-        torch.nan_to_num(v, nan=self.computed_fill_value)
+        v = torch.nan_to_num(v, nan=self.computed_fill_value)
         return self.numeric_transformer.transform_inference(v)
 
 

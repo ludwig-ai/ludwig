@@ -380,20 +380,62 @@ def test_torchscript_e2e_with_nans(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
         number_feature(),
+        binary_feature(),
+        category_feature(vocab_size=3),
+        bag_feature(vocab_size=3),
+        set_feature(vocab_size=3),
     ]
     output_features = [
         binary_feature(),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
 
-    _, outputs = get_ludwig_model_and_torchscript_model_outputs(tmpdir, config, backend, training_data_csv_path)
+    # Initialize Ludwig model
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=training_data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config,
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
 
-    print("outputs", outputs)
+    # Create graph inference model (Torchscript) from trained Ludwig model.
+    script_module = ludwig_model.to_torchscript()
+    # Ensure torchscript saving/loading does not affect final predictions.
+    script_module_path = os.path.join(tmpdir, "inference_module.pt")
+    torch.jit.save(script_module, script_module_path)
+    script_module = torch.jit.load(script_module_path)
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = {
+        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
+        for name, feature in ludwig_model.model.input_features.items()
+    }
+    preproc_inputs = script_module.preprocess(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        if feature_name not in preproc_inputs.keys():
+            continue
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
-def get_ludwig_model_and_torchscript_model_outputs(tmpdir, config, backend, training_data_csv_path):
+def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
@@ -423,14 +465,6 @@ def get_ludwig_model_and_torchscript_model_outputs(tmpdir, config, backend, trai
         for name, feature in ludwig_model.model.input_features.items()
     }
     outputs = script_module(inputs)
-
-    return preds_dict, outputs
-
-
-def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
-    preds_dict, outputs = get_ludwig_model_and_torchscript_model_outputs(
-        tmpdir, config, backend, training_data_csv_path
-    )
 
     # TODO: these are the only outputs we provide from Torchscript for now
     ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}
