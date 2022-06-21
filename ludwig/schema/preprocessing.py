@@ -7,6 +7,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
+from ludwig.utils import strings_utils
 
 preprocessing_registry = Registry()
 
@@ -98,7 +99,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
@@ -110,6 +111,12 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The value to replace the missing values with in case the missing_value_strategy is fill_value",
     )
 
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
+    )
+
 
 @dataclass
 @register_preprocessor("number")
@@ -117,7 +124,7 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number column",
@@ -127,6 +134,12 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=0.0,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.FloatRange(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
     normalization: Optional[str] = schema_utils.StringOptions(
@@ -143,7 +156,8 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_false", "fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row",
+         "fill_with_false"],
         default="fill_with_false",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary column",
@@ -159,6 +173,17 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         min=0,
         max=1,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[Union[str, int]] = schema_utils.IntegerOrStringOptionsField(
+        strings_utils.all_bool_strs(),
+        default=None,
+        default_numeric=None,
+        default_option=None,
+        allow_none=True,
+        min=0,
+        max=1,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
     fallback_true_label: Optional[str] = schema_utils.NumericOrStringOptionsField(
@@ -180,7 +205,7 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a category column",
@@ -190,6 +215,12 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="<UNK>",
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
     lowercase: Optional[bool] = schema_utils.Boolean(
@@ -219,7 +250,7 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a set column",
@@ -229,6 +260,12 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="<UNK>",
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
     lowercase: Optional[bool] = schema_utils.Boolean(
@@ -302,7 +339,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
@@ -314,13 +351,19 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The value to replace the missing values with in case the missing_value_strategy is fill_value",
     )
 
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
+    )
+
 
 @dataclass
 @register_preprocessor("image")
 class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="backfill",
         allow_none=False,
         description="What strategy to follow when there's a missing value in an image column",
@@ -424,7 +467,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="backfill",
         allow_none=False,
         description="What strategy to follow when there's a missing value in an audio column",
@@ -530,7 +573,7 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
@@ -563,7 +606,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a set column",
@@ -573,6 +616,12 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="<UNK>",
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
     lowercase: Optional[bool] = schema_utils.Boolean(
@@ -593,7 +642,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in an h3 column",
@@ -605,13 +654,19 @@ class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
+    )
+
 
 @dataclass
 @register_preprocessor("date")
 class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a date column",
@@ -621,6 +676,12 @@ class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="",
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
     datetime_format: Optional[str] = schema_utils.String(
@@ -642,7 +703,7 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     missing_value_strategy: Optional[str] = schema_utils.StringOptions(
-        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill"],
+        ["fill_with_const", "fill_with_mode", "fill_with_mean", "backfill", "bfill", "pad", "ffill", "drop_row"],
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a vector column",
@@ -653,6 +714,13 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
 

@@ -6,17 +6,6 @@ from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
 from marshmallow import Schema
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
-from ludwig.utils.registry import Registry
-
-encoder_registry = Registry()
-
-
-def register_encoder(name: str):
-    def wrap(encoder_config: BaseEncoderConfig):
-        encoder_registry[name] = encoder_config
-        return encoder_config
-
-    return wrap
 
 
 @dataclass
@@ -34,7 +23,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     "Name corresponding to an encoder."
 
 
-@register_encoder(name="sgd")
+@dataclass
 class DenseEncoder(Schema):
     """DenseEncoder is a dataclass that configures the parameters used for a dense encoder."""
 
@@ -98,16 +87,15 @@ class DenseEncoder(Schema):
 
     dropout: Optional[float] = schema_utils.FloatRange(
         default=0.0,
-        min_value=0.0,
-        max_value=1.0,
+        min=0.0,
+        max=1.0,
         description="Dropout rate.",
     )
 
 
-@register_encoder(name="passthrough")
+@dataclass
 class PassthroughEncoder(Schema):
 
     encoder_class: ClassVar[Encoder] = PassthroughEncoder
 
     type: str = "passthrough"
-        
