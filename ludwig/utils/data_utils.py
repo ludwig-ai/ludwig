@@ -40,7 +40,7 @@ from sklearn.model_selection import KFold
 
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
-from ludwig.utils.fs_utils import download_h5, open_file, upload_h5, has_remote_protocol
+from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.math_utils import cumsum
 from ludwig.utils.misc_utils import get_from_registry
 
