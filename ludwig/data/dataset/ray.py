@@ -174,7 +174,6 @@ class RayDatasetShard(Dataset):
     @lru_cache(1)
     def __len__(self):
         # TODO(travis): find way to avoid calling this, as it's expensive
-        # return next(self.dataset_iter).count()
         return self.dataset_shard_size
 
     @property
