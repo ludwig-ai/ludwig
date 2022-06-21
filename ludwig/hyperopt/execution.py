@@ -907,7 +907,9 @@ def substitute_parameters(config, parameters, shared_params_features_dict):
             parameters_dict,
             feature_type=input_feature[TYPE],
             shared_params_type=INPUT_FEATURES,
-            shared_params_features_dict=shared_params_features_dict[INPUT_FEATURES],
+            shared_params_features_dict=(
+                shared_params_features_dict[INPUT_FEATURES] if shared_params_features_dict else None
+            ),
         )
     for output_feature in config[OUTPUT_FEATURES]:
         set_values(
@@ -916,7 +918,9 @@ def substitute_parameters(config, parameters, shared_params_features_dict):
             parameters_dict,
             feature_type=output_feature[TYPE],
             shared_params_type=OUTPUT_FEATURES,
-            shared_params_features_dict=shared_params_features_dict[OUTPUT_FEATURES],
+            shared_params_features_dict=(
+                shared_params_features_dict[OUTPUT_FEATURES] if shared_params_features_dict else None
+            ),
         )
     set_values(config[COMBINER], COMBINER, parameters_dict)
     set_values(config[TRAINER], TRAINER, parameters_dict)
