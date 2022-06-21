@@ -376,7 +376,24 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
+def test_torchscript_e2e_with_nans(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        number_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    _, outputs = get_ludwig_model_and_torchscript_model_outputs(tmpdir, config, backend, training_data_csv_path)
+
+    print("outputs", outputs)
+
+
+def get_ludwig_model_and_torchscript_model_outputs(tmpdir, config, backend, training_data_csv_path):
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
@@ -406,6 +423,14 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
         for name, feature in ludwig_model.model.input_features.items()
     }
     outputs = script_module(inputs)
+
+    return preds_dict, outputs
+
+
+def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
+    preds_dict, outputs = get_ludwig_model_and_torchscript_model_outputs(
+        tmpdir, config, backend, training_data_csv_path
+    )
 
     # TODO: these are the only outputs we provide from Torchscript for now
     ts_outputs = {PREDICTIONS, PROBABILITIES, LOGITS}

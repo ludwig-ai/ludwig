@@ -154,12 +154,7 @@ def slow(test_case):
     return test_case
 
 
-def generate_data(
-    input_features,
-    output_features,
-    filename="test_csv.csv",
-    num_examples=25,
-):
+def generate_data(input_features, output_features, filename="test_csv.csv", num_examples=25, nan_percent=0.0):
     """Helper method to generate synthetic data based on input, output feature specs.
 
     :param num_examples: number of examples to generate
@@ -173,6 +168,7 @@ def generate_data(
     data = [next(df) for _ in range(num_examples + 1)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
+    add_nans_to_df_in_place(dataframe, nan_percent)
     dataframe.to_csv(filename, index=False)
 
     return filename
@@ -536,16 +532,25 @@ def run_api_experiment(input_features, output_features, data_csv):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
+def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
+    """Adds nans to a pandas dataframe in-place."""
+    if nan_percent < 0 or nan_percent > 1:
+        raise ValueError("nan_percent must be between 0 and 1")
+
+    num_rows = len(df)
+    num_nans_per_col = int(round(nan_percent * num_rows))
+    for col in df.columns:
+        col_idx = df.columns.get_loc(col)
+        for row_idx in random.sample(range(num_rows), num_nans_per_col):
+            df.iloc[row_idx, col_idx] = np.nan
+    return None
+
+
 def read_csv_with_nan(path, nan_percent=0.0):
     """Converts `nan_percent` of samples in each row of the CSV at `path` to NaNs."""
     df = pd.read_csv(path)
     if nan_percent > 0:
-        num_rows = len(df)
-        num_nans_per_col = int(round(nan_percent * num_rows))
-        for col in df.columns:
-            col_idx = df.columns.get_loc(col)
-            for row_idx in random.sample(range(num_rows), num_nans_per_col):
-                df.iloc[row_idx, col_idx] = np.nan
+        add_nans_to_df_in_place(df, nan_percent)
     return df
 
 

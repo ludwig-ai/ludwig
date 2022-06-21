@@ -54,7 +54,7 @@ class H3FeatureMixin(BaseFeatureMixin):
     @staticmethod
     def cast_column(column, backend):
         # todo: add cast to int64
-        return column
+        return column.astype(float).astype(int)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -72,8 +72,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         column = input_df[feature_config[COLUMN]]
-        if column.dtype == object:
-            column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
 
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
