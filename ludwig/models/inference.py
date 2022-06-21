@@ -70,7 +70,7 @@ class InferenceModule(nn.Module):
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
             return preproc_inputs
 
-    def predict(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def predict(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
         with torch.no_grad():
             outputs = self.model(preproc_inputs)
             predictions: Dict[str, Dict[str, torch.Tensor]] = {}
@@ -79,7 +79,7 @@ class InferenceModule(nn.Module):
                 predictions[feature_name] = predict(outputs, feature_name)
             return predictions
 
-    def postprocess(self, predictions: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
+    def postprocess(self, predictions: Dict[str, Dict[str, torch.Tensor]]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             postproc_outputs: Dict[str, Dict[str, Any]] = {}
             for module_dict_key, postproc in self.postproc_modules.items():

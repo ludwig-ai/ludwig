@@ -52,11 +52,14 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         self.padding = metadata["preprocessing"]["padding"]
         self.padding_value = metadata["preprocessing"]["padding_value"]
         self.max_timeseries_length = int(metadata["max_timeseries_length"])
+        self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
     def forward(self, v: TorchscriptPreprocessingInput):
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
+
+        v = [self.computed_fill_value if s == "nan" else s for s in v]
 
         sequences = self.tokenizer(v)
         # refines type of sequences from Any to List[List[str]]

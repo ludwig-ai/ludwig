@@ -376,14 +376,31 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-def test_torchscript_preproc_with_nans(tmpdir, csv_filename):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [
+@pytest.mark.parametrize(
+    "feature",
+    [
         number_feature(),
         binary_feature(),
         category_feature(vocab_size=3),
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        text_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        timeseries_feature(),
+        # TODO: future support
+        # audio_feature(),  # BACKFILL strategy is unintuitive at inference time
+        # image_feature(),  # BACKFILL strategy is unintuitive at inference time
+        # vector_feature(), # Does not have a missing_value_strategy
+        # date_feature(),
+        # h3_feature(),
+    ],
+)
+def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+
+    input_features = [
+        audio_feature(audio_dest_folder),
     ]
     output_features = [
         binary_feature(),
