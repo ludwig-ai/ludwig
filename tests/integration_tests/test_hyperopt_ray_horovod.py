@@ -17,10 +17,10 @@ import logging
 import os.path
 import shutil
 import uuid
-from distutils.version import LooseVersion
 from unittest.mock import patch
 
 import pytest
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -33,7 +33,7 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    _ray_114 = LooseVersion(ray.__version__) >= LooseVersion("1.14")
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:

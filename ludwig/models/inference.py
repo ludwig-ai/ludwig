@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import COLUMN, NAME, TYPE
+from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET, TEXT, TIMESERIES, TYPE, VECTOR
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.date_feature import create_vector_from_datetime_obj
@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
+
+FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
 class InferenceModule(nn.Module):
@@ -64,7 +66,7 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -140,6 +142,6 @@ def _to_inference_model_input_from_series(
             raise ValueError('"date" feature type requires the associated feature config to be provided.')
         datetime_format = feature_config["preprocessing"]["datetime_format"]
         return [torch.tensor(create_vector_from_datetime_obj(datetime.strptime(v, datetime_format))) for v in s]
-    elif feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+    elif feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())
