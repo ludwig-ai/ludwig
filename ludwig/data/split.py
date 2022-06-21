@@ -211,4 +211,10 @@ def split_dataset(
     random_seed: float = default_random_seed,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
     splitter = get_splitter(**global_preprocessing_parameters.get(SPLIT, {}))
-    return splitter.split(df, backend, random_seed)
+    datasets: Tuple[DataFrame, DataFrame, DataFrame] = splitter.split(df, backend, random_seed)
+    if len(datasets[0].columns) == 0:
+        raise ValueError(
+            "Encountered an empty training set while splitting data. Please double check the preprocessing split "
+            "configuration."
+        )
+    return datasets
