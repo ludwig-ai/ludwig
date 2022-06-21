@@ -50,7 +50,7 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
 
 def compute_token_probabilities(
     probabilities: Union[list, tuple, np.ndarray],
-) -> float:
+) -> np.ndarray:
     """Gets the maximum probability per timestep.
 
     Args:
@@ -75,12 +75,12 @@ def compute_sequence_probability(
     sequence_probabilities: np.ndarray,
     max_sequence_length: Optional[int] = None,
     return_log_prob: bool = True,
-):
+) -> float:
     """Computes the sequence level probability.
 
     Args:
         sequence_probabilities: An iterable of iterables or np.ndarray with shape (sequence_length,)
-        max_sequence_length: The maximum sequence length to use. If None, use the length of the longest sequence.
+        max_sequence_length: The maximum sequence length to use. If None, uses the first dim of `sequence_probabilities`
         return_log_prob: Whether to return the log probability. Defaults to True.
     """
     if max_sequence_length is None:
