@@ -648,10 +648,10 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="What strategy to follow when there's a missing value in a vector column",
     )
 
-    # TODO (Connor): Add optional pattern arg for string input
     fill_value: Optional[Any] = schema_utils.String(
         default="",
         allow_none=False,
+        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
