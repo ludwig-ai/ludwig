@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import COLUMN, NAME, TYPE
+from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET, TEXT, TIMESERIES, TYPE, VECTOR
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
+
+FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
 class InferenceModule(nn.Module):
@@ -132,6 +134,6 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     elif feature_type == "audio":
         if load_paths:
             return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+    if feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())

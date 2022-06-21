@@ -212,8 +212,8 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        vector_feature(),
         # TODO: future support
-        # vector_feature(),
         # date_feature(),
         # h3_feature(),
     ]
@@ -223,10 +223,10 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         number_feature(),
         category_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        vector_feature()
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
-        # vector_feature()
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -376,6 +376,22 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+def test_torchscript_e2e_h3(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        h3_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
 @pytest.mark.parametrize(
     "feature",
     [
@@ -387,12 +403,12 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
         text_feature(vocab_size=3),
         sequence_feature(vocab_size=3),
         timeseries_feature(),
+        h3_feature(),
         # TODO: future support
         # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
         # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
         # vector_feature(), # Does not have a missing_value_strategy
         # date_feature(),
-        # h3_feature(),
     ],
 )
 def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
@@ -407,6 +423,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
 
     # Initialize Ludwig model
