@@ -388,8 +388,8 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
         sequence_feature(vocab_size=3),
         timeseries_feature(),
         # TODO: future support
-        # audio_feature(),  # BACKFILL strategy is unintuitive at inference time
-        # image_feature(),  # BACKFILL strategy is unintuitive at inference time
+        # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
+        # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
         # vector_feature(), # Does not have a missing_value_strategy
         # date_feature(),
         # h3_feature(),
