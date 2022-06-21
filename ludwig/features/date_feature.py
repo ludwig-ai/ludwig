@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from datetime import date, datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -72,7 +72,7 @@ class DateFeatureMixin(BaseFeatureMixin):
                 "in the config. "
                 "The preprocessing fill in value will be used."
                 "For more details: "
-                "https://ludwig.ai/user_guide/#date-features-preprocessing"
+                "https://ludwig-ai.github.io/ludwig-docs/0.5/configuration/features/date_features/"
             )
             fill_value = preprocessing_parameters["fill_value"]
             if fill_value != "":
@@ -155,3 +155,22 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+
+import time
+
+
+def parse_date_from_string(s: str) -> List[int]:
+    d = time.strptime(s, "%a %b %d %Y")
+    return [d.year, d.month, d.day]
+
+
+def main():
+    import torch
+
+    script_fn = torch.jit.trace(parse_date_from_string, "Mon Feb 15 2010")
+    print(script_fn)
+
+
+if __name__ == "__main__":
+    main()
