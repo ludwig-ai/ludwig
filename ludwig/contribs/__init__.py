@@ -33,6 +33,8 @@ If you don't want to handle the call, either provide an empty
 method with `pass`, or just don't implement the method.
 """
 
+from .aim import AimCallback
+
 # Contributors, import your class here:
 from .comet import CometCallback
 from .mlflow import MlflowCallback
@@ -45,4 +47,5 @@ contrib_registry = {
     "wandb": WandbCallback,
     "mlflow": MlflowCallback,
     "whylogs": WhyLogsCallback,
+    "aim": AimCallback,
 }

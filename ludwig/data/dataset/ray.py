@@ -17,13 +17,13 @@ import contextlib
 import math
 import queue
 import threading
-from distutils.version import LooseVersion
 from functools import lru_cache
 from typing import Any, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
 import ray
+from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -38,8 +38,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
-_ray113 = LooseVersion(ray.__version__) == LooseVersion("1.13.0")
-
+_ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
