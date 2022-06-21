@@ -17,7 +17,6 @@ import json
 import logging
 import os.path
 import tempfile
-from distutils.version import LooseVersion
 from typing import Dict, Optional, Tuple
 
 import pytest
@@ -46,11 +45,8 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 try:
     import ray
-
-    _ray112 = LooseVersion("1.12") <= LooseVersion(ray.__version__) < LooseVersion("1.13")
 except ImportError:
     ray = None
-    _ray112 = None
 
 
 logger = logging.getLogger(__name__)
@@ -411,12 +407,18 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
 
         # Check that the trials did sample from defaults in the search space
         for _, trial_row in hyperopt_results_df.iterrows():
-            key_delimiter = "."
-            # If ray 1.13, then the key name delimiter is different from ray 1.12
-            if _ray112 is not None and not _ray112:
-                key_delimiter = "/"
-            cell_type = trial_row["config" + key_delimiter + "defaults.input_features.text.cell_type"].replace('"', "")
-            vocab_size = trial_row["config" + key_delimiter + "defaults.output_features.category.vocab_size"]
+            cell_type_key = "defaults.input_features.text.cell_type"
+            vocab_size_key = "defaults.output_features.category.vocab_size"
+            # Different key name delimiters depending on Ray version
+            if "config." + cell_type_key in trial_row:
+                cell_type = trial_row["config." + cell_type_key].replace('"', "")
+                vocab_size = trial_row["config." + vocab_size_key]
+            elif "config/" + cell_type_key in trial_row:
+                cell_type = trial_row["config/" + cell_type_key].replace('"', "")
+                vocab_size = trial_row["config/" + vocab_size_key]
+            else:
+                cell_type = None
+                vocab_size = None
             assert cell_type in cell_types_search_space
             assert vocab_size in vocab_size_search_space
 
