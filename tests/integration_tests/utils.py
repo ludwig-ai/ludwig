@@ -471,12 +471,11 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
 def is_all_close(
     val1: Union[np.ndarray, torch.Tensor, str, list],
     val2: Union[np.ndarray, torch.Tensor, str, list],
-    tolerance=1e-8,
+    tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val1, list):
         return all(is_all_close(v1, v2, tolerance) for v1, v2 in zip(val1, val2))
-
     if isinstance(val1, str):
         return val1 == val2
     if isinstance(val1, torch.Tensor):
