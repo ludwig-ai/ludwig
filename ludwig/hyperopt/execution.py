@@ -1,6 +1,5 @@
 import copy
 import datetime
-from functools import lru_cache
 import glob
 import json
 import logging
@@ -10,6 +9,7 @@ import threading
 import time
 import traceback
 import uuid
+from functools import lru_cache
 from inspect import signature
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -111,7 +111,6 @@ def ray_resource_allocation_function(
 
 
 def checkpoint(progress_tracker, save_path):
-
     def ignore_dot_files(src, files):
         return [f for f in files if f.startswith(".")]
 
@@ -322,18 +321,11 @@ class RayTuneExecutor:
             remote_checkpoint_dir = os.path.join(
                 self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir)
             )
-
-            if _ray_114:
-                syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=remote_checkpoint_dir))
-            else:
-                syncer = get_cloud_sync_client(remote_checkpoint_dir)
-
-            return syncer, remote_checkpoint_dir
+            return remote_checkpoint_dir
         elif self.kubernetes_namespace is not None:
             # Kubernetes sync config. Returns driver node name and path.
             # When running on kubernetes, each trial is rsynced to the node running the main process.
-            node_name = self._get_node_address_by_ip()(self.head_node_ip)
-            # TODO(shreya): Return kubernetes syncer here
+            node_name = self._get_kubernetes_node_address_by_ip()(self.head_node_ip)
             return (node_name, trial_dir)
         else:
             logger.warning(
@@ -345,7 +337,7 @@ class RayTuneExecutor:
 
     @lru_cache(maxsize=1)
     def _get_kubernetes_node_address_by_ip(self) -> Callable:
-        """ Returns a method to get the node name by IP address within a K8s cluster. """
+        """Returns a method to get the node name by IP address within a K8s cluster."""
         assert self.kubernetes_namespace is not None
         from ray.tune.integration.kubernetes import KubernetesSyncer
 
@@ -493,7 +485,7 @@ class RayTuneExecutor:
                     if remote_checkpoint_dir is not None:
                         sync_client = tune_executor.sync_client
                         sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                        sync_client.wait()
+                        sync_client.wait_or_retry()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
                 checkpoint(progress_tracker, save_path)
@@ -510,7 +502,7 @@ class RayTuneExecutor:
                     if remote_checkpoint_dir is not None:
                         sync_client = tune_executor.sync_client
                         sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
-                        sync_client.wait()
+                        sync_client.wait_or_retry()
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
@@ -752,10 +744,13 @@ class RayTuneExecutor:
         if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
             self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
-            self.sync_client = get_cloud_sync_client(output_directory)
+            if _ray_114:
+                self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
+            else:
+                self.sync_client = get_cloud_sync_client(output_directory)
             output_directory = None
         elif self.kubernetes_namespace:
-            from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer, KubernetesSyncClient
+            from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer
 
             self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
