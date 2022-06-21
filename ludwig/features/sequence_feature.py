@@ -98,7 +98,6 @@ class _SequencePreprocessing(torch.nn.Module):
             sequences = v
 
         unit_sequences = self.tokenizer(sequences)
-
         # refines type of unit_sequences from Any to List[List[str]]
         assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
 
