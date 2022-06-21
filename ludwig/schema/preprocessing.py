@@ -139,6 +139,12 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
+    )
+
 
 @register_preprocessor(NUMBER)
 @dataclass
@@ -381,6 +387,12 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
+    )
+
+    computed_fill_value: Optional[str] = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The computed fill value determined by the user or inferred from the data.",
     )
 
 
