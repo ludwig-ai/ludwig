@@ -431,7 +431,7 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
-    inputs = to_inference_module_input_from_dataframe(df, config)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
     outputs = script_module(inputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now

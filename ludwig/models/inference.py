@@ -122,7 +122,10 @@ def to_inference_module_input_from_dataframe(
     inputs = {}
     for if_config in config["input_features"]:
         inputs[if_config[NAME]] = _to_inference_model_input_from_series(
-            dataset[if_config[COLUMN]], if_config[TYPE], feature_config=if_config
+            dataset[if_config[COLUMN]],
+            if_config[TYPE],
+            load_paths=load_paths,
+            feature_config=if_config,
         )
     return inputs
 
