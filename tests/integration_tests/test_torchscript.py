@@ -406,7 +406,7 @@ def test_torchscript_e2e_h3(tmpdir, csv_filename):
         # TODO: future support
         # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
         # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
-        # vector_feature(), # Does not have a missing_value_strategy
+        # vector_feature(), # does not have a missing_value_strategy
         # date_feature(),   # default fill with datetime.now() strategy is not scriptable
     ],
 )
