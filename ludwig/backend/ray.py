@@ -17,7 +17,6 @@
 import contextlib
 import copy
 import logging
-from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -27,6 +26,7 @@ import pandas as pd
 import ray
 import torch
 import tqdm
+from packaging import version
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -44,7 +44,8 @@ from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
-_ray112 = LooseVersion("1.12") <= LooseVersion(ray.__version__) < LooseVersion("1.13")
+_ray112 = version.parse("1.12") <= version.parse(ray.__version__) < version.parse("1.13")
+
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
