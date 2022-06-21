@@ -154,7 +154,13 @@ def slow(test_case):
     return test_case
 
 
-def generate_data(input_features, output_features, filename="test_csv.csv", num_examples=25, nan_percent=0.0):
+def generate_data(
+    input_features,
+    output_features,
+    filename="test_csv.csv",
+    num_examples=25,
+    nan_percent=0.0,
+):
     """Helper method to generate synthetic data based on input, output feature specs.
 
     :param num_examples: number of examples to generate

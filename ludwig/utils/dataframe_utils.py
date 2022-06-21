@@ -53,7 +53,6 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict
         res = df[col]
         if backend and is_dask_backend(backend):
             res = res.compute()
-        print(col, res)
         dataset[col] = np.stack(res.to_numpy())
     return dataset
 

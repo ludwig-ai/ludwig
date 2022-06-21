@@ -376,7 +376,7 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-def test_torchscript_e2e_with_nans(tmpdir, csv_filename):
+def test_torchscript_preproc_with_nans(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
         number_feature(),
