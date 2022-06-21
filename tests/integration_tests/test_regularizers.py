@@ -82,11 +82,11 @@ def test_regularizers(
         )
 
         inputs = {
-            i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column]), copy=True).to(DEVICE)
+            i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(DEVICE)
             for i_feat in model.model.input_features.values()
         }
         targets = {
-            o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column]), copy=True).to(DEVICE)
+            o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(DEVICE)
             for o_feat in model.model.output_features.values()
         }
         predictions = model.model((inputs, targets))
