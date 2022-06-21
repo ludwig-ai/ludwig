@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from functools import partial
 from typing import Any, Dict, List
 
 import numpy as np
@@ -43,6 +44,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
@@ -119,6 +121,42 @@ class _SequencePreprocessing(torch.nn.Module):
                 sequence_matrix[sample_idx][i + 1] = curr_id
 
         return sequence_matrix
+
+
+class _SequencePostprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.max_sequence_length = int(metadata["max_sequence_length"])
+        self.idx2str = metadata["idx2str"]
+        self.unknown_symbol = UNKNOWN_SYMBOL
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.probability_key = PROBABILITY
+
+    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+        """Takes a dictionary of tensors and returns a dictionary of tensors."""
+        pred_predictions = preds[self.predictions_key]
+        predictions: List[List[str]] = []
+        for sequence in pred_predictions:
+            sequence_predictions: List[str] = []
+            for i in range(self.max_sequence_length):
+                unit_id = int(sequence[i].item())
+                if unit_id < len(self.idx2str):
+                    unit_prediction = self.idx2str[unit_id]
+                else:
+                    unit_prediction = self.unknown_symbol
+                sequence_predictions.append(unit_prediction)
+            predictions.append(sequence_predictions)
+
+        pred_probabilities = preds[self.probabilities_key]
+        probabilities, _ = torch.max(pred_probabilities, dim=-1)
+        probability = torch.sum(torch.log(probabilities), dim=-1)
+
+        return {
+            self.predictions_key: predictions,
+            self.probabilities_key: probabilities,
+            self.probability_key: probability,
+        }
 
 
 class _SequencePredict(PredictModule):
@@ -438,34 +476,20 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 result[last_preds_col] = backend.df_engine.map_objects(result[last_preds_col], last_idx2str)
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
+        prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
-
-            def token_prob(prob):
-                dim = len(prob.shape)
-                if dim != 2:
-                    # probs should be shape [s, nc]
-                    raise ValueError(
-                        f"Sequence probability array should be 2-dimensional "
-                        f"shape, instead shape is {dim}-dimensional ({prob.shape})"
-                    )
-                return np.amax(prob, axis=-1)
-
-            # get probability of token in that sequence position
-            result[probs_col] = backend.df_engine.map_objects(result[probs_col], token_prob)
-
-            def compute_log_prob(row):
-                # sum log probability for tokens up to sequence length
-                # create mask only tokens for sequence length
-                seq_prob = row[probs_col]
-                length = metadata["max_sequence_length"]
-                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
-                return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
-
-            # commenting probabilities out because usually it is huge:
+            # currently does not return full probabilties because usually it is huge:
             # dataset x length x classes
-            # todo: add a mechanism for letting the user decide to save it
-            probability_col = f"{self.feature_name}_{PROBABILITY}"
-            result[probability_col] = backend.df_engine.apply_objects(result, compute_log_prob)
+            # TODO: add a mechanism for letting the user decide to save it
+            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probs_col],
+                partial(
+                    compute_sequence_probability,
+                    max_sequence_length=metadata["max_sequence_length"],
+                    return_log_prob=True,
+                ),
+            )
 
         if lengths_col in result:
             del result[lengths_col]
@@ -496,6 +520,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, "dependencies", [])
         set_default_value(output_feature, "reduce_input", SUM)
         set_default_value(output_feature, "reduce_dependencies", SUM)
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SequencePostprocessing(metadata)
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"

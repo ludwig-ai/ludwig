@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import re
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -48,21 +48,50 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
     return np.array(out, dtype=np.int32)
 
 
-def compute_sequence_probability(sequence_probabilities: Union[list, tuple, np.ndarray]) -> float:
-    """Computes sequence-level probability.
+def compute_token_probabilities(
+    probabilities: Union[list, tuple, np.ndarray],
+) -> np.ndarray:
+    """Gets the maximum probability per timestep.
 
     Args:
-        sequence_probabilities: An iterable of iterables or np.ndarray with shape (sequence_length, num_classes)
+        probabilities: An iterable of iterables or np.ndarray with shape (sequence_length, num_classes)
             where each inner iterable or np.ndarray is the probability distribution for a single timestep.
+    Returns:
+        An np.ndarray with shape (sequence_length,) containing the maximum probability for each timestep.
     """
-
-    if isinstance(sequence_probabilities, (list, tuple, np.ndarray)):
+    if isinstance(probabilities, (list, tuple)):
         max_probs = []
-        for timestep_probs in sequence_probabilities:
+        for timestep_probs in probabilities:
             max_probs.append(np.max(timestep_probs))
-        return np.prod(max_probs)
+        max_probs = np.array(max_probs)
+    elif isinstance(probabilities, np.ndarray):
+        max_probs = np.max(probabilities, axis=-1)
     else:
-        return np.prod(sequence_probabilities, axis=-1)
+        raise ValueError(f"probabilities type must be in [list, tuple, np.ndarray]. Got {type(probabilities)}")
+    return max_probs
+
+
+def compute_sequence_probability(
+    sequence_probabilities: np.ndarray,
+    max_sequence_length: Optional[int] = None,
+    return_log_prob: bool = True,
+) -> float:
+    """Computes the sequence level probability.
+
+    Args:
+        sequence_probabilities: An iterable of iterables or np.ndarray with shape (sequence_length,)
+        max_sequence_length: The maximum sequence length to use. If None, uses the first dim of `sequence_probabilities`
+        return_log_prob: Whether to return the log probability. Defaults to True.
+    """
+    if max_sequence_length is None:
+        max_sequence_length = sequence_probabilities.shape[0]
+
+    sequence_probabilities = sequence_probabilities[:max_sequence_length]
+
+    if return_log_prob:
+        return np.sum(np.log(sequence_probabilities))
+    else:
+        return np.prod(sequence_probabilities)
 
 
 def sanitize(name):
