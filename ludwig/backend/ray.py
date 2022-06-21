@@ -695,7 +695,6 @@ class RayPredictor(BasePredictor):
         try:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
-            eval_dataset_size = len(dataset)
             predictor_kwargs = {
                 **self.predictor_kwargs,
                 "collect_predictions": False,
@@ -707,7 +706,7 @@ class RayPredictor(BasePredictor):
                     "model_ref": ray.put(self.model),
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
-                    "eval_dataset_size": eval_dataset_size,
+                    "eval_dataset_size": len(dataset),
                     **kwargs,
                 },
                 dataset=datasets,
