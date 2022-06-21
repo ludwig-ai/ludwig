@@ -13,6 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import List, NamedTuple
+
+
+class H3Data(NamedTuple):
+    mode: int
+    edge: int
+    resolution: int
+    base_cell: int
+    cells: List[int]
+
+
 def set_bit(v, index, x):
     """Set the index:th bit of v to 1 if x is truthy, else to 0, and return the new value."""
     mask = 1 << index  # Compute mask, an integer with just bit 'index' set.
@@ -42,24 +53,24 @@ def components_to_h3(components):
     return h3
 
 
-def bitslice(x, start_bit, slice_length):
-    ones_mask = 2**slice_length - 1
+def bitslice(x: int, start_bit: int, slice_length: int) -> int:
+    ones_mask: int = int(2**slice_length - 1)
     return (x & (ones_mask << start_bit)) >> start_bit
 
 
-def h3_index_mode(h3_long):
+def h3_index_mode(h3_long: int) -> int:
     return bitslice(h3_long, 64 - 5, 4)
 
 
-def h3_edge(h3_long):
+def h3_edge(h3_long: int) -> int:
     return bitslice(h3_long, 64 - 8, 3)
 
 
-def h3_resolution(h3_long):
+def h3_resolution(h3_long: int) -> int:
     return bitslice(h3_long, 64 - 12, 4)
 
 
-def h3_base_cell(h3_long):
+def h3_base_cell(h3_long: int) -> int:
     return bitslice(h3_long, 64 - 19, 7)
 
 
@@ -68,27 +79,27 @@ def h3_octal_components(h3_long):
     return "{0:0{w}o}".format(bitslice(h3_long + 2**63, 64 - 19 - 3 * res, 3 * res), w=res)
 
 
-def h3_component(h3_long, i):
+def h3_component(h3_long: int, i: int) -> int:
     return bitslice(h3_long, 64 - 19 - 3 * i, 3)
 
 
-def h3_components(h3_long):
+def h3_components(h3_long: int) -> List[int]:
     return [h3_component(h3_long, i) for i in range(1, h3_resolution(h3_long) + 1)]
 
 
-def h3_to_components(h3_value):
+def h3_to_components(h3_value: int) -> H3Data:
     """Extract the values from an H3 hexadecimal value Refer to this for the bit layout:
 
     https://uber.github.io/h3/#/documentation/core-library/h3-index-representations
     """
     # lat_long = (0, 0)  # h3ToGeo(h3_value)
-    return {
-        "mode": h3_index_mode(h3_value),
-        "edge": h3_edge(h3_value),
-        "resolution": h3_resolution(h3_value),
-        "base_cell": h3_base_cell(h3_value),
-        "cells": h3_components(h3_value),
-    }
+    return H3Data(
+        mode=h3_index_mode(h3_value),
+        edge=h3_edge(h3_value),
+        resolution=h3_resolution(h3_value),
+        base_cell=h3_base_cell(h3_value),
+        cells=h3_components(h3_value),
+    )
 
 
 if __name__ == "__main__":
