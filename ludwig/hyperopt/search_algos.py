@@ -3,6 +3,7 @@ from abc import ABC
 from importlib import import_module
 from typing import Dict
 
+from ludwig.constants import TYPE
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
@@ -147,7 +148,8 @@ class ZooptSA(SearchAlgorithm):
 
 
 def get_search_algorithm(search_algo):
-    return get_from_registry(search_algo, search_algo_registry)
+    search_algo_name = search_algo.get(TYPE, None)
+    return get_from_registry(search_algo_name, search_algo_registry)(search_algo)
 
 
 search_algo_registry = {

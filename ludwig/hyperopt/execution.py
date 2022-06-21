@@ -140,11 +140,7 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = (
-            get_search_algorithm(None)(search_alg)
-            if search_alg is None
-            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
-        )
+        self.search_algorithm = get_search_algorithm(search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.decode_ctx = self.decode_ctx
         self.output_feature = output_feature
