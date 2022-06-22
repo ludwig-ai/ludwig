@@ -500,48 +500,6 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "!= raw. The following parameters can/should be defined in the dictionary "
     )
 
-    # type: Optional[str] = schema_utils.StringOptions(
-    #     ["raw", "stft", "stft_phase", "group_delay"],
-    #     default="raw",
-    #     allow_none=False,
-    #     description="Defines the type of audio features to be used.",
-    # )
-    #
-    # window_length_in_s: Optional[float] = schema_utils.NonNegativeFloat(
-    #     default=0.04,
-    #     allow_none=False,
-    #     description="Defines the window length used for the short time Fourier transformation (only needed if type is"
-    #                 "not raw).",
-    # )
-    #
-    # window_shift_in_s: Optional[float] = schema_utils.NonNegativeFloat(
-    #     default=0.02,
-    #     allow_none=False,
-    #     description="Defines the window shift used for the short time Fourier transformation - also called hop length"
-    #                 "(only needed if type is not raw).",
-    # )
-    #
-    # num_fft_points: Optional[int] = schema_utils.PositiveInteger(
-    #     default=None,
-    #     allow_none=False,
-    #     description="Defines the number of fft points used for the short time Fourier transformation. If "
-    #                 "num_fft_points > (window_length_in_s * sample_rate), then the signal is zero-padded at the end. "
-    #                 "num_fft_points has to be >= (window_length_in_s * sample_rate). Only needed if type is not raw.",
-    # )
-    #
-    # window_type: Optional[str] = schema_utils.String(
-    #     default="hamming",
-    #     allow_none=False,
-    #     description="Defines the window type the signal is weighted before the short time Fourier transformation. All"
-    #                 "windows provided by scipy’s window function can be used (only needed if type != raw).",
-    #     )
-    #
-    # num_filter_bands: Optional[int] = schema_utils.PositiveInteger(
-    #     default=None,
-    #     allow_none=False,
-    #     description="Defines the number of filters used in the filterbank (only needed if type == fbank)",
-    # )
-
 
 @dataclass
 @register_preprocessor("timeseries")
