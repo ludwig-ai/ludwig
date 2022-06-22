@@ -879,6 +879,10 @@ def update_model_dict_with_shared_params(
     feature_name = model_dict[COLUMN]
     feature_type = model_dict[TYPE]
 
+    # No default parameters specified in hyperopt parameter search space
+    if DEFAULTS not in trial_parameters_dict:
+        return
+
     # All features in Ludwig config use non-default encoders or decoders
     if not shared_params_features_dict:
         logger.warning(
@@ -892,10 +896,6 @@ def update_model_dict_with_shared_params(
         return
 
     shared_params_features_dict = shared_params_features_dict[config_feature_group]
-
-    # No default parameters specified in hyperopt parameter search space
-    if DEFAULTS not in trial_parameters_dict:
-        return
 
     # At least one of this feature's feature type must use non-default encoders/decoders in the config
     if feature_type not in shared_params_features_dict:
