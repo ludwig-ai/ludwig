@@ -464,7 +464,7 @@ def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
     preproc_inputs = script_module.preprocessor_forward(inputs)
 
     for name, values in preproc_inputs.items():
-        assert values.is_cuda, f'feature "{name}" tensors are not on GPU: {values}'
+        assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
 
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
@@ -518,9 +518,7 @@ def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
 
     for feature_name, feature_outputs in postproc_outputs.items():
         for output_name, output_values in feature_outputs.items():
-            assert utils.is_all_tensors_cuda(
-                output_values
-            ), f"{feature_name}.{output_name} tensors are not on GPU: {output_values}"
+            assert utils.is_all_tensors_cuda(output_values), f"{feature_name}.{output_name} tensors are not on GPU"
 
 
 def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
@@ -570,6 +568,10 @@ def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_pat
         skip_save_log=True,
         skip_save_processed_input=True,
     )
+
+    # Put torchscript model on GPU if available (LudwigModel will run train/predict on GPU if available)
+    if device is None:
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript(device=device)

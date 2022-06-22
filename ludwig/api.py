@@ -87,7 +87,7 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import get_file_names, get_output_directory, set_saved_weights_in_checkpoint_flag
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.torch_utils import DEVICE, get_torch_device
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -1452,16 +1452,21 @@ class LudwigModel:
     def to_torchscript(
         self,
         model_only: bool = False,
-        device: TorchDevice = "cpu",
+        device: Optional[TorchDevice] = None,
     ):
         """Converts the trained model to Torchscript.
 
         Args:
             model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
                 preprocessing and postprocessing steps will also be converted to Torchscript.
+            device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
+                ensure maximum model parity.
         Returns:
             A torch.jit.ScriptModule that can be used to predict on a dictionary of inputs.
         """
+        if device is None:
+            device = DEVICE
+
         self._check_initialization()
         if model_only:
             return self.model.to_torchscript(device)
