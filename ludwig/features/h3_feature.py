@@ -40,9 +40,14 @@ class _H3Preprocessing(torch.nn.Module):
         self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        assert torch.jit.isinstance(v, torch.Tensor), "Scripted H3 preprocessing only works with torch.Tensor."
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            v = torch.stack(v)
 
-        v = torch.nan_to_num(v, nan=self.computed_fill_value).long()
+        if not torch.jit.isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+
+        v = torch.nan_to_num(v, nan=self.computed_fill_value)
+        v = v.long()
 
         outputs: List[torch.Tensor] = []
         for v_i in v:
@@ -83,8 +88,11 @@ class H3FeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        # Cast to float first in case of scientific notation
-        return column.astype(float).astype(int)
+        try:
+            return column.astype(int)
+        except ValueError:
+            logging.warning("H3Feature could not be read as int directly. Reading as float and converting to int.")
+            return column.astype(float).astype(int)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

@@ -174,7 +174,8 @@ def generate_data(
     data = [next(df) for _ in range(num_examples + 1)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
-    add_nans_to_df_in_place(dataframe, nan_percent)
+    if nan_percent > 0:
+        add_nans_to_df_in_place(dataframe, nan_percent)
     dataframe.to_csv(filename, index=False)
 
     return filename
