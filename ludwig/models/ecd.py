@@ -11,7 +11,7 @@ from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD, TYPE
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.modules.ludwig_module import LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
@@ -67,6 +67,49 @@ class ECD(BaseModel):
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
+
+    def get_state(self) -> LudwigModuleState:
+        return super().get_state(
+            config={
+                "input_features": self._input_features_def,
+                "combiner": self._combiner_def,
+                "output_features": self._output_features_def,
+            },
+            saved_weights={},  # Weights are saved in the child modules (inputs, combiner, outputs).
+            children={f"input_features.{name}": feature.get_state() for name, feature in self.input_features.items()}
+            | {"combiner": self.combiner.get_state()}
+            | {f"output_features.{name}": feature.get_state() for name, feature in self.output_features.items()},
+        )
+
+    def get_model_inputs(self):
+        inputs = {
+            input_feature_name: input_feature.create_sample_input()
+            for input_feature_name, input_feature in self.input_features.items()
+        }
+        return inputs
+
+    # Return total number of parameters in model
+    def get_model_size(self) -> int:
+        model_tensors = self.collect_weights()
+        total_size = 0
+        for tnsr in model_tensors:
+            total_size += tnsr[1].detach().cpu().numpy().size
+        return total_size
+
+    def to_torchscript(self):
+        self.eval()
+        model_inputs = self.get_model_inputs()
+        # We set strict=False to enable dict inputs and outputs.
+        return torch.jit.trace(self, model_inputs, strict=False)
+
+    def save_torchscript(self, save_path):
+        traced = self.to_torchscript()
+        traced.save(save_path)
+
+    @property
+    def input_shape(self):
+        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
+        return torch.Size([1, 1])
 
     def encode(
         self,

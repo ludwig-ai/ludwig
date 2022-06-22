@@ -17,7 +17,21 @@ from abc import abstractmethod
 from functools import lru_cache
 
 import torch
+from marshmallow_dataclass import dataclass
 from torch.nn import Module, ModuleDict
+
+from ludwig.globals import LUDWIG_VERSION
+
+
+@dataclass
+class LudwigModuleState:
+    """The state of a ludwig object, can be used to serialize or restore a saved object."""
+
+    type: str  # Module Type
+    ludwig_version: str  # Version of ludwig which saved this object
+    config: dict  # Module Config
+    saved_weights: dict[str, torch.Tensor]  # Saved weights of this module
+    children: dict[str, "LudwigModuleState"]  # Child modules
 
 
 class LudwigModule(Module):
@@ -29,6 +43,17 @@ class LudwigModule(Module):
     @property
     def device(self):
         return self.device_tensor.device
+
+    def get_state(self, config=None, saved_weights=None, children=None) -> LudwigModuleState:
+        if saved_weights is None:
+            saved_weights = self.state_dict()
+        return LudwigModuleState(
+            type=type(self).__name__,
+            ludwig_version=LUDWIG_VERSION,
+            config={} if config is None else config,
+            saved_weights={} if saved_weights is None else saved_weights,
+            children={} if children is None else children,
+        )
 
     def losses(self):
         collected_losses = []
