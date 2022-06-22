@@ -275,7 +275,7 @@ def get_optimizer_conds():
     return conds
 
 
-def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
+def OptimizerDataclassField(default={"type": "adam"}, **kwargs):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
 
@@ -290,6 +290,10 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         """Custom marshmallow field that deserializes a dict to a valid optimizer from
         `ludwig.modules.optimization_modules.optimizer_registry` and creates a corresponding `oneOf` JSON schema
         for external usage."""
+
+        # Prevent accidental override:
+        kwargs["default"] = default
+        kwargs["allow_none"] = False
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -318,7 +322,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 "title": "optimizer_options",
                 "allOf": get_optimizer_conds(),
                 "required": ["type"],
-                "description": description,
+                "description": kwargs["description"],
             }
 
     if not isinstance(default, dict) or "type" not in default or default["type"] not in optimizer_registry:
@@ -334,7 +338,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,
-                    metadata={"description": description},
+                    metadata=kwargs,
                 )
             },
             default_factory=lambda: load_default,
@@ -354,13 +358,16 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
 
-def GradientClippingDataclassField(default={}, allow_none=True, description="TODO"):
+def GradientClippingDataclassField(default={}, allow_none=True, **kwargs):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
     :param default: dict that specifies clipping param values that will be loaded by its schema class (default: {}).
     :param allow_none: Whether this field can accept `None` as a value. (default: True)
     """
+    # Prevent accidental override:
+    kwargs["allow_none"] = allow_none
+    kwargs["default"] = default
 
     class GradientClippingMarshmallowField(fields.Field):
         """Custom marshmallow field class for gradient clipping.
@@ -388,7 +395,7 @@ def GradientClippingDataclassField(default={}, allow_none=True, description="TOD
                     {**unload_jsonschema_from_marshmallow_class(GradientClippingConfig), "title": "enabled_options"},
                 ],
                 "title": "gradient_clipping_options",
-                "description": description,
+                "description": kwargs["description"],
             }
 
     if not isinstance(default, dict):
@@ -403,7 +410,7 @@ def GradientClippingDataclassField(default={}, allow_none=True, description="TOD
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,
-                metadata={"description": description},
+                metadata=kwargs,
             )
         },
         default_factory=lambda: load_default,

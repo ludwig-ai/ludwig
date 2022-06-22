@@ -220,10 +220,10 @@ def NonNegativeInteger(default: Union[None, int] = None, allow_none=False, descr
     )
 
 
-def IntegerRange(default: Union[None, int] = None, allow_none=False, description="", **kwargs):
+def IntegerRange(default: Union[None, int] = None, allow_none=False, description="", min=None, max=None, **kwargs):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
-    val = validate.Range(**kwargs)
+    val = validate.Range(min, max)
     allow_none = allow_none or default is None
 
     if default is not None:
@@ -272,10 +272,10 @@ def NonNegativeFloat(default: Union[None, float] = None, allow_none=False, descr
     )
 
 
-def FloatRange(default: Union[None, float] = None, allow_none=False, description="", **kwargs):
+def FloatRange(default: Union[None, float] = None, allow_none=False, description="", min=None, max=None, **kwargs):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
-    val = validate.Range(**kwargs)
+    val = validate.Range(min, max)
     allow_none = allow_none or default is None
 
     if default is not None:
@@ -520,7 +520,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 def FloatOrAutoField(
     options: List[str] = ["auto"],
-    allow_none: bool = True,
+    allow_none: bool = False,
     default: Union[None, int] = True,
     default_numeric: Union[None, int] = None,
     default_option: Union[None, str] = "auto",
@@ -530,13 +530,14 @@ def FloatOrAutoField(
     min_exclusive: Union[None, int] = 0,
     max_exclusive: Union[None, int] = None,
     description="",
+    **kwargs,
 ):
     return IntegerOrStringOptionsField(**locals())
 
 
 def IntegerOrAutoField(
     options: List[str] = ["auto"],
-    allow_none: bool = True,
+    allow_none: bool = False,
     default: Union[None, int] = True,
     default_numeric: Union[None, int] = None,
     default_option: Union[None, str] = "auto",
@@ -546,6 +547,7 @@ def IntegerOrAutoField(
     min_exclusive: Union[None, int] = 0,
     max_exclusive: Union[None, int] = None,
     description="",
+    **kwargs,
 ):
     return IntegerOrStringOptionsField(**locals())
 
@@ -562,6 +564,7 @@ def IntegerOrStringOptionsField(
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
     description="",
+    **kwargs,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
     is_integer = True
@@ -580,6 +583,7 @@ def NumericOrStringOptionsField(
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
     description="",
+    **kwargs,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
 
@@ -665,7 +669,10 @@ def NumericOrStringOptionsField(
     return field(
         metadata={
             "marshmallow_field": IntegerOrStringOptionsField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description, **kwargs},
             )
         },
         default=default,
