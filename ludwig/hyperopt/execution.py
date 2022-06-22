@@ -142,7 +142,6 @@ class RayTuneExecutor:
         self.goal = goal
         self.search_algorithm = get_search_algorithm(search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
-        self.decode_ctx = self.decode_ctx
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -154,7 +153,8 @@ class RayTuneExecutor:
         self.max_concurrent_trials = max_concurrent_trials
         self.sync_config = None
 
-    def _get_search_space(self, parameters):
+    def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
+        """Encode search space parameters as JSON with context for decoding"""
         config = {}
         ctx = {}
         for param, values in parameters.items():
@@ -180,7 +180,7 @@ class RayTuneExecutor:
         return config, ctx
 
     @staticmethod
-    def encode_values(param, values, ctx):
+    def encode_values(param: str, values: Dict, ctx: Dict) -> Dict:
         """JSON encodes any search spaces whose values are lists / dicts.
 
         Only applies to grid search and choice options.  See here for details:
@@ -195,7 +195,7 @@ class RayTuneExecutor:
         return values
 
     @staticmethod
-    def decode_values(config, ctx):
+    def decode_values(config: Dict, ctx: Dict) -> Dict:
         """Decode config values with the decode function in the context.
 
         Uses the identity function if no encoding is needed.
