@@ -486,6 +486,15 @@ def is_all_close(
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
 
 
+def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+    if isinstance(val, list):
+        return all(is_all_tensors_cuda(v) for v in val)
+
+    if isinstance(val, torch.Tensor):
+        return val.is_cuda
+    return True
+
+
 def run_api_experiment(input_features, output_features, data_csv):
     """Helper method to avoid code repetition in running an experiment.
 

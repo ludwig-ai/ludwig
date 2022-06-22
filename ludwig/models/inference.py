@@ -121,17 +121,13 @@ class InferenceModule(nn.Module):
     def predictor_forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Forward pass through the predictor.
 
-        Ensures that the inputs/outputs are on the correct device.
+        Ensures that the inputs are on the correct device. The outputs are on the same device as self.predictor.
         """
-        input_devices: List[torch.device] = []
         for k, v in preproc_inputs.items():
-            input_devices.append(v.device)
             preproc_inputs[k] = v.to(self.predictor.device)
-        input_device = input_devices[0]  # Assumes all of the inputs are on the same device as the first input
 
         with torch.no_grad():
             predictions_flattened = self.predictor(preproc_inputs)
-            predictions_flattened = {k: v.to(input_device) for k, v in predictions_flattened.items()}
             return predictions_flattened
 
     def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
