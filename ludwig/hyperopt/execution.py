@@ -13,6 +13,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
+from packaging import version
+
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
@@ -36,7 +38,13 @@ try:
     from ray.tune import register_trainable, Stopper
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
-    from ray.tune.syncer import get_cloud_sync_client
+
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
+    if _ray_114:
+        from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
+    else:
+        from ray.tune.syncer import get_cloud_sync_client
+
     from ray.tune.utils import wait_for_gpu
     from ray.tune.utils.placement_groups import PlacementGroupFactory
     from ray.util.queue import Queue as RayQueue
@@ -266,7 +274,13 @@ class RayTuneExecutor(HyperoptExecutor):
         remote_checkpoint_dir = os.path.join(
             self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir)
         )
-        return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
+
+        if _ray_114:
+            syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=remote_checkpoint_dir))
+        else:
+            syncer = get_cloud_sync_client(remote_checkpoint_dir)
+
+        return syncer, remote_checkpoint_dir
 
     # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
@@ -288,7 +302,7 @@ class RayTuneExecutor(HyperoptExecutor):
         if sync_info is not None:
             sync_client, remote_checkpoint_dir = sync_info
             sync_client.sync_down(remote_checkpoint_dir, trial_path)
-            sync_client.wait()
+            sync_client.wait_or_retry()
         self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
         mod_path = None
         try:

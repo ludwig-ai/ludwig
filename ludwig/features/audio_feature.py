@@ -66,7 +66,7 @@ class _AudioPreprocessing(torch.nn.Module):
         self.padding_value = metadata["preprocessing"]["padding_value"]
         self.normalization_type = metadata["preprocessing"]["norm"]
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 

@@ -61,7 +61,7 @@ class _BinaryPreprocessing(torch.nn.Module):
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
         self.should_lower = str2bool is None
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 

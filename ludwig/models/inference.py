@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import COLUMN, NAME, TYPE
+from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET, TEXT, TIMESERIES, TYPE, VECTOR
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -28,6 +28,8 @@ PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
 INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
+
+FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
 class _InferenceModuleV0(nn.Module):
@@ -65,7 +67,7 @@ class _InferenceModuleV0(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
@@ -386,6 +388,6 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     elif feature_type == "audio":
         if load_paths:
             return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+    if feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy()).to(device=DEVICE)
