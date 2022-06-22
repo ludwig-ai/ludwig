@@ -156,7 +156,7 @@ class RayTuneExecutor:
         self.sync_config = None
 
     def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
-        """Encode search space parameters as JSON with context for decoding"""
+        """Encode search space parameters as JSON with context for decoding."""
         config = {}
         ctx = {}
         for param, values in parameters.items():
