@@ -14,6 +14,8 @@ from inspect import signature
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from packaging import version
+
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
@@ -38,7 +40,7 @@ try:
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
 
-    _ray_114 = LooseVersion(ray.__version__) >= LooseVersion("1.14")
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
