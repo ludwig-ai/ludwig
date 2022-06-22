@@ -18,7 +18,7 @@ from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.image_utils import read_image_from_path
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import DEVICE
+from ludwig.utils.torch_utils import DEVICE, place_on_device
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
@@ -383,18 +383,18 @@ def get_filename_from_stage(stage: str, device: Optional[TorchDevice] = None) ->
 
 
 def to_inference_module_input_from_dataframe(
-    dataset: pd.DataFrame,
-    config: Dict[str, Any],
-    load_paths: bool = False,
+    dataset: pd.DataFrame, config: Dict[str, Any], load_paths: bool = False, device: Optional[torch.device] = None
 ) -> TorchscriptPreprocessingInput:
     inputs = {}
     for if_config in config["input_features"]:
-        inputs[if_config[NAME]] = _to_inference_model_input_from_series(
+        feature_inputs = _to_inference_model_input_from_series(
             dataset[if_config[COLUMN]],
             if_config[TYPE],
             load_paths=load_paths,
             feature_config=if_config,
         )
+        feature_inputs = place_on_device(feature_inputs, device)
+        inputs[if_config[NAME]] = feature_inputs
     return inputs
 
 
