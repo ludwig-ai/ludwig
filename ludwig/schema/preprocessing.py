@@ -500,7 +500,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "!= raw. The following parameters can/should be defined in the dictionary "
     )
 
-    # type: # Optional[str] = schema_utils.StringOptions(
+    # type: Optional[str] = schema_utils.StringOptions(
     #     ["raw", "stft", "stft_phase", "group_delay"],
     #     default="raw",
     #     allow_none=False,
