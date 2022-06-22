@@ -939,7 +939,9 @@ def get_parameters_dict(parameters):
     return parameters_dict
 
 
-def substitute_parameters(config, parameters, shared_params_features_dict):
+def substitute_parameters(
+    config: Dict[str, Any], parameters: Dict[str, Any], shared_params_features_dict: Dict[str, Dict[str, Set]]
+):
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in config[INPUT_FEATURES]:
         # Update shared params
