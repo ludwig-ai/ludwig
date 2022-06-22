@@ -1,6 +1,7 @@
 from typing import Dict, List, Type, Union
 
 from ludwig.decoders.base import Decoder
+from ludwig.modules.ludwig_module import register_module
 from ludwig.utils.registry import Registry
 
 decoder_registry = Registry()
@@ -11,6 +12,7 @@ def register_decoder(name: str, features: Union[str, List[str]]):
         features = [features]
 
     def wrap(cls):
+        register_module(cls)
         for feature in features:
             feature_registry = decoder_registry.get(feature, {})
             feature_registry[name] = cls

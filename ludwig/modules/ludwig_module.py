@@ -21,6 +21,20 @@ from marshmallow_dataclass import dataclass
 from torch.nn import Module, ModuleDict
 
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.registry import Registry
+
+module_registry = Registry()
+
+
+def register_module(cls, name: str = None):
+    """Registers a serializable module with a specified name.
+
+    If name not specified, default to the name of the class
+    """
+    if name is None:
+        name = cls.__name__
+    module_registry[name] = cls
+    return cls
 
 
 @dataclass

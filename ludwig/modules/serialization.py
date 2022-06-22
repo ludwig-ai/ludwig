@@ -14,6 +14,7 @@
 # ==============================================================================
 
 import json
+import logging
 import os
 from typing import BinaryIO, IO, Union
 
@@ -22,7 +23,9 @@ import numpy as np
 import torch
 
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState
+from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState, module_registry
+
+logger = logging.getLogger(__name__)
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -66,7 +69,7 @@ def _save_state_to_group(state: LudwigModuleState, group: h5py.Group):
     """Save LudwigModuleState to HDF5 group, recursively creating groups for any child modules."""
     group.attrs["type"] = state.type
     group.attrs["ludwig_version"] = state.ludwig_version
-    group.attrs["config"] = json.dumps(state.config, cls=NumpyEncoder)
+    group.attrs["config"] = json.dumps(state.config, cls=NumpyEncoder, sort_keys=True)
     for k, w in state.saved_weights.items():
         if isinstance(w, torch.Tensor):
             w = w.detach().cpu().numpy()
@@ -88,7 +91,7 @@ def _load_state_from_group(group) -> LudwigModuleState:
         type=group.attrs["type"],
         ludwig_version=group.attrs["ludwig_version"],
         config=json.loads(group.attrs["config"]),
-        saved_weights={},
+        saved_weights={k: v[()] for k, v in group.items() if isinstance(v, h5py.Dataset)},
         children={k: _load_state_from_group(v) for k, v in group.items() if isinstance(v, h5py.Group)},
     )
 
@@ -114,14 +117,24 @@ def load(f: Union[str, os.PathLike, BinaryIO, IO[bytes]], device: str = None) ->
         f: The file path or object to load from.
         device: 'cuda' or 'cpu'
     """
-    pass
+    state = load_state_from_file(f)
+    state = update_state_for_current_version(state)
+    cls = module_registry.get(state.type)
+    if cls is None:
+        logger.error(f"No Ludwig Module registered for name {state.type}")
+        return None
+    # TODO: instantiate cls with config and saved weights
+    if not (hasattr(cls, "restore_from_state") and callable(cls.restore_from_state)):
+        logger.error(f"The @classmethod restore_from_state must be implemented to restore {state.type} objects")
+        return None
+    return cls.restore_from_state(state)
 
 
-def update(object_state: LudwigModuleState) -> LudwigModuleState:
+def update_state_for_current_version(state: LudwigModuleState) -> LudwigModuleState:
     """Update saved Ludwig object from previous version."""
-    if object_state == LUDWIG_VERSION:
-        return object_state
+    if state == LUDWIG_VERSION:
+        return state
     else:
-        # TODO: check version, apply migrations if needed.
-        object_state.ludwig_version = LUDWIG_VERSION
-        return object_state
+        # TODO: check version, apply updates if needed.
+        state.ludwig_version = LUDWIG_VERSION
+        return state

@@ -1,6 +1,7 @@
 from typing import Dict, List, Type, Union
 
 from ludwig.encoders.base import Encoder
+from ludwig.modules.ludwig_module import register_module
 from ludwig.utils.registry import Registry
 
 encoder_registry = Registry()
@@ -10,6 +11,7 @@ sequence_encoder_registry = Registry()
 
 def register_sequence_encoder(name: str):
     def wrap(cls):
+        register_module(cls)
         sequence_encoder_registry[name] = cls
         return cls
 
@@ -21,6 +23,7 @@ def register_encoder(name: str, features: Union[str, List[str]]):
         features = [features]
 
     def wrap(cls):
+        register_module(cls)
         for feature in features:
             feature_registry = encoder_registry.get(feature, {})
             feature_registry[name] = cls

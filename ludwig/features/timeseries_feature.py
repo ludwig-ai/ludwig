@@ -223,6 +223,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
 
 # this is still WIP
+# @register_module
 # class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
 #     def __init__(self, feature):
 #         super().__init__(feature)
