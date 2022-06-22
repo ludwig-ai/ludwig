@@ -38,6 +38,7 @@ from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
+from ludwig.utils.config_utils import get_feature_type_parameter_values
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -131,14 +132,34 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
+    categorical_feature_name = input_features[2][NAME]
+    output_feature_name = output_features[0][NAME]
+
+    cell_types_search_space = ["lstm", "gru"]
+    vocab_size_search_space = list(range(4, 9))
+
+    # Add default parameters in hyperopt parameter search space
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        HYPEROPT: {
+            "parameters": {
+                "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
+                categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
+                "defaults.input_features.text.cell_type": {"space": "choice", "categories": cell_types_search_space},
+                "defaults.output_features.category.vocab_size": {"space": "randint", "lower": 4, "upper": 8},
+            },
+            "goal": "minimize",
+            "output_feature": output_feature_name,
+            "validation_metrics": "loss",
+            "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
+            "search_alg": {"type": "variant_generator"},
+        },
     }
 
-    return config, rel_path
+    return config, rel_path, cell_types_search_space, vocab_size_search_space
 
 
 def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> str:
@@ -369,90 +390,50 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
 
 @pytest.mark.distributed
 def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
-    config, rel_path = _setup_ludwig_config_with_shared_params(csv_filename)
-
-    categorical_feature_name = config[INPUT_FEATURES][2][NAME]
-    output_feature_name = config[OUTPUT_FEATURES][0][NAME]
-
-    cell_types_search_space = ["lstm", "gru"]
-    vocab_size_search_space = list(range(4, 9))
-
-    # Add hyperopt parameter space with defaults to the config
-    config[HYPEROPT] = {
-        "parameters": {
-            "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-            categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
-            "defaults.input_features.text.cell_type": {"space": "choice", "categories": cell_types_search_space},
-            "defaults.output_features.category.vocab_size": {"space": "randint", "lower": 4, "upper": 8},
-        },
-        "goal": "minimize",
-        "output_feature": output_feature_name,
-        "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
-        "search_alg": {"type": "variant_generator"},
-    }
+    config, rel_path, cell_types_search_space, vocab_size_search_space = _setup_ludwig_config_with_shared_params(
+        csv_filename
+    )
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
 
     # Check that the trials did sample from defaults in the search space
     for _, trial_row in hyperopt_results_df.iterrows():
+        vocab_size = _get_trial_parameter_value("defaults.output_features.category.vocab_size", trial_row)
+
         cell_type = _get_trial_parameter_value("defaults.input_features.text.cell_type", trial_row)
         if cell_type is not None:
             cell_type = cell_type.replace('"', "")
-        vocab_size = _get_trial_parameter_value("defaults.output_features.category.vocab_size", trial_row)
+
         assert cell_type in cell_types_search_space
         assert vocab_size in vocab_size_search_space
 
 
 @pytest.mark.distributed
 def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
-    config, rel_path = _setup_ludwig_config_with_shared_params(csv_filename)
-
-    categorical_feature_name = config[INPUT_FEATURES][2][NAME]
-    output_feature_name = config[OUTPUT_FEATURES][0][NAME]
-
-    cell_types_search_space = ["lstm", "gru"]
-    vocab_size_search_space = list(range(4, 9))
-
-    # Add hyperopt parameter space with defaults to the config
-    config[HYPEROPT] = {
-        "parameters": {
-            "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-            categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
-            "defaults.input_features.text.cell_type": {"space": "choice", "categories": cell_types_search_space},
-            "defaults.output_features.category.vocab_size": {"space": "randint", "lower": 4, "upper": 8},
-        },
-        "goal": "minimize",
-        "output_feature": output_feature_name,
-        "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
-        "search_alg": {"type": "variant_generator"},
-    }
+    config, rel_path, cell_types_search_space, vocab_size_search_space = _setup_ludwig_config_with_shared_params(
+        csv_filename
+    )
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
 
-    # Check that each trial's text input/output configs got updated correctly
+    # Check that each trial's written input/output configs got updated
     for _, trial_row in hyperopt_results_df.iterrows():
         model_parameters = json.load(
             open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
         )
 
-        input_features = model_parameters[INPUT_FEATURES]
-        output_features = model_parameters[OUTPUT_FEATURES]
-        text_input_cell_types = set()
-
-        # Check that cell_type and vocab_size got updated from the sampler correctly
-        for input_feature in input_features:
+        # Check that cell_type got updated from the sampler correctly
+        for input_feature in model_parameters[INPUT_FEATURES]:
             if input_feature[TYPE] == TEXT:
-                cell_type = input_feature["cell_type"]
-                assert cell_type in cell_types_search_space
-                text_input_cell_types.add(cell_type)
-
-        for output_feature in output_features:
-            if output_feature[TYPE] == CATEGORY:
-                assert output_feature["vocab_size"] in vocab_size_search_space
+                assert input_feature["cell_type"] in cell_types_search_space
 
         # All text features with defaults should have the same cell_type for this trial
+        text_input_cell_types = get_feature_type_parameter_values(model_parameters, INPUT_FEATURES, TEXT, "cell_type")
         assert len(text_input_cell_types) == 1
+
+        # Check that vocab_size got updated from the sampler
+        for output_feature in model_parameters[OUTPUT_FEATURES]:
+            if output_feature[TYPE] == CATEGORY:
+                assert output_feature["vocab_size"] in vocab_size_search_space

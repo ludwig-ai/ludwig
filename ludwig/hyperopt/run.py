@@ -408,10 +408,11 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
 def get_shared_params_dict(config_feature_type: str, features: Dict[str, Any]) -> Dict[str, Dict[str, Set]]:
     """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
-    default encoder for that feature type.
+    default encoder for that feature type.They may be considered for potential shared parameter search spaces
+    depending on the parameter space defined later within the hyperopt config.
 
-    They may be considered for potential shared parameter search spaces depending on the parameter space defined later
-    within the hyperopt config.
+    This applies to both config_feature_types - input_features and output_features. The shared parameters for both
+    config_feature_types must be specified separately.
 
     TODO(#2167): Make sure each feature has a type defined in the JSONSchema for Hyperopt
     """

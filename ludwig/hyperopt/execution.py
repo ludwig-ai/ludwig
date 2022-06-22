@@ -916,7 +916,7 @@ def update_model_dict_with_shared_params(
 def update_model_dict(
     model_dict: Dict[str, Any], parameter_name: str, trial_parameters_dict: Dict[str, Dict[str, Any]]
 ):
-    """Update parameter in config with sampled value from hyperopt."""
+    """Update a parameter in config with sampled value from hyperopt."""
     if parameter_name not in trial_parameters_dict:
         return
 
@@ -942,6 +942,7 @@ def get_parameters_dict(parameters):
 def substitute_parameters(
     config: Dict[str, Any], parameters: Dict[str, Any], shared_params_features_dict: Dict[str, Dict[str, Set]]
 ):
+    """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in config[INPUT_FEATURES]:
         # Update shared params
