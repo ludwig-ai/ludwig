@@ -70,7 +70,7 @@ class _SetPreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.is_bag = is_bag
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of counts for each token."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")

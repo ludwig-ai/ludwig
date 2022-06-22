@@ -139,7 +139,7 @@ def spread(fn):
 
 
 @spread
-def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None, **kwargs):
+def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None, dtype=object, **kwargs):
     """Helper method to read a csv file. Wraps around pd.read_csv to handle some exceptions. Can extend to cover
     cases as necessary.
 
@@ -149,6 +149,7 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
     :param header: header argument for pandas to read the csv
     :param nrows: number of rows to read from the csv, None means all
     :param skiprows: number of rows to skip from the csv, None means no skips
+    :param dtype: dtype to use for columns. Defaults to object to disable type inference.
     :return: Pandas dataframe with the data
     """
     with open_file(data_fp, "r", encoding="utf8") as csvfile:
@@ -159,9 +160,10 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
-    # NOTE: we read all XSV columns in as dtype=object, bypassing all type inference. This is to avoid silent issues
-    # related to incorrect type inference (e.g. NaNs in bool columns). Convert data to correct types after reading in.
-    kwargs = dict(sep=separator, header=header, skiprows=skiprows, dtype=object, **kwargs)
+    # NOTE: by default we read all XSV columns in as dtype=object, bypassing all type inference. This is to avoid silent
+    # issues related to incorrect type inference (e.g. NaNs in bool columns). Convert data to correct types after
+    # reading in.
+    kwargs = dict(sep=separator, header=header, skiprows=skiprows, dtype=dtype, **kwargs)
 
     if nrows is not None:
         kwargs["nrows"] = nrows

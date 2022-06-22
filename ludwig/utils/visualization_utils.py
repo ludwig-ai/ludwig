@@ -17,11 +17,11 @@ import copy
 import logging
 import sys
 from collections import Counter
-from distutils.version import LooseVersion
 from sys import platform
 
 import numpy as np
 import pandas as pd
+from packaging import version
 
 from ludwig.constants import SPACE, TRAINING, VALIDATION
 
@@ -56,7 +56,7 @@ RAY_TUNE_FLOAT_SPACES = {"uniform", "quniform", "loguniform", "qloguniform", "ra
 RAY_TUNE_INT_SPACES = {"randint", "qrandint", "lograndint", "qlograndint"}
 RAY_TUNE_CATEGORY_SPACES = {"choice", "grid_search"}
 
-_matplotlib_34 = LooseVersion(mpl.__version__) >= LooseVersion("3.4")
+_matplotlib_34 = version.parse(mpl.__version__) >= version.parse("3.4")
 
 
 # plt.rc('xtick', labelsize='x-large')
