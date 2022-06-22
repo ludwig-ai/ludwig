@@ -133,9 +133,10 @@ class _SequencePostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.probability_key = PROBABILITY
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        """Takes a dictionary of tensors and returns a dictionary of tensors."""
-        pred_predictions = preds[self.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        pred_predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        pred_probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
         predictions: List[List[str]] = []
         for sequence in pred_predictions:
             sequence_predictions: List[str] = []
@@ -148,7 +149,6 @@ class _SequencePostprocessing(torch.nn.Module):
                 sequence_predictions.append(unit_prediction)
             predictions.append(sequence_predictions)
 
-        pred_probabilities = preds[self.probabilities_key]
         probabilities, _ = torch.max(pred_probabilities, dim=-1)
         probability = torch.sum(torch.log(probabilities), dim=-1)
 
