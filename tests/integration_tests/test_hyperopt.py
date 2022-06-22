@@ -368,7 +368,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
 
 
 @pytest.mark.distributed
-def test_hyperopt_run_shared_params_sampler(csv_filename, tmpdir):
+def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
     config, rel_path = _setup_ludwig_config_with_shared_params(csv_filename)
 
     categorical_feature_name = config[INPUT_FEATURES][2][NAME]
@@ -406,7 +406,7 @@ def test_hyperopt_run_shared_params_sampler(csv_filename, tmpdir):
 
 
 @pytest.mark.distributed
-def test_hyperopt_with_shared_params_full_config(csv_filename, tmpdir):
+def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
     config, rel_path = _setup_ludwig_config_with_shared_params(csv_filename)
 
     categorical_feature_name = config[INPUT_FEATURES][2][NAME]
