@@ -2,6 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.encoders.registry import get_encoder_classes
+from ludwig.decoders.registry import get_decoder_classes
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -17,9 +20,7 @@ class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        ["passthrough", "embed", "parallel_cnn", "stacked_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "transformer",
-         "albert", "mt5", "xlmroberta", "bert", "xlm", "gpt", "gpt2", "roberta", "transformer_xl", "xlnet",
-         "distilbert", "ctrl", "camembert", "t5", "flaubert", "electra", "longformer", "auto_transformer"],
+        list(get_encoder_classes('text').keys()),
         default="parallel_cnn",
         description="Encoder to use for this text feature.",
     )
@@ -40,7 +41,7 @@ class TextOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        ["tagger", "generator"],
+        list(get_decoder_classes('text').keys()),
         default="generator",
         description="Decoder to use for this text output feature.",
     )

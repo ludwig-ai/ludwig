@@ -2,6 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.encoders.registry import get_encoder_classes
+from ludwig.decoders.registry import get_decoder_classes
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -17,7 +20,7 @@ class VectorInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        ["passthrough", "dense"],
+        list(get_encoder_classes('vector').keys()),
         default="dense",
         description="Encoder to use for this vector feature.",
     )
@@ -38,7 +41,7 @@ class VectorOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        ["projector"],
+        list(get_decoder_classes('vector').keys()),
         default="projector",
         description="Decoder to use for this vector feature.",
     )

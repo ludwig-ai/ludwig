@@ -2,6 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.encoders.registry import get_encoder_classes
+from ludwig.decoders.registry import get_decoder_classes
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -15,7 +18,7 @@ class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        ["passthrough", "dense"],
+        list(get_encoder_classes('number').keys()),
         default="passthrough",
         description="Encoder to use for this number feature.",
     )
@@ -33,7 +36,7 @@ class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 class NumberOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        ["regressor"],
+        list(get_decoder_classes('number').keys()),
         default="regressor",
         allow_none=True,
         description="Decoder to use for this number feature.",

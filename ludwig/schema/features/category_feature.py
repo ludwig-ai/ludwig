@@ -2,6 +2,9 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.encoders.registry import get_encoder_classes
+from ludwig.decoders.registry import get_decoder_classes
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -15,7 +18,7 @@ class CategoryInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        ["passthrough", "dense", "sparse"],
+        list(get_encoder_classes('category').keys()),
         default="dense",
         description="Encoder to use for this category feature.",
     )
@@ -34,7 +37,7 @@ class CategoryOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryOutputFeature is a dataclass that configures the parameters used for a category output feature."""
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        ["classifier"],
+        list(get_decoder_classes('category').keys()),
         default="classifier",
         allow_none=True,
         description="Decoder to use for this category feature.",

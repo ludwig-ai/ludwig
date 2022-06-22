@@ -2,6 +2,8 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.encoders.registry import get_encoder_classes
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -17,7 +19,7 @@ class ImageInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        ["stacked_cnn", "resnet", "mlp_mixer", "vit"],
+        list(get_encoder_classes('image').keys()),
         default="stacked_cnn",
         description="Encoder to use for this image feature.",
     )
