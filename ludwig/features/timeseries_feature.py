@@ -128,18 +128,6 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "timeseries_length_limit": {"type": "integer", "minimum": 0},
-            "padding_value": {"type": "number"},
-            "padding": {"type": "string", "enum": ["right", "left"]},
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 

@@ -7,6 +7,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
+from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils import strings_utils
 
 preprocessing_registry = Registry()
@@ -94,7 +95,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     lowercase: Optional[bool] = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
@@ -106,7 +107,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     fill_value: Optional[str] = schema_utils.String(
-        default="",
+        default="<UNK>",
         allow_none=False,
         description="The value to replace the missing values with in case the missing_value_strategy is fill_value",
     )
@@ -164,8 +165,7 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     fill_value: Union[int, float] = schema_utils.NumericOrStringOptionsField(
-        ["yes", "YES", "Yes", "y", "Y", "true", "True", "TRUE", "t", "T", "1", "1.0", "no", "NO", "No", "n", "N",
-         "false", "False", "FALSE", "f", "F", "0", "0.0"],
+        strings_utils.all_bool_strs(),
         default=None,
         default_numeric=None,
         default_option=None,
@@ -186,14 +186,9 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The computed fill value determined by the user or inferred from the data.",
     )
 
-    fallback_true_label: Optional[str] = schema_utils.NumericOrStringOptionsField(
-        ["True", "False"],
-        allow_none=True,
+    fallback_true_label: Optional[str] = schema_utils.String(
         default=None,
-        default_numeric=1,
-        default_option=None,
-        min=0,
-        max=1,
+        allow_none=True,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
                     "conventional boolean value"
     )
@@ -346,7 +341,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     fill_value: Optional[str] = schema_utils.String(
-        default="",
+        default="<UNK>",
         allow_none=False,
         description="The value to replace the missing values with in case the missing_value_strategy is fill_value",
     )
@@ -395,7 +390,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     resize_method: Optional[str] = schema_utils.StringOptions(
         ["crop_or_pad", "interpolate"],
-        default="crop_or_pad",
+        default="interpolate",
         allow_none=False,
         description="The method to use for resizing images.",
     )
@@ -495,59 +490,65 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     audio_feature: Optional[dict] = schema_utils.Dict(
-        default={"type": "raw"},
+        default={
+                "type": "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
+            },
         description="Dictionary that takes as input the audio feature type as well as additional parameters if type "
                     "!= raw. The following parameters can/should be defined in the dictionary "
     )
 
-    type: Optional[str] = schema_utils.StringOptions(
-        ["raw", "stft", "stft_phase", "group_delay"],
-        default="raw",
-        allow_none=False,
-        description="Defines the type of audio features to be used.",
-    )
-
-    window_length_in_s: Optional[float] = schema_utils.NonNegativeFloat(
-        default=0.04,
-        allow_none=False,
-        description="Defines the window length used for the short time Fourier transformation (only needed if type is "
-                    "not raw).",
-    )
-
-    window_shift_in_s: Optional[float] = schema_utils.NonNegativeFloat(
-        default=0.02,
-        allow_none=False,
-        description="Defines the window shift used for the short time Fourier transformation - also called hop length "
-                    "(only needed if type is not raw).",
-    )
-
-    num_fft_points: Optional[int] = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=False,
-        description="Defines the number of fft points used for the short time Fourier transformation. If "
-                    "num_fft_points > (window_length_in_s * sample_rate), then the signal is zero-padded at the end. "
-                    "num_fft_points has to be >= (window_length_in_s * sample_rate). Only needed if type is not raw.",
-    )
-
-    window_type: Optional[str] = schema_utils.String(
-        default="hamming",
-        allow_none=False,
-        description="Defines the window type the signal is weighted before the short time Fourier transformation. All "
-                    "windows provided by scipy’s window function can be used (only needed if type != raw).",
-        )
-
-    num_filter_bands: Optional[int] = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=False,
-        description="Defines the number of filters used in the filterbank (only needed if type == fbank)",
-    )
+    # type: # Optional[str] = schema_utils.StringOptions(
+    #     ["raw", "stft", "stft_phase", "group_delay"],
+    #     default="raw",
+    #     allow_none=False,
+    #     description="Defines the type of audio features to be used.",
+    # )
+    #
+    # window_length_in_s: Optional[float] = schema_utils.NonNegativeFloat(
+    #     default=0.04,
+    #     allow_none=False,
+    #     description="Defines the window length used for the short time Fourier transformation (only needed if type is "
+    #                 "not raw).",
+    # )
+    #
+    # window_shift_in_s: Optional[float] = schema_utils.NonNegativeFloat(
+    #     default=0.02,
+    #     allow_none=False,
+    #     description="Defines the window shift used for the short time Fourier transformation - also called hop length "
+    #                 "(only needed if type is not raw).",
+    # )
+    #
+    # num_fft_points: Optional[int] = schema_utils.PositiveInteger(
+    #     default=None,
+    #     allow_none=False,
+    #     description="Defines the number of fft points used for the short time Fourier transformation. If "
+    #                 "num_fft_points > (window_length_in_s * sample_rate), then the signal is zero-padded at the end. "
+    #                 "num_fft_points has to be >= (window_length_in_s * sample_rate). Only needed if type is not raw.",
+    # )
+    #
+    # window_type: Optional[str] = schema_utils.String(
+    #     default="hamming",
+    #     allow_none=False,
+    #     description="Defines the window type the signal is weighted before the short time Fourier transformation. All "
+    #                 "windows provided by scipy’s window function can be used (only needed if type != raw).",
+    #     )
+    #
+    # num_filter_bands: Optional[int] = schema_utils.PositiveInteger(
+    #     default=None,
+    #     allow_none=False,
+    #     description="Defines the number of filters used in the filterbank (only needed if type == fbank)",
+    # )
 
 
 @dataclass
 @register_preprocessor("timeseries")
 class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    tokenizer: Optional[str] = schema_utils.String(
+    tokenizer: Optional[str] = schema_utils.StringOptions(
+        sorted(list(tokenizer_registry.keys())),
         default="space",
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",

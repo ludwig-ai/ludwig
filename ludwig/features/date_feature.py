@@ -55,16 +55,9 @@ class DateFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "", "datetime_format": None}
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-            "datetime_format": {"type": ["string", "null"]},
-        }
+        return {"missing_value_strategy": FILL_WITH_CONST,
+                "fill_value": "",
+                "datetime_format": None}
 
     @staticmethod
     def cast_column(column, backend):

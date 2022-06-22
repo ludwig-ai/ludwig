@@ -139,25 +139,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema() -> Dict[str, Any]:
-        fill_value_schema = {
-            "anyOf": [
-                {"type": "integer", "minimum": 0, "maximum": 1},
-                {"type": "string", "enum": strings_utils.all_bool_strs()},
-            ]
-        }
-
-        return {
-            "missing_value_strategy": {
-                "type": "string",
-                "enum": [FILL_WITH_FALSE] + MISSING_VALUE_STRATEGY_OPTIONS,
-            },
-            "fill_value": fill_value_schema,
-            "computed_fill_value": fill_value_schema,
-            "fallback_true_label": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         """Cast column of dtype object to bool.
 

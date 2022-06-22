@@ -82,14 +82,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "integer"},
-            "computed_fill_value": {"type": "integer"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         try:
             return column.astype(int)

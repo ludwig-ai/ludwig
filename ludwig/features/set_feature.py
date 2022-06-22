@@ -170,17 +170,6 @@ class SetFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "most_common": {"type": "integer", "minimum": 0},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 

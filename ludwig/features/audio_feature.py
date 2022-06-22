@@ -110,27 +110,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "in_memory": {"type": "boolean"},
-            "padding_value": {"type": "number", "minimum": 0},
-            "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
-            "audio_feature": {
-                "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
-                    "window_length_in_s": {"type": "number", "minimum": 0},
-                    "window_shift_in_s": {"type": "number", "minimum": 0},
-                    "num_fft_points": {"type": "number", "minimum": 0},
-                    "window_type": {"type": "string"},
-                    "num_filter_bands": {"type": "number", "minimum": 0},
-                },
-            },
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 

@@ -234,21 +234,6 @@ class NumberFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {
-                "type": "string",
-                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
-            },
-            "fill_value": {"type": "number"},
-            "computed_fill_value": {"type": "number"},
-            "normalization": {
-                "type": ["string", "null"],
-                "enum": list(numeric_transformation_registry.keys()),
-            },
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return backend.df_engine.df_lib.to_numeric(column, errors="coerce").astype(np.float32)
 
