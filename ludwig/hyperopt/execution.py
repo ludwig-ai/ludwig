@@ -847,6 +847,8 @@ def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
     for key, value in params.items():
         if isinstance(value, dict):
             for sub_key, sub_value in value.items():
+                if key not in model_dict:
+                    model_dict[key] = dict()
                 model_dict[key][sub_key] = sub_value
         else:
             model_dict[key] = value
@@ -883,6 +885,14 @@ def update_model_dict_with_shared_params(
     if DEFAULTS not in trial_parameters_dict:
         return
 
+    # No default parameters specified for this config_feature_group
+    if config_feature_group not in trial_parameters_dict[DEFAULTS]:
+        return
+
+    # This feature type should have a sampled value from the default parameters passed in
+    if feature_type not in trial_parameters_dict[DEFAULTS][config_feature_group]:
+        return
+
     # All features in Ludwig config use non-default encoders or decoders
     if not shared_params_features_dict:
         logger.warning(
@@ -905,11 +915,8 @@ def update_model_dict_with_shared_params(
     if feature_name not in shared_params_features_dict[feature_type]:
         return
 
-    # This feature type should have a sampled value from the default parameters passed in
-    if feature_type not in trial_parameters_dict[DEFAULTS][config_feature_group]:
-        return
-
     shared_params = trial_parameters_dict[DEFAULTS][config_feature_group][feature_type]
+
     set_values(shared_params, model_dict)
 
 
