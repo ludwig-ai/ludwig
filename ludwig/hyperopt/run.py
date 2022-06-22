@@ -406,12 +406,14 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     )
 
 
-def get_shared_params_dict(config_feature_type: str, features: Dict[str, Any]) -> Dict[str, Set]:
+def get_shared_params_dict(config_feature_type: str, features: Dict[str, Any]) -> Dict[str, Dict[str, Set]]:
     """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
     default encoder for that feature type.
 
     They may be considered for potential shared parameter search spaces depending on the parameter space defined later
     within the hyperopt config.
+
+    TODO(#2167): Make sure each feature has a type defined in the JSONSchema for Hyperopt
     """
 
     feature_group_to_features_map = defaultdict(set)
@@ -422,16 +424,15 @@ def get_shared_params_dict(config_feature_type: str, features: Dict[str, Any]) -
         feature_group_to_features_map[feature_type].add(feature_name)
 
     for feature in features:
-        if TYPE in feature:
-            if config_feature_type == INPUT_FEATURES:
-                default_encoder = get_from_registry(feature[TYPE], input_type_registry).encoder
-                if not feature.get(ENCODER, 0) or feature.get(ENCODER) == default_encoder:
-                    update_feature_group_mapping(feature)
-            else:
-                default_decoder = get_from_registry(feature[TYPE], output_type_registry).decoder
-                if not feature.get(DECODER, 0) or feature.get(DECODER) == default_decoder:
-                    update_feature_group_mapping(feature)
+        if TYPE not in feature:
+            raise ValueError("Ludwig expects feature types to be defined for each feature within the config")
+        if config_feature_type == INPUT_FEATURES:
+            default_encoder = get_from_registry(feature[TYPE], input_type_registry).encoder
+            if not feature.get(ENCODER, 0) or feature.get(ENCODER) == default_encoder:
+                update_feature_group_mapping(feature)
         else:
-            raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
+            default_decoder = get_from_registry(feature[TYPE], output_type_registry).decoder
+            if not feature.get(DECODER, 0) or feature.get(DECODER) == default_decoder:
+                update_feature_group_mapping(feature)
 
     return feature_group_to_features_map

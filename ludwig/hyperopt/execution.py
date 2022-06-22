@@ -843,44 +843,85 @@ def get_build_hyperopt_executor(executor_type):
 executor_registry = {"ray": RayTuneExecutor}
 
 
-def set_values(
-    model_dict: Dict[str, Any],
-    name: str,
-    parameters_dict: Dict[str, Dict[str, Any]],
-    feature_type: Optional[str] = None,
-    shared_params_type: Optional[str] = None,
-    shared_params_features_dict: Optional[Dict[str, Set]] = None,
-):
-    """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled for each trial
-    stored in parameters_dict."""
-
-    # Update shared params
-    if DEFAULTS in parameters_dict and name not in {COMBINER, TRAINER, PREPROCESSING}:
-        if shared_params_features_dict:
-            if feature_type in shared_params_features_dict and name in shared_params_features_dict[feature_type]:
-                if feature_type in parameters_dict[DEFAULTS][shared_params_type]:
-                    shared_params = parameters_dict[DEFAULTS][shared_params_type][feature_type]
-                    for key, value in shared_params.items():
-                        if isinstance(value, dict):
-                            for sub_key, sub_value in value.items():
-                                model_dict[key][sub_key] = sub_value
-                        else:
-                            model_dict[key] = value
+def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
+    for key, value in params.items():
+        if isinstance(value, dict):
+            for sub_key, sub_value in value.items():
+                model_dict[key][sub_key] = sub_value
         else:
-            logger.warning(
-                """Defaults specified in hyperopt parameter search space but all features in config override default
-                encoders or decoders"""
-            )
+            model_dict[key] = value
 
-    # Update or overwrite any feature specific hyperopt params
-    if name in parameters_dict:
-        params = parameters_dict[name]
-        for key, value in params.items():
-            if isinstance(value, dict):
-                for sub_key, sub_value in value.items():
-                    model_dict[key][sub_key] = sub_value
-            else:
-                model_dict[key] = value
+
+def update_model_dict_with_shared_params(
+    model_dict: Dict[str, Any],
+    trial_parameters_dict: Dict[str, Dict[str, Any]],
+    config_feature_group: str = None,
+    shared_params_features_dict: Dict[str, Dict[str, Set]] = None,
+):
+    """Updates the parameters of feature_name in model_dict based on hyperopt parameters sampled.
+
+    :param model_dict: Underlying config for the specific input/output feature populated with defaults and feature
+            specific parameters. This may be updated with values from the hyperopt search space.
+    :type model_dict: dict[str, any]
+    :param trial_parameters_dict: Config produced by the hyperopt sampler based on the parameter search space. It maps
+            the name of the feature to the sampled parameters for that feature. For default parameters, it creates
+            nested dictionaries for each feature type.
+    :type trial_parameters_dict: dict[str, dict[str, any]]
+    :param config_feature_group: Indicates whether the feature is an input feature or output feature (can be either of
+            `input_features` or `output_features`).
+    :type config_feature_group: str
+    :param shared_params_features_dict: Mapping that stores all input and output feature names that use default
+            encoders or decoders based on their feature type. At the top level, these are separated into two groups -
+            input features and output features.
+    :type shared_params_features_dict: dict[str, dict[str, set]]
+    """
+
+    feature_name = model_dict[COLUMN]
+    feature_type = model_dict[TYPE]
+
+    # All features in Ludwig config use non-default encoders or decoders
+    if not shared_params_features_dict:
+        logger.warning(
+            """
+            Default parameters specified in the hyperopt parameter search space are not being used since features
+            in Ludwig config are not using default encoders or decoders. You may consider either setting features to
+            their default encoders or decoders, or specifying feature with encoder specific parameters instead of
+            defaults in the parameter search space.
+            """
+        )
+        return
+
+    shared_params_features_dict = shared_params_features_dict[config_feature_group]
+
+    # No default parameters specified in hyperopt parameter search space
+    if DEFAULTS not in trial_parameters_dict:
+        return
+
+    # At least one of this feature's feature type must use non-default encoders/decoders in the config
+    if feature_type not in shared_params_features_dict:
+        return
+
+    # This feature must use a default encoder/decoder
+    if feature_name not in shared_params_features_dict[feature_type]:
+        return
+
+    # This feature type should have a sampled value from the default parameters passed in
+    if feature_type not in trial_parameters_dict[DEFAULTS][config_feature_group]:
+        return
+
+    shared_params = trial_parameters_dict[DEFAULTS][config_feature_group][feature_type]
+    set_values(shared_params, model_dict)
+
+
+def update_model_dict(
+    model_dict: Dict[str, Any], parameter_name: str, trial_parameters_dict: Dict[str, Dict[str, Any]]
+):
+    """Update parameter in config with sampled value from hyperopt."""
+    if parameter_name not in trial_parameters_dict:
+        return
+
+    params = trial_parameters_dict[parameter_name]
+    set_values(params, model_dict)
 
 
 def get_parameters_dict(parameters):
@@ -901,30 +942,28 @@ def get_parameters_dict(parameters):
 def substitute_parameters(config, parameters, shared_params_features_dict):
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in config[INPUT_FEATURES]:
-        set_values(
+        # Update shared params
+        update_model_dict_with_shared_params(
             input_feature,
-            input_feature[COLUMN],
             parameters_dict,
-            feature_type=input_feature[TYPE],
-            shared_params_type=INPUT_FEATURES,
-            shared_params_features_dict=(
-                shared_params_features_dict[INPUT_FEATURES] if shared_params_features_dict else None
-            ),
+            config_feature_group=INPUT_FEATURES,
+            shared_params_features_dict=shared_params_features_dict,
         )
+        # Update or overwrite any feature specific hyperopt params
+        update_model_dict(input_feature, input_feature[COLUMN], parameters_dict)
     for output_feature in config[OUTPUT_FEATURES]:
-        set_values(
+        # Update shared params
+        update_model_dict_with_shared_params(
             output_feature,
-            output_feature[COLUMN],
             parameters_dict,
-            feature_type=output_feature[TYPE],
-            shared_params_type=OUTPUT_FEATURES,
-            shared_params_features_dict=(
-                shared_params_features_dict[OUTPUT_FEATURES] if shared_params_features_dict else None
-            ),
+            config_feature_group=OUTPUT_FEATURES,
+            shared_params_features_dict=shared_params_features_dict,
         )
-    set_values(config[COMBINER], COMBINER, parameters_dict)
-    set_values(config[TRAINER], TRAINER, parameters_dict)
-    set_values(config[PREPROCESSING], PREPROCESSING, parameters_dict)
+        # Update or overwrite any feature specific hyperopt params
+        update_model_dict(output_feature, output_feature[COLUMN], parameters_dict)
+    update_model_dict(config[COMBINER], COMBINER, parameters_dict)
+    update_model_dict(config[TRAINER], TRAINER, parameters_dict)
+    update_model_dict(config[PREPROCESSING], PREPROCESSING, parameters_dict)
     return config
 
 

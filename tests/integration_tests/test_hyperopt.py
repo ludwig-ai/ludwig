@@ -16,7 +16,6 @@ import contextlib
 import json
 import logging
 import os.path
-import tempfile
 from typing import Dict, Optional, Tuple
 
 import pytest
@@ -26,7 +25,6 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COMBINER,
-    DEFAULTS,
     HYPEROPT,
     INPUT_FEATURES,
     NAME,
@@ -141,6 +139,20 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
     }
 
     return config, rel_path
+
+
+def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> str:
+    """Returns the parameter value from the Ray trial row, which has slightly different column names depending on
+    the version of Ray. Returns None if the parameter key is not found.
+
+    TODO(#2176): There are different key name delimiters depending on Ray version. Simplify this as Ray is upgraded.
+    The delimiter in future versions of Ray will be '/' instead of '.'
+    """
+    if f"config.{parameter_key}" in trial_row:
+        return trial_row[f"config.{parameter_key}"]
+    elif f"config/{parameter_key}" in trial_row:
+        return trial_row[f"config/{parameter_key}"]
+    return None
 
 
 @contextlib.contextmanager
@@ -279,7 +291,7 @@ def test_hyperopt_scheduler(
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -338,27 +350,25 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-        if search_space == "random":
-            assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
-        else:
-            # compute size of search space for grid search
-            grid_search_size = 1
-            for k, v in search_parameters.items():
-                grid_search_size *= len(v["values"])
-            assert hyperopt_results.experiment_analysis.results_df.shape[0] == grid_search_size
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    if search_space == "random":
+        assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
+    else:
+        # compute size of search space for grid search
+        grid_search_size = 1
+        for k, v in search_parameters.items():
+            grid_search_size *= len(v["values"])
+        assert hyperopt_results.experiment_analysis.results_df.shape[0] == grid_search_size
 
-        # check for return results
-        assert isinstance(hyperopt_results, HyperoptResults)
+    # check for return results
+    assert isinstance(hyperopt_results, HyperoptResults)
 
-        # check for existence of the hyperopt statistics file
-        assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
+    # check for existence of the hyperopt statistics file
+    assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("search_space", ["random"])
-def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
+def test_hyperopt_run_shared_params_sampler(csv_filename, tmpdir):
     config, rel_path = _setup_ludwig_config_with_shared_params(csv_filename)
 
     categorical_feature_name = config[INPUT_FEATURES][2][NAME]
@@ -367,93 +377,82 @@ def test_hyperopt_run_hyperopt_with_shared_params(csv_filename, search_space):
     cell_types_search_space = ["lstm", "gru"]
     vocab_size_search_space = list(range(4, 9))
 
-    # Create default search space for text features with various cell types
-    search_parameters = {
-        "trainer.learning_rate": {
-            "lower": 0.0001,
-            "upper": 0.01,
-            "space": "loguniform",
-        },
-        categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
-        DEFAULTS
-        + "."
-        + INPUT_FEATURES
-        + "."
-        + TEXT
-        + ".cell_type": {"space": "choice", "categories": cell_types_search_space},
-        DEFAULTS + "." + OUTPUT_FEATURES + "." + CATEGORY + ".vocab_size": {"space": "randint", "lower": 4, "upper": 8},
-    }
-
-    # add hyperopt parameter space to the config
+    # Add hyperopt parameter space with defaults to the config
     config[HYPEROPT] = {
-        "parameters": search_parameters,
+        "parameters": {
+            "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
+            categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
+            "defaults.input_features.text.cell_type": {"space": "choice", "categories": cell_types_search_space},
+            "defaults.output_features.category.vocab_size": {"space": "randint", "lower": 4, "upper": 8},
+        },
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
         "search_alg": {"type": "variant_generator"},
     }
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
 
-        # check for return results
-        assert isinstance(hyperopt_results, HyperoptResults)
+    # Check that the trials did sample from defaults in the search space
+    for _, trial_row in hyperopt_results_df.iterrows():
+        cell_type = _get_trial_parameter_value("defaults.input_features.text.cell_type", trial_row)
+        if cell_type is not None:
+            cell_type = cell_type.replace('"', "")
+        vocab_size = _get_trial_parameter_value("defaults.output_features.category.vocab_size", trial_row)
+        assert cell_type in cell_types_search_space
+        assert vocab_size in vocab_size_search_space
 
-        hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
 
-        # check if trials match random_search_size
-        assert hyperopt_results_df.shape[0] == RANDOM_SEARCH_SIZE
+@pytest.mark.distributed
+def test_hyperopt_with_shared_params_full_config(csv_filename, tmpdir):
+    config, rel_path = _setup_ludwig_config_with_shared_params(csv_filename)
 
-        # Check that the trials did sample from defaults in the search space
-        for _, trial_row in hyperopt_results_df.iterrows():
-            cell_type_key = "defaults.input_features.text.cell_type"
-            vocab_size_key = "defaults.output_features.category.vocab_size"
-            # Different key name delimiters depending on Ray version
-            if "config." + cell_type_key in trial_row:
-                cell_type = trial_row["config." + cell_type_key].replace('"', "")
-                vocab_size = trial_row["config." + vocab_size_key]
-            elif "config/" + cell_type_key in trial_row:
-                cell_type = trial_row["config/" + cell_type_key].replace('"', "")
-                vocab_size = trial_row["config/" + vocab_size_key]
-            else:
-                cell_type = None
-                vocab_size = None
-            assert cell_type in cell_types_search_space
-            assert vocab_size in vocab_size_search_space
+    categorical_feature_name = config[INPUT_FEATURES][2][NAME]
+    output_feature_name = config[OUTPUT_FEATURES][0][NAME]
 
-        # check for existence of the hyperopt statistics file
-        assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
+    cell_types_search_space = ["lstm", "gru"]
+    vocab_size_search_space = list(range(4, 9))
 
-        # Check that each trial's text input/output configs got updated correctly
-        for _, trial_row in hyperopt_results_df.iterrows():
-            trial_dir = trial_row["trial_dir"]
-            parameters_file_path = os.path.join(trial_dir, "test_hyperopt_run", "model", "model_hyperparameters.json")
-            try:
-                params_fd = open(parameters_file_path)
-                model_parameters = json.load(params_fd)
-                input_features = model_parameters[INPUT_FEATURES]
-                output_features = model_parameters[OUTPUT_FEATURES]
-                text_input_cell_types = set()  # Used to track that all text features have the same cell_type
-                for input_feature in input_features:
-                    if input_feature[TYPE] == TEXT:
-                        cell_type = input_feature["cell_type"]
-                        # Check that cell_type got updated from the sampler
-                        assert cell_type in cell_types_search_space
-                        text_input_cell_types.add(cell_type)
-                    elif input_feature[TYPE] == CATEGORY:
-                        vocab_size = input_feature["vocab_size"]
-                        # Check that vocab_size is not in the output category search space
-                        # Category input features have vocab_size in range [1,3] inclusive
-                        assert vocab_size not in vocab_size_search_space
-                # All text features with defaults should have the same cell_type for this trial
-                assert len(text_input_cell_types) == 1
-                for output_feature in output_features:
-                    if output_feature[TYPE] == CATEGORY:
-                        vocab_size = output_feature["vocab_size"]
-                        # Check that vocab_size got updated from the sampler
-                        assert vocab_size in vocab_size_search_space
-                params_fd.close()
-            # Likely unable to open trial dir so fail this test
-            except Exception as e:
-                raise RuntimeError(f"Failed to open hyperopt trial dir with error: \n\t {e}")
+    # Add hyperopt parameter space with defaults to the config
+    config[HYPEROPT] = {
+        "parameters": {
+            "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
+            categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
+            "defaults.input_features.text.cell_type": {"space": "choice", "categories": cell_types_search_space},
+            "defaults.output_features.category.vocab_size": {"space": "randint", "lower": 4, "upper": 8},
+        },
+        "goal": "minimize",
+        "output_feature": output_feature_name,
+        "validation_metrics": "loss",
+        "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
+        "search_alg": {"type": "variant_generator"},
+    }
+
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
+
+    # Check that each trial's text input/output configs got updated correctly
+    for _, trial_row in hyperopt_results_df.iterrows():
+        model_parameters = json.load(
+            open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
+        )
+
+        input_features = model_parameters[INPUT_FEATURES]
+        output_features = model_parameters[OUTPUT_FEATURES]
+        text_input_cell_types = set()
+
+        # Check that cell_type and vocab_size got updated from the sampler correctly
+        for input_feature in input_features:
+            if input_feature[TYPE] == TEXT:
+                cell_type = input_feature["cell_type"]
+                assert cell_type in cell_types_search_space
+                text_input_cell_types.add(cell_type)
+
+        for output_feature in output_features:
+            if output_feature[TYPE] == CATEGORY:
+                assert output_feature["vocab_size"] in vocab_size_search_space
+
+        # All text features with defaults should have the same cell_type for this trial
+        assert len(text_input_cell_types) == 1
