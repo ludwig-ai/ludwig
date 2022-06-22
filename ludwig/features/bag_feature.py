@@ -20,12 +20,12 @@ from typing import Any, Dict
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, NAME, PROC_COLUMN, TIED
+from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig

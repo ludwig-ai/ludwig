@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
