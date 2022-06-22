@@ -1,4 +1,3 @@
-from ludwig.modules.ludwig_module import register_module
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -7,7 +6,6 @@ combiner_registry = Registry()
 
 def register_combiner(name: str):
     def wrap(cls):
-        register_module(cls)
         combiner_registry[name] = cls
         return cls
 

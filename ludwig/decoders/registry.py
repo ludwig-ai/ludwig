@@ -12,7 +12,6 @@ def register_decoder(name: str, features: Union[str, List[str]]):
         features = [features]
 
     def wrap(cls):
-        register_module(cls)
         for feature in features:
             feature_registry = decoder_registry.get(feature, {})
             feature_registry[name] = cls

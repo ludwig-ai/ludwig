@@ -11,7 +11,7 @@ from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD, TYPE
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState, register_module
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
@@ -25,7 +25,6 @@ class ECD(BaseModel):
     def type() -> str:
         return MODEL_ECD
 
-@register_module
 class ECD(LudwigModule):
     def __init__(
         self,
@@ -69,27 +68,6 @@ class ECD(LudwigModule):
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
-
-    @classmethod
-    def restore_from_state(cls, state: LudwigModuleState) -> "ECD":
-        return ECD(
-            input_features_def=state.config["input_features"],
-            combiner_def=state.config["combiner"],
-            output_features_def=state.config["output_features"],
-        )
-
-    def get_state(self) -> LudwigModuleState:
-        return super().get_state(
-            config={
-                "input_features": self._input_features_def,
-                "combiner": self._combiner_def,
-                "output_features": self._output_features_def,
-            },
-            saved_weights={},  # Weights are saved in the child modules (inputs, combiner, outputs).
-            children={f"input_features.{name}": feature.get_state() for name, feature in self.input_features.items()}
-            | {"combiner": self.combiner.get_state()}
-            | {f"output_features.{name}": feature.get_state() for name, feature in self.output_features.items()},
-        )
 
     def get_model_inputs(self):
         inputs = {
