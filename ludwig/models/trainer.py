@@ -608,7 +608,7 @@ class Trainer(BaseTrainer):
             # eval metrics on validation set
             self.evaluation(
                 validation_set,
-                "vali",
+                VALIDATION,
                 progress_tracker.validation_metrics,
                 tables,
                 self.eval_batch_size,
