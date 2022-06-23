@@ -1,12 +1,11 @@
 from typing import Any, Dict, Union
 
-import dask.dataframe as dd
 import numpy as np
 from pandas import DataFrame
 
 
 def convert_to_dict(
-    predictions: Union[DataFrame, dd.core.DataFrame],
+    predictions: Union[DataFrame, "dask.dataframe.core.DataFrame"],  # noqa: F821
     output_features: Dict[str, Any],
 ):
     """Convert predictions from DataFrame format to a dictionary."""
