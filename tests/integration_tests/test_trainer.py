@@ -137,7 +137,7 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_test_cluster):
     assert actual_lr == expected_lr
 
 
-def test_changing_parameters_on_plateau(tmpdir, ray_test_cluster):
+def test_changing_parameters_on_plateau(tmpdir):
     input_features = [sequence_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
