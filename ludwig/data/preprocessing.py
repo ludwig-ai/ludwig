@@ -1154,7 +1154,6 @@ def build_dataset(
                 proc_cols[proc_column] = backend.df_engine.map_objects(proc_cols[proc_column], lambda x: x.reshape(-1))
 
     # Implements an outer join of proc_cols
-    print("GOT HERE!!!\n\n")
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless
