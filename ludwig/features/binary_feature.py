@@ -106,13 +106,19 @@ class _BinaryPostprocessing(torch.nn.Module):
 
 
 class _BinaryPredict(PredictModule):
-    def __init__(self, threshold):
+    def __init__(self, threshold, calibration_module=None):
         super().__init__()
         self.threshold = threshold
+        self.calibration_module = calibration_module
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
-        probabilities = torch.sigmoid(logits)
+
+        if self.calibration_module is not None:
+            probabilities = self.calibration_module(logits)
+        else:
+            probabilities = torch.sigmoid(logits)
+
         predictions = probabilities >= self.threshold
         return {
             self.probabilities_key: probabilities,
@@ -297,6 +303,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def create_calibration_module(self, feature) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
+
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
