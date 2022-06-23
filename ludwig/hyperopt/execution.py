@@ -38,7 +38,6 @@ try:
     from ray.tune import register_trainable, Stopper
     from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
-    from ray.tune.sync_client import CommandBasedClient
 
     _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
@@ -473,7 +472,7 @@ class RayTuneExecutor:
                 super().__init__()
                 self.last_steps = 0
 
-            def _get_remote_checkpoint_dir(self) -> Optional[Tuple["CommandBasedClient", str]]:
+            def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_remote_checkpoint_dir(trial_dir)
 
