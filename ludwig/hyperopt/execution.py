@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 import uuid
-from abc import ABC, abstractmethod
+from inspect import signature
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -32,8 +32,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
-from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import RayTuneSampler
+from ludwig.hyperopt.results import RayTuneResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
@@ -49,6 +48,7 @@ try:
     import ray
     from ray import tune
     from ray.tune import register_trainable, Stopper
+    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
     from ray.tune.sync_client import CommandBasedClient
 
@@ -92,18 +92,129 @@ except ImportError as e:
         return False
 
 
+def identity(x):
+    return x
+
+
 def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
 
 
-class HyperoptExecutor(ABC):
+# Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
+def ray_resource_allocation_function(
+    trial_runner: "trial_runner.TrialRunner",  # noqa
+    trial: "Trial",  # noqa
+    result: Dict[str, Any],
+    scheduler: "ResourceChangingScheduler",
+):
+    """Determine resources to allocate to running trials."""
+    pgf = DistributeResources(trial_runner, trial, result, scheduler)
+    # restore original base trial resources
+
+    # create bundles
+    if scheduler.base_trial_resources.required_resources.get("GPU", 0):
+        bundles = [{"CPU": 1, "GPU": 1}] * int(pgf.required_resources["GPU"])
+    else:
+        bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"] - 0.001))
+    # we can't set Trial actor's CPUs to 0 so we just go very low
+    bundles = [{"CPU": 0.001}] + bundles
+    pgf = PlacementGroupFactory(bundles)
+    return pgf
+
+
+class RayTuneExecutor:
     def __init__(
-        self, hyperopt_sampler: Union[dict, RayTuneSampler], output_feature: str, metric: str, split: str
+        self,
+        parameters: dict,
+        output_feature: str,
+        metric: str,
+        goal: str,
+        split: str,
+        search_alg: Optional[Dict] = None,
+        cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
+        num_samples: int = 1,
+        scheduler: Optional[Dict] = None,
+        **kwargs,
     ) -> None:
-        self.hyperopt_sampler = hyperopt_sampler
+        if ray is None:
+            raise ImportError("ray module is not installed. To install it, try running pip install ray")
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
+        if not ray.is_initialized():
+            try:
+                ray.init("auto", ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info("Initializing new Ray cluster...")
+                ray.init(ignore_reinit_error=True)
+        self.search_space, self.decode_ctx = self._get_search_space(parameters)
+        self.num_samples = num_samples
+        self.goal = goal
+        self.search_algorithm = get_search_algorithm(search_alg)
+        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
+        self.output_feature = output_feature
+        self.metric = metric
+        self.split = split
+        self.trial_id = 0
+        self.cpu_resources_per_trial = cpu_resources_per_trial
+        self.gpu_resources_per_trial = gpu_resources_per_trial
+        self.kubernetes_namespace = kubernetes_namespace
+        self.time_budget_s = time_budget_s
+        self.max_concurrent_trials = max_concurrent_trials
+        self.sync_config = None
+
+    def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
+        """Encode search space parameters as JSON with context for decoding."""
+        config = {}
+        ctx = {}
+        for param, values in parameters.items():
+            # Encode list and dict types as JSON encoded strings to
+            # workaround type limitations of the underlying frameworks
+            values = self.encode_values(param, values, ctx)
+
+            param_search_type = values["space"].lower()
+            if hasattr(tune, param_search_type):
+                param_search_space = getattr(tune, param_search_type)
+            else:
+                raise ValueError(f"'{param_search_type}' is not a supported Ray Tune search space")
+
+            param_search_input_args = {}
+            param_search_space_sig = signature(param_search_space)
+            for arg in param_search_space_sig.parameters.values():
+                if arg.name in values:
+                    param_search_input_args[arg.name] = values[arg.name]
+                else:
+                    if arg.default is arg.empty:
+                        raise ValueError(f"Parameter '{arg}' not defined for {param}")
+            config[param] = param_search_space(**param_search_input_args)
+        return config, ctx
+
+    @staticmethod
+    def encode_values(param: str, values: Dict, ctx: Dict) -> Dict:
+        """JSON encodes any search spaces whose values are lists / dicts.
+
+        Only applies to grid search and choice options.  See here for details:
+
+        https://docs.ray.io/en/master/tune/api_docs/search_space.html#random-distributions-api
+        """
+        values = values.copy()
+        for key in ["values", "categories"]:
+            if key in values and not isinstance(values[key][0], (int, float)):
+                values[key] = [json.dumps(v) for v in values[key]]
+                ctx[param] = json.loads
+        return values
+
+    @staticmethod
+    def decode_values(config: Dict, ctx: Dict) -> Dict:
+        """Decode config values with the decode function in the context.
+
+        Uses the identity function if no encoding is needed.
+        """
+        return {key: ctx.get(key, identity)(value) for key, value in config.items()}
 
     def _has_metric(self, stats, split):
         if not stats:
@@ -182,95 +293,6 @@ class HyperoptExecutor(ABC):
         return sorted(
             hyperopt_results, key=lambda hp_res: hp_res.metric_score, reverse=self.hyperopt_sampler.goal == MAXIMIZE
         )
-
-    @abstractmethod
-    def execute(
-        self,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        resume=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        shared_params_features_dict=None,
-        **kwargs,
-    ) -> HyperoptResults:
-        pass
-
-
-class RayTuneExecutor(HyperoptExecutor):
-    def __init__(
-        self,
-        hyperopt_sampler,
-        output_feature: str,
-        metric: str,
-        goal: str,
-        split: str,
-        search_alg: Optional[Dict] = None,
-        cpu_resources_per_trial: int = None,
-        gpu_resources_per_trial: int = None,
-        kubernetes_namespace: str = None,
-        time_budget_s: Union[int, float, datetime.timedelta] = None,
-        max_concurrent_trials: Optional[int] = None,
-        num_samples: int = 1,
-        scheduler: Optional[Dict] = None,
-        **kwargs,
-    ) -> None:
-        if ray is None:
-            raise ImportError("ray module is not installed. To install it, try running pip install ray")
-        if not isinstance(hyperopt_sampler, RayTuneSampler):
-            raise ValueError(
-                "Sampler {} is not compatible with RayTuneExecutor, "
-                "please use the RayTuneSampler".format(hyperopt_sampler)
-            )
-        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature, metric, split)
-        if not ray.is_initialized():
-            try:
-                ray.init("auto", ignore_reinit_error=True)
-            except ConnectionError:
-                logger.info("Initializing new Ray cluster...")
-                ray.init(ignore_reinit_error=True)
-        self.search_space = hyperopt_sampler.search_space
-        self.num_samples = num_samples
-        self.goal = goal
-        self.search_algorithm = (
-            get_search_algorithm(None)(search_alg)
-            if search_alg is None
-            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
-        )
-        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
-        self.decode_ctx = hyperopt_sampler.decode_ctx
-        self.output_feature = output_feature
-        self.metric = metric
-        self.split = split
-        self.trial_id = 0
-        self.cpu_resources_per_trial = cpu_resources_per_trial
-        self.gpu_resources_per_trial = gpu_resources_per_trial
-        self.kubernetes_namespace = kubernetes_namespace
-        self.time_budget_s = time_budget_s
-        self.max_concurrent_trials = max_concurrent_trials
-        self.sync_config = None
 
     @property
     def _cpu_resources_per_trial_non_none(self):
@@ -390,7 +412,7 @@ class RayTuneExecutor(HyperoptExecutor):
             wait_for_gpu(gpu_id)
 
         # Some config values may be JSON encoded as strings, so decode them here
-        config = RayTuneSampler.decode_values(config, decode_ctx)
+        config = self.decode_values(config, decode_ctx)
 
         trial_id = tune.get_trial_id()
         trial_dir = Path(tune.get_trial_dir())
