@@ -1,5 +1,6 @@
 import os
 
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,9 +8,11 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, PROC_COLUMN
 from tests.integration_tests.utils import (
+    audio_feature,
     binary_feature,
     category_feature,
     generate_data,
+    image_feature,
     init_backend,
     LocalTestBackend,
     sequence_feature,
@@ -71,7 +74,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat["vocab_size"]
 
 
-@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize("backend", ["ray"])
 @pytest.mark.distributed
 def test_with_split(backend, csv_filename, tmpdir):
     num_examples = 10
@@ -79,14 +82,17 @@ def test_with_split(backend, csv_filename, tmpdir):
     val_set_size = int(num_examples * 0.1)
     test_set_size = int(num_examples * 0.1)
 
-    input_features = [sequence_feature(reduce_output="sum")]
+    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
+
+    # input_features = [sequence_feature(reduce_output="sum"), image_feature(image_dest_folder)]
+    input_features = [audio_feature(image_dest_folder)]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
     data_df = pd.read_csv(data_csv)
     data_df["split"] = [0] * train_set_size + [1] * val_set_size + [2] * test_set_size
-    data_df.to_csv(data_csv, index=False)
+    # data_df.to_csv(data_csv, index=False)
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -95,12 +101,47 @@ def test_with_split(backend, csv_filename, tmpdir):
         },
     }
 
+    import dask.dataframe as dd
+
+    data_df = dd.from_pandas(data_df, npartitions=1)
+    assert data_df.known_divisions
+
     with init_backend(backend):
         model = LudwigModel(config, backend=backend)
         train_set, val_set, test_set, _ = model.preprocess(
-            data_csv,
+            data_df,
             skip_save_processed_input=False,
         )
         assert len(train_set) == train_set_size
         assert len(val_set) == val_set_size
         assert len(test_set) == test_set_size
+
+
+@pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
+@pytest.mark.distributed
+def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
+    num_examples = 10
+
+    input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
+    )
+    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=1)
+    assert data_df.known_divisions
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {
+            "epochs": 2,
+        },
+    }
+
+    backend = "ray"
+    with init_backend(backend):
+        model = LudwigModel(config, backend=backend)
+        train_set, val_set, test_set, _ = model.preprocess(
+            data_df,
+            skip_save_processed_input=False,
+        )
