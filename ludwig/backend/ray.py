@@ -91,7 +91,7 @@ def get_trainer_kwargs(use_gpu=None):
         num_workers = int(ray.cluster_resources().get("GPU", 0))
     else:
         # TODO: use placement groups or otherwise spread across nodes
-        node_resources = [node["Resources"] for node in ray.state.nodes()]
+        node_resources = [node["Resources"] for node in ray.nodes()]
         num_workers = len(node_resources)
 
     return dict(

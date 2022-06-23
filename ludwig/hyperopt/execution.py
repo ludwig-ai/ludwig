@@ -770,6 +770,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 stop=CallbackStopper(callbacks),
                 verbose=hyperopt_log_verbosity,
                 resume=should_resume,
+                log_to_file=True,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.

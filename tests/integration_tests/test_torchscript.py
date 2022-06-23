@@ -27,7 +27,7 @@ from ludwig.constants import COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES,
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.inference import to_inference_module_input
+from ludwig.models.inference import to_inference_module_input_from_dataframe
 from ludwig.utils import output_feature_utils
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
@@ -390,6 +390,21 @@ def test_torchscript_e2e_h3(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+def test_torchscript_e2e_date(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        date_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
 def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
@@ -415,10 +430,7 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
-    inputs = {
-        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
-        for name, feature in ludwig_model.model.input_features.items()
-    }
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
     outputs = script_module(inputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now
