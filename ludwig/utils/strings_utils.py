@@ -92,14 +92,6 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     return v == fallback_true_label
 
 
-def values_are_pandas_bools(values: List[str]):
-    """Returns True if values would be read by pandas as dtype bool."""
-    for v in values:
-        if not (str(v).lower() in PANDAS_TRUE_STRS | PANDAS_FALSE_STRS):
-            return False
-    return True
-
-
 def values_are_pandas_numbers(values: List[str]):
     """Returns True if values would be read by pandas as dtype float or int."""
     for v in values:
@@ -108,6 +100,12 @@ def values_are_pandas_numbers(values: List[str]):
         except ValueError:
             return False
     return True
+
+
+def values_are_pandas_bools(values: List[str]):
+    """Returns True if values would be read by pandas as dtype bool."""
+    lowercase_values_set = {str(v).lower() for v in values}
+    return lowercase_values_set.issubset(PANDAS_FALSE_STRS | PANDAS_TRUE_STRS)
 
 
 def are_conventional_bools(values: List[Union[str, bool]]) -> bool:

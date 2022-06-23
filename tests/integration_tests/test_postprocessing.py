@@ -33,6 +33,7 @@ from tests.integration_tests.utils import (
 )
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
 def test_binary_predictions(tmpdir, backend, distinct_values):
@@ -81,6 +82,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values):
         assert np.allclose(prob_0, 1 - prob_1)
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
 def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
