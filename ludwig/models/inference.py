@@ -168,7 +168,7 @@ class InferenceModule(nn.Module):
         model: "ECD",
         config: Dict[str, Any],
         training_set_metadata: Dict[str, Any],
-        device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None,
+        device: TorchDevice,
     ):
         stage_to_module = init_inference_stages_from_ludwig_model(
             model, config, training_set_metadata, device=device, scripted=True
@@ -187,7 +187,7 @@ class InferenceModule(nn.Module):
     def from_directory(
         cls: "InferenceModule",
         directory: str,
-        device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None,
+        device: TorchDevice,
     ):
         stage_to_module = init_inference_stages_from_directory(directory, device=device)
 
@@ -300,8 +300,8 @@ def save_ludwig_model_for_inference(
     model: "ECD",
     config: Dict[str, Any],
     training_set_metadata: Dict[str, Any],
+    device: TorchDevice,
     model_only: bool = False,
-    device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None,
 ) -> None:
     """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
     stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
@@ -317,7 +317,8 @@ def save_ludwig_model_for_inference(
 
 
 def init_inference_stages_from_directory(
-    directory: str, device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None
+    directory: str,
+    device: TorchDevice,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from directory."""
     stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
@@ -332,7 +333,7 @@ def init_inference_stages_from_ludwig_model(
     model: "ECD",
     config: Dict[str, Any],
     training_set_metadata: Dict[str, Any],
-    device: Optional[Union[Dict[str, TorchDevice], TorchDevice]] = None,
+    device: TorchDevice,
     scripted: bool = True,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from a LudwigModel (an ECD model, config, and training_set_metadata)."""
@@ -365,17 +366,15 @@ def unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, 
     return outputs
 
 
-def get_filename_from_stage(stage: str, device: Optional[TorchDevice] = None) -> str:
+def get_filename_from_stage(stage: str, device: TorchDevice) -> str:
     """Returns the filename for a stage of inference."""
-    if device is None:
-        device = "cpu"
     if stage not in INFERENCE_STAGES:
         raise ValueError(f"Invalid stage: {stage}.")
     # device is only tracked for predictor stage
     if stage == PREDICTOR:
         return f"inference_{stage}-{device}.pt"
     else:
-        return f"inference_{stage}.pt"
+        return
 
 
 def to_inference_module_input_from_dataframe(

@@ -1480,7 +1480,7 @@ class LudwigModel:
         self,
         save_path: str,
         model_only: bool = False,
-        device: TorchDevice = "cpu",
+        device: Optional[TorchDevice] = None,
     ):
         """Saves the Torchscript model to disk.
 
