@@ -59,7 +59,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values):
 
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
 
-    preds_df = predict_with_backend(tmpdir, config, data_csv_path, backend)
+    preds_df = predict_with_backend(tmpdir, config, data_csv_path, backend, num_predict_samples=len(data_df))
 
     cols = set(preds_df.columns)
     assert f"{feature[NAME]}_predictions" in cols
@@ -107,7 +107,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
 
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
 
-    preds_df = predict_with_backend(tmpdir, config, data_csv_path, backend)
+    preds_df = predict_with_backend(tmpdir, config, data_csv_path, backend, num_predict_samples=len(data_df))
 
     cols = set(preds_df.columns)
     assert f"{feature[NAME]}_predictions" in cols
@@ -146,13 +146,13 @@ def predict_with_backend(tmpdir, config, data_csv_path, backend, num_predict_sam
 
         # Produce an even mix of True and False predictions, as the model may be biased towards
         # one direction without training
-        def random_logits(num_predict_samples, *args, **kwargs):
+        def random_logits(*args, num_predict_samples=None, **kwargs):
             return torch.tensor(np.random.uniform(low=-1.0, high=1.0, size=(num_predict_samples,)))
 
         if num_predict_samples is not None:
             with mock.patch(
                 "ludwig.features.binary_feature.BinaryOutputFeature.logits",
-                partial(random_logits, num_samples=num_predict_samples),
+                partial(random_logits, num_predict_samples=num_predict_samples),
             ):
                 preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
         else:
