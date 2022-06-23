@@ -9,11 +9,10 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, RAY, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
@@ -251,10 +250,8 @@ def hyperopt(
                 )
             )
 
-    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
-
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
-        hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod

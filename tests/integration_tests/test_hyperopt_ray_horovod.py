@@ -20,18 +20,23 @@ import uuid
 from unittest.mock import patch
 
 import pytest
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
 
 try:
     import ray
-    from ray.tune.sync_client import get_sync_client
+
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
+    if _ray_114:
+        from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
+    else:
+        from ray.tune.syncer import get_sync_client
 
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
@@ -55,10 +60,12 @@ logger = logging.getLogger(__name__)
 
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
-    client = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
     os.makedirs(path, exist_ok=True)
-    client.set_logdir(path)
-    return client
+    if _ray_114:
+        syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
+    else:
+        syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
+    return syncer
 
 
 HYPEROPT_CONFIG = {
@@ -207,9 +214,6 @@ def run_hyperopt_executor(
         goal = hyperopt_config["goal"]
         search_alg = hyperopt_config["search_alg"]
 
-        # hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
-        hyperopt_sampler = get_build_hyperopt_sampler("ray")(parameters)
-
         # preprocess
         backend = RayBackend(**RAY_BACKEND_KWARGS)
         model = LudwigModel(config=config, backend=backend)
@@ -219,7 +223,7 @@ def run_hyperopt_executor(
 
         # hyperopt
         hyperopt_executor = MockRayTuneExecutor(
-            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+            parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
         )
         hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 

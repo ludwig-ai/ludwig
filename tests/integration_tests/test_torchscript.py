@@ -27,7 +27,7 @@ from ludwig.constants import COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES,
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.inference import to_inference_module_input
+from ludwig.models.inference import to_inference_module_input_from_dataframe
 from ludwig.utils import output_feature_utils
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
@@ -231,8 +231,8 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        vector_feature(),
         # TODO: future support
-        # vector_feature(),
         # date_feature(),
         # h3_feature(),
     ]
@@ -241,11 +241,10 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
-        # TODO: future support
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
-        # vector_feature()
+        set_feature(vocab_size=3),
+        vector_feature(),
+        sequence_feature(vocab_size=3),
+        text_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -356,7 +355,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
         for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
     ]
     output_features = [
-        binary_feature(),
+        text_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -371,7 +370,7 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
         sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
     ]
     output_features = [
-        binary_feature(),
+        sequence_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -384,6 +383,36 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
         timeseries_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_h3(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        h3_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_date(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        date_feature(),
     ]
     output_features = [
         binary_feature(),
@@ -420,10 +449,7 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
-    inputs = {
-        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
-        for name, feature in ludwig_model.model.input_features.items()
-    }
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
     outputs = script_module(inputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now
@@ -440,17 +466,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
-            if isinstance(output_values, list):
-                # Strings should match exactly
-                assert np.all(
-                    output_values == output_values_expected
-                ), f"feature: {feature_name}, output: {output_name}"
-            else:
-                output_values = np.array(output_values)
-                # Shapes and values must both match
-                assert (
-                    output_values.shape == output_values_expected.shape
-                ), f"feature: {feature_name}, output: {output_name}"
-                assert np.allclose(
-                    output_values, output_values_expected, atol=tolerance
-                ), f"feature: {feature_name}, output: {output_name}"
+            assert utils.is_all_close(
+                output_values, output_values_expected
+            ), f"feature: {feature_name}, output: {output_name}"
