@@ -34,7 +34,7 @@ INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
-class _InferenceModuleV0(nn.Module):
+class InferenceModuleV0(nn.Module):
     """Wraps preprocessing, model forward pass, and postprocessing into a single module.
 
     Deprecated; used for benchmarking against the new inference module.
@@ -44,8 +44,8 @@ class _InferenceModuleV0(nn.Module):
         self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any], device: TorchDevice
     ):
         super().__init__()
-
-        self.model = model.to_torchscript(device=device)
+        self.device = torch.device(device)
+        self.model = model.to_torchscript(device=self.device)
 
         input_features = {
             feature[NAME]: get_from_registry(feature[TYPE], input_type_registry) for feature in config["input_features"]
@@ -75,21 +75,18 @@ class _InferenceModuleV0(nn.Module):
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
+            preproc_inputs = {k: v.to(self.device) for k, v in preproc_inputs.items()}
             outputs = self.model(preproc_inputs)
 
-            predictions_flattened: Dict[str, torch.Tensor] = {}
+            predictions: Dict[str, Dict[str, torch.Tensor]] = {}
             for module_dict_key, predict in self.predict_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
-                feature_predictions = predict(outputs, feature_name)
-                # Flatten out the predictions to support Triton input/output
-                for predict_key, tensor_values in feature_predictions.items():
-                    predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
-                    predictions_flattened[predict_concat_key] = tensor_values
+                predictions[feature_name] = predict(outputs, feature_name)
 
             postproc_outputs: Dict[str, Dict[str, Any]] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
-                postproc_outputs[feature_name] = postproc(predictions_flattened, feature_name)
+                postproc_outputs[feature_name] = postproc(predictions[feature_name])
 
             return postproc_outputs
 
