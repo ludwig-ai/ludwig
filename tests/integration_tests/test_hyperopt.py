@@ -386,6 +386,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
 
+@pytest.mark.distributed
 def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
     config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
         csv_filename
@@ -402,6 +403,7 @@ def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
         assert embedding_size in embedding_size_search_space
 
 
+@pytest.mark.distributed
 def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
     config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
         csv_filename
