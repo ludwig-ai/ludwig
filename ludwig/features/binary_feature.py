@@ -153,15 +153,23 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        # Binary features are always read as strings. column.astype(bool) for all non-empty cells returns True.
-        return column.astype(str)
+        values = backend.df_engine.compute(column.drop_duplicates())
+        # If values are strings, converting to bools directly will make them all True.
+        if strings_utils.values_are_pandas_objects(values):
+            return column.astype(object)
+        else:
+            return column.astype(bool)
 
     @staticmethod
     def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
-        distinct_values = backend.df_engine.compute(column.drop_duplicates()).tolist()
+        if column.dtype != object:
+            return {}
+
+        distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
             raise ValueError(
-                f"Binary feature column {column.name} expects 2 distinct values, " f"found: {distinct_values}"
+                f"Binary feature column {column.name} expects 2 distinct values, "
+                f"found: {distinct_values.values.tolist()}"
             )
 
         if "fallback_true_label" in preprocessing_parameters:
@@ -195,9 +203,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     ) -> None:
         column = input_df[feature_config[COLUMN]]
 
-        column_np_dtype = np.dtype(column.dtype)
-        # np.str_ is dtype of modin cols
-        if any(column_np_dtype == np_dtype for np_dtype in {np.object_, np.str_}):
+        if column.dtype == object:
             metadata = metadata[feature_config[NAME]]
             if "str2bool" in metadata:
                 column = backend.df_engine.map_objects(column, lambda x: metadata["str2bool"][str(x)])
@@ -356,13 +362,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
             if "bool2str" in metadata:
-                # If the values in column could have been inferred as boolean dtype, do not convert preds to strings.
-                # This preserves the behavior of this feature before #2058.
-                if not strings_utils.values_are_pandas_bools(class_names):
-                    result[predictions_col] = backend.df_engine.map_objects(
-                        result[predictions_col],
-                        lambda pred: metadata["bool2str"][pred],
-                    )
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    lambda pred: metadata["bool2str"][pred],
+                )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:

@@ -92,15 +92,20 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     return v == fallback_true_label
 
 
-def column_is_bool(column: Series) -> bool:
-    """Returns whether a column could have been cast by read_csv as boolean."""
-    distinct_values = column.drop_duplicates()
-    return values_are_pandas_bools(distinct_values)
+def values_are_pandas_objects(values: List[Union[str, bool]]):
+    """Returns True if values would be read by pandas as dtype object."""
+    for v in values:
+        # check if readable as bool
+        if str(v).lower() in PANDAS_TRUE_STRS | PANDAS_FALSE_STRS:
+            return False
 
-
-def values_are_pandas_bools(values: List[Union[str, bool]]):
-    lowercase_values_set = {str(v).lower() for v in values}
-    return lowercase_values_set.issubset(PANDAS_FALSE_STRS | PANDAS_TRUE_STRS)
+        # check if readable as float/int
+        try:
+            float(v)
+            return False
+        except ValueError:
+            continue
+    return True
 
 
 def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
