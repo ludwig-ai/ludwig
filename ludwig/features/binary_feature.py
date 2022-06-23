@@ -40,7 +40,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.utils import output_feature_utils, strings_utils
+from ludwig.utils import calibration, output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
     ConfusionMatrix,
@@ -295,8 +295,18 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
         )
 
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        """Creates the appropriate calibration module based on the feature config.
+        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
+        the future.
+        """
+        if feature.get("calibration"):
+            calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")
+            return calibration_cls(binary=True)
+        return None
+
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold)
+        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
