@@ -157,8 +157,8 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     def cast_column(column, backend):
         """Cast column of dtype object to bool.
 
-        Unchecked casting to boolean when given a column of dtype object converts all non-empty cells to True.
-        We check the values of the column directly and manually determine the best dtype to use.
+        Unchecked casting to boolean when given a column of dtype object converts all non-empty cells to True. We check
+        the values of the column directly and manually determine the best dtype to use.
         """
         values = backend.df_engine.compute(column.drop_duplicates())
 
