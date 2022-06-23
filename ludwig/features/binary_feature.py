@@ -177,7 +177,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
-
         if "fallback_true_label" in preprocessing_parameters:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
