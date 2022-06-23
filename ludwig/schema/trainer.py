@@ -235,6 +235,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     eval_batch_size: int = schema_utils.PositiveInteger(
         default=128,
+        allow_none=True,
         description="Size of batch to pass to the model for evaluation.",
     )
 
