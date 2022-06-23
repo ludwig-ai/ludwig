@@ -16,7 +16,7 @@ import contextlib
 import json
 import logging
 import os.path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import pytest
 import torch
@@ -162,7 +162,7 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
     return config, rel_path, cell_types_search_space, vocab_size_search_space
 
 
-def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> str:
+def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
     """Returns the parameter value from the Ray trial row, which has slightly different column names depending on
     the version of Ray. Returns None if the parameter key is not found.
 
@@ -171,9 +171,8 @@ def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> str:
     """
     if f"config.{parameter_key}" in trial_row:
         return trial_row[f"config.{parameter_key}"]
-    elif f"config/{parameter_key}" in trial_row:
+    if f"config/{parameter_key}" in trial_row:
         return trial_row[f"config/{parameter_key}"]
-    return None
 
 
 @contextlib.contextmanager
@@ -400,11 +399,7 @@ def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
     # Check that the trials did sample from defaults in the search space
     for _, trial_row in hyperopt_results_df.iterrows():
         vocab_size = _get_trial_parameter_value("defaults.output_features.category.vocab_size", trial_row)
-
-        cell_type = _get_trial_parameter_value("defaults.input_features.text.cell_type", trial_row)
-        if cell_type is not None:
-            cell_type = cell_type.replace('"', "")
-
+        cell_type = _get_trial_parameter_value("defaults.input_features.text.cell_type", trial_row).replace('"', "")
         assert cell_type in cell_types_search_space
         assert vocab_size in vocab_size_search_space
 
