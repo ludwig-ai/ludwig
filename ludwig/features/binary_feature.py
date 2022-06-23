@@ -155,12 +155,25 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
+        """Cast column of dtype object to bool.
+
+        Unchecked casting to boolean when given a column of dtype object converts all non-empty cells to True.
+        We check the values of the column directly and manually determine the best dtype to use.
+        """
         values = backend.df_engine.compute(column.drop_duplicates())
-        # If values are strings, converting to bools directly will make them all True.
-        if strings_utils.values_are_pandas_objects(values):
-            return column.astype(object)
+
+        if strings_utils.values_are_pandas_numbers(values):
+            # If numbers, convert to float so it can be converted to bool
+            column = column.astype(float).astype(bool)
+        elif strings_utils.values_are_pandas_bools(values):
+            # If booleans, manually assign boolean values
+            column = backend.df_engine.map_objects(
+                column, lambda x: x.lower() in strings_utils.PANDAS_TRUE_STRS
+            ).astype(bool)
         else:
-            return column.astype(bool)
+            # If neither numbers or booleans, they are strings (objects)
+            column = column.astype(object)
+        return column
 
     @staticmethod
     def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:

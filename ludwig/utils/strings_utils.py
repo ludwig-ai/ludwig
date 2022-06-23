@@ -92,19 +92,21 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     return v == fallback_true_label
 
 
-def values_are_pandas_objects(values: List[Union[str, bool]]):
-    """Returns True if values would be read by pandas as dtype object."""
+def values_are_pandas_bools(values: List[str]):
+    """Returns True if values would be read by pandas as dtype bool."""
     for v in values:
-        # check if readable as bool
-        if str(v).lower() in PANDAS_TRUE_STRS | PANDAS_FALSE_STRS:
+        if not (str(v).lower() in PANDAS_TRUE_STRS | PANDAS_FALSE_STRS):
             return False
+    return True
 
-        # check if readable as float/int
+
+def values_are_pandas_numbers(values: List[str]):
+    """Returns True if values would be read by pandas as dtype float or int."""
+    for v in values:
         try:
             float(v)
-            return False
         except ValueError:
-            continue
+            return False
     return True
 
 

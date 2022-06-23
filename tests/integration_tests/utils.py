@@ -75,6 +75,36 @@ HF_ENCODERS = [
 ]
 
 
+RAY_BACKEND_CONFIG = {
+    "type": "ray",
+    "processor": {
+        "parallelism": 2,
+    },
+    "trainer": {
+        "use_gpu": False,
+        "num_workers": 2,
+        "resources_per_worker": {
+            "CPU": 0.1,
+            "GPU": 0,
+        },
+    },
+}
+
+
+@contextlib.contextmanager
+def ray_start(num_cpus=2, num_gpus=None):
+    res = ray.init(
+        num_cpus=num_cpus,
+        num_gpus=num_gpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
 @contextlib.contextmanager
 def ray_cluster():
     ray.init(
@@ -89,14 +119,14 @@ def ray_cluster():
 
 
 @contextlib.contextmanager
-def init_backend(backend: str):
+def init_backend(backend: str, num_cpus=2, num_gpus=None):
     if backend == "local":
         with contextlib.nullcontext():
             yield
             return
 
     if backend == "ray":
-        with ray_cluster():
+        with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
             yield
             return
 
