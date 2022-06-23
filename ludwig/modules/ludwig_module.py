@@ -60,7 +60,7 @@ class LudwigModule(Module):
 
     def get_state(self, config=None, saved_weights=None, children=None) -> LudwigModuleState:
         if saved_weights is None:
-            saved_weights = self.state_dict()
+            saved_weights = {k: v.detach().cpu().numpy() for k, v in self.state_dict().items()}
         return LudwigModuleState(
             type=type(self).__name__,
             ludwig_version=LUDWIG_VERSION,

@@ -11,10 +11,11 @@ from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import DEVICE, LudwigModule, reg_loss
+from ludwig.utils.torch_utils import DEVICE, reg_loss
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)

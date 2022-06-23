@@ -30,58 +30,36 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("embed", BAG)
 class BagEmbedWeightedEncoder(Encoder):
-    def __init__(
-        self,
-        vocab: List[str],
-        embedding_size: int = 50,
-        representation: str = "dense",
-        embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
-        force_embedding_size: bool = False,
-        embeddings_on_cpu: bool = False,
-        fc_layers=None,
-        num_fc_layers: int = 0,
-        output_size: int = 10,
-        use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Optional[Dict[str, Any]] = None,
-        activation: str = "relu",
-        dropout: float = 0.0,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-        self.config = encoder_config
+    def __init__(self, encoder_config: BagEmbedWeightedConfig, **kwargs):
+        super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
 
         logger.debug("  EmbedWeighted")
         self.embed_weighted = EmbedWeighted(
-            vocab,
-            embedding_size,
-            representation=representation,
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            force_embedding_size=force_embedding_size,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=weights_initializer,
+            encoder_config.vocab,
+            encoder_config.embedding_size,
+            representation=encoder_config.representation,
+            embeddings_trainable=encoder_config.embeddings_trainable,
+            pretrained_embeddings=encoder_config.pretrained_embeddings,
+            force_embedding_size=encoder_config.force_embedding_size,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.weights_initializer,
         )
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
             self.embed_weighted.output_shape[-1],
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_output_size=output_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout=dropout,
+            layers=encoder_config.fc_layers,
+            num_layers=encoder_config.num_fc_layers,
+            default_output_size=encoder_config.output_size,
+            default_use_bias=encoder_config.use_bias,
+            default_weights_initializer=encoder_config.weights_initializer,
+            default_bias_initializer=encoder_config.bias_initializer,
+            default_norm=encoder_config.norm,
+            default_norm_params=encoder_config.norm_params,
+            default_activation=encoder_config.activation,
+            default_dropout=encoder_config.dropout,
         )
 
     @staticmethod

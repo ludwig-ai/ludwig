@@ -9,7 +9,7 @@ from ludwig.decoders.registry import register_decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.schema.decoders.sequence_decoders import SequenceTaggerDecoderConfig
 from ludwig.modules.fully_connected_modules import Dense
-g
+
 logger = logging.getLogger(__name__)
 
 

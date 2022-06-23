@@ -20,7 +20,7 @@ import numpy as np
 from ludwig.api import LudwigModel
 from ludwig.modules import serialization
 from ludwig.modules.ludwig_module import LudwigModuleState
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
+from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, text_feature
 
 
 def assert_module_states_equal(a: LudwigModuleState, b: LudwigModuleState):
@@ -40,7 +40,7 @@ def assert_module_states_equal(a: LudwigModuleState, b: LudwigModuleState):
         assert_module_states_equal(ac, bc)
 
 
-def test_serialize_simple_model(tmpdir):
+def test_serialize_deserialize_encoder(tmpdir):
     input_features = [sequence_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
@@ -55,21 +55,50 @@ def test_serialize_simple_model(tmpdir):
     model_1 = LudwigModel(config)
     model_1.train(dataset=data_csv, output_directory=tmpdir)
 
-    saved_path = os.path.join(tmpdir, "model.h5")
-    model_state = model_1.model.get_state()
-    serialization.save(model_1.model, saved_path)
-    restored_state = serialization.load_state_from_file(saved_path)
-    # Ensures we can read state from the saved H5 file.
-    assert restored_state is not None
-    # Ensure model in-memory state and state restored from disk are equal.
-    assert_module_states_equal(model_state, restored_state)
+    # Get pre-trained encoder
+    trained_input_feature = model_1.model.input_features[input_features[0]["name"]]
+    input_feature_encoder = trained_input_feature.encoder_obj
+
+    encoder_state = input_feature_encoder.get_state()
+    assert encoder_state is not None
+
+    restored_encoder = serialization.instantiate_module_from_state(encoder_state, device="cpu")
+    assert isinstance(restored_encoder, type(input_feature_encoder))
+
+    restored_encoder_state = restored_encoder.get_state()
+    assert restored_encoder_state is not None
+    assert_module_states_equal(encoder_state, restored_encoder_state)
+
+
+def test_load_save_encoder(tmpdir):
+    input_features = [text_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+    }
+
+    model_1 = LudwigModel(config)
+    model_1.train(dataset=data_csv, output_directory=tmpdir)
+    # Get pre-trained encoder
+    trained_input_feature = model_1.model.input_features[input_features[0]["name"]]
+    input_feature_encoder = trained_input_feature.encoder_obj
+
+    saved_path = os.path.join(tmpdir, "text_encoder.h5")
+    serialization.save(input_feature_encoder, saved_path)
 
     # Attempt to load model from saved file
-    restored_model = serialization.load(saved_path, "cpu")
-    assert restored_model is not None
+    restored_encoder = serialization.load(saved_path, "cpu")
+    assert restored_encoder is not None
+
+    # TODO: construct new model with previously trained encoder
 
 
 if __name__ == "__main__":
     import pytest
 
-    pytest.main(["-k", "test_serialize_simple_model"])
+    pytest.main(["-k", "test_serialize_deserialize_encoder"])

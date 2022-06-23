@@ -29,33 +29,19 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("dense", CATEGORY)
 class CategoricalEmbedEncoder(Encoder):
-    def __init__(
-        self,
-        vocab: List[str],
-        embedding_size: int = 50,
-        embeddings_trainable: bool = True,
-        pretrained_embeddings: Optional[str] = None,
-        embeddings_on_cpu: bool = False,
-        dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-        self.config = encoder_config
-
+    def __init__(self, encoder_config: CategoricalEmbedConfig):
+        super().__init__(encoder_config)
         logger.debug(f" {self.name}")
-
         logger.debug("  Embed")
         self.embed = Embed(
-            vocab=vocab,
-            embedding_size=embedding_size,
+            vocab=encoder_config.vocab,
+            embedding_size=encoder_config.embedding_size,
             representation="dense",
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=embedding_initializer,
+            embeddings_trainable=encoder_config.embeddings_trainable,
+            pretrained_embeddings=encoder_config.pretrained_embeddings,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.embedding_initializer,
         )
         self.embedding_size = self.embed.embedding_size
 
@@ -84,32 +70,19 @@ class CategoricalEmbedEncoder(Encoder):
 
 @register_encoder("sparse", CATEGORY)
 class CategoricalSparseEncoder(Encoder):
-    def __init__(
-        self,
-        vocab: List[str],
-        embeddings_trainable: bool = False,
-        pretrained_embeddings: Optional[str] = None,
-        embeddings_on_cpu: bool = False,
-        dropout: float = 0.0,
-        embedding_initializer: Optional[Union[str, Dict]] = None,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-        self.config = encoder_config
-
+    def __init__(self, encoder_config: CategoricalSparseConfig):
+        super().__init__(encoder_config)
         logger.debug(f" {self.name}")
-
         logger.debug("  Embed")
         self.embed = Embed(
-            vocab=vocab,
-            embedding_size=len(vocab),
+            vocab=encoder_config.vocab,
+            embedding_size=len(encoder_config.vocab),
             representation="sparse",
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=embedding_initializer,
+            embeddings_trainable=encoder_config.embeddings_trainable,
+            pretrained_embeddings=encoder_config.pretrained_embeddings,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.gembedding_initializer,
         )
         self.embedding_size = self.embed.embedding_size
 

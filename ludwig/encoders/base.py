@@ -16,10 +16,17 @@
 
 from abc import ABC, abstractmethod
 
-from ludwig.modules.ludwig_module import LudwigModule
+import torch
+
+from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 class Encoder(LudwigModule, ABC):
+    def __init__(self, config: BaseEncoderConfig):
+        super().__init__()
+        self.config = config
+
     @abstractmethod
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
@@ -27,3 +34,14 @@ class Encoder(LudwigModule, ABC):
     @property
     def name(self):
         return self.__class__.__name__
+
+    @classmethod
+    def restore_from_state(cls, state: LudwigModuleState) -> "Encoder":
+        encoder = cls(state.config)
+        encoder.load_state_dict({k: torch.from_numpy(v) for k, v in state.saved_weights.items()})
+        return encoder
+
+    def get_state(self) -> LudwigModuleState:
+        return super().get_state(
+            config=self.config,
+        )

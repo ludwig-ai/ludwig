@@ -27,10 +27,8 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", BINARY)
 class BinaryPassthroughEncoder(Encoder):
-    def __init__(self, encoder_config=None, **kwargs):
-        super().__init__()
-        self.config = encoder_config
-
+    def __init__(self, encoder_config: BinaryPassthroughEncoderConfig):
+        super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:

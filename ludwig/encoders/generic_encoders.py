@@ -28,12 +28,10 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
-    def __init__(self, input_size=1, encoder_config=None, **kwargs):
-        super().__init__()
-        self.config = encoder_config
-
+    def __init__(self, encoder_config: PassthroughEncoderConfig):
+        super().__init__(encoder_config)
         logger.debug(f" {self.name}")
-        self.input_size = input_size
+        self.input_size = encoder_config.input_size
 
     def forward(self, inputs, mask=None):
         """
@@ -57,41 +55,24 @@ class PassthroughEncoder(Encoder):
 
 @register_encoder("dense", [BINARY, NUMBER, VECTOR])
 class DenseEncoder(Encoder):
-    def __init__(
-        self,
-        input_size,
-        layers=None,
-        num_layers=1,
-        output_size=256,
-        use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
-        norm=None,
-        norm_params=None,
-        activation="relu",
-        dropout=0,
-        encoder_config=None,
-        **kwargs,
-    ):
-        super().__init__()
-        self.config = encoder_config
-
+    def __init__(self, encoder_config: DenseEncoderConfig):
+        super().__init__(encoder_config)
         logger.debug(f" {self.name}")
-        self.input_size = input_size
+        self.input_size = encoder_config.input_size
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
-            first_layer_input_size=input_size,
-            layers=layers,
-            num_layers=num_layers,
-            default_output_size=output_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout=dropout,
+            first_layer_input_size=encoder_config.input_size,
+            layers=encoder_config.layers,
+            num_layers=encoder_config.num_layers,
+            default_output_size=encoder_config.output_size,
+            default_use_bias=encoder_config.use_bias,
+            default_weights_initializer=encoder_config.weights_initializer,
+            default_bias_initializer=encoder_config.bias_initializer,
+            default_norm=encoder_config.norm,
+            default_norm_params=encoder_config.norm_params,
+            default_activation=encoder_config.activation,
+            default_dropout=encoder_config.dropout,
         )
 
     def forward(self, inputs, training=None, mask=None):

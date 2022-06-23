@@ -20,7 +20,6 @@ from typing import BinaryIO, IO, Union
 
 import h5py
 import numpy as np
-import torch
 
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState, module_registry
@@ -71,8 +70,6 @@ def _save_state_to_group(state: LudwigModuleState, group: h5py.Group):
     group.attrs["ludwig_version"] = state.ludwig_version
     group.attrs["config"] = json.dumps(state.config, cls=NumpyEncoder, sort_keys=True)
     for k, w in state.saved_weights.items():
-        if isinstance(w, torch.Tensor):
-            w = w.detach().cpu().numpy()
         group.create_dataset(k, data=w)
     for k, child in state.children.items():
         child_group = group.create_group(k)
@@ -103,6 +100,21 @@ def load_state_from_file(f: Union[str, os.PathLike, BinaryIO, IO[bytes]]) -> Lud
         return _load_state_from_group(f)
 
 
+def instantiate_module_from_state(state: LudwigModuleState, device: str = None) -> LudwigModule:
+    """Instatiates a module by restoring from saved state."""
+    cls = module_registry.get(state.type)
+    if cls is None:
+        logger.error(f"No Ludwig Module registered for name {state.type}")
+        return None
+    if not (hasattr(cls, "restore_from_state") and callable(cls.restore_from_state)):
+        logger.error(f"The @classmethod restore_from_state must be implemented to restore {state.type} objects")
+        return None
+    restored_module = cls.restore_from_state(state)
+    if restored_module is not None and device is not None:
+        restored_module = restored_module.to(device)
+    return restored_module
+
+
 def save(object: LudwigModule, f: Union[str, os.PathLike, BinaryIO, IO[bytes]]):
     """Saves Ludwig object to file or buffer."""
     object_state = object.get_state()
@@ -119,15 +131,7 @@ def load(f: Union[str, os.PathLike, BinaryIO, IO[bytes]], device: str = None) ->
     """
     state = load_state_from_file(f)
     state = update_state_for_current_version(state)
-    cls = module_registry.get(state.type)
-    if cls is None:
-        logger.error(f"No Ludwig Module registered for name {state.type}")
-        return None
-    # TODO: instantiate cls with config and saved weights
-    if not (hasattr(cls, "restore_from_state") and callable(cls.restore_from_state)):
-        logger.error(f"The @classmethod restore_from_state must be implemented to restore {state.type} objects")
-        return None
-    return cls.restore_from_state(state)
+    return instantiate_module_from_state(state, device=device)
 
 
 def update_state_for_current_version(state: LudwigModuleState) -> LudwigModuleState:
