@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,24 +16,13 @@
 
 from abc import ABC, abstractmethod
 
-from ludwig.utils.registry import DEFAULT_KEYS
 from ludwig.utils.torch_utils import LudwigModule
 
 
 class Decoder(LudwigModule, ABC):
     @abstractmethod
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         raise NotImplementedError
-
-    @classmethod
-    @abstractmethod
-    def register(cls, name):
-        raise NotImplementedError
-
-    @classmethod
-    def register_default(cls):
-        for key in DEFAULT_KEYS:
-            cls.register(name=key)
 
     @property
     def name(self):

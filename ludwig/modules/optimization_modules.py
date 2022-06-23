@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,68 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from dataclasses import dataclass
-from typing import Optional, Iterable
+from dataclasses import asdict
+from typing import Optional
 
 import torch
 
+from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig, optimizer_registry, SGDOptimizerConfig
 from ludwig.utils.misc_utils import get_from_registry
 
 
-optimizers_registry = {
-    'sgd': torch.optim.SGD,
-    'stochastic_gradient_descent': torch.optim.SGD,
-    'gd': torch.optim.SGD,
-    'gradient_descent': torch.optim.SGD,
-    'adam': torch.optim.Adam,
-    'adadelta': torch.optim.Adadelta,
-    'adagrad': torch.optim.Adagrad,
-    'adamax': torch.optim.Adamax,
-    #'ftrl': tf.keras.optimizers.Ftrl,
-    #'nadam': tf.keras.optimizers.Nadam,
-    'rmsprop': torch.optim.RMSprop,
-}
+def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
+    """Utility function that will convert a None-type gradient clipping config to the correct form."""
+    if isinstance(gradient_clipping_config, GradientClippingConfig):
+        return gradient_clipping_config
+    # Return default config if provided value is None:
+    return GradientClippingConfig()
 
 
-@dataclass
-class Clipper:
-    clipglobalnorm: Optional[float] = 0.5
-    clipnorm: Optional[float] = None
-    clipvalue: Optional[float] = None
-
-    def clip_grads(self, variables: Iterable[torch.Tensor]):
-        if self.clipglobalnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-        if self.clipnorm:
-            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-        if self.clipvalue:
-            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
-
-
-def create_optimizer_with_clipper(
+def create_optimizer(
     model,
-    type='sgd',
-    clipglobalnorm=5.0,
-    clipnorm=None,
-    clipvalue=None,
+    optimizer_config: BaseOptimizerConfig = SGDOptimizerConfig(),
     horovod=None,
-    **kwargs
 ):
-    optimizer_cls = get_from_registry(type.lower(), optimizers_registry)
-    optimizer = create_optimizer(optimizer_cls, model, horovod, **kwargs)
-    clipper = Clipper(
-        clipglobalnorm=clipglobalnorm,
-        clipnorm=clipnorm,
-        clipvalue=clipvalue
-    )
-    return optimizer, clipper
+    """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
+    :param model: Underlying Ludwig model
+    :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
+           `ludwig.modules.optimization_modules.SGDOptimizerConfig()`).
+    :param horovod: Horovod parameters (default: None).
+    :return: Initialized instance of a torch optimizer.
+    """
+    # Get the corresponding torch optimizer class for the given config:
+    optimizer_cls = get_from_registry(optimizer_config.type.lower(), optimizer_registry)[0]
 
-def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
-    optimizer = optimizer_cls(params=model.parameters(), **kwargs)
+    # Create a dict of parameters to be passed to torch (i.e. everything except `type`):
+    cls_kwargs = {field: value for field, value in asdict(optimizer_config).items() if field != "type"}
+
+    # Instantiate the optimizer:
+    torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
     if horovod:
-        optimizer = horovod.DistributedOptimizer(
-            optimizer,
+        torch_optimizer = horovod.DistributedOptimizer(
+            torch_optimizer,
             named_parameters=model.named_parameters(),
         )
-    return optimizer
+    return torch_optimizer

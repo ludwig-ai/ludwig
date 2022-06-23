@@ -1,71 +1,78 @@
-import torch
+from typing import List, Optional
+
+import numpy as np
 import pytest
-from typing import Optional
+import torch
 
 from ludwig.modules.fully_connected_modules import FCLayer, FCStack
-from tests.integration_tests.utils import assert_model_parameters_updated
+from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
-INPUT_SIZE = 8
-OUTPUT_SIZE = 4
-RANDOM_SEED = 1919
+DEVICE = get_torch_device()
 
 
-@pytest.mark.parametrize('norm', [None, 'batch', 'layer'])
-@pytest.mark.parametrize('use_bias', [True, False])
+@pytest.mark.parametrize("input_size", [2, 3])
+@pytest.mark.parametrize("output_size", [3, 4])
+@pytest.mark.parametrize("activation", ["relu", "sigmoid", "tanh"])
+@pytest.mark.parametrize("dropout", [0.0, 0.5])
 def test_fc_layer(
-        use_bias: bool,
-        norm: Optional[str]
-) -> None:
-    torch.manual_seed(RANDOM_SEED)
-    batch = torch.randn([BATCH_SIZE, INPUT_SIZE], dtype=torch.float32)
-
-
-    # setup layer to test
-    model = FCLayer(
-        INPUT_SIZE,
-        output_size=OUTPUT_SIZE,
-        norm=norm,
-        use_bias=use_bias
+    input_size: int,
+    output_size: int,
+    activation: str,
+    dropout: float,
+):
+    fc_layer = FCLayer(input_size=input_size, output_size=output_size, activation=activation, dropout=dropout).to(
+        DEVICE
     )
-
-    output_tensor = model(batch)
-
-    # check for correct output type and shape
-    assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, OUTPUT_SIZE)
-
-    # check to confirm parameter updates
-    assert_model_parameters_updated(model, (batch,))
+    input_tensor = torch.randn(BATCH_SIZE, input_size, device=DEVICE)
+    output_tensor = fc_layer(input_tensor)
+    assert output_tensor.shape[1:] == fc_layer.output_shape
 
 
-@pytest.mark.parametrize('residual', [True, False])
-@pytest.mark.parametrize('num_layers', [1, 3])
-def test_fc_stack(
-        num_layers: int,
-        residual: bool
-) -> None:
-    torch.manual_seed(RANDOM_SEED)
-    batch = torch.randn([BATCH_SIZE, INPUT_SIZE], dtype=torch.float32)
+@pytest.mark.parametrize(
+    "first_layer_input_size,layers,num_layers",
+    [
+        (2, None, 3),
+        (2, [{"output_size": 4}, {"output_size": 8}], None),
+        (2, [{"input_size": 2, "output_size": 4}, {"output_size": 8}], None),
+    ],
+)
+def test_fc_stack(first_layer_input_size: Optional[int], layers: Optional[List], num_layers: Optional[int]):
+    fc_stack = FCStack(first_layer_input_size=first_layer_input_size, layers=layers, num_layers=num_layers).to(DEVICE)
+    input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
+    output_tensor = fc_stack(input_tensor)
+    assert output_tensor.shape[1:] == fc_stack.output_shape
 
-    # setup layer to test
-    model = FCStack(
-        INPUT_SIZE,
-        default_fc_size=OUTPUT_SIZE,
-        num_layers=num_layers
-    )
 
-    # confirm correct number of layers and type in stack
-    assert len(model.stack) == num_layers
-    for layer in model.stack:
-        assert isinstance(layer, FCLayer)
+def test_fc_stack_input_size_mismatch_fails():
+    first_layer_input_size = 10
+    layers = [{"input_size": 2, "output_size": 4}, {"output_size": 8}]
 
-    output_tensor = model(batch)
+    fc_stack = FCStack(
+        first_layer_input_size=first_layer_input_size,
+        layers=layers,
+    ).to(DEVICE)
+    input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
 
-    # check for correct output type and shape
-    assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, OUTPUT_SIZE)
+    with pytest.raises(RuntimeError):
+        fc_stack(input_tensor)
 
-    # check to confirm parameter updates
-    # assert_model_parameters_updated(model, output_tensor)
-    assert_model_parameters_updated(model, (batch,))
+
+def test_fc_stack_no_layers_behaves_like_passthrough():
+    first_layer_input_size = 10
+    layers = None
+    num_layers = 0
+    output_size = 15
+
+    fc_stack = FCStack(
+        first_layer_input_size=first_layer_input_size,
+        layers=layers,
+        num_layers=num_layers,
+        default_output_size=output_size,
+    ).to(DEVICE)
+    input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
+    output_tensor = fc_stack(input_tensor)
+
+    assert list(output_tensor.shape[1:]) == [first_layer_input_size]
+    assert output_tensor.shape[1:] == fc_stack.output_shape
+    assert np.all(np.isclose(input_tensor, output_tensor))

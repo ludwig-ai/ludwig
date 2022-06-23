@@ -1,0 +1,6 @@
+version: 1.0
+download_urls:
+  - "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+data_filename: iris.data
+download_file_type: data
+csv_filename: iris.csv

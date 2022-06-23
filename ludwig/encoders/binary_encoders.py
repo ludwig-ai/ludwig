@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,43 +14,26 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 
 import torch
 
+from ludwig.constants import BINARY
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
-from ludwig.encoders.generic_encoders import DenseEncoder
-
+from ludwig.encoders.registry import register_encoder
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry({
-    'dense': DenseEncoder
-})
-
-
-class BinaryEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='passthrough')
-class BinaryPassthroughEncoder(BinaryEncoder):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
+@register_encoder("passthrough", BINARY, default=True)
+class BinaryPassthroughEncoder(Encoder):
+    def __init__(self, **kwargs):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type torch.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type torch.float32
         """
         if inputs.dtype == torch.bool:
             inputs = inputs.to(torch.float32)

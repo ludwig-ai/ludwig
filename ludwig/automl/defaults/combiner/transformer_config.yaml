@@ -1,0 +1,39 @@
+combiner:
+  type: transformer
+
+trainer:
+  batch_size: auto #256
+  learning_rate: auto #0.0001
+  # validation_metric: accuracy
+
+hyperopt:
+  # goal: maximize
+  parameters:
+    trainer.learning_rate:
+      space: loguniform
+      lower: 0.00002
+      upper: 0.001
+    trainer.batch_size:
+      space: choice
+      categories: [64, 128, 256]
+    combiner.num_heads:
+      space: choice
+      categories: [4]
+    combiner.dropout:
+      space: uniform
+      type: float
+      lower: 0.1
+      upper: 0.3
+    combiner.num_layers:
+      space: randint
+      type: int
+      lower: 3
+      upper: 4
+    combiner.num_fc_layers:
+      space: choice
+      categories: [1, 2]
+    combiner.fc_dropout:
+      space: uniform
+      type: float
+      lower: 0.1
+      upper: 0.5

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,6 +43,10 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def map_partitions(self, series, map_fn, meta=None):
+        raise NotImplementedError()
+
+    @abstractmethod
     def apply_objects(self, series, map_fn, meta=None):
         raise NotImplementedError()
 
@@ -53,6 +56,10 @@ class DataFrameEngine(ABC):
 
     @abstractmethod
     def to_parquet(self, df, path):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def to_ray_dataset(self, df):
         raise NotImplementedError()
 
     @property

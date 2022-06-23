@@ -1,0 +1,9 @@
+version: 1.0
+competition: weipengfei/ohr8r52
+archive_filename: ohr8r52.zip
+split_filenames:
+  train_file: oh/oh-train-stemmed.csv
+  test_file: oh/oh-test-stemmed.csv
+  val_file: oh/oh-dev-stemmed.csv
+download_file_type: csv
+csv_filename: ohsumed_7400.csv

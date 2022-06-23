@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,12 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def topological_sort(graph_unsorted):
-    """
-    Repeatedly go through all of the nodes in the graph, moving each of
-    the nodes that has all its edges resolved, onto a sequence that
-    forms our sorted graph. A node has all of its edges resolved and
-    can be moved once all the nodes its edges point to, have been moved
-    from the unsorted graph onto the sorted one.
+    """Repeatedly go through all of the nodes in the graph, moving each of the nodes that has all its edges
+    resolved, onto a sequence that forms our sorted graph.
+
+    A node has all of its edges resolved and can be moved once all the nodes its edges point to, have been moved from
+    the unsorted graph onto the sorted one.
     """
 
     # This is the list we'll return, that stores each node/edges pair
@@ -71,7 +69,7 @@ def topological_sort(graph_unsorted):
             # weren't able to resolve any of them, which means there
             # are nodes with cyclic edges that will never be resolved,
             # so we bail out with an error.
-            raise RuntimeError('A cyclic dependency occurred')
+            raise RuntimeError("A cyclic dependency occurred")
 
     return graph_sorted
 
@@ -82,27 +80,17 @@ def topological_sort_feature_dependencies(features):
     output_features_dict = {}
     for feature in features:
         dependencies = []
-        if 'dependencies' in feature:
-            dependencies.extend(feature['dependencies'])
+        if "dependencies" in feature:
+            dependencies.extend(feature["dependencies"])
         if TIED in feature:
             dependencies.append(feature[TIED])
-        dependencies_graph[feature['name']] = dependencies
-        output_features_dict[feature['name']] = feature
-    return [output_features_dict[node[0]]
-            for node in topological_sort(dependencies_graph)]
+        dependencies_graph[feature["name"]] = dependencies
+        output_features_dict[feature["name"]] = feature
+    return [output_features_dict[node[0]] for node in topological_sort(dependencies_graph)]
 
 
-if __name__ == '__main__':
-    graph_unsorted = [(2, []),
-                      (5, [11]),
-                      (11, [2, 9, 10]),
-                      (7, [11, 8]),
-                      (9, []),
-                      (10, []),
-                      (8, [9]),
-                      (3, [10, 8])]
+if __name__ == "__main__":
+    graph_unsorted = [(2, []), (5, [11]), (11, [2, 9, 10]), (7, [11, 8]), (9, []), (10, []), (8, [9]), (3, [10, 8])]
     logger.info(topological_sort(graph_unsorted))
-    graph_unsorted = [('macro', ['action', 'contact_type']),
-                      ('contact_type', None),
-                      ('action', ['contact_type'])]
+    graph_unsorted = [("macro", ["action", "contact_type"]), ("contact_type", None), ("action", ["contact_type"])]
     logger.info(topological_sort(graph_unsorted))

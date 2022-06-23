@@ -1,20 +1,17 @@
-Releasing
-=========
+# Releasing
 
-Release procedure
------------------
+## Release procedure
 
 1. Update version number in `ludwig/globals.py`
-2. Update version number in `setup.py`
-3. Commit
-4. Tag the commit with the version number `vX.Y.Z` with a meaningful message
-5. Push with `--tags`
-6. If a non-patch release, edit the release notes
-7. Create a release for Pypi: `python setup.py sdist`
-8. Release on Pypi: `twine upaload --repository pypi dist/ludwig-X.Y.Z.tar.gz`
+1. Update version number in `setup.py`
+1. Commit
+1. Tag the commit with the version number `vX.Y.Z` with a meaningful message
+1. Push with `--tags`
+1. If a non-patch release, edit the release notes
+1. Create a release for Pypi: `python setup.py sdist`
+1. Release on Pypi: `twine upaload --repository pypi dist/ludwig-X.Y.Z.tar.gz`
 
-Release policy
---------------
+## Release policy
 
 Ludwig follows [Semantic Versioning](https://semver.org).
 In general, for major and minor releases, maintainers should all agree on the release.

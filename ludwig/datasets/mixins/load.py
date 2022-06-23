@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,13 +27,12 @@ def _split(data_df, split):
         data_df[SPLIT] = pd.to_numeric(data_df[SPLIT])
     if split:
         if SPLIT in data_df:
-            training_set = data_df[data_df[SPLIT] == 0]
-            val_set = data_df[data_df[SPLIT] == 1]
-            test_set = data_df[data_df[SPLIT] == 2]
+            training_set = data_df[data_df[SPLIT] == 0].drop(columns=[SPLIT])
+            val_set = data_df[data_df[SPLIT] == 1].drop(columns=[SPLIT])
+            test_set = data_df[data_df[SPLIT] == 2].drop(columns=[SPLIT])
             return training_set, test_set, val_set
         else:
-            raise ValueError("The dataset does not have splits, "
-                             "load with `split=False`")
+            raise ValueError("The dataset does not have splits, " "load with `split=False`")
     return data_df
 
 
@@ -44,14 +42,11 @@ class CSVLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self, split) -> Union[pd.DataFrame,
-                                                     Tuple[pd.DataFrame,
-                                                           pd.DataFrame,
-                                                           pd.DataFrame]]:
+    def load_processed_dataset(self, split) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed CSV into a dataframe.
 
-        :param split: Splits along 'split' column if present
-        :returns: A pandas dataframe
+        :param split: Splits along 'split' column if present.
+        :returns: The preprocessed dataset, or a tuple of (train, validation, test) datasets.
         """
         data_df = pd.read_csv(self.dataset_path)
         return _split(data_df, split)
@@ -71,17 +66,13 @@ class ParquetLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self, split) -> Union[pd.DataFrame,
-                                                     Tuple[pd.DataFrame,
-                                                           pd.DataFrame,
-                                                           pd.DataFrame]]:
+    def load_processed_dataset(self, split) -> Union[pd.DataFrame, Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
         """Loads the processed Parquet into a dataframe.
 
         :param split: Splits along 'split' column if present
-        :returns: A pandas dataframe
+        :returns: The preprocessed dataset, or a tuple of (train, validation, test) datasets.
         """
-        dataset_path = os.path.join(self.processed_dataset_path,
-                                    self.parquet_filename)
+        dataset_path = os.path.join(self.processed_dataset_path, self.parquet_filename)
         data_df = pd.read_parquet(dataset_path)
         return _split(data_df, split)
 

@@ -1,0 +1,138 @@
+apiVersion: ray.io/v1alpha1
+kind: RayCluster
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: ludwig-ray-gpu-cluster
+spec:
+  rayVersion: "2.0.0"
+  headGroupSpec:
+    serviceType: ClusterIP
+    replicas: 1
+    rayStartParams:
+      port: "6379"
+      metrics-export-port: "8080"
+      node-manager-port: "22346"
+      object-manager-port: "22345"
+      object-store-memory: "200000000"
+      redis-password: "LetMeInRay"
+      dashboard-host: "0.0.0.0"
+      node-ip-address: $MY_POD_IP
+      block: "true"
+    template:
+      metadata:
+        labels:
+          rayCluster: ludwig-ray-gpu-cluster
+          rayNodeType: head
+          groupName: headgroup
+        annotations:
+          key: value
+      spec:
+        volumes:
+          - emptyDir:
+              medium: Memory
+            name: dshm
+        containers:
+          - name: ray-head
+            image: ludwigai/ludwig-ray-gpu:master
+            lifecycle:
+              preStop:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - ray stop
+            env:
+              - name: MY_POD_IP
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.podIP
+            ports:
+              - containerPort: 6379
+                name: redis
+                protocol: TCP
+              - containerPort: 10001
+                name: client
+                protocol: TCP
+              - containerPort: 8265
+                name: dashboard
+                protocol: TCP
+              - containerPort: 8000
+                name: ray-serve
+                protocol: TCP
+              - containerPort: 8080
+                name: metrics
+                protocol: TCP
+            resources:
+              limits:
+                cpu: "8"
+                memory: 16Gi
+                nvidia.com/gpu: "1"
+              requests:
+                cpu: "4"
+                memory: 8Gi
+            securityContext:
+              capabilities:
+                add:
+                  - SYS_PTRACE
+  workerGroupSpecs:
+    - replicas: 1
+      minReplicas: 1
+      maxReplicas: 1
+      groupName: worker-gpu
+      rayStartParams:
+        redis-password: "LetMeInRay"
+        node-ip-address: $MY_POD_IP
+        block: "true"
+      template:
+        metadata:
+          labels:
+            rayCluster: ludwig-ray-gpu-cluster
+            rayNodeType: worker
+            groupName: worker-gpu
+          annotations:
+            key: value
+        spec:
+          volumes:
+            - emptyDir:
+                medium: Memory
+              name: dshm
+          initContainers:
+            - name: init-myservice
+              image: busybox:1.28
+              command:
+                [
+                  "sh",
+                  "-c",
+                  "until nslookup $RAY_IP.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done",
+                ]
+          containers:
+            - name: machine-learning
+              image: ludwigai/ludwig-ray-gpu:master
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - ray stop
+              env:
+                - name: MY_POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: MY_POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+              ports:
+                - containerPort: 80
+                  protocol: TCP
+              resources:
+                limits:
+                  cpu: "8"
+                  memory: 16Gi
+                  nvidia.com/gpu: "1"
+                requests:
+                  cpu: "4"
+                  memory: 8Gi

@@ -1,0 +1,5 @@
+version: 1.0
+download_urls:
+  - "http://archive.ics.uci.edu/ml/machine-learning-databases/00265/CASP.csv"
+download_file_type: csv
+csv_filename: CASP.csv

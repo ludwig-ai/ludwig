@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +16,25 @@ import contextlib
 import logging
 import os.path
 
-import pytest
-
 import mlflow
-import ray
+import pandas as pd
+import pytest
 from mlflow.tracking import MlflowClient
 
+from ludwig.constants import ACCURACY, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
-from ludwig.hyperopt.results import RayTuneResults
-from ludwig.hyperopt.run import hyperopt
-from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
-from ludwig.hyperopt.run import update_hyperopt_params_with_defaults
-from ludwig.utils.defaults import merge_with_defaults, ACCURACY
-from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import spawn
-from tests.integration_tests.utils import text_feature
+from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.utils.defaults import merge_with_defaults
+from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+try:
+    import ray
+
+    from ludwig.hyperopt.results import RayTuneResults
+except ImportError:
+    ray = None
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,63 +42,50 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 HYPEROPT_CONFIG = {
     "parameters": {
-        "training.learning_rate": {
+        "trainer.learning_rate": {
             "space": "loguniform",
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {
-            "space": "randint",
-            "lower": 2,
-            "upper": 6
-        },
-        "utterance.cell_type": {
-            "space": "grid_search",
-            "values": ["rnn", "gru"]
-        },
-        "utterance.bidirectional": {
-            "space": "choice",
-            "categories": [True, False]
-        },
+        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
+        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
         "utterance.fc_layers": {
             "space": "choice",
             "categories": [
-                [{"fc_size": 512}, {"fc_size": 256}],
-                [{"fc_size": 512}],
-                [{"fc_size": 256}],
-            ]
-        }
+                [{"output_size": 64}, {"output_size": 32}],
+                [{"output_size": 64}],
+                [{"output_size": 32}],
+            ],
+        },
     },
-    "goal": "minimize"
+    "goal": "minimize",
 }
 
 
-SAMPLERS = [
-    {"type": "ray"},
-    {"type": "ray", "num_samples": 2},
+SCENARIOS = [
+    {"executor": {"type": "ray"}, "search_alg": {"type": "variant_generator"}},
+    {"executor": {"type": "ray", "num_samples": 2}, "search_alg": {"type": "variant_generator"}},
     {
-        "type": "ray",
-        "search_alg": {
-            "type": "bohb"
+        "executor": {
+            "type": "ray",
+            "num_samples": 3,
+            "scheduler": {
+                "type": "hb_bohb",
+                "time_attr": "training_iteration",
+                "reduction_factor": 4,
+            },
         },
-        "scheduler": {
-            "type": "hb_bohb",
-            "time_attr": "training_iteration",
-            "reduction_factor": 4,
-        },
-        "num_samples": 3
+        "search_alg": {"type": "bohb"},
     },
 ]
 
-EXECUTORS = [
-    {"type": "ray"},
-]
 
-
-def _get_config(sampler, executor):
+def _get_config(search_alg, executor):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum")]
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
@@ -105,11 +93,11 @@ def _get_config(sampler, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
-            "sampler": sampler,
+            "search_alg": search_alg,
         },
     }
 
@@ -127,167 +115,167 @@ def ray_start_4_cpus():
         ray.shutdown()
 
 
-@spawn
+@pytest.fixture(scope="module")
+def ray_cluster_4cpu():
+    with ray_start_4_cpus():
+        yield
+
+
 def run_hyperopt_executor(
-    sampler, executor, csv_filename,
+    search_alg,
+    executor,
+    csv_filename,
+    tmpdir,
     validate_output_feature=False,
     validation_metric=None,
+    use_split=True,
 ):
-    config = _get_config(sampler, executor)
-    rel_path = generate_data(
-        config['input_features'],
-        config['output_features'],
-        csv_filename
-    )
+    config = _get_config(search_alg, executor)
+    rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
+
+    if not use_split:
+        df = pd.read_csv(rel_path)
+        df["split"] = 0
+        df.to_csv(rel_path)
 
     config = merge_with_defaults(config)
 
     hyperopt_config = config["hyperopt"]
 
     if validate_output_feature:
-        hyperopt_config['output_feature'] = config['output_features'][0]['name']
+        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
     if validation_metric:
-        hyperopt_config['validation_metric'] = validation_metric
+        hyperopt_config["validation_metric"] = validation_metric
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
-    if sampler.get("search_alg", {}).get("type", "") == 'bohb':
+    if search_alg.get("type", "") == "bohb":
         # bohb does not support grid_search search space
-        del parameters['utterance.cell_type']
+        del parameters["utterance.cell_type"]
+        hyperopt_config["parameters"] = parameters
 
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
-
-    hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler["type"])(goal, parameters, **sampler)
+    search_alg = hyperopt_config["search_alg"]
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, split, **executor)
+        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
+    )
 
     hyperopt_executor.execute(
         config,
         dataset=rel_path,
-        backend='local',
+        output_directory=tmpdir,
+        backend="local",
     )
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize('sampler', SAMPLERS)
-@pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename):
-    with ray_start_4_cpus():
-        run_hyperopt_executor(sampler, executor, csv_filename)
+@pytest.mark.parametrize("scenario", SCENARIOS)
+def test_hyperopt_executor(scenario, csv_filename, tmpdir, ray_cluster_4cpu):
+    search_alg = scenario["search_alg"]
+    executor = scenario["executor"]
+    run_hyperopt_executor(search_alg, executor, csv_filename, tmpdir)
 
 
 @pytest.mark.distributed
-def test_hyperopt_executor_with_metric(csv_filename):
-    with ray_start_4_cpus():
-        run_hyperopt_executor({"type": "ray", "num_samples": 2},
-                              {"type": "ray"},
-                              csv_filename,
-                              validate_output_feature=True,
-                              validation_metric=ACCURACY)
+@pytest.mark.parametrize("use_split", [True, False], ids=["split", "no_split"])
+def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_cluster_4cpu):
+    run_hyperopt_executor(
+        {"type": "variant_generator"},  # search_alg
+        {"type": "ray", "num_samples": 2},  # executor
+        csv_filename,
+        tmpdir,
+        validate_output_feature=True,
+        validation_metric=ACCURACY,
+        use_split=use_split,
+    )
 
 
 @pytest.mark.distributed
-def test_hyperopt_run_hyperopt(csv_filename):
-    with ray_start_4_cpus():
-        input_features = [
-            text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-            category_feature(vocab_size=2, reduce_input="sum")]
+def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
+    input_features = [
+        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
+        category_feature(vocab_size=2, reduce_input="sum"),
+    ]
 
-        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
-        rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "num_fc_layers": 2},
-            "training": {"epochs": 2, "learning_rate": 0.001}
-        }
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+    }
 
-        output_feature_name = output_features[0]['name']
+    output_feature_name = output_features[0]["name"]
 
-        hyperopt_configs = {
-            "parameters": {
-                "training.learning_rate": {
-                    "space": "loguniform",
-                    "lower": 0.001,
-                    "upper": 0.1,
-                },
-                output_feature_name + ".fc_size": {
-                    "space": "randint",
-                    "lower": 32,
-                    "upper": 256
-                },
-                output_feature_name + ".num_fc_layers": {
-                    "space": "randint",
-                    "lower": 2,
-                    "upper": 6
-                }
+    hyperopt_configs = {
+        "parameters": {
+            "trainer.learning_rate": {
+                "space": "loguniform",
+                "lower": 0.001,
+                "upper": 0.1,
             },
-            "goal": "minimize",
-            'output_feature': output_feature_name,
-            'validation_metrics': 'loss',
-            'executor': {'type': 'ray'},
-            'sampler': {'type': 'ray', 'num_samples': 2}
-        }
+            output_feature_name + ".output_size": {"space": "randint", "lower": 32, "upper": 64},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        },
+        "goal": "minimize",
+        "output_feature": output_feature_name,
+        "validation_metrics": "loss",
+        "executor": {"type": "ray", "num_samples": 2},
+        "search_alg": {"type": "variant_generator"},
+    }
 
-        # add hyperopt parameter space to the config
-        config['hyperopt'] = hyperopt_configs
-        run_hyperopt(config, rel_path)
+    # add hyperopt parameter space to the config
+    config["hyperopt"] = hyperopt_configs
+    run_hyperopt(config, rel_path, tmpdir)
 
 
 @pytest.mark.distributed
-def test_hyperopt_ray_mlflow(csv_filename, tmpdir):
-    with ray_start_4_cpus():
-        mlflow_uri = f'file://{tmpdir}/mlruns'
-        mlflow.set_tracking_uri(mlflow_uri)
-        client = MlflowClient(tracking_uri=mlflow_uri)
+def test_hyperopt_ray_mlflow(csv_filename, tmpdir, ray_cluster_4cpu):
+    mlflow_uri = f"file://{tmpdir}/mlruns"
+    mlflow.set_tracking_uri(mlflow_uri)
+    client = MlflowClient(tracking_uri=mlflow_uri)
 
-        num_samples = 2
-        config = _get_config(
-            {"type": "ray", "num_samples": num_samples},
-            {"type": "ray"}
-        )
+    num_samples = 2
+    config = _get_config(
+        {"type": "variant_generator"}, {"type": "ray", "num_samples": num_samples}  # search_alg  # executor
+    )
 
-        rel_path = generate_data(
-            config['input_features'],
-            config['output_features'],
-            csv_filename
-        )
+    rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
-        exp_name = 'mlflow_test'
-        run_hyperopt(config, rel_path,
-                     experiment_name=exp_name,
-                     callbacks=[MlflowCallback(mlflow_uri)])
+    exp_name = "mlflow_test"
+    run_hyperopt(config, rel_path, tmpdir, experiment_name=exp_name, callbacks=[MlflowCallback(mlflow_uri)])
 
-        experiment = client.get_experiment_by_name(exp_name)
-        assert experiment is not None
+    experiment = client.get_experiment_by_name(exp_name)
+    assert experiment is not None
 
-        runs = client.search_runs([experiment.experiment_id])
-        assert len(runs) > 0
+    runs = client.search_runs([experiment.experiment_id])
+    assert len(runs) > 0
 
-        for run in runs:
-            artifacts = [f.path for f in client.list_artifacts(run.info.run_id, "")]
-            assert 'config.yaml' in artifacts
-            assert 'model' in artifacts
+    for run in runs:
+        artifacts = [f.path for f in client.list_artifacts(run.info.run_id, "")]
+        assert "config.yaml" in artifacts
+        assert "model" in artifacts
 
 
-@spawn
 def run_hyperopt(
-        config, rel_path,
-        experiment_name='ray_hyperopt',
-        callbacks=None,
+    config,
+    rel_path,
+    tmpdir,
+    experiment_name="ray_hyperopt",
+    callbacks=None,
 ):
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,
-        output_directory='results_hyperopt',
+        output_directory=tmpdir,
         experiment_name=experiment_name,
         callbacks=callbacks,
     )
@@ -296,6 +284,4 @@ def run_hyperopt(
     assert isinstance(hyperopt_results, RayTuneResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(
-        os.path.join('results_hyperopt', 'hyperopt_statistics.json')
-    )
+    assert os.path.isfile(os.path.join(tmpdir, experiment_name, "hyperopt_statistics.json"))

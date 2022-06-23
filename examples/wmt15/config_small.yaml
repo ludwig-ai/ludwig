@@ -1,0 +1,8 @@
+input_features:
+  - name: en
+    type: text
+    encoder: embed
+
+output_features:
+  - name: fr
+    type: text

@@ -2,12 +2,10 @@ name: docker
 
 on:
   schedule:
-    - cron: '0 10 * * *' # everyday at 10am
+    - cron: "0 10 * * *" # everyday at 10am
   push:
-    branches: [ master ]
-    tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ master ]
+    branches: [master]
+    tags: ["v*.*.*"]
 
 jobs:
   start-runner:
@@ -17,7 +15,6 @@ jobs:
       github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
       github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
-
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -32,7 +29,7 @@ jobs:
 
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: machulav/ec2-github-runner@v2.2.0
+        uses: machulav/ec2-github-runner@v2.3.2
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -126,7 +123,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Stop EC2 runner
-        uses: machulav/ec2-github-runner@v2.2.0
+        uses: machulav/ec2-github-runner@v2.3.2
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}

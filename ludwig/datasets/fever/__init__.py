@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +17,7 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.registry import register_dataset
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
@@ -25,13 +25,12 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class Fever(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
-            CSVLoadMixin, BaseDataset):
+@register_dataset(name="fever")
+class Fever(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
     """The Fever dataset.
 
-    This pulls in an array of mixins for different types of functionality
-    which belongs in the workflow for ingesting and transforming training data into a destination
-    dataframe that can fit into Ludwig's training API.
+    This pulls in an array of mixins for different types of functionality which belongs in the workflow for ingesting
+    and transforming training data into a destination dataframe that can fit into Ludwig's training API.
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):

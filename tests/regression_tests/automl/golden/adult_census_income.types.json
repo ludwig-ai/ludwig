@@ -1,0 +1,77 @@
+[
+    {
+        "column": "age",
+        "name": "age",
+        "type": "number"
+    },
+    {
+        "column": "workclass",
+        "name": "workclass",
+        "type": "category"
+    },
+    {
+        "column": "fnlwgt",
+        "name": "fnlwgt",
+        "type": "number"
+    },
+    {
+        "column": "education",
+        "name": "education",
+        "type": "category"
+    },
+    {
+        "column": "education-num",
+        "name": "education-num",
+        "type": "number"
+    },
+    {
+        "column": "marital-status",
+        "name": "marital-status",
+        "type": "category"
+    },
+    {
+        "column": "occupation",
+        "name": "occupation",
+        "type": "category"
+    },
+    {
+        "column": "relationship",
+        "name": "relationship",
+        "type": "category"
+    },
+    {
+        "column": "race",
+        "name": "race",
+        "type": "category"
+    },
+    {
+        "column": "sex",
+        "name": "sex",
+        "type": "category"
+    },
+    {
+        "column": "capital-gain",
+        "name": "capital-gain",
+        "type": "number"
+    },
+    {
+        "column": "capital-loss",
+        "name": "capital-loss",
+        "type": "number"
+    },
+    {
+        "column": "hours-per-week",
+        "name": "hours-per-week",
+        "type": "number"
+    },
+    {
+        "column": "native-country",
+        "name": "native-country",
+        "type": "category"
+    },
+    {
+        "column": "income",
+        "name": "income",
+        "type": "category"
+    }
+]

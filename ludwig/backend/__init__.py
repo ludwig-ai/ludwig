@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +14,37 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
+import os
+
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray as _ray
-except:
+except Exception as e:
+    logger.warning(f"import ray failed with exception: {e}")
     _ray = None
 
 
 LOCAL_BACKEND = LocalBackend()
 
-LOCAL = 'local'
-DASK = 'dask'
-HOROVOD = 'horovod'
-RAY = 'ray'
+LOCAL = "local"
+DASK = "dask"
+HOROVOD = "horovod"
+RAY = "ray"
 
 ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
 
 
 def _has_ray():
+    # Temporary workaround to prevent tests from automatically using the Ray backend. Taken from
+    # https://stackoverflow.com/questions/25188119/test-if-code-is-executed-from-within-a-py-test-session
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return False
+
     if _ray is None:
         return False
 
@@ -42,9 +52,10 @@ def _has_ray():
         return True
 
     try:
-        _ray.init('auto', ignore_reinit_error=True)
+        _ray.init("auto", ignore_reinit_error=True)
         return True
-    except:
+    except Exception as e:
+        logger.error(f"ray.init() failed: {e}")
         return False
 
 
@@ -52,24 +63,20 @@ def get_local_backend(**kwargs):
     return LocalBackend(**kwargs)
 
 
-def create_dask_backend(**kwargs):
-    from ludwig.backend.dask import DaskBackend
-    return DaskBackend(**kwargs)
-
-
 def create_horovod_backend(**kwargs):
     from ludwig.backend.horovod import HorovodBackend
+
     return HorovodBackend(**kwargs)
 
 
 def create_ray_backend(**kwargs):
     from ludwig.backend.ray import RayBackend
+
     return RayBackend(**kwargs)
 
 
 backend_registry = {
     LOCAL: get_local_backend,
-    DASK: create_dask_backend,
     HOROVOD: create_horovod_backend,
     RAY: create_ray_backend,
     None: get_local_backend,

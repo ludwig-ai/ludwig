@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Linux Foundation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,18 +15,27 @@
 # ==============================================================================
 
 import contextlib
+import functools
+import logging
 import os
 import pathlib
 import tempfile
+from typing import Any, Optional, Union
+from urllib.parse import unquote, urlparse
 
 import fsspec
 import h5py
+import requests
+from filelock import FileLock
 from fsspec.core import split_protocol
 
-from filelock import FileLock
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
+    # Parse the url to get only the escaped url path
+    path = unquote(urlparse(path).path)
+    # Create a windows compatible path from url path
+    path = os.fspath(pathlib.PurePosixPath(path))
     fs = fsspec.filesystem(protocol)
     return fs, path
 
@@ -49,12 +57,52 @@ def upgrade_http(urlpath):
     return None
 
 
+def get_bytes_obj_if_path(path: Any) -> Union[Any, Optional[bytes]]:
+    """Gets bytes string if `path` is a path (e.g. a string).
+
+    If it is not a path, return as-is.
+    """
+    if not isinstance(path, str):
+        return path
+    return get_bytes_obj_from_path(path)
+
+
+@functools.lru_cache(maxsize=32)
+def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
+    if is_http(path):
+        try:
+            return get_bytes_obj_from_http_path(path)
+        except requests.exceptions.RequestException as e:
+            logging.warning(e)
+            return None
+    else:
+        try:
+            with open_file(path) as f:
+                return f.read()
+        except OSError as e:
+            logging.warning(e)
+            return None
+
+
+@functools.lru_cache(maxsize=32)
+def get_bytes_obj_from_http_path(path: str) -> bytes:
+    data = requests.get(path, stream=True)
+    if data.status_code == 404:
+        upgraded = upgrade_http(path)
+        if upgraded:
+            logging.info(f"reading url {path} failed. upgrading to https and retrying")
+            return get_bytes_obj_from_http_path(upgraded)
+        else:
+            raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
+    return data.raw.read()
+
+
 def find_non_existing_dir_by_adding_suffix(directory_name):
     fs, _ = get_fs_and_path(directory_name)
     suffix = 0
     curr_directory_name = directory_name
     while fs.exists(curr_directory_name):
-        curr_directory_name = directory_name + '_' + str(suffix)
+        curr_directory_name = directory_name + "_" + str(suffix)
         suffix += 1
     return curr_directory_name
 
@@ -76,8 +124,8 @@ def rename(src, tgt):
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
-    if not path_exists(path):
-        with fsspec.open(url, mode="wb") as f:
+    if not path_exists(url):
+        with fsspec.open(url, mode="wb"):
             pass
 
 
@@ -111,7 +159,7 @@ def upload_output_directory(url):
         with tempfile.TemporaryDirectory() as tmpdir:
             fs, remote_path = get_fs_and_path(url)
             if path_exists(url):
-                fs.get(url, tmpdir + '/', recursive=True)
+                fs.get(url, tmpdir + "/", recursive=True)
 
             def put_fn():
                 fs.put(tmpdir, remote_path, recursive=True)
@@ -137,16 +185,16 @@ def open_file(url, *args, **kwargs):
 @contextlib.contextmanager
 def download_h5(url):
     local_path = fsspec.open_local(url)
-    with h5py.File(local_path, 'r') as f:
+    with h5py.File(local_path, "r") as f:
         yield f
 
 
 @contextlib.contextmanager
 def upload_h5(url):
     with upload_output_file(url) as local_fname:
-        mode = 'w'
+        mode = "w"
         if url == local_fname and path_exists(url):
-            mode = 'r+'
+            mode = "r+"
 
         with h5py.File(local_fname, mode) as f:
             yield f
@@ -159,7 +207,7 @@ def upload_output_file(url):
     if protocol is not None:
         fs = fsspec.filesystem(protocol)
         with tempfile.TemporaryDirectory() as tmpdir:
-            local_fname = os.path.join(tmpdir, 'tmpfile')
+            local_fname = os.path.join(tmpdir, "tmpfile")
             yield local_fname
             fs.put(local_fname, url, recursive=True)
     else:
@@ -168,16 +216,12 @@ def upload_output_file(url):
 
 class file_lock(contextlib.AbstractContextManager):
     """File lock based on filelock package."""
-    def __init__(
-        self,
-        path: str,
-        ignore_remote_protocol: bool = True,
-        lock_file: str = '.lock'
-    ) -> None:
+
+    def __init__(self, path: str, ignore_remote_protocol: bool = True, lock_file: str = ".lock") -> None:
         if not isinstance(path, (str, os.PathLike, pathlib.Path)):
             self.lock = None
         else:
-            path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
+            path = os.path.join(path, lock_file) if os.path.isdir(path) else f"{path}./{lock_file}"
             if ignore_remote_protocol and has_remote_protocol(path):
                 self.lock = None
             else:

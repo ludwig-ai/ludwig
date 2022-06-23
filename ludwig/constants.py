@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +18,7 @@ CATEGORY = "category"
 INT = "int"
 FLOAT = "float"
 SPACE = "space"
-NUMERICAL = "numerical"
+NUMBER = "number"
 SET = "set"
 BAG = "bag"
 TEXT = "text"
@@ -43,7 +42,7 @@ EVAL_LOSS = "eval_loss"
 TRAIN_MEAN_LOSS = "train_mean_loss"
 SOFTMAX_CROSS_ENTROPY = "softmax_cross_entropy"
 SIGMOID_CROSS_ENTROPY = "sigmoid_cross_entropy"
-SAMPLED_SOFTMAX_CROSS_ENTROPY = "sampled_softmax_cross_entropy"
+BINARY_WEIGHTED_CROSS_ENTROPY = "binary_weighted_cross_entropy"
 ACCURACY = "accuracy"
 HITS_AT_K = "hits_at_k"
 MEAN_HITS_AT_K = "mean_hits_at_k"
@@ -65,7 +64,7 @@ PROBABILITIES = "probabilities"
 TOKEN_ACCURACY = "token_accuracy"
 LAST_ACCURACY = "last_accuracy"
 SEQUENCE_ACCURACY = "sequence_accuracy"
-LAST_PROBABILTIES = "last_probabilities"
+LAST_PROBABILITIES = "last_probabilities"
 LAST_PREDICTIONS = "last_predictions"
 LENGTHS = "lengths"
 TIED = "tied"
@@ -75,6 +74,7 @@ PREPROCESSING = "preprocessing"
 FILL_WITH_CONST = "fill_with_const"
 FILL_WITH_MODE = "fill_with_mode"
 FILL_WITH_MEAN = "fill_with_mean"
+FILL_WITH_FALSE = "fill_with_false"
 BACKFILL = "backfill"
 BFILL = "bfill"
 PAD = "pad"
@@ -95,11 +95,13 @@ CROP_OR_PAD = "crop_or_pad"
 INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
+TRAINER = "trainer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"
 HIDDEN = "hidden"
 LAST_HIDDEN = "last_hidden"
+ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
 
 SUM = "sum"
@@ -121,6 +123,8 @@ EXECUTOR = "executor"
 MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
+SEARCH_ALG = "search_alg"
+SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
 
 NAME = "name"
@@ -136,12 +140,37 @@ CHECKSUM = "checksum"
 HDF5 = "hdf5"
 PARQUET = "parquet"
 
-SRC = 'dataset_src'
+SRC = "dataset_src"
 
-BATCH_SIZE = 'batch_size'
-EVAL_BATCH_SIZE = 'eval_batch_size'
-LEARNING_RATE = 'learning_rate'
-AUTO = 'auto'
-CONFIG = 'config'
+BATCH_SIZE = "batch_size"
+EVAL_BATCH_SIZE = "eval_batch_size"
+LEARNING_RATE = "learning_rate"
+AUTO = "auto"
+CONFIG = "config"
 
 COMBINER = "combiner"
+
+BALANCE_PERCENTAGE_TOLERANCE = 0.03
+IMBALANCE_DETECTION_RATIO = 0.05
+
+TABULAR = "tabular"
+AUTOML_DEFAULT_TABULAR_MODEL = "tabnet"
+AUTOML_DEFAULT_TEXT_ENCODER = "bert"
+AUTOML_SMALLER_TEXT_ENCODER = "distilbert"
+AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN = 512
+AUTOML_SMALLER_TEXT_LENGTH = 128
+AUTOML_LARGE_TEXT_DATASET = 100000
+AUTOML_MAX_ROWS_PER_CHECKPOINT = 350000
+AUTOML_DEFAULT_IMAGE_ENCODER = "stacked_cnn"
+
+HYPEROPT_WARNING = (
+    "You are running the ludwig train command but there’s a hyperopt section present in your config. "
+    "It will be ignored. If you want to run hyperopt you should use the following command: ludwig "
+    "hyperopt\n\n"
+)
+
+CONTINUE_PROMPT = "Do you want to continue? "
+
+DEFAULT_AUDIO_TENSOR_LENGTH = 70000
+
+DASK_MODULE_NAME = "dask.dataframe"

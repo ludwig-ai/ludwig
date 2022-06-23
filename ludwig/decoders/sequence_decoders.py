@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,839 +12,312 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import ABC
 import logging
+from typing import Dict, Tuple
 
-# from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
-#     StackedRNNCells
-# from tensorflow.keras.layers import Dense, Embedding
-# from tensorflow.keras.layers import average
-# from tensorflow_addons.seq2seq import AttentionWrapper
-# from tensorflow_addons.seq2seq import BahdanauAttention
-# from tensorflow_addons.seq2seq import LuongAttention
+import torch
+import torch.nn as nn
 
-from ludwig.constants import *
+from ludwig.constants import LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
-from ludwig.modules.attention_modules import MultiHeadSelfAttention
+from ludwig.decoders.registry import register_decoder
+from ludwig.decoders.sequence_decoder_utils import get_lstm_init_state, get_rnn_init_state
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.modules.recurrent_modules import BasicDecoder
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.registry import Registry, register
-from ludwig.utils.torch_utils import sequence_length_3D, sequence_length_2D
+from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
 
-rnn_layers_registry = {
-    # 'rnn': SimpleRNNCell,
-    # 'gru': GRUCell,
-    # 'lstm': LSTMCell
-}
 
-PAD_TOKEN = 0
+class RNNDecoder(nn.Module):
+    """GRU or RNN-based decoder."""
+
+    def __init__(self, hidden_size: int, vocab_size: int, cell_type: str, num_layers: int = 1):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        if cell_type == "gru":
+            self.rnn = nn.GRU(hidden_size, hidden_size, num_layers=num_layers, batch_first=True)
+        else:
+            self.rnn = nn.RNN(hidden_size, hidden_size, num_layers=num_layers, batch_first=True)
+        self.out = nn.Linear(hidden_size, vocab_size)
+
+        # Have the embedding and projection share weights.
+        # This is a trick used by the Transformer, and seems to attain better loss.
+        # See section 3.4 of https://arxiv.org/pdf/1706.03762.pdf.
+        self.out.weight = self.embedding.weight
+
+    def forward(self, input: torch.Tensor, hidden: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Runs a single decoding time step.
+
+        Modeled off of https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html.
+
+        Args:
+            input: [batch_size] tensor with the previous step's predicted symbol.
+            hidden: [batch_size, hidden_size] tensor with the previous step's hidden state.
+
+        Returns:
+            Tuple of two tensors:
+            - output: [batch_size, 1, vocab_size] tensor with the logits.
+            - hidden: [num_layers, batch_size, hidden_size] tensor with the hidden state for the next time step.
+        """
+        # Unsqueeze predicted tokens.
+        input = input.unsqueeze(1).to(torch.int)
+        output = self.embedding(input)
+        output, hidden = self.rnn(output, hidden)
+        output_logits = self.out(output)
+        return output_logits, hidden
 
 
-DECODER_REGISTRY = Registry()
+class LSTMDecoder(nn.Module):
+    """LSTM-based decoder."""
+
+    def __init__(self, hidden_size: int, vocab_size: int, num_layers: int = 1):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True, num_layers=num_layers)
+        self.out = nn.Linear(hidden_size, vocab_size)
+
+        # Have the embedding and projection share weights.
+        # This is a trick used by the Transformer, and seems to attain better loss.
+        # See section 3.4 of https://arxiv.org/pdf/1706.03762.pdf.
+        self.out.weight = self.embedding.weight
+
+    def forward(
+        self, input: torch.Tensor, hidden_state: torch.Tensor, cell_state: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Runs a single decoding time step.
+
+        Modeled off of https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html.
+
+        Args:
+            input: [batch_size] tensor with the previous step's predicted symbol.
+            hidden_state: [batch_size, hidden_size] tensor with the previous step's hidden state.
+            cell_state: [batch_size, hidden_size] tensor with the previous step's cell state.
+
+        Returns:
+            Tuple of 3 tensors:
+            - output: [batch_size, vocab_size] tensor with the logits.
+            - hidden_state: [batch_size, hidden_size] tensor with the hidden state for the next time step.
+            - cell_state: [batch_size, hidden_size] tensor with the cell state for the next time step.
+        """
+        # Unsqueeze predicted tokens.
+        input = input.unsqueeze(1).to(torch.int)
+        output = self.embedding(input)
+        output, (hidden_state, cell_state) = self.lstm(output, (hidden_state, cell_state))
+        output_logits = self.out(output)
+        return output_logits, hidden_state, cell_state
 
 
-class SequenceDecoder(Decoder, ABC):
-    @classmethod
-    def register(cls, name):
-        DECODER_REGISTRY[name] = cls
-
-
-@register(name='generator')
-class SequenceGeneratorDecoder(SequenceDecoder):
+class SequenceRNNDecoder(nn.Module):
+    """RNN-based decoder over multiple time steps."""
 
     def __init__(
-            self,
-            num_classes,
-            cell_type='rnn',
-            state_size=256,
-            embedding_size=64,
-            beam_width=1,
-            num_layers=1,
-            attention=None,
-            tied_embeddings=None,
-            is_timeseries=False,
-            max_sequence_length=0,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            reduce_input='sum',
-            **kwargs
+        self,
+        hidden_size: int,
+        vocab_size: int,
+        max_sequence_length: int,
+        cell_type: str,
+        num_layers: int = 1,
+        reduce_input="sum",
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
-
-        self.cell_type = cell_type
-        self.state_size = state_size
-        self.embedding_size = embedding_size
-        self.beam_width = beam_width
-        self.num_layers = num_layers
-        self.attention = attention
-        self.attention_mechanism = None
-        self.tied_embeddings = tied_embeddings
-        self.is_timeseries = is_timeseries
-        self.num_classes = num_classes
+        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
+        self.rnn_decoder = RNNDecoder(hidden_size, vocab_size, cell_type, num_layers=num_layers)
         self.max_sequence_length = max_sequence_length
-        self.state_size = state_size
-        self.attention_mechanism = None
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
+        self.num_layers = num_layers
 
-        self.reduce_input = reduce_input if reduce_input else 'sum'
-        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
+        self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
+        self.register_buffer("decoder_input", torch.Tensor([strings_utils.SpecialSymbol.START.value]))
 
-        if is_timeseries:
-            self.vocab_size = 1
-        else:
-            self.vocab_size = self.num_classes
+    def forward(self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor):
+        """Runs max_sequence_length RNN decoding time steps.
 
-        self.GO_SYMBOL = self.vocab_size
-        self.END_SYMBOL = 0
+        Args:
+            combiner_outputs: Dictionary of tensors from the outputs of the combiner and other output features.
+            target: Tensor [batch_size, max_sequence_length] with target symbols.
 
-        # todo: convert following code to torch
-        # logger.debug('  project input Dense')
-        # self.project = Dense(
-        #     state_size,
-        #     use_bias=use_bias,
-        #     kernel_initializer=weights_initializer,
-        #     bias_initializer=bias_initializer
-        # )
-        #
-        # logger.debug('  Embedding')
-        # self.decoder_embedding = Embedding(
-        #     input_dim=self.num_classes + 1,  # account for GO_SYMBOL
-        #     output_dim=embedding_size,
-        #     embeddings_initializer=weights_initializer,
-        # )
-        # logger.debug('  project output Dense')
-        # self.dense_layer = Dense(
-        #     num_classes,
-        #     use_bias=use_bias,
-        #     kernel_initializer=weights_initializer,
-        #     bias_initializer=bias_initializer,
-        # )
-        # rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
-        # rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
-        # self.decoder_rnncell = StackedRNNCells(rnn_cells)
-        # logger.debug('  {}'.format(self.decoder_rnncell))
-        #
-        # # Sampler
-        # self.sampler = tfa.seq2seq.sampler.TrainingSampler()
-        #
-        # logger.debug('setting up attention for', attention)
-        # if attention is not None:
-        #     if attention == 'luong':
-        #         self.attention_mechanism = LuongAttention(units=state_size)
-        #     elif attention == 'bahdanau':
-        #         self.attention_mechanism = BahdanauAttention(units=state_size)
-        #     logger.debug('  {}'.format(self.attention_mechanism))
-        #     self.decoder_rnncell = AttentionWrapper(
-        #         self.decoder_rnncell,
-        #         [self.attention_mechanism] * num_layers,
-        #         attention_layer_size=[state_size] * num_layers
-        #     )
-        #     logger.debug('  {}'.format(self.decoder_rnncell))
+        Returns:
+            Tensor of logits [batch_size, max_sequence_length, vocab_size].
+        """
+        # Prepare the encoder output state.
+        decoder_hidden = get_rnn_init_state(combiner_outputs, self.reduce_sequence, self.num_layers)
 
-    def _logits_training(self, inputs, target):
-        input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
-        encoder_end_state = self.prepare_encoder_output_state(inputs)
+        batch_size = decoder_hidden.size()[1]
 
-        logits = self.decoder_teacher_forcing(
-            input,
-            target=target,
-            encoder_end_state=encoder_end_state
-        )
+        # Tensor to store decoder output logits.
+        logits = self.logits.unsqueeze(0).repeat(batch_size, 1, 1)
 
-        # logits is tuple containing two tensor:
-        #   logits: suitable for use with softmax_crossentropy loss
-        #   projection_input: suitable for use with sampled_softmax
+        # Initialize the decoder with start symbols.
+        decoder_input = self.decoder_input.repeat(batch_size)
+
+        # Unsqueeze to account for extra multilayer dimension.
+        # decoder_hidden = encoder_output_state.unsqueeze(0)
+
+        # Decode until max length.
+        for di in range(self.max_sequence_length):
+            decoder_output, decoder_hidden = self.rnn_decoder(decoder_input, decoder_hidden)
+
+            # decoder_output: [batch_size, 1, vocab_size]
+            # Squeeze out the multilayer dimension and save logits.
+            logits[:, di, :] = decoder_output.squeeze(1)
+
+            # Determine inputs for next time step.
+            # Using teacher forcing causes the model to converge faster but when the trained network is exploited, it
+            # may be unstable: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.378.4095&rep=rep1&type=pdf.
+            # TODO: Use a configurable ratio for how often to use teacher forcing during training.
+            if target is None:
+                _, topi = decoder_output.topk(1)
+                # Squeeze out multilayer and vocabulary dimensions.
+                decoder_input = topi.squeeze(1).squeeze(1).detach()  # detach from history as input
+            else:
+                # Teacher forcing.
+                decoder_input = target[:, di]
+
         return logits
 
-    def prepare_encoder_output_state(self, inputs):
 
-        if 'encoder_output_state' in inputs:
-            encoder_output_state = inputs['encoder_output_state']
-        else:
-            hidden = inputs['hidden']
-            if len(hidden.shape) == 3:  # encoder_output is a sequence
-                # reduce_sequence returns a [b, h]
-                encoder_output_state = self.reduce_sequence(hidden)
-            elif len(hidden.shape) == 2:
-                # this returns a [b, h]
-                encoder_output_state = hidden
-            else:
-                raise ValueError("Only works for 1d or 2d encoder_output")
-
-        # now we have to deal with the fact that the state needs to be a list
-        # in case of lstm or a tensor otherwise
-        if (self.cell_type == 'lstm' and
-                isinstance(encoder_output_state, list)):
-            if len(encoder_output_state) == 2:
-                # this maybe a unidirectionsl lstm or a bidirectional gru / rnn
-                # there is no way to tell
-                # If it is a unidirectional lstm, pass will work fine
-                # if it is bidirectional gru / rnn, the output of one of
-                # the directions will be treated as the inital c of the lstm
-                # which is weird and may lead to poor performance
-                # todo future: try to find a way to distinguish among these two cases
-                pass
-            elif len(encoder_output_state) == 4:
-                # the encoder was a bidirectional lstm
-                # a good strategy is to average the 2 h and the 2 c vectors
-                encoder_output_state = [
-                    average(
-                        [encoder_output_state[0], encoder_output_state[2]]
-                    ),
-                    average(
-                        [encoder_output_state[1], encoder_output_state[3]]
-                    )
-                ]
-            else:
-                # no idea how lists of length different than 2 or 4
-                # might have been originated, we can either rise an ValueError
-                # or deal with it averaging everything
-                # raise ValueError(
-                #     "encoder_output_state has length different than 2 or 4. "
-                #     "Please doublecheck your encoder"
-                # )
-                average_state = average(encoder_output_state)
-                encoder_output_state = [average_state, average_state]
-
-        elif (self.cell_type == 'lstm' and
-              not isinstance(encoder_output_state, list)):
-            encoder_output_state = [encoder_output_state, encoder_output_state]
-
-        elif (self.cell_type != 'lstm' and
-              isinstance(encoder_output_state, list)):
-            # here we have a couple options,
-            # either reuse part of the input encoder state,
-            # or just use its output
-            if len(encoder_output_state) == 2:
-                # using h and ignoring c
-                encoder_output_state = encoder_output_state[0]
-            elif len(encoder_output_state) == 4:
-                # using average of hs and ignoring cs
-                encoder_output_state + average(
-                    [encoder_output_state[0], encoder_output_state[2]]
-                )
-            else:
-                # no idea how lists of length different than 2 or 4
-                # might have been originated, we can either rise an ValueError
-                # or deal with it averaging everything
-                # raise ValueError(
-                #     "encoder_output_state has length different than 2 or 4. "
-                #     "Please doublecheck your encoder"
-                # )
-                encoder_output_state = average(encoder_output_state)
-            # this returns a [b, h]
-            # decoder_input_state = reduce_sequence(eo, self.reduce_input)
-
-        elif (self.cell_type != 'lstm' and
-              not isinstance(encoder_output_state, list)):
-            # do nothing, we are good
-            pass
-
-        # at this point decoder_input_state is either a [b,h]
-        # or a list([b,h], [b,h]) if the decoder cell is an lstm
-        # but h may not be the same as the decoder state size,
-        # so we may need to project
-        if isinstance(encoder_output_state, list):
-            for i in range(len(encoder_output_state)):
-                if (encoder_output_state[i].shape[1] !=
-                        self.state_size):
-                    encoder_output_state[i] = self.project(
-                        encoder_output_state[i]
-                    )
-        else:
-            if encoder_output_state.shape[1] != self.state_size:
-                encoder_output_state = self.project(
-                    encoder_output_state
-                )
-
-        return encoder_output_state
-
-    def build_decoder_initial_state(self, batch_size, encoder_state, dtype):
-        decoder_initial_state = self.decoder_rnncell.get_initial_state(
-            batch_size=batch_size,
-            dtype=dtype)
-
-        # handle situation where encoder and decoder are different cell_types
-        # and to account for inconsistent wrapping for encoder state w/in lists
-        if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
-            encoder_state = [encoder_state, encoder_state]
-        elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
-            encoder_state = encoder_state[0]
-
-        if self.attention_mechanism is not None:
-            decoder_initial_state = decoder_initial_state.clone(
-                cell_state=(encoder_state,) * self.num_layers)
-        else:
-            decoder_initial_state = (encoder_state,) * self.num_layers
-
-        return decoder_initial_state
-
-    def decoder_teacher_forcing(
-            self,
-            encoder_output,
-            target=None,
-            encoder_end_state=None
-    ):
-        # ================ Setup ================
-        batch_size = tf.shape(encoder_output)[0]
-
-        # Prepare target for decoding
-        target_sequence_length = sequence_length_2D(target)
-        start_tokens = tf.tile([self.GO_SYMBOL], [batch_size])
-        end_tokens = tf.tile([self.END_SYMBOL], [batch_size])
-        if self.is_timeseries:
-            start_tokens = tf.cast(start_tokens, tf.float32)
-            end_tokens = tf.cast(end_tokens, tf.float32)
-        targets_with_go_and_eos = tf.concat([
-            tf.expand_dims(start_tokens, 1),
-            target,  # right now cast to tf.int32, fails if tf.int64
-            tf.expand_dims(end_tokens, 1)], 1)
-        target_sequence_length_with_eos = target_sequence_length + 1
-
-        # Decoder Embeddings
-        decoder_emb_inp = self.decoder_embedding(targets_with_go_and_eos)
-
-        # Setting up decoder memory from encoder output
-        if self.attention_mechanism is not None:
-            encoder_sequence_length = sequence_length_3D(encoder_output)
-            self.attention_mechanism.setup_memory(
-                encoder_output,
-                memory_sequence_length=encoder_sequence_length
-            )
-
-        decoder_initial_state = self.build_decoder_initial_state(
-            batch_size,
-            encoder_state=encoder_end_state,
-            dtype=tf.float32
-        )
-
-        # use Ludwig custom BasicDecoder
-        decoder = BasicDecoder(
-            self.decoder_rnncell,
-            sampler=self.sampler,
-            output_layer=self.dense_layer
-        )
-
-        # BasicDecoderOutput
-        outputs, final_state, generated_sequence_lengths = decoder(
-            decoder_emb_inp,
-            initial_state=decoder_initial_state,
-            sequence_length=target_sequence_length_with_eos
-        )
-
-        logits = outputs.rnn_output
-        # mask = tf.sequence_mask(
-        #    generated_sequence_lengths,
-        #    maxlen=tf.shape(logits)[1],
-        #    dtype=tf.float32
-        # )
-        # logits = logits * mask[:, :, tf.newaxis]
-
-        # append a trailing 0, useful for
-        # those datapoints that reach maximum length
-        # and don't have a eos at the end
-        logits = tf.pad(
-            logits,
-            [[0, 0], [0, 1], [0, 0]]
-        )
-
-        # EXPECTED SIZE OF RETURNED TENSORS
-        # logits: shape[batch_size, seq_size, num_classes] used for evaluation
-        # projection_input: shape[batch_size, seq_size, state_size] for sampled softmax
-        return {
-            LOGITS: logits,
-            PROJECTION_INPUT: outputs.projection_input
-        }
-
-    def decoder_beam_search(
-            self,
-            encoder_output,
-            encoder_end_state=None,
-            training=None
-    ):
-        # ================ Setup ================
-        batch_size = encoder_output.shape[0]
-        encoder_sequence_length = sequence_length_3D(encoder_output)
-
-        # ================ predictions =================
-        decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
-        start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
-        end_token = self.END_SYMBOL
-        decoder_inp_emb = self.decoder_embedding(decoder_input)
-
-        # code sequence based on example found here
-        # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
-        tiled_encoder_output = tfa.seq2seq.tile_batch(
-            encoder_output,
-            multiplier=self.beam_width
-        )
-
-        tiled_encoder_end_state = tfa.seq2seq.tile_batch(
-            encoder_end_state,
-            multiplier=self.beam_width
-        )
-
-        tiled_encoder_sequence_length = tfa.seq2seq.tile_batch(
-            encoder_sequence_length,
-            multiplier=self.beam_width
-        )
-
-        if self.attention_mechanism is not None:
-            self.attention_mechanism.setup_memory(
-                tiled_encoder_output,
-                memory_sequence_length=tiled_encoder_sequence_length
-            )
-
-        decoder_initial_state = self.build_decoder_initial_state(
-            batch_size * self.beam_width,
-            encoder_state=tiled_encoder_end_state,
-            dtype=tf.float32
-        )
-
-        decoder = tfa.seq2seq.beam_search_decoder.BeamSearchDecoder(
-            cell=self.decoder_rnncell,
-            beam_width=self.beam_width,
-            output_layer=self.dense_layer,
-            output_all_scores=True,
-        )
-        # ================ generate logits ==================
-        maximum_iterations = self.max_sequence_length
-
-        # initialize inference decoder
-        decoder_embedding_matrix = self.decoder_embedding.weights[0]
-
-        # beam search
-        decoder_output, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
-            decoder=decoder,
-            output_time_major=False,
-            impute_finished=False,
-            maximum_iterations=maximum_iterations,
-            decoder_init_input=decoder_embedding_matrix,
-            decoder_init_kwargs=dict(
-                start_tokens=start_tokens,
-                end_token=end_token,
-                initial_state=decoder_initial_state
-            ),
-        )
-
-        sequence_id = 0
-        predictions = decoder_output.predicted_ids[:, :, sequence_id]
-        probabilities = extract_sequence_probabilities(
-            decoder_output, self.beam_width, sequence_id=sequence_id
-        )
-
-        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
-        if seq_len_diff > 0:
-            predictions = tf.pad(
-                predictions,
-                [[0, 0], [0, seq_len_diff]]
-            )
-            probabilities = tf.pad(
-                probabilities,
-                [[0, 0], [0, seq_len_diff], [0, 0]],
-                constant_values=1.0 / self.vocab_size
-            )
-
-        # -1 because they include pad
-        lengths = decoder_lengths[:, 0] - 1
-
-        last_predictions = tf.gather_nd(
-            predictions,
-            tf.stack(
-                [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 1, 0)],
-                axis=1
-            ),
-            name='last_predictions_{}'.format(self.name)
-        )
-
-        # EXPECTED SIZE OF RETURNED TENSORS
-        # lengths: shape[batch_size]
-        # predictions: shape [batch_size, seq_size]
-        # last_predictions: shape[batch_size
-        # probabilities: shape[batch_size, seq_size, num_classes]
-        return None, lengths, predictions, last_predictions, probabilities
-
-    def decoder_greedy(
-            self,
-            encoder_output,
-            encoder_end_state=None,
-            training=None
-    ):
-        # ================ Setup ================
-        batch_size = encoder_output.shape[0]
-
-        # ================ predictions =================
-        greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
-
-        decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
-        start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
-        end_token = self.END_SYMBOL
-        decoder_inp_emb = self.decoder_embedding(decoder_input)
-
-        if self.attention_mechanism is not None:
-            encoder_sequence_length = sequence_length_3D(encoder_output)
-            self.attention_mechanism.setup_memory(
-                encoder_output,
-                memory_sequence_length=encoder_sequence_length
-            )
-
-        decoder_initial_state = self.build_decoder_initial_state(
-            batch_size,
-            encoder_state=encoder_end_state,
-            dtype=tf.float32
-        )
-
-        decoder = tfa.seq2seq.BasicDecoder(
-            cell=self.decoder_rnncell,
-            sampler=greedy_sampler,
-            output_layer=self.dense_layer
-        )
-
-        # ================ generate sequence ==================
-        maximum_iterations = self.max_sequence_length
-
-        # initialize inference decoder
-        decoder_embedding_matrix = self.decoder_embedding.weights[0]
-        decoder_output, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
-            decoder=decoder,
-            output_time_major=False,
-            impute_finished=False,
-            maximum_iterations=maximum_iterations,
-            decoder_init_input=decoder_embedding_matrix,
-            decoder_init_kwargs=dict(
-                start_tokens=start_tokens,
-                end_token=end_token,
-                initial_state=decoder_initial_state,
-            ),
-        )
-
-        predictions = decoder_output.sample_id
-        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
-        if seq_len_diff > 0:
-            predictions = tf.pad(
-                predictions,
-                [[0, 0], [0, seq_len_diff]]
-            )
-        logits = tf.pad(
-            decoder_output.rnn_output,
-            [[0, 0], [0, seq_len_diff], [0, 0]]
-        )
-
-        # -1 because they include the EOS symbol
-        lengths = decoder_lengths - 1
-
-        probabilities = tf.nn.softmax(
-            logits,
-            name='probabilities_{}'.format(self.name)
-        )
-
-        predictions = tf.cast(
-            predictions,
-            tf.int64,
-            name='predictions_{}'.format(self.name)
-        )
-
-        last_predictions = tf.gather_nd(
-            predictions,
-            tf.stack(
-                [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 1, 0)],  # -1 because of EOS
-                axis=1
-            ),
-            name='last_predictions_{}'.format(self.name)
-        )
-
-        # EXPECTED SIZE OF RETURNED TENSORS
-        # logits: shape [batch_size, seq_size, num_classes]
-        # lengths: shape[batch_size]
-        # predictions: shape [batch_size, seq_size]
-        # last_predictions: shape[batch_size
-        # probabilities: shape[batch_size, seq_size, num_classes]
-        return logits, lengths, predictions, last_predictions, probabilities
-
-    # this should be used only for decoder inference
-    def forward(self, inputs, training=None, mask=None):
-        # shape [batch_size, seq_size, state_size]
-        encoder_output = inputs['hidden']
-        # form dependent on cell_type
-        # lstm: list([batch_size, state_size], [batch_size, state_size])
-        # rnn, gru: [batch_size, state_size]
-        encoder_output_state = self.prepare_encoder_output_state(inputs)
-
-        if self.beam_width > 1:
-            decoder_outputs = self.decoder_beam_search(
-                encoder_output,
-                encoder_end_state=encoder_output_state,
-            )
-        else:
-            decoder_outputs = self.decoder_greedy(
-                encoder_output,
-                encoder_end_state=encoder_output_state,
-            )
-
-        logits, lengths, preds, last_preds, probs = decoder_outputs
-
-        return logits, lengths, preds, last_preds, probs
-
-    def _predictions_eval(
-            self,
-            inputs,  # encoder_output, encoder_output_state
-            training=None
-    ):
-        decoder_outputs = self.call(inputs)
-        logits, lengths, preds, last_preds, probs = decoder_outputs
-
-        return {
-            PREDICTIONS: preds,
-            LENGTHS: lengths,
-            LAST_PREDICTIONS: last_preds,
-            PROBABILITIES: probs,
-            LOGITS: logits
-        }
-
-    def get_prediction_set(self):
-        return {
-            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
-        }
-
-
-# reconstruct probs from raw beam search output
-def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
-    # obtain tesnors needed
-    predictions = decoder_output.predicted_ids[:, :, sequence_id]
-    all_log_probs = decoder_output.beam_search_decoder_output.scores
-    top_ids = decoder_output.beam_search_decoder_output.predicted_ids
-    parent_rows = decoder_output.beam_search_decoder_output.parent_ids
-
-    # tile predictions so that they have the same shape
-    # of top ids, [b, s, beam]
-    preds_tiled = tf.tile(tf.expand_dims(predictions, -1),
-                          [1, 1, beam_width])
-    # figure out the location among the top k ids of the ones
-    # we ended using for predictions, by first obtaining a boolean tensor
-    # that reports if they match or not, and then using tf.where
-    # to obtain the coordinates where they appear.
-    # the output is a tensor preds_locs_all of size = [n, dims]
-    # where n is ]the number of matches and dims is
-    # the number of axes of the coordinates
-    # (the rank of the preds_locs_bool tesnor)
-    # They are not always the first, because of the way beam search works.
-    preds_locs_bool = tf.equal(preds_tiled, top_ids)
-    preds_locs_all = tf.where(preds_locs_bool)
-    # the predicted ids may have appeared multiple times across
-    # the different beams, so we need to select the first one (as it's the
-    # one with highest probability.
-    # to do so we create segment ids to use with the segment_min function.
-    # to obtain the segments we use the first 2 coordinates of preds_locs
-    # multiply the first by the max length of the second and then
-    # add the second to obtain contgous numbering.
-    # for example if we know that the maximum length is 12,
-    # location [2,3] becomes segment 2 * 12 + 3 = 27
-    segments = ((preds_locs_all[:, 0] *
-                 tf.cast(tf.shape(predictions)[-1], tf.int64)) +
-                preds_locs_all[:, 1])
-    # degment min takes the min (first occurrence) of
-    # the predicted sequence elment among all the beams
-    preds_locs = tf.math.segment_min(
-        preds_locs_all[:, 2], segments
-    )
-    # as we want to gather the values in parent rows,
-    # we need to construct the coordinates xs and ys as the preds_locs
-    # are the values of the third axis (beam size)
-    # from which we want to gather).
-    # we know for sure the values of xs and ys because we know for sure
-    # that at least one of the besms contains the pred id at each step,
-    # so we know for sure that there will be b*s rows in pred_loc
-    # and so we can concatenate xs and ys that have the same size
-    xs = tf.repeat(
-        tf.range(tf.shape(parent_rows)[0], dtype=tf.int64),
-        tf.repeat(
-            tf.shape(parent_rows)[1], tf.shape(parent_rows)[0])
-    )
-    ys = tf.tile(tf.range(tf.shape(parent_rows)[1], dtype=tf.int64),
-                 tf.shape(parent_rows)[0:1])
-    preds_locs_for_gather = tf.concat(
-        [xs[:, tf.newaxis], ys[:, tf.newaxis],
-         preds_locs[:, tf.newaxis]],
-        axis=-1
-    )
-    # now that we have a [b*s, x, y ,z] tensor of coordinates,
-    # we can use it to gather from the parent rows tensor
-    rows_from_log_probs_to_select = tf.gather_nd(
-        parent_rows,
-        preds_locs_for_gather
-    )
-    # we can reuse xs and ys to concatenate to the id of rows
-    # from log probs to select in order to obtain the coordinates
-    # in the all_log_probs tensor to gather
-    rows_from_log_probs_for_gather = tf.concat(
-        [xs[:, tf.newaxis], ys[:, tf.newaxis],
-         tf.cast(rows_from_log_probs_to_select[:, tf.newaxis],
-                 dtype=tf.int64)],
-        axis=-1
-    )
-    # let's finally gather the logprobs
-    log_probs_to_reshape = tf.gather_nd(
-        all_log_probs,
-        rows_from_log_probs_for_gather
-    )
-    # and let's reshape them in a [b,s,v] shape where v is
-    # the size of the output vocabulary
-    log_probs = tf.reshape(
-        log_probs_to_reshape,
-        tf.stack(
-            [tf.shape(all_log_probs)[0], tf.shape(all_log_probs)[1],
-             tf.shape(all_log_probs)[3]], axis=0)
-    )
-    # as they are log probs, exponentiating them return probabilities
-    probabilities = tf.exp(log_probs)
-
-    return probabilities
-
-
-@register(name='tagger')
-class SequenceTaggerDecoder(SequenceDecoder):
+class SequenceLSTMDecoder(nn.Module):
+    """LSTM-based decoder over multiple time steps."""
 
     def __init__(
-            self,
-            num_classes,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            attention=False,
-            attention_embedding_size=256,
-            attention_num_heads=8,
-            is_timeseries=False,
-            **kwargs
+        self,
+        hidden_size: int,
+        vocab_size: int,
+        max_sequence_length: int,
+        reduce_input: str = "sum",
+        num_layers: int = 1,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
+        self.lstm_decoder = LSTMDecoder(hidden_size, vocab_size, num_layers)
+        self.max_sequence_length = max_sequence_length
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
+        self.num_layers = num_layers
 
-        self.attention = attention
-        if attention:
-            logger.debug('  MultiHeadSelfAttention')
-            self.self_attention = MultiHeadSelfAttention(
-                hidden_size=attention_embedding_size,
-                num_heads=attention_num_heads
+        self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
+        self.register_buffer("decoder_input", torch.Tensor([strings_utils.SpecialSymbol.START.value]))
+
+    def forward(self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor) -> torch.Tensor:
+        """Runs max_sequence_length LSTM decoding time steps.
+
+        Args:
+            combiner_outputs: Dictionary of tensors from the outputs of the combiner and other output features.
+            target: Tensor [batch_size, max_sequence_length] with target symbols.
+
+        Returns:
+            Tensor of logits [batch_size, max_sequence_length, vocab_size].
+        """
+        # Prepare the decoder initial state.
+        decoder_hidden, decoder_cell_state = get_lstm_init_state(
+            combiner_outputs, self.reduce_sequence, self.num_layers
+        )
+        batch_size = decoder_hidden.size()[1]
+
+        # Initialize the decoder with start symbols.
+        decoder_input = self.decoder_input.repeat(batch_size)
+
+        # Tensor to store decoder output logits.
+        logits = self.logits.unsqueeze(0).repeat(batch_size, 1, 1)
+
+        # Decode until max length.
+        for di in range(self.max_sequence_length):
+            decoder_output, decoder_hidden, decoder_cell_state = self.lstm_decoder(
+                decoder_input, decoder_hidden, decoder_cell_state
             )
 
-        if is_timeseries:
-            num_classes = 1
+            # decoder_output: [batch_size, 1, vocab_size]
+            # Squeeze out the multilayer dimension and save logits.
+            logits[:, di, :] = decoder_output.squeeze(1)
 
-        logger.debug('  Dense')
-        self.projection_layer = Dense(
-            units=num_classes,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer
-        )
+            # Determine inputs for next time step.
+            # Using teacher forcing causes the model to converge faster but when the trained network is exploited, it
+            # may be unstable: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.378.4095&rep=rep1&type=pdf.
+            # TODO: Use a configurable ratio for how often to use teacher forcing during training.
+            if target is None:
+                _, topi = decoder_output.topk(1)
+                # Squeeze out multilayer and vocabulary dimensions.
+                decoder_input = topi.squeeze(1).squeeze(1).detach()  # detach from history as input
+            else:
+                # Teacher forcing.
+                decoder_input = target[:, di]
 
-    def call(
-            self,
-            inputs,
-            training=None,
-            mask=None
+        return logits
+
+
+@register_decoder("generator", [SEQUENCE, TEXT])
+class SequenceGeneratorDecoder(Decoder):
+    """Dispatcher for different sequence generator decoders."""
+
+    def __init__(
+        self,
+        vocab_size: int,
+        max_sequence_length: int,
+        cell_type: str = "gru",
+        input_size: int = 256,
+        reduce_input: str = "sum",
+        num_layers: int = 1,
+        **kwargs,
     ):
-        # shape [batch_size, seq_size, state_size]
-        if LOGITS in inputs:
-            inputs = inputs[LOGITS]
-        hidden = inputs['hidden']
-        if len(hidden.shape) != 3:
-            raise ValueError(
-                'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
-                'when using a tagger sequential decoder. '
-                'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
-                    len(hidden.shape)))
+        """
+        Args:
+            vocab_size: Vocab size.
+            max_sequence_length: Maximum sequence length.
+            cell_type: Type of RNN cell to use. 'rnn', 'gru', or 'lstm'.
+            input_size: Size of incoming combiner output.
+            reduce_input: Mode with which to reduce incoming combiner output, if needed.
+            num_layers: Number of layers for the RNN deecoders.
+        """
+        super().__init__()
+        self.vocab_size = vocab_size
+        self.input_size = input_size
+        self.max_sequence_length = max_sequence_length
+        if cell_type == "lstm":
+            self.rnn_decoder = SequenceLSTMDecoder(
+                hidden_size=input_size,
+                vocab_size=vocab_size,
+                max_sequence_length=max_sequence_length,
+                reduce_input=reduce_input,
+                num_layers=num_layers,
+            )
+        else:
+            self.rnn_decoder = SequenceRNNDecoder(
+                hidden_size=input_size,
+                vocab_size=vocab_size,
+                max_sequence_length=max_sequence_length,
+                cell_type=cell_type,
+                reduce_input=reduce_input,
+                num_layers=num_layers,
+            )
 
-        if self.attention:
-            hidden = self.self_attention(hidden, mask=mask)
+    def forward(
+        self, combiner_outputs: Dict[str, torch.Tensor], target: torch.Tensor = None
+    ) -> Dict[str, torch.Tensor]:
+        """Decodes combiner_outputs into a sequence.
 
-        # hidden shape [batch_size, sequence_length, hidden_size]
-        logits = self.projection_layer(hidden)
+        Args:
+            combiner_outputs: Dictionary of tensors from the outputs of the combiner and other output features.
+            target: Tensor [batch_size, max_sequence_length] with target symbols.
 
-        return {
-            LOGITS: logits,
-            # logits shape [batch_size, sequence_length, num_classes]
-            LENGTHS: inputs[LENGTHS],
-            PROJECTION_INPUT: hidden
-        }
-
-    def _logits_training(
-            self,
-            inputs,
-            mask=None,
-            *args,
-            **kwarg
-    ):
-        return self.call(inputs, mask=mask)
-
-    def _predictions_eval(
-            self,
-            inputs,  # encoder_output, encoder_output_state, lengths
-            training=None
-    ):
-        outputs = self.call(inputs)
-        logits = outputs[LOGITS]
-        input_sequence_lengths = inputs[
-            LENGTHS]  # retrieve input sequence length
-
-        probabilities = tf.nn.softmax(
-            logits,
-            name='probabilities_{}'.format(self.name)
-        )
-
-        predictions = tf.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.name),
-            output_type=tf.int64
-        )
-
-        # generated_sequence_lengths = sequence_length_2D(predictions)
-        last_predictions = tf.gather_nd(
-            predictions,
-            tf.stack(
-                [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(
-                     input_sequence_lengths - 1,
-                     # modified to use input sequence length
-                     0
-                )],
-                axis=1
-            ),
-            name='last_predictions_{}'.format(self.name)
-        )
-
-        # mask logits
-        mask = tf.sequence_mask(
-            input_sequence_lengths,
-            maxlen=tf.shape(logits)[1],
-            dtype=tf.float32
-        )
-        logits = logits * mask[:, :, tf.newaxis]
-
-        # EXPECTED SIZE OF RETURNED TENSORS
-        # LOGITS: shape [batch_size, seq_size, num_classes]
-        # LENGTHS: shape[batch_size]
-        # PREDICTIONS: shape [batch_size, seq_size]
-        # LAST_PREDICTIONS: shape[batch_size]
-        # PROBABILITIES: shape[batch_size, seq_size, num_classes]
-        # PROJECTION_INPUT: shape[batch_size, seq_size, state_size]
-        return {
-            PREDICTIONS: predictions,
-            LENGTHS: input_sequence_lengths,
-            LAST_PREDICTIONS: last_predictions,
-            PROBABILITIES: probabilities,
-            LOGITS: logits,
-            PROJECTION_INPUT: outputs[PROJECTION_INPUT]
-        }
+        Returns:
+            Dictionary of tensors of logits [batch_size, max_sequence_length, vocab_size].
+        """
+        logits = self.rnn_decoder(combiner_outputs, target)
+        return {LOGITS: logits}
 
     def get_prediction_set(self):
-        return {
-            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
-        }
+        return {LOGITS}
+
+    @property
+    def input_shape(self):
+        # Dummy implementation.
+        return torch.Size([1])
+
+    @property
+    def output_shape(self):
+        return torch.Size([self.max_sequence_length, self.vocab_size])

@@ -1,6 +1,4 @@
 uvicorn
 fastapi
-pydantic
 python-multipart
-neuropod ; platform_system != "Windows" and python_version < '3.9'
-imageio
+neuropod==0.3.0rc6 ; platform_system != "Windows" and python_version < '3.9'

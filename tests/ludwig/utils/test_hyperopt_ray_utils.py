@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,90 +21,71 @@ except ImportError:
 else:
     RAY_AVAILABLE = True
 
-from ludwig.hyperopt.sampling import RayTuneSampler
-
+# from ludwig.hyperopt.sampling import RayTuneSampler   TDOO: remove
+from ludwig.constants import RAY, TYPE
+from ludwig.hyperopt.execution import get_build_hyperopt_executor
 
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
-            "training.learning_rate": {
-                "space": "uniform",
-                "lower": 0.001,
-                "upper": 0.1
-            },
-            "combiner.num_fc_layers": {
-                "space": "qrandint",
-                "lower": 3,
-                "upper": 6,
-                "q": 3
-            },
-            "utterance.cell_type": {
-                "space": "grid_search",
-                "values": ["rnn", "gru", "lstm"]
-            }
+            "trainer.learning_rate": {"space": "uniform", "lower": 0.001, "upper": 0.1},
+            "combiner.num_fc_layers": {"space": "qrandint", "lower": 3, "upper": 6, "q": 3},
+            "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru", "lstm"]},
         },
-        "goal": "minimize",
-        "num_samples": 3
     },
     "test_2": {
         "parameters": {
-            "training.learning_rate": {
+            "trainer.learning_rate": {
                 "space": "loguniform",
                 "lower": 0.001,
                 "upper": 0.1,
                 "base": 10,
             },
-            "combiner.num_fc_layers": {
-                "space": "randint",
-                "lower": 2,
-                "upper": 6
-            },
-            "utterance.cell_type": {
-                "space": "choice",
-                "categories": ["rnn", "gru", "lstm"]
-            }
+            "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+            "utterance.cell_type": {"space": "choice", "categories": ["rnn", "gru", "lstm"]},
         },
-        "goal": "maximize",
-        "num_samples": 4
-    }
+    },
 }
 
 if RAY_AVAILABLE:
     EXPECTED_SEARCH_SPACE = {
         "test_1": {
-            "training.learning_rate": tune.uniform(0.001, 0.1),
+            "trainer.learning_rate": tune.uniform(0.001, 0.1),
             "combiner.num_fc_layers": tune.qrandint(3, 6, 3),
-            "utterance.cell_type": tune.grid_search(["rnn", "gru", "lstm"])
+            "utterance.cell_type": tune.grid_search(["rnn", "gru", "lstm"]),
         },
         "test_2": {
-            "training.learning_rate": tune.loguniform(0.001, 0.1),
+            "trainer.learning_rate": tune.loguniform(0.001, 0.1),
             "combiner.num_fc_layers": tune.randint(2, 6),
-            "utterance.cell_type": tune.choice(["rnn", "gru", "lstm"])
-        }
+            "utterance.cell_type": tune.choice(["rnn", "gru", "lstm"]),
+        },
     }
 
 
-@pytest.mark.skipif(not RAY_AVAILABLE,
-                    reason="Ray is not installed for testing")
+@pytest.mark.skipif(not RAY_AVAILABLE, reason="Ray is not installed for testing")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
-
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     expected_search_space = EXPECTED_SEARCH_SPACE[key]
 
-    goal = hyperopt_test_params["goal"]
-    num_samples = hyperopt_test_params["num_samples"]
     tune_sampler_params = hyperopt_test_params["parameters"]
 
-    tune_sampler = RayTuneSampler(goal=goal, parameters=tune_sampler_params,
-                                  num_samples=num_samples)
-    search_space = tune_sampler.search_space
+    hyperopt_executor = get_build_hyperopt_executor(RAY)(
+        tune_sampler_params,
+        "output_feature",
+        "mse",
+        "minimize",
+        "validation",
+        search_alg={TYPE: "variant_generator"},
+        **{"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}}
+    )
+
+    search_space = hyperopt_executor.search_space
 
     actual_params_keys = search_space.keys()
     expected_params_keys = expected_search_space.keys()
 
     for param in search_space:
-        assert type(search_space[param]) is type(expected_search_space[param])
+        assert isinstance(search_space[param], type(expected_search_space[param]))
 
     assert actual_params_keys == expected_params_keys
-    assert tune_sampler.num_samples == num_samples

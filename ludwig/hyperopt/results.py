@@ -1,8 +1,7 @@
 # !/usr/bin/env python
-# coding=utf-8
 
 from dataclasses import dataclass
-from typing import Any, List, Union
+from typing import Any, List
 
 from dataclasses_json import dataclass_json
 

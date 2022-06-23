@@ -1,0 +1,20 @@
+trainer:
+  batch_size: auto #256
+  learning_rate: auto #.001
+  # validation_metric: accuracy
+
+hyperopt:
+  search_alg:
+    # Gives results like default + supports random_state_seed for sample sequence repeatability
+    type: hyperopt
+  executor:
+    type: ray
+    num_samples: 10
+    time_budget_s: 7200
+    scheduler:
+      type: async_hyperband
+      time_attr: time_total_s
+      max_t: 7200
+      grace_period: 72
+      # Increased over default to get more pruning/exploration
+      reduction_factor: 5

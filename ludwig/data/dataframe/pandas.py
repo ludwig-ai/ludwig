@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,11 +36,17 @@ class PandasEngine(DataFrameEngine):
     def compute(self, data):
         return data
 
+    def concat(self, dfs):
+        return pd.concat(dfs)
+
     def from_pandas(self, df):
         return df
 
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
+
+    def map_partitions(self, series, map_fn, meta=None):
+        return map_fn(series)
 
     def apply_objects(self, df, apply_fn, meta=None):
         return df.apply(apply_fn, axis=1)
@@ -50,7 +55,15 @@ class PandasEngine(DataFrameEngine):
         return reduce_fn(series)
 
     def to_parquet(self, df, path):
-        df.to_parquet(path, engine='pyarrow')
+        df.to_parquet(path, engine="pyarrow")
+
+    def to_ray_dataset(self, df):
+        from ray.data import from_pandas
+
+        return from_pandas(df)
+
+    def from_ray_dataset(self, dataset) -> pd.DataFrame:
+        return dataset.to_pandas()
 
     @property
     def array_lib(self):

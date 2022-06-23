@@ -1,0 +1,5 @@
+version: 1.0
+download_urls:
+  - "http://archive.ics.uci.edu/ml/machine-learning-databases/00316/UCI%20CBM%20Dataset.zip"
+download_file_type: csv
+csv_filename: naval.csv

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,55 +14,46 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
+from typing import Any, Dict, List, Optional
 
 import torch
-from typing import List, Optional, Dict, Any
 
+from ludwig.constants import BAG
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry()
-
-
-class BagEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='embed')
-class BagEmbedWeightedEncoder(BagEncoder):
+@register_encoder("embed", BAG, default=True)
+class BagEmbedWeightedEncoder(Encoder):
     def __init__(
-            self,
-            vocab: List[str],
-            embedding_size: int = 50,
-            representation: str = 'dense',
-            embeddings_trainable: bool = True,
-            pretrained_embeddings: Optional[str] = None,
-            force_embedding_size: bool = False,
-            embeddings_on_cpu: bool = False,
-            fc_layers=None,
-            num_fc_layers: int = 0,
-            fc_size: int = 10,
-            use_bias: bool = True,
-            weights_initializer: str = 'xavier_uniform',
-            bias_initializer: str = 'zeros',
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict[str, Any]] = None,
-            activation: str = 'relu',
-            dropout: float = 0.0,
-            **kwargs
+        self,
+        vocab: List[str],
+        embedding_size: int = 50,
+        representation: str = "dense",
+        embeddings_trainable: bool = True,
+        pretrained_embeddings: Optional[str] = None,
+        force_embedding_size: bool = False,
+        embeddings_on_cpu: bool = False,
+        fc_layers=None,
+        num_fc_layers: int = 0,
+        output_size: int = 10,
+        use_bias: bool = True,
+        weights_initializer: str = "xavier_uniform",
+        bias_initializer: str = "zeros",
+        norm: Optional[str] = None,
+        norm_params: Optional[Dict[str, Any]] = None,
+        activation: str = "relu",
+        dropout: float = 0.0,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  EmbedWeighted')
+        logger.debug("  EmbedWeighted")
         self.embed_weighted = EmbedWeighted(
             vocab,
             embedding_size,
@@ -75,13 +65,12 @@ class BagEmbedWeightedEncoder(BagEncoder):
             dropout=dropout,
             embedding_initializer=weights_initializer,
         )
-
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             self.embed_weighted.output_shape[-1],
             layers=fc_layers,
             num_layers=num_fc_layers,
-            default_fc_size=fc_size,
+            default_output_size=output_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
@@ -101,10 +90,10 @@ class BagEmbedWeightedEncoder(BagEncoder):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x vocab size], type torch.int32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x vocab size], type torch.int32
 
-            :param return: embeddings of shape [batch x embed size], type torch.float32
+        :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         hidden = self.embed_weighted(inputs)
         hidden = self.fc_stack(hidden)

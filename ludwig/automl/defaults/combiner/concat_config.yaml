@@ -1,0 +1,27 @@
+combiner:
+  type: concat
+
+hyperopt:
+  # goal: maximize
+  parameters:
+    combiner.num_fc_layers:
+      space: randint
+      type: int
+      lower: 1
+      upper: 4
+    combiner.output_size:
+      space: choice
+      categories: [128, 256]
+    combiner.dropout:
+      space: uniform
+      type: float
+      lower: 0.0
+      upper: 0.1
+    trainer.learning_rate:
+      space: loguniform
+      type: float
+      lower: 0.00002
+      upper: 0.001
+    trainer.batch_size:
+      space: choice
+      categories: [64, 128, 256, 512, 1024]

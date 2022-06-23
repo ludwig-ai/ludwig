@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,22 +15,31 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from typing import Callable, Optional, Union
+
+import pandas as pd
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
-from ludwig.data.dataset import create_dataset_manager
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.models.predictor import Predictor
-from ludwig.models.trainer import Trainer
+from ludwig.models.ecd import ECD
+from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.torch_utils import initialize_pytorch
+from ludwig.utils.types import Series
 
 
 class Backend(ABC):
-    def __init__(self, dataset_manager: DatasetManager, cache_dir: str = None):
+    def __init__(
+        self,
+        dataset_manager: DatasetManager,
+        cache_dir: Optional[str] = None,
+        cache_credentials: Optional[Union[str, dict]] = None,
+    ):
         self._dataset_manager = dataset_manager
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
+        self._cache_manager = CacheManager(self._dataset_manager, cache_dir, cache_credentials)
 
     @property
     def cache(self):
@@ -80,6 +88,15 @@ class Backend(ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @abstractmethod
+    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def num_nodes(self) -> int:
+        raise NotImplementedError()
+
 
 class LocalPreprocessingMixin:
     @property
@@ -93,16 +110,30 @@ class LocalPreprocessingMixin:
     def check_lazy_load_supported(self, feature):
         pass
 
+    def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
+        df = column.to_frame(name=column.name)
+
+        with ThreadPoolExecutor() as executor:  # number of threads is inferred
+            result = executor.map(lambda idx_and_row: get_bytes_obj_if_path(idx_and_row[1][column.name]), df.iterrows())
+            if map_fn is not None:
+                result = executor.map(map_fn, result)
+
+        return pd.Series(result, index=df.index, name=column.name)
+
 
 class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
         initialize_pytorch(*args, **kwargs)
 
     def create_trainer(self, **kwargs):
+        from ludwig.models.trainer import Trainer
+
         return Trainer(**kwargs)
 
-    def create_predictor(self, **kwargs):
-        return Predictor(**kwargs)
+    def create_predictor(self, model: ECD, **kwargs):
+        from ludwig.models.predictor import Predictor
+
+        return Predictor(model, **kwargs)
 
     def sync_model(self, model):
         pass
@@ -131,3 +162,7 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
 
     def initialize(self):
         pass
+
+    @property
+    def num_nodes(self) -> int:
+        return 1

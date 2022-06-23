@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,31 +14,79 @@
 # ==============================================================================
 
 
-from typing import Optional, Union, List
-import torch
-import torch.nn.functional as F
-from torch import nn, Tensor
-from torch.nn import (MSELoss as _MSELoss, L1Loss)
+from typing import List, Optional, Union
 
-from ludwig.constants import LOGITS, PREDICTIONS
+import torch
+from torch import nn, Tensor
+from torch.nn import L1Loss
+from torch.nn import MSELoss as _MSELoss
+
 import ludwig.utils.loss_utils as utils
-from ludwig.utils.torch_utils import sequence_length_2D
+from ludwig.constants import (
+    BINARY,
+    BINARY_WEIGHTED_CROSS_ENTROPY,
+    CATEGORY,
+    LOGITS,
+    NUMBER,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
+from ludwig.utils import strings_utils
+from ludwig.utils.registry import Registry
 
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
 
-
-class MSELoss(_MSELoss):
-    """ Mean squared error. """
+loss_registry = Registry()
 
 
-class MAELoss(L1Loss):
-    """ Mean absolute error. """
-    pass
+def register_loss(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            feature_registry = loss_registry.get(feature, {})
+            feature_registry[name] = cls
+            loss_registry[feature] = feature_registry
+        return cls
+
+    return wrap
 
 
-class RMSELoss(nn.Module):
-    """ Root mean square error. """
+def get_loss_cls(feature: str, name: str):
+    return loss_registry[feature][name]
+
+
+class LogitsInputsMixin:
+    @classmethod
+    def get_loss_inputs(cls):
+        """Maps loss to the desired predicted input type."""
+        return LOGITS
+
+
+@register_loss("mean_squared_error", [NUMBER, TIMESERIES, VECTOR])
+class MSELoss(_MSELoss, LogitsInputsMixin):
+    """Mean squared error."""
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+
+@register_loss("mean_absolute_error", [NUMBER, TIMESERIES, VECTOR])
+class MAELoss(L1Loss, LogitsInputsMixin):
+    """Mean absolute error."""
+
+    def __init__(self, **kwargs):
+        super().__init__()
+
+
+@register_loss("root_mean_squared_error", [NUMBER])
+class RMSELoss(nn.Module, LogitsInputsMixin):
+    """Root mean square error."""
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -49,8 +96,9 @@ class RMSELoss(nn.Module):
         return torch.sqrt(self.mse(preds, target))
 
 
-class RMSPELoss(nn.Module):
-    """ Root mean square percentage error. """
+@register_loss("root_mean_squared_percentage_error", [NUMBER])
+class RMSPELoss(nn.Module, LogitsInputsMixin):
+    """Root mean square percentage error."""
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -60,18 +108,22 @@ class RMSPELoss(nn.Module):
         return loss
 
 
-class BWCEWLoss(nn.Module):
-    """ Binary weighted cross entropy loss. """
+@register_loss(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
+class BWCEWLoss(nn.Module, LogitsInputsMixin):
+    """Binary weighted cross entropy loss."""
 
     def __init__(
-            self,
-            positive_class_weight: Optional[Tensor] = None,
-            robust_lambda: int = 0,
-            confidence_penalty: int = 0,
-            **kwargs):
+        self,
+        positive_class_weight: Optional[Union[Tensor, int]] = None,
+        robust_lambda: int = 0,
+        confidence_penalty: int = 0,
+        **kwargs,
+    ):
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(
-            pos_weight=positive_class_weight, **kwargs)
+        if positive_class_weight:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([positive_class_weight]), **kwargs)
+        else:
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
         self.robust_lambda = robust_lambda
         self.confidence_penalty = confidence_penalty
 
@@ -79,8 +131,7 @@ class BWCEWLoss(nn.Module):
         train_loss = self.loss_fn(preds, target.float())
         # robust lambda
         if self.robust_lambda > 0:
-            train_loss = (1 - self.robust_lambda) * train_loss + \
-                self.robust_lambda / 2
+            train_loss = (1 - self.robust_lambda) * train_loss + self.robust_lambda / 2
 
         train_mean_loss = torch.mean(train_loss)
 
@@ -93,7 +144,8 @@ class BWCEWLoss(nn.Module):
         return train_mean_loss
 
 
-class SoftmaxCrossEntropyLoss(nn.Module):
+@register_loss("softmax_cross_entropy", [CATEGORY, VECTOR])
+class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
         Params:
@@ -101,8 +153,7 @@ class SoftmaxCrossEntropyLoss(nn.Module):
         """
         super().__init__()
         if class_weights:
-            self.loss_fn = nn.CrossEntropyLoss(
-                weight=torch.Tensor(class_weights))
+            self.loss_fn = nn.CrossEntropyLoss(weight=torch.Tensor(class_weights))
         else:
             self.loss_fn = nn.CrossEntropyLoss()
 
@@ -117,64 +168,28 @@ class SoftmaxCrossEntropyLoss(nn.Module):
         return self.loss_fn(preds, target)
 
 
-# # For Categorical Output Features
-# class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
-#     def __init__(
-#         self, decoder_obj=None, num_classes=0, feature_loss=None, name=None
-#     ):
-#         super().__init__(name=name)
-#
-#         self.decoder_obj = decoder_obj
-#         self.num_classes = num_classes
-#         self.feature_loss = feature_loss
-#
-#     def call(self, y, y_pred):
-#         decoder_weights = self.decoder_obj.weights[0]
-#         decoder_biases = self.decoder_obj.weights[1]
-#
-#         loss = sampled_softmax_cross_entropy(
-#             y,
-#             y_pred[PROJECTION_INPUT],
-#             num_classes=self.num_classes,
-#             decoder_weights=decoder_weights,
-#             decoder_biases=decoder_biases,
-#             **self.feature_loss
-#         )
-#
-#         return loss
-#
-#
-# # For Sequence Output Feature
-# class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
-#     def __init__(
-#         self,
-#         dec_dense_layer=None,
-#         dec_num_layers=None,
-#         num_classes=0,
-#         feature_loss=None,
-#         name=None,
-#     ):
-#         super(SequenceSampledSoftmaxCrossEntropyLoss, self).__init__(name=name)
-#
-#         self.num_classes = num_classes
-#         self.feature_loss = feature_loss
-#         self.dec_dense_layer = dec_dense_layer
-#
-#     def call(self, y, y_pred):
-#
-#         loss = sequence_sampled_softmax_cross_entropy(
-#             y,  # targets
-#             y_pred[PROJECTION_INPUT],
-#             decoder_weights=self.dec_dense_layer.weights[0],
-#             decoder_biases=self.dec_dense_layer.weights[1],
-#             num_classes=self.num_classes,
-#             **self.feature_loss
-#         )
-#
-#         return loss
+@register_loss("sequence_softmax_cross_entropy", [SEQUENCE, TEXT])
+class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
+    def __init__(self, **kwargs):
+        """
+        Params:
+            class_weights: List or 1D tensor of length equal to number of classes.
+        """
+        super().__init__()
+        self.loss_fn = nn.CrossEntropyLoss(ignore_index=strings_utils.SpecialSymbol.PADDING.value)
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        """
+        Params:
+            preds: Tensor of shape [batch x sequence_length x vocab_size]
+            target: Tensor of shape [batch x sequence_length], where each element is integral between 0 and vocab_size.
+        """
+        target = target.long()
+        return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
 
 
-class SigmoidCrossEntropyLoss(nn.Module):
+@register_loss("sigmoid_cross_entropy", [SET])
+class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
         Params:
@@ -182,87 +197,12 @@ class SigmoidCrossEntropyLoss(nn.Module):
         """
         super().__init__()
         if class_weights:
-            self.loss_fn = nn.BCEWithLogitsLoss(
-                reduction='none',
-                pos_weight=torch.Tensor(class_weights))
+            self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(class_weights))
         else:
-            self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
+            self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         if preds.ndim != 2:
-            raise RuntimeError(
-                'SigmoidCrossEntropyLoss currently supported for 2D tensors.')
+            raise RuntimeError("SigmoidCrossEntropyLoss currently supported for 2D tensors.")
 
-        element_loss = self.loss_fn(
-            preds.type(torch.float32),
-            target.type(torch.float32)
-        )
-
-        # Reduce by sum along column dimension, mean along batch dimension.
-        loss = torch.sum(element_loss, dim=1)
-        loss = torch.mean(loss)
-        return loss
-
-
-# TODO(shreya): To migrate from below here
-################################################################################
-
-# class SequenceSoftmaxCrossEntropyLoss(nn.Module):
-#     def __init__(self, name=None, from_logits=True, **kwargs):
-#         super().__init__(name=name)
-#         self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
-#             from_logits=from_logits, reduction="none"
-#         )
-#         self.from_logits = from_logits
-
-#     def forward(self, y_true: Tensor, y_pred: Tensor) -> Tensor:
-#         """
-#         Params:
-#             y_true: Labels of shape [batch x seq_size]
-#             y_pred: Predictions of shape [batch x seq_size x num_classes]
-#         """
-#         # TODO(shreya): Make sure that the features using this are sending the correct tensor.
-#         # if self.from_logits:
-#         #     y_pred_tensor = y_pred[LOGITS]
-#         # else:
-#         #     y_pred_tensor = y_pred[PROBABILITIES]
-#         y_pred_tensor = y_pred.type(torch.int64)
-#         y_true_tensor = y_true.type(torch.int64)
-
-#         # Pad both tensors so that they have the same sequence length.
-#         if y_true_tensor.shape[1] > y_pred_tensor.shape[1]:
-#             y_pred_tensor = F.pad(
-#                 y_true_tensor,
-#                 pad=(0, y_true_tensor.shape[1] - y_pred_tensor.shape[1], 0, 0))
-#         elif y_pred_tensor.shape[1] > y_true_tensor.shape[1]:
-#             y_true_tensor = F.pad(
-#                 y_true_tensor,
-#                 pad=(0, y_pred_tensor.shape[1] - y_true_tensor.shape[1]))
-
-#         y_true_seq_len = sequence_length_2D(y_true_tensor)
-
-#         mask = tf.sequence_mask(
-#             y_true_seq_len + 1,  # this is for including the eos
-#             # in case of generator and shouldn't impact
-#             # negatively in case of tagger
-#             maxlen=tf.shape(y_true_tensor)[1],
-#             dtype=tf.float32,
-#         )
-#         # compute loss based on valid time steps
-#         loss = self.loss_function(y_true_tensor, y_pred_tensor)
-#         loss = loss * mask
-#         loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
-#         return loss
-#
-
-
-# Registry to map loss name to the desired predicted input type.
-LOSS_INPUTS_REGISTRY = {
-    MSELoss: LOGITS,
-    MAELoss: LOGITS,
-    RMSELoss: LOGITS,
-    RMSPELoss: LOGITS,
-    BWCEWLoss: LOGITS,
-    SoftmaxCrossEntropyLoss: LOGITS,
-    SigmoidCrossEntropyLoss: LOGITS,
-}
+        return self.loss_fn(preds.type(torch.float32), target.type(torch.float32))

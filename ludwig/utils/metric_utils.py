@@ -1,105 +1,100 @@
-from typing import Optional
+from collections import defaultdict, namedtuple
+from typing import Dict, List, Optional
+
 import torch
-import torch.nn.functional as F
 from torch import Tensor
+from torchmetrics.metric import Metric
+
+from ludwig.constants import COMBINED, LOSS
 
 
-def sequence_mask(
-        lengths: Tensor,
-        maxlen: Optional[int] = None,
-        dtype=torch.bool
-):
-    """ Implements tf.sequence_mask in torch
+def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
+    """Implements tf.sequence_mask in torch.
 
     From https://discuss.pytorch.org/t/pytorch-equivalent-for-tf-sequence-mask/39036/2.
     """
     if maxlen is None:
         maxlen = lengths.max()
-    row_vector = torch.arange(0, maxlen, 1)
+    row_vector = torch.arange(0, maxlen, 1).to(lengths.device)
     matrix = torch.unsqueeze(lengths, dim=-1)
     mask = row_vector < matrix
 
     return mask.type(dtype)
 
 
-def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int):
-    """ Implements tf.dynamic_repartition in torch
+def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int) -> List[Tensor]:
+    """Implements tf.dynamic_partition in torch.
 
     From https://discuss.pytorch.org/t/equivalent-of-tf-dynamic-partition/53735.
     """
-    res = []
+    assert data.size() == partitions.size()
+
+    # Flatten data into 1D vectors to do partitioning correctly.
+    data = data.view(-1)
+    partitions = partitions.view(-1)
+    result = []
     for i in range(num_partitions):
-        res += [data[(partitions == i).nonzero().squeeze(1)]]
-    return res
+        result += [data[(partitions == i).nonzero().squeeze(1)]]
+    return result
 
 
-def masked_correct_predictions(
-        targets: Tensor,
-        preds: Tensor,
-        targets_sequence_lengths: Tensor
-) -> Tensor:
+def masked_correct_predictions(targets: Tensor, preds: Tensor, targets_sequence_lengths: Tensor) -> Tensor:
+    """Masks out special symbols, and returns tensor of correct predictions.
+
+    Args:
+        targets: 2D tensor [batch_size, sequence_length]
+        preds: 2D tensor [batch_size, sequence_length]
+
+    Returns:
+        1D tensor of all correct predictions.
     """
-    Params:
-        targets: 2D tensor
-        preds: 2D tensor
-    """
-    truncated_preds = preds[:, :targets.shape[1]]
-    padded_truncated_preds = F.pad(
-        truncated_preds, pad=[0, targets.shape[1] - truncated_preds.shape[1]])
-    correct_preds = padded_truncated_preds == targets
+    correct_preds = preds == targets
 
-    mask = sequence_mask(
-        lengths=targets_sequence_lengths,
-        maxlen=correct_preds.shape[1],
-        dtype=torch.int32
-    )
-    _, masked_correct_preds = dynamic_partition(
-        data=correct_preds,
-        partitions=mask,
-        num_partitions=2)
+    mask = sequence_mask(lengths=targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=torch.int32)
+    _, masked_correct_preds = dynamic_partition(data=correct_preds, partitions=mask, num_partitions=2)
 
     return masked_correct_preds.type(torch.float32)
 
 
-# TODO(shreya): After sequence loss
-# def masked_sequence_corrected_predictions(
-#         targets, predictions, targets_sequence_lengths
-# ):
-#     truncated_preds = predictions[:, : targets.shape[1]]
-#     paddings = tf.stack(
-#         [[0, 0], [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]]
-#     )
-#     padded_truncated_preds = tf.pad(truncated_preds, paddings, name="ptp")
-#
-#     correct_preds = tf.equal(padded_truncated_preds, targets)
-#
-#     mask = tf.sequence_mask(
-#         targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=tf.int32
-#     )
-#
-#     one_masked_correct_prediction = (
-#         1.0
-#         - tf.cast(mask, tf.float32)
-#         + (tf.cast(mask, tf.float32) * tf.cast(correct_preds, tf.float32))
-#     )
-#     sequence_correct_preds = tf.reduce_prod(
-#         one_masked_correct_prediction, axis=-1
-#     )
-#
-#     return sequence_correct_preds
+def get_scalar_from_ludwig_metric(metric: Metric) -> float:
+    """Returns the scalar value of a Ludwig metric.
+
+    Params:
+        metric: Metric object
+
+    Returns:
+        float: scalar value of the metric
+    """
+    return metric.compute().detach().cpu().numpy().item()
 
 
-# TODO(shreya): No PyTorch CUDA implementation available
-# def edit_distance(
-#         targets, target_seq_length, predictions_sequence,
-#         predictions_seq_length
-# ):
-#     predicts = to_sparse(
-#         predictions_sequence,
-#         predictions_seq_length,
-#         tf.shape(predictions_sequence)[1],
-#     )
-#     labels = to_sparse(targets, target_seq_length, tf.shape(targets)[1])
-#     edit_distance = tf.edit_distance(predicts, labels)
-#     mean_edit_distance = tf.reduce_mean(edit_distance)
-#     return edit_distance, mean_edit_distance
+# Data for training and evaluation metrics.
+TrainerMetric = namedtuple("TrainerMetric", ("epoch", "step", "value"))
+
+
+def reduce_trainer_metrics_dict(
+    dict_dict_trainer_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
+) -> Dict[str, Dict[str, List[float]]]:
+    """Reduces Dict[feature_name, Dict[metric_name, List[TrainerMetric]]] to Dict[feature_name, Dict[metric_name,
+    List[float]]].
+
+    Used for flattening the results returned by trainer.py::train(), which come from ProgressTracker.
+    """
+    flattened_dict = defaultdict(lambda: defaultdict(list))
+    for feature_name, trainer_metric_dict in dict_dict_trainer_metrics.items():
+        for metric_name, trainer_metrics in trainer_metric_dict.items():
+            for trainer_metric in trainer_metrics:
+                flattened_dict[feature_name][metric_name].append(trainer_metric[-1])
+    return flattened_dict
+
+
+def get_metric_names(output_features: Dict[str, Dict]) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {}
+    for output_feature_name, output_feature in output_features.items():
+        for metric in output_feature.metric_functions:
+            metrics = metrics_names.get(output_feature_name, [])
+            metrics.append(metric)
+            metrics_names[output_feature_name] = metrics
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names

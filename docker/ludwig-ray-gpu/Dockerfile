@@ -9,8 +9,14 @@
 #   model serving
 #
 
-# Pin to 1.5.1 to ensure CUDA 11.2 following: https://github.com/ray-project/ray/pull/17806
-FROM rayproject/ray:1.5.1-gpu
+FROM rayproject/ray:1.12.1-py38-cu111
+
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+RUN sudo apt-key del 7fa2af80 && \
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb && \
+    sudo dpkg -i cuda-keyring_1.0-1_all.deb && \
+    sudo rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/apt.conf.d/99allow_unauth cuda-keyring_1.0-1_all.deb && \
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC F60F4B3D7FA2AF80
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
@@ -22,9 +28,7 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
     tzdata \
     rsync \
     vim
-
-# Upgrade to the latest ray
-RUN pip install --upgrade ray
+RUN pip install -U pip
 
 WORKDIR /ludwig
 
@@ -34,4 +38,6 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]'
+    pip install --no-cache-dir '.[full]' -f https://download.pytorch.org/whl/cu111/torch_stable.html && \
+    horovodrun --check-build && \
+    python -c "import horovod.torch; horovod.torch.init()"

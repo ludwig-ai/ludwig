@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,42 +14,96 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
 
-from ludwig.constants import *
-from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
-    StackedParallelCNN, StackedRNN, StackedCNNRNN, SequencePassthroughEncoder, \
-    StackedTransformer
+from ludwig.constants import (
+    COLUMN,
+    FILL_WITH_CONST,
+    MISSING_VALUE_STRATEGY_OPTIONS,
+    NAME,
+    PROC_COLUMN,
+    TIED,
+    TIMESERIES,
+)
+from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
 
-class TimeseriesFeatureMixin(object):
-    type = TIMESERIES
+class _TimeseriesPreprocessing(torch.nn.Module):
+    """Torchscript-enabled version of preprocessing done by TimeseriesFeatureMixin.add_feature_data."""
 
-    preprocessing_defaults = {
-        'timeseries_length_limit': 256,
-        'padding_value': 0,
-        'padding': 'right',
-        'tokenizer': 'space',
-        'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
-    }
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
+            raise ValueError(
+                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
+                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
+            )
+        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.padding = metadata["preprocessing"]["padding"]
+        self.padding_value = metadata["preprocessing"]["padding_value"]
+        self.max_timeseries_length = int(metadata["max_timeseries_length"])
 
-    preprocessing_schema = {
-        'timeseries_length_limit': {'type': 'integer', 'minimum': 0},
-        'padding_value': {'type': 'number'},
-        'padding': {'type': 'string', 'enum': ['right', 'left']},
-        'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
-        'fill_value': {'type': 'string'},
-        'computed_fill_value': {'type': 'string'},
-    }
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        """Takes a list of strings and returns a tensor of token ids."""
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        sequences = self.tokenizer(v)
+        # refines type of sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(sequences, List[List[str]]), "sequences is not a list of lists."
+
+        float_sequences: List[List[float]] = [[float(s) for s in sequence] for sequence in sequences]
+        timeseries_matrix = torch.full(
+            [len(float_sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
+        )
+        for sample_idx, float_sequence in enumerate(float_sequences):
+            limit = min(len(float_sequence), self.max_timeseries_length)
+            if self.padding == "right":
+                timeseries_matrix[sample_idx][:limit] = torch.tensor(float_sequence[:limit])
+            else:  # if self.padding == 'left
+                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = torch.tensor(
+                    float_sequence[:limit]
+                )
+        return timeseries_matrix
+
+
+class TimeseriesFeatureMixin(BaseFeatureMixin):
+    @staticmethod
+    def type():
+        return TIMESERIES
+
+    @staticmethod
+    def preprocessing_defaults():
+        return {
+            "timeseries_length_limit": 256,
+            "padding_value": 0,
+            "padding": "right",
+            "tokenizer": "space",
+            "missing_value_strategy": FILL_WITH_CONST,
+            "fill_value": "",
+        }
+
+    @staticmethod
+    def preprocessing_schema():
+        return {
+            "timeseries_length_limit": {"type": "integer", "minimum": 0},
+            "padding_value": {"type": "number"},
+            "padding": {"type": "string", "enum": ["right", "left"]},
+            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
+            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
+            "fill_value": {"type": "string"},
+            "computed_fill_value": {"type": "string"},
+        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -59,62 +112,33 @@ class TimeseriesFeatureMixin(object):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         column = column.astype(str)
-        tokenizer = get_from_registry(
-            preprocessing_parameters['tokenizer'],
-            tokenizer_registry
-        )()
+        tokenizer = get_from_registry(preprocessing_parameters["tokenizer"], tokenizer_registry)()
         max_length = 0
         for timeseries in column:
             processed_line = tokenizer(timeseries)
             max_length = max(max_length, len(processed_line))
-        max_length = min(
-            preprocessing_parameters['timeseries_length_limit'],
-            max_length
-        )
+        max_length = min(preprocessing_parameters["timeseries_length_limit"], max_length)
 
-        return {'max_timeseries_length': max_length}
+        return {"max_timeseries_length": max_length}
 
     @staticmethod
-    def build_matrix(
-            timeseries,
-            tokenizer_name,
-            length_limit,
-            padding_value,
-            padding,
-            backend
-    ):
-        tokenizer = get_from_registry(
-            tokenizer_name,
-            tokenizer_registry
-        )()
+    def build_matrix(timeseries, tokenizer_name, length_limit, padding_value, padding, backend):
+        tokenizer = get_from_registry(tokenizer_name, tokenizer_registry)()
 
-        ts_vectors = backend.df_engine.map_objects(
-            timeseries,
-            lambda ts: np.array(tokenizer(ts)).astype(np.float32)
-        )
+        ts_vectors = backend.df_engine.map_objects(timeseries, lambda ts: np.array(tokenizer(ts)).astype(np.float32))
 
         max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
-            logger.debug(
-                'max length of {0}: {1} < limit: {2}'.format(
-                    tokenizer_name,
-                    max_length,
-                    length_limit
-                )
-            )
+            logger.debug(f"max length of {tokenizer_name}: {max_length} < limit: {length_limit}")
         max_length = length_limit
 
         def pad(vector):
-            padded = np.full(
-                (max_length,),
-                padding_value,
-                dtype=np.float32
-            )
+            padded = np.full((max_length,), padding_value, dtype=np.float32)
             limit = min(vector.shape[0], max_length)
-            if padding == 'right':
+            if padding == "right":
                 padded[:limit] = vector[:limit]
             else:  # if padding == 'left
-                padded[max_length - limit:] = vector[:limit]
+                padded[max_length - limit :] = vector[:limit]
             return padded
 
         return backend.df_engine.map_objects(ts_vectors, pad)
@@ -123,40 +147,35 @@ class TimeseriesFeatureMixin(object):
     def feature_data(column, metadata, preprocessing_parameters, backend):
         timeseries_data = TimeseriesFeatureMixin.build_matrix(
             column,
-            preprocessing_parameters['tokenizer'],
-            metadata['max_timeseries_length'],
-            preprocessing_parameters['padding_value'],
-            preprocessing_parameters['padding'],
-            backend)
+            preprocessing_parameters["tokenizer"],
+            metadata["max_timeseries_length"],
+            preprocessing_parameters["padding_value"],
+            preprocessing_parameters["padding"],
+            backend,
+        )
         return timeseries_data
 
     @staticmethod
     def add_feature_data(
-            feature,
-            input_df,
-            proc_df,
-            metadata,
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+    ):
+        proc_df[feature_config[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
+            input_df[feature_config[COLUMN]].astype(str),
+            metadata[feature_config[NAME]],
             preprocessing_parameters,
             backend,
-            skip_save_processed_input
-    ):
-        proc_df[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
-            input_df[feature[COLUMN]].astype(str),
-            metadata[feature[NAME]],
-            preprocessing_parameters,
-            backend
         )
         return proc_df
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    encoder = 'parallel_cnn'
+    encoder = "parallel_cnn"
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         # add required sequence encoder parameters for time series
-        feature['embedding_size'] = 1
-        feature['should_embed'] = False
+        feature["embedding_size"] = 1
+        feature["should_embed"] = False
 
         # initialize encoder for time series
         super().__init__(feature, encoder_obj=encoder_obj)
@@ -180,14 +199,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return torch.float32
 
     @staticmethod
-    def update_config_with_metadata(
-            input_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
-        input_feature['max_sequence_length'] = feature_metadata[
-            'max_timeseries_length']
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+        input_feature["max_sequence_length"] = feature_metadata["max_timeseries_length"]
 
     @staticmethod
     def populate_defaults(input_feature):
@@ -195,30 +208,19 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
             input_feature,
             {
                 TIED: None,
-                'encoder': 'parallel_cnn',
-            }
+                "encoder": "parallel_cnn",
+            },
         )
 
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': StackedRNN,
-        'cnnrnn': StackedCNNRNN,
-        'transformer': StackedTransformer,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _TimeseriesPreprocessing(metadata)
+
 
 # this is still WIP
 # class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
 #     def __init__(self, feature):
 #         super().__init__(feature)
-#         self.type = TIMESERIES
-#
 #         self.decoder = 'generator'
 #
 #         self.loss = {

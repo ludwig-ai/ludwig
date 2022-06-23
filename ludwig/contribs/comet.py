@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,50 +19,43 @@ from datetime import datetime
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
 
-comet_ml = LazyLoader('comet_ml', globals(), 'comet_ml')
+comet_ml = LazyLoader("comet_ml", globals(), "comet_ml")
 
 logger = logging.getLogger(__name__)
 
 
 class CometCallback(Callback):
-    """
-    Class that defines the methods necessary to hook into process.
-    """
+    """Class that defines the methods necessary to hook into process."""
 
     def __init__(self):
         self.cometml_experiment = None
 
     def on_train_init(
-            self,
-            base_config,
-            experiment_directory,
-            experiment_name,
-            model_name,
-            output_directory,
-            resume,
+        self,
+        base_config,
+        experiment_directory,
+        experiment_name,
+        model_name,
+        output_directory,
+        resume_directory,
     ):
         if self.cometml_experiment:
             # Comet ML already initialized
             return
 
         try:
-            self.cometml_experiment = comet_ml.Experiment(log_code=False,
-                                                          project_name=experiment_name)
+            self.cometml_experiment = comet_ml.Experiment(log_code=False, project_name=experiment_name)
         except Exception:
             self.cometml_experiment = None
-            logger.exception(
-                "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+            logger.exception("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             raise
 
-        logger.info("comet.on_train_init() called......")
         self.cometml_experiment.set_name(model_name)
         self.cometml_experiment.set_filename("Ludwig API")
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
-    def on_train_start(self, model, config, config_fp,
-                       *args, **kwargs):
-        logger.info("comet.on_train_start() called......")
+    def on_train_start(self, model, config, config_fp, *args, **kwargs):
         if self.cometml_experiment:
             # todo v0.4: currently not clear way to set model graph
             # see: https://github.com/comet-ml/issue-tracking/issues/296
@@ -80,39 +72,38 @@ class CometCallback(Callback):
                     base_name = base_name.rsplit(".", 1)[0] + ".json"
                 else:
                     base_name = base_name + ".json"
-                self.cometml_experiment.log_asset_data(config,
-                                                       base_name)
+                self.cometml_experiment.log_asset_data(config, base_name)
 
     def on_train_end(self, output_directory, *args, **kwargs):
-        logger.info("comet.on_train_end() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(output_directory)
 
+    def on_eval_end(self, trainer, progress_tracker, save_path):
+        """Called from ludwig/models/model.py."""
+        if self.cometml_experiment:
+            for key, value in progress_tracker.log_metrics().items():
+                self.cometml_experiment.log_metric(key, value)
+
     def on_epoch_end(self, trainer, progress_tracker, save_path):
-        """
-        Called from ludwig/models/model.py
-        """
-        logger.info("comet.on_epoch_end() called......")
+        """Called from ludwig/models/model.py."""
         if self.cometml_experiment:
             for key, value in progress_tracker.log_metrics().items():
                 self.cometml_experiment.log_metric(key, value)
 
     def on_visualize_figure(self, fig):
-        logger.info("comet.on_visualize_figure() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_figure(fig)
 
     def on_cmdline(self, cmd, *args):
         self.cometml_experiment = None
-        if cmd in {'train', 'experiment'}:
+        if cmd in {"train", "experiment"}:
             # create a new experiment
             try:
                 self.cometml_experiment = comet_ml.Experiment(log_code=False)
             except Exception:
-                logger.exception(
-                    "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+                logger.exception("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
                 return
-        elif cmd in {'visualize', 'predict', 'evaluate'}:
+        elif cmd in {"visualize", "predict", "evaluate"}:
             # restore from an existing experiment
             try:
                 self.cometml_experiment = comet_ml.ExistingExperiment()
@@ -123,7 +114,6 @@ class CometCallback(Callback):
             # unhandled command
             return
 
-        logger.info(f"comet.{cmd}() called......")
         cli = self._make_command_line(cmd, args)
         self.cometml_experiment.set_code(cli)
         self.cometml_experiment.set_filename("Ludwig CLI")
@@ -131,23 +121,22 @@ class CometCallback(Callback):
         config = comet_ml.get_config()
         self._save_config(config)
 
-    def _save_config(self, config, directory='.'):
-        ## save the .comet.config here:
+    def _save_config(self, config, directory="."):
+        # save the .comet.config here:
         config["comet.experiment_key"] = self.cometml_experiment.id
         config.save(directory=directory)
 
     def _log_html(self, text):
-        ## log the text to the html tab:
+        # log the text to the html tab:
         now = datetime.now()
         timestamp = now.strftime("%m/%d/%Y %H:%M:%S")
-        self.cometml_experiment.log_html(
-            "<p><b>%s</b>: %s</p>" % (timestamp, text))
+        self.cometml_experiment.log_html(f"<p><b>{timestamp}</b>: {text}</p>")
 
     def _make_command_line(self, cmd, args):
-        ## put the commet flag back in:
+        # put the commet flag back in:
         arg_str = " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
         return f"ludwig {cmd} {arg_str}"
 
     @staticmethod
     def preload():
-        import comet_ml
+        import comet_ml  # noqa

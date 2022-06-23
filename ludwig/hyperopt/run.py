@@ -1,24 +1,22 @@
 import logging
+import os
 from pprint import pformat
-from typing import Union, List
+from typing import List, Optional, Union
 
 import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.callbacks import Callback
-from ludwig.hyperopt.execution import RayTuneExecutor, executor_registry
 from ludwig.backend import Backend, initialize_backend, LocalBackend
-from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
-    LOSS, TYPE, SAMPLER, EXECUTOR, MINIMIZE
+from ludwig.callbacks import Callback
+from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler, sampler_registry
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import open_file, makedirs
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values, get_class_attributes
+from ludwig.utils.fs_utils import makedirs, open_file
+from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
 
 try:
     from ludwig.backend.ray import RayBackend
@@ -27,38 +25,37 @@ except ImportError:
     class RayBackend:
         pass
 
-logger = logging.getLogger(__name__)
-
 
 def hyperopt(
-        config: Union[str, dict],
-        dataset: Union[str, dict, pd.DataFrame] = None,
-        training_set: Union[str, dict, pd.DataFrame] = None,
-        validation_set: Union[str, dict, pd.DataFrame] = None,
-        test_set: Union[str, dict, pd.DataFrame] = None,
-        training_set_metadata: Union[str, dict] = None,
-        data_format: str = None,
-        experiment_name: str = 'hyperopt',
-        model_name: str = 'run',
-        skip_save_training_description: bool = False,
-        skip_save_training_statistics: bool = False,
-        skip_save_model: bool = False,
-        skip_save_progress: bool = False,
-        skip_save_log: bool = False,
-        skip_save_processed_input: bool = True,
-        skip_save_unprocessed_output: bool = False,
-        skip_save_predictions: bool = False,
-        skip_save_eval_stats: bool = False,
-        skip_save_hyperopt_statistics: bool = False,
-        output_directory: str = 'results',
-        gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
-        allow_parallel_threads: bool = True,
-        callbacks: List[Callback] = None,
-        backend: Union[Backend, str] = None,
-        random_seed: int = default_random_seed,
-        debug: bool = False,
-        **kwargs,
+    config: Union[str, dict],
+    dataset: Union[str, dict, pd.DataFrame] = None,
+    training_set: Union[str, dict, pd.DataFrame] = None,
+    validation_set: Union[str, dict, pd.DataFrame] = None,
+    test_set: Union[str, dict, pd.DataFrame] = None,
+    training_set_metadata: Union[str, dict] = None,
+    data_format: str = None,
+    experiment_name: str = "hyperopt",
+    model_name: str = "run",
+    resume: Optional[bool] = None,
+    skip_save_training_description: bool = False,
+    skip_save_training_statistics: bool = False,
+    skip_save_model: bool = False,
+    skip_save_progress: bool = False,
+    skip_save_log: bool = False,
+    skip_save_processed_input: bool = True,
+    skip_save_unprocessed_output: bool = False,
+    skip_save_predictions: bool = False,
+    skip_save_eval_stats: bool = False,
+    skip_save_hyperopt_statistics: bool = False,
+    output_directory: str = "results",
+    gpus: Union[str, int, List[int]] = None,
+    gpu_memory_limit: int = None,
+    allow_parallel_threads: bool = True,
+    callbacks: List[Callback] = None,
+    backend: Union[Backend, str] = None,
+    random_seed: int = default_random_seed,
+    hyperopt_log_verbosity: int = 3,
+    **kwargs,
 ) -> HyperoptResults:
     """This method performs an hyperparameter optimization.
 
@@ -94,6 +91,11 @@ def hyperopt(
         the experiment.
     :param model_name: (str, default: `'run'`) name of the model that is
         being used.
+    :param resume: (bool) If true, continue hyperopt from the state of the previous
+        run in the output directory with the same experiment name. If false, will create
+        new trials, ignoring any previous state, even if they exist in the output_directory.
+        By default, will attempt to resume if there is already an existing experiment with
+        the same name, and will create new trials if not.
     :param skip_save_training_description: (bool, default: `False`) disables
         saving the description JSON file.
     :param skip_save_training_statistics: (bool, default: `False`) disables
@@ -150,8 +152,9 @@ def hyperopt(
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
-    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
-        `inf_or_nan` checks.
+    :param hyperopt_log_verbosity: (int: default: 3) controls verbosity of
+        ray tune log messages.  Valid values: 0 = silent, 1 = only status updates,
+        2 = status and brief trial results, 3 = status and detailed trial results.
 
     # Return
 
@@ -160,7 +163,7 @@ def hyperopt(
     """
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
-        with open_file(config, 'r') as def_file:
+        with open_file(config, "r") as def_file:
             config_dict = yaml.safe_load(def_file)
     else:
         config_dict = config
@@ -169,19 +172,17 @@ def hyperopt(
     config = merge_with_defaults(config_dict)
 
     if HYPEROPT not in config:
-        raise ValueError(
-            "Hyperopt Section not present in config"
-        )
+        raise ValueError("Hyperopt Section not present in config")
 
     hyperopt_config = config["hyperopt"]
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
-    logger.info(pformat(hyperopt_config, indent=4))
-    logger.info('\n')
+    logging.info(pformat(hyperopt_config, indent=4))
+    logging.info("\n")
 
-    sampler = hyperopt_config["sampler"]
+    search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config["executor"]
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
@@ -193,68 +194,50 @@ def hyperopt(
     # check validity of output_feature / metric/ split combination
     ######################
     if split == TRAINING:
-        if training_set is None and (
-                config['preprocessing']['split_probabilities'][0]
-                <= 0):
+        if training_set is None and (config["preprocessing"]["split_probabilities"][0] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
-                'was not provided, '
-                'or the split amount specified in the preprocessing section '
-                'of the config is not greater than 0'.format(split)
+                "was not provided, "
+                "or the split amount specified in the preprocessing section "
+                "of the config is not greater than 0".format(split)
             )
     elif split == VALIDATION:
-        if validation_set is None and (
-                config['preprocessing']['split_probabilities'][1]
-                <= 0):
+        if validation_set is None and (config["preprocessing"]["split_probabilities"][1] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
-                'was not provided, '
-                'or the split amount specified in the preprocessing section '
-                'of the config is not greater than 0'.format(split)
+                "was not provided, "
+                "or the split amount specified in the preprocessing section "
+                "of the config is not greater than 0".format(split)
             )
     elif split == TEST:
-        if test_set is None and (
-                config['preprocessing']['split_probabilities'][2]
-                <= 0):
+        if test_set is None and (config["preprocessing"]["split_probabilities"][2] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
-                'was not provided, '
-                'or the split amount specified in the preprocessing section '
-                'of the config is not greater than 0'.format(split)
+                "was not provided, "
+                "or the split amount specified in the preprocessing section "
+                "of the config is not greater than 0".format(split)
             )
     else:
         raise ValueError(
-            'unrecognized hyperopt split "{}". '
-            'Please provide one of: {}'.format(
-                split, {TRAINING, VALIDATION, TEST}
-            )
+            'unrecognized hyperopt split "{}". ' "Please provide one of: {}".format(split, {TRAINING, VALIDATION, TEST})
         )
     if output_feature == COMBINED:
         if metric != LOSS:
-            raise ValueError(
-                'The only valid metric for "combined" output feature is "loss"'
-            )
+            raise ValueError('The only valid metric for "combined" output feature is "loss"')
     else:
-        output_feature_names = set(
-            of['name'] for of in config['output_features']
-        )
+        output_feature_names = {of["name"] for of in config["output_features"]}
         if output_feature not in output_feature_names:
             raise ValueError(
                 'The output feature specified for hyperopt "{}" '
-                'cannot be found in the config. '
-                'Available ones are: {} and "combined"'.format(
-                    output_feature, output_feature_names
-                )
+                "cannot be found in the config. "
+                'Available ones are: {} and "combined"'.format(output_feature, output_feature_names)
             )
 
         output_feature_type = None
-        for of in config['output_features']:
-            if of['name'] == output_feature:
+        for of in config["output_features"]:
+            if of["name"] == output_feature:
                 output_feature_type = of[TYPE]
-        feature_class = get_from_registry(
-            output_feature_type,
-            output_type_registry
-        )
+        feature_class = get_from_registry(output_feature_type, output_type_registry)
         if metric not in feature_class.metric_functions:
             # todo v0.4: allow users to specify also metrics from the overall
             #  and per class metrics from the trainign stats and in general
@@ -262,30 +245,25 @@ def hyperopt(
             raise ValueError(
                 'The specified metric for hyperopt "{}" is not a valid metric '
                 'for the specified output feature "{}" of type "{}". '
-                'Available metrics are: {}'.format(
-                    metric,
-                    output_feature,
-                    output_feature_type,
-                    feature_class.metric_functions.keys()
+                "Available metrics are: {}".format(
+                    metric, output_feature, output_feature_type, feature_class.metric_functions.keys()
                 )
             )
 
-    hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler[TYPE]
-    )(goal, parameters, **sampler)
-
-    hyperopt_executor = get_build_hyperopt_executor(
-        executor[TYPE]
-    )(hyperopt_sampler, output_feature, metric, split, **executor)
+    hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
+        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
+    )
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
     # backend from the environment.
-    backend = backend or config_dict.get('backend') or 'local'
+    backend = backend or config_dict.get("backend") or "local"
     backend = initialize_backend(backend)
-    if not (isinstance(backend, LocalBackend) or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))):
+    if not (
+        isinstance(backend, LocalBackend)
+        or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))
+    ):
         raise ValueError(
-            'Hyperopt requires using a `local` backend at this time, or '
-            '`ray` backend with `ray` executor.'
+            "Hyperopt requires using a `local` backend at this time, or " "`ray` backend with `ray` executor."
         )
 
     for callback in callbacks or []:
@@ -333,8 +311,7 @@ def hyperopt(
         data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        # model_load_path=None,
-        # model_resume_path=None,
+        resume=resume,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
@@ -351,57 +328,45 @@ def hyperopt(
         callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
-        debug=debug,
-        **kwargs
+        hyperopt_log_verbosity=hyperopt_log_verbosity,
+        **kwargs,
     )
 
     if backend.is_coordinator():
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            makedirs(output_directory, exist_ok=True)
+            results_directory = os.path.join(output_directory, experiment_name)
+            makedirs(results_directory, exist_ok=True)
 
             hyperopt_stats = {
-                'hyperopt_config': hyperopt_config,
-                'hyperopt_results': [t.to_dict() for t in hyperopt_results.ordered_trials],
+                "hyperopt_config": hyperopt_config,
+                "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
             }
 
-            save_hyperopt_stats(hyperopt_stats, output_directory)
-            logger.info('Hyperopt stats saved to: {}'.format(output_directory))
+            save_hyperopt_stats(hyperopt_stats, results_directory)
+            logging.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
         callback.on_hyperopt_finish(experiment_name)
 
-    logger.info('Finished hyperopt')
+    logging.info("Finished hyperopt")
 
     return hyperopt_results
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
-    set_default_value(hyperopt_params, SAMPLER, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(hyperopt_params[SAMPLER], {TYPE: "random"})
-
-    sampler = get_from_registry(hyperopt_params[SAMPLER][TYPE],
-                                sampler_registry)
-    sampler_defaults = {k: v for k, v in sampler.__dict__.items() if
-                        k in get_class_attributes(sampler)}
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
+    executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
+    executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
     set_default_values(
-        hyperopt_params[SAMPLER], sampler_defaults,
-    )
-
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "serial"})
-
-    executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE],
-                                 executor_registry)
-    executor_defaults = {k: v for k, v in executor.__dict__.items() if
-                         k in get_class_attributes(executor)}
-    set_default_values(
-        hyperopt_params[EXECUTOR], executor_defaults,
+        hyperopt_params[EXECUTOR],
+        executor_defaults,
     )

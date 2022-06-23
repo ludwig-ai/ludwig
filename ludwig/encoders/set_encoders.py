@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,56 +14,47 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 from typing import Any, Dict, List, Optional
 
 import torch
 
+from ludwig.constants import SET
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry()
-
-
-class SetEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='embed')
-class SetSparseEncoder(SetEncoder):
+@register_encoder("embed", SET, default=True)
+class SetSparseEncoder(Encoder):
     def __init__(
-            self,
-            vocab: List[str],
-            representation: str = 'dense',
-            embedding_size: int = 50,
-            embeddings_trainable: bool = True,
-            pretrained_embeddings: Optional[str] = None,
-            embeddings_on_cpu: bool = False,
-            fc_layers=None,
-            num_fc_layers: int = 0,
-            fc_size: int = 10,
-            use_bias: bool = True,
-            weights_initializer: str = 'xavier_uniform',
-            bias_initializer: str = 'zeros',
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict[str, Any]] = None,
-            activation: str = 'relu',
-            dropout: float=0.0,
-            **kwargs
+        self,
+        vocab: List[str],
+        representation: str = "dense",
+        embedding_size: int = 50,
+        embeddings_trainable: bool = True,
+        pretrained_embeddings: Optional[str] = None,
+        embeddings_on_cpu: bool = False,
+        fc_layers=None,
+        num_fc_layers: int = 0,
+        output_size: int = 10,
+        use_bias: bool = True,
+        weights_initializer: str = "xavier_uniform",
+        bias_initializer: str = "zeros",
+        norm: Optional[str] = None,
+        norm_params: Optional[Dict[str, Any]] = None,
+        activation: str = "relu",
+        dropout: float = 0.0,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
         self.vocab_size = len(vocab)
 
-        logger.debug('  Embed')
+        logger.debug("  Embed")
         self.embed = EmbedSet(
             vocab,
             embedding_size,
@@ -76,13 +66,13 @@ class SetSparseEncoder(SetEncoder):
             embedding_initializer=weights_initializer,
         )
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
             first_layer_input_size=self.embed.output_shape[-1],
             layers=fc_layers,
             num_layers=num_fc_layers,
-            default_fc_size=fc_size,
+            default_output_size=output_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,

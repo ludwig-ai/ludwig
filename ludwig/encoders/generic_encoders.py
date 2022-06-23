@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,29 +17,27 @@ import logging
 
 import torch
 
-from ludwig.encoders import Encoder
+from ludwig.constants import BINARY, CATEGORY, NUMBER, VECTOR
+from ludwig.encoders.base import Encoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
+@register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR], default=True)
 class PassthroughEncoder(Encoder):
-
-    def __init__(
-            self,
-            input_size,
-            **kwargs
-    ):
+    def __init__(self, input_size, **kwargs):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
         self.input_size = input_size
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type tf.float32
         """
-        return {'encoder_output': inputs}
+        return {"encoder_output": inputs}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -50,38 +47,34 @@ class PassthroughEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.input_shape
 
-    @classmethod
-    def register(cls, name):
-        pass
 
-
+@register_encoder("dense", [BINARY, NUMBER, VECTOR])
 class DenseEncoder(Encoder):
-
     def __init__(
-            self,
-            input_size,
-            layers=None,
-            num_layers=1,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            **kwargs
+        self,
+        input_size,
+        layers=None,
+        num_layers=1,
+        output_size=256,
+        use_bias=True,
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
+        norm=None,
+        norm_params=None,
+        activation="relu",
+        dropout=0,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
         self.input_size = input_size
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             first_layer_input_size=input_size,
             layers=layers,
             num_layers=num_layers,
-            default_fc_size=fc_size,
+            default_output_size=output_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
@@ -93,19 +86,15 @@ class DenseEncoder(Encoder):
 
     def forward(self, inputs, training=None, mask=None):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type tf.float32
         """
-        return {'encoder_output': self.fc_stack(inputs)}
+        return {"encoder_output": self.fc_stack(inputs)}
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self.input_size)
+        return torch.Size([self.input_size])
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.fc_stack.layers[-1]['fc_size']])
-
-    @classmethod
-    def register(cls, name):
-        pass
+        return torch.Size([self.fc_stack.layers[-1]["output_size"]])

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +15,22 @@
 # ==============================================================================
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.kdd_dataset import KDDCup2009Dataset
+from ludwig.datasets.registry import register_dataset
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = KDDAppetency(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, include_test_download=False):
+    dataset = KDDAppetency(cache_dir=cache_dir, include_test_download=include_test_download)
     return dataset.load(split=split)
 
 
+@register_dataset(name="kdd_appetency")
 class KDDAppetency(KDDCup2009Dataset):
-    """
-    The KDD Cup 2009 Appetency dataset
+    """The KDD Cup 2009 Appetency dataset.
 
     Additional Details:
 
     https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(task_name="appetency", cache_dir=cache_dir)
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, include_test_download=False):
+        super().__init__(task_name="appetency", cache_dir=cache_dir, include_test_download=include_test_download)
