@@ -1,6 +1,5 @@
 import os
 
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
@@ -112,6 +111,8 @@ def test_with_split(backend, csv_filename, tmpdir):
 @pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
 @pytest.mark.distributed
 def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
+    import dask.dataframe as dd
+
     num_examples = 10
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
