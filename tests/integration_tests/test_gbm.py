@@ -10,31 +10,32 @@ from ludwig.constants import MODEL_TYPE, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
-@pytest.fixture(params=["local", "ray"], scope="module")
-def backend_config(request):
-    backend_type = request.param
-    if backend_type == "local":
-        return {"type": "local"}
-    else:
-        num_workers = 2
-        num_cpus_per_worker = 2
-        return {
-            "type": "ray",
-            "processor": {
-                "parallelism": num_cpus_per_worker * num_workers,
-            },
-            "trainer": {
-                "use_gpu": False,
-                "num_workers": num_workers,
-                "resources_per_worker": {
-                    "CPU": num_cpus_per_worker,
-                    "GPU": 0,
-                },
-            },
-        }
+@pytest.fixture(scope="module")
+def local_backend():
+    return {"type": "local"}
 
 
-def test_gbm_output_not_supported(backend_config):
+@pytest.fixture(scope="module")
+def ray_backend():
+    num_workers = 2
+    num_cpus_per_worker = 2
+    return {
+        "type": "ray",
+        "processor": {
+            "parallelism": num_cpus_per_worker * num_workers,
+        },
+        "trainer": {
+            "use_gpu": False,
+            "num_workers": num_workers,
+            "resources_per_worker": {
+                "CPU": num_cpus_per_worker,
+                "GPU": 0,
+            },
+        },
+    }
+
+
+def run_test_gbm_output_not_supported(backend_config):
     """Test that an error is raised when the output feature is not supported by the model."""
     input_features = [number_feature(), category_feature(reduce_output="sum")]
     output_features = [text_feature()]
@@ -53,7 +54,16 @@ def test_gbm_output_not_supported(backend_config):
             model.train(dataset=dataset_filename, output_directory=tmpdir)
 
 
-def test_gbm_multiple_outputs(backend_config):
+def test_local_gbm_output_not_supported(local_backend):
+    run_test_gbm_output_not_supported(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_output_not_supported(ray_backend):
+    run_test_gbm_output_not_supported(ray_backend)
+
+
+def run_test_gbm_multiple_outputs(backend_config):
     """Test that an error is raised when the model is trained with multiple outputs."""
     input_features = [number_feature(), category_feature(reduce_output="sum")]
     output_features = [
@@ -79,7 +89,16 @@ def test_gbm_multiple_outputs(backend_config):
             model.train(dataset=dataset_filename, output_directory=tmpdir)
 
 
-def test_gbm_binary(backend_config):
+def test_local_gbm_multiple_outputs(local_backend):
+    run_test_gbm_multiple_outputs(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_multiple_outputs(ray_backend):
+    run_test_gbm_multiple_outputs(ray_backend)
+
+
+def run_test_gbm_binary(backend_config):
     """Test that the GBM model can train and predict a binary variable (binary classification)."""
     input_features = [number_feature(), category_feature(reduce_output="sum")]
     output_feature = binary_feature()
@@ -116,7 +135,16 @@ def test_gbm_binary(backend_config):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
-def test_gbm_category(backend_config):
+def test_local_gbm_binary(local_backend):
+    run_test_gbm_binary(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_binary(ray_backend):
+    run_test_gbm_binary(ray_backend)
+
+
+def run_test_gbm_category(backend_config):
     """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
     input_features = [number_feature(), category_feature(reduce_output="sum")]
     vocab_size = 3
@@ -155,7 +183,16 @@ def test_gbm_category(backend_config):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
-def test_gbm_number(backend_config):
+def test_local_gbm_category(local_backend):
+    run_test_gbm_category(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_category(ray_backend):
+    run_test_gbm_category(ray_backend)
+
+
+def run_test_gbm_number(backend_config):
     """Test that the GBM model can train and predict a numerical output (regression)."""
     # Given a dataset with a single input feature and a single output feature,
     input_features = [number_feature(), category_feature(reduce_output="sum")]
@@ -199,7 +236,16 @@ def test_gbm_number(backend_config):
     assert pred_col.dtype == float
 
 
-def test_gbm_schema(backend_config):
+def test_local_gbm_number(local_backend):
+    run_test_gbm_number(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_number(ray_backend):
+    run_test_gbm_number(ray_backend)
+
+
+def run_test_gbm_schema(backend_config):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
@@ -218,3 +264,12 @@ def test_gbm_schema(backend_config):
     with pytest.raises(ValidationError):
         # Then I should get a schema validation error
         LudwigModel(config, backend=backend)
+
+
+def test_local_gbm_schema(local_backend):
+    run_test_gbm_schema(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_schema(ray_backend):
+    run_test_gbm_schema(ray_backend)
