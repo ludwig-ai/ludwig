@@ -123,8 +123,8 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
     input_features = [
         text_feature(name="title", cell_type="rnn", reduce_output="sum", encoder="parallel_cnn"),
         text_feature(name="summary", cell_type="rnn"),
-        category_feature(vocab_size=2, reduce_input="sum"),
-        category_feature(vocab_size=3),
+        category_feature(),
+        category_feature(),
     ]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
@@ -134,8 +134,8 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
     categorical_feature_name = input_features[2][NAME]
     output_feature_name = output_features[0][NAME]
 
-    cell_types_search_space = ["lstm", "gru"]
-    vocab_size_search_space = list(range(4, 9))
+    num_filters_search_space = [128, 512]
+    embedding_size_search_space = [128, 512]
 
     # Add default parameters in hyperopt parameter search space
     config = {
@@ -147,8 +147,11 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
             "parameters": {
                 "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
                 categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
-                "defaults.input_features.text.cell_type": {"space": "choice", "categories": cell_types_search_space},
-                "defaults.output_features.category.vocab_size": {"space": "randint", "lower": 4, "upper": 8},
+                "defaults.input_features.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
+                "defaults.output_features.category.embedding_size": {
+                    "space": "choice",
+                    "categories": embedding_size_search_space,
+                },
             },
             "goal": "minimize",
             "output_feature": output_feature_name,
@@ -158,7 +161,7 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
         },
     }
 
-    return config, rel_path, cell_types_search_space, vocab_size_search_space
+    return config, rel_path, num_filters_search_space, embedding_size_search_space
 
 
 def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
@@ -383,9 +386,8 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
 
-@pytest.mark.distributed
 def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
-    config, rel_path, cell_types_search_space, vocab_size_search_space = _setup_ludwig_config_with_shared_params(
+    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
         csv_filename
     )
 
@@ -394,15 +396,14 @@ def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
 
     # Check that the trials did sample from defaults in the search space
     for _, trial_row in hyperopt_results_df.iterrows():
-        vocab_size = _get_trial_parameter_value("defaults.output_features.category.vocab_size", trial_row)
-        cell_type = _get_trial_parameter_value("defaults.input_features.text.cell_type", trial_row).replace('"', "")
-        assert cell_type in cell_types_search_space
-        assert vocab_size in vocab_size_search_space
+        embedding_size = _get_trial_parameter_value("defaults.output_features.category.embedding_size", trial_row)
+        num_filters = _get_trial_parameter_value("defaults.input_features.text.num_filters", trial_row)
+        assert num_filters in num_filters_search_space
+        assert embedding_size in embedding_size_search_space
 
 
-@pytest.mark.distributed
 def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
-    config, rel_path, cell_types_search_space, vocab_size_search_space = _setup_ludwig_config_with_shared_params(
+    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
         csv_filename
     )
 
@@ -415,16 +416,24 @@ def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
             open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
         )
 
-        # Check that cell_type got updated from the sampler correctly
+        # Check that num_filters got updated from the sampler correctly
         for input_feature in model_parameters[INPUT_FEATURES]:
             if input_feature[TYPE] == TEXT:
-                assert input_feature["cell_type"] in cell_types_search_space
+                assert input_feature["num_filters"] in num_filters_search_space
 
-        # All text features with defaults should have the same cell_type for this trial
-        text_input_cell_types = get_feature_type_parameter_values(model_parameters, INPUT_FEATURES, TEXT, "cell_type")
-        assert len(text_input_cell_types) == 1
+        # All text features with defaults should have the same num_filters for this trial
+        text_input_num_filters = get_feature_type_parameter_values(
+            model_parameters, INPUT_FEATURES, TEXT, "num_filters"
+        )
+        assert len(text_input_num_filters) == 1
 
-        # Check that vocab_size got updated from the sampler
+        # Check that embedding_size got updated from the sampler
         for output_feature in model_parameters[OUTPUT_FEATURES]:
             if output_feature[TYPE] == CATEGORY:
-                assert output_feature["vocab_size"] in vocab_size_search_space
+                assert output_feature["embedding_size"] in embedding_size_search_space
+
+        # All category features with defaults should have the same embedding_size for this trial
+        category_features_embedding_sizes = get_feature_type_parameter_values(
+            model_parameters, OUTPUT_FEATURES, CATEGORY, "embedding_size"
+        )
+        assert len(category_features_embedding_sizes) == 1
