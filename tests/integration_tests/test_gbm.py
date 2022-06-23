@@ -18,7 +18,7 @@ def local_backend():
 @pytest.fixture(scope="module")
 def ray_backend():
     num_workers = 2
-    num_cpus_per_worker = 2
+    num_cpus_per_worker = 1
     return {
         "type": "ray",
         "processor": {
