@@ -464,8 +464,7 @@ def get_trainer_jsonschema():
         "properties": {
             "type": {"type": "string", "enum": all_trainer_types},
         },
-        "required": ["type"],
         "title": "trainer_options",
         "allOf": conds,
-        "description": "",
+        "description": "Use type 'trainer' for training ECD models, or 'lightgbm_trainer' for Tree models.",
     }
