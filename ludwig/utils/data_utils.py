@@ -169,7 +169,7 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
         kwargs["nrows"] = nrows
 
     try:
-        df = df_lib.from_pandas(pd.read_csv(data_fp, **kwargs, dtype=None))
+        df = df_lib.read_csv(data_fp, **kwargs)
     except ParserError:
         logger.warning("Failed to parse the CSV with pandas default way," " trying \\ as escape character.")
         df = df_lib.read_csv(data_fp, escapechar="\\", **kwargs)
