@@ -101,4 +101,4 @@ def test_load_save_encoder(tmpdir):
 if __name__ == "__main__":
     import pytest
 
-    pytest.main(["-k", "test_serialize_deserialize_encoder"])
+    pytest.main(["-k", "test_load_save_encoder"])

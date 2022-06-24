@@ -15,14 +15,13 @@
 
 import json
 import logging
-import os
-from typing import BinaryIO, IO, Union
 
 import h5py
 import numpy as np
 
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.modules.ludwig_module import LudwigModule, LudwigModuleState, module_registry
+from ludwig.utils.fs_utils import download_h5, upload_h5
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +75,10 @@ def _save_state_to_group(state: LudwigModuleState, group: h5py.Group):
         _save_state_to_group(child, child_group)
 
 
-def save_state_to_file(state: LudwigModuleState, f: Union[str, os.PathLike, BinaryIO, IO[bytes]]):
+def save_state_to_file(state: LudwigModuleState, url_or_path: str):
     """Serializes LudwigModuleState to file."""
-    with h5py.File(f, "w") as f:
+    with upload_h5(url_or_path) as f:
+        # with h5py.File(f, "w") as f:
         _save_state_to_group(state, f)
 
 
@@ -93,9 +93,10 @@ def _load_state_from_group(group) -> LudwigModuleState:
     )
 
 
-def load_state_from_file(f: Union[str, os.PathLike, BinaryIO, IO[bytes]]) -> LudwigModuleState:
+def load_state_from_file(path_or_url: str) -> LudwigModuleState:
     """Loads Ludwig Module state from a file."""
-    with h5py.File(f, "r") as f:
+    with download_h5(path_or_url) as f:
+        # with h5py.File(f, "r") as f:
         # The file object does double duty as the HDF5 root group
         return _load_state_from_group(f)
 
@@ -115,13 +116,13 @@ def instantiate_module_from_state(state: LudwigModuleState, device: str = None) 
     return restored_module
 
 
-def save(object: LudwigModule, f: Union[str, os.PathLike, BinaryIO, IO[bytes]]):
+def save(object: LudwigModule, path_or_url: str):
     """Saves Ludwig object to file or buffer."""
     object_state = object.get_state()
-    save_state_to_file(object_state, f)
+    save_state_to_file(object_state, path_or_url)
 
 
-def load(f: Union[str, os.PathLike, BinaryIO, IO[bytes]], device: str = None) -> LudwigModule:
+def load(path_or_url: str, device: str = None) -> LudwigModule:
     """Loads saved Ludwig module from file or buffer. If the module has parameters which are torch Tensors, device
     specifies the device where tensors will be instantiated.
 
@@ -129,7 +130,7 @@ def load(f: Union[str, os.PathLike, BinaryIO, IO[bytes]], device: str = None) ->
         f: The file path or object to load from.
         device: 'cuda' or 'cpu'
     """
-    state = load_state_from_file(f)
+    state = load_state_from_file(path_or_url)
     state = update_state_for_current_version(state)
     return instantiate_module_from_state(state, device=device)
 
