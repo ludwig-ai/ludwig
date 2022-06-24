@@ -196,7 +196,9 @@ def ray_cluster():
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS)
-def test_hyperopt_search_alg(search_alg, csv_filename, tmpdir, validate_output_feature=False, validation_metric=None):
+def test_hyperopt_search_alg(
+    search_alg, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
+):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
@@ -251,7 +253,9 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("scheduler", SCHEDULERS)
-def test_hyperopt_scheduler(scheduler, csv_filename, tmpdir, validate_output_feature=False, validation_metric=None):
+def test_hyperopt_scheduler(
+    scheduler, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
+):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
@@ -304,7 +308,7 @@ def test_hyperopt_scheduler(scheduler, csv_filename, tmpdir, validate_output_fea
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
         category_feature(embedding_size=128),
