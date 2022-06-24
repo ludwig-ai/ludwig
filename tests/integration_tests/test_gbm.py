@@ -1,3 +1,4 @@
+import contextlib
 import os
 import tempfile
 
@@ -10,9 +11,22 @@ except ImportError:
 from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
-from ludwig.backend import initialize_backend
 from ludwig.constants import MODEL_TYPE, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
+
+
+@contextlib.contextmanager
+def ray_start(num_cpus=3, num_gpus=None):
+    res = _ray.init(
+        num_cpus=num_cpus,
+        num_gpus=num_gpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        _ray.shutdown()
 
 
 @pytest.fixture(scope="module")
@@ -51,8 +65,7 @@ def run_test_gbm_output_not_supported(backend_config):
 
         config = {MODEL_TYPE: "gbm", "input_features": input_features, "output_features": output_features}
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+        model = LudwigModel(config, backend=backend_config)
         with pytest.raises(
             ValueError, match="Model type GBM only supports numerical, categorical, or binary output features"
         ):
@@ -65,8 +78,8 @@ def test_local_gbm_output_not_supported(local_backend):
 
 @pytest.mark.distributed
 def test_ray_gbm_output_not_supported(ray_backend):
-    run_test_gbm_output_not_supported(ray_backend)
-    _ray.shutdown()
+    with ray_start():
+        run_test_gbm_output_not_supported(ray_backend)
 
 
 def run_test_gbm_multiple_outputs(backend_config):
@@ -89,8 +102,7 @@ def run_test_gbm_multiple_outputs(backend_config):
             TRAINER: {"num_boost_round": 2},
         }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+        model = LudwigModel(config, backend=backend_config)
         with pytest.raises(ValueError, match="Only single task currently supported"):
             model.train(dataset=dataset_filename, output_directory=tmpdir)
 
@@ -101,8 +113,8 @@ def test_local_gbm_multiple_outputs(local_backend):
 
 @pytest.mark.distributed
 def test_ray_gbm_multiple_outputs(ray_backend):
-    run_test_gbm_multiple_outputs(ray_backend)
-    _ray.shutdown()
+    with ray_start():
+        run_test_gbm_multiple_outputs(ray_backend)
 
 
 def run_test_gbm_binary(backend_config):
@@ -122,8 +134,7 @@ def run_test_gbm_binary(backend_config):
             TRAINER: {"num_boost_round": 2},
         }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+        model = LudwigModel(config, backend=backend_config)
         _, _, output_directory = model.train(
             dataset=dataset_filename,
             output_directory=tmpdir,
@@ -148,8 +159,8 @@ def test_local_gbm_binary(local_backend):
 
 @pytest.mark.distributed
 def test_ray_gbm_binary(ray_backend):
-    run_test_gbm_binary(ray_backend)
-    _ray.shutdown()
+    with ray_start():
+        run_test_gbm_binary(ray_backend)
 
 
 def run_test_gbm_category(backend_config):
@@ -170,8 +181,7 @@ def run_test_gbm_category(backend_config):
             TRAINER: {"num_boost_round": 2},
         }
 
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+        model = LudwigModel(config, backend=backend_config)
 
         _, _, output_directory = model.train(
             dataset=dataset_filename,
@@ -197,8 +207,8 @@ def test_local_gbm_category(local_backend):
 
 @pytest.mark.distributed
 def test_ray_gbm_category(ray_backend):
-    run_test_gbm_category(ray_backend)
-    _ray.shutdown()
+    with ray_start():
+        run_test_gbm_category(ray_backend)
 
 
 def run_test_gbm_number(backend_config):
@@ -221,8 +231,7 @@ def run_test_gbm_number(backend_config):
 
         # When I train a model on the dataset, load the model from the output directory, and
         # predict on the dataset
-        backend = initialize_backend(backend_config)
-        model = LudwigModel(config, backend=backend)
+        model = LudwigModel(config, backend=backend_config)
 
         model.train(
             dataset=dataset_filename,
@@ -251,8 +260,8 @@ def test_local_gbm_number(local_backend):
 
 @pytest.mark.distributed
 def test_ray_gbm_number(ray_backend):
-    run_test_gbm_number(ray_backend)
-    _ray.shutdown()
+    with ray_start():
+        run_test_gbm_number(ray_backend)
 
 
 def run_test_gbm_schema(backend_config):
@@ -270,10 +279,9 @@ def run_test_gbm_schema(backend_config):
             "type": invalid_trainer,
         },
     }
-    backend = initialize_backend(backend_config)
     with pytest.raises(ValidationError):
         # Then I should get a schema validation error
-        LudwigModel(config, backend=backend)
+        LudwigModel(config, backend=backend_config)
 
 
 def test_local_gbm_schema(local_backend):
@@ -282,5 +290,5 @@ def test_local_gbm_schema(local_backend):
 
 @pytest.mark.distributed
 def test_ray_gbm_schema(ray_backend):
-    run_test_gbm_schema(ray_backend)
-    _ray.shutdown()
+    with ray_start():
+        run_test_gbm_schema(ray_backend)
