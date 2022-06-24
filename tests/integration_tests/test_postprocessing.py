@@ -14,6 +14,7 @@
 # ==============================================================================
 
 import os
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -134,13 +135,17 @@ def predict_with_backend(tmpdir, config, data_csv_path, backend):
             backend = RAY_BACKEND_CONFIG
             backend["processor"]["type"] = "dask"
 
-        ludwig_model = LudwigModel(config, backend=backend)
-        _, _, output_directory = ludwig_model.train(
-            dataset=data_csv_path,
-            output_directory=os.path.join(tmpdir, "output"),
-        )
+        try:
+            ludwig_model = LudwigModel(config, backend=backend)
+            _, _, output_directory = ludwig_model.train(
+                dataset=data_csv_path,
+                output_directory=os.path.join(tmpdir, "output"),
+            )
+            # Check that metadata JSON saves and loads correctly
+            ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
+            preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
+        finally:
+            # Remove results/intermediate data saved to disk
+            shutil.rmtree(output_directory, ignore_errors=True)
 
-        # Check that metadata JSON saves and loads correctly
-        ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
-        preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
     return preds_df
