@@ -521,3 +521,21 @@ def test_ray_progress_bar():
         output_features,
         df_engine="dask",
     )
+
+
+@pytest.mark.parametrize("calibration", [True, False])
+@pytest.mark.distributed
+def test_ray_calibration(calibration):
+    input_features = [
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+    ]
+    output_features = [
+        binary_feature(calibration=calibration),
+        category_feature(vocab_size=3, calibration=calibration),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+    )

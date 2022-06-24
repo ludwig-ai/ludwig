@@ -46,7 +46,7 @@ class BasePredictor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def batch_evaluation(self, dataset, collect_predictions=False, dataset_name=None):
+    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         raise NotImplementedError()
 
     @abstractmethod
@@ -76,11 +76,7 @@ class Predictor(BasePredictor):
         self.device = get_torch_device()
         self.model = model.to(self.device)
 
-    def batch_predict(
-        self,
-        dataset: Dataset,
-        dataset_name: str = None,
-    ):
+    def batch_predict(self, dataset: Dataset, dataset_name: str = None, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
@@ -98,7 +94,9 @@ class Predictor(BasePredictor):
                 while not batcher.last_batch():
                     batch = batcher.next_batch()
                     preds = self._predict(self.model, batch)
-                    self._accumulate_preds(preds, predictions)
+                    self._accumulate_preds(
+                        preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+                    )
                     progress_bar.update(1)
 
                 progress_bar.close()
@@ -110,14 +108,16 @@ class Predictor(BasePredictor):
 
         return from_numpy_dataset(predictions)
 
-    def predict_single(self, batch):
+    def predict_single(self, batch, collect_logits: bool = False):
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
             predictions = defaultdict(list)
             preds = self._predict(self.model, batch)
-            self._accumulate_preds(preds, predictions)
+            self._accumulate_preds(
+                preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+            )
             self._concat_preds(predictions)
 
         # reset model to its original training mode
@@ -141,11 +141,11 @@ class Predictor(BasePredictor):
 
         return model.predict_step(inputs)
 
-    def _accumulate_preds(self, preds, predictions):
+    def _accumulate_preds(self, preds, predictions, exclude_pred_set=EXCLUDE_PRED_SET):
         # accumulate predictions from batch for each output feature
         for of_name, of_preds in preds.items():
             for pred_name, pred_values in of_preds.items():
-                if pred_name not in EXCLUDE_PRED_SET:
+                if pred_name not in exclude_pred_set:
                     key = f"{of_name}_{pred_name}"
                     predictions[key].append(pred_values)
 
@@ -155,7 +155,19 @@ class Predictor(BasePredictor):
             # is a tensor that requires grad.
             predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
-    def batch_evaluation(self, dataset, collect_predictions=False, dataset_name=None):
+    def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
+        """Batch evaluate model on dataset.
+
+        Params:
+            dataset (Union[str, dict, pandas.DataFrame]): source containing the entire dataset to be evaluated.
+            collect_predictions: Return model predictions.
+            collect_logits: Return model logits and final layer activations.
+
+        Returns:
+            Tuple of dictionaries of (metrics, predictions). The keys of metrics are determined by the metrics in the
+            model config. The keys of the predictions dictionary depend on which values are requested by the caller:
+            collect_predictions, collect_logits.
+        """
         prev_model_training_mode = self.model.training  # store previous model training mode
         self.model.eval()  # set model to eval mode
 
@@ -194,11 +206,9 @@ class Predictor(BasePredictor):
 
                     # accumulate predictions from batch for each output feature
                     if collect_predictions:
-                        for of_name, of_preds in preds.items():
-                            for pred_name, pred_values in of_preds.items():
-                                if pred_name not in EXCLUDE_PRED_SET:
-                                    key = f"{of_name}_{pred_name}"
-                                    predictions[key].append(pred_values)
+                        self._accumulate_preds(
+                            preds, predictions, exclude_pred_set={LAST_HIDDEN} if collect_logits else EXCLUDE_PRED_SET
+                        )
 
                     progress_bar.update(1)
                     if self.is_coordinator():
@@ -337,10 +347,10 @@ def print_evaluation_stats(test_stats):
                     logger.info(f"{metric}: {value_repr}")
 
 
-def get_output_columns(output_features):
+def get_output_columns(output_features, include_logits: bool = False):
     output_columns = []
     for of_name, feature in output_features.items():
         for pred in feature.get_prediction_set():
-            if pred not in EXCLUDE_PRED_SET:
+            if pred not in EXCLUDE_PRED_SET or (pred == LOGITS and include_logits):
                 output_columns.append(f"{of_name}_{pred}")
     return output_columns
