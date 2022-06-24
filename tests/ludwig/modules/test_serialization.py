@@ -15,6 +15,7 @@
 import os
 
 import numpy as np
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.modules import serialization
@@ -42,37 +43,34 @@ def assert_module_states_equal(a: LudwigModuleState, b: LudwigModuleState):
 def test_serialize_deserialize_encoder(tmpdir):
     input_features = [sequence_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
-
     config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
     }
-
     model_1 = LudwigModel(config)
     model_1.train(dataset=data_csv, output_directory=tmpdir)
-
-    # Get pre-trained encoder
+    # Gets pre-trained encoder.
     trained_input_feature = model_1.model.input_features[input_features[0]["name"]]
     input_feature_encoder = trained_input_feature.encoder_obj
-
     encoder_state = input_feature_encoder.get_state()
     assert encoder_state is not None
-
+    # Instantiates a copy of the encoder from encoder_state.
     restored_encoder = serialization.instantiate_module_from_state(encoder_state, device="cpu")
     assert isinstance(restored_encoder, type(input_feature_encoder))
-
+    # Ensures restored encoder's state is identical to pre-trained encoder's state.
     restored_encoder_state = restored_encoder.get_state()
     assert restored_encoder_state is not None
     assert_module_states_equal(encoder_state, restored_encoder_state)
 
 
 def test_load_save_encoder(tmpdir):
+    torch.random.manual_seed(17)
     input_features = [text_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
     text_input_name = input_features[0]["name"]  # Auto-generated from random number by text_feature
+    category_output_name = output_features[0]["name"]  # Auto-generated from random number by category_feature
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     model1_config = {
         "input_features": input_features,
@@ -80,25 +78,31 @@ def test_load_save_encoder(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
     }
     model1 = LudwigModel(model1_config)
-    model1.train(dataset=data_csv, output_directory=tmpdir)
-    # Save pre-trained encoder
+    train_stats1, _, _ = model1.train(dataset=data_csv, output_directory=tmpdir)
+    # Saves pre-trained encoder to file.
     trained_input_feature = model1.model.input_features[text_input_name]
     input_feature_encoder = trained_input_feature.encoder_obj
     saved_path = os.path.join(tmpdir, "text_encoder.h5")
     serialization.save(input_feature_encoder, saved_path)
-    # Ensure that we can restore encoder from saved path.
+    # Ensures that we can restore encoder from saved path.
     restored_encoder = serialization.load(saved_path, "cpu")
     assert restored_encoder is not None
-    # Create new model using the pre-trained encoder
+    # Creates new model referencing the pre-trained encoder.
     model2_config = {
-        "input_features": [{"name": text_input_name, "type": "text", "encoder": f"file://{saved_path}"}],
+        "input_features": [input_features[0] | {"encoder": f"file://{saved_path}"}],
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
     }
     model2 = LudwigModel(model2_config)
-    model2.train(dataset=data_csv, output_directory=tmpdir)
+    train_stats2, _, _ = model2.train(dataset=data_csv, output_directory=tmpdir)
+    # Assert that final train loss is lower for model 2 using the pre-trained encoder.
+    assert (
+        train_stats2["training"][category_output_name]["loss"][-1]
+        < train_stats1["training"][category_output_name]["loss"][-1]
+    )
 
 
+# Uncomment for debugging.  TODO: delete this before code review.
 if __name__ == "__main__":
     import pytest
 
