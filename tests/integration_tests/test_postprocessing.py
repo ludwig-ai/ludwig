@@ -14,7 +14,6 @@
 # ==============================================================================
 
 import os
-import shutil
 
 import numpy as np
 import pandas as pd
@@ -56,7 +55,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values):
     data_df[feature[NAME]] = data_df[feature[NAME]].map(lambda x: true_value if x else false_value)
     data_df.to_csv(data_csv_path, index=False)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     preds_df = predict_with_backend(tmpdir, config, data_csv_path, backend)
 
@@ -105,7 +104,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
     data_df[feature[NAME]] = data_df[feature[NAME]].map(lambda x: true_value if x else false_value)
     data_df.to_csv(data_csv_path, index=False)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     preds_df = predict_with_backend(tmpdir, config, data_csv_path, backend)
 
@@ -135,17 +134,13 @@ def predict_with_backend(tmpdir, config, data_csv_path, backend):
             backend = RAY_BACKEND_CONFIG
             backend["processor"]["type"] = "dask"
 
-        try:
-            ludwig_model = LudwigModel(config, backend=backend)
-            _, _, output_directory = ludwig_model.train(
-                dataset=data_csv_path,
-                output_directory=os.path.join(tmpdir, "output"),
-            )
-            # Check that metadata JSON saves and loads correctly
-            ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
-            preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
-        finally:
-            # Remove results/intermediate data saved to disk
-            shutil.rmtree(output_directory, ignore_errors=True)
+        ludwig_model = LudwigModel(config, backend=backend)
+        _, _, output_directory = ludwig_model.train(
+            dataset=data_csv_path,
+            output_directory=os.path.join(tmpdir, "output"),
+        )
+        # Check that metadata JSON saves and loads correctly
+        ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
+        preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
 
     return preds_df
