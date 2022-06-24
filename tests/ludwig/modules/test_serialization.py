@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import os
 
 import numpy as np
@@ -73,29 +72,31 @@ def test_serialize_deserialize_encoder(tmpdir):
 def test_load_save_encoder(tmpdir):
     input_features = [text_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-
+    text_input_name = input_features[0]["name"]  # Auto-generated from random number by text_feature
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
-
-    config = {
+    model1_config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
     }
-
-    model_1 = LudwigModel(config)
-    model_1.train(dataset=data_csv, output_directory=tmpdir)
-    # Get pre-trained encoder
-    trained_input_feature = model_1.model.input_features[input_features[0]["name"]]
+    model1 = LudwigModel(model1_config)
+    model1.train(dataset=data_csv, output_directory=tmpdir)
+    # Save pre-trained encoder
+    trained_input_feature = model1.model.input_features[text_input_name]
     input_feature_encoder = trained_input_feature.encoder_obj
-
     saved_path = os.path.join(tmpdir, "text_encoder.h5")
     serialization.save(input_feature_encoder, saved_path)
-
-    # Attempt to load model from saved file
+    # Ensure that we can restore encoder from saved path.
     restored_encoder = serialization.load(saved_path, "cpu")
     assert restored_encoder is not None
-
-    # TODO: construct new model with previously trained encoder
+    # Create new model using the pre-trained encoder
+    model2_config = {
+        "input_features": [{"name": text_input_name, "type": "text", "encoder": f"file://{saved_path}"}],
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+    }
+    model2 = LudwigModel(model2_config)
+    model2.train(dataset=data_csv, output_directory=tmpdir)
 
 
 if __name__ == "__main__":

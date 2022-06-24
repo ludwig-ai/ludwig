@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import json
 import logging
 
@@ -93,9 +92,9 @@ def _load_state_from_group(group) -> LudwigModuleState:
     )
 
 
-def load_state_from_file(path_or_url: str) -> LudwigModuleState:
+def load_state_from_file(path_or_uri: str) -> LudwigModuleState:
     """Loads Ludwig Module state from a file."""
-    with download_h5(path_or_url) as f:
+    with download_h5(path_or_uri) as f:
         # with h5py.File(f, "r") as f:
         # The file object does double duty as the HDF5 root group
         return _load_state_from_group(f)
@@ -116,13 +115,13 @@ def instantiate_module_from_state(state: LudwigModuleState, device: str = None) 
     return restored_module
 
 
-def save(object: LudwigModule, path_or_url: str):
+def save(object: LudwigModule, path_or_uri: str):
     """Saves Ludwig object to file or buffer."""
     object_state = object.get_state()
-    save_state_to_file(object_state, path_or_url)
+    save_state_to_file(object_state, path_or_uri)
 
 
-def load(path_or_url: str, device: str = None) -> LudwigModule:
+def load(path_or_uri: str, device: str = None) -> LudwigModule:
     """Loads saved Ludwig module from file or buffer. If the module has parameters which are torch Tensors, device
     specifies the device where tensors will be instantiated.
 
@@ -130,7 +129,7 @@ def load(path_or_url: str, device: str = None) -> LudwigModule:
         f: The file path or object to load from.
         device: 'cuda' or 'cpu'
     """
-    state = load_state_from_file(path_or_url)
+    state = load_state_from_file(path_or_uri)
     state = update_state_for_current_version(state)
     return instantiate_module_from_state(state, device=device)
 

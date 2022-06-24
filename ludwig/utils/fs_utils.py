@@ -44,6 +44,14 @@ def get_fs_and_path(url):
     return fs, path
 
 
+def is_url(url: str):
+    try:
+        result = urlparse(url)
+        return all((result.scheme, result.path))
+    except:  # noqa: E722
+        return False
+
+
 def has_remote_protocol(url):
     protocol, _ = split_protocol(url)
     return protocol and protocol != "file"

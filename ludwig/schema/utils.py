@@ -1,3 +1,18 @@
+#! /usr/bin/env python
+# Copyright (c) 2022 Predibase, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -58,7 +73,16 @@ def load_config_with_kwargs(
     }
 
 
-def create_cond(if_pred: TDict, then_pred: TDict):
+def create_anyof_cond(if_pred: tDict, then_preds: List[tDict]):
+    """Returns a JSONSchema conditional for the given if-then predicates which matches any of the predicates in
+    then_preds."""
+    return {
+        "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
+        "then": {"anyOf": [{"properties": {k: v for k, v in then_pred.items()}} for then_pred in then_preds]},
+    }
+
+
+def create_cond(if_pred: tDict, then_pred: tDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
