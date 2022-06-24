@@ -37,132 +37,93 @@ H3_INPUT_SIZE = 19
 
 @register_encoder("embed", H3)
 class H3Embed(Encoder):
-    def __init__(
-        self,
-        embedding_size: int = 10,
-        embeddings_on_cpu: bool = False,
-        fc_layers: Optional[List] = None,
-        num_fc_layers: int = 0,
-        output_size: int = 10,
-        use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
-        norm: str = None,
-        norm_params: Dict = None,
-        activation: str = "relu",
-        dropout: float = 0,
-        reduce_output: str = "sum",
-        encoder_config=None,
-        **kwargs,
-    ):
-        """
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for
-               `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        """
-        super().__init__()
-        self.config = encoder_config
-
+    def __init__(self, encoder_config: H3EmbedConfig):
+        super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
-        self.embedding_size = embedding_size
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.embedding_size = encoder_config.embedding_size
+        self.reduce_output = encoder_config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
 
         logger.debug("  mode Embed")
         self.embed_mode = Embed(
             [str(i) for i in range(3)],
-            embedding_size,
+            self.embedding_size,
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
             force_embedding_size=True,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=weights_initializer,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.weights_initializer,
         )
 
         logger.debug("  edge Embed")
         self.embed_edge = Embed(
             [str(i) for i in range(7)],
-            embedding_size,
+            self.embedding_size,
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
             force_embedding_size=True,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=weights_initializer,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.weights_initializer,
         )
 
         logger.debug("  resolution Embed")
         self.embed_resolution = Embed(
             [str(i) for i in range(16)],
-            embedding_size,
+            self.embedding_size,
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
             force_embedding_size=True,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=weights_initializer,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.weights_initializer,
         )
 
         logger.debug("  base cell Embed")
         self.embed_base_cell = Embed(
             [str(i) for i in range(122)],
-            embedding_size,
+            self.embedding_size,
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
             force_embedding_size=True,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=weights_initializer,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.weights_initializer,
         )
 
         logger.debug("  cells Embed")
         self.embed_cells = EmbedSequence(
             [str(i) for i in range(8)],
-            embedding_size,
+            self.embedding_size,
             max_sequence_length=(H3_INPUT_SIZE - 4),
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
             force_embedding_size=True,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            embedding_initializer=weights_initializer,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            embedding_initializer=encoder_config.weights_initializer,
         )
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
-            first_layer_input_size=embedding_size,
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_output_size=output_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout=dropout,
+            first_layer_input_size=self.embedding_size,
+            layers=encoder_config.fc_layers,
+            num_layers=encoder_config.num_fc_layers,
+            default_output_size=encoder_config.output_size,
+            default_use_bias=encoder_config.use_bias,
+            default_weights_initializer=encoder_config.weights_initializer,
+            default_bias_initializer=encoder_config.bias_initializer,
+            default_norm=encoder_config.norm,
+            default_norm_params=encoder_config.norm_params,
+            default_activation=encoder_config.activation,
+            default_dropout=encoder_config.dropout,
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
@@ -216,78 +177,40 @@ class H3Embed(Encoder):
 
 @register_encoder("weighted_sum", H3)
 class H3WeightedSum(Encoder):
-    def __init__(
-        self,
-        embedding_size: int = 10,
-        embeddings_on_cpu: bool = False,
-        should_softmax: bool = False,
-        fc_layers: Optional[List] = None,
-        num_fc_layers: int = 0,
-        output_size: int = 10,
-        use_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        bias_initializer: str = "zeros",
-        norm: Optional[str] = None,
-        norm_params: Dict = None,
-        activation: str = "relu",
-        dropout: float = 0,
-        encoder_config=None,
-        **kwargs,
-    ):
-        """
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for
-               `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
-        """
-        super().__init__()
-        self.config = encoder_config
+    def __init__(self, encoder_config: H3WeightedSumConfig):
+        super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
 
-        self.should_softmax = should_softmax
+        self.should_softmax = encoder_config.should_softmax
         self.sum_sequence_reducer = SequenceReducer(reduce_mode="sum")
 
         self.h3_embed = H3Embed(
-            embedding_size,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            weights_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
+            encoder_config.embedding_size,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            weights_initializer=encoder_config.weights_initializer,
+            bias_initializer=encoder_config.bias_initializer,
             reduce_output="None",
         )
 
         self.register_buffer(
-            "aggregation_weights", torch.Tensor(get_initializer(weights_initializer)([H3_INPUT_SIZE, 1]))
+            "aggregation_weights", torch.Tensor(get_initializer(encoder_config.weights_initializer)([H3_INPUT_SIZE, 1]))
         )
 
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
             first_layer_input_size=self.h3_embed.output_shape[0],
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_output_size=output_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout=dropout,
+            layers=encoder_config.fc_layers,
+            num_layers=encoder_config.num_fc_layers,
+            default_output_size=encoder_config.output_size,
+            default_use_bias=encoder_config.use_bias,
+            default_weights_initializer=encoder_config.weights_initializer,
+            default_bias_initializer=encoder_config.bias_initializer,
+            default_norm=encoder_config.norm,
+            default_norm_params=encoder_config.norm_params,
+            default_activation=encoder_config.activation,
+            default_dropout=encoder_config.dropout,
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
@@ -329,96 +252,19 @@ class H3WeightedSum(Encoder):
 
 @register_encoder("rnn", H3)
 class H3RNN(Encoder):
-    def __init__(
-        self,
-        embedding_size: int = 10,
-        embeddings_on_cpu: bool = False,
-        num_layers: int = 1,
-        hidden_size: int = 10,
-        cell_type: str = "rnn",
-        bidirectional: bool = False,
-        activation: str = "tanh",
-        recurrent_activation: str = "sigmoid",
-        use_bias: bool = True,
-        unit_forget_bias: bool = True,
-        weights_initializer: str = "xavier_uniform",
-        recurrent_initializer: str = "orthogonal",
-        bias_initializer: str = "zeros",
-        dropout: float = 0.0,
-        recurrent_dropout: float = 0.0,
-        reduce_output: str = "last",
-        encoder_config=None,
-        **kwargs,
-    ):
-        """
-        :param embedding_size: it is the maximum embedding size, the actual
-               size will be `min(vocabulary_size, embedding_size)`
-               for `dense` representations and exactly `vocabulary_size`
-               for the `sparse` encoding, where `vocabulary_size` is
-               the number of different strings appearing in the training set
-               in the column the feature is named after (plus 1 for
-               `<UNK>`).
-        :type embedding_size: Integer
-        :param embeddings_on_cpu: by default embeddings matrices are stored
-               on GPU memory if a GPU is used, as it allows
-               for faster access, but in some cases the embedding matrix
-               may be really big and this parameter forces the placement
-               of the embedding matrix in regular memory and the CPU is used
-               to resolve them, slightly slowing down the process
-               as a result of data transfer between CPU and GPU memory.
-        :param num_layers: the number of stacked recurrent layers.
-        :type num_layers: Integer
-        :param cell_type: the type of recurrent cell to use.
-               Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
-               `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
-               For reference about the differences between the cells please
-               refer to TensorFlow's documentation. We suggest to use the
-               `block` variants on CPU and the `cudnn` variants on GPU
-               because of their increased speed.
-        :type cell_type: str
-        :param hidden_size: the size of the state of the rnn.
-        :type hidden_size: Integer
-        :param bidirectional: if `True` two recurrent networks will perform
-               encoding in the forward and backward direction and
-               their outputs will be concatenated.
-        :type bidirectional: Boolean
-        :param activation: Activation function to use.
-        :type activation: string
-        :param recurrent_activation: Activation function to use for the
-                recurrent step.
-        :type recurrent_activation: string
-        :param use_bias: bool determines where to use a bias vector
-        :type use_bias: bool
-        :param unit_forget_bias: if True add 1 to the bias forget gate at
-               initialization.
-        :type unit_forget_bias: bool
-        :param weights_initializer: Initializer for the weights (aka kernel)
-               matrix
-        :type weights_initializer: string
-        :param recurrent_initializer: Initializer for the recurrent weights
-               matrix
-        :type recurrent_initializer: string
-        :param bias_initializer: Initializer for the bias vector
-        :type bias_initializer: string
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: float
-        :param recurrent_dropout: Dropout rate for the RNN encoder of the H3 embeddings.
-        :type recurrent_dropout: float
-        """
-        super().__init__()
-        self.config = encoder_config
+    def __init__(self, encoder_config: H3RNNConfig):
+        super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
 
-        self.embedding_size = embedding_size
+        self.embedding_size = encoder_config.embedding_size
 
         self.h3_embed = H3Embed(
-            embedding_size,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            weights_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
+            self.embedding_size,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
+            dropout=encoder_config.dropout,
+            weights_initializer=encoder_config.weights_initializer,
+            bias_initializer=encoder_config.bias_initializer,
             reduce_output="None",
         )
 
@@ -426,12 +272,12 @@ class H3RNN(Encoder):
         self.recurrent_stack = RecurrentStack(
             input_size=self.h3_embed.output_shape[0],
             max_sequence_length=H3_INPUT_SIZE,
-            hidden_size=hidden_size,
-            cell_type=cell_type,
-            num_layers=num_layers,
-            bidirectional=bidirectional,
-            use_bias=use_bias,
-            dropout=recurrent_dropout,
+            hidden_size=encoder_config.hidden_size,
+            cell_type=encoder_config.cell_type,
+            num_layers=encoder_config.num_layers,
+            bidirectional=encoder_config.bidirectional,
+            use_bias=encoder_config.use_bias,
+            dropout=encoder_config.recurrent_dropout,
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:

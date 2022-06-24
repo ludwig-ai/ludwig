@@ -15,6 +15,7 @@
 from abc import abstractmethod
 from functools import lru_cache
 
+import numpy as np
 import torch
 from marshmallow_dataclass import dataclass
 from torch.nn import Module, ModuleDict
@@ -43,7 +44,7 @@ class LudwigModuleState:
     type: str  # Module Type
     ludwig_version: str  # Version of ludwig which saved this object
     config: dict  # Module Config
-    saved_weights: dict[str, torch.Tensor]  # Saved weights of this module
+    saved_weights: dict[str, np.ndarray]  # Saved weights of this module
     children: dict[str, "LudwigModuleState"]  # Child modules
 
 
