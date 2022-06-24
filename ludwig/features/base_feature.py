@@ -30,6 +30,7 @@ from ludwig.modules.metric_modules import MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
+from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import LudwigModule
@@ -201,7 +202,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.reduce_input = None
         self.reduce_dependencies = None
 
-        # List of feature names that this output feature is depdendent on.
+        # List of feature names that this output feature is dependent on.
         self.dependencies = []
 
         self.fc_layers = None
@@ -237,6 +238,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+        self._calibration_module = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -308,11 +310,20 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             },
         }
 
+    def create_calibration_module(self, feature) -> CalibrationModule:
+        """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
+        return None
+
+    @property
+    def calibration_module(self) -> torch.nn.Module:
+        """Returns the CalibrationModule used to convert logits to a probability distribution."""
+        return self._calibration_module
+
     @abstractmethod
     def create_predict_module(self) -> PredictModule:
         """Creates and returns a `nn.Module` that converts raw model outputs (logits) to predictions.
 
-        Thos module is needed when generating the Torchscript model using scripting.
+        This module is needed when generating the Torchscript model using scripting.
         """
         raise NotImplementedError()
 

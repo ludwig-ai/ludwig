@@ -65,6 +65,7 @@ from ludwig.globals import (
     TRAIN_SET_METADATA_FILE_NAME,
 )
 from ludwig.models.base import BaseModel
+from ludwig.models.calibrator import Calibrator
 from ludwig.models.inference import InferenceModule
 from ludwig.models.predictor import (
     calculate_overall_stats,
@@ -554,6 +555,27 @@ class LudwigModel:
                         test_set=test_set,
                         save_path=model_dir,
                     )
+
+                    # Calibrates output feature probabilities on validation set if calibration is enabled.
+                    # Must be done after training, and before final model parameters are saved.
+                    if self.backend.is_coordinator():
+                        calibrator = Calibrator(
+                            trainer.model,
+                            self.backend,
+                            batch_size=trainer.eval_batch_size,
+                        )
+                        if validation_set is not None:
+                            # Use backend.createPredictor to ensure we get ray predictor with ray backend
+                            calibrator.train_calibration(validation_set, VALIDATION)
+                        else:
+                            logger.warning(
+                                "Calibration uses validation set, but not validation split specified. "
+                                "Will use training set for calibration."
+                            )
+                            calibrator.train_calibration(training_set, TRAINING)
+                        if not skip_save_model:
+                            model_weights_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
+                            torch.save(self.model.state_dict(), model_weights_path)
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
