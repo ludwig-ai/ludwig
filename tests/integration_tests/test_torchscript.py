@@ -463,10 +463,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
-    inputs = {
-        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
-        for name, feature in ludwig_model.model.input_features.items()
-    }
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
     preproc_inputs = script_module.preprocess(inputs)
 
     # Check that preproc_inputs is the same as preproc_inputs_expected.
