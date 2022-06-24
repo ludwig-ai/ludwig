@@ -100,10 +100,10 @@ SCHEDULERS = [
 def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
-        category_feature(embedding_size=128),
+        category_feature(vocab_size=3),
     ]
 
-    output_features = [category_feature(embedding_size=128)]
+    output_features = [category_feature(vocab_size=3)]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
@@ -123,16 +123,16 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
     input_features = [
         text_feature(name="title", encoder="parallel_cnn"),
         text_feature(name="summary"),
-        category_feature(),
-        category_feature(),
+        category_feature(vocab_size=3),
+        category_feature(vocab_size=3),
     ]
 
-    output_features = [category_feature(embedding_size=128)]
+    output_features = [category_feature(vocab_size=3)]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
-    num_filters_search_space = [128, 512]
-    embedding_size_search_space = [128, 512]
+    num_filters_search_space = [4, 8]
+    embedding_size_search_space = [4, 8]
 
     # Add default parameters in hyperopt parameter search space
     config = {
@@ -311,10 +311,10 @@ def test_hyperopt_scheduler(
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
-        category_feature(embedding_size=128),
+        category_feature(vocab_size=3),
     ]
 
-    output_features = [category_feature(embedding_size=128)]
+    output_features = [category_feature(vocab_size=3)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
