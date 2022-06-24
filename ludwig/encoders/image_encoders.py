@@ -369,8 +369,8 @@ class ViTEncoder(Encoder):
         self._output_shape = (self.transformer.config.hidden_size,)
 
     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-        output = self.transformer(inputs, head_mask=head_mask)
-        return {"encoder_output": output.pooler_output}
+        output = self.transformer(inputs, head_mask=head_mask, output_attentions=True)
+        return {"encoder_output": output.pooler_output, "attentions": output.attentions}
 
     @property
     def input_shape(self) -> torch.Size:
