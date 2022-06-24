@@ -99,11 +99,11 @@ SCHEDULERS = [
 
 def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(embedding_size=128),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(embedding_size=128)]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
@@ -121,18 +121,15 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
 
 def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="title", cell_type="rnn", reduce_output="sum", encoder="parallel_cnn"),
-        text_feature(name="summary", cell_type="rnn"),
+        text_feature(name="title", encoder="parallel_cnn"),
+        text_feature(name="summary"),
         category_feature(),
         category_feature(),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(embedding_size=128)]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
-
-    categorical_feature_name = input_features[2][NAME]
-    output_feature_name = output_features[0][NAME]
 
     num_filters_search_space = [128, 512]
     embedding_size_search_space = [128, 512]
@@ -146,7 +143,6 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
         HYPEROPT: {
             "parameters": {
                 "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-                categorical_feature_name + ".vocab_size": {"space": "randint", "lower": 1, "upper": 3},
                 "defaults.input_features.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
                 "defaults.output_features.category.embedding_size": {
                     "space": "choice",
@@ -154,7 +150,7 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
                 },
             },
             "goal": "minimize",
-            "output_feature": output_feature_name,
+            "output_feature": output_features[0][NAME],
             "validation_metrics": "loss",
             "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
             "search_alg": {"type": "variant_generator"},
@@ -200,12 +196,11 @@ def ray_cluster():
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS)
-def test_hyperopt_search_alg(
-    search_alg, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
-):
+def test_hyperopt_search_alg(search_alg, csv_filename, tmpdir, validate_output_feature=False, validation_metric=None):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
+
     # finalize hyperopt config settings
     if search_alg == "dragonfly":
         hyperopt_config["search_alg"] = {
@@ -221,7 +216,7 @@ def test_hyperopt_search_alg(
         }
 
     if validate_output_feature:
-        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+        hyperopt_config["output_feature"] = config[OUTPUT_FEATURES][0][NAME]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
@@ -256,12 +251,11 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("scheduler", SCHEDULERS)
-def test_hyperopt_scheduler(
-    scheduler, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
-):
+def test_hyperopt_scheduler(scheduler, csv_filename, tmpdir, validate_output_feature=False, validation_metric=None):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
+
     # finalize hyperopt config settings
     if scheduler == "pb2":
         # setup scheduler hyperparam_bounds parameter
@@ -280,7 +274,7 @@ def test_hyperopt_scheduler(
         }
 
     if validate_output_feature:
-        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+        hyperopt_config["output_feature"] = config[OUTPUT_FEATURES][0][NAME]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
@@ -312,22 +306,22 @@ def test_hyperopt_scheduler(
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir):
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(embedding_size=128),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(embedding_size=128)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        COMBINER: {"type": "concat", "num_fc_layers": 2},
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
-    output_feature_name = output_features[0]["name"]
+    output_feature_name = output_features[0][NAME]
 
     if search_space == "random":
         # random search will be size of num_samples
@@ -399,8 +393,8 @@ def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
     for _, trial_row in hyperopt_results_df.iterrows():
         embedding_size = _get_trial_parameter_value("defaults.output_features.category.embedding_size", trial_row)
         num_filters = _get_trial_parameter_value("defaults.input_features.text.num_filters", trial_row)
-        assert num_filters in num_filters_search_space
         assert embedding_size in embedding_size_search_space
+        assert num_filters in num_filters_search_space
 
 
 @pytest.mark.distributed
