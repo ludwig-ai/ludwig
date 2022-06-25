@@ -15,6 +15,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
@@ -68,7 +69,7 @@ def test_serialize_deserialize_encoder(tmpdir):
 def test_load_save_encoder(tmpdir):
     torch.random.manual_seed(17)
     input_features = [text_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=5)]
     text_input_name = input_features[0]["name"]  # Auto-generated from random number by text_feature
     category_output_name = output_features[0]["name"]  # Auto-generated from random number by category_feature
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
@@ -102,8 +103,58 @@ def test_load_save_encoder(tmpdir):
     )
 
 
-# Uncomment for debugging.  TODO: delete this before code review.
+def test_transfer_learning(tmpdir):
+    torch.random.manual_seed(17)
+    # Trains model 1 on generated dataset.
+    input_features = [text_feature(reduce_output="sum", vocab_size=32, embedding_size=32)]
+    output_features = [category_feature(vocab_size=5)]
+    text_input_name = input_features[0]["name"]  # Auto-generated from random number by text_feature
+    category_output_name = output_features[0]["name"]  # Auto-generated from random number by category_feature
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), 100)
+    model1_config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+    }
+    model1 = LudwigModel(model1_config)
+    train_stats1, _, _ = model1.train(dataset=data_csv, output_directory=tmpdir)
+    # Saves pre-trained encoder to file.
+    trained_input_feature = model1.model.input_features[text_input_name]
+    input_feature_encoder = trained_input_feature.encoder_obj
+    saved_path = os.path.join(tmpdir, "text_encoder.h5")
+    serialization.save(input_feature_encoder, saved_path)
+    # Trains model 2 on new dataset with different input column name.
+    original_training_set = pd.read_csv(data_csv)
+    new_training_set = original_training_set.rename(columns={text_input_name: "text_column"})
+    new_training_set = pd.concat(
+        [
+            new_training_set,
+            pd.DataFrame(
+                {
+                    "text_column": ["some new words", "which don't appear in the vocab", "should be mapped to UNK"],
+                    category_output_name: ["test", "test", "test"],
+                }
+            ),
+        ],
+        axis=0,
+    )
+    model2_config = {
+        "input_features": [{"type": "text", "name": "text_column", "encoder": f"file://{saved_path}"}],
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+    }
+    model2 = LudwigModel(model2_config)
+    train_stats2, preproc_data, _ = model2.train(dataset=new_training_set, output_directory=tmpdir)
+    # Assert that final train loss is lower for model 2 using the pre-trained encoder.
+    assert (
+        train_stats2["training"][category_output_name]["loss"][-1]
+        < train_stats1["training"][category_output_name]["loss"][-1]
+    )
+    # Assert that vocabulary of model2 input feature matches vocabulary of model1 encoder.
+    assert model1.config["input_features"][0]["vocab"] == model2.config["input_features"][0]["vocab"]
+
+
 if __name__ == "__main__":
     import pytest
 
-    pytest.main(["-k", "test_load_save_encoder"])
+    pytest.main(["-k", "test_transfer_learning"])
