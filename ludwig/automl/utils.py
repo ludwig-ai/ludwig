@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 from dataclasses_json import dataclass_json, LetterCase
-from numpy import nan_to_num
+from numpy import nan_to_num, isnan
 from pandas import Series
 
 from ludwig.constants import (
@@ -76,6 +76,23 @@ def avg_num_tokens(field: Series) -> int:
     unique_entries = field.unique()
     avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
+
+
+def check_if_boolean(field: Series) -> bool:
+    if len(field) > 5000:
+        field = field.sample(n=5000, random_state=40)
+    unique_entries = field.unique()
+    if len(unique_entries) <= 3:
+        for entry in unique_entries:
+            try:
+                if isnan(entry):
+                    continue
+            except TypeError:
+                return False
+            if isinstance(entry, bool):
+                continue
+            return False
+    return True
 
 
 def get_available_resources() -> dict:

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from ludwig.automl.utils import avg_num_tokens
+from ludwig.automl.utils import avg_num_tokens, check_if_boolean
 from ludwig.utils.audio_utils import is_audio_score
 from ludwig.utils.image_utils import is_image_score
 from ludwig.utils.types import DataFrame
@@ -27,6 +27,10 @@ class DataSource(ABC):
 
     @abstractmethod
     def get_avg_num_tokens(self, column: str) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_if_boolean(self, column: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
@@ -68,6 +72,9 @@ class DataframeSourceMixin:
 
     def get_avg_num_tokens(self, column: str) -> int:
         return avg_num_tokens(self.df[column])
+
+    def check_if_boolean(self, column: str) -> bool:
+        return check_if_boolean(self.df[column])
 
     def is_string_type(self, dtype: str) -> bool:
         return dtype in ["str", "string", "object"]

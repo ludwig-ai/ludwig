@@ -201,6 +201,11 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)
         avg_words = None
+        if dtype == "object":
+            # Check if it is a nullboolean field
+            is_boolean = source.check_if_boolean(field)
+            if is_boolean:
+                dtype = "bool"
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
         fields.append(
