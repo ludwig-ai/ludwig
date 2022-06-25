@@ -41,7 +41,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.utils import output_feature_utils
+from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -57,7 +57,7 @@ class _CategoryPreprocessing(torch.nn.Module):
         self.str2idx = metadata["str2idx"]
         self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -83,10 +83,19 @@ class _CategoryPostprocessing(torch.nn.Module):
 
 
 class _CategoryPredict(PredictModule):
+    def __init__(self, calibration_module=None):
+        super().__init__()
+        self.calibration_module = calibration_module
+
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
-        probabilities = torch.softmax(logits, -1)
-        predictions = torch.argmax(logits, -1)
+
+        if self.calibration_module is not None:
+            probabilities = self.calibration_module(logits)
+        else:
+            probabilities = torch.softmax(logits, -1)
+
+        predictions = torch.argmax(probabilities, -1)
         predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
@@ -234,8 +243,19 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        """Creates the appropriate calibration module based on the feature config.
+
+        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
+        the future.
+        """
+        if feature.get("calibration"):
+            calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
+            return calibration_cls(num_classes=feature["num_classes"])
+        return None
+
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict()
+        return _CategoryPredict(calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

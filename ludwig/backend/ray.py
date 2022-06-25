@@ -17,7 +17,6 @@
 import contextlib
 import copy
 import logging
-from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -27,6 +26,7 @@ import pandas as pd
 import ray
 import torch
 import tqdm
+from packaging import version
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -44,7 +44,8 @@ from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
-_ray112 = LooseVersion("1.12") <= LooseVersion(ray.__version__) < LooseVersion("1.13")
+_ray112 = version.parse("1.12") <= version.parse(ray.__version__) < version.parse("1.13")
+
 import ray.train as rt  # noqa: E402
 from ray.train.trainer import Trainer  # noqa: E402
 
@@ -90,7 +91,7 @@ def get_trainer_kwargs(use_gpu=None):
         num_workers = int(ray.cluster_resources().get("GPU", 0))
     else:
         # TODO: use placement groups or otherwise spread across nodes
-        node_resources = [node["Resources"] for node in ray.state.nodes()]
+        node_resources = [node["Resources"] for node in ray.nodes()]
         num_workers = len(node_resources)
 
     return dict(
@@ -429,7 +430,7 @@ class RayTrainerV2(BaseTrainer):
 
     @property
     def eval_batch_size(self) -> int:
-        return self.config.eval_batch_size
+        return self.config.eval_batch_size if self.config.eval_batch_size is not None else self.config.batch_size
 
     @eval_batch_size.setter
     def eval_batch_size(self, value: int):
@@ -607,11 +608,11 @@ class RayPredictor(BasePredictor):
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
 
-    def batch_predict(self, dataset: RayDataset, *args, **kwargs):
+    def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
-        output_columns = get_output_columns(self.model.output_features)
+        output_columns = get_output_columns(self.model.output_features, include_logits=collect_logits)
         batch_predictor = self.get_batch_infer_model(
             self.model,
             predictor_kwargs,
@@ -619,6 +620,7 @@ class RayPredictor(BasePredictor):
             dataset.features,
             dataset.training_set_metadata,
             *args,
+            collect_logits=collect_logits,
             **kwargs,
         )
 
@@ -652,7 +654,13 @@ class RayPredictor(BasePredictor):
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
 
-    def batch_evaluation(self, dataset: RayDataset, collect_predictions: bool = False, **kwargs):
+    def batch_evaluation(
+        self,
+        dataset: RayDataset,
+        collect_predictions: bool = False,
+        collect_logits=False,
+        **kwargs,
+    ):
         # We need to be in a Horovod context to collect the aggregated metrics, since it relies on collective
         # communication ops. However, Horovod is not suitable for transforming one big dataset to another. For that
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
@@ -683,7 +691,7 @@ class RayPredictor(BasePredictor):
         predictions = None
         if collect_predictions:
             # Collect eval predictions by using Ray Datasets to transform partitions of the data in parallel
-            predictions = self.batch_predict(dataset)
+            predictions = self.batch_predict(dataset, collect_logits=collect_logits)
 
         return eval_stats, predictions
 

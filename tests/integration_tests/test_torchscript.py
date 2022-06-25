@@ -27,7 +27,7 @@ from ludwig.constants import COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES,
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.inference import to_inference_module_input
+from ludwig.models.inference import to_inference_module_input_from_dataframe
 from ludwig.utils import output_feature_utils
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from tests.integration_tests import utils
@@ -212,8 +212,8 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         category_feature(vocab_size=3),
         bag_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        vector_feature(),
         # TODO: future support
-        # vector_feature(),
         # date_feature(),
         # h3_feature(),
     ]
@@ -222,11 +222,10 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
-        # TODO: future support
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
-        # vector_feature()
+        set_feature(vocab_size=3),
+        vector_feature(),
+        sequence_feature(vocab_size=3),
+        text_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -337,7 +336,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
         for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
     ]
     output_features = [
-        binary_feature(),
+        text_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -352,7 +351,7 @@ def test_torchscript_e2e_sequence(tmpdir, csv_filename):
         sequence_feature(vocab_size=3, preprocessing={"tokenizer": "space"}),
     ]
     output_features = [
-        binary_feature(),
+        sequence_feature(vocab_size=3),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
@@ -374,6 +373,107 @@ def test_torchscript_e2e_timeseries(tmpdir, csv_filename):
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_h3(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        h3_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_date(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        date_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+@pytest.mark.parametrize(
+    "feature",
+    [
+        number_feature(),
+        binary_feature(),
+        category_feature(vocab_size=3),
+        bag_feature(vocab_size=3),
+        set_feature(vocab_size=3),
+        text_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        timeseries_feature(),
+        h3_feature(),
+        # TODO: future support
+        # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
+        # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
+        # vector_feature(), # does not have a missing_value_strategy
+        # date_feature(),   # default fill with datetime.now() strategy is not scriptable
+    ],
+)
+def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    input_features = [feature]
+
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
+
+    # Initialize Ludwig model
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=training_data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config,
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
+
+    # Create graph inference model (Torchscript) from trained Ludwig model.
+    script_module = ludwig_model.to_torchscript()
+    # Ensure torchscript saving/loading does not affect final predictions.
+    script_module_path = os.path.join(tmpdir, "inference_module.pt")
+    torch.jit.save(script_module, script_module_path)
+    script_module = torch.jit.load(script_module_path)
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
+    preproc_inputs = script_module.preprocess(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        if feature_name not in preproc_inputs.keys():
+            continue
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
 def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
@@ -401,10 +501,7 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
     script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
-    inputs = {
-        name: to_inference_module_input(df[feature.column], feature.type(), load_paths=True)
-        for name, feature in ludwig_model.model.input_features.items()
-    }
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
     outputs = script_module(inputs)
 
     # TODO: these are the only outputs we provide from Torchscript for now
@@ -421,17 +518,6 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
-            if isinstance(output_values, list):
-                # Strings should match exactly
-                assert np.all(
-                    output_values == output_values_expected
-                ), f"feature: {feature_name}, output: {output_name}"
-            else:
-                output_values = np.array(output_values)
-                # Shapes and values must both match
-                assert (
-                    output_values.shape == output_values_expected.shape
-                ), f"feature: {feature_name}, output: {output_name}"
-                assert np.allclose(
-                    output_values, output_values_expected, atol=tolerance
-                ), f"feature: {feature_name}, output: {output_name}"
+            assert utils.is_all_close(
+                output_values, output_values_expected
+            ), f"feature: {feature_name}, output: {output_name}"
