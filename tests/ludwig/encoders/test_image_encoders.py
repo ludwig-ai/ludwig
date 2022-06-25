@@ -33,7 +33,13 @@ def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
 @pytest.mark.parametrize("image_size,num_channels", [(224, 3)])
 @pytest.mark.parametrize("use_pretrained", [True, False])
 def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
-    vit = ViTEncoder(height=image_size, width=image_size, num_channels=num_channels, use_pretrained=use_pretrained)
+    vit = ViTEncoder(
+        height=image_size,
+        width=image_size,
+        num_channels=num_channels,
+        use_pretrained=use_pretrained,
+        output_attentions=True,
+    )
     inputs = torch.rand(2, num_channels, image_size, image_size)
     outputs = vit(inputs)
     assert outputs["encoder_output"].shape[1:] == vit.output_shape
