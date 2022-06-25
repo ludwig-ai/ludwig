@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import os
 import tempfile
 
@@ -37,6 +36,8 @@ from tests.integration_tests.utils import (
     h3_feature,
     image_feature,
     number_feature,
+    RAY_BACKEND_CONFIG,
+    ray_start,
     sequence_feature,
     set_feature,
     text_feature,
@@ -64,36 +65,6 @@ try:
 
 except ImportError:
     ray = None
-
-
-RAY_BACKEND_CONFIG = {
-    "type": "ray",
-    "processor": {
-        "parallelism": 2,
-    },
-    "trainer": {
-        "use_gpu": False,
-        "num_workers": 2,
-        "resources_per_worker": {
-            "CPU": 0.1,
-            "GPU": 0,
-        },
-    },
-}
-
-
-@contextlib.contextmanager
-def ray_start(num_cpus=2, num_gpus=None):
-    res = ray.init(
-        num_cpus=num_cpus,
-        num_gpus=num_gpus,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
 
 
 def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
