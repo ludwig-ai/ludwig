@@ -202,8 +202,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         audio_values = source.get_audio_values(field)
         avg_words = None
         if dtype == "object":
-            # Check if it is a nullboolean field. We do this since if you read a csv with 
-            # pandas that has a column of booleans and some missing values, the column is 
+            # Check if it is a nullboolean field. We do this since if you read a csv with
+            # pandas that has a column of booleans and some missing values, the column is
             # interpreted as object dtype instead of bool
             is_boolean = source.check_if_boolean(field)
             if is_boolean:

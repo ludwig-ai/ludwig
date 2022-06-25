@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 from dataclasses_json import dataclass_json, LetterCase
-from numpy import nan_to_num, isnan
+from numpy import isnan, nan_to_num
 from pandas import Series
 
 from ludwig.constants import (
