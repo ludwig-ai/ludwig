@@ -40,7 +40,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.utils import output_feature_utils, strings_utils
+from ludwig.utils import calibration, output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
     ConfusionMatrix,
@@ -82,10 +82,6 @@ class _BinaryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         bool2str = metadata.get("bool2str")
-        # If the values in column could have been inferred as boolean dtype, do not convert preds to strings.
-        # This preserves the behavior of this feature before #2058.
-        if strings_utils.values_are_pandas_bools(bool2str):
-            bool2str = None
         self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
@@ -106,13 +102,19 @@ class _BinaryPostprocessing(torch.nn.Module):
 
 
 class _BinaryPredict(PredictModule):
-    def __init__(self, threshold):
+    def __init__(self, threshold, calibration_module=None):
         super().__init__()
         self.threshold = threshold
+        self.calibration_module = calibration_module
 
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
-        probabilities = torch.sigmoid(logits)
+
+        if self.calibration_module is not None:
+            probabilities = self.calibration_module(logits)
+        else:
+            probabilities = torch.sigmoid(logits)
+
         predictions = probabilities >= self.threshold
         return {
             self.probabilities_key: probabilities,
@@ -153,17 +155,37 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        # Binary features are always read as strings. column.astype(bool) for all non-empty cells returns True.
-        return column.astype(str)
+        """Cast column of dtype object to bool.
+
+        Unchecked casting to boolean when given a column of dtype object converts all non-empty cells to True. We check
+        the values of the column directly and manually determine the best dtype to use.
+        """
+        values = backend.df_engine.compute(column.drop_duplicates())
+
+        if strings_utils.values_are_pandas_numbers(values):
+            # If numbers, convert to float so it can be converted to bool
+            column = column.astype(float).astype(bool)
+        elif strings_utils.values_are_pandas_bools(values):
+            # If booleans, manually assign boolean values
+            column = backend.df_engine.map_objects(
+                column, lambda x: x.lower() in strings_utils.PANDAS_TRUE_STRS
+            ).astype(bool)
+        else:
+            # If neither numbers or booleans, they are strings (objects)
+            column = column.astype(object)
+        return column
 
     @staticmethod
     def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
-        distinct_values = backend.df_engine.compute(column.drop_duplicates()).tolist()
+        if column.dtype != object:
+            return {}
+
+        distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
             raise ValueError(
-                f"Binary feature column {column.name} expects 2 distinct values, " f"found: {distinct_values}"
+                f"Binary feature column {column.name} expects 2 distinct values, "
+                f"found: {distinct_values.values.tolist()}"
             )
-
         if "fallback_true_label" in preprocessing_parameters:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
@@ -195,9 +217,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     ) -> None:
         column = input_df[feature_config[COLUMN]]
 
-        column_np_dtype = np.dtype(column.dtype)
-        # np.str_ is dtype of modin cols
-        if any(column_np_dtype == np_dtype for np_dtype in {np.object_, np.str_}):
+        if column.dtype == object:
             metadata = metadata[feature_config[NAME]]
             if "str2bool" in metadata:
                 column = backend.df_engine.map_objects(column, lambda x: metadata["str2bool"][str(x)])
@@ -289,8 +309,19 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
         )
 
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        """Creates the appropriate calibration module based on the feature config.
+
+        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
+        the future.
+        """
+        if feature.get("calibration"):
+            calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")
+            return calibration_cls(binary=True)
+        return None
+
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold)
+        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -356,13 +387,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
             if "bool2str" in metadata:
-                # If the values in column could have been inferred as boolean dtype, do not convert preds to strings.
-                # This preserves the behavior of this feature before #2058.
-                if not strings_utils.values_are_pandas_bools(class_names):
-                    result[predictions_col] = backend.df_engine.map_objects(
-                        result[predictions_col],
-                        lambda pred: metadata["bool2str"][pred],
-                    )
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    lambda pred: metadata["bool2str"][pred],
+                )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
