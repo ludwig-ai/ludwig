@@ -2,7 +2,6 @@ import logging
 import os
 import queue
 import threading
-from distutils.version import LooseVersion
 from typing import Any, Dict
 
 from ludwig.callbacks import Callback
@@ -133,12 +132,7 @@ class MlflowCallback(Callback):
         pass
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
-        import ray
-
-        if LooseVersion(ray.__version__) >= LooseVersion("1.11"):
-            from ludwig.contribs.mlflow._ray_111.mlflow import mlflow_mixin
-        else:
-            from ray.tune.integration.mlflow import mlflow_mixin
+        from ray.tune.integration.mlflow import mlflow_mixin
 
         return mlflow_mixin(train_fn), {
             **tune_config,

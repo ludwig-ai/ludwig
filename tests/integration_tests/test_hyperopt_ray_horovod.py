@@ -17,23 +17,22 @@ import logging
 import os.path
 import shutil
 import uuid
-from distutils.version import LooseVersion
 from unittest.mock import patch
 
 import pytest
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
 
 try:
     import ray
 
-    _ray_114 = LooseVersion(ray.__version__) >= LooseVersion("1.14")
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
@@ -215,9 +214,6 @@ def run_hyperopt_executor(
         goal = hyperopt_config["goal"]
         search_alg = hyperopt_config["search_alg"]
 
-        # hyperopt_sampler = get_build_hyperopt_sampler(sampler["type"])(goal, parameters, **sampler)
-        hyperopt_sampler = get_build_hyperopt_sampler("ray")(parameters)
-
         # preprocess
         backend = RayBackend(**RAY_BACKEND_KWARGS)
         model = LudwigModel(config=config, backend=backend)
@@ -227,7 +223,7 @@ def run_hyperopt_executor(
 
         # hyperopt
         hyperopt_executor = MockRayTuneExecutor(
-            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+            parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
         )
         hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 

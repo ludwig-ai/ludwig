@@ -1,13 +1,15 @@
 import os
-from typing import Any, Dict, List, TYPE_CHECKING, Union
+from datetime import datetime
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import COLUMN, NAME, TYPE
+from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET, TEXT, TIMESERIES, TYPE, VECTOR
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
+from ludwig.features.date_feature import create_vector_from_datetime_obj
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import INFERENCE_MODULE_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
@@ -21,6 +23,8 @@ if TYPE_CHECKING:
 
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.misc_utils import get_from_registry
+
+FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
 class InferenceModule(nn.Module):
@@ -62,25 +66,36 @@ class InferenceModule(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]):
+    def preprocess(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
         with torch.no_grad():
             preproc_inputs = {}
             for module_dict_key, preproc in self.preproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 preproc_inputs[feature_name] = preproc(inputs[feature_name])
-            outputs = self.model(preproc_inputs)
+            return preproc_inputs
 
+    def predict(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
+        with torch.no_grad():
+            outputs = self.model(preproc_inputs)
             predictions: Dict[str, Dict[str, torch.Tensor]] = {}
             for module_dict_key, predict in self.predict_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 predictions[feature_name] = predict(outputs, feature_name)
+            return predictions
 
+    def postprocess(self, predictions: Dict[str, Dict[str, torch.Tensor]]) -> Dict[str, Dict[str, Any]]:
+        with torch.no_grad():
             postproc_outputs: Dict[str, Dict[str, Any]] = {}
             for module_dict_key, postproc in self.postproc_modules.items():
                 feature_name = get_name_from_module_dict_key(module_dict_key)
                 postproc_outputs[feature_name] = postproc(predictions[feature_name])
-
             return postproc_outputs
+
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
+        preproc_inputs = self.preprocess(inputs)
+        predictions = self.predict(preproc_inputs)
+        postproc_outputs = self.postprocess(predictions)
+        return postproc_outputs
 
 
 class InferenceLudwigModel:
@@ -101,10 +116,7 @@ class InferenceLudwigModel:
 
         One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
         """
-        inputs = {
-            if_config["name"]: to_inference_module_input(dataset[if_config[COLUMN]], if_config[TYPE])
-            for if_config in self.config["input_features"]
-        }
+        inputs = to_inference_module_input_from_dataframe(dataset, self.config, load_paths=True)
 
         preds = self.model(inputs)
 
@@ -113,7 +125,25 @@ class InferenceLudwigModel:
         return preds, None  # Second return value is for compatibility with LudwigModel.predict
 
 
-def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False) -> Union[List[str], torch.Tensor]:
+def to_inference_module_input_from_dataframe(
+    dataset: pd.DataFrame,
+    config: Dict[str, Any],
+    load_paths: bool = False,
+) -> TorchscriptPreprocessingInput:
+    inputs = {}
+    for if_config in config["input_features"]:
+        inputs[if_config[NAME]] = _to_inference_model_input_from_series(
+            dataset[if_config[COLUMN]],
+            if_config[TYPE],
+            load_paths=load_paths,
+            feature_config=if_config,
+        )
+    return inputs
+
+
+def _to_inference_model_input_from_series(
+    s: pd.Series, feature_type: str, load_paths: bool = False, feature_config: Optional[Dict[str, Any]] = None
+) -> Union[List[str], torch.Tensor]:
     """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
     if feature_type == "image":
         if load_paths:
@@ -121,6 +151,11 @@ def to_inference_module_input(s: pd.Series, feature_type: str, load_paths=False)
     elif feature_type == "audio":
         if load_paths:
             return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
-    if feature_type in {"binary", "category", "bag", "set", "text", "sequence", "timeseries"}:
+    elif feature_type == "date":
+        if feature_config is None:
+            raise ValueError('"date" feature type requires the associated feature config to be provided.')
+        datetime_format = feature_config["preprocessing"]["datetime_format"]
+        return [torch.tensor(create_vector_from_datetime_obj(datetime.strptime(v, datetime_format))) for v in s]
+    elif feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
     return torch.from_numpy(s.to_numpy())

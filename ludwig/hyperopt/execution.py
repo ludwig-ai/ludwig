@@ -9,17 +9,18 @@ import threading
 import time
 import traceback
 import uuid
-from abc import ABC, abstractmethod
-from distutils.version import LooseVersion
+from functools import lru_cache
+from inspect import signature
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
-from ludwig.hyperopt.sampling import RayTuneSampler
+from ludwig.hyperopt.results import RayTuneResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
@@ -35,10 +36,10 @@ try:
     import ray
     from ray import tune
     from ray.tune import register_trainable, Stopper
+    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
-    from ray.tune.sync_client import CommandBasedClient
 
-    _ray_114 = LooseVersion(ray.__version__) >= LooseVersion("1.14")
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
@@ -78,18 +79,150 @@ except ImportError as e:
         return False
 
 
+def identity(x):
+    return x
+
+
 def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
 
 
-class HyperoptExecutor(ABC):
+# Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
+def ray_resource_allocation_function(
+    trial_runner: "trial_runner.TrialRunner",  # noqa
+    trial: "Trial",  # noqa
+    result: Dict[str, Any],
+    scheduler: "ResourceChangingScheduler",
+):
+    """Determine resources to allocate to running trials."""
+    pgf = DistributeResources(trial_runner, trial, result, scheduler)
+    # restore original base trial resources
+
+    # create bundles
+    if scheduler.base_trial_resources.required_resources.get("GPU", 0):
+        bundles = [{"CPU": 1, "GPU": 1}] * int(pgf.required_resources["GPU"])
+    else:
+        bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"] - 0.001))
+    # we can't set Trial actor's CPUs to 0 so we just go very low
+    bundles = [{"CPU": 0.001}] + bundles
+    pgf = PlacementGroupFactory(bundles)
+    return pgf
+
+
+def checkpoint(progress_tracker, save_path):
+    def ignore_dot_files(src, files):
+        return [f for f in files if f.startswith(".")]
+
+    with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
+        checkpoint_model = os.path.join(checkpoint_dir, "model")
+        # Atomic copying of the checkpoints
+        if not os.path.isdir(checkpoint_model):
+            copy_id = uuid.uuid4()
+            tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
+            assert os.path.exists(save_path)
+            shutil.copytree(save_path, tmp_dst, ignore=ignore_dot_files)
+            try:
+                os.rename(tmp_dst, checkpoint_model)
+            except Exception:
+                shutil.rmtree(tmp_dst)
+
+
+class RayTuneExecutor:
     def __init__(
-        self, hyperopt_sampler: Union[dict, RayTuneSampler], output_feature: str, metric: str, split: str
+        self,
+        parameters: dict,
+        output_feature: str,
+        metric: str,
+        goal: str,
+        split: str,
+        search_alg: Optional[Dict] = None,
+        cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
+        num_samples: int = 1,
+        scheduler: Optional[Dict] = None,
+        **kwargs,
     ) -> None:
-        self.hyperopt_sampler = hyperopt_sampler
+        if ray is None:
+            raise ImportError("ray module is not installed. To install it, try running pip install ray")
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
+        if not ray.is_initialized():
+            try:
+                ray.init("auto", ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info("Initializing new Ray cluster...")
+                ray.init(ignore_reinit_error=True)
+        self.search_space, self.decode_ctx = self._get_search_space(parameters)
+        self.num_samples = num_samples
+        self.goal = goal
+        self.search_algorithm = get_search_algorithm(search_alg)
+        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
+        self.output_feature = output_feature
+        self.metric = metric
+        self.split = split
+        self.trial_id = 0
+        self.cpu_resources_per_trial = cpu_resources_per_trial
+        self.gpu_resources_per_trial = gpu_resources_per_trial
+        self.kubernetes_namespace = kubernetes_namespace
+        self.time_budget_s = time_budget_s
+        self.max_concurrent_trials = max_concurrent_trials
+        self.sync_config = None
+        self.sync_client = None
+        # Head node is the node to which all checkpoints are synced if running on a K8s cluster.
+        self.head_node_ip = ray.util.get_node_ip_address()
+
+    def _get_search_space(self, parameters: Dict) -> Tuple[Dict, Dict]:
+        """Encode search space parameters as JSON with context for decoding."""
+        config = {}
+        ctx = {}
+        for param, values in parameters.items():
+            # Encode list and dict types as JSON encoded strings to
+            # workaround type limitations of the underlying frameworks
+            values = self.encode_values(param, values, ctx)
+
+            param_search_type = values["space"].lower()
+            if hasattr(tune, param_search_type):
+                param_search_space = getattr(tune, param_search_type)
+            else:
+                raise ValueError(f"'{param_search_type}' is not a supported Ray Tune search space")
+
+            param_search_input_args = {}
+            param_search_space_sig = signature(param_search_space)
+            for arg in param_search_space_sig.parameters.values():
+                if arg.name in values:
+                    param_search_input_args[arg.name] = values[arg.name]
+                else:
+                    if arg.default is arg.empty:
+                        raise ValueError(f"Parameter '{arg}' not defined for {param}")
+            config[param] = param_search_space(**param_search_input_args)
+        return config, ctx
+
+    @staticmethod
+    def encode_values(param: str, values: Dict, ctx: Dict) -> Dict:
+        """JSON encodes any search spaces whose values are lists / dicts.
+
+        Only applies to grid search and choice options.  See here for details:
+
+        https://docs.ray.io/en/master/tune/api_docs/search_space.html#random-distributions-api
+        """
+        values = values.copy()
+        for key in ["values", "categories"]:
+            if key in values and not isinstance(values[key][0], (int, float)):
+                values[key] = [json.dumps(v) for v in values[key]]
+                ctx[param] = json.loads
+        return values
+
+    @staticmethod
+    def decode_values(config: Dict, ctx: Dict) -> Dict:
+        """Decode config values with the decode function in the context.
+
+        Uses the identity function if no encoding is needed.
+        """
+        return {key: ctx.get(key, identity)(value) for key, value in config.items()}
 
     def _has_metric(self, stats, split):
         if not stats:
@@ -169,94 +302,6 @@ class HyperoptExecutor(ABC):
             hyperopt_results, key=lambda hp_res: hp_res.metric_score, reverse=self.hyperopt_sampler.goal == MAXIMIZE
         )
 
-    @abstractmethod
-    def execute(
-        self,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        resume=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs,
-    ) -> HyperoptResults:
-        pass
-
-
-class RayTuneExecutor(HyperoptExecutor):
-    def __init__(
-        self,
-        hyperopt_sampler,
-        output_feature: str,
-        metric: str,
-        goal: str,
-        split: str,
-        search_alg: Optional[Dict] = None,
-        cpu_resources_per_trial: int = None,
-        gpu_resources_per_trial: int = None,
-        kubernetes_namespace: str = None,
-        time_budget_s: Union[int, float, datetime.timedelta] = None,
-        max_concurrent_trials: Optional[int] = None,
-        num_samples: int = 1,
-        scheduler: Optional[Dict] = None,
-        **kwargs,
-    ) -> None:
-        if ray is None:
-            raise ImportError("ray module is not installed. To install it, try running pip install ray")
-        if not isinstance(hyperopt_sampler, RayTuneSampler):
-            raise ValueError(
-                "Sampler {} is not compatible with RayTuneExecutor, "
-                "please use the RayTuneSampler".format(hyperopt_sampler)
-            )
-        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature, metric, split)
-        if not ray.is_initialized():
-            try:
-                ray.init("auto", ignore_reinit_error=True)
-            except ConnectionError:
-                logger.info("Initializing new Ray cluster...")
-                ray.init(ignore_reinit_error=True)
-        self.search_space = hyperopt_sampler.search_space
-        self.num_samples = num_samples
-        self.goal = goal
-        self.search_algorithm = (
-            get_search_algorithm(None)(search_alg)
-            if search_alg is None
-            else get_search_algorithm(search_alg.get(TYPE, None))(search_alg)
-        )
-        self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
-        self.decode_ctx = hyperopt_sampler.decode_ctx
-        self.output_feature = output_feature
-        self.metric = metric
-        self.split = split
-        self.trial_id = 0
-        self.cpu_resources_per_trial = cpu_resources_per_trial
-        self.gpu_resources_per_trial = gpu_resources_per_trial
-        self.kubernetes_namespace = kubernetes_namespace
-        self.time_budget_s = time_budget_s
-        self.max_concurrent_trials = max_concurrent_trials
-        self.sync_config = None
-
     @property
     def _cpu_resources_per_trial_non_none(self):
         return self.cpu_resources_per_trial if self.cpu_resources_per_trial is not None else 1
@@ -265,21 +310,40 @@ class RayTuneExecutor(HyperoptExecutor):
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial if self.gpu_resources_per_trial is not None else 0
 
-    def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Tuple["CommandBasedClient", str]]:
-        """Get the Ray sync client and path to remote checkpoint directory."""
+    def _get_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Union[str, Tuple[str, str]]]:
+        """Get the path to remote checkpoint directory."""
         if self.sync_config is None:
             return None
 
-        remote_checkpoint_dir = os.path.join(
-            self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir)
-        )
-
-        if _ray_114:
-            syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=remote_checkpoint_dir))
+        if self.sync_config.upload_dir is not None:
+            # Cloud storage sync config
+            remote_checkpoint_dir = os.path.join(
+                self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir)
+            )
+            return remote_checkpoint_dir
+        elif self.kubernetes_namespace is not None:
+            # Kubernetes sync config. Returns driver node name and path.
+            # When running on kubernetes, each trial is rsynced to the node running the main process.
+            node_name = self._get_kubernetes_node_address_by_ip()(self.head_node_ip)
+            return (node_name, trial_dir)
         else:
-            syncer = get_cloud_sync_client(remote_checkpoint_dir)
+            logger.warning(
+                "Checkpoint syncing disabled as syncing is only supported to remote cloud storage or on Kubernetes "
+                "clusters is supported. To use syncing, set the kubernetes_namespace in the config or use a cloud URI "
+                "as the output directory."
+            )
+            return None
 
-        return syncer, remote_checkpoint_dir
+    @lru_cache(maxsize=1)
+    def _get_kubernetes_node_address_by_ip(self) -> Callable:
+        """Returns a method to get the node name by IP address within a K8s cluster."""
+        assert self.kubernetes_namespace is not None
+        from ray.tune.integration.kubernetes import KubernetesSyncer
+
+        # Initialized with null local and remote directories as we only need to use get_node_address_by_ip.
+        kubernetes_syncer = KubernetesSyncer(None, None)
+
+        return kubernetes_syncer.get_node_address_by_ip
 
     # For specified [stopped] trial, remove checkpoint marker on any partial checkpoints
     @staticmethod
@@ -297,11 +361,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 os.remove(marker_path)
 
     def _get_best_model_path(self, trial_path, analysis):
-        sync_info = self._get_sync_client_and_remote_checkpoint_dir(Path(trial_path))
-        if sync_info is not None:
-            sync_client, remote_checkpoint_dir = sync_info
-            sync_client.sync_down(remote_checkpoint_dir, trial_path)
-            sync_client.wait_or_retry()
+        remote_checkpoint_dir = self._get_remote_checkpoint_dir(Path(trial_path))
+        if remote_checkpoint_dir is not None:
+            self.sync_client.sync_down(remote_checkpoint_dir, trial_path)
+            self.sync_client.wait_or_retry()
         self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
         mod_path = None
         try:
@@ -366,13 +429,13 @@ class RayTuneExecutor(HyperoptExecutor):
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
         # Some config values may be JSON encoded as strings, so decode them here
-        config = RayTuneSampler.decode_values(config, decode_ctx)
+        config = self.decode_values(config, decode_ctx)
 
         trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
         trial_dir = Path(tune.get_trial_dir())
-        trial_location = ray.util.get_node_ip_address()
+        driver_trial_location = ray.util.get_node_ip_address()
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -383,22 +446,6 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = RayQueue(actor_options={"num_cpus": 0})
         else:
             ray_queue = None
-
-        def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.tune_checkpoint_num) as checkpoint_dir:
-                checkpoint_model = os.path.join(checkpoint_dir, "model")
-                # shutil.copytree(save_path, checkpoint_model)
-                # Note: A previous implementation used shutil.copytree()
-                # however, this copying method is non atomic
-                if not os.path.isdir(checkpoint_model):
-                    copy_id = uuid.uuid4()
-                    tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
-                    assert os.path.exists(save_path)
-                    shutil.copytree(save_path, tmp_dst)
-                    try:
-                        os.rename(tmp_dst, checkpoint_model)
-                    except Exception:
-                        shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
             # The progress tracker's metrics are nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
@@ -425,37 +472,36 @@ class RayTuneExecutor(HyperoptExecutor):
                 super().__init__()
                 self.last_steps = 0
 
-            def _get_sync_client_and_remote_checkpoint_dir(self) -> Optional[Tuple["CommandBasedClient", str]]:
+            def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
                 # sync client has to be recreated to avoid issues with serialization
-                return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
+                return tune_executor._get_remote_checkpoint_dir(trial_dir)
 
             def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
                 """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
                     save_path = Path(save_path)
-                    if trial_location != ray.util.get_node_ip_address():
-                        sync_info = self._get_sync_client_and_remote_checkpoint_dir()
-                        if sync_info is not None:
-                            sync_client, remote_checkpoint_dir = sync_info
-                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                            sync_client.wait()
+                    remote_checkpoint_dir = self._get_remote_checkpoint_dir()
+                    if remote_checkpoint_dir is not None:
+                        sync_client = tune_executor.sync_client
+                        sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                        sync_client.wait_or_retry()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
                 checkpoint(progress_tracker, save_path)
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
-                if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
+                if is_using_ray_backend and checkpoint_dir and driver_trial_location != ray.util.get_node_ip_address():
                     save_path = Path(save_path)
 
                     for path in trial_dir.glob("checkpoint*"):
                         if path not in (save_path.parent, checkpoint_dir):
                             shutil.rmtree(path, ignore_errors=True)
 
-                    sync_info = self._get_sync_client_and_remote_checkpoint_dir()
-                    if sync_info is not None:
-                        sync_client, remote_checkpoint_dir = sync_info
+                    remote_checkpoint_dir = self._get_remote_checkpoint_dir()
+                    if remote_checkpoint_dir is not None:
+                        sync_client = tune_executor.sync_client
                         sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
-                        sync_client.wait()
+                        sync_client.wait_or_retry()
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
@@ -506,7 +552,6 @@ class RayTuneExecutor(HyperoptExecutor):
             )
             stats.append((train_stats, eval_stats))
 
-        sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)
         if is_using_ray_backend:
             # We have to pull the results to the trial actor
             # from worker actors, as the Tune session is running
@@ -515,17 +560,16 @@ class RayTuneExecutor(HyperoptExecutor):
             thread.daemon = True
             thread.start()
 
-            sync_client = None
-            if sync_info is not None:
-                sync_client, remote_checkpoint_dir = sync_info
+            if self.sync_config is not None:
+                remote_checkpoint_dir = self._get_remote_checkpoint_dir(trial_dir)
 
             def check_queue():
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    if sync_client is not None:
-                        sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
-                        sync_client.wait()
+                    if self.sync_client is not None:
+                        self.sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
+                        self.sync_client.wait()
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
                         report(progress_tracker)
@@ -699,11 +743,16 @@ class RayTuneExecutor(HyperoptExecutor):
         if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
             self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
+            if _ray_114:
+                self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
+            else:
+                self.sync_client = get_cloud_sync_client(output_directory)
             output_directory = None
         elif self.kubernetes_namespace:
-            from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
+            from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer
 
             self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
+            self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
@@ -738,6 +787,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 stop=CallbackStopper(callbacks),
                 verbose=hyperopt_log_verbosity,
                 resume=should_resume,
+                log_to_file=True,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
