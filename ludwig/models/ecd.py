@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from typing import Dict, Tuple, Union
 
 import numpy as np
@@ -9,10 +10,13 @@ import torchmetrics
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD, TYPE
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.fs_utils import open_file, path_exists
+from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +150,19 @@ class ECD(BaseModel):
         encoder_outputs = self.encode(inputs)
         combiner_outputs = self.combine(encoder_outputs)
         return self.decode(combiner_outputs, targets, mask)
+    
+    def save(self, save_path):
+        """Saves the model to the given path."""
+        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        if not path_exists(weights_save_path):
+            with open_file(weights_save_path, "wb") as f:
+                torch.save(self.state_dict(), f)
+    
+    def load(self, save_path):
+        """Loads the model from the given path."""
+        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        device = torch.device(get_torch_device())
+        self.load_state_dict(torch.load(weights_save_path, map_location=device))
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
+from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_initial_validation_value
@@ -413,7 +413,8 @@ class LightGBMTrainer(BaseTrainer):
                 self.progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
         # convert to pytorch for inference, fine tuning
-        self.model.compile(gbm)
+        self.model.lgb_booster = gbm
+        self.model.compile()
         self.model = self.model.to(self.device)
 
         # evaluate
@@ -574,8 +575,7 @@ class LightGBMTrainer(BaseTrainer):
         checkpoint_manager.save(1)
         checkpoint_manager.close()
 
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.model.state_dict(), model_weights_path)
+        self.model.save(save_path)
 
     def is_coordinator(self) -> bool:
         if not self.horovod:

@@ -60,7 +60,6 @@ from ludwig.globals import (
     INFERENCE_MODULE_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
@@ -87,7 +86,7 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
+from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
     get_file_names,
     get_from_registry,
@@ -95,7 +94,6 @@ from ludwig.utils.misc_utils import (
     set_saved_weights_in_checkpoint_flag,
 )
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -574,8 +572,7 @@ class LudwigModel:
                             )
                             calibrator.train_calibration(training_set, TRAINING)
                         if not skip_save_model:
-                            model_weights_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-                            torch.save(self.model.state_dict(), model_weights_path)
+                            self.model.save(model_dir)
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
@@ -642,10 +639,7 @@ class LudwigModel:
 
                 # Ensure model weights are saved to the driver if training was done remotely
                 if self.backend.is_coordinator() and not skip_save_model:
-                    weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-                    if not path_exists(weights_save_path):
-                        with open_file(weights_save_path, "wb") as f:
-                            torch.save(self.model.state_dict(), f)
+                    self.model.save(model_dir)
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
@@ -1423,9 +1417,7 @@ class LudwigModel:
         ```
         """
         if self.backend.is_coordinator():
-            weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            device = torch.device(get_torch_device())
-            self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
+            self.model.load(model_dir)
 
         self.backend.sync_model(self.model)
 
@@ -1455,8 +1447,7 @@ class LudwigModel:
         self.save_config(save_path)
 
         # save model weights
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.model.state_dict(), model_weights_path)
+        self.model.save(save_path)
 
         # save training set metadata
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)

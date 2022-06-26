@@ -1,9 +1,9 @@
 import copy
+import os
 from typing import Any, Dict, List, Tuple, Union
 
 import lightgbm as lgb
 import numpy as np
-import pandas as pd
 import torch
 import torchmetrics
 from hummingbird.ml import convert
@@ -11,8 +11,10 @@ from hummingbird.ml import convert
 from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.utils import output_feature_utils
+from ludwig.utils.torch_utils import get_torch_device
 
 
 class GBM(BaseModel):
@@ -49,31 +51,8 @@ class GBM(BaseModel):
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
-        self._init_state_dict()
-
-    def _init_state_dict(self):
-        """Creates a dummy model to initialize this module's state dict.
-
-        This is needed for loading a model from a file. The state dict of this module is initialized with the state dict
-        of the dummy model.
-        """
-        output_feature_name = self.output_features.keys()[0]
-        output_feature = self.output_features[output_feature_name]
-        if output_feature.type() == CATEGORY:
-            output_params = {"objective": "multiclass", "num_class": output_feature.num_classes}
-        elif output_feature.type() == BINARY:
-            output_params = {"objective": "binary"}
-        elif output_feature.type() == NUMBER:
-            output_params = {"objective": "regression"}
-        else:
-            raise ValueError(
-                "Model type GBM only supports numerical, categorical, or binary output features,"
-                f" found: {output_feature.type}"
-            )
-
-        df = pd.DataFrame({"label": 0.0, **{str(i): [0.0] for i in range(len(self.input_features))}})
-        gbm = lgb.train(params={"verbosity": -1, **output_params}, train_set=lgb.Dataset(df), num_boost_round=1)
-        self.compile(gbm)
+        self.lgb_booster: lgb.Booster = None
+        self.compiled_model: torch.nn.Module = None
 
     @classmethod
     def build_outputs(cls, output_features_def: List[Dict[str, Any]], input_size: int) -> Dict[str, OutputFeature]:
@@ -91,15 +70,18 @@ class GBM(BaseModel):
 
         return output_features
 
-    def compile(self, gbm: lgb.Booster):
+    def compile(self):
         """Convert the LightGBM model to a PyTorch model and store internally."""
+        if self.lgb_booster is None:
+            raise ValueError("Model has not been trained yet.")
+        
         output_feature_name = self.output_features.keys()[0]
         output_feature = self.output_features[output_feature_name]
 
         # https://github.com/microsoft/LightGBM/issues/1942#issuecomment-453975607
         gbm_sklearn_cls = lgb.LGBMRegressor if output_feature.type() == NUMBER else lgb.LGBMClassifier
         gbm_sklearn = gbm_sklearn_cls(feature_name=list(self.input_features.keys()))  # , **params)
-        gbm_sklearn._Booster = gbm
+        gbm_sklearn._Booster = self.lgb_booster
         gbm_sklearn.fitted_ = True
         gbm_sklearn._n_features = len(self.input_features)
         if isinstance(gbm_sklearn, lgb.LGBMClassifier):
@@ -170,6 +152,23 @@ class GBM(BaseModel):
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
         return output_logits
+    
+    def save(self, save_path):
+        """Saves the model to the given path."""
+        if self.lgb_booster is None:
+            raise ValueError("Model has not been trained yet.")
+        
+        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        self.lgb_booster.save_model(weights_save_path, num_iteration=self.lgb_booster.best_iteration)
+    
+    def load(self, save_path):
+        """Loads the model from the given path."""
+        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        self.lgb_booster = lgb.Booster(model_file=weights_save_path)
+        self.compile()
+
+        device = torch.device(get_torch_device())
+        self.compiled_model.to(device)
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

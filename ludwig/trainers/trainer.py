@@ -37,7 +37,6 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
@@ -498,7 +497,6 @@ class Trainer(BaseTrainer):
         train_summary_writer,
         validation_summary_writer,
         test_summary_writer,
-        model_weights_path,
         model_hyperparameters_path,
         output_features,
         metrics_names,
@@ -610,7 +608,7 @@ class Trainer(BaseTrainer):
                 progress_tracker,
                 self.validation_field,
                 self.validation_metric,
-                model_weights_path,
+                save_path,
                 model_hyperparameters_path,
                 self.reduce_learning_rate_on_plateau,
                 self.reduce_learning_rate_on_plateau_patience,
@@ -629,7 +627,7 @@ class Trainer(BaseTrainer):
         else:
             # There's no validation, so we save the model.
             if self.is_coordinator() and not self.skip_save_model:
-                torch.save(self.model.state_dict(), model_weights_path)
+                self.model.save(save_path)
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
@@ -692,12 +690,11 @@ class Trainer(BaseTrainer):
             )
 
         # ====== Setup file names =======
-        model_weights_path = model_hyperparameters_path = None
+        model_hyperparameters_path = None
         training_checkpoints_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
-            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
             tensorboard_log_dir = os.path.join(save_path, "logs")
@@ -817,7 +814,6 @@ class Trainer(BaseTrainer):
                         start_time,
                         validation_summary_writer,
                         test_summary_writer,
-                        model_weights_path,
                         model_hyperparameters_path,
                         output_features,
                         metrics_names,
@@ -862,7 +858,7 @@ class Trainer(BaseTrainer):
 
             # Load the best weights from saved checkpoint
             if self.is_coordinator() and not self.skip_save_model:
-                self.model.load_state_dict(torch.load(model_weights_path))
+                self.model.load(save_path)
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
@@ -888,7 +884,6 @@ class Trainer(BaseTrainer):
         start_time,
         validation_summary_writer,
         test_summary_writer,
-        model_weights_path,
         model_hyperparameters_path,
         output_features,
         metrics_names,
@@ -981,7 +976,6 @@ class Trainer(BaseTrainer):
                     train_summary_writer,
                     validation_summary_writer,
                     test_summary_writer,
-                    model_weights_path,
                     model_hyperparameters_path,
                     output_features,
                     metrics_names,
@@ -1084,7 +1078,7 @@ class Trainer(BaseTrainer):
         progress_tracker,
         validation_output_feature_name,
         validation_metric,
-        model_weights_path,
+        save_path,
         model_hyperparameters_path,
         reduce_learning_rate_on_plateau,
         reduce_learning_rate_on_plateau_patience,
@@ -1119,7 +1113,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = last_validation_metric_value
 
             if self.is_coordinator() and not skip_save_model:
-                torch.save(self.model.state_dict(), model_weights_path)
+                self.model.save(save_path)
                 logger.info(
                     f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
                 )
