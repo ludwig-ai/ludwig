@@ -750,112 +750,177 @@ class ParameterUpdateError(Exception):
 
 def assert_model_parameters_updated(
         model: LudwigModule,
-        model_output: torch.Tensor,
-        target_tensor_shape: tuple
+        model_input_args: Tuple,
+        max_steps: int = 1
 ) -> None:
     """
     Confirms that model parameters can be updated.
     Args:
         model: (LudwigModel) model to be tested.
-        model_output: (torch.Tensor) tensor created by model.
-        target_tensor_shape: (tuple) shape of to use when
-            creating target tensor compute a loss.
+        model_input_args: (tuple) input for model
+        max_steps: (int) maximum number of steps allowed to test for parameter
+            updates.
 
     Returns: None
 
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    target_tensor = torch.ones(target_tensor_shape, dtype=torch.float32)
+    optimizer = torch.optim.SGD(model.parameters(), lr=100)
+    model.train(True)
 
-    # capture model parameters before passing through data
-    before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+    # generate initial model output tensor
+    model_output = model(*model_input_args)
 
-    # do update of model parameters
-    loss = loss_function(model_output, target_tensor)
-    loss.backward()
-    optimizer.step()  # comment out to generate no update exception for testing
+    # create target tensor
+    if isinstance(model_output, torch.Tensor):
+        target_tensor = torch.randn(model_output.shape,
+                                    dtype=model_output.dtype)
+    elif isinstance(model_output, tuple):
+        target_tensor = torch.randn(model_output[0].shape,
+                                    dtype=model_output[0].dtype)
+    else:
+        raise RuntimeError(
+            'Unable to setup target tensor for model parameter update testing.'
+        )
 
-    # capture model parameters after one pass
-    after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+    step = 1
+    while True:
+        # make pass through model
+        model_output = model(*model_input_args)
 
-    # check for parameter updates
-    for b, a in zip(before, after):
-        # ensure parameter names match
-        if a[0] != b[0]:
-            raise RuntimeError(
-                f'During parameter update check, detected mis-matching names: '
-                f'name1: {a[0]}, name2: {b[0]}'
-            )
+        # capture model parameters before doing parameter update pass
+        before = [(x[0], x[1].clone()) for x in model.named_parameters()]
 
-        # ensure parameters are updated
-        if (a[1] == b[1]).all():
+        # do update of model parameters
+        optimizer.zero_grad()
+        if isinstance(model_output, torch.Tensor):
+            loss = loss_function(model_output, target_tensor)
+        else:
+            loss = loss_function(model_output[0], target_tensor)
+        loss.backward()
+        optimizer.step()
+
+        # capture model parameters after one pass
+        after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+        # check for parameter updates
+        parameter_updated = []
+        for b, a in zip(before, after):
+            parameter_updated.append((a[1] != b[1]).any())
+
+        # check to see if parameters were updated in all layers
+        if all(parameter_updated):
+            logger.debug(f'\nall model parameters updated at step {step}')
+            break
+        elif step >= max_steps:
+            parameters_not_updated = []
+            for updated, b, a in zip(parameter_updated, before, after):
+                if not updated:
+                    parameters_not_updated.append(
+                        f'\n\tParameter {a[0]} not updated.'
+                        # f'\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n'
+                        # f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n'
+                    )
             raise ParameterUpdateError(
-                f'Model parameter for {a[0]} did not update.  Before and after '
-                f'contain same contents.\nBefore model update: {b[1]}\n'
-                f'After module update: {a[1]}'
+                f'Not all model parameters updated after {step} iteration(s):'
+                f'{"".join(parameters_not_updated)}'
             )
 
+        step += 1
 
-def assert_model_parameters_updated_tensor(
+
+def _assert_model_parameters_updated(
         model: LudwigModule,
-        model_output: torch.Tensor,
-        target_tensor_shape: tuple
+        model_input: torch.Tensor,
+        extract_model_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
+        max_steps: int = 1
 ) -> None:
     """
-    Confirms correct shape of model output tensor and  model parameters are updated.
+    Confirms that model parameters can be updated.
     Args:
         model: (LudwigModel) model to be tested.
-        model_output: (torch.Tensor) tensor created by model.
-        target_tensor_shape: (tuple) shape of to confirm shape and39878594
-            model parameter updates.
+        model_input: (torch.Tensor) input for model
+        extract_model_output: (Callable[[Union[Dict, Tuple]], torch.Tensor])
+            function to extract tensor for use in parameter update testing
+        max_steps: (int) maximum number of steps allowed to test for parameter
+            updates.
 
     Returns: None
+
     """
-    # confirm correct shape of output
-    assert model_output.shape == target_tensor_shape
+    # setup
+    loss_function = torch.nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=100)
+    model.train(True)
 
-    # check for parameter updates
-    assert_model_parameters_updated(model, model_output, target_tensor_shape)
+    # create target tensor
+    model_output = extract_model_output(model(model_input))
+    target_tensor = torch.randn(model_output.shape,
+                                dtype=model_output.dtype)
+
+    step = 1
+    while True:
+        # capture model parameters before doing parameter update pass
+        before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+        # do update of model parameters
+        optimizer.zero_grad()
+        loss = loss_function(model_output, target_tensor)
+        loss.backward()
+        optimizer.step()
+
+        # capture model parameters after one pass
+        after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+        # check for parameter updates
+        parameter_updated = []
+        for b, a in zip(before, after):
+            parameter_updated.append((a[1] != b[1]).any())
+
+        # check to see if parameters were updated in all layers
+        if all(parameter_updated):
+            logger.debug(f'\nall model parameters updated at step {step}')
+            break
+        elif step >= max_steps:
+            # exceeded maximum allowed tries, terminating with error
+            parameters_not_updated = []
+            for updated, b, a in zip(parameter_updated, before, after):
+                if not updated:
+                    parameters_not_updated.append(
+                        f'\n\tParameter {a[0]} not updated.'
+                        # f'\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n'
+                        # f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n'
+                    )
+            raise ParameterUpdateError(
+                f'Not all model parameters updated after {step} iteration(s):'
+                f'{"".join(parameters_not_updated)}'
+            )
+
+        # make another pass through model
+        model_output = extract_model_output(model(model_input))
+        step += 1
 
 
-def assert_model_parameters_updated_combiner(
+def assert_model_parameters_updated_encoders(
         model: LudwigModule,
-        model_output: torch.Tensor,
-        batch_size: int
+        model_input: torch.Tensor,
+        max_steps: int = 1
 ) -> None:
     """
-    Confirms correct shape of model output tensor and  model parameters are updated.
+    Confirms that model parameters can be updated.
     Args:
-        model: (LudwigModel) model to be tested.
-        model_output: (torch.Tensor) tensor created by model.
-        batch_size: (int) size of the batch
+        model: (Type[Encoder]) model to be tested.
+        model_input: (torch.Tensor) input for model
+        max_steps: (int) maximum number of steps allowed to test for parameter
+            updates.
 
     Returns: None
-    """
-    # confirm correct shape of output
-    check_combiner_output(model, model_output, batch_size)
 
-    # check for parameter updates
-    assert_model_parameters_updated(
+    """
+    _assert_model_parameters_updated(
         model,
-        model_output['combiner_output'],
-        (batch_size, *model_output['combiner_output'].shape))
-
-
-# helper function to test correctness of combiner output
-def check_combiner_output(combiner, combiner_output, batch_size):
-    # check for required attributes
-    assert hasattr(combiner, 'input_dtype')
-    assert hasattr(combiner, 'output_shape')
-
-    # check for correct data type
-    assert isinstance(combiner_output, dict)
-
-    # required key present
-    assert 'combiner_output' in combiner_output
-
-    # check for correct output shape
-    assert combiner_output['combiner_output'].shape \
-           == (batch_size, *combiner.output_shape)
+        model_input,
+        lambda outputs: outputs['encoder_output'],
+        max_steps
+    )
