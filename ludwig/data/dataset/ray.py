@@ -17,13 +17,13 @@ import contextlib
 import math
 import queue
 import threading
-from distutils.version import LooseVersion
 from functools import lru_cache
 from typing import Any, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
 import ray
+from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -38,8 +38,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
-_ray113 = LooseVersion(ray.__version__) == LooseVersion("1.13.0")
-
+_ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
@@ -65,6 +64,7 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
+        self.dataset_window_status = False
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -96,6 +96,7 @@ class RayDataset(Dataset):
             pipe = self.ds.repeat()
         else:
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
+            self.dataset_window_status = True
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
         return pipe
@@ -116,6 +117,14 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    @property
+    def num_partitions(self):
+        return self.ds.num_blocks()
+
+    @property
+    def window_status(self):
+        return self.dataset_window_status
 
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
@@ -151,14 +160,17 @@ class RayDatasetShard(Dataset):
     def __init__(
         self,
         dataset_shard: DatasetPipeline,
-        dataset_shard_size: int,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
+        num_dataset_partitions: int,
+        window_status: bool,
     ):
         self.dataset_shard = dataset_shard
-        self.dataset_shard_size = dataset_shard_size
         self.features = features
         self.training_set_metadata = training_set_metadata
+        self.num_dataset_partitions = num_dataset_partitions
+        self.window_status = window_status
+
         self.dataset_iter = dataset_shard.iter_datasets()
 
     @contextlib.contextmanager
@@ -173,7 +185,11 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        return self.dataset_shard_size
+        # TODO(travis): find way to avoid calling this, as it's expensive
+        next_iteration_length = next(self.dataset_iter).count()
+        if self.num_dataset_partitions > 1 and self.window_status:
+            return next_iteration_length * self.num_dataset_partitions
+        return next_iteration_length
 
     @property
     def size(self):
