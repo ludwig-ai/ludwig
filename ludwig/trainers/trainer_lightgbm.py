@@ -707,13 +707,18 @@ class LightGBMRayTrainer(LightGBMTrainer):
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         from ludwig.backend.ray import _get_df_engine, RayPredictor
 
+        predictor_kwargs = self.executable_kwargs.copy()
+        if "callbacks" in predictor_kwargs:
+            # remove unused (non-serializable) callbacks
+            del predictor_kwargs["callbacks"]
+        
         predictor = RayPredictor(
             model=self.model,
             df_engine=_get_df_engine(None),
             trainer_kwargs=self.trainer_kwargs,
             data_loader_kwargs=self.data_loader_kwargs,
             batch_size=batch_size,
-            **self.executable_kwargs,
+            **predictor_kwargs,
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
