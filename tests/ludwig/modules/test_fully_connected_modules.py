@@ -20,12 +20,12 @@ DEVICE = get_torch_device()
 @pytest.mark.parametrize("random_seed", [42, 1919])  # TODO: keep this?
 @pytest.mark.parametrize("max_steps", [1, 2, 3])  # TODO: keep this?
 def test_fc_layer(
-        input_size: int,
-        output_size: int,
-        activation: str,
-        dropout: float,
-        random_seed: int,
-        max_steps: int,
+    input_size: int,
+    output_size: int,
+    activation: str,
+    dropout: float,
+    random_seed: int,
+    max_steps: int,
 ):
     set_random_seed(random_seed)  # 1919 cause parameter update error  42 no errors
     fc_layer = FCLayer(input_size=input_size, output_size=output_size, activation=activation, dropout=dropout).to(
@@ -50,11 +50,11 @@ def test_fc_layer(
 @pytest.mark.parametrize("random_seed", [42, 1919])  # TODO: keep this?
 @pytest.mark.parametrize("max_steps", [1, 3])  # TODO: keep this?
 def test_fc_stack(
-        first_layer_input_size: Optional[int],
-        layers: Optional[List],
-        num_layers: Optional[int],
-        random_seed: int,
-        max_steps: int,
+    first_layer_input_size: Optional[int],
+    layers: Optional[List],
+    num_layers: Optional[int],
+    random_seed: int,
+    max_steps: int,
 ):
     set_random_seed(random_seed)
     fc_stack = FCStack(first_layer_input_size=first_layer_input_size, layers=layers, num_layers=num_layers).to(DEVICE)

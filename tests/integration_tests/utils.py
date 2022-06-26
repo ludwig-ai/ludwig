@@ -748,11 +748,7 @@ class ParameterUpdateError(Exception):
     pass
 
 
-def assert_model_parameters_updated(
-        model: LudwigModule,
-        model_input_args: Tuple,
-        max_steps: int = 1
-) -> None:
+def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple, max_steps: int = 1) -> None:
     """
     Confirms that model parameters can be updated.
     Args:
@@ -774,15 +770,11 @@ def assert_model_parameters_updated(
 
     # create target tensor
     if isinstance(model_output, torch.Tensor):
-        target_tensor = torch.randn(model_output.shape,
-                                    dtype=model_output.dtype)
+        target_tensor = torch.randn(model_output.shape, dtype=model_output.dtype)
     elif isinstance(model_output, tuple):
-        target_tensor = torch.randn(model_output[0].shape,
-                                    dtype=model_output[0].dtype)
+        target_tensor = torch.randn(model_output[0].shape, dtype=model_output[0].dtype)
     else:
-        raise RuntimeError(
-            "Unable to setup target tensor for model parameter update testing."
-        )
+        raise RuntimeError("Unable to setup target tensor for model parameter update testing.")
 
     step = 1
     while True:
@@ -823,18 +815,17 @@ def assert_model_parameters_updated(
                         f"\tafter values (requires grad:{a[1].requires_grad}): {a[1]}\n"
                     )
             raise ParameterUpdateError(
-                f"Not all model parameters updated after {step} iteration(s):"
-                f"{''.join(parameters_not_updated)}"
+                f"Not all model parameters updated after {step} iteration(s):" f"{''.join(parameters_not_updated)}"
             )
 
         step += 1
 
 
 def _assert_model_parameters_updated(
-        model: LudwigModule,
-        model_input: torch.Tensor,
-        extract_model_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
-        max_steps: int = 1
+    model: LudwigModule,
+    model_input: torch.Tensor,
+    extract_model_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
+    max_steps: int = 1,
 ) -> None:
     """
     Confirms that model parameters can be updated.
@@ -856,8 +847,7 @@ def _assert_model_parameters_updated(
 
     # create target tensor
     model_output = extract_model_output(model(model_input))
-    target_tensor = torch.randn(model_output.shape,
-                                dtype=model_output.dtype)
+    target_tensor = torch.randn(model_output.shape, dtype=model_output.dtype)
 
     step = 1
     while True:
@@ -893,8 +883,7 @@ def _assert_model_parameters_updated(
                         # f"\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n"
                     )
             raise ParameterUpdateError(
-                f"Not all model parameters updated after {step} iteration(s):"
-                f"{''.join(parameters_not_updated)}"
+                f"Not all model parameters updated after {step} iteration(s):" f"{''.join(parameters_not_updated)}"
             )
 
         # make another pass through model
@@ -903,9 +892,7 @@ def _assert_model_parameters_updated(
 
 
 def assert_model_parameters_updated_encoders(
-        model: LudwigModule,
-        model_input: torch.Tensor,
-        max_steps: int = 1
+    model: LudwigModule, model_input: torch.Tensor, max_steps: int = 1
 ) -> None:
     """
     Confirms that model parameters can be updated.
@@ -918,9 +905,4 @@ def assert_model_parameters_updated_encoders(
     Returns: None
 
     """
-    _assert_model_parameters_updated(
-        model,
-        model_input,
-        lambda outputs: outputs['encoder_output'],
-        max_steps
-    )
+    _assert_model_parameters_updated(model, model_input, lambda outputs: outputs["encoder_output"], max_steps)
