@@ -74,7 +74,7 @@ class GBM(BaseModel):
         """Convert the LightGBM model to a PyTorch model and store internally."""
         if self.lgb_booster is None:
             raise ValueError("Model has not been trained yet.")
-        
+
         output_feature_name = self.output_features.keys()[0]
         output_feature = self.output_features[output_feature_name]
 
@@ -152,15 +152,15 @@ class GBM(BaseModel):
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
         return output_logits
-    
+
     def save(self, save_path):
         """Saves the model to the given path."""
         if self.lgb_booster is None:
             raise ValueError("Model has not been trained yet.")
-        
+
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         self.lgb_booster.save_model(weights_save_path, num_iteration=self.lgb_booster.best_iteration)
-    
+
     def load(self, save_path):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
