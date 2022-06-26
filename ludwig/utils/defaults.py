@@ -26,10 +26,16 @@ from ludwig.constants import (
     CATEGORY,
     COLUMN,
     COMBINER,
+    DECODER,
+    DEFAULTS,
     DROP_ROW,
+    ENCODER,
     EXECUTOR,
     HYPEROPT,
+    INPUT_FEATURES,
+    LOSS,
     NAME,
+    OUTPUT_FEATURES,
     PREPROCESSING,
     PROC_COLUMN,
     RAY,
@@ -75,21 +81,21 @@ default_combiner_type = "concat"
 
 
 def _perform_sanity_checks(config):
-    assert "input_features" in config, "config does not define any input features"
+    assert INPUT_FEATURES in config, "config does not define any input features"
 
-    assert "output_features" in config, "config does not define any output features"
+    assert OUTPUT_FEATURES in config, "config does not define any output features"
 
-    assert isinstance(config["input_features"], list), (
+    assert isinstance(config[INPUT_FEATURES], list), (
         "Ludwig expects input features in a list. Check your model " "config format"
     )
 
-    assert isinstance(config["output_features"], list), (
+    assert isinstance(config[OUTPUT_FEATURES], list), (
         "Ludwig expects output features in a list. Check your model " "config format"
     )
 
-    assert len(config["input_features"]) > 0, "config needs to have at least one input feature"
+    assert len(config[INPUT_FEATURES]) > 0, "config needs to have at least one input feature"
 
-    assert len(config["output_features"]) > 0, "config needs to have at least one output feature"
+    assert len(config[OUTPUT_FEATURES]) > 0, "config needs to have at least one output feature"
 
     if TRAINER in config:
         assert isinstance(config[TRAINER], dict), (
@@ -98,8 +104,8 @@ def _perform_sanity_checks(config):
             "read as a dictionary. Please check your config format."
         )
 
-    if "preprocessing" in config:
-        assert isinstance(config["preprocessing"], dict), (
+    if PREPROCESSING in config:
+        assert isinstance(config[PREPROCESSING], dict), (
             "There is an issue while reading the preprocessing section of the "
             "config. The parameters are expected to be read"
             "as a dictionary. Please check your config format."
@@ -111,6 +117,24 @@ def _perform_sanity_checks(config):
             "config. The parameters are expected to be read"
             "as a dictionary. Please check your config format."
         )
+
+    if DEFAULTS in config:
+        input_feature_types = set(input_type_registry.keys())
+        allowed_feature_type_params = {PREPROCESSING, ENCODER, DECODER, LOSS}
+
+        for feature_type in config.get(DEFAULTS):
+            # output_feature_types is a subset of input_feature_types so just check input_feature_types
+            assert (
+                feature_type in input_feature_types
+            ), f"Defaults specified for {feature_type} but {feature_type} is not a valid feature type."
+
+            feature_type_params = list(config.get(feature_type).keys())
+
+            for feature_type_param in feature_type_params:
+                assert (
+                    feature_type_param in allowed_feature_type_params
+                ), f"""{feature_type_param} is not a valid default parameter. Valid default parameters are
+                        {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
 def _set_feature_column(config: dict) -> None:
@@ -174,12 +198,16 @@ def merge_with_defaults(config):
     _set_proc_column(config)
     _merge_hyperopt_with_trainer(config)
 
-    # ===== Preprocessing =====
-    config["preprocessing"] = merge_dict(default_preprocessing_parameters, config.get("preprocessing", {}))
+    # ===== Defaults =====
+    if DEFAULTS in config:
+        pass
 
-    stratify = config["preprocessing"]["stratify"]
+    # ===== Preprocessing =====
+    config[PREPROCESSING] = merge_dict(default_preprocessing_parameters, config.get(PREPROCESSING, {}))
+
+    stratify = config[PREPROCESSING]["stratify"]
     if stratify is not None:
-        features = config["input_features"] + config["output_features"]
+        features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
         feature_names = {f[COLUMN] for f in features}
         if stratify not in feature_names:
             logger.warning("Stratify is not among the features. " "Cannot establish if it is a binary or category")
@@ -193,11 +221,11 @@ def merge_with_defaults(config):
     set_default_value(
         config[TRAINER],
         "validation_metric",
-        output_type_registry[config["output_features"][0][TYPE]].default_validation_metric,
+        output_type_registry[config[OUTPUT_FEATURES][0][TYPE]].default_validation_metric,
     )
 
     # ===== Input Features =====
-    for input_feature in config["input_features"]:
+    for input_feature in config[INPUT_FEATURES]:
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
     # ===== Combiner =====
@@ -208,7 +236,7 @@ def merge_with_defaults(config):
     config[COMBINER].update(asdict(full_combiner_config))
 
     # ===== Output features =====
-    for output_feature in config["output_features"]:
+    for output_feature in config[OUTPUT_FEATURES]:
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
 
         # By default, drop rows with missing output features
