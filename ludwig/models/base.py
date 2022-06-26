@@ -267,11 +267,11 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         # Apply filter.
         tensor_set = set(tensor_names)
         return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
-    
+
     @abstractmethod
     def save(self, save_path):
         """Saves the model to the given path."""
-    
+
     @abstractmethod
     def load(self, save_path):
         """Loads the model from the given path."""
