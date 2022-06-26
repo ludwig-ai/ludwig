@@ -24,7 +24,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import cloudpickle
 import numpy as np
@@ -766,7 +766,7 @@ def assert_model_parameters_updated(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=100)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
     model.train(True)
 
     # generate initial model output tensor
@@ -851,7 +851,7 @@ def _assert_model_parameters_updated(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=100)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
     model.train(True)
 
     # create target tensor

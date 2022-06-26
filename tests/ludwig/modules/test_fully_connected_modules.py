@@ -6,6 +6,7 @@ import torch
 
 from ludwig.modules.fully_connected_modules import FCLayer, FCStack
 from ludwig.utils.torch_utils import get_torch_device
+from tests.integration_tests.utils import assert_model_parameters_updated
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
@@ -18,8 +19,8 @@ DEVICE = get_torch_device()
 def test_fc_layer(
     input_size: int,
     output_size: int,
-    activation: str,
-    dropout: float,
+        activation: str,
+        dropout: float,
 ):
     fc_layer = FCLayer(input_size=input_size, output_size=output_size, activation=activation, dropout=dropout).to(
         DEVICE
@@ -27,6 +28,9 @@ def test_fc_layer(
     input_tensor = torch.randn(BATCH_SIZE, input_size, device=DEVICE)
     output_tensor = fc_layer(input_tensor)
     assert output_tensor.shape[1:] == fc_layer.output_shape
+
+    # check to confirm parameter updates
+    assert_model_parameters_updated(fc_layer, (input_tensor,))
 
 
 @pytest.mark.parametrize(
@@ -42,6 +46,10 @@ def test_fc_stack(first_layer_input_size: Optional[int], layers: Optional[List],
     input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
     output_tensor = fc_stack(input_tensor)
     assert output_tensor.shape[1:] == fc_stack.output_shape
+
+    # check to confirm parameter updates
+    # assert_model_parameters_updated(model, output_tensor)
+    assert_model_parameters_updated(fc_stack, (input_tensor,))
 
 
 def test_fc_stack_input_size_mismatch_fails():
