@@ -766,7 +766,7 @@ def assert_model_parameters_updated(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
     model.train(True)
 
     # generate initial model output tensor
@@ -781,7 +781,7 @@ def assert_model_parameters_updated(
                                     dtype=model_output[0].dtype)
     else:
         raise RuntimeError(
-            'Unable to setup target tensor for model parameter update testing.'
+            "Unable to setup target tensor for model parameter update testing."
         )
 
     step = 1
@@ -811,20 +811,20 @@ def assert_model_parameters_updated(
 
         # check to see if parameters were updated in all layers
         if all(parameter_updated):
-            logger.debug(f'\nall model parameters updated at step {step}')
+            logger.debug(f"\nall model parameters updated at step {step}")
             break
         elif step >= max_steps:
             parameters_not_updated = []
             for updated, b, a in zip(parameter_updated, before, after):
                 if not updated:
                     parameters_not_updated.append(
-                        f'\n\tParameter {a[0]} not updated.'
-                        # f'\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n'
-                        # f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n'
+                        f"\n\tParameter {a[0]} not updated.\n"
+                        f"\tbefore values (requires grad:{b[1].requires_grad}): {b[1]}\n"
+                        f"\tafter values (requires grad:{a[1].requires_grad}): {a[1]}\n"
                     )
             raise ParameterUpdateError(
-                f'Not all model parameters updated after {step} iteration(s):'
-                f'{"".join(parameters_not_updated)}'
+                f"Not all model parameters updated after {step} iteration(s):"
+                f"{''.join(parameters_not_updated)}"
             )
 
         step += 1
@@ -880,7 +880,7 @@ def _assert_model_parameters_updated(
 
         # check to see if parameters were updated in all layers
         if all(parameter_updated):
-            logger.debug(f'\nall model parameters updated at step {step}')
+            logger.debug(f"\nall model parameters updated at step {step}")
             break
         elif step >= max_steps:
             # exceeded maximum allowed tries, terminating with error
@@ -888,13 +888,13 @@ def _assert_model_parameters_updated(
             for updated, b, a in zip(parameter_updated, before, after):
                 if not updated:
                     parameters_not_updated.append(
-                        f'\n\tParameter {a[0]} not updated.'
-                        # f'\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n'
-                        # f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n'
+                        f"\n\tParameter {a[0]} not updated."
+                        # f"\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n"
+                        # f"\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n"
                     )
             raise ParameterUpdateError(
-                f'Not all model parameters updated after {step} iteration(s):'
-                f'{"".join(parameters_not_updated)}'
+                f"Not all model parameters updated after {step} iteration(s):"
+                f"{''.join(parameters_not_updated)}"
             )
 
         # make another pass through model
