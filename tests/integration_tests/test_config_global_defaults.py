@@ -1,5 +1,4 @@
 import logging
-import tempfile
 from typing import Dict, Tuple
 
 import pytest
@@ -28,13 +27,13 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="title", cell_type="rnn", reduce_output="sum"),
-        text_feature(name="summary", cell_type="rnn"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="title", reduce_output="sum"),
+        text_feature(name="summary"),
         category_feature(vocab_size=3),
+        category_feature(vocab_size=5),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=3)]
 
     dataset = generate_data(input_features, output_features, csv_filename)
 
@@ -43,6 +42,14 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        DEFAULTS: {
+            CATEGORY: {
+                PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<UNK>"},
+                ENCODER: {TYPE: "sparse"},
+                DECODER: {"norm_params": None, "dropout": 0, "use_bias": True},
+                LOSS: {TYPE: SOFTMAX_CROSS_ENTROPY, "confidence_penalty": 0},
+            }
+        },
     }
 
     return config, dataset
@@ -53,14 +60,4 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
 def test_run_global_default_parameters(backend, csv_filename):
     config, dataset = _prepare_data(csv_filename)
 
-    config[DEFAULTS] = {
-        CATEGORY: {
-            PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<UNK>"},
-            ENCODER: {TYPE: "sparse"},
-            DECODER: {"norm_params": None, "dropout": 0, "use_bias": True},
-            LOSS: {TYPE: SOFTMAX_CROSS_ENTROPY, "confidence_penalty": 0},
-        }
-    }
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        run_experiment(config=config, backend=backend, dataset=dataset, output_dir=tmpdir)
+    run_experiment(config=config, backend=backend, dataset=dataset)
