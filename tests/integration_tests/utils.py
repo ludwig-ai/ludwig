@@ -39,6 +39,7 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.trainer import Trainer
 from ludwig.utils.data_utils import read_csv, replace_file_extension
+from ludwig.utils.torch_utils import LudwigModule
 
 try:
     import ray
@@ -741,3 +742,120 @@ def train_with_backend(
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
+
+
+class ParameterUpdateError(Exception):
+    pass
+
+
+def assert_model_parameters_updated(
+        model: LudwigModule,
+        model_output: torch.Tensor,
+        target_tensor_shape: tuple
+) -> None:
+    """
+    Confirms that model parameters can be updated.
+    Args:
+        model: (LudwigModel) model to be tested.
+        model_output: (torch.Tensor) tensor created by model.
+        target_tensor_shape: (tuple) shape of to use when
+            creating target tensor compute a loss.
+
+    Returns: None
+
+    """
+    # setup
+    loss_function = torch.nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    target_tensor = torch.ones(target_tensor_shape, dtype=torch.float32)
+
+    # capture model parameters before passing through data
+    before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+    # do update of model parameters
+    loss = loss_function(model_output, target_tensor)
+    loss.backward()
+    optimizer.step()  # comment out to generate no update exception for testing
+
+    # capture model parameters after one pass
+    after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+    # check for parameter updates
+    for b, a in zip(before, after):
+        # ensure parameter names match
+        if a[0] != b[0]:
+            raise RuntimeError(
+                f'During parameter update check, detected mis-matching names: '
+                f'name1: {a[0]}, name2: {b[0]}'
+            )
+
+        # ensure parameters are updated
+        if (a[1] == b[1]).all():
+            raise ParameterUpdateError(
+                f'Model parameter for {a[0]} did not update.  Before and after '
+                f'contain same contents.\nBefore model update: {b[1]}\n'
+                f'After module update: {a[1]}'
+            )
+
+
+def assert_model_parameters_updated_tensor(
+        model: LudwigModule,
+        model_output: torch.Tensor,
+        target_tensor_shape: tuple
+) -> None:
+    """
+    Confirms correct shape of model output tensor and  model parameters are updated.
+    Args:
+        model: (LudwigModel) model to be tested.
+        model_output: (torch.Tensor) tensor created by model.
+        target_tensor_shape: (tuple) shape of to confirm shape and39878594
+            model parameter updates.
+
+    Returns: None
+    """
+    # confirm correct shape of output
+    assert model_output.shape == target_tensor_shape
+
+    # check for parameter updates
+    assert_model_parameters_updated(model, model_output, target_tensor_shape)
+
+
+def assert_model_parameters_updated_combiner(
+        model: LudwigModule,
+        model_output: torch.Tensor,
+        batch_size: int
+) -> None:
+    """
+    Confirms correct shape of model output tensor and  model parameters are updated.
+    Args:
+        model: (LudwigModel) model to be tested.
+        model_output: (torch.Tensor) tensor created by model.
+        batch_size: (int) size of the batch
+
+    Returns: None
+    """
+    # confirm correct shape of output
+    check_combiner_output(model, model_output, batch_size)
+
+    # check for parameter updates
+    assert_model_parameters_updated(
+        model,
+        model_output['combiner_output'],
+        (batch_size, *model_output['combiner_output'].shape))
+
+
+# helper function to test correctness of combiner output
+def check_combiner_output(combiner, combiner_output, batch_size):
+    # check for required attributes
+    assert hasattr(combiner, 'input_dtype')
+    assert hasattr(combiner, 'output_shape')
+
+    # check for correct data type
+    assert isinstance(combiner_output, dict)
+
+    # required key present
+    assert 'combiner_output' in combiner_output
+
+    # check for correct output shape
+    assert combiner_output['combiner_output'].shape \
+           == (batch_size, *combiner.output_shape)
