@@ -9,7 +9,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, RAY, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
