@@ -61,7 +61,7 @@ def run_test_gbm_output_not_supported(backend_config):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, "training.csv")
-        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=30)
+        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
         config = {MODEL_TYPE: "gbm", "input_features": input_features, "output_features": output_features}
 
@@ -93,7 +93,7 @@ def run_test_gbm_multiple_outputs(backend_config):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, "training.csv")
-        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=30)
+        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
         config = {
             MODEL_TYPE: "gbm",
@@ -125,7 +125,7 @@ def run_test_gbm_binary(backend_config):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, "training.csv")
-        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=30)
+        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
         config = {
             MODEL_TYPE: "gbm",
@@ -172,7 +172,7 @@ def run_test_gbm_category(backend_config):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, "training.csv")
-        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=30)
+        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
         config = {
             MODEL_TYPE: "gbm",
@@ -220,7 +220,7 @@ def run_test_gbm_number(backend_config):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, "training.csv")
-        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=30)
+        dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
         config = {
             MODEL_TYPE: "gbm",
