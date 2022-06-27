@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
@@ -75,7 +76,7 @@ class InferenceModule(nn.Module):
         with torch.no_grad():
             postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
-            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
+            postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
@@ -111,9 +112,10 @@ class InferenceModule(nn.Module):
         device: Optional[TorchDevice] = None,
     ):
         if device is None:
+            logging.info(f'No device specified. Loading using device "{DEVICE}".')
             device = DEVICE
 
-        stage_to_module = init_inference_stages_from_ludwig_model(
+        stage_to_module = _init_inference_stages_from_ludwig_model(
             model, config, training_set_metadata, device=device, scripted=True
         )
 
@@ -133,9 +135,10 @@ class InferenceModule(nn.Module):
         device: Optional[TorchDevice] = None,
     ):
         if device is None:
+            logging.info(f'No device specified. Loading using device "{DEVICE}".')
             device = DEVICE
 
-        stage_to_module = init_inference_stages_from_directory(directory, device=device)
+        stage_to_module = _init_inference_stages_from_directory(directory, device=device)
 
         config_path = os.path.join(directory, MODEL_HYPERPARAMETERS_FILE_NAME)
         config = load_json(config_path) if os.path.exists(config_path) else None
@@ -152,7 +155,7 @@ class InferenceModule(nn.Module):
         )
 
 
-class InferencePreprocessor(nn.Module):
+class _InferencePreprocessor(nn.Module):
     """Wraps preprocessing modules into a single nn.Module.
 
     TODO(geoffrey): Implement torchscript-compatible feature_utils.LudwigFeatureDict to replace
@@ -178,7 +181,7 @@ class InferencePreprocessor(nn.Module):
             return preproc_inputs
 
 
-class InferencePredictor(nn.Module):
+class _InferencePredictor(nn.Module):
     """Wraps model forward pass + predictions into a single nn.Module.
 
     The forward call of this module returns a flattened dictionary in order to support Triton input/output.
@@ -211,7 +214,7 @@ class InferencePredictor(nn.Module):
             return predictions_flattened
 
 
-class InferencePostprocessor(nn.Module):
+class _InferencePostprocessor(nn.Module):
     """Wraps postprocessing modules into a single nn.Module.
 
     The forward call of this module returns a flattened dictionary in order to support Triton input/output.
@@ -246,13 +249,17 @@ def save_ludwig_model_for_inference(
     model: "ECD",
     config: Dict[str, Any],
     training_set_metadata: Dict[str, Any],
-    device: TorchDevice,
+    device: Optional[TorchDevice] = None,
     model_only: bool = False,
 ) -> None:
     """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
-    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
+    if device is None:
+        logging.info(f'No device specified. Saving using device "{DEVICE}".')
+        device = DEVICE
 
-    stage_to_module = init_inference_stages_from_ludwig_model(
+    stage_to_filenames = {stage: _get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
+
+    stage_to_module = _init_inference_stages_from_ludwig_model(
         model, config, training_set_metadata, device, scripted=True
     )
     if model_only:
@@ -260,22 +267,24 @@ def save_ludwig_model_for_inference(
     else:
         for stage, module in stage_to_module.items():
             module.save(os.path.join(save_path, stage_to_filenames[stage]))
+            logging.info(f"Saved torchscript module for {stage} to {stage_to_filenames[stage]}.")
 
 
-def init_inference_stages_from_directory(
+def _init_inference_stages_from_directory(
     directory: str,
     device: TorchDevice,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from directory."""
-    stage_to_filenames = {stage: get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
+    stage_to_filenames = {stage: _get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
 
     stage_to_module = {}
     for stage in INFERENCE_STAGES:
         stage_to_module[stage] = torch.jit.load(os.path.join(directory, stage_to_filenames[stage]))
+        print(f"Loaded torchscript module for {stage} from {stage_to_filenames[stage]}.")
     return stage_to_module
 
 
-def init_inference_stages_from_ludwig_model(
+def _init_inference_stages_from_ludwig_model(
     model: "ECD",
     config: Dict[str, Any],
     training_set_metadata: Dict[str, Any],
@@ -283,9 +292,9 @@ def init_inference_stages_from_ludwig_model(
     scripted: bool = True,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from a LudwigModel (an ECD model, config, and training_set_metadata)."""
-    preprocessor = InferencePreprocessor(config, training_set_metadata)
-    predictor = InferencePredictor(model, device=device)
-    postprocessor = InferencePostprocessor(model, training_set_metadata)
+    preprocessor = _InferencePreprocessor(config, training_set_metadata)
+    predictor = _InferencePredictor(model, device=device)
+    postprocessor = _InferencePostprocessor(model, training_set_metadata)
 
     stage_to_module = {
         PREPROCESSOR: preprocessor,
@@ -297,7 +306,7 @@ def init_inference_stages_from_ludwig_model(
     return stage_to_module
 
 
-def unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+def _unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     """Convert a flattened dictionary of objects to a nested dictionary of outputs per feature name."""
     outputs: Dict[str, Dict[str, Any]] = {}
     for concat_key, tensor_values in flattened_dict.items():
@@ -312,7 +321,7 @@ def unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, 
     return outputs
 
 
-def get_filename_from_stage(stage: str, device: TorchDevice) -> str:
+def _get_filename_from_stage(stage: str, device: TorchDevice) -> str:
     """Returns the filename for a stage of inference."""
     if stage not in INFERENCE_STAGES:
         raise ValueError(f"Invalid stage: {stage}.")
