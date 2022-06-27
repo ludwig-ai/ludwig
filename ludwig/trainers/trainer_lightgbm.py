@@ -120,14 +120,6 @@ class LightGBMTrainer(BaseTrainer):
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.progress_tracker = get_new_progress_tracker(
-            batch_size=-1,
-            learning_rate=self.base_learning_rate,
-            best_eval_metric=get_initial_validation_value(self.validation_metric),
-            best_reduce_learning_rate_eval_metric=float("inf"),
-            best_increase_batch_size_eval_metric=float("inf"),
-            output_features=self.model.output_features,
-        )
 
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:
@@ -384,6 +376,15 @@ class LightGBMTrainer(BaseTrainer):
             lambda c: c.on_trainer_train_setup(self, save_path, self.is_coordinator()), coordinator_only=False
         )
 
+        progress_tracker = get_new_progress_tracker(
+            batch_size=-1,
+            learning_rate=self.base_learning_rate,
+            best_eval_metric=get_initial_validation_value(self.validation_metric),
+            best_reduce_learning_rate_eval_metric=float("inf"),
+            best_increase_batch_size_eval_metric=float("inf"),
+            output_features=self.model.output_features,
+        )
+
         params = self._construct_lgb_params()
 
         lgb_train, eval_sets, eval_names = self._construct_lgb_datasets(training_set, validation_set)
@@ -394,23 +395,25 @@ class LightGBMTrainer(BaseTrainer):
         # Reset the metrics at the start of the next epoch
         self.model.reset_metrics()
 
-        self.callback(lambda c: c.on_epoch_start(self, self.progress_tracker, save_path))
+        self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+        self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
         gbm = self._train(params, lgb_train, eval_sets, eval_names)
 
+        self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
         # ================ Post Training Epoch ================
-        self.progress_tracker.steps = gbm.current_iteration()
-        self.progress_tracker.last_improvement_steps = gbm.best_iteration
-        self.callback(lambda c: c.on_epoch_end(self, self.progress_tracker, save_path))
+        progress_tracker.steps = gbm.current_iteration()
+        progress_tracker.last_improvement_steps = gbm.best_iteration
+        self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
         if self.is_coordinator():
             # ========== Save training progress ==========
             logging.debug(
-                f"Epoch {self.progress_tracker.epoch} took: "
+                f"Epoch {progress_tracker.epoch} took: "
                 f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
             )
             if not self.skip_save_progress:
-                self.progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
+                progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
 
         # convert to pytorch for inference, fine tuning
         self.model.lgb_booster = gbm
@@ -438,7 +441,7 @@ class LightGBMTrainer(BaseTrainer):
                 training_set,
                 validation_set,
                 test_set,
-                self.progress_tracker,
+                progress_tracker,
                 train_summary_writer,
                 validation_summary_writer,
                 test_summary_writer,
@@ -450,7 +453,7 @@ class LightGBMTrainer(BaseTrainer):
             )
         finally:
             self.callback(
-                lambda c: c.on_trainer_train_teardown(self, self.progress_tracker, save_path, self.is_coordinator()),
+                lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
             )
 
@@ -466,9 +469,9 @@ class LightGBMTrainer(BaseTrainer):
 
         return (
             self.model,
-            self.progress_tracker.train_metrics,
-            self.progress_tracker.validation_metrics,
-            self.progress_tracker.test_metrics,
+            progress_tracker.train_metrics,
+            progress_tracker.validation_metrics,
+            progress_tracker.test_metrics,
         )
 
     def _construct_lgb_params(self) -> Tuple[dict, dict]:
