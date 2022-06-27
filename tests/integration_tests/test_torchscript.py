@@ -460,10 +460,10 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
         assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
 
 
-@pytest.mark.parametrize("timeseries_type", [torch.Tensor, List[torch.Tensor]])
-def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, timeseries_type):
+@pytest.mark.parametrize("padding", ["left", "right"])
+def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    feature = timeseries_feature()
+    feature = timeseries_feature(preprocessing={"padding": padding, "timeseries_length_limit": 4}, max_len=7)
     input_features = [
         feature,
     ]
@@ -472,7 +472,7 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, t
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
 
     # Initialize Ludwig model
     ludwig_model, script_module = initialize_ludwig_model_and_scripted_module(
@@ -491,16 +491,13 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, t
     df = pd.read_csv(training_data_csv_path)
     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
 
-    def transform_timeseries_list(timeseries_list, timeseries_type):
+    def transform_timeseries_from_str_list_to_tensor_list(timeseries_list):
         timeseries = []
         for timeseries_str in timeseries_list:
             timeseries.append(torch.tensor([float(x) for x in timeseries_str.split()]))
-
-        if timeseries_type == torch.Tensor:
-            timeseries = torch.nn.utils.rnn.pad_sequence(timeseries, batch_first=True)
         return timeseries
 
-    inputs[feature[NAME]] = transform_timeseries_list(inputs[feature[NAME]], timeseries_type)
+    inputs[feature[NAME]] = transform_timeseries_from_str_list_to_tensor_list(inputs[feature[NAME]])
 
     preproc_inputs = script_module.preprocess(inputs)
 

@@ -49,17 +49,21 @@ logger = logging.getLogger(__name__)
 class _VectorPreprocessing(torch.nn.Module):
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if torch.jit.isinstance(v, torch.Tensor):
-            return v
+            out = v
         elif torch.jit.isinstance(v, List[torch.Tensor]):
-            return torch.stack(v)
+            out = torch.stack(v)
         elif torch.jit.isinstance(v, List[str]):
             vectors = []
             for sample in v:
                 vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
                 vectors.append(vector)
-            return torch.stack(vectors)
+            out = torch.stack(vectors)
         else:
             raise ValueError(f"Unsupported input: {v}")
+
+        if out.isnan().any():
+            raise ValueError("Scripted NaN handling not implemented for Vector feature")
+        return out
 
 
 class _VectorPostprocessing(torch.nn.Module):
