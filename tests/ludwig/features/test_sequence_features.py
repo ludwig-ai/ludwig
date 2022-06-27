@@ -105,6 +105,7 @@ def test_sequence_preproc_module_bad_tokenizer():
             "tokenizer": "dutch_lemmatize",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
+            "computed_fill_value": "<UNK>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {"<EOS>": 0, "<SOS>": 1, "<PAD>": 2, "<UNK>": 3, "▁hell": 4, "o": 5, "▁world": 6},
@@ -121,6 +122,7 @@ def test_sequence_preproc_module_space_tokenizer():
             "tokenizer": "space",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
+            "computed_fill_value": "<UNK>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {
@@ -149,6 +151,7 @@ def test_text_preproc_module_space_punct_tokenizer():
             "tokenizer": "space_punct",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
+            "computed_fill_value": "<UNK>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {
@@ -183,6 +186,7 @@ def test_sequence_preproc_module_sentencepiece_tokenizer():
             "tokenizer": "sentencepiece",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
+            "computed_fill_value": "<UNK>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {
@@ -217,6 +221,7 @@ def test_sequence_preproc_module_clip_tokenizer():
             "tokenizer": "clip",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
+            "computed_fill_value": "<UNK>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {
@@ -249,6 +254,7 @@ def test_sequence_preproc_module_gpt2bpe_tokenizer():
             "tokenizer": "gpt2bpe",
             "unknown_symbol": "<UNK>",
             "padding_symbol": "<PAD>",
+            "computed_fill_value": "<UNK>",
         },
         "max_sequence_length": SEQ_SIZE,
         "str2idx": {

@@ -85,11 +85,14 @@ class _SequencePreprocessing(torch.nn.Module):
         self.stop_symbol = STOP_SYMBOL
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
+        self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
+
+        v = [self.computed_fill_value if s == "nan" else s for s in v]
 
         if self.lowercase:
             sequences = [sequence.lower() for sequence in v]
