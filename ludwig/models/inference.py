@@ -90,10 +90,7 @@ class InferenceModule(nn.Module):
     def predict(
         self, dataset: pd.DataFrame, return_type: Union[dict, pd.DataFrame] = pd.DataFrame
     ) -> Union[pd.DataFrame, dict]:
-        """Predict on a batch of data.
-
-        One difference between InferenceLudwigModel and LudwigModel is that the input data must be a pandas DataFrame.
-        """
+        """Predict on a batch of data with an interface similar to LudwigModel.predict."""
         inputs = to_inference_module_input_from_dataframe(dataset, self.config, load_paths=True)
 
         preds = self(inputs)
