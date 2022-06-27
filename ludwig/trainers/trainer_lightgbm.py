@@ -717,7 +717,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         if "callbacks" in predictor_kwargs:
             # remove unused (non-serializable) callbacks
             del predictor_kwargs["callbacks"]
-        
+
         predictor = RayPredictor(
             model=self.model,
             df_engine=_get_df_engine(None),
