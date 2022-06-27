@@ -120,7 +120,6 @@ class LightGBMTrainer(BaseTrainer):
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-
     @staticmethod
     def get_schema_cls() -> BaseTrainerConfig:
         return GBMTrainerConfig
@@ -409,8 +408,7 @@ class LightGBMTrainer(BaseTrainer):
         if self.is_coordinator():
             # ========== Save training progress ==========
             logging.debug(
-                f"Epoch {progress_tracker.epoch} took: "
-                f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                f"Epoch {progress_tracker.epoch} took: {time_utils.strdelta((time.time()- start_time) * 1000.0)}."
             )
             if not self.skip_save_progress:
                 progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
