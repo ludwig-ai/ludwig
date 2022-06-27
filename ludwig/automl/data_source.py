@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from ludwig.automl.utils import avg_num_tokens, check_if_boolean
+import numpy as np
+
+from ludwig.automl.utils import avg_num_tokens
 from ludwig.utils.audio_utils import is_audio_score
 from ludwig.utils.image_utils import is_image_score
 from ludwig.utils.types import DataFrame
@@ -74,7 +76,18 @@ class DataframeSourceMixin:
         return avg_num_tokens(self.df[column])
 
     def check_if_boolean(self, column: str) -> bool:
-        return check_if_boolean(self.df[column])
+        num_unique_values, unique_values, _ = self.get_distinct_values(column, max_values_to_return=4)
+        if num_unique_values <= 3:
+            for entry in unique_values:
+                try:
+                    if np.isnan(entry):
+                        continue
+                except TypeError:
+                    return False
+                if isinstance(entry, bool):
+                    continue
+                return False
+        return True
 
     def is_string_type(self, dtype: str) -> bool:
         return dtype in ["str", "string", "object"]
