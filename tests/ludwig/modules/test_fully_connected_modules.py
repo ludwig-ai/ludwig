@@ -18,10 +18,10 @@ DEVICE = get_torch_device()
 @pytest.mark.parametrize("activation", ["relu", "sigmoid", "tanh"])
 @pytest.mark.parametrize("dropout", [0.0, 0.5])
 def test_fc_layer(
-        input_size: int,
-        output_size: int,
-        activation: str,
-        dropout: float,
+    input_size: int,
+    output_size: int,
+    activation: str,
+    dropout: float,
 ):
     set_random_seed(1919)  # make repeatable
     fc_layer = FCLayer(input_size=input_size, output_size=output_size, activation=activation, dropout=dropout).to(
@@ -45,9 +45,9 @@ def test_fc_layer(
     ],
 )
 def test_fc_stack(
-        first_layer_input_size: Optional[int],
-        layers: Optional[List],
-        num_layers: Optional[int],
+    first_layer_input_size: Optional[int],
+    layers: Optional[List],
+    num_layers: Optional[int],
 ):
     set_random_seed(1919)
     fc_stack = FCStack(first_layer_input_size=first_layer_input_size, layers=layers, num_layers=num_layers).to(DEVICE)
