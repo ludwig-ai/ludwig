@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.utils.data_utils import split_by_slices
 
 
 class PandasEngine(DataFrameEngine):
@@ -54,8 +55,11 @@ class PandasEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return reduce_fn(series)
 
-    def to_parquet(self, df, path):
-        df.to_parquet(path, engine="pyarrow")
+    def split(self, df, probabilities):
+        return split_by_slices(df.iloc, len(df), probabilities)
+
+    def to_parquet(self, df, path, index=False):
+        df.to_parquet(path, engine="pyarrow", index=index)
 
     def to_ray_dataset(self, df):
         from ray.data import from_pandas
