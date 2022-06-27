@@ -10,7 +10,7 @@ from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET,
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
 from ludwig.features.date_feature import create_vector_from_datetime_obj
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
@@ -32,67 +32,6 @@ POSTPROCESSOR = "postprocessor"
 INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
-
-
-class InferenceModuleV0(nn.Module):
-    """Wraps preprocessing, model forward pass, and postprocessing into a single module.
-
-    Deprecated; used for benchmarking against the new inference module.
-    """
-
-    def __init__(
-        self, model: "ECD", config: Dict[str, Any], training_set_metadata: Dict[str, Any], device: TorchDevice
-    ):
-        super().__init__()
-        self.device = torch.device(device)
-        self.model = model.to_torchscript(device=self.device)
-
-        input_features = {
-            feature[NAME]: get_from_registry(feature[TYPE], input_type_registry) for feature in config["input_features"]
-        }
-        self.preproc_modules = nn.ModuleDict()
-        for feature_name, feature in input_features.items():
-            module_dict_key = get_module_dict_key_from_name(feature_name)
-            self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
-
-        self.predict_modules = nn.ModuleDict()
-        for feature_name, feature in model.output_features.items():
-            module_dict_key = get_module_dict_key_from_name(feature_name)
-            self.predict_modules[module_dict_key] = feature.prediction_module
-
-        output_features = {
-            feature[NAME]: get_from_registry(feature[TYPE], output_type_registry)
-            for feature in config["output_features"]
-        }
-        self.postproc_modules = nn.ModuleDict()
-        for feature_name, feature in output_features.items():
-            module_dict_key = get_module_dict_key_from_name(feature_name)
-            self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
-
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
-        with torch.no_grad():
-            preproc_inputs = {}
-            for module_dict_key, preproc in self.preproc_modules.items():
-                feature_name = get_name_from_module_dict_key(module_dict_key)
-                preproc_inputs[feature_name] = preproc(inputs[feature_name])
-            preproc_inputs = {k: v.to(self.device) for k, v in preproc_inputs.items()}
-            model_outputs = self.model(preproc_inputs)
-
-            predictions_flattened: Dict[str, torch.Tensor] = {}
-            for module_dict_key, predict in self.predict_modules.items():
-                feature_name = get_name_from_module_dict_key(module_dict_key)
-                feature_predictions = predict(model_outputs, feature_name)
-                # Flatten out the predictions to support Triton input/output
-                for predict_key, tensor_values in feature_predictions.items():
-                    predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
-                    predictions_flattened[predict_concat_key] = tensor_values
-
-            postproc_outputs: Dict[str, Dict[str, Any]] = {}
-            for module_dict_key, postproc in self.postproc_modules.items():
-                feature_name = get_name_from_module_dict_key(module_dict_key)
-                postproc_outputs[feature_name] = postproc(predictions_flattened, feature_name)
-
-            return postproc_outputs
 
 
 class InferenceModule(nn.Module):
