@@ -409,12 +409,10 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
 @pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
 def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-
     feature = vector_feature()
     input_features = [
         feature,
     ]
-
     output_features = [
         binary_feature(),
     ]
@@ -465,12 +463,10 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
 @pytest.mark.parametrize("timeseries_type", [torch.Tensor, List[torch.Tensor]])
 def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, timeseries_type):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-
     feature = timeseries_feature()
     input_features = [
         feature,
     ]
-
     output_features = [
         binary_feature(),
     ]
@@ -539,11 +535,9 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, t
 )
 def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-
     input_features = [
         feature,
     ]
-
     output_features = [
         binary_feature(),
     ]
