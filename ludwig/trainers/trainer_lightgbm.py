@@ -491,7 +491,10 @@ class LightGBMTrainer(BaseTrainer):
                     "metric": ["l2", "l1"],
                 }
             else:
-                raise ValueError(f"Output feature must be numerical, categorical, or binary, found: {feature.type}")
+                raise ValueError(
+                    f"Model type GBM only supports numerical, categorical, or binary output features,"
+                    f" found: {feature.type()}"
+                )
 
         # from: https://github.com/microsoft/LightGBM/blob/master/examples/python-guide/advanced_example.py
         params = {
