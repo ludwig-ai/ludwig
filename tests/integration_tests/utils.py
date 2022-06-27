@@ -819,6 +819,7 @@ def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple
             f"Not all model parameters updated after {max_steps} iteration(s):" f"{''.join(parameters_not_updated)}"
         )
 
+
 def _assert_model_parameters_updated(
     model: LudwigModule,
     model_input: torch.Tensor,
