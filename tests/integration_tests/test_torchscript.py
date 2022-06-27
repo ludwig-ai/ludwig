@@ -465,7 +465,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
 
     df = pd.read_csv(training_data_csv_path)
     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
-    preproc_inputs = script_module.preprocess(inputs)
+    preproc_inputs = script_module.preprocessor_forward(inputs)
 
     # Check that preproc_inputs is the same as preproc_inputs_expected.
     for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():

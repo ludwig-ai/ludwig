@@ -108,8 +108,11 @@ class InferenceModule(nn.Module):
         model: "ECD",
         config: Dict[str, Any],
         training_set_metadata: Dict[str, Any],
-        device: TorchDevice,
+        device: Optional[TorchDevice] = None,
     ):
+        if device is None:
+            device = DEVICE
+
         stage_to_module = init_inference_stages_from_ludwig_model(
             model, config, training_set_metadata, device=device, scripted=True
         )
@@ -127,8 +130,11 @@ class InferenceModule(nn.Module):
     def from_directory(
         cls: "InferenceModule",
         directory: str,
-        device: TorchDevice,
+        device: Optional[TorchDevice] = None,
     ):
+        if device is None:
+            device = DEVICE
+
         stage_to_module = init_inference_stages_from_directory(directory, device=device)
 
         config_path = os.path.join(directory, MODEL_HYPERPARAMETERS_FILE_NAME)

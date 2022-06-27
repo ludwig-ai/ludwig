@@ -64,7 +64,7 @@ from ludwig.globals import (
 )
 from ludwig.models.calibrator import Calibrator
 from ludwig.models.ecd import ECD
-from ludwig.models.inference import InferenceModule, InferenceModuleV0, save_ludwig_model_for_inference
+from ludwig.models.inference import InferenceModule, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -1511,9 +1511,8 @@ class LudwigModel:
         "cpu"): The device to save the model to. If a dictionary, it must have keys that     correspond to
         ludwig.models.inference.INFERENCE_STAGES and values that are strings or torch.device objects.
         """
-        single_module = InferenceModuleV0(self.model, self.config, self.training_set_metadata, device=device)
-        single_module = torch.jit.script(single_module)
-        single_module.save(os.path.join(save_path, "single_module.pt"))
+        if device is None:
+            device = DEVICE
 
         save_ludwig_model_for_inference(
             save_path,
