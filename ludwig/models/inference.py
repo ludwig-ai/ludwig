@@ -365,4 +365,4 @@ def _to_inference_model_input_from_series(
         return [torch.tensor(create_vector_from_datetime_obj(datetime.strptime(v, datetime_format))) for v in s]
     elif feature_type in FEATURES_TO_CAST_AS_STRINGS:
         return s.astype(str).to_list()
-    return torch.from_numpy(s.to_numpy()).to(device=DEVICE)
+    return torch.from_numpy(s.to_numpy())
