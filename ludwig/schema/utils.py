@@ -1,6 +1,6 @@
 from dataclasses import field
 from typing import Dict as tDict
-from typing import List as tList
+from typing import List as TList
 from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
@@ -628,7 +628,7 @@ def IntegerOrAutoField(
 
 
 def IntegerOrStringOptionsField(
-    options: tList[str],
+    options: TList[str],
     allow_none: bool,
     description: str,
     parameter_metadata: ParameterMetadata,
@@ -647,7 +647,7 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: tList[str],
+    options: TList[str],
     allow_none: bool,
     description: str,
     parameter_metadata: ParameterMetadata,
