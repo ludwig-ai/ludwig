@@ -48,14 +48,18 @@ logger = logging.getLogger(__name__)
 
 class _VectorPreprocessing(torch.nn.Module):
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if not torch.jit.isinstance(v, List[str]):
+        if torch.jit.isinstance(v, torch.Tensor):
+            return v
+        elif torch.jit.isinstance(v, List[torch.Tensor]):
+            return torch.stack(v)
+        elif torch.jit.isinstance(v, List[str]):
+            vectors = []
+            for sample in v:
+                vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
+                vectors.append(vector)
+            return torch.stack(vectors)
+        else:
             raise ValueError(f"Unsupported input: {v}")
-
-        vectors = []
-        for sample in v:
-            vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
-            vectors.append(vector)
-        return torch.stack(vectors)
 
 
 class _VectorPostprocessing(torch.nn.Module):

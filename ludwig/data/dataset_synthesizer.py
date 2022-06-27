@@ -247,7 +247,9 @@ def generate_text(feature):
 
 def generate_timeseries(feature):
     series = []
-    for _ in range(feature.get("max_len", 10)):
+    max_len = feature.get("max_len", 10)
+    series_len = random.randint(max_len - 2, max_len)  # simulates variable length
+    for _ in range(series_len):
         series.append(str(random.uniform(feature.get("min", 0), feature.get("max", 1))))
     return " ".join(series)
 
