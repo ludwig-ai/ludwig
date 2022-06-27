@@ -512,10 +512,19 @@ def is_all_close(
     if isinstance(val1, str):
         return val1 == val2
     if isinstance(val1, torch.Tensor):
-        val1 = val1.detach().numpy()
+        val1 = val1.cpu().detach().numpy()
     if isinstance(val2, torch.Tensor):
-        val2 = val2.detach().numpy()
+        val2 = val2.cpu().detach().numpy()
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
+
+
+def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+    if isinstance(val, list):
+        return all(is_all_tensors_cuda(v) for v in val)
+
+    if isinstance(val, torch.Tensor):
+        return val.is_cuda
+    return True
 
 
 def run_api_experiment(input_features, output_features, data_csv):

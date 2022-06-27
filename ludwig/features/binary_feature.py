@@ -86,18 +86,19 @@ class _BinaryPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
         if self.bool2str is not None:
             predictions = predictions.to(dtype=torch.int32)
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
 
-        probs = preds[self.probabilities_key]
-        probs = torch.stack([1 - probs, probs], dim=-1)
+        probabilities = torch.stack([1 - probabilities, probabilities], dim=-1)
 
         return {
             self.predictions_key: predictions,
-            self.probabilities_key: probs,
+            self.probabilities_key: probabilities,
         }
 
 
