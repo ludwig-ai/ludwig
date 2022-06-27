@@ -67,12 +67,14 @@ class _VectorPostprocessing(torch.nn.Module):
     def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
+
         return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class _VectorPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
         return {self.predictions_key: logits, self.logits_key: logits}
 
 

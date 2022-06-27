@@ -186,8 +186,7 @@ class _NumberPreprocessing(torch.nn.Module):
         v = torch.nan_to_num(v, nan=self.computed_fill_value)
 
         v = v.to(dtype=torch.float32)
-        out = self.numeric_transformer.transform_inference(v)
-        return out
+        return self.numeric_transformer.transform_inference(v)
 
 
 class _NumberPostprocessing(torch.nn.Module):

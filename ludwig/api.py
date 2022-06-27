@@ -1506,10 +1506,11 @@ class LudwigModel:
     ):
         """Saves the Torchscript model to disk.
 
+        save_path (str): The path to the directory where the model will be saved.
         model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else, the
-        preprocessing and postprocessing steps will also be converted to Torchscript. device (dict or str, default:
-        "cpu"): The device to save the model to. If a dictionary, it must have keys that     correspond to
-        ludwig.models.inference.INFERENCE_STAGES and values that are strings or torch.device objects.
+            preprocessing and postprocessing steps will also be converted to Torchscript.
+        device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
+            ensure maximum model parity.
         """
         if device is None:
             device = DEVICE

@@ -111,6 +111,7 @@ class InferenceModule(nn.Module):
         training_set_metadata: Dict[str, Any],
         device: Optional[TorchDevice] = None,
     ):
+        """Create an InferenceModule from a trained LudwigModel."""
         if device is None:
             logging.info(f'No device specified. Loading using device "{DEVICE}".')
             device = DEVICE
@@ -134,6 +135,7 @@ class InferenceModule(nn.Module):
         directory: str,
         device: Optional[TorchDevice] = None,
     ):
+        """Create an InferenceModule from a directory containing a model, config, and training set metadata."""
         if device is None:
             logging.info(f'No device specified. Loading using device "{DEVICE}".')
             device = DEVICE
@@ -335,6 +337,7 @@ def _get_filename_from_stage(stage: str, device: TorchDevice) -> str:
 def to_inference_module_input_from_dataframe(
     dataset: pd.DataFrame, config: Dict[str, Any], load_paths: bool = False, device: Optional[torch.device] = None
 ) -> TorchscriptPreprocessingInput:
+    """Converts a pandas DataFrame to be compatible with a torchscripted InferenceModule forward pass."""
     inputs = {}
     for if_config in config["input_features"]:
         feature_inputs = _to_inference_model_input_from_series(
