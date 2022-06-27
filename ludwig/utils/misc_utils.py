@@ -16,8 +16,12 @@
 import copy
 import os
 import random
+import sys
+import traceback
 from collections import OrderedDict
 from collections.abc import Mapping
+from functools import wraps
+from multiprocessing import Process, Queue
 
 import numpy
 import torch
@@ -140,3 +144,41 @@ def set_saved_weights_in_checkpoint_flag(config):
     """
     for input_feature in config.get("input_features", []):
         input_feature["saved_weights_in_checkpoint"] = True
+
+
+def processify(func):
+    """Decorator to run a function as a process.
+    Be sure that every argument and the return value
+    is *pickable*.
+    The created process is joined, so the code does not
+    run in parallel.
+
+    Taken from https://gist.github.com/schlamar/2311116
+    """
+    def process_func(q, *args, **kwargs):
+        try:
+            ret = func(q, *args, **kwargs)
+        except Exception as e:
+            ex_type, ex_value, tb = sys.exc_info()
+            error = ex_type, ex_value, "".join(traceback.format_tb(tb))
+            ret = None
+            q.put((ret, error))
+            raise e
+        else:
+            error = None
+        q.put((ret, error))
+
+    # register original function with different name
+    # in sys.modules so it is pickable
+    process_func.__name__ = func.__name__ + "processify_func"
+    setattr(sys.modules[__name__], process_func.__name__, process_func)
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        queue = Queue()  # not the same as a Queue.Queue()
+        p = Process(target=process_func, args=[queue] + list(args), kwargs=kwargs)
+        p.start()
+
+        return p, queue
+
+    return wrapper
