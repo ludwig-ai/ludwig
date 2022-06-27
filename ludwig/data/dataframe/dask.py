@@ -52,6 +52,7 @@ class DaskEngine(DataFrameEngine):
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
         for k, v in proc_cols.items():
+            v.divisions = dataset.divisions
             dataset[k] = v
         return dataset
 

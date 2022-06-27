@@ -45,7 +45,6 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.strings_utils import column_is_bool
 
 logger = logging.getLogger(__name__)
 
@@ -69,15 +68,8 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
             # non-standard boolean representation
             ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx)
         else:
-            # If the values in column could have been inferred as boolean dtype, cast (strings) as booleans.
-            # This preserves the behavior of this feature before #2058.
-            if column_is_bool(ground_truth):
-                ground_truth = _vectorize_ground_truth(
-                    ground_truth, {"false": False, "False": False, "true": True, "True": True}, ground_truth_apply_idx
-                )
-            else:
-                # standard boolean representation
-                ground_truth = ground_truth.values
+            # standard boolean representation
+            ground_truth = ground_truth.values
 
         # ensure positive_label is 1 for binary feature
         positive_label = 1
@@ -234,7 +226,10 @@ def _extract_ground_truth_values(
     reader = get_from_registry(data_format, external_data_reader_registry)
 
     # retrieve ground truth from source data set
-    gt_df = reader(ground_truth)
+    if data_format in {"csv", "tsv"}:
+        gt_df = reader(ground_truth, dtype=None)  # allow type inference
+    else:
+        gt_df = reader(ground_truth)
 
     # extract ground truth for visualization
     if SPLIT in gt_df:

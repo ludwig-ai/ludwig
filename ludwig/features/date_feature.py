@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from datetime import date, datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -24,11 +24,25 @@ from dateutil.parser import parse
 from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
 DATE_VECTOR_LENGTH = 9
+
+
+class _DatePreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            v = torch.stack(v)
+
+        if torch.jit.isinstance(v, torch.Tensor):
+            return v.to(dtype=torch.int)
+        else:
+            raise ValueError(f"Unsupported input: {v}")
 
 
 class DateFeatureMixin(BaseFeatureMixin):
@@ -80,22 +94,7 @@ class DateFeatureMixin(BaseFeatureMixin):
             else:
                 datetime_obj = datetime.now()
 
-        yearday = datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
-
-        midnight = datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
-        second_of_day = (datetime_obj - midnight).seconds
-
-        return [
-            datetime_obj.year,
-            datetime_obj.month,
-            datetime_obj.day,
-            datetime_obj.weekday(),
-            yearday,
-            datetime_obj.hour,
-            datetime_obj.minute,
-            datetime_obj.second,
-            second_of_day,
-        ]
+        return create_vector_from_datetime_obj(datetime_obj)
 
     def add_feature_data(
         feature_config: Dict[str, Any],
@@ -155,3 +154,26 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _DatePreprocessing(metadata)
+
+
+def create_vector_from_datetime_obj(datetime_obj):
+    yearday = datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
+
+    midnight = datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    second_of_day = (datetime_obj - midnight).seconds
+
+    return [
+        datetime_obj.year,
+        datetime_obj.month,
+        datetime_obj.day,
+        datetime_obj.weekday(),
+        yearday,
+        datetime_obj.hour,
+        datetime_obj.minute,
+        datetime_obj.second,
+        second_of_day,
+    ]

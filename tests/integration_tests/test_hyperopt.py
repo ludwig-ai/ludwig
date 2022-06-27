@@ -24,7 +24,6 @@ from ludwig.constants import ACCURACY, RAY, TRAINER
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -164,9 +163,8 @@ def test_hyperopt_search_alg(
     executor = hyperopt_config["executor"]
     search_alg = hyperopt_config["search_alg"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
     hyperopt_executor = get_build_hyperopt_executor(RAY)(
-        hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
     raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
     assert isinstance(raytune_results, RayTuneResults)
@@ -224,17 +222,15 @@ def test_hyperopt_scheduler(
     executor = hyperopt_config["executor"]
     search_alg = hyperopt_config["search_alg"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(RAY)(parameters)
-
     # TODO: Determine if we still need this if-then-else construct
     if search_alg["type"] in {""}:
         with pytest.raises(ImportError):
             get_build_hyperopt_executor(RAY)(
-                hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+                parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
             )
     else:
         hyperopt_executor = get_build_hyperopt_executor(RAY)(
-            hyperopt_sampler, output_feature, metric, goal, split, search_alg=search_alg, **executor
+            parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
         )
         raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
         assert isinstance(raytune_results, RayTuneResults)

@@ -4,8 +4,6 @@ import queue
 import threading
 from typing import Any, Dict
 
-from packaging import version
-
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.data.dataset.base import Dataset
@@ -134,12 +132,7 @@ class MlflowCallback(Callback):
         pass
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
-        import ray
-
-        if version.parse(ray.__version__) >= version.parse("1.11"):
-            from ludwig.contribs.mlflow._ray_111.mlflow import mlflow_mixin
-        else:
-            from ray.tune.integration.mlflow import mlflow_mixin
+        from ray.tune.integration.mlflow import mlflow_mixin
 
         return mlflow_mixin(train_fn), {
             **tune_config,
