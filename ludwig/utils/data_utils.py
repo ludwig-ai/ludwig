@@ -29,7 +29,7 @@ import re
 import tempfile
 import threading
 from itertools import islice
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -41,6 +41,7 @@ from sklearn.model_selection import KFold
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
+from ludwig.utils.math_utils import cumsum
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
@@ -108,7 +109,7 @@ GLOBAL_CRED_LOCK = threading.Lock()
 
 
 def get_split_path(dataset_fp):
-    return os.path.splitext(dataset_fp)[0] + ".split.csv"
+    return os.path.splitext(dataset_fp)[0] + ".split.parquet"
 
 
 def get_abs_path(src_path, file_path):
@@ -490,6 +491,16 @@ def split_data(split: float, data: List) -> Tuple[List, List]:
     return data[:split_length], data[split_length:]
 
 
+def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> List[Any]:
+    splits = []
+    indices = cumsum([int(x * n) for x in probabilities])
+    start = 0
+    for end in indices:
+        splits.append(slices[start:end])
+        start = end
+    return splits
+
+
 def shuffle_unison_inplace(list_of_lists, random_state=None):
     if list_of_lists:
         assert all(len(single_list) == len(list_of_lists[0]) for single_list in list_of_lists)
@@ -537,7 +548,7 @@ def split_dataset_ttv(dataset, split):
 
 def split_dataset(dataset, split, value_to_split=0):
     split_df = dataset[dataset[split] == value_to_split]
-    return split_df.reset_index()
+    return split_df
 
 
 def collapse_rare_labels(labels, labels_limit):
