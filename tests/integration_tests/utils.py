@@ -776,8 +776,7 @@ def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple
     else:
         raise RuntimeError("Unable to setup target tensor for model parameter update testing.")
 
-    step = 1
-    while True:
+    for step in range(max_steps):
         # make pass through model
         model_output = model(*model_input_args)
 
@@ -793,7 +792,7 @@ def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple
         loss.backward()
         optimizer.step()
 
-        # capture model parameters after one pass
+        # capture model parameters after a pass
         after = [(x[0], x[1].clone()) for x in model.named_parameters()]
 
         # check for parameter updates
@@ -801,25 +800,25 @@ def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple
         for b, a in zip(before, after):
             parameter_updated.append((a[1] != b[1]).any())
 
-        # check to see if parameters were updated in all layers
+        # if parameters were updated in all layers, the exit loop
         if all(parameter_updated):
-            logger.debug(f"\nall model parameters updated at step {step}")
+            logger.debug(f"\nall model parameters updated at step {step + 1}")
+            # early stop
             break
-        elif step >= max_steps:
-            parameters_not_updated = []
-            for updated, b, a in zip(parameter_updated, before, after):
-                if not updated:
-                    parameters_not_updated.append(
-                        f"\n\tParameter {a[0]} not updated.\n"
-                        f"\tbefore values (requires grad:{b[1].requires_grad}): {b[1]}\n"
-                        f"\tafter values (requires grad:{a[1].requires_grad}): {a[1]}\n"
-                    )
-            raise ParameterUpdateError(
-                f"Not all model parameters updated after {step} iteration(s):" f"{''.join(parameters_not_updated)}"
-            )
 
-        step += 1
-
+    # if not all layers are updated, raise exception
+    if not all(parameter_updated):
+        parameters_not_updated = []
+        for updated, b, a in zip(parameter_updated, before, after):
+            if not updated:
+                parameters_not_updated.append(
+                    f"\n\tParameter {a[0]} not updated.\n"
+                    f"\tbefore values (requires grad:{b[1].requires_grad}): {b[1]}\n"
+                    f"\tafter values (requires grad:{a[1].requires_grad}): {a[1]}\n"
+                )
+        raise ParameterUpdateError(
+            f"Not all model parameters updated after {max_steps} iteration(s):" f"{''.join(parameters_not_updated)}"
+        )
 
 def _assert_model_parameters_updated(
     model: LudwigModule,
