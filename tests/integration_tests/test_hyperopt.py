@@ -20,6 +20,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import pytest
 import torch
+from packaging import version
 
 from ludwig.constants import (
     ACCURACY,
@@ -43,8 +44,11 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 try:
     import ray
+
+    _ray113 = version.parse(ray.__version__) >= version.parse("1.13")
 except ImportError:
     ray = None
+    _ray113 = None
 
 
 logger = logging.getLogger(__name__)
@@ -164,13 +168,12 @@ def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str,
     """Returns the parameter value from the Ray trial row, which has slightly different column names depending on
     the version of Ray. Returns None if the parameter key is not found.
 
-    TODO(#2176): There are different key name delimiters depending on Ray version. Simplify this as Ray is upgraded.
-    The delimiter in future versions of Ray will be '/' instead of '.'
+    TODO(#2176): There are different key name delimiters depending on Ray version. The delimiter in future versions of
+    Ray (>= 1.13) will be '/' instead of '.' Simplify this as Ray is upgraded.
     """
-    if f"config.{parameter_key}" in trial_row:
-        return trial_row[f"config.{parameter_key}"]
-    if f"config/{parameter_key}" in trial_row:
+    if _ray113:
         return trial_row[f"config/{parameter_key}"]
+    return trial_row[f"config.{parameter_key}"]
 
 
 @contextlib.contextmanager
@@ -384,16 +387,10 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
 
-@pytest.mark.distributed
-def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
-    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
-        csv_filename
-    )
-
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
-
-    # Check that the trials did sample from defaults in the search space
+def _test_hyperopt_with_shared_params_trial_table(
+    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+):
+    # Check that hyperopt trials sample from defaults in the search space
     for _, trial_row in hyperopt_results_df.iterrows():
         embedding_size = _get_trial_parameter_value("defaults.output_features.category.embedding_size", trial_row)
         num_filters = _get_trial_parameter_value("defaults.input_features.text.num_filters", trial_row)
@@ -401,16 +398,10 @@ def test_hyperopt_run_shared_params_trial_table(csv_filename, tmpdir):
         assert num_filters in num_filters_search_space
 
 
-@pytest.mark.distributed
-def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
-    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
-        csv_filename
-    )
-
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
-
-    # Check that each trial's written input/output configs got updated
+def _test_hyperopt_with_shared_params_written_config(
+    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+):
+    # Check that each hyperopt trial's written input/output configs got updated
     for _, trial_row in hyperopt_results_df.iterrows():
         model_parameters = json.load(
             open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
@@ -437,3 +428,21 @@ def test_hyperopt_with_shared_params_written_config(csv_filename, tmpdir):
             model_parameters, OUTPUT_FEATURES, CATEGORY, "embedding_size"
         )
         assert len(category_features_embedding_sizes) == 1
+
+
+@pytest.mark.distributed
+def test_hyperopt_with_shared_params(csv_filename, tmpdir):
+    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
+        csv_filename
+    )
+
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
+
+    _test_hyperopt_with_shared_params_trial_table(
+        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    )
+
+    _test_hyperopt_with_shared_params_written_config(
+        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    )
