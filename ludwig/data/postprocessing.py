@@ -104,8 +104,8 @@ def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.T
 
 
 def convert_predictions(
-    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None
-):  # noqa: F821
+    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None  # noqa: F821
+):
     convert_fn = get_from_registry(return_type, conversion_registry)
     return convert_fn(predictions, output_features, backend)
 
