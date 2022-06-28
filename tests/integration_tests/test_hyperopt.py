@@ -21,7 +21,6 @@ import pytest
 import torch
 
 from ludwig.constants import ACCURACY, RAY, TRAINER
-from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
@@ -29,6 +28,8 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 try:
     import ray
+
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor
 except ImportError:
     ray = None
 
