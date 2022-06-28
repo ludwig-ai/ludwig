@@ -64,39 +64,6 @@ from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-def process_sequence(
-    sequence_matrix: torch.Tensor,
-    sample_idx: int,
-    sequence: str,
-    lowercase: bool,
-    tokenizer: Any,
-    max_sequence_length: int,
-    unit_to_id: Dict[str, int],
-    unknown_symbol: str,
-    stop_symbol: str,
-):
-    if lowercase:
-        sequence_str: str = sequence.lower()
-    else:
-        sequence_str: str = sequence
-
-    unit_sequence: List[str] = tokenizer(sequence_str)
-    # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
-    if len(unit_sequence) + 1 < max_sequence_length:
-        sequence_length = len(unit_sequence)
-        sequence_matrix[sample_idx][len(unit_sequence) + 1] = unit_to_id[stop_symbol]
-    else:
-        sequence_length = max_sequence_length - 1
-
-    for i in range(sequence_length):
-        curr_unit = unit_sequence[i]
-        if curr_unit in unit_to_id:
-            curr_id = unit_to_id[curr_unit]
-        else:
-            curr_id = unit_to_id[unknown_symbol]
-        sequence_matrix[sample_idx][i + 1] = curr_id
-
-
 class _SequencePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by SequenceFeatureMixin.add_feature_data."""
 
@@ -120,6 +87,71 @@ class _SequencePreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
+    def _process_sequence(self, sequence: str) -> torch.Tensor:
+        if self.lowercase:
+            sequence_str: str = sequence.lower()
+        else:
+            sequence_str: str = sequence
+
+        unit_sequence = self.tokenizer(sequence_str)
+        assert torch.jit.isinstance(unit_sequence, List[str])
+
+        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
+        sequence_vector[0] = self.unit_to_id[self.start_symbol]
+        if len(unit_sequence) + 1 < self.max_sequence_length:
+            sequence_length = len(unit_sequence)
+            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        else:
+            sequence_length = self.max_sequence_length - 1
+
+        for i in range(sequence_length):
+            curr_unit = unit_sequence[i]
+            if curr_unit in self.unit_to_id:
+                curr_id = self.unit_to_id[curr_unit]
+            else:
+                curr_id = self.unit_to_id[self.unknown_symbol]
+            sequence_vector[i + 1] = curr_id
+        return sequence_vector
+
+    @torch.jit.export
+    def forward_old(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        """Takes a list of strings and returns a tensor of token ids."""
+        if not torch.jit.isinstance(v, List[str]):
+            raise ValueError(f"Unsupported input: {v}")
+
+        v = [self.computed_fill_value if s == "nan" else s for s in v]
+
+        if self.lowercase:
+            sequences = [sequence.lower() for sequence in v]
+        else:
+            sequences = v
+
+        unit_sequences = self.tokenizer(sequences)
+        # refines type of unit_sequences from Any to List[List[str]]
+        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+
+        sequence_matrix = torch.full(
+            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
+        )
+        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
+        for sample_idx, unit_sequence in enumerate(unit_sequences):
+            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
+            if len(unit_sequence) + 1 < self.max_sequence_length:
+                sequence_length = len(unit_sequence)
+                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+            else:
+                sequence_length = self.max_sequence_length - 1
+
+            for i in range(sequence_length):
+                curr_unit = unit_sequence[i]
+                if curr_unit in self.unit_to_id:
+                    curr_id = self.unit_to_id[curr_unit]
+                else:
+                    curr_id = self.unit_to_id[self.unknown_symbol]
+                sequence_matrix[sample_idx][i + 1] = curr_id
+
+        return sequence_matrix
+
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
@@ -127,23 +159,18 @@ class _SequencePreprocessing(torch.nn.Module):
 
         v = [self.computed_fill_value if s == "nan" else s for s in v]
 
-        sequence_matrix = torch.full([len(v), self.max_sequence_length], self.unit_to_id[self.padding_symbol])
-        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
+        sequence_matrix = []
+        for sequence in v:
+            sequence_vector = self._process_sequence(sequence)
+            sequence_matrix.append(sequence_vector)
+        return torch.stack(sequence_matrix)
 
-        for sample_idx, sequence in enumerate(v):
-            process_sequence(
-                sequence_matrix,
-                sample_idx,
-                sequence,
-                self.lowercase,
-                self.tokenizer,
-                self.max_sequence_length,
-                self.unit_to_id,
-                self.unknown_symbol,
-                self.stop_symbol,
-            )
-
-        return sequence_matrix
+    @torch.jit.unused
+    def forward_series(self, column, backend) -> torch.Tensor:
+        column = backend.df_engine.map_objects(column, lambda s: self.computed_fill_value if s == "nan" else s)
+        column = backend.df_engine.map_objects(column, self._process_sequence)
+        sequence_matrix = backend.df_engine.compute(column).values.tolist()
+        return torch.stack(sequence_matrix)
 
 
 class _SequencePostprocessing(torch.nn.Module):

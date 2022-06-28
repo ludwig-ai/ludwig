@@ -616,8 +616,6 @@ def test_preproc_speed(tmpdir, csv_filename):
         load_paths=True,
     )
 
-    print(ludwig_model.input_features)
-
     # sequence_preprocessor = _SequencePreprocessing()
 
     # inputs[feature[NAME]]
