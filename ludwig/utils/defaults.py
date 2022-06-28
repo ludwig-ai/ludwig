@@ -22,8 +22,6 @@ from dataclasses import asdict
 import yaml
 
 from ludwig.constants import (
-    BINARY,
-    CATEGORY,
     COLUMN,
     COMBINER,
     DROP_ROW,
@@ -40,6 +38,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
@@ -54,17 +53,12 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
-default_preprocessing_force_split = False
-default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
-default_preprocessing_stratify = None
 default_preprocessing_undersample_majority = None
 default_preprocessing_oversample_minority = None
 default_preprocessing_sample_ratio = 1.0
 
 default_preprocessing_parameters = {
-    "force_split": default_preprocessing_force_split,
-    "split_probabilities": default_preprocessing_split_probabilities,
-    "stratify": default_preprocessing_stratify,
+    "split": {},
     "undersample_majority": default_preprocessing_undersample_majority,
     "oversample_minority": default_preprocessing_oversample_minority,
     "sample_ratio": default_preprocessing_sample_ratio,
@@ -185,15 +179,8 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
     # ===== Preprocessing =====
     config["preprocessing"] = merge_dict(default_preprocessing_parameters, config.get("preprocessing", {}))
-
-    stratify = config["preprocessing"]["stratify"]
-    if stratify is not None:
-        features = config["input_features"] + config["output_features"]
-        feature_names = {f[COLUMN] for f in features}
-        if stratify not in feature_names:
-            logger.warning("Stratify is not among the features. " "Cannot establish if it is a binary or category")
-        elif [f for f in features if f[COLUMN] == stratify][0][TYPE] not in {BINARY, CATEGORY}:
-            raise ValueError("Stratify feature must be binary or category")
+    splitter = get_splitter(**config["preprocessing"].get("split", {}))
+    splitter.validate(config)
 
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)

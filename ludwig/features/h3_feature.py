@@ -59,7 +59,7 @@ class _H3Preprocessing(torch.nn.Module):
                 components.base_cell,
             ]
             cells_padding: List[int] = [self.h3_padding_value] * (self.max_h3_resolution - len(components.cells))
-            output = torch.tensor(header + components.cells + cells_padding, dtype=torch.uint8)
+            output = torch.tensor(header + components.cells + cells_padding, dtype=torch.uint8, device=v.device)
             outputs.append(output)
 
         return torch.stack(outputs)
@@ -111,8 +111,8 @@ class H3FeatureMixin(BaseFeatureMixin):
     ):
         column = input_df[feature_config[COLUMN]]
         if column.dtype == object:
-            column = column.map(int)
-        column = column.map(H3FeatureMixin.h3_to_list)
+            column = backend.df_engine.map_objects(column, int)
+        column = backend.df_engine.map_objects(column, H3FeatureMixin.h3_to_list)
 
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
             column, lambda x: np.array(x, dtype=np.uint8)

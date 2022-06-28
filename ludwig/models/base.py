@@ -13,7 +13,8 @@ from ludwig.features.feature_registries import input_type_registry, output_type_
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import LudwigModule, reg_loss
+from ludwig.utils.torch_utils import DEVICE, LudwigModule, reg_loss
+from ludwig.utils.types import TorchDevice
 
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
@@ -109,16 +110,25 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             total_size += tnsr[1].detach().cpu().numpy().size
         return total_size
 
-    def to_torchscript(self):
-        """Converts the model to TorchScript."""
+    def to_torchscript(self, device: Optional[TorchDevice] = None):
+        """Converts the ECD model as a TorchScript model."""
+        if device is None:
+            device = DEVICE
+
         self.eval()
         model_inputs = self.get_model_inputs()
-        # We set strict=False to enable dict inputs and outputs.
-        return torch.jit.trace(self, model_inputs, strict=False)
 
-    def save_torchscript(self, save_path):
-        """Saves the model as a TorchScript file."""
-        traced = self.to_torchscript()
+        model_to_script = self.to(device)
+        model_inputs_to_script = {k: v.to(device) for k, v in model_inputs.items()}
+        # We set strict=False to enable dict inputs and outputs.
+        return torch.jit.trace(model_to_script, model_inputs_to_script, strict=False)
+
+    def save_torchscript(self, save_path, device: Optional[TorchDevice] = None):
+        """Saves the ECD model as a TorchScript model."""
+        if device is None:
+            device = DEVICE
+
+        traced = self.to_torchscript(device)
         traced.save(save_path)
 
     @property

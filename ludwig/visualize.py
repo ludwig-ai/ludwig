@@ -26,6 +26,7 @@ import sklearn
 from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
+from yaml import warnings
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
@@ -237,8 +238,25 @@ def _extract_ground_truth_values(
         gt = gt_df[output_feature_name][split == ground_truth_split]
     elif split_file is not None:
         # retrieve from split file
-        split = load_array(split_file)
-        gt = gt_df[output_feature_name][split == ground_truth_split]
+        if split_file.endswith(".csv"):
+            # Legacy code path for previous split file format
+            warnings.warn(
+                "Using a CSV split file is deprecated and will be removed in v0.7. "
+                "Please retrain or convert to Parquet",
+                DeprecationWarning,
+            )
+            split = load_array(split_file)
+            mask = split == ground_truth_split
+        else:
+            split = pd.read_parquet(split_file)
+
+            # Realign index from the split file with the ground truth to account for
+            # dropped rows during preprocessing.
+            # https://stackoverflow.com/a/65731168
+            mask = split.iloc[:, 0] == ground_truth_split
+            mask = mask.reindex(gt_df.index, fill_value=False)
+
+        gt = gt_df[output_feature_name][mask]
     else:
         # use all the data in ground_truth
         gt = gt_df[output_feature_name]

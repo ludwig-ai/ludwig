@@ -15,6 +15,7 @@ from ludwig.constants import (
     NUMBER,
     PREPROCESSING,
     SCHEDULER,
+    SPLIT,
     TRAINER,
     TYPE,
 )
@@ -125,8 +126,8 @@ def test_missing_outputs_drop_rows():
 
 def test_deprecated_field_aliases():
     config = {
-        "input_features": [{"name": "num_in", "type": "number"}],
-        "output_features": [{"name": "num_out", "type": "number"}],
+        "input_features": [{"name": "num_in", "type": "numerical"}],
+        "output_features": [{"name": "num_out", "type": "numerical"}],
         "training": {
             "epochs": 2,
             "eval_batch_size": 0,
@@ -243,6 +244,42 @@ def test_invalid_trainer_type(model_type):
 
     with pytest.raises(ValidationError):
         merge_with_defaults(config)
+
+
+@pytest.mark.parametrize("force_split", [None, False, True])
+@pytest.mark.parametrize("stratify", [None, "cat_in"])
+def test_deprecated_split_aliases(stratify, force_split):
+    split_probabilities = [0.6, 0.2, 0.2]
+    config = {
+        "input_features": [{"name": "num_in", "type": "number"}, {"name": "cat_in", "type": "category"}],
+        "output_features": [{"name": "num_out", "type": "number"}],
+        "preprocessing": {
+            "force_split": force_split,
+            "split_probabilities": split_probabilities,
+            "stratify": stratify,
+        },
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert "force_split" not in merged_config[PREPROCESSING]
+    assert "split_probabilities" not in merged_config[PREPROCESSING]
+    assert "stratify" not in merged_config[PREPROCESSING]
+
+    assert SPLIT in merged_config[PREPROCESSING]
+    split = merged_config[PREPROCESSING][SPLIT]
+
+    assert split["probabilities"] == split_probabilities
+    if stratify is None:
+        if force_split:
+            assert split.get(TYPE) == "random"
+        elif force_split is False:
+            assert split.get(TYPE) == "fixed"
+        else:
+            assert split.get(TYPE) is None
+    else:
+        assert split.get(TYPE) == "stratify"
+        assert split.get("column") == stratify
 
 
 def test_merge_with_defaults():
@@ -382,9 +419,7 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         "preprocessing": {
-            "force_split": False,
-            "split_probabilities": (0.7, 0.1, 0.2),
-            "stratify": None,
+            "split": {},
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,

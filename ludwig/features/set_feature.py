@@ -112,9 +112,9 @@ class _SetPostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.unk = UNKNOWN_SYMBOL
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key]
-        probabilities = preds[self.probabilities_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
         inv_preds: List[List[str]] = []
         filtered_probs: List[torch.Tensor] = []

@@ -57,7 +57,6 @@ from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.globals import (
-    INFERENCE_MODULE_FILE_NAME,
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     set_disable_progressbar,
@@ -65,7 +64,7 @@ from ludwig.globals import (
 )
 from ludwig.models.base import BaseModel
 from ludwig.models.calibrator import Calibrator
-from ludwig.models.inference import InferenceModule
+from ludwig.models.inference import InferenceModule, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
     print_evaluation_stats,
@@ -94,6 +93,8 @@ from ludwig.utils.misc_utils import (
     set_saved_weights_in_checkpoint_flag,
 )
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.torch_utils import DEVICE
+from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
 
@@ -1468,35 +1469,57 @@ class LudwigModel:
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
-    def to_torchscript(self, model_only: bool = False):
-        """Converts the trained LudwigModule, including preprocessing and postprocessing, to Torchscript.
-
-        The scripted module takes in a `Dict[str, Union[List[str], Tensor]]` as input.
-
-        More specifically, for every input feature, we provide either a Tensor of batch_size inputs, a list of Tensors
-        batch_size in length, or a list of strings batch_size in length.
-
-        Note that the dimensions of all Tensors and lengths of all lists must match.
-
-        Similarly, the output will be a dictionary of dictionaries, where each feature has its own dictionary of
-        outputs. The outputs will be a list of strings for predictions with string types, while other outputs will be
-        tensors of varying dimensions for probabilities, logits, etc.
+    def to_torchscript(
+        self,
+        model_only: bool = False,
+        device: Optional[TorchDevice] = None,
+    ):
+        """Converts the trained model to Torchscript.
 
         Args:
             model_only (bool, optional): If True, only the ECD model will be converted to Torchscript. Else,
-                preprocessing and postprocessing will also be converted to Torchscript.
+                preprocessing and postprocessing steps will also be converted to Torchscript.
+            device (TorchDevice, optional): If None, the model will be converted to Torchscript on the same device to
+                ensure maximum model parity.
+        Returns:
+            A torch.jit.ScriptModule that can be used to predict on a dictionary of inputs.
         """
+        if device is None:
+            device = DEVICE
+
         self._check_initialization()
         if model_only:
-            return self.model.to_torchscript()
+            return self.model.to_torchscript(device)
         else:
-            inference_module = InferenceModule(self.model, self.config, self.training_set_metadata)
+            inference_module = InferenceModule.from_ludwig_model(
+                self.model, self.config, self.training_set_metadata, device=device
+            )
             return torch.jit.script(inference_module)
 
-    def save_torchscript(self, save_path: str, model_only: bool = False):
-        """Saves the Torchscript model to disk."""
-        inference_module = self.to_torchscript(model_only=model_only)
-        inference_module.save(os.path.join(save_path, INFERENCE_MODULE_FILE_NAME))
+    def save_torchscript(
+        self,
+        save_path: str,
+        model_only: bool = False,
+        device: Optional[TorchDevice] = None,
+    ):
+        """Saves the Torchscript model to disk.
+
+        save_path (str): The path to the directory where the model will be saved. model_only (bool, optional): If True,
+        only the ECD model will be converted to Torchscript. Else, the     preprocessing and postprocessing steps will
+        also be converted to Torchscript. device (TorchDevice, optional): If None, the model will be converted to
+        Torchscript on the same device to     ensure maximum model parity.
+        """
+        if device is None:
+            device = DEVICE
+
+        save_ludwig_model_for_inference(
+            save_path,
+            self.model,
+            self.config,
+            self.training_set_metadata,
+            model_only=model_only,
+            device=device,
+        )
 
     def _check_initialization(self):
         if self.model is None or self.config is None or self.training_set_metadata is None:
