@@ -429,7 +429,7 @@ def get_features_eligible_for_shared_params(
     """
 
     if config_feature_type not in config_dict:
-        raise ValueError(f"{config_feature_type} must be define in Ludwig config.")
+        raise ValueError(f"{config_feature_type} must be defined in Ludwig config.")
 
     features_eligible_for_shared_params = defaultdict(set)
 
