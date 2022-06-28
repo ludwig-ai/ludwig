@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -104,17 +104,17 @@ def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.T
     return pd.DataFrame.from_dict(output)
 
 
-def convert_predictions(predictions, output_features, return_type="dict"):
+def convert_predictions(
+    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None  # noqa: F821
+):
     convert_fn = get_from_registry(return_type, conversion_registry)
-    return convert_fn(
-        predictions,
-        output_features,
-    )
+    return convert_fn(predictions, output_features, backend)
 
 
 def convert_to_df(
     predictions,
     output_features,
+    backend: Optional["Backend"] = None,  # noqa: F821
 ):
     return predictions
 

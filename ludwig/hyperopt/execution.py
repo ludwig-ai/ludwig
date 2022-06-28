@@ -14,7 +14,15 @@ from inspect import signature
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import ray
 from packaging import version
+from ray import tune
+from ray.tune import register_trainable, Stopper
+from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
+from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
+from ray.tune.utils import wait_for_gpu
+from ray.tune.utils.placement_groups import PlacementGroupFactory
+from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
@@ -30,32 +38,16 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
+_ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
+if _ray_114:
+    from ray.tune.search import SEARCH_ALG_IMPORT
+    from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
+else:
+    from ray.tune.suggest import SEARCH_ALG_IMPORT
+    from ray.tune.syncer import get_cloud_sync_client
+
+
 logger = logging.getLogger(__name__)
-
-try:
-    import ray
-    from ray import tune
-    from ray.tune import register_trainable, Stopper
-    from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
-
-    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
-    if _ray_114:
-        from ray.tune.search import SEARCH_ALG_IMPORT
-        from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
-    else:
-        from ray.tune.syncer import get_cloud_sync_client
-        from ray.tune.suggest import SEARCH_ALG_IMPORT
-
-    from ray.tune.utils import wait_for_gpu
-    from ray.tune.utils.placement_groups import PlacementGroupFactory
-    from ray.util.queue import Queue as RayQueue
-
-except ImportError as e:
-    logger.warning(f"ImportError (execution.py) failed to import ray with error: \n\t{e}")
-    ray = None
-    Stopper = object
-    get_horovod_kwargs = None
 
 
 try:
