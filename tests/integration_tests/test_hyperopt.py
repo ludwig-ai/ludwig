@@ -45,7 +45,7 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 try:
     import ray
 
-    _ray113 = version.parse(ray.__version__) >= version.parse("1.13")
+    _ray113 = version.parse(ray.__version__) > version.parse("1.13")
 except ImportError:
     ray = None
     _ray113 = None
