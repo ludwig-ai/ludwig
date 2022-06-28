@@ -35,7 +35,6 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
@@ -45,7 +44,10 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 try:
     import ray
 
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor
+
     _ray113 = version.parse(ray.__version__) > version.parse("1.13")
+
 except ImportError:
     ray = None
     _ray113 = None
