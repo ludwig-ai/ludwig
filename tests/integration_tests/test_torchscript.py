@@ -447,7 +447,7 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
 
     inputs[feature[NAME]] = transform_vector_list(inputs[feature[NAME]], vector_type)
 
-    preproc_inputs = script_module.preprocess_forward(inputs)
+    preproc_inputs = script_module.preprocessor_forward(inputs)
 
     # Check that preproc_inputs is the same as preproc_inputs_expected.
     for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
