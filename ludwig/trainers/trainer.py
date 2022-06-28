@@ -45,7 +45,7 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
@@ -72,11 +72,11 @@ class Trainer(BaseTrainer):
 
     @staticmethod
     def get_schema_cls():
-        return TrainerConfig
+        return ECDTrainerConfig
 
     def __init__(
         self,
-        config: TrainerConfig,
+        config: ECDTrainerConfig,
         model: ECD,
         resume: float = False,
         skip_save_model: bool = False,

@@ -23,9 +23,9 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
     otherwise passes all other parameters through without change.
     """
     from ludwig.constants import MODEL_ECD, TYPE
-    from ludwig.schema.trainer import GBMTrainerConfig, TrainerConfig
+    from ludwig.schema.trainer import GBMTrainerConfig, ECDTrainerConfig
 
-    trainer_schema = TrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
+    trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 
     def default_type_for_trainer_schema(cls):
         """Returns the default values for the "type" field on the given trainer schema."""

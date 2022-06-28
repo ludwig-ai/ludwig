@@ -20,7 +20,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.data.preprocessing import merge_preprocessing
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
@@ -97,7 +97,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else TrainerConfig().early_stop
+    expected = -1 if use_hyperopt_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
 

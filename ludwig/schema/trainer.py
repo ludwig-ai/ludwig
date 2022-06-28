@@ -79,7 +79,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
 
 @register_trainer_schema("trainer")
 @dataclass
-class TrainerConfig(BaseTrainerConfig):
+class ECDTrainerConfig(BaseTrainerConfig):
     """TrainerConfig is a dataclass that configures most of the hyperparameters used for ECD model training."""
 
     type: str = schema_utils.StringOptions(

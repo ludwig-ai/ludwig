@@ -39,7 +39,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import GBMTrainerConfig, TrainerConfig
+from ludwig.schema.trainer import GBMTrainerConfig, ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.fs_utils import get_bytes_obj_if_path
@@ -339,7 +339,7 @@ class RayTrainerV2(BaseTrainer):
 
     @staticmethod
     def get_schema_cls():
-        return TrainerConfig
+        return ECDTrainerConfig
 
     @contextlib.contextmanager
     def create_runner(self):
@@ -433,7 +433,7 @@ class RayTrainerV2(BaseTrainer):
         return self._validation_metric
 
     @property
-    def config(self) -> TrainerConfig:
+    def config(self) -> ECDTrainerConfig:
         return self.executable_kwargs["config"]
 
     @property
@@ -534,7 +534,7 @@ class RayLegacyTrainer(BaseTrainer):
 
     @staticmethod
     def get_schema_cls():
-        return TrainerConfig
+        return ECDTrainerConfig
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers
@@ -810,7 +810,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not self._use_legacy:
             trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
 
-            config: Union[TrainerConfig, GBMTrainerConfig] = kwargs["config"]
+            config: Union[ECDTrainerConfig, GBMTrainerConfig] = kwargs["config"]
             trainer_cls = get_from_registry(config.type, trainers_for_model)
 
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
