@@ -801,7 +801,7 @@ class LudwigModel:
                 skip_save_unprocessed_output=skip_save_unprocessed_output or not self.backend.is_coordinator(),
             )
             converted_postproc_predictions = convert_predictions(
-                postproc_predictions, self.model.output_features, return_type=return_type
+                postproc_predictions, self.model.output_features, return_type=return_type, backend=self.backend
             )
 
             if self.backend.is_coordinator():
