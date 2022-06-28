@@ -22,7 +22,7 @@ import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS
-from ludwig.utils.dataframe_utils import to_numpy_dataset, is_dask_backend
+from ludwig.utils.dataframe_utils import to_numpy_dataset, is_dask_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import make_safe_filename
 
@@ -103,7 +103,7 @@ def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.T
     return pd.DataFrame.from_dict(output)
 
 
-def convert_predictions(predictions, output_features, return_type="dict", backend: Optional["Backend"] = None):
+def convert_predictions(predictions, output_features, return_type="dict", backend: Optional["Backend"] = None):  # noqa: F821
     convert_fn = get_from_registry(return_type, conversion_registry)
     return convert_fn(
         predictions,
@@ -115,7 +115,7 @@ def convert_predictions(predictions, output_features, return_type="dict", backen
 def convert_to_dict(
     predictions,
     output_features,
-    backend: Optional["Backend"] = None,
+    backend: Optional["Backend"] = None,   # noqa: F821
 ):
     output = {}
     for of_name, output_feature in output_features.items():
@@ -125,7 +125,7 @@ def convert_to_dict(
             subgroup = key[len(of_name) + 1 :]
 
             values = predictions[key]
-            if is_dask_backend(backend):
+            if is_dask_df(values, backend):
                 values = values.compute()
             try:
                 values = np.stack(values.to_numpy())
@@ -140,7 +140,7 @@ def convert_to_dict(
 def convert_to_df(
     predictions,
     output_features,
-    backend: Optional["Backend"] = None,
+    backend: Optional["Backend"] = None,   # noqa: F821
 ):
     return predictions
 

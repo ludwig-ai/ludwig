@@ -18,6 +18,13 @@ def is_dask_backend(backend: Optional["Backend"]) -> bool:  # noqa: F821
     return backend is not None and is_dask_lib(backend.df_engine.df_lib)
 
 
+def is_dask_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  # noqa: F821
+    if is_dask_backend(backend):
+        import dask.dataframe as dd
+        return isinstance(df, dd.DataFrame)
+    return False
+
+
 def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
