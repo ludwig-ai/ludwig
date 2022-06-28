@@ -239,7 +239,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Size of batch to pass to the model for evaluation.",
     )
 
-    # LightGBM core parameters
+    # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
         ["gbdt", "rf", "dart", "goss"],
         default="gbdt",
