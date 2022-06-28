@@ -501,6 +501,17 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
+def has_no_grad(
+    val: Union[np.ndarray, torch.Tensor, str, list],
+):
+    """Checks if two values are close to each other."""
+    if isinstance(val, list):
+        return all(has_no_grad(v) for v in val)
+    if isinstance(val, torch.Tensor):
+        return not val.requires_grad
+    return True
+
+
 def is_all_close(
     val1: Union[np.ndarray, torch.Tensor, str, list],
     val2: Union[np.ndarray, torch.Tensor, str, list],
