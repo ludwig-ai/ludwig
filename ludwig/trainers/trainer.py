@@ -119,8 +119,8 @@ class Trainer(BaseTrainer):
         :type horovod: dict
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
-        :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
-                `ludwig.models.trainer.TrainerConfig()`).
+        :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters 
+                (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
 
         self.epochs = config.epochs

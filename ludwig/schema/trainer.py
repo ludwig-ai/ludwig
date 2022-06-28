@@ -80,7 +80,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
 @register_trainer_schema("trainer")
 @dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for ECD model training."""
+    """Dataclass that configures most of the hyperparameters used for ECD model training."""
 
     type: str = schema_utils.StringOptions(
         ["trainer", "ray_legacy_trainer"],
@@ -220,7 +220,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 @register_trainer_schema("lightgbm_trainer")
 @dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
-    """TrainerConfig is a dataclass that configures most of the hyperparameters used for GBM model training."""
+    """Dataclass that configures most of the hyperparameters used for GBM model training."""
 
     type: str = schema_utils.StringOptions(
         ["lightgbm_trainer"],
