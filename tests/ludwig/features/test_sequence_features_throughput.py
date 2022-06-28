@@ -43,8 +43,8 @@ backend:
   trainer:
     num_workers: 1
 """
-AGNEWS_CSV_PATH = "/Users/geoffreyangus/.ludwig_cache/agnews_1.0/processed/agnews_tiny.csv"
-# AGNEWS_CSV_PATH = "/home/ray/agnews_tiny.csv"
+# AGNEWS_CSV_PATH = "/Users/geoffreyangus/.ludwig_cache/agnews_1.0/processed/agnews_tiny.csv"
+AGNEWS_CSV_PATH = "/home/ray/agnews_tiny.csv"
 
 
 def test_text_preproc_module_space_punct_tokenizer_speed(tmpdir):
@@ -89,17 +89,17 @@ def test_text_preproc_module_space_punct_tokenizer_speed(tmpdir):
 
         df = pd.read_csv(data_csv_path)
         batch_sizes = [
-            # 1,
-            # 2,
-            # 4,
-            # 8,
-            # 16,
-            # 32,
-            # 64,
-            # 128,
-            # 256,
-            # 512,
-            # 1024,
+            1,
+            2,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128,
+            256,
+            512,
+            1024,
             2048,
         ]
 
@@ -109,9 +109,10 @@ def test_text_preproc_module_space_punct_tokenizer_speed(tmpdir):
             inputs_df = df.sample(n=batch_size, replace=True)
 
             inputs_dict = to_inference_module_input_from_dataframe(inputs_df, config)
+            scripted_model(inputs_dict)
             # scripted_model.preprocessor_forward(inputs_dict)
-            scripted_preprocessing_module(inputs_dict[feature_config[NAME]])
-            scripted_preprocessing_module.forward_old(inputs_dict[feature_config[NAME]])
+            # scripted_preprocessing_module(inputs_dict[feature_config[NAME]])
+            # scripted_preprocessing_module.forward_old(inputs_dict[feature_config[NAME]])
 
         print("benchmarking...")
         for batch_size in batch_sizes:
@@ -122,17 +123,17 @@ def test_text_preproc_module_space_punct_tokenizer_speed(tmpdir):
             method_to_durations = collections.defaultdict(list)
 
             for _ in tqdm(range(10)):
-                start_t = time.time()
-                scripted_preprocessing_module.forward_old(inputs_dict[feature_config[NAME]])
-                method_to_durations["old_preproc"].append(time.time() - start_t)
+                # start_t = time.time()
+                # scripted_preprocessing_module.forward_old(inputs_dict[feature_config[NAME]])
+                # method_to_durations["old_preproc"].append(time.time() - start_t)
 
-                start_t = time.time()
-                scripted_preprocessing_module(inputs_dict[feature_config[NAME]])
-                method_to_durations["new_preproc"].append(time.time() - start_t)
+                # start_t = time.time()
+                # scripted_preprocessing_module(inputs_dict[feature_config[NAME]])
+                # method_to_durations["new_preproc"].append(time.time() - start_t)
 
-                start_t = time.time()
-                preprocessing_module.forward_series(inputs_series, ludwig_model.backend)
-                method_to_durations["series_preproc"].append(time.time() - start_t)
+                # start_t = time.time()
+                # preprocessing_module.forward_series(inputs_series, ludwig_model.backend)
+                # method_to_durations["series_preproc"].append(time.time() - start_t)
 
                 # start_t = time.time()
                 # preprocess_for_prediction(
@@ -148,13 +149,13 @@ def test_text_preproc_module_space_punct_tokenizer_speed(tmpdir):
                 # scripted_model.preprocessor_forward(inputs_dict)
                 # method_to_durations["ts_inf_preproc"].append(time.time() - start_t)
 
-                # start_t = time.time()
-                # ludwig_model.predict(inputs_df)
-                # method_to_durations["ludwig_predict"].append(time.time() - start_t)
+                start_t = time.time()
+                ludwig_model.predict(inputs_df)
+                method_to_durations["ludwig_predict"].append(time.time() - start_t)
 
-                # start_t = time.time()
-                # scripted_model(inputs_dict)
-                # method_to_durations["ts_inf_predict"].append(time.time() - start_t)
+                start_t = time.time()
+                scripted_model(inputs_dict)
+                method_to_durations["ts_inf_predict"].append(time.time() - start_t)
 
             print()
             print(f"Batch size: {batch_size}")

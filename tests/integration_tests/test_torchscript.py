@@ -592,35 +592,6 @@ def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
             assert utils.is_all_tensors_cuda(output_values), f"{feature_name}.{output_name} tensors are not on GPU"
 
 
-def test_preproc_speed(tmpdir, csv_filename):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-
-    feature = text_feature()
-    input_features = [
-        feature,
-    ]
-    output_features = [
-        binary_feature(),
-    ]
-
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-    backend = LocalTestBackend()
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    ludwig_model, _ = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
-
-    df = pd.read_csv(training_data_csv_path)
-    inputs = to_inference_module_input_from_dataframe(
-        df,
-        config,
-        load_paths=True,
-    )
-
-    # sequence_preprocessor = _SequencePreprocessing()
-
-    # inputs[feature[NAME]]
-
-
 def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
     # Train Ludwig (Pythonic) model:
     ludwig_model, script_module = initialize_torchscript_module(

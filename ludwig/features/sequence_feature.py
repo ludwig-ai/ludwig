@@ -126,27 +126,35 @@ class _SequencePreprocessing(torch.nn.Module):
 
         return sequence_matrix
 
-    def forward_new(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
-        v = [self.computed_fill_value if s == "nan" else s for s in v]
+        futures: List[torch.jit.Future[torch.Tensor]] = []
+        for sequence in v:
+            futures.append(
+                torch.jit.fork(
+                    self._process_sequence,
+                    sequence,
+                )
+            )
 
         sequence_matrix = []
-        for sequence in v:
-            sequence_vector = self._process_sequence(sequence)
-            sequence_matrix.append(sequence_vector)
+        for future in futures:
+            sequence_matrix.append(torch.jit.wait(future))
+
         return torch.stack(sequence_matrix)
 
     @torch.jit.unused
     def forward_series(self, column, backend) -> torch.Tensor:
-        column = backend.df_engine.map_objects(column, lambda s: self.computed_fill_value if s == "nan" else s)
         column = backend.df_engine.map_objects(column, self._process_sequence)
         sequence_matrix = backend.df_engine.compute(column).values.tolist()
         return torch.stack(sequence_matrix)
 
     def _process_sequence(self, sequence: str) -> torch.Tensor:
+        sequence = self.computed_fill_value if sequence == "nan" else sequence
+
         if self.lowercase:
             sequence_str: str = sequence.lower()
         else:
