@@ -906,7 +906,6 @@ def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
 def update_features_with_shared_params(
     section_dict: Dict[str, Any],
     trial_parameters_dict: Dict[str, Dict[str, Any]],
-    config_feature_group: str = None,
     features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
 ):
     """Updates the parameters of feature_name in section_dict based on hyperopt parameters sampled.
@@ -918,9 +917,6 @@ def update_features_with_shared_params(
             the name of the feature to the sampled parameters for that feature. For default parameters, it creates
             nested dictionaries for each feature type.
     :type trial_parameters_dict: dict[str, dict[str, any]]
-    :param config_feature_group: Indicates whether the feature is an input feature or output feature (can be either of
-            `input_features` or `output_features`).
-    :type config_feature_group: str
     :param features_eligible_for_shared_params: Collection of names of features that are eligible for using shared
             parameters, keyed by `input_features` or `output_features` and then by feature type.
     :type features_eligible_for_shared_params: dict[str, dict[str, set]]
@@ -949,8 +945,6 @@ def update_features_with_shared_params(
         )
         return
 
-    features_eligible_for_shared_params = features_eligible_for_shared_params.get(config_feature_group)
-
     # At least one of this feature's feature type must use non-default encoders/decoders in the config
     if feature_type not in features_eligible_for_shared_params:
         return
@@ -960,7 +954,6 @@ def update_features_with_shared_params(
         return
 
     sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
-
     set_values(sampled_default_shared_params, section_dict)
 
 
@@ -1000,8 +993,7 @@ def substitute_parameters(
         update_features_with_shared_params(
             input_feature,
             parameters_dict,
-            config_feature_group=INPUT_FEATURES,
-            features_eligible_for_shared_params=features_eligible_for_shared_params,
+            features_eligible_for_shared_params=features_eligible_for_shared_params.get(INPUT_FEATURES),
         )
         # Update or overwrite any feature specific hyperopt params
         update_section_dict(input_feature, input_feature[COLUMN], parameters_dict)
@@ -1010,8 +1002,7 @@ def substitute_parameters(
         update_features_with_shared_params(
             output_feature,
             parameters_dict,
-            config_feature_group=OUTPUT_FEATURES,
-            features_eligible_for_shared_params=features_eligible_for_shared_params,
+            features_eligible_for_shared_params=features_eligible_for_shared_params.get(OUTPUT_FEATURES),
         )
         # Update or overwrite any feature specific hyperopt params
         update_section_dict(output_feature, output_feature[COLUMN], parameters_dict)
