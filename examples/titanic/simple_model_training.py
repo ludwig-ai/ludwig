@@ -17,6 +17,7 @@ from torch.autograd import Variable
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.datasets import titanic
+from ludwig.explain.captum import explain_ig
 from ludwig.utils.neuropod_utils import generate_neuropod_torchscript
 
 # clean out prior results
@@ -50,73 +51,9 @@ model = LudwigModel.load("results/simple_experiment_simple_model/model")
 
 # model_ts = torch.jit.load("titanic.pt")
 
-
-def get_input_tensors(input_set):
-    dataset, _ = preprocess_for_prediction(
-        model.config,
-        dataset=input_set,
-        training_set_metadata=model.training_set_metadata,
-        data_format="auto",
-        split="full",
-        include_outputs=False,
-        backend=model.backend,
-        callbacks=model.callbacks,
-    )
-    # print(dataset.get_dataset())
-
-    inputs = {name: dataset.dataset[feature.proc_column] for name, feature in model.model.input_features.items()}
-    # return [torch.from_numpy(t) for t in inputs.values()], inputs, {}
-
-    encoded_inputs = model.model.encode(inputs)
-    # print("ENCODED_INPUTS", encoded_inputs)
-
-    # print(encoded_inputs)
-
-    data_to_predict = [v["encoder_output"] for _, v in encoded_inputs.items()]
-    # preds = model.model.predict_from_encoded(*[{"encoder_output": arg} for arg in data_to_predict])
-    # print(preds)
-
-    data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
-    return data_to_predict, inputs, encoded_inputs
-
-
-def getmean(t):
-    import random
-
-    try:
-        return t.mean()
-    except:
-        try:
-            return torch.mode(t).values
-        except:
-            batch_size = t.shape[0]
-            idx = random.randint(0, batch_size - 1)
-            return t[idx]
-
-
-data_to_predict, inputs, encoded_inputs = get_input_tensors(test_set)
-baseline, _, _ = get_input_tensors(base_set)
-baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in baseline]
-# baseline[0] = torch.tensor([3], dtype=torch.int8)
-print(baseline)
-
 # baseline = []
 # for feature in model.model.input_features.values():
 #     baseline.append(feature.create_sample_input())
-
-
-class WrapperModule(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.model = model.model
-
-    def forward(self, *args):
-        # args = [{"encoder_output": arg} for arg in args]
-        return model.model.predict_from_encoded(*args)[0]
-
-
-model_fn = WrapperModule()
-print("BASELINE PREDS", model_fn(*baseline))
 
 
 # data_to_predict = [
@@ -126,45 +63,18 @@ print("BASELINE PREDS", model_fn(*baseline))
 # # print(model_ts(*data_to_predict))
 # print(data_to_predict)
 
-from captum.attr import (
-    configure_interpretable_embedding_layer,
-    DeepLift,
-    FeatureAblation,
-    GradientShap,
-    IntegratedGradients,
-    LayerIntegratedGradients,
-    NoiseTunnel,
-    remove_interpretable_embedding_layer,
-)
-from captum.attr._utils.input_layer_wrapper import ModelInputWrapper
 
-# print(data_to_predict)
-explainer = IntegratedGradients(model_fn)
-# explainer = NoiseTunnel(explainer)
-# explainer = DeepLift(model_fn)
-# explainer = GradientShap(model_fn)
-# explainer = FeatureAblation(model_fn)
+attribution, expected_values, preds = explain_ig(model, inputs_df=test_set, sample_df=base_set, target="Survived")
+print(attribution.shape)
+print(np.array(expected_values).shape)
+print(np.array(preds).shape)
 
-# layers = [layer for layer in model_fn.model.input_features.values()]
-# print(layers)
-# explainer = LayerIntegratedGradients(model_fn, layers, multiply_by_inputs=True)
-
-results = explainer.attribute(
-    tuple(data_to_predict),
-    # n_steps=200,
-    baselines=tuple(baseline),
-    # method="gausslegendre",
-    # return_convergence_delta=True,
-)
-
-results = [t.detach().numpy().sum(1) for t in results]
-
-for (name, values), attribution in zip(inputs.items(), results):
-    print(name)
-    print(values)
-    print(attribution)
-    print(abs(attribution).mean(0))
-    print()
+# for (name, values), attribution in zip(inputs.items(), results):
+#     print(name)
+#     print(values)
+#     print(attribution)
+#     print(abs(attribution).mean(0))
+#     print()
 
 # for (name, values), encoded, attribution in zip(inputs.items(), encoded_inputs.values(), results):
 #     print(name, values, encoded, attribution, abs(attribution).sum(0))
