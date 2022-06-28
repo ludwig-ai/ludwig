@@ -460,9 +460,17 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
 
 
 @pytest.mark.parametrize("padding", ["left", "right"])
-def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding):
+@pytest.mark.parametrize("fill_value", ["", "1.0"])
+def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding, fill_value):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    feature = timeseries_feature(preprocessing={"padding": padding, "timeseries_length_limit": 4}, max_len=7)
+    feature = timeseries_feature(
+        preprocessing={
+            "padding": padding,
+            "timeseries_length_limit": 4,
+            "fill_value": "1.0",
+        },
+        max_len=7,
+    )
     input_features = [
         feature,
     ]
@@ -496,16 +504,15 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
 
     inputs[feature[NAME]] = transform_timeseries_from_str_list_to_tensor_list(inputs[feature[NAME]])
 
-    preproc_inputs = script_module.preprocess(inputs)
+    preproc_inputs = script_module.preprocessor_forward(inputs)
 
     # Check that preproc_inputs is the same as preproc_inputs_expected.
     for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
         feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
-        if feature_name not in preproc_inputs.keys():
-            continue
+        assert feature_name in preproc_inputs.keys(), f'feature "{feature_name}" not found.'
 
         feature_values = preproc_inputs[feature_name]
-        assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
+        assert utils.is_all_close(feature_values, feature_values_expected), f'feature "{feature_name}" value mismatch.'
 
 
 @pytest.mark.parametrize(

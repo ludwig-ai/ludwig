@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Dict, Optional, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
@@ -333,7 +333,7 @@ def _get_filename_from_stage(stage: str, device: TorchDevice) -> str:
 
 def to_inference_module_input_from_dataframe(
     dataset: pd.DataFrame, config: Dict[str, Any], load_paths: bool = False, device: Optional[torch.device] = None
-) -> TorchscriptPreprocessingInput:
+) -> Dict[str, TorchscriptPreprocessingInput]:
     """Converts a pandas DataFrame to be compatible with a torchscripted InferenceModule forward pass."""
     inputs = {}
     for if_config in config["input_features"]:
@@ -350,7 +350,7 @@ def to_inference_module_input_from_dataframe(
 
 def _to_inference_model_input_from_series(
     s: pd.Series, feature_type: str, load_paths: bool = False, feature_config: Optional[Dict[str, Any]] = None
-) -> Union[List[str], torch.Tensor]:
+) -> TorchscriptPreprocessingInput:
     """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
     if feature_type == "image":
         if load_paths:

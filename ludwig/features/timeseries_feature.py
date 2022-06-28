@@ -54,16 +54,20 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         self.max_timeseries_length = int(metadata["max_timeseries_length"])
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
-    def _replace_nan_with_padding_value(self, v: torch.Tensor) -> torch.Tensor:
+    def _process_str_sequence(self, sequence: List[str], limit: int) -> torch.Tensor:
+        float_sequence = [float(s) for s in sequence[:limit]]
+        return torch.tensor(float_sequence)
+
+    def _nan_to_fill_value(self, v: torch.Tensor) -> torch.Tensor:
         if v.isnan().any():
-            if self.computed_fill_value == "":
-                v = torch.nan_to_num(v, nan=self.padding_value)
-            else:
-                raise ValueError(f"Fill value must be empty string. Got {self.computed_fill_value}.")
+            tokenized_fill_value = self.tokenizer(self.computed_fill_value)
+            # refines type of sequences from Any to List[str]
+            assert torch.jit.isinstance(tokenized_fill_value, List[str])
+            return self._process_str_sequence(tokenized_fill_value, self.max_timeseries_length)
         return v
 
     def forward_list_of_tensors(self, v: List[torch.Tensor]) -> torch.Tensor:
-        v = [self._replace_nan_with_padding_value(v_i) for v_i in v]
+        v = [self._nan_to_fill_value(v_i) for v_i in v]
 
         if self.padding == "right":
             timeseries_matrix = torch.nn.utils.rnn.pad_sequence(v, batch_first=True, padding_value=self.padding_value)
@@ -83,28 +87,25 @@ class _TimeseriesPreprocessing(torch.nn.Module):
         # refines type of sequences from Any to List[List[str]]
         assert torch.jit.isinstance(sequences, List[List[str]]), "sequences is not a list of lists."
 
-        float_sequences: List[List[float]] = [[float(s) for s in sequence] for sequence in sequences]
         timeseries_matrix = torch.full(
-            [len(float_sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
+            [len(sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
         )
-        for sample_idx, float_sequence in enumerate(float_sequences):
-            limit = min(len(float_sequence), self.max_timeseries_length)
+        for sample_idx, str_sequence in enumerate(sequences):
+            limit = min(len(str_sequence), self.max_timeseries_length)
+            float_sequence = self._process_str_sequence(str_sequence, limit)
             if self.padding == "right":
-                timeseries_matrix[sample_idx][:limit] = torch.tensor(float_sequence[:limit])
+                timeseries_matrix[sample_idx][:limit] = float_sequence
             else:  # if self.padding == 'left
-                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = torch.tensor(
-                    float_sequence[:limit]
-                )
+                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = float_sequence
         return timeseries_matrix
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of float values and creates a padded torch.Tensor."""
         if torch.jit.isinstance(v, List[torch.Tensor]):
             return self.forward_list_of_tensors(v)
-        elif torch.jit.isinstance(v, List[str]):
+        if torch.jit.isinstance(v, List[str]):
             return self.forward_list_of_strs(v)
-        else:
-            raise ValueError(f"Unsupported input: {v}")
+        raise ValueError(f"Unsupported input: {v}")
 
 
 class TimeseriesFeatureMixin(BaseFeatureMixin):
