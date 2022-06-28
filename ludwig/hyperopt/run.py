@@ -189,8 +189,8 @@ def hyperopt(
 
     # Get mapping of input/output features that don't have an encoder for shared parameters
     features_eligible_for_shared_params = {
-        INPUT_FEATURES: get_features_eligible_for_shared_params(INPUT_FEATURES, config_dict),
-        OUTPUT_FEATURES: get_features_eligible_for_shared_params(OUTPUT_FEATURES, config_dict),
+        INPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, INPUT_FEATURES),
+        OUTPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, OUTPUT_FEATURES),
     }
 
     # merge config with defaults
@@ -409,7 +409,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
 
 def get_features_eligible_for_shared_params(
-    config_feature_type: str, config_dict: Dict[str, Any]
+    config_dict: Dict[str, Any], config_feature_type: str
 ) -> Dict[str, Dict[str, Set]]:
     """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
     default encoder for that feature type.
