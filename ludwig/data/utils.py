@@ -1,11 +1,12 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import numpy as np
-from pandas import DataFrame
+
+from ludwig.utils.types import DataFrame
 
 
 def convert_to_dict(
-    predictions: Union[DataFrame, "dask.dataframe.core.DataFrame"],  # noqa: F821
+    predictions: DataFrame,
     output_features: Dict[str, Any],
 ):
     """Convert predictions from DataFrame format to a dictionary."""
