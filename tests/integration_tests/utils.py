@@ -75,6 +75,36 @@ HF_ENCODERS = [
 ]
 
 
+RAY_BACKEND_CONFIG = {
+    "type": "ray",
+    "processor": {
+        "parallelism": 2,
+    },
+    "trainer": {
+        "use_gpu": False,
+        "num_workers": 2,
+        "resources_per_worker": {
+            "CPU": 0.1,
+            "GPU": 0,
+        },
+    },
+}
+
+
+@contextlib.contextmanager
+def ray_start(num_cpus=2, num_gpus=None):
+    res = ray.init(
+        num_cpus=num_cpus,
+        num_gpus=num_gpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
 @contextlib.contextmanager
 def ray_cluster():
     ray.init(
@@ -89,14 +119,14 @@ def ray_cluster():
 
 
 @contextlib.contextmanager
-def init_backend(backend: str):
+def init_backend(backend: str, num_cpus=2, num_gpus=None):
     if backend == "local":
         with contextlib.nullcontext():
             yield
             return
 
     if backend == "ray":
-        with ray_cluster():
+        with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
             yield
             return
 
@@ -159,6 +189,7 @@ def generate_data(
     output_features,
     filename="test_csv.csv",
     num_examples=25,
+    nan_percent=0.0,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -173,6 +204,8 @@ def generate_data(
     data = [next(df) for _ in range(num_examples + 1)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
+    if nan_percent > 0:
+        add_nans_to_df_in_place(dataframe, nan_percent)
     dataframe.to_csv(filename, index=False)
 
     return filename
@@ -471,19 +504,27 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
 def is_all_close(
     val1: Union[np.ndarray, torch.Tensor, str, list],
     val2: Union[np.ndarray, torch.Tensor, str, list],
-    tolerance=1e-8,
+    tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val1, list):
         return all(is_all_close(v1, v2, tolerance) for v1, v2 in zip(val1, val2))
-
     if isinstance(val1, str):
         return val1 == val2
     if isinstance(val1, torch.Tensor):
-        val1 = val1.detach().numpy()
+        val1 = val1.cpu().detach().numpy()
     if isinstance(val2, torch.Tensor):
-        val2 = val2.detach().numpy()
+        val2 = val2.cpu().detach().numpy()
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
+
+
+def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+    if isinstance(val, list):
+        return all(is_all_tensors_cuda(v) for v in val)
+
+    if isinstance(val, torch.Tensor):
+        return val.is_cuda
+    return True
 
 
 def run_api_experiment(input_features, output_features, data_csv):
@@ -536,16 +577,25 @@ def run_api_experiment(input_features, output_features, data_csv):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
+def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
+    """Adds nans to a pandas dataframe in-place."""
+    if nan_percent < 0 or nan_percent > 1:
+        raise ValueError("nan_percent must be between 0 and 1")
+
+    num_rows = len(df)
+    num_nans_per_col = int(round(nan_percent * num_rows))
+    for col in df.columns:
+        col_idx = df.columns.get_loc(col)
+        for row_idx in random.sample(range(num_rows), num_nans_per_col):
+            df.iloc[row_idx, col_idx] = np.nan
+    return None
+
+
 def read_csv_with_nan(path, nan_percent=0.0):
     """Converts `nan_percent` of samples in each row of the CSV at `path` to NaNs."""
     df = pd.read_csv(path)
     if nan_percent > 0:
-        num_rows = len(df)
-        num_nans_per_col = int(round(nan_percent * num_rows))
-        for col in df.columns:
-            col_idx = df.columns.get_loc(col)
-            for row_idx in random.sample(range(num_rows), num_nans_per_col):
-                df.iloc[row_idx, col_idx] = np.nan
+        add_nans_to_df_in_place(df, nan_percent)
     return df
 
 

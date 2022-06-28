@@ -23,6 +23,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.backend import RAY
 from ludwig.constants import COMBINER, LOGITS, NAME, PREDICTIONS, PROBABILITIES, TRAINER
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.number_feature import numeric_transformation_registry
@@ -405,8 +406,38 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
-def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
-    # Train Ludwig (Pythonic) model:
+@pytest.mark.parametrize(
+    "feature",
+    [
+        number_feature(),
+        binary_feature(),
+        category_feature(vocab_size=3),
+        bag_feature(vocab_size=3),
+        set_feature(vocab_size=3),
+        text_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        timeseries_feature(),
+        h3_feature(),
+        # TODO: future support
+        # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
+        # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
+        # vector_feature(), # does not have a missing_value_strategy
+        # date_feature(),   # default fill with datetime.now() strategy is not scriptable
+    ],
+)
+def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    input_features = [feature]
+
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
+
+    # Initialize Ludwig model
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
         dataset=training_data_csv_path,
@@ -417,17 +448,161 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
         skip_save_log=True,
         skip_save_processed_input=True,
     )
-
-    # Obtain predictions from Python model
-    preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config,
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
 
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript()
-
     # Ensure torchscript saving/loading does not affect final predictions.
     script_module_path = os.path.join(tmpdir, "inference_module.pt")
     torch.jit.save(script_module, script_module_path)
     script_module = torch.jit.load(script_module_path)
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        if feature_name not in preproc_inputs.keys():
+            continue
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "feature_fn",
+    [
+        number_feature,
+        image_feature,
+        audio_feature,
+        h3_feature,
+        date_feature,
+        # TODO: future support
+        # binary_feature(),                # Torchscript takes List[str] as input, so currently CPU only
+        # category_feature(vocab_size=3),  # Torchscript takes List[str] as input, so currently CPU only
+        # set_feature(vocab_size=3),       # Torchscript takes List[str] as input, so currently CPU only
+        # sequence_feature(vocab_size=3),  # Torchscript takes List[str] as input, so currently CPU only
+        # text_feature(vocab_size=3),      # Torchscript takes List[str] as input, so currently CPU only
+        # vector_feature(),                # Torchscript takes List[str] as input, so currently CPU only
+        # bag_feature(vocab_size=3),       # Torchscript takes List[str] as input, so currently CPU only
+        # timeseries_feature(),            # Torchscript takes List[str] as input, so currently CPU only
+    ],
+)
+def test_torchscript_preproc_gpu(tmpdir, csv_filename, feature_fn):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    feature_kwargs = {}
+    if feature_fn in {image_feature, audio_feature}:
+        dest_folder = os.path.join(tmpdir, "generated_samples")
+        feature_kwargs["folder"] = dest_folder
+
+    input_features = [
+        feature_fn(**feature_kwargs),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    backend = RAY
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    _, script_module = initialize_torchscript_module(
+        tmpdir,
+        config,
+        backend,
+        training_data_csv_path,
+        device=torch.device("cuda"),
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(
+        df,
+        config,
+        load_paths=True,
+        device=torch.device("cuda"),
+    )
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    for name, values in preproc_inputs.items():
+        assert values.is_cuda, f'feature "{name}" tensors are not on GPU'
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "feature_fn",
+    [
+        number_feature,
+        category_feature,
+        binary_feature,
+        set_feature,
+        vector_feature,
+        sequence_feature,
+        text_feature,
+    ],
+)
+def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    feature_kwargs = {}
+    if feature_fn in {category_feature, set_feature, sequence_feature, text_feature}:
+        feature_kwargs["vocab_size"] = 3
+
+    input_features = [
+        number_feature(),
+    ]
+    output_features = [
+        feature_fn(**feature_kwargs),
+    ]
+
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    backend = RAY
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    _, script_module = initialize_torchscript_module(
+        tmpdir,
+        config,
+        backend,
+        training_data_csv_path,
+        device=torch.device("cuda"),
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(
+        df,
+        config,
+        load_paths=True,
+        device=torch.device("cuda"),
+    )
+    postproc_outputs = script_module(inputs)
+
+    for feature_name, feature_outputs in postproc_outputs.items():
+        for output_name, output_values in feature_outputs.items():
+            assert utils.is_all_tensors_cuda(output_values), f"{feature_name}.{output_name} tensors are not on GPU"
+
+
+def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
+    # Train Ludwig (Pythonic) model:
+    ludwig_model, script_module = initialize_torchscript_module(
+        tmpdir,
+        config,
+        backend,
+        training_data_csv_path,
+    )
+
+    # Obtain predictions from Python model
+    preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
     df = pd.read_csv(training_data_csv_path)
     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
@@ -450,3 +625,29 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
             assert utils.is_all_close(
                 output_values, output_values_expected
             ), f"feature: {feature_name}, output: {output_name}"
+
+
+def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path, device=None):
+    # Initialize Ludwig model
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=training_data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
+
+    # Put torchscript model on GPU if available (LudwigModel will run train/predict on GPU if available)
+    if device is None:
+        device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    # Create graph inference model (Torchscript) from trained Ludwig model.
+    script_module = ludwig_model.to_torchscript(device=device)
+    # Ensure torchscript saving/loading does not affect final predictions.
+    script_module_path = os.path.join(tmpdir, "inference_module.pt")
+    torch.jit.save(script_module, script_module_path)
+    script_module = torch.jit.load(script_module_path)
+    return ludwig_model, script_module

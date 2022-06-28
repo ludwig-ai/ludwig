@@ -50,13 +50,15 @@ try:
     from ray import tune
     from ray.tune import register_trainable, Stopper
     from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
+    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
 
     _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
+        from ray.tune.search import SEARCH_ALG_IMPORT
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
         from ray.tune.syncer import get_cloud_sync_client
+        from ray.tune.suggest import SEARCH_ALG_IMPORT
 
     from ray.tune.utils import wait_for_gpu
     from ray.tune.utils.placement_groups import PlacementGroupFactory

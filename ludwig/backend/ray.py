@@ -26,6 +26,7 @@ import pandas as pd
 import ray
 import torch
 import tqdm
+from fsspec.config import conf
 from packaging import version
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -39,6 +40,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetSha
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
+from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -828,8 +830,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
         ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
-            df[column.name] = df[column.name].map(fn)
-            return df
+            # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
+            with use_credentials(conf):
+                df[column.name] = df[column.name].map(fn)
+                return df
 
         ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_if_path), batch_format="pandas")
         if map_fn is not None:

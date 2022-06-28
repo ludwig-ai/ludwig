@@ -285,7 +285,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         feature_length = audio_feature.shape[0]
         broadcast_feature_length = min(feature_length, max_length)
-        audio_feature_padded = torch.full((max_length, feature_dim), padding_value, dtype=torch.float32)
+        audio_feature_padded = torch.full(
+            (max_length, feature_dim), padding_value, dtype=torch.float32, device=audio_feature.device
+        )
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
 
         return audio_feature_padded

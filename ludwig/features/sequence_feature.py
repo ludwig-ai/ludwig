@@ -85,11 +85,14 @@ class _SequencePreprocessing(torch.nn.Module):
         self.stop_symbol = STOP_SYMBOL
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
+        self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
+
+        v = [self.computed_fill_value if s == "nan" else s for s in v]
 
         if self.lowercase:
             sequences = [sequence.lower() for sequence in v]
@@ -133,9 +136,10 @@ class _SequencePostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.probability_key = PROBABILITY
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        """Takes a dictionary of tensors and returns a dictionary of tensors."""
-        pred_predictions = preds[self.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        pred_predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        pred_probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
         predictions: List[List[str]] = []
         for sequence in pred_predictions:
             sequence_predictions: List[str] = []
@@ -148,7 +152,6 @@ class _SequencePostprocessing(torch.nn.Module):
                 sequence_predictions.append(unit_prediction)
             predictions.append(sequence_predictions)
 
-        pred_probabilities = preds[self.probabilities_key]
         probabilities, _ = torch.max(pred_probabilities, dim=-1)
         probability = torch.sum(torch.log(probabilities), dim=-1)
 

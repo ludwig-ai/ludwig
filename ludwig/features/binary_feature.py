@@ -82,26 +82,23 @@ class _BinaryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         bool2str = metadata.get("bool2str")
-        # If the values in column could have been inferred as boolean dtype, do not convert preds to strings.
-        # This preserves the behavior of this feature before #2058.
-        if strings_utils.values_are_pandas_bools(bool2str):
-            bool2str = None
         self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
         if self.bool2str is not None:
             predictions = predictions.to(dtype=torch.int32)
             predictions = [self.bool2str.get(pred, self.bool2str[0]) for pred in predictions]
 
-        probs = preds[self.probabilities_key]
-        probs = torch.stack([1 - probs, probs], dim=-1)
+        probabilities = torch.stack([1 - probabilities, probabilities], dim=-1)
 
         return {
             self.predictions_key: predictions,
-            self.probabilities_key: probs,
+            self.probabilities_key: probabilities,
         }
 
 
@@ -159,17 +156,37 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def cast_column(column, backend):
-        # Binary features are always read as strings. column.astype(bool) for all non-empty cells returns True.
-        return column.astype(str)
+        """Cast column of dtype object to bool.
+
+        Unchecked casting to boolean when given a column of dtype object converts all non-empty cells to True. We check
+        the values of the column directly and manually determine the best dtype to use.
+        """
+        values = backend.df_engine.compute(column.drop_duplicates())
+
+        if strings_utils.values_are_pandas_numbers(values):
+            # If numbers, convert to float so it can be converted to bool
+            column = column.astype(float).astype(bool)
+        elif strings_utils.values_are_pandas_bools(values):
+            # If booleans, manually assign boolean values
+            column = backend.df_engine.map_objects(
+                column, lambda x: x.lower() in strings_utils.PANDAS_TRUE_STRS
+            ).astype(bool)
+        else:
+            # If neither numbers or booleans, they are strings (objects)
+            column = column.astype(object)
+        return column
 
     @staticmethod
     def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
-        distinct_values = backend.df_engine.compute(column.drop_duplicates()).tolist()
+        if column.dtype != object:
+            return {}
+
+        distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
             raise ValueError(
-                f"Binary feature column {column.name} expects 2 distinct values, " f"found: {distinct_values}"
+                f"Binary feature column {column.name} expects 2 distinct values, "
+                f"found: {distinct_values.values.tolist()}"
             )
-
         if "fallback_true_label" in preprocessing_parameters:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
@@ -201,9 +218,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     ) -> None:
         column = input_df[feature_config[COLUMN]]
 
-        column_np_dtype = np.dtype(column.dtype)
-        # np.str_ is dtype of modin cols
-        if any(column_np_dtype == np_dtype for np_dtype in {np.object_, np.str_}):
+        if column.dtype == object:
             metadata = metadata[feature_config[NAME]]
             if "str2bool" in metadata:
                 column = backend.df_engine.map_objects(column, lambda x: metadata["str2bool"][str(x)])
@@ -373,13 +388,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
             if "bool2str" in metadata:
-                # If the values in column could have been inferred as boolean dtype, do not convert preds to strings.
-                # This preserves the behavior of this feature before #2058.
-                if not strings_utils.values_are_pandas_bools(class_names):
-                    result[predictions_col] = backend.df_engine.map_objects(
-                        result[predictions_col],
-                        lambda pred: metadata["bool2str"][pred],
-                    )
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    lambda pred: metadata["bool2str"][pred],
+                )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:

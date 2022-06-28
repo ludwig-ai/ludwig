@@ -59,17 +59,22 @@ class _VectorPreprocessing(torch.nn.Module):
 
 
 class _VectorPostprocessing(torch.nn.Module):
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        # Workaround to convert type annotation from Dict[str, torch.Tensor] to Dict[str, Any]
-        preds_any: Dict[str, Any] = {}
-        for k, v in preds.items():
-            preds_any[k] = v
-        return preds_any
+    def __init__(self):
+        super().__init__()
+        self.predictions_key = PREDICTIONS
+        self.logits_key = LOGITS
+
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
+
+        return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class _VectorPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
         return {self.predictions_key: logits, self.logits_key: logits}
 
 
