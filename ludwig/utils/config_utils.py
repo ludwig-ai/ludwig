@@ -3,7 +3,7 @@ from typing import Any, Dict, Set
 from ludwig.constants import TYPE
 
 
-def get_feature_type_parameter_values(
+def get_feature_type_parameter_values_from_section(
     config: Dict[str, Any], features_section: str, feature_type: str, parameter_name: str
 ) -> Set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and

@@ -38,7 +38,7 @@ from ludwig.constants import (
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.utils.config_utils import get_feature_type_parameter_values
+from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -147,8 +147,8 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
         HYPEROPT: {
             "parameters": {
                 "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-                "defaults.input_features.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
-                "defaults.output_features.category.embedding_size": {
+                "defaults.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
+                "defaults.category.embedding_size": {
                     "space": "choice",
                     "categories": embedding_size_search_space,
                 },
@@ -169,7 +169,7 @@ def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str,
     the version of Ray. Returns None if the parameter key is not found.
 
     TODO(#2176): There are different key name delimiters depending on Ray version. The delimiter in future versions of
-    Ray (>= 1.13) will be '/' instead of '.' Simplify this as Ray is upgraded.
+    Ray (> 1.13) will be '/' instead of '.' Simplify this as Ray is upgraded.
     """
     if _ray113:
         return trial_row[f"config/{parameter_key}"]
@@ -392,8 +392,8 @@ def _test_hyperopt_with_shared_params_trial_table(
 ):
     # Check that hyperopt trials sample from defaults in the search space
     for _, trial_row in hyperopt_results_df.iterrows():
-        embedding_size = _get_trial_parameter_value("defaults.output_features.category.embedding_size", trial_row)
-        num_filters = _get_trial_parameter_value("defaults.input_features.text.num_filters", trial_row)
+        embedding_size = _get_trial_parameter_value("defaults.category.embedding_size", trial_row)
+        num_filters = _get_trial_parameter_value("defaults.text.num_filters", trial_row)
         assert embedding_size in embedding_size_search_space
         assert num_filters in num_filters_search_space
 
@@ -411,9 +411,11 @@ def _test_hyperopt_with_shared_params_written_config(
         for input_feature in model_parameters[INPUT_FEATURES]:
             if input_feature[TYPE] == TEXT:
                 assert input_feature["num_filters"] in num_filters_search_space
+            elif input_feature[TYPE] == CATEGORY:
+                assert input_feature["embedding_size"] in embedding_size_search_space
 
         # All text features with defaults should have the same num_filters for this trial
-        text_input_num_filters = get_feature_type_parameter_values(
+        text_input_num_filters = get_feature_type_parameter_values_from_section(
             model_parameters, INPUT_FEATURES, TEXT, "num_filters"
         )
         assert len(text_input_num_filters) == 1
@@ -424,10 +426,14 @@ def _test_hyperopt_with_shared_params_written_config(
                 assert output_feature["embedding_size"] in embedding_size_search_space
 
         # All category features with defaults should have the same embedding_size for this trial
-        category_features_embedding_sizes = get_feature_type_parameter_values(
+        input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
+            model_parameters, INPUT_FEATURES, CATEGORY, "embedding_size"
+        )
+        output_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
             model_parameters, OUTPUT_FEATURES, CATEGORY, "embedding_size"
         )
-        assert len(category_features_embedding_sizes) == 1
+        trial_embedding_sizes = input_category_features_embedding_sizes.union(output_category_features_embedding_sizes)
+        assert len(trial_embedding_sizes) == 1
 
 
 @pytest.mark.distributed

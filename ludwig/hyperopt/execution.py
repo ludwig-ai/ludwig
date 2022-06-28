@@ -934,19 +934,15 @@ def update_features_with_shared_params(
     :type features_eligible_for_shared_params: dict[str, dict[str, set]]
     """
 
-    feature_name = section_dict[COLUMN]
-    feature_type = section_dict[TYPE]
+    feature_name = section_dict.get(COLUMN)
+    feature_type = section_dict.get(TYPE)
 
     # No default parameters specified in hyperopt parameter search space
     if DEFAULTS not in trial_parameters_dict:
         return
 
-    # No default parameters specified for this config_feature_group
-    if config_feature_group not in trial_parameters_dict[DEFAULTS]:
-        return
-
     # This feature type should have a sampled value from the default parameters passed in
-    if feature_type not in trial_parameters_dict[DEFAULTS][config_feature_group]:
+    if feature_type not in trial_parameters_dict.get(DEFAULTS):
         return
 
     # All features in Ludwig config use non-default encoders or decoders
@@ -961,19 +957,19 @@ def update_features_with_shared_params(
         )
         return
 
-    features_eligible_for_shared_params = features_eligible_for_shared_params[config_feature_group]
+    features_eligible_for_shared_params = features_eligible_for_shared_params.get(config_feature_group)
 
     # At least one of this feature's feature type must use non-default encoders/decoders in the config
     if feature_type not in features_eligible_for_shared_params:
         return
 
     # This feature must use a default encoder/decoder
-    if feature_name not in features_eligible_for_shared_params[feature_type]:
+    if feature_name not in features_eligible_for_shared_params.get(feature_type):
         return
 
-    shared_params = trial_parameters_dict[DEFAULTS][config_feature_group][feature_type]
+    sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
 
-    set_values(shared_params, section_dict)
+    set_values(sampled_default_shared_params, section_dict)
 
 
 def update_section_dict(
