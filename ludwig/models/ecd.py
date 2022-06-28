@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 
 from ludwig.combiners.combiners import Combiner, get_combiner_class
-from ludwig.constants import COMBINED, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TIED, TYPE
+from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
