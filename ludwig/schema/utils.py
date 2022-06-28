@@ -23,7 +23,7 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
     otherwise passes all other parameters through without change.
     """
     from ludwig.constants import MODEL_ECD, TYPE
-    from ludwig.schema.trainer import GBMTrainerConfig, ECDTrainerConfig
+    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 
     trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 

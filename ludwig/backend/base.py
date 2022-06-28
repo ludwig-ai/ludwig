@@ -26,7 +26,7 @@ from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
-from ludwig.schema.trainer import GBMTrainerConfig, ECDTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import initialize_pytorch
