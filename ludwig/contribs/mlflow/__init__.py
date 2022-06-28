@@ -123,9 +123,6 @@ class MlflowCallback(Callback):
             if self.save_thread is not None:
                 self.save_thread.join()
 
-        if self.run is not None:
-            mlflow.end_run()
-
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure
         # mlflow.log_figure(fig)
