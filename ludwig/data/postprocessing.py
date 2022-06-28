@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,7 @@ import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS
-from ludwig.utils.dataframe_utils import to_numpy_dataset, is_dask_df
+from ludwig.utils.dataframe_utils import is_dask_df, to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import make_safe_filename
 
@@ -103,19 +103,17 @@ def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.T
     return pd.DataFrame.from_dict(output)
 
 
-def convert_predictions(predictions, output_features, return_type="dict", backend: Optional["Backend"] = None):  # noqa: F821
+def convert_predictions(
+    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None
+):  # noqa: F821
     convert_fn = get_from_registry(return_type, conversion_registry)
-    return convert_fn(
-        predictions,
-        output_features,
-        backend
-    )
+    return convert_fn(predictions, output_features, backend)
 
 
 def convert_to_dict(
     predictions,
     output_features,
-    backend: Optional["Backend"] = None,   # noqa: F821
+    backend: Optional["Backend"] = None,  # noqa: F821
 ):
     output = {}
     for of_name, output_feature in output_features.items():
@@ -140,7 +138,7 @@ def convert_to_dict(
 def convert_to_df(
     predictions,
     output_features,
-    backend: Optional["Backend"] = None,   # noqa: F821
+    backend: Optional["Backend"] = None,  # noqa: F821
 ):
     return predictions
 

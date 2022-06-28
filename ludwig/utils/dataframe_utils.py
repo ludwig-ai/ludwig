@@ -21,6 +21,7 @@ def is_dask_backend(backend: Optional["Backend"]) -> bool:  # noqa: F821
 def is_dask_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  # noqa: F821
     if is_dask_backend(backend):
         import dask.dataframe as dd
+
         return isinstance(df, dd.DataFrame)
     return False
 
