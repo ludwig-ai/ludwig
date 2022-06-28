@@ -66,7 +66,7 @@ class InferenceModule(nn.Module):
         for k, v in preproc_inputs.items():
             preproc_inputs[k] = v.to(self.predictor.device)
 
-        with torch.no_grad():  # Ensure model params do not store gradients
+        with torch.no_grad():  # Ensure model params do not compute gradients
             predictions_flattened = self.predictor(preproc_inputs)
             return predictions_flattened
 
