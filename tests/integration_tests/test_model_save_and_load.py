@@ -152,11 +152,8 @@ def test_gbm_model_save_reload_api(csv_filename, tmp_path):
     }
 
     data_df = read_csv(data_csv_path)
-    data_df[SPLIT] = get_split(data_df)
-    training_set, test_set, validation_set = split_dataset_ttv(data_df, SPLIT)
-    training_set = pd.DataFrame(training_set)
-    validation_set = pd.DataFrame(validation_set)
-    test_set = pd.DataFrame(test_set)
+    splitter = get_splitter("random")
+    training_set, validation_set, test_set = splitter.split(data_df, LocalTestBackend())
 
     # create sub-directory to store results
     results_dir = tmp_path / "results"
