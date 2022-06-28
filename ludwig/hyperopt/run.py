@@ -441,10 +441,10 @@ def get_features_eligible_for_shared_params(
         if config_feature_type == INPUT_FEATURES:
             default_encoder = get_from_registry(feature.get(TYPE), input_type_registry).encoder
             if not feature.get(ENCODER, 0) or feature.get(ENCODER) == default_encoder:
-                features_eligible_for_shared_params.get(feature[TYPE]).add(feature[NAME])
+                features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
         else:
             default_decoder = get_from_registry(feature.get(TYPE), output_type_registry).decoder
             if not feature.get(DECODER, 0) or feature.get(DECODER) == default_decoder:
-                features_eligible_for_shared_params.get(feature[TYPE]).add(feature[NAME])
+                features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
 
     return features_eligible_for_shared_params
