@@ -87,45 +87,6 @@ class _SequencePreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
-    @torch.jit.export
-    def forward_old(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        """Takes a list of strings and returns a tensor of token ids."""
-        if not torch.jit.isinstance(v, List[str]):
-            raise ValueError(f"Unsupported input: {v}")
-
-        v = [self.computed_fill_value if s == "nan" else s for s in v]
-
-        if self.lowercase:
-            sequences = [sequence.lower() for sequence in v]
-        else:
-            sequences = v
-
-        unit_sequences = self.tokenizer(sequences)
-        # refines type of unit_sequences from Any to List[List[str]]
-        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
-
-        sequence_matrix = torch.full(
-            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
-        )
-        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
-        for sample_idx, unit_sequence in enumerate(unit_sequences):
-            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_length = len(unit_sequence)
-                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
-            else:
-                sequence_length = self.max_sequence_length - 1
-
-            for i in range(sequence_length):
-                curr_unit = unit_sequence[i]
-                if curr_unit in self.unit_to_id:
-                    curr_id = self.unit_to_id[curr_unit]
-                else:
-                    curr_id = self.unit_to_id[self.unknown_symbol]
-                sequence_matrix[sample_idx][i + 1] = curr_id
-
-        return sequence_matrix
-
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
@@ -144,12 +105,6 @@ class _SequencePreprocessing(torch.nn.Module):
         for future in futures:
             sequence_matrix.append(torch.jit.wait(future))
 
-        return torch.stack(sequence_matrix)
-
-    @torch.jit.unused
-    def forward_series(self, column, backend) -> torch.Tensor:
-        column = backend.df_engine.map_objects(column, self._process_sequence)
-        sequence_matrix = backend.df_engine.compute(column).values.tolist()
         return torch.stack(sequence_matrix)
 
     def _process_sequence(self, sequence: str) -> torch.Tensor:
