@@ -13,9 +13,9 @@ def is_dask_lib(df_lib) -> bool:
     return df_lib.__name__ == DASK_MODULE_NAME
 
 
-def is_dask_backend(backend: "Backend") -> bool:  # noqa: F821
+def is_dask_backend(backend: Optional["Backend"]) -> bool:  # noqa: F821
     """Returns whether the backend's dataframe is dask."""
-    return is_dask_lib(backend.df_engine.df_lib)
+    return backend is not None and is_dask_lib(backend.df_engine.df_lib)
 
 
 def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
