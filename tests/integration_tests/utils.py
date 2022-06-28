@@ -504,19 +504,27 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
 def is_all_close(
     val1: Union[np.ndarray, torch.Tensor, str, list],
     val2: Union[np.ndarray, torch.Tensor, str, list],
-    tolerance=1e-8,
+    tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val1, list):
         return all(is_all_close(v1, v2, tolerance) for v1, v2 in zip(val1, val2))
-
     if isinstance(val1, str):
         return val1 == val2
     if isinstance(val1, torch.Tensor):
-        val1 = val1.detach().numpy()
+        val1 = val1.cpu().detach().numpy()
     if isinstance(val2, torch.Tensor):
-        val2 = val2.detach().numpy()
+        val2 = val2.cpu().detach().numpy()
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
+
+
+def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+    if isinstance(val, list):
+        return all(is_all_tensors_cuda(v) for v in val)
+
+    if isinstance(val, torch.Tensor):
+        return val.is_cuda
+    return True
 
 
 def run_api_experiment(input_features, output_features, data_csv):
