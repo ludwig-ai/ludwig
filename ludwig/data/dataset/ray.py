@@ -124,7 +124,9 @@ class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]) -> RayDataset:
+    def create(
+        self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]
+    ) -> RayDataset:
         return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
 
     def save(
