@@ -23,8 +23,6 @@ from typing import Any, Dict, List, Union
 import yaml
 
 from ludwig.constants import (
-    BINARY,
-    CATEGORY,
     COLUMN,
     COMBINER,
     DECODER,
@@ -43,6 +41,7 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     RAY,
+    SPLIT,
     TRAINER,
     TYPE,
 )
@@ -251,20 +250,11 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
     # ===== Preprocessing =====
     config[PREPROCESSING] = merge_dict(base_preprocessing_parameters, config.get(PREPROCESSING, {}))
-    splitter = get_splitter(**config["preprocessing"].get("split", {}))
+    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
     splitter.validate(config)
 
     # Create global preprocessing dictionary for preprocessing module
     _merge_preprocessing_with_defaults(config_defaults, config_defaults_feature_types)
-
-    stratify = config[PREPROCESSING]["stratify"]
-    if stratify is not None:
-        features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
-        feature_names = {f[COLUMN] for f in features}
-        if stratify not in feature_names:
-            logger.warning("Stratify is not among the features. " "Cannot establish if it is a binary or category")
-        elif [f for f in features if f[COLUMN] == stratify][0][TYPE] not in {BINARY, CATEGORY}:
-            raise ValueError("Stratify feature must be binary or category")
 
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)
