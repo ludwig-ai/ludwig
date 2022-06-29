@@ -21,6 +21,7 @@ import pandas as pd
 import torch
 
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.data.utils import convert_to_dict
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS
 from ludwig.utils.dataframe_utils import to_numpy_dataset, is_dask_object
 from ludwig.utils.misc_utils import get_from_registry
@@ -108,31 +109,6 @@ def convert_predictions(
 ):
     convert_fn = get_from_registry(return_type, conversion_registry)
     return convert_fn(predictions, output_features, backend)
-
-
-def convert_to_dict(
-    predictions,
-    output_features,
-    backend: Optional["Backend"] = None,  # noqa: F821
-):
-    output = {}
-    for of_name, output_feature in output_features.items():
-        feature_keys = {k for k in predictions.columns if k.startswith(of_name)}
-        feature_dict = {}
-        for key in feature_keys:
-            subgroup = key[len(of_name) + 1 :]
-
-            values = predictions[key]
-            if is_dask_object(values, backend):
-                values = values.compute()
-            try:
-                values = np.stack(values.to_numpy())
-            except ValueError:
-                values = values.to_list()
-
-            feature_dict[subgroup] = values
-        output[of_name] = feature_dict
-    return output
 
 
 def convert_to_df(
