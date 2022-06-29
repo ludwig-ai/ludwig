@@ -19,6 +19,7 @@ from ludwig.utils.inference_utils import (
     get_filename_from_stage,
 )
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.output_feature_utils import get_feature_name_from_concat_name, get_tensor_name_from_concat_name
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 

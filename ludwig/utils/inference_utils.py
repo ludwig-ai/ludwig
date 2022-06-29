@@ -4,31 +4,31 @@ from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 import torch
 
+from ludwig.constants import (
+    PREPROCESSOR,
+    PREDICTOR,
+    POSTPROCESSOR,
+    BINARY,
+    CATEGORY,
+    BAG,
+    SET,
+    TEXT,
+    SEQUENCE,
+    TIMESERIES,
+    VECTOR,
+    IMAGE,
+    AUDIO,
+    DATE,
+    COLUMN,
+    TYPE,
+    NAME,
+)
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.image_utils import read_image_from_path
 from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 
-
-# Duplicated from ludwig.constants to minimize dependencies.
-PREPROCESSOR = "preprocessor"
-PREDICTOR = "predictor"
-POSTPROCESSOR = "postprocessor"
-BINARY = "binary"
-CATEGORY = "category"
-BAG = "bag"
-SET = "set"
-TEXT = "text"
-SEQUENCE = "sequence"
-TIMESERIES = "timeseries"
-VECTOR = "vector"
-IMAGE = "image"
-AUDIO = "audio"
-DATE = "date"
-COLUMN = "column"
-TYPE = "type"
-NAME = "name"
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
