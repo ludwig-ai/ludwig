@@ -279,7 +279,7 @@ def generate_audio(feature):
 
 def generate_image(feature, save_as_numpy=False):
     save_as_numpy = feature.get("save_as_numpy", save_as_numpy)
-    print("save_as_numpy", save_as_numpy)
+
     try:
         from torchvision.io import write_png
     except ImportError:

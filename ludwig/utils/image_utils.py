@@ -115,7 +115,7 @@ def read_image_as_png(
             del buffer_view
             return image
     except Exception as e:
-        logger.warning("Failed to read image as PNG. Original exception: " + str(e))
+        logger.warning("Failed to read image from PNG file. Original exception: " + str(e))
         return None
 
 
@@ -125,7 +125,7 @@ def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Ten
             image = np.load(buffer)
             return torch.from_numpy(image)
     except Exception as e:
-        logger.warning("Failed to read image as NumPy. Original exception: " + str(e))
+        logger.warning("Failed to read image from numpy file. Original exception: " + str(e))
         return None
 
 
