@@ -95,6 +95,10 @@ def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optio
 def read_image_from_bytes_obj(
     bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
 ) -> Optional[torch.Tensor]:
+    """Tries to read image as a tensor from the path.
+
+    If the path is not decodable as a PNG, attempts to read as a numpy file. If neither of these work, returns None.
+    """
     mode = get_image_read_mode_from_num_channels(num_channels)
 
     image = read_image_as_png(bytes_obj, mode)
@@ -108,6 +112,7 @@ def read_image_from_bytes_obj(
 def read_image_as_png(
     bytes_obj: Optional[bytes] = None, mode: ImageReadMode = ImageReadMode.UNCHANGED
 ) -> Optional[torch.Tensor]:
+    """Reads image from bytes object from a PNG file."""
     try:
         with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
@@ -120,6 +125,7 @@ def read_image_as_png(
 
 
 def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Tensor]:
+    """Reads image from bytes object from a numpy file."""
     try:
         with BytesIO(bytes_obj) as buffer:
             image = np.load(buffer)
