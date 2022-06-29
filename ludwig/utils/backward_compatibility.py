@@ -18,17 +18,25 @@ import warnings
 from typing import Any, Callable, Dict
 
 from ludwig.constants import (
+    DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
+    INPUT_FEATURES,
     NUMBER,
+    OUTPUT_FEATURES,
     PARAMETERS,
+    PREPROCESSING,
     RAY,
     SAMPLER,
+    SCHEDULER,
     SEARCH_ALG,
     TRAINER,
+    TRAINING,
     TYPE,
 )
+from ludwig.features.feature_registries import input_type_registry
+from ludwig.utils.misc_utils import merge_dict
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
@@ -127,8 +135,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
             hyperopt[EXECUTOR]["num_samples"] = hyperopt[SAMPLER]["num_samples"]
             warnings.warn('Moved "num_samples" from "sampler" to "executor"', DeprecationWarning)
 
-        if "scheduler" in hyperopt[SAMPLER] and "scheduler" not in hyperopt[EXECUTOR]:
-            hyperopt[EXECUTOR]["scheduler"] = hyperopt[SAMPLER]["scheduler"]
+        if SCHEDULER in hyperopt[SAMPLER] and SCHEDULER not in hyperopt[EXECUTOR]:
+            hyperopt[EXECUTOR][SCHEDULER] = hyperopt[SAMPLER][SCHEDULER]
             warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
 
         # remove legacy section
@@ -153,17 +161,47 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
         trainer[EVAL_BATCH_SIZE] = None
 
 
+def _upgrade_preprocessing(config: Dict[str, Any]):
+    """Move feature type pre-processing into the defaults section of the config (in-place)"""
+    # Use input registry since it contains all feature types
+    input_feature_types = set(input_type_registry.keys())
+    preprocessing_params = list(config.get(PREPROCESSING).keys())
+    values_to_be_updated = dict()
+
+    for preprocessing_param in preprocessing_params:
+        if preprocessing_param in input_feature_types:
+            warnings.warn(
+                "Moving feature-specific preprocessing configuration from `preprocessing` section to `defaults`"
+                " section in Ludwig config. Support will be removed in v0.8",
+                DeprecationWarning,
+            )
+            values_to_be_updated[preprocessing_param] = config[PREPROCESSING].pop(preprocessing_param)
+
+    if DEFAULTS not in config:
+        config[DEFAULTS] = dict()
+
+    for feature_type, preprocessing_param in values_to_be_updated.items():
+        if feature_type not in config.get(DEFAULTS):
+            config[DEFAULTS][feature_type] = preprocessing_param
+        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
+            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+        else:
+            config[DEFAULTS][feature_type][PREPROCESSING].update(
+                merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
+            )
+
+
 def upgrade_deprecated_fields(config: Dict[str, Any]):
     """Updates config (in-place) to use fields from earlier versions of Ludwig.
 
     Logs deprecation warnings
     """
-    if "training" in config:
+    if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
-        config[TRAINER] = config["training"]
-        del config["training"]
+        config[TRAINER] = config[TRAINING]
+        del config[TRAINING]
 
-    for feature in config.get("input_features", []) + config.get("output_features", []):
+    for feature in config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, []):
         _upgrade_feature(feature)
 
     if HYPEROPT in config:
@@ -171,3 +209,6 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
 
     if TRAINER in config:
         _upgrade_trainer(config[TRAINER])
+
+    if PREPROCESSING in config:
+        _upgrade_preprocessing(config)
