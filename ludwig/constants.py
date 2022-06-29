@@ -174,3 +174,7 @@ CONTINUE_PROMPT = "Do you want to continue? "
 DEFAULT_AUDIO_TENSOR_LENGTH = 70000
 
 DASK_MODULE_NAME = "dask.dataframe"
+
+PREPROCESSOR = "preprocessor"
+PREDICTOR = "predictor"
+POSTPROCESSOR = "postprocessor"

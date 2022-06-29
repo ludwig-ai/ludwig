@@ -1,38 +1,31 @@
 import logging
 import os
-from datetime import datetime
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Dict, Optional, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import BAG, BINARY, CATEGORY, COLUMN, NAME, SEQUENCE, SET, TEXT, TIMESERIES, TYPE, VECTOR
+from ludwig.constants import PREPROCESSOR, PREDICTOR, POSTPROCESSOR, NAME, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
-from ludwig.features.date_feature import create_vector_from_datetime_obj
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
-from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.image_utils import read_image_from_path
+from ludwig.utils.inference_utils import (
+    to_inference_module_input_from_dataframe,
+    unflatten_dict_by_feature_name,
+    get_filename_from_stage,
+)
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import DEVICE, place_on_device
+from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
     from ludwig.models.ecd import ECD
-
-
-PREPROCESSOR = "preprocessor"
-PREDICTOR = "predictor"
-POSTPROCESSOR = "postprocessor"
-INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
-
-FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 
 class InferenceModule(nn.Module):
@@ -76,7 +69,7 @@ class InferenceModule(nn.Module):
         with torch.no_grad():
             postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
-            postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
+            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
@@ -256,7 +249,9 @@ def save_ludwig_model_for_inference(
         logging.info(f'No device specified. Saving using device "{DEVICE}".')
         device = DEVICE
 
-    stage_to_filenames = {stage: _get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
+    stage_to_filenames = {
+        stage: get_filename_from_stage(stage, device) for stage in [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
+    }
 
     stage_to_module = _init_inference_stages_from_ludwig_model(
         model, config, training_set_metadata, device, scripted=True
@@ -274,10 +269,12 @@ def _init_inference_stages_from_directory(
     device: TorchDevice,
 ) -> Dict[str, torch.nn.Module]:
     """Initializes inference stage modules from directory."""
-    stage_to_filenames = {stage: _get_filename_from_stage(stage, device) for stage in INFERENCE_STAGES}
+    stage_to_filenames = {
+        stage: get_filename_from_stage(stage, device) for stage in [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
+    }
 
     stage_to_module = {}
-    for stage in INFERENCE_STAGES:
+    for stage in [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]:
         stage_to_module[stage] = torch.jit.load(os.path.join(directory, stage_to_filenames[stage]))
         print(f"Loaded torchscript module for {stage} from {stage_to_filenames[stage]}.")
     return stage_to_module
@@ -303,66 +300,3 @@ def _init_inference_stages_from_ludwig_model(
     if scripted:
         stage_to_module = {stage: torch.jit.script(module) for stage, module in stage_to_module.items()}
     return stage_to_module
-
-
-def _unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    """Convert a flattened dictionary of objects to a nested dictionary of outputs per feature name."""
-    outputs: Dict[str, Dict[str, Any]] = {}
-    for concat_key, tensor_values in flattened_dict.items():
-        feature_name = output_feature_utils.get_feature_name_from_concat_name(concat_key)
-        tensor_name = output_feature_utils.get_tensor_name_from_concat_name(concat_key)
-        feature_outputs: Dict[str, Any] = {}
-        if feature_name not in outputs:
-            outputs[feature_name] = feature_outputs
-        else:
-            feature_outputs = outputs[feature_name]
-        feature_outputs[tensor_name] = tensor_values
-    return outputs
-
-
-def _get_filename_from_stage(stage: str, device: TorchDevice) -> str:
-    """Returns the filename for a stage of inference."""
-    if stage not in INFERENCE_STAGES:
-        raise ValueError(f"Invalid stage: {stage}.")
-    # device is only tracked for predictor stage
-    if stage == PREDICTOR:
-        return f"inference_{stage}-{device}.pt"
-    else:
-        return f"inference_{stage}.pt"
-
-
-def to_inference_module_input_from_dataframe(
-    dataset: pd.DataFrame, config: Dict[str, Any], load_paths: bool = False, device: Optional[torch.device] = None
-) -> TorchscriptPreprocessingInput:
-    """Converts a pandas DataFrame to be compatible with a torchscripted InferenceModule forward pass."""
-    inputs = {}
-    for if_config in config["input_features"]:
-        feature_inputs = _to_inference_model_input_from_series(
-            dataset[if_config[COLUMN]],
-            if_config[TYPE],
-            load_paths=load_paths,
-            feature_config=if_config,
-        )
-        feature_inputs = place_on_device(feature_inputs, device)
-        inputs[if_config[NAME]] = feature_inputs
-    return inputs
-
-
-def _to_inference_model_input_from_series(
-    s: pd.Series, feature_type: str, load_paths: bool = False, feature_config: Optional[Dict[str, Any]] = None
-) -> Union[List[str], torch.Tensor]:
-    """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
-    if feature_type == "image":
-        if load_paths:
-            return [read_image_from_path(v) if isinstance(v, str) else v for v in s]
-    elif feature_type == "audio":
-        if load_paths:
-            return [read_audio_from_path(v) if isinstance(v, str) else v for v in s]
-    elif feature_type == "date":
-        if feature_config is None:
-            raise ValueError('"date" feature type requires the associated feature config to be provided.')
-        datetime_format = feature_config["preprocessing"]["datetime_format"]
-        return [torch.tensor(create_vector_from_datetime_obj(datetime.strptime(v, datetime_format))) for v in s]
-    elif feature_type in FEATURES_TO_CAST_AS_STRINGS:
-        return s.astype(str).to_list()
-    return torch.from_numpy(s.to_numpy())
