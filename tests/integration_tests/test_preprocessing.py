@@ -141,7 +141,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
         )
 
 
-@pytest.mark.parametrize("generate_images_as_numpy", [True, False])
+@pytest.mark.parametrize("generate_images_as_numpy", [False, True])
 def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     num_examples = 10
 
