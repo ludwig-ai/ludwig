@@ -177,12 +177,19 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
             )
             type_specific_preprocessing_params[preprocessing_param] = config[PREPROCESSING].pop(preprocessing_param)
 
+    # Check if preprocessing is empty
+    if PREPROCESSING in config and not config[PREPROCESSING]:
+        del config[PREPROCESSING]
+
     if DEFAULTS not in config:
         config[DEFAULTS] = dict()
 
     for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
         if feature_type not in config.get(DEFAULTS):
-            config[DEFAULTS][feature_type] = preprocessing_param
+            if PREPROCESSING in preprocessing_param:
+                config[DEFAULTS][feature_type] = preprocessing_param
+            else:
+                config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_param}
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
         else:
