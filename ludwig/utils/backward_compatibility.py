@@ -161,8 +161,8 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
         trainer[EVAL_BATCH_SIZE] = None
 
 
-def _upgrade_preprocessing(config: Dict[str, Any]):
-    """Move feature type pre-processing into the defaults section of the config (in-place)"""
+def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
+    """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
     # Use input registry since it contains all feature types
     input_feature_types = set(input_type_registry.keys())
     preprocessing_params = list(config.get(PREPROCESSING).keys())
@@ -191,6 +191,52 @@ def _upgrade_preprocessing(config: Dict[str, Any]):
             )
 
 
+def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
+    """Upgrade split related parameters in preprocessing."""
+    split_params = {}
+
+    force_split = preprocessing.pop("force_split", None)
+    split_probabilities = preprocessing.pop("split_probabilities", None)
+    stratify = preprocessing.pop("stratify", None)
+
+    if split_probabilities is not None:
+        split_params["probabilities"] = split_probabilities
+        warnings.warn(
+            "`preprocessing.split_probabilities` has been replaced by `preprocessing.split.probabilities`, "
+            "will be flagged as error in v0.7",
+            DeprecationWarning,
+        )
+
+    if stratify is not None:
+        split_params["type"] = "stratify"
+        split_params["column"] = stratify
+        warnings.warn(
+            "`preprocessing.stratify` has been replaced by `preprocessing.split.column` "
+            'when setting `preprocessing.split.type` to "stratify", '
+            "will be flagged as error in v0.7",
+            DeprecationWarning,
+        )
+
+    if force_split is not None:
+        warnings.warn(
+            "`preprocessing.force_split` has been replaced by `preprocessing.split.type`, "
+            "will be flagged as error in v0.7",
+            DeprecationWarning,
+        )
+
+        if "type" not in split_params:
+            split_params["type"] = "random" if force_split else "fixed"
+
+    if split_params:
+        preprocessing["split"] = split_params
+
+
+def _upgrade_preprocessing(preprocessing: Dict[str, Any], config: Dict[str, Any]):
+    """Upgrade preprocessing section of config (in-place)"""
+    _upgrade_preprocessing_split(preprocessing)
+    _upgrade_preprocessing_defaults(config)
+
+
 def upgrade_deprecated_fields(config: Dict[str, Any]):
     """Updates config (in-place) to use fields from earlier versions of Ludwig.
 
@@ -211,4 +257,4 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
         _upgrade_trainer(config[TRAINER])
 
     if PREPROCESSING in config:
-        _upgrade_preprocessing(config)
+        _upgrade_preprocessing(config[PREPROCESSING], config)

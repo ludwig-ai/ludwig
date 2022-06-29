@@ -1,6 +1,7 @@
 import copy
 
 import pytest
+from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
@@ -8,14 +9,18 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     FILL_WITH_MODE,
     HYPEROPT,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NUMBER,
     PREPROCESSING,
     SCHEDULER,
+    SPLIT,
     TRAINER,
     TYPE,
 )
 from ludwig.data.preprocessing import merge_preprocessing
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
@@ -92,7 +97,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else TrainerConfig().early_stop
+    expected = -1 if use_hyperopt_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
 
@@ -121,8 +126,8 @@ def test_missing_outputs_drop_rows():
 
 def test_deprecated_field_aliases():
     config = {
-        "input_features": [{"name": "num_in", "type": "number"}],
-        "output_features": [{"name": "num_out", "type": "number"}],
+        "input_features": [{"name": "num_in", "type": "numerical"}],
+        "output_features": [{"name": "num_out", "type": "numerical"}],
         "training": {
             "epochs": 2,
             "eval_batch_size": 0,
@@ -162,6 +167,119 @@ def test_deprecated_field_aliases():
     assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
     assert "num_samples" in merged_config[HYPEROPT]["executor"]
     assert "scheduler" in merged_config[HYPEROPT]["executor"]
+
+
+def test_default_model_type():
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[MODEL_TYPE] == MODEL_ECD
+
+
+@pytest.mark.parametrize(
+    "model_trainer_type",
+    [
+        (MODEL_ECD, "trainer"),
+        (MODEL_GBM, "lightgbm_trainer"),
+    ],
+)
+def test_default_trainer_type(model_trainer_type):
+    model_type, expected_trainer_type = model_trainer_type
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        MODEL_TYPE: model_type,
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[TRAINER][TYPE] == expected_trainer_type
+
+
+def test_overwrite_trainer_type():
+    expected_trainer_type = "ray_legacy_trainer"
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        MODEL_TYPE: MODEL_ECD,
+        "trainer": {"type": expected_trainer_type},
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[TRAINER][TYPE] == expected_trainer_type
+
+
+@pytest.mark.parametrize(
+    "model_type",
+    [MODEL_ECD, MODEL_GBM],
+)
+def test_invalid_trainer_type(model_type):
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        MODEL_TYPE: model_type,
+        "trainer": {"type": "invalid_trainer"},
+    }
+
+    with pytest.raises(ValidationError):
+        merge_with_defaults(config)
+
+
+@pytest.mark.parametrize("force_split", [None, False, True])
+@pytest.mark.parametrize("stratify", [None, "cat_in"])
+def test_deprecated_split_aliases(stratify, force_split):
+    split_probabilities = [0.6, 0.2, 0.2]
+    config = {
+        "input_features": [{"name": "num_in", "type": "number"}, {"name": "cat_in", "type": "category"}],
+        "output_features": [{"name": "num_out", "type": "number"}],
+        "preprocessing": {
+            "force_split": force_split,
+            "split_probabilities": split_probabilities,
+            "stratify": stratify,
+        },
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert "force_split" not in merged_config[PREPROCESSING]
+    assert "split_probabilities" not in merged_config[PREPROCESSING]
+    assert "stratify" not in merged_config[PREPROCESSING]
+
+    assert SPLIT in merged_config[PREPROCESSING]
+    split = merged_config[PREPROCESSING][SPLIT]
+
+    assert split["probabilities"] == split_probabilities
+    if stratify is None:
+        if force_split:
+            assert split.get(TYPE) == "random"
+        elif force_split is False:
+            assert split.get(TYPE) == "fixed"
+        else:
+            assert split.get(TYPE) is None
+    else:
+        assert split.get(TYPE) == "stratify"
+        assert split.get("column") == stratify
 
 
 def test_merge_with_defaults():
@@ -215,6 +333,7 @@ def test_merge_with_defaults():
 
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
+        "model_type": "ecd",
         "input_features": [
             {
                 "type": "number",
@@ -264,6 +383,7 @@ def test_merge_with_defaults():
             "search_alg": {"type": "variant_generator"},
         },
         "trainer": {
+            "type": "trainer",
             "eval_batch_size": None,
             "optimizer": {"type": "adadelta", "rho": 0.9, "eps": 1e-06, "lr": 1.0, "weight_decay": 0.0},
             "epochs": 100,
@@ -299,9 +419,7 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         "preprocessing": {
-            "force_split": False,
-            "split_probabilities": (0.7, 0.1, 0.2),
-            "stratify": None,
+            "split": {},
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,

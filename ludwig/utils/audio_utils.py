@@ -87,9 +87,13 @@ def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
 
 def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
     # Increase precision in order to achieve parity with scipy.signal.lfilter implementation
-    filter_window = torch.tensor([1.0, -emphasize_value], dtype=torch.float64)
+    filter_window = torch.tensor([1.0, -emphasize_value], dtype=torch.float64, device=data.device)
+    a_coeffs = torch.tensor([1, 0], dtype=torch.float64, device=data.device)
     pre_emphasized_data = torchaudio.functional.lfilter(
-        data.to(dtype=torch.float64), torch.tensor([1, 0], dtype=torch.float64), filter_window, clamp=False
+        data.to(dtype=torch.float64),
+        a_coeffs,
+        filter_window,
+        clamp=False,
     ).to(torch.float32)
     return pre_emphasized_data
 
@@ -190,7 +194,7 @@ def get_fbank(
     upper_limit_freq = int(sampling_rate_in_hz / 2)
     upper_limit_mel = _convert_hz_to_mel(upper_limit_freq)
     lower_limit_mel = 0
-    list_mel_points = torch.linspace(lower_limit_mel, upper_limit_mel, num_filter_bands + 2)
+    list_mel_points = torch.linspace(lower_limit_mel, upper_limit_mel, num_filter_bands + 2, device=raw_data.device)
     mel_fbank_matrix = _get_mel_fbank_matrix(list_mel_points, num_filter_bands, num_fft_points, sampling_rate_in_hz)
     mel_fbank_feature = torch.matmul(stft_power, torch.transpose(mel_fbank_matrix, 0, 1))
     log_mel_fbank_feature = torch.log(mel_fbank_feature + 1.0e-10)
@@ -203,7 +207,9 @@ def _get_mel_fbank_matrix(
     num_ess_fft_points = get_non_symmetric_length(num_fft_points)
     freq_scale = (num_fft_points + 1) / sampling_rate_in_hz
     freq_bins_on_mel_scale = torch.floor(freq_scale * _convert_mel_to_hz(list_mel_points))
-    mel_scaled_fbank = torch.zeros((num_filter_bands, num_ess_fft_points), dtype=torch.float32)
+    mel_scaled_fbank = torch.zeros(
+        (num_filter_bands, num_ess_fft_points), dtype=torch.float32, device=list_mel_points.device
+    )
     for filt_idx in range(num_filter_bands):
         start_bin_freq = freq_bins_on_mel_scale[filt_idx]
         middle_bin_freq = freq_bins_on_mel_scale[filt_idx + 1]
@@ -217,7 +223,7 @@ def _get_mel_fbank_matrix(
 def _create_triangular_filter(
     start_bin_freq: torch.Tensor, middle_bin_freq: torch.Tensor, end_bin_freq: torch.Tensor, num_ess_fft_points: int
 ):
-    filter_window = torch.zeros(num_ess_fft_points, dtype=torch.float32)
+    filter_window = torch.zeros(num_ess_fft_points, dtype=torch.float32, device=start_bin_freq.device)
     filt_support_begin = middle_bin_freq - start_bin_freq
     filt_support_end = end_bin_freq - middle_bin_freq
     for freq in range(int(start_bin_freq), int(middle_bin_freq)):
@@ -287,7 +293,7 @@ def _preprocess_to_padded_matrix(
 ) -> torch.Tensor:
     num_input = data.shape[0]
     num_output = get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp)
-    zero_padded_matrix = torch.zeros((num_output, window_length_in_samp), dtype=torch.float32)
+    zero_padded_matrix = torch.zeros((num_output, window_length_in_samp), dtype=torch.float32, device=data.device)
     for num_output_idx in range(num_output):
         start_idx = window_shift_in_samp * num_output_idx
         is_last_output = num_output_idx == num_output - 1
@@ -305,16 +311,24 @@ def get_num_output_padded_to_fit_input(num_input: int, window_length_in_samp: in
     return int(torch.ceil(num_output_valid))
 
 
-def get_window(window_type: str, window_length_in_samp: int) -> torch.Tensor:
+def get_window(window_type: str, window_length_in_samp: int, device: Optional[torch.device] = None) -> torch.Tensor:
     # Increase precision in order to achieve parity with scipy.signal.windows.get_window implementation
     if window_type == "bartlett":
-        return torch.bartlett_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
+        return torch.bartlett_window(window_length_in_samp, periodic=False, dtype=torch.float64, device=device).to(
+            torch.float32
+        )
     elif window_type == "blackman":
-        return torch.blackman_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
+        return torch.blackman_window(window_length_in_samp, periodic=False, dtype=torch.float64, device=device).to(
+            torch.float32
+        )
     elif window_type == "hamming":
-        return torch.hamming_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
+        return torch.hamming_window(window_length_in_samp, periodic=False, dtype=torch.float64, device=device).to(
+            torch.float32
+        )
     elif window_type == "hann":
-        return torch.hann_window(window_length_in_samp, periodic=False, dtype=torch.float64).to(torch.float32)
+        return torch.hann_window(window_length_in_samp, periodic=False, dtype=torch.float64, device=device).to(
+            torch.float32
+        )
     else:
         raise ValueError(f"Unknown window type: {window_type}")
 
@@ -328,9 +342,9 @@ def _weight_data_matrix(
     data_matrix: torch.Tensor, window_type: str, data_transformation: Optional[str] = None
 ) -> torch.Tensor:
     window_length_in_samp = data_matrix[0].shape[0]
-    window = get_window(window_type, window_length_in_samp)
+    window = get_window(window_type, window_length_in_samp, device=data_matrix.device)
     if data_transformation is not None and data_transformation == "group_delay":
-        window *= torch.arange(window_length_in_samp).float()
+        window *= torch.arange(window_length_in_samp, device=data_matrix.device).float()
     return data_matrix * window
 
 

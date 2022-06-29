@@ -10,8 +10,8 @@ from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -161,6 +161,8 @@ def hyperopt(
     :return: (List[dict]) List of results for each trial, ordered by
         descending performance on the target metric.
     """
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor
+
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
         with open_file(config, "r") as def_file:
@@ -193,8 +195,9 @@ def hyperopt(
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
+    splitter = get_splitter(**config["preprocessing"]["split"])
     if split == TRAINING:
-        if training_set is None and (config["preprocessing"]["split_probabilities"][0] <= 0):
+        if training_set is None and not splitter.has_split(0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 "was not provided, "
@@ -202,7 +205,7 @@ def hyperopt(
                 "of the config is not greater than 0".format(split)
             )
     elif split == VALIDATION:
-        if validation_set is None and (config["preprocessing"]["split_probabilities"][1] <= 0):
+        if validation_set is None and not splitter.has_split(1):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 "was not provided, "
@@ -210,7 +213,7 @@ def hyperopt(
                 "of the config is not greater than 0".format(split)
             )
     elif split == TEST:
-        if test_set is None and (config["preprocessing"]["split_probabilities"][2] <= 0):
+        if test_set is None and not splitter.has_split(2):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 "was not provided, "
@@ -357,6 +360,8 @@ def hyperopt(
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
+    from ludwig.hyperopt.execution import executor_registry
+
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)

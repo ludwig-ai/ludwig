@@ -69,16 +69,19 @@ class _CategoryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.unk = UNKNOWN_SYMBOL
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
-        self.unk = ""
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
         inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
+
         return {
             self.predictions_key: inv_preds,
-            self.probabilities_key: preds[self.probabilities_key],
+            self.probabilities_key: probabilities,
         }
 
 
