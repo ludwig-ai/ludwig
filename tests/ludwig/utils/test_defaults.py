@@ -1,27 +1,31 @@
 import copy
+from typing import Any, Dict
 
 import pytest
 from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
+    DEFAULTS,
     DROP_ROW,
     EVAL_BATCH_SIZE,
     FILL_WITH_MODE,
     HYPEROPT,
+    INPUT_FEATURES,
     MODEL_ECD,
     MODEL_GBM,
     MODEL_TYPE,
     NUMBER,
+    OUTPUT_FEATURES,
     PREPROCESSING,
     SCHEDULER,
     SPLIT,
     TRAINER,
     TYPE,
 )
-from ludwig.data.preprocessing import merge_preprocessing
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -56,6 +60,19 @@ HYPEROPT_CONFIG = {
 }
 
 SCHEDULER_DICT = {"type": "async_hyperband", "time_attr": "time_total_s"}
+
+
+def _merge_preprocessing(
+    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Returns default preprocessing for the feature type in feature_config, or merges feature specific pre-
+    processing with default preprocessing."""
+    if PREPROCESSING not in feature_config:
+        return global_preprocessing_parameters[feature_config[TYPE]][PREPROCESSING]
+
+    return merge_dict(
+        global_preprocessing_parameters[feature_config[TYPE]][PREPROCESSING], feature_config[PREPROCESSING]
+    )
 
 
 @pytest.mark.parametrize(
@@ -103,24 +120,21 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
 def test_missing_outputs_drop_rows():
     config = {
-        "input_features": [
-            category_feature(),
-        ],
-        "output_features": [
-            category_feature(),
-        ],
+        INPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature()],
         PREPROCESSING: {CATEGORY: {"missing_value_strategy": FILL_WITH_MODE}},
     }
 
     merged_config = merge_with_defaults(config)
-    feature_config = merged_config["output_features"][0]
-    assert feature_config[PREPROCESSING]["missing_value_strategy"] == DROP_ROW
 
-    global_preprocessing = merged_config[PREPROCESSING]
-    feature_preprocessing = merge_preprocessing(feature_config, global_preprocessing)
+    output_feature_config = merged_config[OUTPUT_FEATURES][0]
+    assert output_feature_config[PREPROCESSING]["missing_value_strategy"] == DROP_ROW
+
+    global_preprocessing = merged_config[DEFAULTS]
+    feature_preprocessing = _merge_preprocessing(output_feature_config, global_preprocessing)
     assert feature_preprocessing["missing_value_strategy"] == DROP_ROW
 
-    feature_preprocessing = merge_preprocessing(merged_config["input_features"][0], global_preprocessing)
+    feature_preprocessing = _merge_preprocessing(merged_config[INPUT_FEATURES][0], global_preprocessing)
     assert feature_preprocessing["missing_value_strategy"] == FILL_WITH_MODE
 
 
@@ -423,89 +437,111 @@ def test_merge_with_defaults():
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,
+        },
+        "defaults": {
             "text": {
-                "tokenizer": "space_punct",
-                "pretrained_model_name_or_path": None,
-                "vocab_file": None,
-                "max_sequence_length": 256,
-                "most_common": 20000,
-                "padding_symbol": "<PAD>",
-                "unknown_symbol": "<UNK>",
-                "padding": "right",
-                "lowercase": True,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "tokenizer": "space_punct",
+                    "pretrained_model_name_or_path": None,
+                    "vocab_file": None,
+                    "max_sequence_length": 256,
+                    "most_common": 20000,
+                    "padding_symbol": "<PAD>",
+                    "unknown_symbol": "<UNK>",
+                    "padding": "right",
+                    "lowercase": True,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "category": {
-                "most_common": 10000,
-                "lowercase": False,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "most_common": 10000,
+                    "lowercase": False,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "set": {
-                "tokenizer": "space",
-                "most_common": 10000,
-                "lowercase": False,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "tokenizer": "space",
+                    "most_common": 10000,
+                    "lowercase": False,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "bag": {
-                "tokenizer": "space",
-                "most_common": 10000,
-                "lowercase": False,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "tokenizer": "space",
+                    "most_common": 10000,
+                    "lowercase": False,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
-            "binary": {"missing_value_strategy": "fill_with_false"},
-            "number": {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None},
+            "binary": {PREPROCESSING: {"missing_value_strategy": "fill_with_false"}},
+            "number": {
+                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None}
+            },
             "sequence": {
-                "max_sequence_length": 256,
-                "most_common": 20000,
-                "padding_symbol": "<PAD>",
-                "unknown_symbol": "<UNK>",
-                "padding": "right",
-                "tokenizer": "space",
-                "lowercase": False,
-                "vocab_file": None,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "max_sequence_length": 256,
+                    "most_common": 20000,
+                    "padding_symbol": "<PAD>",
+                    "unknown_symbol": "<UNK>",
+                    "padding": "right",
+                    "tokenizer": "space",
+                    "lowercase": False,
+                    "vocab_file": None,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "timeseries": {
-                "timeseries_length_limit": 256,
-                "padding_value": 0,
-                "padding": "right",
-                "tokenizer": "space",
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "",
+                PREPROCESSING: {
+                    "timeseries_length_limit": 256,
+                    "padding_value": 0,
+                    "padding": "right",
+                    "tokenizer": "space",
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "",
+                }
             },
             "image": {
-                "missing_value_strategy": "backfill",
-                "in_memory": True,
-                "resize_method": "interpolate",
-                "scaling": "pixel_normalization",
-                "num_processes": 1,
-                "infer_image_num_channels": True,
-                "infer_image_dimensions": True,
-                "infer_image_max_height": 256,
-                "infer_image_max_width": 256,
-                "infer_image_sample_size": 100,
+                PREPROCESSING: {
+                    "missing_value_strategy": "backfill",
+                    "in_memory": True,
+                    "resize_method": "interpolate",
+                    "scaling": "pixel_normalization",
+                    "num_processes": 1,
+                    "infer_image_num_channels": True,
+                    "infer_image_dimensions": True,
+                    "infer_image_max_height": 256,
+                    "infer_image_max_width": 256,
+                    "infer_image_sample_size": 100,
+                }
             },
             "audio": {
-                "audio_file_length_limit_in_s": 7.5,
-                "missing_value_strategy": "backfill",
-                "in_memory": True,
-                "padding_value": 0,
-                "norm": None,
-                "audio_feature": {
-                    "type": "fbank",
-                    "window_length_in_s": 0.04,
-                    "window_shift_in_s": 0.02,
-                    "num_filter_bands": 80,
-                },
+                PREPROCESSING: {
+                    "audio_file_length_limit_in_s": 7.5,
+                    "missing_value_strategy": "backfill",
+                    "in_memory": True,
+                    "padding_value": 0,
+                    "norm": None,
+                    "audio_feature": {
+                        "type": "fbank",
+                        "window_length_in_s": 0.04,
+                        "window_shift_in_s": 0.02,
+                        "num_filter_bands": 80,
+                    },
+                }
             },
-            "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
-            "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},
-            "vector": {"missing_value_strategy": "fill_with_const", "fill_value": ""},
+            "h3": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319}},
+            "date": {
+                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None}
+            },
+            "vector": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": ""}},
         },
         "combiner": {
             "type": "concat",
