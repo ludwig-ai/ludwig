@@ -18,7 +18,7 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import dask
 import numpy as np
@@ -34,15 +34,19 @@ from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
+from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.models.trainer import BaseTrainer, RemoteTrainer, TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
+from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.fs_utils import get_bytes_obj_if_path
 from ludwig.utils.horovod_utils import initialize_horovod
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
@@ -318,14 +322,26 @@ class TqdmCallback(rt.TrainingCallback):
                 self.progess_bars[_id].update(update_by)
 
 
+@register_ray_trainer("trainer", MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
-    def __init__(self, model, trainer_kwargs, data_loader_kwargs, executable_kwargs):
+    def __init__(
+        self,
+        model: BaseModel,
+        trainer_kwargs: Dict[str, Any],
+        data_loader_kwargs: Dict[str, Any],
+        executable_kwargs: Dict[str, Any],
+        **kwargs,
+    ):
         self.model = model.cpu()
         self.data_loader_kwargs = data_loader_kwargs
         self.executable_kwargs = executable_kwargs
         self.trainer_kwargs = trainer_kwargs
         self._validation_field = None
         self._validation_metric = None
+
+    @staticmethod
+    def get_schema_cls():
+        return ECDTrainerConfig
 
     @contextlib.contextmanager
     def create_runner(self):
@@ -419,7 +435,7 @@ class RayTrainerV2(BaseTrainer):
         return self._validation_metric
 
     @property
-    def config(self) -> TrainerConfig:
+    def config(self) -> ECDTrainerConfig:
         return self.executable_kwargs["config"]
 
     @property
@@ -504,8 +520,9 @@ class HorovodRemoteTrainer(RemoteTrainer):
         super().__init__(horovod=horovod, **kwargs)
 
 
+@register_ray_trainer("ray_legacy_trainer", MODEL_ECD)
 class RayLegacyTrainer(BaseTrainer):
-    def __init__(self, horovod_kwargs, executable_kwargs):
+    def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         if RayExecutor is None:
             logger.error(
@@ -516,6 +533,10 @@ class RayLegacyTrainer(BaseTrainer):
 
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=HorovodRemoteTrainer, executable_kwargs=executable_kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return ECDTrainerConfig
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers
@@ -591,7 +612,9 @@ def eval_fn(
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, model: ECD, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs):
+    def __init__(
+        self, model: BaseModel, df_engine: DataFrameEngine, trainer_kwargs, data_loader_kwargs, **predictor_kwargs
+    ):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
         self.data_loader_kwargs = data_loader_kwargs
@@ -784,21 +807,31 @@ class RayBackend(RemoteTrainingMixin, Backend):
         initialize_pytorch(gpus=-1)
         self._pytorch_kwargs = kwargs
 
-    def create_trainer(self, model: ECD, **kwargs):
+    def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
+            trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
+
+            config: Union[ECDTrainerConfig, GBMTrainerConfig] = kwargs["config"]
+            trainer_cls = get_from_registry(config.type, trainers_for_model)
+
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
-            return RayTrainerV2(
-                model,
-                copy.deepcopy(self._horovod_kwargs),
-                self._data_loader_kwargs,
-                executable_kwargs,
-            )
+            all_kwargs = {
+                "model": model,
+                "trainer_kwargs": copy.deepcopy(self._horovod_kwargs),
+                "data_loader_kwargs": self._data_loader_kwargs,
+                "executable_kwargs": executable_kwargs,
+            }
+            all_kwargs.update(kwargs)
+            return trainer_cls(**all_kwargs)
         else:
+            if model.name == MODEL_GBM:
+                raise RuntimeError("Legacy trainer not supported for GBM models.")
+
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
-    def create_predictor(self, model: ECD, **kwargs):
+    def create_predictor(self, model: BaseModel, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         return RayPredictor(
             model,
