@@ -277,7 +277,9 @@ def generate_audio(feature):
     return audio_dest_path
 
 
-def generate_image(feature):
+def generate_image(feature, save_as_numpy=False):
+    save_as_numpy = feature.get("save_as_numpy", save_as_numpy)
+    print("save_as_numpy", save_as_numpy)
     try:
         from torchvision.io import write_png
     except ImportError:
@@ -315,7 +317,11 @@ def generate_image(feature):
 
         image_dest_path = os.path.join(destination_folder, image_filename)
         # save_image(torch.from_numpy(img.astype("uint8")), image_dest_path)
-        write_png(img, image_dest_path)
+        if save_as_numpy:
+            with open(image_dest_path, "wb") as f:
+                np.save(f, img.detach().cpu().numpy())
+        else:
+            write_png(img, image_dest_path)
 
     except OSError as e:
         raise OSError("Unable to create a folder for images/save image to disk." "{}".format(e))

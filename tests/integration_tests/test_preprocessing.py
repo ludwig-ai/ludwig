@@ -139,3 +139,28 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
             data_df,
             skip_save_processed_input=False,
         )
+
+
+@pytest.mark.parametrize("generate_images_as_numpy", [True, False])
+def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
+    num_examples = 10
+
+    input_features = [image_feature(os.path.join(tmpdir, "generated_output"), save_as_numpy=generate_images_as_numpy)]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {
+            "epochs": 2,
+        },
+    }
+
+    model = LudwigModel(config)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_csv,
+        skip_save_processed_input=False,
+    )

@@ -333,7 +333,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         else:
             sample_size = 1  # Take first image
 
+        failed_entries = []
         for image_entry in column.head(sample_size):
+            # Read the image from path
             if isinstance(image_entry, str):
                 image = read_image_from_path(image_entry)
             else:
@@ -341,8 +343,14 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             if isinstance(image, torch.Tensor):
                 sample.append(image)
+            else:
+                failed_entries.append(image_entry)
         if len(sample) == 0:
-            raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+            failed_entries_repr = "\n\t- ".join(failed_entries)
+            raise ValueError(
+                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
+                f"{failed_entries_repr}."
+            )
 
         should_resize = False
         if explicit_height_width:

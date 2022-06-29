@@ -97,6 +97,17 @@ def read_image_from_bytes_obj(
 ) -> Optional[torch.Tensor]:
     mode = get_image_read_mode_from_num_channels(num_channels)
 
+    image = read_image_as_png(bytes_obj, mode)
+    if image is None:
+        image = read_image_as_numpy(bytes_obj)
+    if image is None:
+        logger.warning(f"Unable to read image from bytes object.")
+    return image
+
+
+def read_image_as_png(
+    bytes_obj: Optional[bytes] = None, mode: ImageReadMode = ImageReadMode.UNCHANGED
+) -> Optional[torch.Tensor]:
     try:
         with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
@@ -104,7 +115,17 @@ def read_image_from_bytes_obj(
             del buffer_view
             return image
     except Exception as e:
-        logger.warning("Failed to read image from bytes object. Original exception: " + str(e))
+        logger.warning("Failed to read image as PNG. Original exception: " + str(e))
+        return None
+
+
+def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Tensor]:
+    try:
+        with BytesIO(bytes_obj) as buffer:
+            image = np.load(buffer)
+            return torch.from_numpy(image)
+    except Exception as e:
+        logger.warning("Failed to read image as NumPy. Original exception: " + str(e))
         return None
 
 
