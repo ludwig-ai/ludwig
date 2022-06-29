@@ -166,7 +166,7 @@ def _upgrade_preprocessing(config: Dict[str, Any]):
     # Use input registry since it contains all feature types
     input_feature_types = set(input_type_registry.keys())
     preprocessing_params = list(config.get(PREPROCESSING).keys())
-    values_to_be_updated = dict()
+    type_specific_preprocessing_params = dict()
 
     for preprocessing_param in preprocessing_params:
         if preprocessing_param in input_feature_types:
@@ -175,12 +175,12 @@ def _upgrade_preprocessing(config: Dict[str, Any]):
                 " section in Ludwig config. Support will be removed in v0.8",
                 DeprecationWarning,
             )
-            values_to_be_updated[preprocessing_param] = config[PREPROCESSING].pop(preprocessing_param)
+            type_specific_preprocessing_params[preprocessing_param] = config[PREPROCESSING].pop(preprocessing_param)
 
     if DEFAULTS not in config:
         config[DEFAULTS] = dict()
 
-    for feature_type, preprocessing_param in values_to_be_updated.items():
+    for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
         if feature_type not in config.get(DEFAULTS):
             config[DEFAULTS][feature_type] = preprocessing_param
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:

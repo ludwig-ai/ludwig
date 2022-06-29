@@ -49,8 +49,8 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
                 DECODER: {"norm_params": None, "dropout": 0, "use_bias": True},
             },
             TEXT: {
-                PREPROCESSING: {"most_common": 10000, "padding_symbol": "<PADDING>"},
-                ENCODER: {TYPE: "bert"},
+                PREPROCESSING: {"most_common": 10, "padding_symbol": "<PADDING>"},
+                ENCODER: {TYPE: "rnn"},
                 DECODER: {TYPE: "generator", "num_fc_layers": 2, "dropout": 0.1},
                 LOSS: {"confidence_penalty": 0.1},
             },

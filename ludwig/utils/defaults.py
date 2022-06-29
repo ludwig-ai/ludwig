@@ -74,9 +74,6 @@ default_preprocessing_parameters = {
     "oversample_minority": default_preprocessing_oversample_minority,
     "sample_ratio": default_preprocessing_sample_ratio,
 }
-default_preprocessing_parameters.update(
-    {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
-)
 
 default_combiner_type = "concat"
 
@@ -128,7 +125,7 @@ def _perform_sanity_checks(config):
             # output_feature_types is a subset of input_feature_types so just check input_feature_types
             assert (
                 feature_type in input_feature_types
-            ), f"""Defaults specified for '{feature_type}' but '{feature_type}' is
+            ), f"""Defaults specified for `{feature_type}` but `{feature_type}` is
                 not a feature type recognised by Ludwig."""
 
             feature_type_params = list(defaults.get(feature_type).keys())
@@ -136,7 +133,7 @@ def _perform_sanity_checks(config):
             for feature_type_param in feature_type_params:
                 assert (
                     feature_type_param in allowed_feature_type_params
-                ), f"""'{feature_type_param}' is not a valid default parameter. Valid default parameters are
+                ), f"""`{feature_type_param}` is not a valid default parameter. Valid default parameters are
                     {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
@@ -217,20 +214,28 @@ def merge_with_defaults(config):
     _merge_hyperopt_with_trainer(config)
 
     # ===== Defaults =====
-    config_defaults = config.get(DEFAULTS, {})
+    default_feature_specific_preprocessing_parameters = {
+        name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
+    }
+
+    if DEFAULTS not in config:
+        config[DEFAULTS] = dict()
+
+    for feature_type, preprocessing_defaults in default_feature_specific_preprocessing_parameters.items():
+        if feature_type not in config.get(DEFAULTS):
+            config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
+        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
+            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_defaults
+        else:
+            config[DEFAULTS][feature_type][PREPROCESSING].update(
+                merge_dict(preprocessing_defaults, config[DEFAULTS][feature_type][PREPROCESSING])
+            )
+
+    config_defaults = config.get(DEFAULTS)
     config_defaults_feature_types = list(config_defaults.keys())
 
     # ===== Preprocessing =====
     config[PREPROCESSING] = merge_dict(default_preprocessing_parameters, config.get(PREPROCESSING, {}))
-
-    # Update feature type preprocessing from global defaults
-    for feature_type in config_defaults_feature_types:
-        default_preprocessing_params_for_feature_type = get_defaults_section_for_feature_type(
-            feature_type, config_defaults, config_defaults_feature_types, PREPROCESSING
-        )
-        config[PREPROCESSING][feature_type].update(
-            merge_dict(config[PREPROCESSING][feature_type], default_preprocessing_params_for_feature_type)
-        )
 
     stratify = config[PREPROCESSING]["stratify"]
     if stratify is not None:
@@ -262,11 +267,12 @@ def merge_with_defaults(config):
             config_defaults_feature_types,
             ENCODER,
         )
-        # TODO(#2125): Remove conditional check once a PR for this issue is merged in
+        # TODO(#2125): Remove conditional check and copy creation once a PR for this issue is merged in
         if TYPE in default_encoder_params_for_feature_type:
             input_feature[ENCODER] = default_encoder_params_for_feature_type[TYPE]
-            del default_encoder_params_for_feature_type[TYPE]
-        input_feature.update(merge_dict(input_feature, default_encoder_params_for_feature_type))
+        default_encoder_params_without_encoder_type = copy.deepcopy(default_encoder_params_for_feature_type)
+        default_encoder_params_without_encoder_type.pop(TYPE, None)
+        input_feature.update(merge_dict(input_feature, default_encoder_params_without_encoder_type))
 
     # ===== Combiner =====
     set_default_value(config, COMBINER, {TYPE: default_combiner_type})
@@ -290,11 +296,12 @@ def merge_with_defaults(config):
             config_defaults_feature_types,
             DECODER,
         )
-        # TODO(#2125): Remove conditional check once a PR for this issue is merged in
+        # TODO(#2125): Remove conditional check and copy creation once a PR for this issue is merged in
         if TYPE in default_decoder_params_for_feature_type:
             output_feature[DECODER] = default_decoder_params_for_feature_type[TYPE]
-            del default_decoder_params_for_feature_type[TYPE]
-        output_feature.update(merge_dict(output_feature, default_decoder_params_for_feature_type))
+        default_decoder_params_without_decoder_type = copy.deepcopy(default_decoder_params_for_feature_type)
+        default_decoder_params_without_decoder_type.pop(TYPE, None)
+        output_feature.update(merge_dict(output_feature, default_decoder_params_without_decoder_type))
 
         # Update loss parameters for output feature from global defaults
         default_loss_params_for_feature_type = get_defaults_section_for_feature_type(
