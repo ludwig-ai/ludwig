@@ -1737,14 +1737,14 @@ def _preprocess_df_for_training(
 
 def preprocess_for_prediction(
     config,
-    dataset,
+    dataset: Dataset,
     training_set_metadata=None,
     data_format=None,
     split=FULL,
     include_outputs=True,
     backend=LOCAL_BACKEND,
     callbacks=None,
-):
+) -> [Dataset, dict]:
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 
     :param model_path: The input data that is joined with the model

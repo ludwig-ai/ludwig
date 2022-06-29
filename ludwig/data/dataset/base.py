@@ -34,7 +34,7 @@ class Dataset(ABC):
 
 class DatasetManager(ABC):
     @abstractmethod
-    def create(self, dataset, config, training_set_metadata):
+    def create(self, dataset, config, training_set_metadata) -> Dataset:
         raise NotImplementedError()
 
     @abstractmethod

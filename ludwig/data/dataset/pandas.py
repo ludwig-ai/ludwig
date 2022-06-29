@@ -79,7 +79,7 @@ class PandasDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset, config, training_set_metadata):
+    def create(self, dataset, config, training_set_metadata) -> PandasDataset:
         return PandasDataset(dataset, get_proc_features(config), training_set_metadata.get(DATA_TRAIN_HDF5_FP))
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):

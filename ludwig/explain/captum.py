@@ -8,9 +8,11 @@ from torch.autograd import Variable
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, CATEGORY, TYPE
+from ludwig.data.dataset.ray import RayDataset
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.util import get_feature_name, get_pred_col, prepare_data
 from ludwig.models.ecd import ECD
+from ludwig.utils.dataframe_utils import is_dask_df
 from ludwig.utils.torch_utils import get_torch_device
 
 DEVICE = get_torch_device()
@@ -65,11 +67,23 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
         callbacks=model.callbacks,
     )
 
-    # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
-    inputs = {
-        name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(model.config["trainer"]["batch_size"])
-        for name, feature in model.model.input_features.items()
-    }
+    if isinstance(dataset, RayDataset):
+        dataset_df = dataset.to_df()
+        print("________________________", type(dataset_df), ">>>", dataset.backend)
+        if is_dask_df(dataset_df, dataset.backend.df_engine):
+            dataset_df = dataset_df.compute()
+        inputs = {}
+        for name, feature in model.model.input_features.items():
+            col = dataset_df[feature.proc_column]
+            if isinstance(col, pd.Series):
+                col = col.to_numpy()
+            inputs[name] = torch.from_numpy(col).split(model.config["trainer"]["batch_size"])
+    else:
+        # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
+        inputs = {
+            name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(model.config["trainer"]["batch_size"])
+            for name, feature in model.model.input_features.items()
+        }
 
     # Dict of lists to list of dicts
     input_batches = [dict(zip(inputs, t)) for t in zip(*inputs.values())]
