@@ -736,9 +736,10 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
+            assert utils.has_no_grad(output_values), f'"{feature_name}.{output_name}" tensors have gradients'
             assert utils.is_all_close(
                 output_values, output_values_expected
-            ), f"feature: {feature_name}, output: {output_name}"
+            ), f'"{feature_name}.{output_name}" tensors are not close to ludwig model'
 
 
 def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path, device=None):

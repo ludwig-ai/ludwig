@@ -56,8 +56,7 @@ class InferenceModule(nn.Module):
 
     def preprocessor_forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
         """Forward pass through the preprocessor."""
-        with torch.no_grad():
-            return self.preprocessor(inputs)
+        return self.preprocessor(inputs)
 
     def predictor_forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Forward pass through the predictor.
@@ -67,24 +66,22 @@ class InferenceModule(nn.Module):
         for k, v in preproc_inputs.items():
             preproc_inputs[k] = v.to(self.predictor.device)
 
-        with torch.no_grad():
+        with torch.no_grad():  # Ensure model params do not compute gradients
             predictions_flattened = self.predictor(preproc_inputs)
             return predictions_flattened
 
     def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
         """Forward pass through the postprocessor."""
-        with torch.no_grad():
-            postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
-            # Turn flat inputs into nested predictions per feature name
-            postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
-            return postproc_outputs
+        postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
+        # Turn flat inputs into nested predictions per feature name
+        postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
+        return postproc_outputs
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
-        with torch.no_grad():
-            preproc_inputs: Dict[str, torch.Tensor] = self.preprocessor_forward(inputs)
-            predictions_flattened: Dict[str, torch.Tensor] = self.predictor_forward(preproc_inputs)
-            postproc_outputs: Dict[str, Dict[str, Any]] = self.postprocessor_forward(predictions_flattened)
-            return postproc_outputs
+        preproc_inputs: Dict[str, torch.Tensor] = self.preprocessor_forward(inputs)
+        predictions_flattened: Dict[str, torch.Tensor] = self.predictor_forward(preproc_inputs)
+        postproc_outputs: Dict[str, Dict[str, Any]] = self.postprocessor_forward(predictions_flattened)
+        return postproc_outputs
 
     @torch.jit.unused
     def predict(
@@ -172,12 +169,11 @@ class _InferencePreprocessor(nn.Module):
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
-        with torch.no_grad():
-            preproc_inputs = {}
-            for module_dict_key, preproc in self.preproc_modules.items():
-                feature_name = get_name_from_module_dict_key(module_dict_key)
-                preproc_inputs[feature_name] = preproc(inputs[feature_name])
-            return preproc_inputs
+        preproc_inputs = {}
+        for module_dict_key, preproc in self.preproc_modules.items():
+            feature_name = get_name_from_module_dict_key(module_dict_key)
+            preproc_inputs[feature_name] = preproc(inputs[feature_name])
+        return preproc_inputs
 
 
 class _InferencePredictor(nn.Module):
@@ -200,17 +196,16 @@ class _InferencePredictor(nn.Module):
             self.predict_modules[module_dict_key] = feature.prediction_module.to(device=self.device)
 
     def forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        with torch.no_grad():
-            model_outputs = self.model(preproc_inputs)
-            predictions_flattened: Dict[str, torch.Tensor] = {}
-            for module_dict_key, predict in self.predict_modules.items():
-                feature_name = get_name_from_module_dict_key(module_dict_key)
-                feature_predictions = predict(model_outputs, feature_name)
-                # Flatten out the predictions to support Triton input/output
-                for predict_key, tensor_values in feature_predictions.items():
-                    predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
-                    predictions_flattened[predict_concat_key] = tensor_values
-            return predictions_flattened
+        model_outputs = self.model(preproc_inputs)
+        predictions_flattened: Dict[str, torch.Tensor] = {}
+        for module_dict_key, predict in self.predict_modules.items():
+            feature_name = get_name_from_module_dict_key(module_dict_key)
+            feature_predictions = predict(model_outputs, feature_name)
+            # Flatten out the predictions to support Triton input/output
+            for predict_key, tensor_values in feature_predictions.items():
+                predict_concat_key = output_feature_utils.get_feature_concat_name(feature_name, predict_key)
+                predictions_flattened[predict_concat_key] = tensor_values
+        return predictions_flattened
 
 
 class _InferencePostprocessor(nn.Module):
@@ -231,16 +226,15 @@ class _InferencePostprocessor(nn.Module):
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
     def forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        with torch.no_grad():
-            postproc_outputs_flattened: Dict[str, Any] = {}
-            for module_dict_key, postproc in self.postproc_modules.items():
-                feature_name = get_name_from_module_dict_key(module_dict_key)
-                feature_postproc_outputs = postproc(predictions_flattened, feature_name)
-                # Flatten out the predictions to support Triton input/output
-                for postproc_key, tensor_values in feature_postproc_outputs.items():
-                    postproc_concat_key = output_feature_utils.get_feature_concat_name(feature_name, postproc_key)
-                    postproc_outputs_flattened[postproc_concat_key] = tensor_values
-            return postproc_outputs_flattened
+        postproc_outputs_flattened: Dict[str, Any] = {}
+        for module_dict_key, postproc in self.postproc_modules.items():
+            feature_name = get_name_from_module_dict_key(module_dict_key)
+            feature_postproc_outputs = postproc(predictions_flattened, feature_name)
+            # Flatten out the predictions to support Triton input/output
+            for postproc_key, tensor_values in feature_postproc_outputs.items():
+                postproc_concat_key = output_feature_utils.get_feature_concat_name(feature_name, postproc_key)
+                postproc_outputs_flattened[postproc_concat_key] = tensor_values
+        return postproc_outputs_flattened
 
 
 def save_ludwig_model_for_inference(

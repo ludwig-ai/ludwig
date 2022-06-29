@@ -92,38 +92,48 @@ class _SequencePreprocessing(torch.nn.Module):
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
-        v = [self.computed_fill_value if s == "nan" else s for s in v]
+        futures: List[torch.jit.Future[torch.Tensor]] = []
+        for sequence in v:
+            futures.append(
+                torch.jit.fork(
+                    self._process_sequence,
+                    sequence,
+                )
+            )
+
+        sequence_matrix = []
+        for future in futures:
+            sequence_matrix.append(torch.jit.wait(future))
+
+        return torch.stack(sequence_matrix)
+
+    def _process_sequence(self, sequence: str) -> torch.Tensor:
+        sequence = self.computed_fill_value if sequence == "nan" else sequence
 
         if self.lowercase:
-            sequences = [sequence.lower() for sequence in v]
+            sequence_str: str = sequence.lower()
         else:
-            sequences = v
+            sequence_str: str = sequence
 
-        unit_sequences = self.tokenizer(sequences)
-        # refines type of unit_sequences from Any to List[List[str]]
-        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+        unit_sequence = self.tokenizer(sequence_str)
+        assert torch.jit.isinstance(unit_sequence, List[str])
 
-        sequence_matrix = torch.full(
-            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
-        )
-        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
-        for sample_idx, unit_sequence in enumerate(unit_sequences):
-            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_length = len(unit_sequence)
-                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
+        sequence_vector[0] = self.unit_to_id[self.start_symbol]
+        if len(unit_sequence) + 1 < self.max_sequence_length:
+            sequence_length = len(unit_sequence)
+            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        else:
+            sequence_length = self.max_sequence_length - 1
+
+        for i in range(sequence_length):
+            curr_unit = unit_sequence[i]
+            if curr_unit in self.unit_to_id:
+                curr_id = self.unit_to_id[curr_unit]
             else:
-                sequence_length = self.max_sequence_length - 1
-
-            for i in range(sequence_length):
-                curr_unit = unit_sequence[i]
-                if curr_unit in self.unit_to_id:
-                    curr_id = self.unit_to_id[curr_unit]
-                else:
-                    curr_id = self.unit_to_id[self.unknown_symbol]
-                sequence_matrix[sample_idx][i + 1] = curr_id
-
-        return sequence_matrix
+                curr_id = self.unit_to_id[self.unknown_symbol]
+            sequence_vector[i + 1] = curr_id
+        return sequence_vector
 
 
 class _SequencePostprocessing(torch.nn.Module):
