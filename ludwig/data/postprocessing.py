@@ -22,7 +22,7 @@ import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS
-from ludwig.utils.dataframe_utils import is_dask_df, to_numpy_dataset
+from ludwig.utils.dataframe_utils import is_dask_object, to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import make_safe_filename
 
@@ -123,7 +123,7 @@ def convert_to_dict(
             subgroup = key[len(of_name) + 1 :]
 
             values = predictions[key]
-            if is_dask_df(values, backend):
+            if is_dask_object(values, backend):
                 values = values.compute()
             try:
                 values = np.stack(values.to_numpy())

@@ -64,7 +64,6 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
-        self.backend = backend
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:

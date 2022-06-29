@@ -1,11 +1,11 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from ludwig.constants import DASK_MODULE_NAME
 from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, Series
 
 
 def is_dask_lib(df_lib) -> bool:
@@ -18,11 +18,11 @@ def is_dask_backend(backend: Optional["Backend"]) -> bool:  # noqa: F821
     return backend is not None and is_dask_lib(backend.df_engine.df_lib)
 
 
-def is_dask_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  # noqa: F821
+def is_dask_object(df: Union[DataFrame, Series], backend: Optional["Backend"]) -> bool:  # noqa: F821
     if is_dask_backend(backend):
         import dask.dataframe as dd
 
-        return isinstance(df, dd.DataFrame)
+        return isinstance(df, dd.DataFrame) or isinstance(df, dd.Series)
     return False
 
 
