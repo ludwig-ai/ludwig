@@ -16,7 +16,6 @@ from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.inference_utils import (
     to_inference_module_input_from_dataframe,
-    unflatten_dict_by_feature_name,
     get_filename_from_stage,
 )
 from ludwig.utils.misc_utils import get_from_registry
@@ -69,7 +68,7 @@ class InferenceModule(nn.Module):
         with torch.no_grad():
             postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
             # Turn flat inputs into nested predictions per feature name
-            postproc_outputs: Dict[str, Dict[str, Any]] = unflatten_dict_by_feature_name(postproc_outputs_flattened)
+            postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
             return postproc_outputs
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
@@ -300,3 +299,18 @@ def _init_inference_stages_from_ludwig_model(
     if scripted:
         stage_to_module = {stage: torch.jit.script(module) for stage, module in stage_to_module.items()}
     return stage_to_module
+
+
+def _unflatten_dict_by_feature_name(flattened_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Convert a flattened dictionary of objects to a nested dictionary of outputs per feature name."""
+    outputs: Dict[str, Dict[str, Any]] = {}
+    for concat_key, tensor_values in flattened_dict.items():
+        feature_name = get_feature_name_from_concat_name(concat_key)
+        tensor_name = get_tensor_name_from_concat_name(concat_key)
+        feature_outputs: Dict[str, Any] = {}
+        if feature_name not in outputs:
+            outputs[feature_name] = feature_outputs
+        else:
+            feature_outputs = outputs[feature_name]
+        feature_outputs[tensor_name] = tensor_values
+    return outputs
