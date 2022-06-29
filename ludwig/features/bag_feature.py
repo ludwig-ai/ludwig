@@ -93,7 +93,7 @@ class BagFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("bag")
+@register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []

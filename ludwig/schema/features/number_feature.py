@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import NUMBER
 
 from marshmallow_dataclass import dataclass
 
@@ -14,11 +15,11 @@ class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """NumberInputFeature is a dataclass that configures the parameters used for a number input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='number'
+        feature_type=NUMBER
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('number').keys()),
+        list(get_encoder_classes(NUMBER).keys()),
         default="passthrough",
         description="Encoder to use for this number feature.",
     )
@@ -36,7 +37,7 @@ class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 class NumberOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes('number').keys()),
+        list(get_decoder_classes(NUMBER).keys()),
         default="regressor",
         allow_none=True,
         description="Decoder to use for this number feature.",

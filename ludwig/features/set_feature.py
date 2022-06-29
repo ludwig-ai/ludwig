@@ -214,7 +214,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("set")
+@register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []
@@ -264,7 +264,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return _SetPreprocessing(metadata)
 
 
-@register_output_feature("set")
+@register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}

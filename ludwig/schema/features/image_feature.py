@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import IMAGE
 
 from marshmallow_dataclass import dataclass
 
@@ -15,11 +16,11 @@ class ImageInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='image'
+        feature_type=IMAGE
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('image').keys()),
+        list(get_encoder_classes(IMAGE).keys()),
         default="stacked_cnn",
         description="Encoder to use for this image feature.",
     )

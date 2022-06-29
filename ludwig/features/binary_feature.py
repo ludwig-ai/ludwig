@@ -213,7 +213,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("binary")
+@register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     encoder = "passthrough"
     norm = None
@@ -273,7 +273,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return _BinaryPreprocessing(metadata)
 
 
-@register_output_feature("binary")
+@register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}

@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import TIMESERIES
 
 from marshmallow_dataclass import dataclass
 
@@ -15,11 +16,11 @@ class TimeseriesInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='timeseries'
+        feature_type=TIMESERIES
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('timeseries').keys()),
+        list(get_encoder_classes(TIMESERIES).keys()),
         default="parallel_cnn",
         description="Encoder to use for this timeseries feature.",
     )

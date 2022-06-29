@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import TEXT
 
 from marshmallow_dataclass import dataclass
 
@@ -16,11 +17,11 @@ class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='text'
+        feature_type=TEXT
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('text').keys()),
+        list(get_encoder_classes(TEXT).keys()),
         default="parallel_cnn",
         description="Encoder to use for this text feature.",
     )
@@ -41,7 +42,7 @@ class TextOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes('text').keys()),
+        list(get_decoder_classes(TEXT).keys()),
         default="generator",
         description="Decoder to use for this text output feature.",
     )

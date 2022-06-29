@@ -160,7 +160,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("category")
+@register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = "dense"
 
@@ -220,7 +220,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return _CategoryPreprocessing(metadata)
 
 
-@register_output_feature("category")
+@register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}

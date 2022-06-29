@@ -46,7 +46,8 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded",
     )
 
-    tokenizer: Optional[str] = schema_utils.String(
+    tokenizer: Optional[str] = schema_utils.StringOptions(
+        tokenizer_registry.keys(),
         default='space_punct',
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",

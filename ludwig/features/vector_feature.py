@@ -146,7 +146,7 @@ class VectorFeatureMixin:
         return proc_df
 
 
-@register_input_feature("vector")
+@register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = "dense"
     vector_size = 0
@@ -196,7 +196,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return VectorInputFeatureConfig
 
 
-@register_output_feature("vector")
+@register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = "projector"
     loss = {TYPE: MEAN_SQUARED_ERROR}

@@ -261,7 +261,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("sequence")
+@register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -319,7 +319,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
-@register_output_feature("sequence")
+@register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
     loss = {TYPE: "sequence_softmax_cross_entropy"}

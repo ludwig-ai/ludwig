@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import SEQUENCE
 
 from marshmallow_dataclass import dataclass
 
@@ -16,11 +17,11 @@ class SequenceInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='sequence'
+        feature_type=SEQUENCE
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('sequence').keys()),
+        list(get_encoder_classes(SEQUENCE).keys()),
         default="embed",
         description="Encoder to use for this sequence feature.",
     )
@@ -41,7 +42,7 @@ class SequenceOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes('sequence').keys()),
+        list(get_decoder_classes(SEQUENCE).keys()),
         default="generator",
         allow_none=True,
         description="Decoder to use for this sequence feature.",

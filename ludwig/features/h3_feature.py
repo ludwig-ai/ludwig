@@ -115,7 +115,7 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("h3")
+@register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
     encoder = "embed"
 

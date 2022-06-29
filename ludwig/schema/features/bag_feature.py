@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import BAG
 
 from marshmallow_dataclass import dataclass
 
@@ -15,11 +16,11 @@ class BagInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='bag'
+        feature_type=BAG
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('bag').keys()),
+        list(get_encoder_classes(BAG).keys()),
         default="embed",
         description="Encoder to use for this bag feature.",
     )

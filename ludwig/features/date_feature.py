@@ -112,7 +112,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("date")
+@register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
     encoder = "embed"
 

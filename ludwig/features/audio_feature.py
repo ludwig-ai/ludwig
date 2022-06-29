@@ -444,7 +444,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f"{feature_type} is not recognized.")
 
 
-@register_input_feature("audio")
+@register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None

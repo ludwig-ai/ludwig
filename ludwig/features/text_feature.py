@@ -188,7 +188,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("text")
+@register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -253,7 +253,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return _SequencePreprocessing(metadata)
 
 
-@register_output_feature("text")
+@register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}

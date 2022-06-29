@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import AUDIO
 
 from marshmallow_dataclass import dataclass
 
@@ -13,11 +14,11 @@ class AudioInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """AudioFeatureInputFeature is a dataclass that configures the parameters used for an audio input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='audio'
+        feature_type=AUDIO
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('audio').keys()),
+        list(get_encoder_classes(AUDIO).keys()),
         default="parallel_cnn",
         description="Encoder to use for this audio feature.",
     )

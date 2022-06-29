@@ -189,7 +189,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("timeseries")
+@register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None

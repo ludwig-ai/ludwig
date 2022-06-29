@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import H3
 
 from marshmallow_dataclass import dataclass
 
@@ -15,11 +16,11 @@ class H3InputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='h3'
+        feature_type=H3
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('h3').keys()),
+        list(get_encoder_classes(H3).keys()),
         default="embed",
         description="Encoder to use for this h3 feature.",
     )

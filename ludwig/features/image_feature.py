@@ -444,7 +444,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("image")
+@register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
     height = 0
     width = 0

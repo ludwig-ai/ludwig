@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import DATE
 
 from marshmallow_dataclass import dataclass
 
@@ -15,11 +16,11 @@ class DateInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='date'
+        feature_type=DATE
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('date').keys()),
+        list(get_encoder_classes(DATE).keys()),
         default="embed",
         description="Encoder to use for this date feature.",
     )

@@ -282,7 +282,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature("number")
+@register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
     encoder = "passthrough"
 
@@ -340,7 +340,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return _NumberPreprocessing(metadata)
 
 
-@register_output_feature("number")
+@register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: MEAN_SQUARED_ERROR}

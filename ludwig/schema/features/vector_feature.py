@@ -1,4 +1,5 @@
 from typing import Optional
+from ludwig.constants import VECTOR
 
 from marshmallow_dataclass import dataclass
 
@@ -16,11 +17,11 @@ class VectorInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type='vector'
+        feature_type=VECTOR
     )
 
     encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes('vector').keys()),
+        list(get_encoder_classes(VECTOR).keys()),
         default="dense",
         description="Encoder to use for this vector feature.",
     )
@@ -41,7 +42,7 @@ class VectorOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """
 
     decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes('vector').keys()),
+        list(get_decoder_classes(VECTOR).keys()),
         default="projector",
         description="Decoder to use for this vector feature.",
     )
