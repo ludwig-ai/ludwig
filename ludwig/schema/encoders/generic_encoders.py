@@ -1,30 +1,22 @@
-from abc import ABC
 from typing import Optional, Union, List, ClassVar
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
 
-from marshmallow import Schema
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for encoders. Not meant to be used directly.
+class PassthroughEncoder(schema_utils.BaseMarshmallowConfig):
+    """PassthroughEncoder is a dataclass that configures the parameters used for a passthrough encoder."""
 
-    The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
-    from the corresponding Encoder class are copied over.
-    """
+    encoder_class: ClassVar[Encoder] = PassthroughEncoder
 
-    encoder_class: ClassVar[Optional[Encoder]] = None
-    "Class variable pointing to the corresponding Encoder class."
-
-    encoder: str
-    "Name corresponding to an encoder."
+    type: str = "passthrough"
 
 
 @dataclass
-class DenseEncoder(Schema):
+class DenseEncoder(schema_utils.BaseMarshmallowConfig):
     """DenseEncoder is a dataclass that configures the parameters used for a dense encoder."""
 
     encoder_class: ClassVar[Encoder] = DenseEncoder
@@ -91,11 +83,3 @@ class DenseEncoder(Schema):
         max=1.0,
         description="Dropout rate.",
     )
-
-
-@dataclass
-class PassthroughEncoder(Schema):
-
-    encoder_class: ClassVar[Encoder] = PassthroughEncoder
-
-    type: str = "passthrough"

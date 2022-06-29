@@ -261,12 +261,14 @@ def sequence_feature(**kwargs):
         "name": "sequence_" + random_string(),
         "vocab_size": 10,
         "max_len": 7,
-        "encoder": "embed",
-        "embedding_size": 8,
-        "output_size": 8,
-        "state_size": 8,
-        "num_filters": 8,
-        "hidden_size": 8,
+        "encoder": {
+            "type": "embed",
+            "embedding_size": 8,
+            "output_size": 8,
+            "state_size": 8,
+            "num_filters": 8,
+            "hidden_size": 8,
+        }
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -278,12 +280,14 @@ def image_feature(folder, **kwargs):
     feature = {
         "type": "image",
         "name": "image_" + random_string(),
-        "encoder": "resnet",
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
-        "resnet_size": 8,
+        "encoder": {
+            "type": "resnet",
+            "resnet_size": 8,
+            "num_filters": 8,
+            "output_size": 8,
+        },
         "destination_folder": folder,
-        "output_size": 8,
-        "num_filters": 8,
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -302,13 +306,15 @@ def audio_feature(folder, **kwargs):
             "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
-        "encoder": "stacked_cnn",
-        "should_embed": False,
-        "conv_layers": [
-            {"filter_size": 400, "pool_size": 16, "num_filters": 32},
-            {"filter_size": 40, "pool_size": 10, "num_filters": 64},
-        ],
-        "output_size": 16,
+        "encoder": {
+            "type": "stacked_cnn",
+            "should_embed": False,
+            "conv_layers": [
+                {"filter_size": 400, "pool_size": 16, "num_filters": 32},
+                {"filter_size": 40, "pool_size": 10, "num_filters": 64},
+            ],
+            "output_size": 16,
+        },
         "destination_folder": folder,
     }
     feature.update(kwargs)
