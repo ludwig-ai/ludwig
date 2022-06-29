@@ -22,7 +22,7 @@ import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS
-from ludwig.utils.dataframe_utils import is_dask_object, to_numpy_dataset
+from ludwig.utils.dataframe_utils import to_numpy_dataset, is_dask_object
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import make_safe_filename
 

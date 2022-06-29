@@ -4,7 +4,7 @@ from marshmallow.utils import EXCLUDE
 from marshmallow_dataclass import dataclass
 
 import ludwig.combiners.combiners as lcc
-from ludwig.models.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.schema.utils import assert_is_a_marshmallow_class, BaseMarshmallowConfig, load_config_with_kwargs
 
 
@@ -17,7 +17,7 @@ class CustomTestSchema(BaseMarshmallowConfig):
 
 
 def test_assert_is_a_marshmallow_clas():
-    assert_is_a_marshmallow_class(TrainerConfig)
+    assert_is_a_marshmallow_class(ECDTrainerConfig)
     with pytest.raises(AssertionError, match=r"^Expected marshmallow class.*"):
         assert_is_a_marshmallow_class(lcc.ConcatCombiner)
 

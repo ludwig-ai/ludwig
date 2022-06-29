@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR], default=True)
 class PassthroughEncoder(Encoder):
-    def __init__(self, input_size, **kwargs):
+    def __init__(self, input_size=1, **kwargs):
         super().__init__()
         logger.debug(f" {self.name}")
         self.input_size = input_size

@@ -16,6 +16,27 @@ def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs):  # noqa 0821
     return schema.load(kwargs)
 
 
+def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
+    """Special case of `load_config_with_kwargs` for the trainer schemas.
+
+    In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
+    otherwise passes all other parameters through without change.
+    """
+    from ludwig.constants import MODEL_ECD, TYPE
+    from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+
+    trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
+
+    def default_type_for_trainer_schema(cls):
+        """Returns the default values for the "type" field on the given trainer schema."""
+        return cls.Schema().fields[TYPE].dump_default
+
+    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
+    kwargs_with_type = {**{TYPE: default_type_for_trainer_schema(trainer_schema)}, **kwargs}
+
+    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+
+
 def load_config_with_kwargs(
     cls: Type["BaseMarshmallowConfig"], kwargs_overrides
 ) -> "BaseMarshmallowConfig":  # noqa 0821
@@ -143,6 +164,29 @@ def Boolean(default: bool, description=""):
                 truthy={True},
                 falsy={False},
                 allow_none=False,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
+            )
+        },
+        default=default,
+    )
+
+
+def Integer(default: Union[None, int] = None, allow_none=False, description=""):
+    """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
+    allow_none = allow_none or default is None
+
+    if default is not None:
+        try:
+            assert isinstance(default, int)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Integer(
+                strict=True,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},

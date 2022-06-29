@@ -13,14 +13,14 @@ import torch
 
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
-from ludwig.data.postprocessing import convert_to_dict
+from ludwig.data.utils import convert_to_dict
 from ludwig.globals import (
     is_progressbar_disabled,
     PREDICTIONS_PARQUET_FILE_NAME,
     PREDICTIONS_SHAPES_FILE_NAME,
     TEST_STATISTICS_FILE_NAME,
 )
-from ludwig.models.ecd import ECD
+from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import flatten_df, from_numpy_dataset
@@ -68,7 +68,7 @@ class BasePredictor(ABC):
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
-    def __init__(self, model: ECD, batch_size=128, horovod=None, report_tqdm_to_ray=False, **kwargs):
+    def __init__(self, model: BaseModel, batch_size=128, horovod=None, report_tqdm_to_ray=False, **kwargs):
         self._batch_size = batch_size
         self._horovod = horovod
         self.report_tqdm_to_ray = report_tqdm_to_ray
@@ -124,11 +124,11 @@ class Predictor(BasePredictor):
         self.model.train(prev_model_training_mode)
         return from_numpy_dataset(predictions)
 
-    def _predict(self, model: ECD, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _predict(self, model: BaseModel, batch: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """Predict a batch of data.
 
         Params:
-            model: ECD model
+            model: BaseModel model
             batch: batch of data
 
         Returns:
@@ -275,7 +275,7 @@ class Predictor(BasePredictor):
 
 
 class RemotePredictor(Predictor):
-    def __init__(self, model: ECD, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
+    def __init__(self, model: BaseModel, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         super().__init__(model, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead

@@ -24,7 +24,7 @@ from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
-    from ludwig.models.ecd import ECD
+    from ludwig.models.base import BaseModel
 
 
 PREPROCESSOR = "preprocessor"
@@ -103,7 +103,7 @@ class InferenceModule(nn.Module):
     @classmethod
     def from_ludwig_model(
         cls: "InferenceModule",
-        model: "ECD",
+        model: "BaseModel",
         config: Dict[str, Any],
         training_set_metadata: Dict[str, Any],
         device: Optional[TorchDevice] = None,
@@ -189,7 +189,7 @@ class _InferencePredictor(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: "ECD", device: TorchDevice):
+    def __init__(self, model: "BaseModel", device: TorchDevice):
         super().__init__()
         self.device = torch.device(device)
         self.model = model.to_torchscript(self.device)
@@ -222,7 +222,7 @@ class _InferencePostprocessor(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: "ECD", training_set_metadata: Dict[str, Any]):
+    def __init__(self, model: "BaseModel", training_set_metadata: Dict[str, Any]):
         super().__init__()
         self.postproc_modules = nn.ModuleDict()
         for feature_name, feature in model.output_features.items():
@@ -245,13 +245,13 @@ class _InferencePostprocessor(nn.Module):
 
 def save_ludwig_model_for_inference(
     save_path: str,
-    model: "ECD",
+    model: "BaseModel",
     config: Dict[str, Any],
     training_set_metadata: Dict[str, Any],
     device: Optional[TorchDevice] = None,
     model_only: bool = False,
 ) -> None:
-    """Saves a LudwigModel (an ECD model, config, and training_set_metadata) for inference."""
+    """Saves a LudwigModel (a BaseModel model, config, and training_set_metadata) for inference."""
     if device is None:
         logging.info(f'No device specified. Saving using device "{DEVICE}".')
         device = DEVICE
@@ -284,13 +284,14 @@ def _init_inference_stages_from_directory(
 
 
 def _init_inference_stages_from_ludwig_model(
-    model: "ECD",
+    model: "BaseModel",
     config: Dict[str, Any],
     training_set_metadata: Dict[str, Any],
     device: TorchDevice,
     scripted: bool = True,
 ) -> Dict[str, torch.nn.Module]:
-    """Initializes inference stage modules from a LudwigModel (an ECD model, config, and training_set_metadata)."""
+    """Initializes inference stage modules from a LudwigModel (a BaseModel model, config, and
+    training_set_metadata)."""
     preprocessor = _InferencePreprocessor(config, training_set_metadata)
     predictor = _InferencePredictor(model, device=device)
     postprocessor = _InferencePostprocessor(model, training_set_metadata)
