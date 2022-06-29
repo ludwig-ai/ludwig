@@ -14,7 +14,7 @@ from ludwig.constants import (
     LOSS,
     OUTPUT_FEATURES,
     PREPROCESSING,
-    SOFTMAX_CROSS_ENTROPY,
+    TEXT,
     TRAINER,
     TYPE,
 )
@@ -33,7 +33,7 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         category_feature(vocab_size=5),
     ]
 
-    output_features = [category_feature(vocab_size=3)]
+    output_features = [text_feature(name="article")]
 
     dataset = generate_data(input_features, output_features, csv_filename)
 
@@ -44,11 +44,16 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         DEFAULTS: {
             CATEGORY: {
-                PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<UNK>"},
+                PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<CUSTOM_TOK>"},
                 ENCODER: {TYPE: "sparse"},
                 DECODER: {"norm_params": None, "dropout": 0, "use_bias": True},
-                LOSS: {TYPE: SOFTMAX_CROSS_ENTROPY, "confidence_penalty": 0},
-            }
+            },
+            TEXT: {
+                PREPROCESSING: {"most_common": 10000, "padding_symbol": "<PADDING>"},
+                ENCODER: {TYPE: "bert"},
+                DECODER: {TYPE: "generator", "num_fc_layers": 2, "dropout": 0.1},
+                LOSS: {"confidence_penalty": 0.1},
+            },
         },
     }
 
@@ -56,8 +61,7 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("backend", ["local", "ray"])
-def test_run_global_default_parameters(backend, csv_filename):
+def test_run_global_default_parameters(csv_filename):
     config, dataset = _prepare_data(csv_filename)
 
-    run_experiment(config=config, backend=backend, dataset=dataset)
+    run_experiment(config=config, dataset=dataset)
