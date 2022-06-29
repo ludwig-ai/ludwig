@@ -101,7 +101,7 @@ def read_image_from_bytes_obj(
     if image is None:
         image = read_image_as_numpy(bytes_obj)
     if image is None:
-        logger.warning(f"Unable to read image from bytes object.")
+        logger.warning("Unable to read image from bytes object.")
     return image
 
 
