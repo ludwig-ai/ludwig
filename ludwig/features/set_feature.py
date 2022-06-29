@@ -373,7 +373,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             threshold = self.threshold
 
             def get_prob(prob_set):
-                return np.array([prob for prob in prob_set if prob >= threshold])
+                # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
+                return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
 
             result[probabilities_col] = backend.df_engine.map_objects(
                 result[probabilities_col],
