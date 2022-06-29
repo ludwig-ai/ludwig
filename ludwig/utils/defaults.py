@@ -59,21 +59,23 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
-default_preprocessing_force_split = False
-default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
-default_preprocessing_stratify = None
-default_preprocessing_undersample_majority = None
-default_preprocessing_oversample_minority = None
-default_preprocessing_sample_ratio = 1.0
+base_preprocessing_force_split = False
+base_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
+base_preprocessing_stratify = None
+base_preprocessing_undersample_majority = None
+base_preprocessing_oversample_minority = None
+base_preprocessing_sample_ratio = 1.0
 
-default_preprocessing_parameters = {
-    "force_split": default_preprocessing_force_split,
-    "split_probabilities": default_preprocessing_split_probabilities,
-    "stratify": default_preprocessing_stratify,
-    "undersample_majority": default_preprocessing_undersample_majority,
-    "oversample_minority": default_preprocessing_oversample_minority,
-    "sample_ratio": default_preprocessing_sample_ratio,
+base_preprocessing_parameters = {
+    "force_split": base_preprocessing_force_split,
+    "split_probabilities": base_preprocessing_split_probabilities,
+    "stratify": base_preprocessing_stratify,
+    "undersample_majority": base_preprocessing_undersample_majority,
+    "oversample_minority": base_preprocessing_oversample_minority,
+    "sample_ratio": base_preprocessing_sample_ratio,
 }
+
+default_preprocessing_parameters = dict()
 
 default_combiner_type = "concat"
 
@@ -117,23 +119,24 @@ def _perform_sanity_checks(config):
         )
 
     if DEFAULTS in config:
-        input_feature_types = set(input_type_registry.keys())
-        allowed_feature_type_params = {PREPROCESSING, ENCODER, DECODER, LOSS}
         defaults = config.get(DEFAULTS)
 
         for feature_type in list(defaults.keys()):
             # output_feature_types is a subset of input_feature_types so just check input_feature_types
-            assert (
-                feature_type in input_feature_types
+            assert feature_type in set(
+                input_type_registry.keys()
             ), f"""Defaults specified for `{feature_type}` but `{feature_type}` is
                 not a feature type recognised by Ludwig."""
 
             feature_type_params = list(defaults.get(feature_type).keys())
 
             for feature_type_param in feature_type_params:
-                assert (
-                    feature_type_param in allowed_feature_type_params
-                ), f"""`{feature_type_param}` is not a valid default parameter. Valid default parameters are
+                assert feature_type_param in {
+                    PREPROCESSING,
+                    ENCODER,
+                    DECODER,
+                    LOSS,
+                }, f"""`{feature_type_param}` is not a valid default parameter. Valid default parameters are
                     {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
@@ -190,19 +193,26 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def get_defaults_section_for_feature_type(
+def _get_defaults_section_for_feature_type(
     feature_type: str,
     config_defaults: Dict[str, Dict[str, Any]],
     config_defaults_feature_types: List,
     config_defaults_section: str,
-) -> Union[Dict[str, Any], None]:
+) -> Union[Dict[str, Any], Dict]:
     """Returns a dictionary of all default parameter values specified in the global defaults section for the
     config_defaults_section of the feature_type."""
-
     if feature_type in config_defaults_feature_types:
         if config_defaults_section in config_defaults.get(feature_type):
             return config_defaults.get(feature_type).get(config_defaults_section)
     return {}
+
+
+def _merge_preprocessing_with_defaults(config_defaults: Dict[str, Any], config_default_feature_types: List[str]):
+    """Update default_preprocessing_parameters that gets used by the preprocessing module."""
+    global default_preprocessing_parameters
+    for feature_type in config_default_feature_types:
+        default_preprocessing_parameters[feature_type] = config_defaults.get(feature_type).get(PREPROCESSING, {})
+    default_preprocessing_parameters = merge_dict(default_preprocessing_parameters, base_preprocessing_parameters)
 
 
 def merge_with_defaults(config):
@@ -235,7 +245,10 @@ def merge_with_defaults(config):
     config_defaults_feature_types = list(config_defaults.keys())
 
     # ===== Preprocessing =====
-    config[PREPROCESSING] = merge_dict(default_preprocessing_parameters, config.get(PREPROCESSING, {}))
+    config[PREPROCESSING] = merge_dict(base_preprocessing_parameters, config.get(PREPROCESSING, {}))
+
+    # Create global preprocessing dictionary for preprocessing module
+    _merge_preprocessing_with_defaults(config_defaults, config_defaults_feature_types)
 
     stratify = config[PREPROCESSING]["stratify"]
     if stratify is not None:
@@ -261,7 +274,7 @@ def merge_with_defaults(config):
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
         # Update encoder parameters for input feature from global defaults
-        default_encoder_params_for_feature_type = get_defaults_section_for_feature_type(
+        default_encoder_params_for_feature_type = _get_defaults_section_for_feature_type(
             input_feature[TYPE],
             config_defaults,
             config_defaults_feature_types,
@@ -290,7 +303,7 @@ def merge_with_defaults(config):
         set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
 
         # Update decoder parameters for output feature from global defaults
-        default_decoder_params_for_feature_type = get_defaults_section_for_feature_type(
+        default_decoder_params_for_feature_type = _get_defaults_section_for_feature_type(
             output_feature[TYPE],
             config_defaults,
             config_defaults_feature_types,
@@ -304,7 +317,7 @@ def merge_with_defaults(config):
         output_feature.update(merge_dict(output_feature, default_decoder_params_without_decoder_type))
 
         # Update loss parameters for output feature from global defaults
-        default_loss_params_for_feature_type = get_defaults_section_for_feature_type(
+        default_loss_params_for_feature_type = _get_defaults_section_for_feature_type(
             output_feature[TYPE],
             config_defaults,
             config_defaults_feature_types,
