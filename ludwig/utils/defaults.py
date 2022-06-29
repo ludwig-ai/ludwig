@@ -72,7 +72,12 @@ base_preprocessing_parameters = {
     "sample_ratio": base_preprocessing_sample_ratio,
 }
 
-default_preprocessing_parameters = dict()
+default_feature_specific_parameters = {
+    name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
+}
+
+default_preprocessing_parameters = copy.deepcopy(default_feature_specific_parameters)
+default_preprocessing_parameters.update(base_preprocessing_parameters)
 
 default_model_type = MODEL_ECD
 
@@ -211,12 +216,15 @@ def _get_defaults_section_for_feature_type(
     return {}
 
 
-def _merge_preprocessing_with_defaults(config_defaults: Dict[str, Any], config_default_feature_types: List[str]):
-    """Update default_preprocessing_parameters that gets used by the preprocessing module."""
+def _merge_preprocessing_with_defaults(
+    preprocessing: Dict[str, Any], config_defaults: Dict[str, Any], config_default_feature_types: List[str]
+):
+    """Update default_preprocessing_parameters used by the preprocessing module with updated values from
+    preprocessing and default sections of the Ludwig config."""
     global default_preprocessing_parameters
     for feature_type in config_default_feature_types:
         default_preprocessing_parameters[feature_type] = config_defaults.get(feature_type).get(PREPROCESSING, {})
-    default_preprocessing_parameters = merge_dict(default_preprocessing_parameters, base_preprocessing_parameters)
+    default_preprocessing_parameters = merge_dict(default_preprocessing_parameters, preprocessing)
 
 
 def merge_with_defaults(config: dict) -> dict:  # noqa: F821
@@ -228,14 +236,10 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     _merge_hyperopt_with_trainer(config)
 
     # ===== Defaults =====
-    default_feature_specific_preprocessing_parameters = {
-        name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
-    }
-
     if DEFAULTS not in config:
         config[DEFAULTS] = dict()
 
-    for feature_type, preprocessing_defaults in default_feature_specific_preprocessing_parameters.items():
+    for feature_type, preprocessing_defaults in default_feature_specific_parameters.items():
         if feature_type not in config.get(DEFAULTS):
             config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
@@ -254,7 +258,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     splitter.validate(config)
 
     # Create global preprocessing dictionary for preprocessing module
-    _merge_preprocessing_with_defaults(config_defaults, config_defaults_feature_types)
+    _merge_preprocessing_with_defaults(config[PREPROCESSING], config_defaults, config_defaults_feature_types)
 
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)
