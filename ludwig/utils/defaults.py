@@ -18,7 +18,7 @@ import copy
 import logging
 import sys
 from dataclasses import asdict
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
 import yaml
 
@@ -205,24 +205,23 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
 def _get_defaults_section_for_feature_type(
     feature_type: str,
     config_defaults: Dict[str, Dict[str, Any]],
-    config_defaults_feature_types: List,
     config_defaults_section: str,
 ) -> Union[Dict[str, Any], Dict]:
     """Returns a dictionary of all default parameter values specified in the global defaults section for the
     config_defaults_section of the feature_type."""
+    config_defaults_feature_types = list(config_defaults.keys())
     if feature_type in config_defaults_feature_types:
         if config_defaults_section in config_defaults.get(feature_type):
             return config_defaults.get(feature_type).get(config_defaults_section)
     return {}
 
 
-def _merge_preprocessing_with_defaults(
-    preprocessing: Dict[str, Any], config_defaults: Dict[str, Any], config_default_feature_types: List[str]
-):
+def _merge_preprocessing_with_defaults(preprocessing: Dict[str, Any], config_defaults: Dict[str, Any]):
     """Update default_preprocessing_parameters used by the preprocessing module with updated values from
     preprocessing and default sections of the Ludwig config."""
     global default_preprocessing_parameters
-    for feature_type in config_default_feature_types:
+    config_defaults_feature_types = list(config_defaults.keys())
+    for feature_type in config_defaults_feature_types:
         default_preprocessing_parameters[feature_type] = config_defaults.get(feature_type).get(PREPROCESSING, {})
     default_preprocessing_parameters = merge_dict(default_preprocessing_parameters, preprocessing)
 
@@ -256,16 +255,13 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
                 merge_dict(preprocessing_defaults, config[DEFAULTS][feature_type][PREPROCESSING])
             )
 
-    config_defaults = config.get(DEFAULTS)
-    config_defaults_feature_types = list(config_defaults.keys())
-
     # ===== Preprocessing =====
     config[PREPROCESSING] = merge_dict(base_preprocessing_parameters, config.get(PREPROCESSING, {}))
     splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
     splitter.validate(config)
 
     # Create global preprocessing dictionary for preprocessing module
-    _merge_preprocessing_with_defaults(config[PREPROCESSING], config_defaults, config_defaults_feature_types)
+    _merge_preprocessing_with_defaults(config[PREPROCESSING], config[DEFAULTS])
 
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)
@@ -291,8 +287,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         # Update encoder parameters for input feature from global defaults
         default_encoder_params_for_feature_type = _get_defaults_section_for_feature_type(
             input_feature[TYPE],
-            config_defaults,
-            config_defaults_feature_types,
+            config[DEFAULTS],
             ENCODER,
         )
         # TODO(#2125): Remove conditional check and copy creation once a PR for this issue is merged in
@@ -323,8 +318,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         # Update decoder parameters for output feature from global defaults
         default_decoder_params_for_feature_type = _get_defaults_section_for_feature_type(
             output_feature[TYPE],
-            config_defaults,
-            config_defaults_feature_types,
+            config[DEFAULTS],
             DECODER,
         )
         # TODO(#2125): Remove conditional check and copy creation once a PR for this issue is merged in
@@ -337,8 +331,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         # Update loss parameters for output feature from global defaults
         default_loss_params_for_feature_type = _get_defaults_section_for_feature_type(
             output_feature[TYPE],
-            config_defaults,
-            config_defaults_feature_types,
+            config[DEFAULTS],
             LOSS,
         )
         output_feature[LOSS].update(merge_dict(output_feature[LOSS], default_loss_params_for_feature_type))
