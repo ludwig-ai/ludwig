@@ -286,9 +286,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
         # Update encoder parameters for input feature from global defaults
         default_encoder_params_for_feature_type = _get_defaults_section_for_feature_type(
-            input_feature[TYPE],
-            config[DEFAULTS],
-            ENCODER,
+            input_feature[TYPE], config[DEFAULTS], ENCODER
         )
         # TODO(#2125): Remove conditional check and copy creation once a PR for this issue is merged in
         if TYPE in default_encoder_params_for_feature_type:
@@ -317,9 +315,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
         # Update decoder parameters for output feature from global defaults
         default_decoder_params_for_feature_type = _get_defaults_section_for_feature_type(
-            output_feature[TYPE],
-            config[DEFAULTS],
-            DECODER,
+            output_feature[TYPE], config[DEFAULTS], DECODER
         )
         # TODO(#2125): Remove conditional check and copy creation once a PR for this issue is merged in
         if TYPE in default_decoder_params_for_feature_type:
@@ -330,9 +326,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
         # Update loss parameters for output feature from global defaults
         default_loss_params_for_feature_type = _get_defaults_section_for_feature_type(
-            output_feature[TYPE],
-            config[DEFAULTS],
-            LOSS,
+            output_feature[TYPE], config[DEFAULTS], LOSS
         )
         output_feature[LOSS].update(merge_dict(output_feature[LOSS], default_loss_params_for_feature_type))
 
