@@ -19,15 +19,15 @@ class ExpectedImpact(Enum):
 
 @dataclass
 class ParameterMetadata:
-    """ParameterMetadata is a dataclass that describes metadata fields for any Ludwig parameter."""
+    """Contains descriptive information that pertains to a Ludwig configuration parameter."""
 
-    # How the parameter can be displayed in a human-readable form.
+    # How this parameter can be displayed in a human-readable form.
     ui_display_name: str = ""
 
-    # Why the default value is the default.
+    # Why the default value for this parameter is the default.
     default_value_reasoning: Union[str, None] = None
 
-    # Examples of other values that can be used.
+    # Examples of other values that can be used for this parameter.
     example_value: List[Any] = None
 
     # List of related parameters that this parameter interacts with or depends on.
@@ -40,20 +40,19 @@ class ParameterMetadata:
     # learning curves, model speed, memory usage, etc.
     description_implications: Union[str, None] = None
 
-    # What values would you suggest users try? Ideally, covers 95% (~2 sigma) of use cases.
+    # What values would a machine learning expert suggest users try to help improve their model? Ideally, covers 95%
+    # (~2 sigma) of use cases.
     suggested_values: Any = None
 
-    # Indicators that would inform a user to try to use a suggested value, and why.
+    # The reasoning behind the suggested values, as well as model performance indicators or other intuition that could
+    # help inform a user to make an educated decision about what values to experiment with for this parameter.
     suggested_values_reasoning: Union[str, None] = None
 
-    # True if you believe changing this parameter could be frequently used, would have a high impact, and/or would be
-    # interesting for a machine learning practitioner.
+    # True if this parameter could be frequently used, would have a high impact, and/or would be interesting for a
+    # machine learning practitioner.
     commonly_used: bool = False
 
-    # What's the expected impact of determining a "good" value for this parameter?
-    #   HIGH: this parameter should almost always be included in a hyperopt run and can make or break a good model.
-    #   MEDIUM: this parameter might make or break a good model.
-    #   LOW: this parmater usually does not have a significant impact on model performance.
+    # The expected impact of determining a "good" value for this parameter.
     expected_impact: ExpectedImpact = ExpectedImpact.UNKNOWN
 
     # List of links, papers, and blog posts to learn more.
