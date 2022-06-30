@@ -15,11 +15,14 @@
 # ==============================================================================
 
 import contextlib
+import errno
 import functools
 import logging
 import os
 import pathlib
+import shutil
 import tempfile
+import uuid
 from typing import Any, Optional, Union
 from urllib.parse import unquote, urlparse
 
@@ -112,13 +115,45 @@ def path_exists(url):
     return fs.exists(path)
 
 
+def safe_move_file(src, dst):
+    """Rename a file from `src` to `dst`. Inspired by: https://alexwlchan.net/2019/03/atomic-cross-filesystem-
+    moves-in-python/
+
+    *   Moves must be atomic.  `shutil.move()` is not atomic.
+
+    *   Moves must work across filesystems.  Sometimes temp directories and the
+        model directories live on different filesystems.  `os.replace()` will
+        throw errors if run across filesystems.
+
+    So we try `os.rename()`, but if we detect a cross-filesystem copy, we
+    switch to `shutil.move()` with some wrappers to make it atomic.
+    """
+    try:
+        os.replace(src, dst)
+    except OSError as err:
+
+        if err.errno == errno.EXDEV:
+            # Generate a unique ID, and copy `<src>` to the target directory with a temporary name `<dst>.<ID>.tmp`.
+            # Because we're copying across a filesystem boundary, this initial copy may not be atomic.  We insert a
+            # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp copies.
+            copy_id = uuid.uuid4()
+            tmp_dst = f"{dst}.{copy_id}.tmp"
+            shutil.copyfile(src, tmp_dst)
+
+            # Atomic replace file onto the new name, and clean up original source file.
+            os.replace(tmp_dst, dst)
+            os.unlink(src)
+        else:
+            raise
+
+
 def rename(src, tgt):
     protocol, _ = split_protocol(tgt)
     if protocol is not None:
         fs = fsspec.filesystem(protocol)
         fs.mv(src, tgt, recursive=True)
     else:
-        os.rename(src, tgt)
+        safe_move_file(src, tgt)
 
 
 def makedirs(url, exist_ok=False):
