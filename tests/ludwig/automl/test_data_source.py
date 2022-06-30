@@ -1,17 +1,17 @@
 import tempfile
+
+import dask.dataframe as dd
 import pytest
 
-from ludwig.utils.data_utils import read_csv
 from ludwig.automl.automl import create_auto_config
-import dask.dataframe as dd
+from ludwig.utils.data_utils import read_csv
 
-csv_content = (
-"""
+csv_content = """
 name,gender,lives_in_sf
 Jessica,f,
 Jim,m,FALSE
 """
-)
+
 
 @pytest.mark.distributed
 def test_mixed_csv_data_source():
@@ -21,15 +21,10 @@ def test_mixed_csv_data_source():
         temp.seek(0)
         ds = read_csv(temp.name, dtype=None)
         df = dd.from_pandas(ds, npartitions=1)
-        config = create_auto_config(
-            dataset=df,
-            target=[],
-            time_limit_s=3600,
-            tune_for_memory=False
-        )
-        assert len(config['input_features']) == 3
-        assert config['input_features'][0]['type'] == 'text'
-        assert config['input_features'][1]['type'] == 'text'
-        assert config['input_features'][2]['type'] == 'binary'
+        config = create_auto_config(dataset=df, target=[], time_limit_s=3600, tune_for_memory=False)
+        assert len(config["input_features"]) == 3
+        assert config["input_features"][0]["type"] == "text"
+        assert config["input_features"][1]["type"] == "text"
+        assert config["input_features"][2]["type"] == "binary"
     finally:
         temp.close()
