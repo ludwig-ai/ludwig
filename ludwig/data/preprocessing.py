@@ -1772,7 +1772,6 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    # get updated pre-processing parameters
     preprocessing_params = merge_dict(default_preprocessing_parameters, config[PREPROCESSING])
 
     # if training_set_metadata is a string, assume it's a path to load the json
