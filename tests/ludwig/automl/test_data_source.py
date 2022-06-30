@@ -6,6 +6,7 @@ from ludwig.utils.data_utils import read_csv
 
 try:
     import dask.dataframe as dd
+
     from ludwig.automl.automl import create_auto_config
 except ImportError:
     pass
