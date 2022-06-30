@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Optional, Union, Any
+from typing import ClassVar, Optional, Union
 from ludwig.constants import (
     MISSING_VALUE_STRATEGY_OPTIONS,
     AUDIO,
