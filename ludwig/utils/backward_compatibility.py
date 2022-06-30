@@ -18,6 +18,7 @@ import warnings
 from typing import Any, Callable, Dict
 
 from ludwig.constants import (
+    COLUMN,
     DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
@@ -27,15 +28,17 @@ from ludwig.constants import (
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
+    PROBABILITIES,
     RAY,
     SAMPLER,
     SCHEDULER,
     SEARCH_ALG,
+    SPLIT,
     TRAINER,
     TRAINING,
     TYPE,
 )
-from ludwig.features.feature_registries import input_type_registry
+from ludwig.features.feature_registries import base_type_registry
 from ludwig.utils.misc_utils import merge_dict
 
 
@@ -163,21 +166,22 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
 
 def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
-    # Use input registry since it contains all feature types
-    input_feature_types = set(input_type_registry.keys())
-    preprocessing_params = list(config.get(PREPROCESSING).keys())
+    # Use base registry since it contains all feature types
+    input_feature_types = set(base_type_registry)
+    preprocessing_parameters = list(config.get(PREPROCESSING))
+
     type_specific_preprocessing_params = dict()
 
     # If preprocessing section specified and it contains feature specific preprocessing parameters, make a copy
     # and delete them from the preprocessing section
-    for preprocessing_param in preprocessing_params:
-        if preprocessing_param in input_feature_types:
+    for parameter in preprocessing_parameters:
+        if parameter in input_feature_types:
             warnings.warn(
-                "Moving feature-specific preprocessing configuration from `preprocessing` section to `defaults`"
-                " section in Ludwig config. Support will be removed in v0.8",
+                f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
+                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
                 DeprecationWarning,
             )
-            type_specific_preprocessing_params[preprocessing_param] = config[PREPROCESSING].pop(preprocessing_param)
+            type_specific_preprocessing_params[parameter] = config[PREPROCESSING].pop(parameter)
 
     # Delete empty preprocessing section if no other preprocessing parameters specified
     if PREPROCESSING in config and not config[PREPROCESSING]:
@@ -197,7 +201,7 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
         # Feature type exists but preprocessing hasn't be specified
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
-        # Update defaults with parameters from config for specific feature type
+        # Update default feature specific preprocessing with parameters from config
         else:
             config[DEFAULTS][feature_type][PREPROCESSING].update(
                 merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
@@ -213,7 +217,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
     stratify = preprocessing.pop("stratify", None)
 
     if split_probabilities is not None:
-        split_params["probabilities"] = split_probabilities
+        split_params[PROBABILITIES] = split_probabilities
         warnings.warn(
             "`preprocessing.split_probabilities` has been replaced by `preprocessing.split.probabilities`, "
             "will be flagged as error in v0.7",
@@ -221,8 +225,8 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
         )
 
     if stratify is not None:
-        split_params["type"] = "stratify"
-        split_params["column"] = stratify
+        split_params[TYPE] = "stratify"
+        split_params[COLUMN] = stratify
         warnings.warn(
             "`preprocessing.stratify` has been replaced by `preprocessing.split.column` "
             'when setting `preprocessing.split.type` to "stratify", '
@@ -237,17 +241,11 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
             DeprecationWarning,
         )
 
-        if "type" not in split_params:
-            split_params["type"] = "random" if force_split else "fixed"
+        if TYPE not in split_params:
+            split_params[TYPE] = "random" if force_split else "fixed"
 
     if split_params:
-        preprocessing["split"] = split_params
-
-
-def _upgrade_preprocessing(config: Dict[str, Any]):
-    """Upgrade preprocessing section of config (in-place)"""
-    _upgrade_preprocessing_split(config[PREPROCESSING])
-    _upgrade_preprocessing_defaults(config)
+        preprocessing[SPLIT] = split_params
 
 
 def upgrade_deprecated_fields(config: Dict[str, Any]):
@@ -270,4 +268,5 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
         _upgrade_trainer(config[TRAINER])
 
     if PREPROCESSING in config:
-        _upgrade_preprocessing(config)
+        _upgrade_preprocessing_split(config[PREPROCESSING])
+        _upgrade_preprocessing_defaults(config)

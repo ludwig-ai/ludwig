@@ -7,6 +7,7 @@ from ludwig.constants import (
     DECODER,
     DEFAULTS,
     ENCODER,
+    EPOCHS,
     FILL_WITH_CONST,
     INPUT_FEATURES,
     LOSS,
@@ -16,6 +17,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.features.feature_registries import input_type_registry
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, run_experiment, text_feature
 
@@ -40,7 +42,7 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 1, "learning_rate": 0.001},
         DEFAULTS: {
             CATEGORY: {
                 PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<CUSTOM_TOK>"},
@@ -65,20 +67,30 @@ def test_run_experiment_with_global_default_parameters(csv_filename):
     run_experiment(config=config, dataset=dataset)
 
 
-def test_run_global_default_parameters_validate_config(csv_filename):
+def test_global_default_parameters_merge_with_defaults(csv_filename):
     config, _ = _prepare_data(csv_filename)
 
     updated_config = merge_with_defaults(config)
 
     assert DEFAULTS in updated_config
 
-    assert CATEGORY not in updated_config[PREPROCESSING]
-    assert TEXT not in updated_config[PREPROCESSING]
+    # Make sure no type specific parameters are in preprocessing
+    input_feature_types = set(input_type_registry)
+    for parameter in updated_config[PREPROCESSING]:
+        assert parameter not in input_feature_types
 
+    # All feature-specific preprocessing parameters should be in defaults
+    defaults_with_preprocessing = [
+        feature for feature in updated_config[DEFAULTS] if PREPROCESSING in updated_config[DEFAULTS][feature]
+    ]
+    assert len(defaults_with_preprocessing) == len(input_feature_types)
+
+    # Feature encoders and decoders should update
     for feature in updated_config[INPUT_FEATURES]:
         if feature[TYPE] == TEXT:
-            assert feature[ENCODER] == "rnn"
+            assert feature[ENCODER] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
         elif feature[TYPE] == CATEGORY:
-            assert feature[ENCODER] == "sparse"
+            assert feature[ENCODER] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
 
-    assert updated_config[OUTPUT_FEATURES][0][DECODER] == "generator"
+    output_feature = updated_config[OUTPUT_FEATURES][0]
+    assert output_feature[DECODER] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]

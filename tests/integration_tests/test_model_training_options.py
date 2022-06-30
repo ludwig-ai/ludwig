@@ -410,7 +410,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        DEFAULTS: {CATEGORY: {PREPROCESSING: {"fill_value": "<EMP>"}}},
+        DEFAULTS: {CATEGORY: {PREPROCESSING: {"fill_value": "<UNKNOWN>"}}},
         TRAINER: {EPOCHS: 2},
     }
 
@@ -433,12 +433,12 @@ def test_cache_checksum(csv_filename, tmp_path):
 
     # force recreating cache file by changing checksum by updating defaults
     prior_training_timestamp = current_training_timestamp
-    config[DEFAULTS][CATEGORY][PREPROCESSING]["fill_value"] = "<BLANK>"
+    config[DEFAULTS][CATEGORY][PREPROCESSING]["fill_value"] = "<EMPTY>"
     model = LudwigModel(config, backend=backend)
     model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
-    # # timestamp should differ
+    # timestamp should differ
     assert prior_training_timestamp < current_training_timestamp
 
     # force recreating cache by updating modification time of source dataset
