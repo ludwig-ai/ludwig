@@ -219,25 +219,45 @@ def get_defaults_section_for_feature_type(
     return config_defaults[feature_type][config_defaults_section]
 
 
-def update_feature_encoder_or_decoder_from_defaults(
-    feature_dict: Dict[str, Any], param: str, default_params_for_feature_type: Dict[str, Any]
-):
-    """Update input feature encoder or output feature decoder if it is specified in global defaults.
+def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
+    """Updates feature_dict belonging to an input or output feature using global encoder, decoder and loss related
+    default parameters specified in the Ludwig config.
 
-    TODO(#2125): Delete this function and any calls to this function once issue is closed.
+    :param config: Ludwig configuration containing parameters for different sections, including global default
+        parameters for preprocessing, encoder, decoder and loss.
+    :type config: dict[str, any]
+    :param feature_dict: Underlying config for the specific input/output feature. This may be updated with values
+        from the global defaults specified in config.
+    :type feature_dict: dict[str, any]
+    :param config_feature_group: Indicates whether the feature is an input feature or output feature (can be either of
+        `input_features` or `output_features`).
+    :type config_feature_group: str
     """
+    parameter = ENCODER if config_feature_group == INPUT_FEATURES else DECODER
+
+    default_params_for_feature_type = get_defaults_section_for_feature_type(
+        feature_dict[TYPE], config[DEFAULTS], parameter
+    )
+
+    # Update input feature encoder or output feature decoder if it is specified in global defaults
+    # TODO(#2125): Delete this code block once issue is closed. No need to make this check.
     if TYPE in default_params_for_feature_type:
-        feature_dict[param] = default_params_for_feature_type[TYPE]
+        feature_dict[parameter] = default_params_for_feature_type[TYPE]
 
+    # Make a copy of default encoder or decoder parameters without the type key.
+    # TODO(#2125): Delete this code block once issue is closed. No need to make a copy
+    default_params_for_feature_type_without_type = copy.deepcopy(default_params_for_feature_type)
+    default_params_for_feature_type_without_type.pop(TYPE, None)
 
-def delete_encoder_or_decoder_type_from_defaults(default_params_for_feature_type: Dict[str, Any]) -> Dict[str, Any]:
-    """Returns a copy of default encoder or decoder parameters without the type key if it exists.
+    # Update encoder or decoder with other encoder/decoder related parameters
+    feature_dict.update(merge_dict(feature_dict, default_params_for_feature_type_without_type))
 
-    TODO(#2125): Delete this function and any calls to this function once issue is closed.
-    """
-    default_params_copy = copy.deepcopy(default_params_for_feature_type)
-    default_params_copy.pop(TYPE, None)
-    return default_params_copy
+    # Update loss parameters for output feature from global defaults
+    if parameter == DECODER:
+        default_loss_params_for_feature_type = get_defaults_section_for_feature_type(
+            feature_dict[TYPE], config[DEFAULTS], LOSS
+        )
+        feature_dict[LOSS].update(merge_dict(feature_dict[LOSS], default_loss_params_for_feature_type))
 
 
 def _merge_preprocessing_with_defaults(preprocessing: Dict[str, Any], config_defaults: Dict[str, Any]):
@@ -310,16 +330,8 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
             remove_ecd_params(input_feature)
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
-        default_encoder_params_for_feature_type = get_defaults_section_for_feature_type(
-            input_feature[TYPE], config[DEFAULTS], ENCODER
-        )
-
-        # Update encoder parameters for input feature from global defaults
-        update_feature_encoder_or_decoder_from_defaults(input_feature, ENCODER, default_encoder_params_for_feature_type)
-        default_encoder_params_without_encoder_type = delete_encoder_or_decoder_type_from_defaults(
-            default_encoder_params_for_feature_type
-        )
-        input_feature.update(merge_dict(input_feature, default_encoder_params_without_encoder_type))
+        # Update encoder parameters for output feature from global defaults
+        update_feature_from_defaults(config, input_feature, INPUT_FEATURES)
 
     # ===== Combiner =====
     set_default_value(config, COMBINER, {TYPE: default_combiner_type})
@@ -339,24 +351,8 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         set_default_value(output_feature, PREPROCESSING, {})
         set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
 
-        default_decoder_params_for_feature_type = get_defaults_section_for_feature_type(
-            output_feature[TYPE], config[DEFAULTS], DECODER
-        )
-
-        # Update decoder parameters for output feature from global defaults
-        update_feature_encoder_or_decoder_from_defaults(
-            output_feature, DECODER, default_decoder_params_for_feature_type
-        )
-        default_decoder_params_without_decoder_type = delete_encoder_or_decoder_type_from_defaults(
-            default_decoder_params_for_feature_type
-        )
-        output_feature.update(merge_dict(output_feature, default_decoder_params_without_decoder_type))
-
-        # Update loss parameters for output feature from global defaults
-        default_loss_params_for_feature_type = get_defaults_section_for_feature_type(
-            output_feature[TYPE], config[DEFAULTS], LOSS
-        )
-        output_feature[LOSS].update(merge_dict(output_feature[LOSS], default_loss_params_for_feature_type))
+        # Update decoder and loss related parameters for output feature from global defaults
+        update_feature_from_defaults(config, output_feature, OUTPUT_FEATURES)
 
     # ===== Hyperpot =====
     if HYPEROPT in config:
