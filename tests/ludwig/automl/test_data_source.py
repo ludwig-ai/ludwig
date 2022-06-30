@@ -1,10 +1,14 @@
 import tempfile
 
-import dask.dataframe as dd
 import pytest
 
 from ludwig.automl.automl import create_auto_config
 from ludwig.utils.data_utils import read_csv
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
 
 csv_content = """
 name,gender,lives_in_sf
