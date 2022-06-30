@@ -6,6 +6,7 @@ import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.schema.utils import (
     BaseMarshmallowConfig,
     Boolean,
@@ -354,7 +355,12 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
 
-def GradientClippingDataclassField(default={}, allow_none=True, description="TODO"):
+def GradientClippingDataclassField(
+    default={},
+    allow_none=True,
+    description="Parameters for gradient clipping.",
+    parameter_metadata: ParameterMetadata = None,
+):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
@@ -403,7 +409,7 @@ def GradientClippingDataclassField(default={}, allow_none=True, description="TOD
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,
-                metadata={"description": description},
+                metadata={"description": description, "parameter_metadata": parameter_metadata},
             )
         },
         default_factory=lambda: load_default,
