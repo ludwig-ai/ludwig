@@ -72,11 +72,11 @@ base_preprocessing_parameters = {
     "sample_ratio": base_preprocessing_sample_ratio,
 }
 
-default_feature_specific_parameters = {
+default_feature_specific_preprocessing_parameters = {
     name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
 }
 
-default_preprocessing_parameters = copy.deepcopy(default_feature_specific_parameters)
+default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 default_preprocessing_parameters.update(base_preprocessing_parameters)
 
 default_model_type = MODEL_ECD
@@ -239,7 +239,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         config[DEFAULTS] = dict()
 
     # Update defaults with the default feature specific preprocessing parameters
-    for feature_type, preprocessing_defaults in default_feature_specific_parameters.items():
+    for feature_type, preprocessing_defaults in default_feature_specific_preprocessing_parameters.items():
         # If defaults was empty, then create a new key with feature type
         if feature_type not in config.get(DEFAULTS):
             if PREPROCESSING in preprocessing_defaults:
