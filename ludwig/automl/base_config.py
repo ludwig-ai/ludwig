@@ -16,8 +16,8 @@ from dataclasses import dataclass
 from typing import List, Set, Union
 
 import dask.dataframe as dd
-import pandas as pd
 import numpy as np
+import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
