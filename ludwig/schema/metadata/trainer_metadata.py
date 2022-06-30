@@ -1,6 +1,6 @@
 # flake8: noqa
 # fmt: off
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterMetadata
 
 TRAINER_METADATA = (
 {'batch_size': ParameterMetadata(ui_display_name='Batch Size',
@@ -17,7 +17,7 @@ TRAINER_METADATA = (
                                  suggested_values_reasoning='Try at least a few different batch sizes to get a sense '
                                                             'of whether batch size affects model performance',
                                  commonly_used=True,
-                                 expected_impact='HIGH',
+                                 expected_impact=ExpectedImpact.HIGH,
                                  literature_references=None,
                                  internal_only=False),
  'checkpoints_per_epoch': ParameterMetadata(ui_display_name='Checkpoints per epoch',
@@ -54,7 +54,7 @@ TRAINER_METADATA = (
                                                                        'a sub-epoch time scale, or every few thousand '
                                                                        'steps.',
                                             commonly_used=True,
-                                            expected_impact='HIGH',
+                                            expected_impact=ExpectedImpact.HIGH,
                                             literature_references=None,
                                             internal_only=False),
  'decay': ParameterMetadata(ui_display_name='Decay',
@@ -80,7 +80,7 @@ TRAINER_METADATA = (
                                                        'a learning rate schedule can give better training performance '
                                                        'and make the model converge faster',
                             commonly_used=True,
-                            expected_impact='MEDIUM',
+                            expected_impact=ExpectedImpact.MEDIUM,
                             literature_references='https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule',
                             internal_only=False),
  'decay_rate': ParameterMetadata(ui_display_name='Decay Rate',
@@ -98,7 +98,7 @@ TRAINER_METADATA = (
                                  suggested_values_reasoning='Since this controls exponential decay, even a small decay '
                                                             'rate will still be strongly impactful.',
                                  commonly_used=False,
-                                 expected_impact='MEDIUM',
+                                 expected_impact=ExpectedImpact.MEDIUM,
                                  literature_references='https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule',
                                  internal_only=False),
  'decay_steps': ParameterMetadata(ui_display_name='Decay Steps',
@@ -125,7 +125,7 @@ TRAINER_METADATA = (
                                                              '`decay_steps`. You can think of `decay_steps` as a rate '
                                                              'of decay for the `decay_rate`.',
                                   commonly_used=True,
-                                  expected_impact='MEDIUM',
+                                  expected_impact=ExpectedImpact.MEDIUM,
                                   literature_references=None,
                                   internal_only=False),
  'early_stop': ParameterMetadata(ui_display_name='Early Stop',
@@ -153,7 +153,7 @@ TRAINER_METADATA = (
                                                             "is usually a good indicator that there's not much more to "
                                                             'learn.',
                                  commonly_used=True,
-                                 expected_impact='MEDIUM',
+                                 expected_impact=ExpectedImpact.MEDIUM,
                                  literature_references=None,
                                  internal_only=False),
  'epochs': ParameterMetadata(ui_display_name='Epochs',
@@ -171,7 +171,7 @@ TRAINER_METADATA = (
                                                         'require many epochs through the dataset to converge while '
                                                         'others converge before a single epoch through the data.',
                              commonly_used=False,
-                             expected_impact='HIGH',
+                             expected_impact=ExpectedImpact.HIGH,
                              literature_references=None,
                              internal_only=False),
  'eval_batch_size': ParameterMetadata(ui_display_name='Evaluation Batch Size',
@@ -197,7 +197,7 @@ TRAINER_METADATA = (
                                                                  'thumb can be experimentally doubling the eval batch '
                                                                  'size if you do not have insight into memory usage.',
                                       commonly_used=False,
-                                      expected_impact='MEDIUM',
+                                      expected_impact=ExpectedImpact.MEDIUM,
                                       literature_references=None,
                                       internal_only=False),
  'evaluate_training_set': ParameterMetadata(ui_display_name='Evaluate Training Set',
@@ -224,7 +224,7 @@ TRAINER_METADATA = (
                                                                        'signs of overfitting like when the '
                                                                        'training-validation loss curves diverge.',
                                             commonly_used=True,
-                                            expected_impact='HIGH',
+                                            expected_impact=ExpectedImpact.HIGH,
                                             literature_references=None,
                                             internal_only=False),
  'gradient_clipping': ParameterMetadata(ui_display_name='Gradient Clipping',
@@ -245,7 +245,7 @@ TRAINER_METADATA = (
                                                                    'robust to a particularly bad or noisy batch of '
                                                                    'examples.',
                                         commonly_used=False,
-                                        expected_impact='MEDIUM',
+                                        expected_impact=ExpectedImpact.MEDIUM,
                                         literature_references=None,
                                         internal_only=False),
  'increase_batch_size_eval_metric': ParameterMetadata(ui_display_name='Batch Size Increase: Evaluation Metric',
@@ -257,7 +257,7 @@ TRAINER_METADATA = (
                                                       suggested_values=None,
                                                       suggested_values_reasoning=None,
                                                       commonly_used=False,
-                                                      expected_impact='MEDIUM',
+                                                      expected_impact=ExpectedImpact.MEDIUM,
                                                       literature_references=None,
                                                       internal_only=False),
  'increase_batch_size_eval_split': ParameterMetadata(ui_display_name='Batch Size Increase: Evaluation Split',
@@ -269,7 +269,7 @@ TRAINER_METADATA = (
                                                      suggested_values=None,
                                                      suggested_values_reasoning=None,
                                                      commonly_used=False,
-                                                     expected_impact='MEDIUM',
+                                                     expected_impact=ExpectedImpact.MEDIUM,
                                                      literature_references=None,
                                                      internal_only=False),
  'increase_batch_size_on_plateau': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau',
@@ -281,7 +281,7 @@ TRAINER_METADATA = (
                                                      suggested_values=None,
                                                      suggested_values_reasoning=None,
                                                      commonly_used=False,
-                                                     expected_impact='MEDIUM',
+                                                     expected_impact=ExpectedImpact.MEDIUM,
                                                      literature_references=None,
                                                      internal_only=False),
  'increase_batch_size_on_plateau_max': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: Cap',
@@ -293,7 +293,7 @@ TRAINER_METADATA = (
                                                          suggested_values=None,
                                                          suggested_values_reasoning=None,
                                                          commonly_used=False,
-                                                         expected_impact='MEDIUM',
+                                                         expected_impact=ExpectedImpact.MEDIUM,
                                                          literature_references=None,
                                                          internal_only=False),
  'increase_batch_size_on_plateau_patience': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: '
@@ -306,7 +306,7 @@ TRAINER_METADATA = (
                                                               suggested_values=None,
                                                               suggested_values_reasoning=None,
                                                               commonly_used=False,
-                                                              expected_impact='MEDIUM',
+                                                              expected_impact=ExpectedImpact.MEDIUM,
                                                               literature_references=None,
                                                               internal_only=False),
  'increase_batch_size_on_plateau_rate': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: Rate',
@@ -318,7 +318,7 @@ TRAINER_METADATA = (
                                                           suggested_values=None,
                                                           suggested_values_reasoning=None,
                                                           commonly_used=False,
-                                                          expected_impact='MEDIUM',
+                                                          expected_impact=ExpectedImpact.MEDIUM,
                                                           literature_references=None,
                                                           internal_only=False),
  'learning_rate': ParameterMetadata(ui_display_name='Learning Rate',
@@ -343,7 +343,7 @@ TRAINER_METADATA = (
                                                                'to any specific choice of learning rate, consider '
                                                                'turning enabling learning rate exponential decay.',
                                     commonly_used=True,
-                                    expected_impact='HIGH',
+                                    expected_impact=ExpectedImpact.HIGH,
                                     literature_references=None,
                                     internal_only=False),
  'learning_rate_scaling': ParameterMetadata(ui_display_name='Learning Rate Scaling',
@@ -374,7 +374,7 @@ TRAINER_METADATA = (
                                                                        'workers, setting this value to constant can be '
                                                                        'used to disable scale-up.',
                                             commonly_used=False,
-                                            expected_impact='MEDIUM',
+                                            expected_impact=ExpectedImpact.MEDIUM,
                                             literature_references=None,
                                             internal_only=False),
  'learning_rate_warmup_epochs': ParameterMetadata(ui_display_name='Learning Rate Warmup Epochs',
@@ -403,7 +403,7 @@ TRAINER_METADATA = (
                                                                              'of the learning rate to descend into '
                                                                              'good loss minima.',
                                                   commonly_used=False,
-                                                  expected_impact='MEDIUM',
+                                                  expected_impact=ExpectedImpact.MEDIUM,
                                                   literature_references='https://datascience.stackexchange.com/questions/55991/in-the-context-of-deep-learning-what-is-training-warmup-steps',
                                                   internal_only=False),
  'optimizer': ParameterMetadata(ui_display_name='Optimizer',
@@ -428,7 +428,7 @@ TRAINER_METADATA = (
                                                            'extensive hypertuning, tend towards adaptive gradient '
                                                            'methods like adam or adamw.',
                                 commonly_used=True,
-                                expected_impact='HIGH',
+                                expected_impact=ExpectedImpact.HIGH,
                                 literature_references='https://www.youtube.com/watch?v=mdKjMPmcWjY',
                                 internal_only=False),
  'reduce_learning_rate_eval_metric': ParameterMetadata(ui_display_name='Reduce Learning Rate Eval Metric',
@@ -440,7 +440,7 @@ TRAINER_METADATA = (
                                                        suggested_values=None,
                                                        suggested_values_reasoning=None,
                                                        commonly_used=False,
-                                                       expected_impact='LOW',
+                                                       expected_impact=ExpectedImpact.LOW,
                                                        literature_references=None,
                                                        internal_only=False),
  'reduce_learning_rate_eval_split': ParameterMetadata(ui_display_name='Reduce Learning Rate Eval Split',
@@ -452,7 +452,7 @@ TRAINER_METADATA = (
                                                       suggested_values=None,
                                                       suggested_values_reasoning=None,
                                                       commonly_used=False,
-                                                      expected_impact='LOW',
+                                                      expected_impact=ExpectedImpact.LOW,
                                                       literature_references=None,
                                                       internal_only=False),
  'reduce_learning_rate_on_plateau': ParameterMetadata(ui_display_name='Reduce Learning Rate On Plateau',
@@ -464,7 +464,7 @@ TRAINER_METADATA = (
                                                       suggested_values=None,
                                                       suggested_values_reasoning=None,
                                                       commonly_used=False,
-                                                      expected_impact='LOW',
+                                                      expected_impact=ExpectedImpact.LOW,
                                                       literature_references=None,
                                                       internal_only=False),
  'reduce_learning_rate_on_plateau_patience': ParameterMetadata(ui_display_name='Reduce Learning Rate on Plateau '
@@ -477,7 +477,7 @@ TRAINER_METADATA = (
                                                                suggested_values=None,
                                                                suggested_values_reasoning=None,
                                                                commonly_used=False,
-                                                               expected_impact='LOW',
+                                                               expected_impact=ExpectedImpact.LOW,
                                                                literature_references=None,
                                                                internal_only=False),
  'reduce_learning_rate_on_plateau_rate': ParameterMetadata(ui_display_name='Reduce Learning Rate On Plateau Rate',
@@ -489,7 +489,7 @@ TRAINER_METADATA = (
                                                            suggested_values=None,
                                                            suggested_values_reasoning=None,
                                                            commonly_used=False,
-                                                           expected_impact='LOW',
+                                                           expected_impact=ExpectedImpact.LOW,
                                                            literature_references=None,
                                                            internal_only=False),
  'regularization_lambda': ParameterMetadata(ui_display_name='Regularization Lambda',
@@ -526,7 +526,7 @@ TRAINER_METADATA = (
                                                                        'often on a logarithmic scale between 0 and '
                                                                        '0.1, such as 0.1, 0.001, 0.0001, etc.',
                                             commonly_used=True,
-                                            expected_impact='HIGH',
+                                            expected_impact=ExpectedImpact.HIGH,
                                             literature_references='https://developers.google.com/machine-learning/crash-course/regularization-for-simplicity/lambda',
                                             internal_only=False),
  'regularization_type': ParameterMetadata(ui_display_name='Regularization Type',
@@ -549,7 +549,7 @@ TRAINER_METADATA = (
                                           suggested_values='L2',
                                           suggested_values_reasoning=None,
                                           commonly_used=True,
-                                          expected_impact='HIGH',
+                                          expected_impact=ExpectedImpact.HIGH,
                                           literature_references='https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2-regularization#:~:text=The%20differences%20between%20L1%20and,regularization%20solution%20is%20non%2Dsparse.',
                                           internal_only=False),
  'should_shuffle': ParameterMetadata(ui_display_name='Should Shuffle',
@@ -589,7 +589,7 @@ TRAINER_METADATA = (
                                 suggested_values_reasoning='We have not found strong evidence that discretely decaying '
                                                            'the learning rate is superior to doing so continuously.',
                                 commonly_used=False,
-                                expected_impact='LOW',
+                                expected_impact=ExpectedImpact.LOW,
                                 literature_references='https://neptune.ai/blog/how-to-choose-a-learning-rate-scheduler',
                                 internal_only=False),
  'steps_per_checkpoint': ParameterMetadata(ui_display_name='Steps Per Checkpoint',
@@ -626,7 +626,7 @@ TRAINER_METADATA = (
                                                                       'a sub-epoch time scale, or every few thousand '
                                                                       'steps.',
                                            commonly_used=True,
-                                           expected_impact='HIGH',
+                                           expected_impact=ExpectedImpact.HIGH,
                                            literature_references=None,
                                            internal_only=False),
  'train_steps': ParameterMetadata(ui_display_name='Train Steps',
@@ -647,7 +647,7 @@ TRAINER_METADATA = (
                                                              'through the dataset to converge while others converge '
                                                              'before a single epoch through the data.',
                                   commonly_used=False,
-                                  expected_impact='HIGH',
+                                  expected_impact=ExpectedImpact.HIGH,
                                   literature_references=None,
                                   internal_only=False),
  'validation_field': ParameterMetadata(ui_display_name='Validation Field',
@@ -664,7 +664,7 @@ TRAINER_METADATA = (
                                        suggested_values='default behavior',
                                        suggested_values_reasoning=None,
                                        commonly_used=False,
-                                       expected_impact='HIGH',
+                                       expected_impact=ExpectedImpact.HIGH,
                                        literature_references=None,
                                        internal_only=False),
  'validation_metric': ParameterMetadata(ui_display_name='Validation Metric',
