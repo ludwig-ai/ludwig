@@ -147,14 +147,12 @@ def set_saved_weights_in_checkpoint_flag(config):
 
 
 def processify(func):
-    """Decorator to run a function as a process.
-    Be sure that every argument and the return value
-    is *pickable*.
-    The created process is joined, so the code does not
-    run in parallel.
+    """Decorator to run a function as a process. Be sure that every argument and the return value is *pickable*.
+    The created process is joined, so the code does not run in parallel.
 
     Taken from https://gist.github.com/schlamar/2311116
     """
+
     def process_func(q, *args, **kwargs):
         try:
             ret = func(q, *args, **kwargs)
