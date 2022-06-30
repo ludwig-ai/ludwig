@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict as tDict
+from typing import Dict as TDict
 from typing import List as TList
 from typing import Tuple, Type, Union
 
@@ -51,7 +51,7 @@ def load_config_with_kwargs(
     }
 
 
-def create_cond(if_pred: tDict, then_pred: tDict):
+def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
@@ -82,7 +82,7 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
+def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
@@ -606,7 +606,7 @@ def FloatOrAutoField(
     max_exclusive: Union[None, int] = None,
 ):
     """Float that also permits an `auto` string value."""
-    options: List[str] = ["auto"]
+    options: TList[str] = ["auto"]
     return NumericOrStringOptionsField(**locals())
 
 
@@ -623,7 +623,7 @@ def IntegerOrAutoField(
     max_exclusive: Union[None, int] = None,
 ):
     """Integer that also permits an `auto` string value."""
-    options: List[str] = ["auto"]
+    options: TList[str] = ["auto"]
     return IntegerOrStringOptionsField(**locals())
 
 

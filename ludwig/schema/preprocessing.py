@@ -50,104 +50,118 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
 
-@dataclass
 @register_preprocessor(TEXT)
+@dataclass
 class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
-    pretrained_model_name_or_path: Optional[str] = schema_utils.String(
+    pretrained_model_name_or_path: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="This can be either the name of a pretrained HuggingFace model or a path where it was downloaded",
     )
 
-    tokenizer: Optional[str] = schema_utils.StringOptions(
+    tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),
         default='space_punct',
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
     )
 
-    vocab_file: Optional[str] = schema_utils.String(
+    vocab_file: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
                     "first string until \t or \n is considered a word.",
     )
 
-    max_sequence_length: Optional[int] = schema_utils.PositiveInteger(
+    max_sequence_length: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
                     "truncated, while texts that are shorter will be padded.",
     )
 
-    most_common: Optional[int] = schema_utils.PositiveInteger(
+    most_common: int = schema_utils.PositiveInteger(
         default=20000,
         allow_none=False,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
                     "amount, the most infrequent symbols will be treated as unknown.",
     )
 
-    padding_symbol: Optional[str] = schema_utils.String(
+    padding_symbol: str = schema_utils.String(
         default="<PAD>",
         allow_none=False,
         description="The string used as the padding symbol for sequence features. Ignored for features using "
                     "huggingface encoders, which have their own vocabulary.",
     )
 
-    unknown_symbol: Optional[str] = schema_utils.String(
-        default="<UNK>",
+    unknown_symbol: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The string used as the unknown symbol for sequence features. Ignored for features using "
                     "huggingface encoders, which have their own vocabulary.",
     )
 
-    padding: Optional[str] = schema_utils.StringOptions(
+    padding: str = schema_utils.StringOptions(
         ["left", "right"],
         default="right",
         allow_none=False,
         description="the direction of the padding. right and left are available options.",
     )
 
-    lowercase: Optional[bool] = schema_utils.Boolean(
+    lowercase: bool = schema_utils.Boolean(
         default=True,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
     )
 
-    fill_value: Optional[str] = schema_utils.String(
-        default="<UNK>",
+    fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
+    computed_fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
 
-@dataclass
+
 @register_preprocessor(NUMBER)
+@dataclass
 class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number column",
     )
 
-    fill_value: Optional[float] = schema_utils.NonNegativeFloat(
+    fill_value: float = schema_utils.NonNegativeFloat(
         default=0.0,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    normalization: Optional[str] = schema_utils.StringOptions(
+    computed_fill_value: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    normalization: str = schema_utils.StringOptions(
         ["zscore", "minmax", "log1p"],
         default=None,
         allow_none=True,
@@ -155,19 +169,19 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(BINARY)
+@dataclass
 class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],
         default="fill_with_false",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary column",
     )
 
-    fill_value: Union[int, float] = schema_utils.NumericOrStringOptionsField(
+    fill_value: Union[int, float, str] = schema_utils.NumericOrStringOptionsField(
         strings_utils.all_bool_strs(),
         default=None,
         default_numeric=None,
@@ -178,7 +192,19 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    fallback_true_label: Optional[str] = schema_utils.String(
+    computed_fill_value: Union[int, float, str] = schema_utils.NumericOrStringOptionsField(
+        strings_utils.all_bool_strs(),
+        default=None,
+        default_numeric=None,
+        default_option=None,
+        allow_none=False,
+        min=0,
+        max=1,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    fallback_true_label: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
@@ -186,30 +212,37 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(CATEGORY)
+@dataclass
 class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a category column",
     )
 
-    fill_value: Optional[str] = schema_utils.String(
-        default="<UNK>",
+    fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    lowercase: Optional[bool] = schema_utils.Boolean(
+    computed_fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    lowercase: bool = schema_utils.Boolean(
         default=False,
         description="Whether the string has to be lowercased before being handled by the tokenizer.",
     )
 
-    most_common: Optional[int] = schema_utils.PositiveInteger(
+    most_common: int = schema_utils.PositiveInteger(
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. if the data contains more than this "
@@ -217,11 +250,11 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(SET)
+@dataclass
 class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    tokenizer: Optional[str] = schema_utils.String(
+    tokenizer: str = schema_utils.String(
         default="space",
         allow_none=False,
         description="Defines how to transform the raw text content of the dataset column to a set of elements. The "
@@ -230,25 +263,32 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "JSON parser).",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a set column",
     )
 
-    fill_value: Optional[Any] = schema_utils.String(
-        default="<UNK>",
+    fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    lowercase: Optional[bool] = schema_utils.Boolean(
+    computed_fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    lowercase: bool = schema_utils.Boolean(
         default=False,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
-    most_common: Optional[int] = schema_utils.PositiveInteger(
+    most_common: int = schema_utils.PositiveInteger(
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
@@ -256,95 +296,110 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(SEQUENCE)
+@dataclass
 class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    tokenizer: Optional[str] = schema_utils.String(
+    tokenizer: str = schema_utils.String(
         default="space",
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
     )
 
-    vocab_file: Optional[str] = schema_utils.String(
+    vocab_file: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
                     "first string until \t or \n is considered a word.",
     )
 
-    max_sequence_length: Optional[int] = schema_utils.PositiveInteger(
+    max_sequence_length: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
                     "truncated, while texts that are shorter will be padded.",
     )
 
-    most_common: Optional[int] = schema_utils.PositiveInteger(
+    most_common: int = schema_utils.PositiveInteger(
         default=20000,
         allow_none=False,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
                     "amount, the most infrequent symbols will be treated as unknown.",
     )
 
-    padding_symbol: Optional[str] = schema_utils.String(
+    padding_symbol: str = schema_utils.String(
         default="<PAD>",
         allow_none=False,
         description="The string used as a padding symbol. This special token is mapped to the integer ID 0 in the "
                     "vocabulary.",
     )
 
-    unknown_symbol: Optional[str] = schema_utils.String(
-        default="<UNK>",
+    unknown_symbol: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The string used as an unknown placeholder. This special token is mapped to the integer ID 1 in "
                     "the vocabulary.",
     )
 
-    padding: Optional[str] = schema_utils.StringOptions(
+    padding: str = schema_utils.StringOptions(
         ["left", "right"],
         default="right",
         allow_none=False,
         description="the direction of the padding. right and left are available options.",
     )
 
-    lowercase: Optional[bool] = schema_utils.Boolean(
+    lowercase: bool = schema_utils.Boolean(
         default=False,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
     )
 
-    fill_value: Optional[str] = schema_utils.String(
-        default="<UNK>",
+    fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
+    computed_fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
 
-@dataclass
+
 @register_preprocessor(IMAGE)
+@dataclass
 class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="backfill",
         allow_none=False,
         description="What strategy to follow when there's a missing value in an image column",
     )
 
-    fill_value: Optional[str] = schema_utils.NonNegativeFloat(
+    fill_value: float = schema_utils.NonNegativeFloat(
         default=None,
         allow_none=True,
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+        description="The maximum number of most common tokens to be considered. If the data contains more than this "
+                    "amount, the most infrequent tokens will be treated as unknown.",
     )
 
-    height: Optional[int] = schema_utils.PositiveInteger(
+    computed_fill_value: float = schema_utils.NonNegativeFloat(
+        default=None,
+        allow_none=True,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    height: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image height in pixels. If this parameter is set, images will be resized to the specified "
@@ -352,7 +407,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "first image in the dataset.",
     )
 
-    width: Optional[int] = schema_utils.PositiveInteger(
+    width: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image width in pixels. If this parameter is set, images will be resized to the specified "
@@ -360,7 +415,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "first image in the dataset.",
     )
 
-    num_channels: Optional[int] = schema_utils.PositiveInteger(
+    num_channels: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="Number of channels in the images. If specified, images will be read in the mode specified by the "
@@ -368,20 +423,20 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "format of the first valid image in the dataset.",
     )
 
-    resize_method: Optional[str] = schema_utils.StringOptions(
+    resize_method: str = schema_utils.StringOptions(
         ["crop_or_pad", "interpolate"],
         default="interpolate",
         allow_none=False,
         description="The method to use for resizing images.",
     )
 
-    infer_image_num_channels: Optional[bool] = schema_utils.Boolean(
+    infer_image_num_channels: bool = schema_utils.Boolean(
         default=True,
         description="If true, then the number of channels in the dataset is inferred from a sample of the first image "
                     "in the dataset.",
     )
 
-    infer_image_dimensions: Optional[bool] = schema_utils.Boolean(
+    infer_image_dimensions: bool = schema_utils.Boolean(
         default=True,
         description="If true, then the height and width of images in the dataset will be inferred from a sample of "
                     "the first image in the dataset. Each image that doesn't conform to these dimensions will be "
@@ -389,85 +444,92 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "dataset will be specified by the user.",
     )
 
-    infer_image_max_height: Optional[int] = schema_utils.PositiveInteger(
+    infer_image_max_height: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="If infer_image_dimensions is set, this is used as the maximum height of the images in "
                     "the dataset.",
     )
 
-    infer_image_max_width: Optional[int] = schema_utils.PositiveInteger(
+    infer_image_max_width: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="If infer_image_dimensions is set, this is used as the maximum width of the images in "
                     "the dataset.",
     )
 
-    infer_image_sample_size: Optional[int] = schema_utils.PositiveInteger(
+    infer_image_sample_size: int = schema_utils.PositiveInteger(
         default=100,
         allow_none=False,
         description="The sample size used for inferring dimensions of images in infer_image_dimensions.",
     )
 
-    scaling: Optional[str] = schema_utils.StringOptions(
+    scaling: str = schema_utils.StringOptions(
         ["pixel_normalization", "pixel_standardization"],
         default="pixel_normalization",
         allow_none=False,
         description="The scaling strategy for pixel values in the image.",
     )
 
-    in_memory: Optional[bool] = schema_utils.Boolean(
+    in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether image dataset will reside in memory during the training process or will be "
                     "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
                     "of input images will be fetched from disk each training iteration.",
     )
 
-    num_processes: Optional[int] = schema_utils.PositiveInteger(
+    num_processes: int = schema_utils.PositiveInteger(
         default=1,
         allow_none=False,
         description="Specifies the number of processes to run for preprocessing images.",
     )
 
 
-@dataclass
 @register_preprocessor(AUDIO)
+@dataclass
 class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    audio_file_length_limit_in_s: Optional[int] = schema_utils.NonNegativeFloat(
+    audio_file_length_limit_in_s: int = schema_utils.NonNegativeFloat(
         default=7.5,
         allow_none=False,
         description="Float value that defines the maximum limit of the audio file in seconds. All files longer than "
                     "this limit are cut off. All files shorter than this limit are padded with padding_value",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="backfill",
         allow_none=False,
         description="What strategy to follow when there's a missing value in an audio column",
     )
 
-    fill_value: Optional[str] = schema_utils.NonNegativeFloat(
+    fill_value: float = schema_utils.NonNegativeFloat(
         default=None,
         allow_none=True,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    in_memory: Optional[bool] = schema_utils.Boolean(
+    computed_fill_value: float = schema_utils.NonNegativeFloat(
+        default=None,
+        allow_none=True,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether the audio dataset will reside in memory during the training process or will be "
                     "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
                     "of input audio will be fetched from disk each training iteration.",
     )
 
-    padding_value: Optional[float] = schema_utils.NonNegativeFloat(
+    padding_value: float = schema_utils.NonNegativeFloat(
         default=0.0,
         allow_none=False,
         description="Float value that is used for padding."
     )
 
-    norm: Optional[str] = schema_utils.StringOptions(
+    norm: str = schema_utils.StringOptions(
         ["per_file"],
         default=None,
         allow_none=True,
@@ -475,7 +537,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "per_file, z-norm is applied on a 'per file' level",
     )
 
-    audio_feature: Optional[dict] = schema_utils.Dict(
+    audio_feature: dict = schema_utils.Dict(
         default={
                 "type": "fbank",
                 "window_length_in_s": 0.04,
@@ -487,55 +549,62 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(TIMESERIES)
+@dataclass
 class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    tokenizer: Optional[str] = schema_utils.StringOptions(
+    tokenizer: str = schema_utils.StringOptions(
         sorted(list(tokenizer_registry.keys())),
         default="space",
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
     )
 
-    timeseries_length_limit: Optional[int] = schema_utils.PositiveInteger(
+    timeseries_length_limit: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="Defines the maximum length of the timeseries. All timeseries longer than this limit are cut off.",
     )
 
-    padding_value: Optional[float] = schema_utils.NonNegativeFloat(
+    padding_value: float = schema_utils.NonNegativeFloat(
         default=0.0,
         allow_none=False,
         description="Float value that is used for padding.",
     )
 
-    padding: Optional[str] = schema_utils.StringOptions(
+    padding: str = schema_utils.StringOptions(
         ["left", "right"],
         default="right",
         allow_none=False,
         description="the direction of the padding. right and left are available options.",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text column",
     )
 
-    fill_value: Optional[str] = schema_utils.String(
+    fill_value: str = schema_utils.String(
         default="",
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
+    computed_fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
 
-@dataclass
+
 @register_preprocessor(BAG)
+@dataclass
 class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    tokenizer: Optional[str] = schema_utils.StringOptions(
+    tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),
         default="space",
         allow_none=False,
@@ -545,25 +614,32 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "JSON parser).",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a set column",
     )
 
-    fill_value: Optional[Any] = schema_utils.String(
-        default="<UNK>",
+    fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    lowercase: Optional[bool] = schema_utils.Boolean(
+    computed_fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    lowercase: bool = schema_utils.Boolean(
         default=False,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
-    most_common: Optional[int] = schema_utils.PositiveInteger(
+    most_common: int = schema_utils.PositiveInteger(
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
@@ -571,42 +647,56 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(H3)
+@dataclass
 class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in an h3 column",
     )
 
-    fill_value: Optional[Any] = schema_utils.PositiveInteger(
+    fill_value: int = schema_utils.PositiveInteger(
         default=576495936675512319,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
+    computed_fill_value: int = schema_utils.PositiveInteger(
+        default=576495936675512319,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
 
-@dataclass
+
 @register_preprocessor(DATE)
+@dataclass
 class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a date column",
     )
 
-    fill_value: Optional[Any] = schema_utils.String(
+    fill_value: str = schema_utils.String(
         default="",
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    datetime_format: Optional[str] = schema_utils.String(
+    computed_fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+    )
+
+    datetime_format: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="This parameter can either be a datetime format string, or null, in which case the datetime "
@@ -614,28 +704,36 @@ class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
 @register_preprocessor(VECTOR)
+@dataclass
 class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
-    vector_size: Optional[int] = schema_utils.PositiveInteger(
+    vector_size: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The size of the vector. If None, the vector size will be inferred from the data.",
     )
 
-    missing_value_strategy: Optional[str] = schema_utils.StringOptions(
+    missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a vector column",
     )
 
-    fill_value: Optional[Any] = schema_utils.String(
+    fill_value: str = schema_utils.String(
         default="",
         allow_none=False,
         pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
+        description="The internally computed fill value to replace missing values with in case the "
+                    "missing_value_strategy is fill_with_mode or fill_with_mean",
     )
 
 
@@ -649,7 +747,7 @@ def PreprocessingDataclassField(feature_type: str):
     class PreprocessingMarshmallowField(fields.Field):
         """
         Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
-        preprocessing_registry and creates a corresponding `oneOf` JSON schema for external usage.
+        preprocessing_registry and creates a corresponding JSON schema for external usage.
         """
 
         def _deserialize(self, value, attr, data, **kwargs):

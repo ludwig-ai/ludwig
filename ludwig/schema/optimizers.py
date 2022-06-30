@@ -326,8 +326,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
-        load_default = opt.Schema()
-        load_default = load_default.load(default)
+        load_default = opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(

@@ -24,12 +24,34 @@ def register_output_feature(name: str):
 
 
 def update_encoders(feature_props, feature_type):
+    """
+    This function updates the list of encoders acquired from the registry with any custom encoders that are not
+    registered before schema validation.
+
+    Args:
+        feature_props: Input feature properties
+        feature_type: Input feature type
+
+    Returns:
+        None
+    """
     for key in get_encoder_classes(feature_type):
         if key not in feature_props["encoder"]["enum"]:
             feature_props["encoder"]["enum"].append(key)
 
 
 def update_decoders(feature_props, feature_type):
+    """
+        This function updates the list of decoders acquired from the registry with any custom decoders that are not
+        registered before schema validation.
+
+        Args:
+            feature_props: Output feature properties
+            feature_type: Output feature type
+
+        Returns:
+            None
+        """
     for key in get_decoder_classes(feature_type):
         if key not in feature_props["decoder"]["enum"]:
             feature_props["decoder"]["enum"].append(key)
