@@ -707,6 +707,8 @@ def NumericOrStringOptionsField(
                 "default": default_numeric,
                 "description": "Set to a valid number.",
             }
+            if not is_integer:
+                numeric_option["format"] = "float"
             if min is not None:
                 numeric_option["minimum"] = min
             if min_exclusive is not None:

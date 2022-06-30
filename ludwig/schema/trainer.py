@@ -268,7 +268,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
         description="Parameter values for gradient clipping.",
-        parameter_metadata=TRAINER_METADATA["gradient_clipping"],
+        default={},
     )
 
     learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(
@@ -305,15 +305,6 @@ class GBMTrainerConfig(BaseTrainerConfig):
             "(default: 'lightgbm_trainer')"
         ),
         allow_none=False,
-    )
-
-    eval_batch_size: int = schema_utils.PositiveInteger(
-        default=128,
-        allow_none=True,
-        description=(
-            "Size of batch to use for evaluation. This can be handy for increasing evaluation throughput, "
-            "as more memory may be available than during training."
-        ),
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)

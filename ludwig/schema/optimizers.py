@@ -1,12 +1,12 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Optional, Tuple
+from typing import ClassVar, Dict, Optional, Tuple
 
 import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.utils import (
     BaseMarshmallowConfig,
     Boolean,
@@ -355,18 +355,14 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
 
-def GradientClippingDataclassField(
-    default={},
-    allow_none=True,
-    description="Parameters for gradient clipping.",
-    parameter_metadata: ParameterMetadata = None,
-):
+def GradientClippingDataclassField(description: str, default: Dict):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
     :param default: dict that specifies clipping param values that will be loaded by its schema class (default: {}).
     :param allow_none: Whether this field can accept `None` as a value. (default: True)
     """
+    allow_none = True
 
     class GradientClippingMarshmallowField(fields.Field):
         """Custom marshmallow field class for gradient clipping.
@@ -409,7 +405,7 @@ def GradientClippingDataclassField(
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,
-                metadata={"description": description, "parameter_metadata": parameter_metadata},
+                metadata={"description": description, "parameter_metadata": TRAINER_METADATA["gradient_clipping"]},
             )
         },
         default_factory=lambda: load_default,
