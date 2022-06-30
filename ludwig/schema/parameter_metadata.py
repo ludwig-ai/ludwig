@@ -7,8 +7,8 @@ class ExpectedImpact(Enum):
     """The expected impact of determining a "good" value for a specific parameter.
 
     - HIGH: this parameter should almost always be included in a hyperopt run and can make or break a good model.
-    - MEDIUM: this parameter might make or break a good model.
-    - LOW: this parmater usually does not have a significant impact on model performance.
+    - MEDIUM: this parameter can sometimes make or break a good model.
+    - LOW: this parameter usually does not have a significant impact on model performance.
     """
 
     UNKNOWN = 0
