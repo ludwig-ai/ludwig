@@ -2,15 +2,16 @@ import tempfile
 
 import pytest
 
-from ludwig.automl.automl import create_auto_config
 from ludwig.utils.data_utils import read_csv
 
 try:
     import dask.dataframe as dd
+    from ludwig.automl.automl import create_auto_config
 except ImportError:
     pass
 
-csv_content = """
+
+CSV_CONTENT = """
 name,gender,lives_in_sf
 Jessica,f,
 Jim,m,FALSE
@@ -21,7 +22,7 @@ Jim,m,FALSE
 def test_mixed_csv_data_source():
     try:
         temp = tempfile.NamedTemporaryFile(mode="w+")
-        temp.write(csv_content)
+        temp.write(CSV_CONTENT)
         temp.seek(0)
         ds = read_csv(temp.name, dtype=None)
         df = dd.from_pandas(ds, npartitions=1)
