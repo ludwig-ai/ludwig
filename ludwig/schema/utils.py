@@ -158,7 +158,7 @@ def StringOptions(
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, "parameter_metadata": parameter_metadata},
             )
         },
         default=default,
@@ -186,7 +186,9 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
     )
 
 
-def Integer(default: Union[None, int] = None, allow_none=False, description=""):
+def Integer(
+    default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
+):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
     allow_none = allow_none or default is None
 
@@ -202,7 +204,7 @@ def Integer(default: Union[None, int] = None, allow_none=False, description=""):
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, "parameter_metadata": parameter_metadata},
             )
         },
         default=default,
@@ -329,7 +331,7 @@ def NonNegativeFloat(
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, "parameter_metadata": parameter_metadata},
             )
         },
         default=default,
@@ -371,7 +373,7 @@ def FloatRange(
     )
 
 
-def Dict(default: Union[None, tDict] = None, description=""):
+def Dict(default: Union[None, tDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
@@ -386,14 +388,16 @@ def Dict(default: Union[None, tDict] = None, description=""):
                 allow_none=True,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, "parameter_metadata": parameter_metadata},
             )
         },
         default_factory=lambda: default,
     )
 
 
-def DictList(default: Union[None, List[tDict]] = None, description=""):
+def DictList(
+    default: Union[None, List[tDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
         try:
@@ -411,7 +415,7 @@ def DictList(default: Union[None, List[tDict]] = None, description=""):
                 allow_none=True,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={"description": description, "parameter_metadata": parameter_metadata},
             )
         },
         default_factory=lambda: default,
@@ -467,7 +471,7 @@ def Embed():
     )
 
 
-def InitializerOrDict(default: str = "xavier_uniform", description=""):
+def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
     """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
 
     In particular, allows str or dict types; in the former case the field is equivalent to `InitializerOptions` while in
@@ -734,7 +738,13 @@ def NumericOrStringOptionsField(
                 else []
             )
 
-            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
+            return {
+                "oneOf": oneof_list,
+                "title": self.name,
+                "description": description,
+                "default": default,
+                "parameter_metadata": parameter_metadata,
+            }
 
     return field(
         metadata={
