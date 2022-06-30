@@ -29,13 +29,11 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
 
     type: str
 
-    learning_rate: float = schema_utils.NumericOrStringOptionsField(
+    learning_rate: float = schema_utils.FloatOrAutoField(
         default=0.001,
         min=0.0,
         max=1.0,
-        options=["auto"],
         default_numeric=0.001,
-        default_option="auto",
         allow_none=False,
         description=(
             "Learning rate specified in configuration, represents how much to scale the gradients by. If 'auto', "
@@ -53,11 +51,8 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
         description="First output feature, by default it is set as the same field of the first output feature.",
     )
 
-    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrStringOptionsField(
+    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrAutoField(
         default=None,
-        options=["auto"],
-        default_numeric=None,
-        default_option="auto",
         allow_none=True,
         min_exclusive=0,
         description="Size of batch to pass to the model for evaluation.",
@@ -120,11 +115,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=True, description="Whether to shuffle batches during training when true."
     )
 
-    batch_size: Union[int, str] = schema_utils.IntegerOrStringOptionsField(
+    batch_size: Union[int, str] = schema_utils.IntegerOrAutoField(
         default=128,
-        options=["auto"],
         default_numeric=128,
-        default_option="auto",
         allow_none=False,
         min_exclusive=0,
         description="Size of batch to pass to the model for training.",
