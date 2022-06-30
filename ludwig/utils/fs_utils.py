@@ -125,7 +125,7 @@ def safe_move_file(src, dst):
         model directories live on different filesystems.  `os.replace()` will
         throw errors if run across filesystems.
 
-    So we try `os.rename()`, but if we detect a cross-filesystem copy, we
+    So we try `os.replace()`, but if we detect a cross-filesystem copy, we
     switch to `shutil.move()` with some wrappers to make it atomic.
     """
     try:
