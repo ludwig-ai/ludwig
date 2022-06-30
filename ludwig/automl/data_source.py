@@ -32,10 +32,6 @@ class DataSource(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def check_if_boolean(self, column: str) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
     def is_string_type(self, dtype: str) -> bool:
         raise NotImplementedError()
 
@@ -74,20 +70,6 @@ class DataframeSourceMixin:
 
     def get_avg_num_tokens(self, column: str) -> int:
         return avg_num_tokens(self.df[column])
-
-    def check_if_boolean(self, column: str) -> bool:
-        num_unique_values, unique_values, _ = self.get_distinct_values(column, max_values_to_return=4)
-        if num_unique_values <= 3:
-            for entry in unique_values:
-                try:
-                    if np.isnan(entry):
-                        continue
-                except TypeError:
-                    return False
-                if isinstance(entry, bool):
-                    continue
-                return False
-        return True
 
     def is_string_type(self, dtype: str) -> bool:
         return dtype in ["str", "string", "object"]
