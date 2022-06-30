@@ -556,6 +556,7 @@ def FloatOrAutoField(
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
 ):
+    """Float that also permits an `auto` string value."""
     options: List[str] = ["auto"]
     return NumericOrStringOptionsField(**locals())
 
@@ -571,6 +572,7 @@ def IntegerOrAutoField(
     min_exclusive: Union[None, int] = None,
     max_exclusive: Union[None, int] = None,
 ):
+    """Integer that also permits an `auto` string value."""
     options: List[str] = ["auto"]
     return IntegerOrStringOptionsField(**locals())
 
