@@ -239,14 +239,18 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     if DEFAULTS not in config:
         config[DEFAULTS] = dict()
 
+    # Update defaults with the default feature specific preprocessing parameters
     for feature_type, preprocessing_defaults in default_feature_specific_parameters.items():
+        # If defaults was empty, then create a new key with feature type
         if feature_type not in config.get(DEFAULTS):
             if PREPROCESSING in preprocessing_defaults:
                 config[DEFAULTS][feature_type] = preprocessing_defaults
             else:
                 config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
+        # Feature type exists but preprocessing hasn't be specified
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_defaults
+        # Preprocessing parameters exist for feature type, update defaults with parameters from config
         else:
             config[DEFAULTS][feature_type][PREPROCESSING].update(
                 merge_dict(preprocessing_defaults, config[DEFAULTS][feature_type][PREPROCESSING])

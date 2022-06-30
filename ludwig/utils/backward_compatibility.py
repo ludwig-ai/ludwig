@@ -168,6 +168,8 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     preprocessing_params = list(config.get(PREPROCESSING).keys())
     type_specific_preprocessing_params = dict()
 
+    # If preprocessing section specified and it contains feature specific preprocessing parameters, make a copy
+    # and delete them from the preprocessing section
     for preprocessing_param in preprocessing_params:
         if preprocessing_param in input_feature_types:
             warnings.warn(
@@ -177,21 +179,25 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
             )
             type_specific_preprocessing_params[preprocessing_param] = config[PREPROCESSING].pop(preprocessing_param)
 
-    # Check if preprocessing is empty
+    # Delete empty preprocessing section if no other preprocessing parameters specified
     if PREPROCESSING in config and not config[PREPROCESSING]:
         del config[PREPROCESSING]
 
     if DEFAULTS not in config:
         config[DEFAULTS] = dict()
 
+    # Update defaults with the default feature specific preprocessing parameters
     for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
+        # If defaults was empty, then create a new key with feature type
         if feature_type not in config.get(DEFAULTS):
             if PREPROCESSING in preprocessing_param:
                 config[DEFAULTS][feature_type] = preprocessing_param
             else:
                 config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_param}
+        # Feature type exists but preprocessing hasn't be specified
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+        # Update defaults with parameters from config for specific feature type
         else:
             config[DEFAULTS][feature_type][PREPROCESSING].update(
                 merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
@@ -238,9 +244,9 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
         preprocessing["split"] = split_params
 
 
-def _upgrade_preprocessing(preprocessing: Dict[str, Any], config: Dict[str, Any]):
+def _upgrade_preprocessing(config: Dict[str, Any]):
     """Upgrade preprocessing section of config (in-place)"""
-    _upgrade_preprocessing_split(preprocessing)
+    _upgrade_preprocessing_split(config[PREPROCESSING])
     _upgrade_preprocessing_defaults(config)
 
 
@@ -264,4 +270,4 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
         _upgrade_trainer(config[TRAINER])
 
     if PREPROCESSING in config:
-        _upgrade_preprocessing(config[PREPROCESSING], config)
+        _upgrade_preprocessing(config)
