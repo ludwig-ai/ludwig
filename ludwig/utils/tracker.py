@@ -19,16 +19,12 @@ from ludwig.utils.data_utils import save_json, load_json
 from ludwig.utils.misc_utils import processify
 from ludwig.globals import LUDWIG_VERSION
 
-# disabling print because the following imports are verbose
-f = open(os.devnull, 'w')
-sys.stdout = f
 from experiment_impact_tracker.py_environment.common import get_python_packages_and_versions
 from experiment_impact_tracker.gpu.nvidia import get_gpu_info
 from experiment_impact_tracker.cpu.common import get_my_cpu_info
-f.close()
-sys.stdout = sys.__stdout__
 
 STOP_MESSAGE = 'stop'
+
 
 @processify
 def monitor(queue, info, output_dir, logging_interval):
@@ -71,6 +67,7 @@ class Tracker:
     """
     Track system resource (hardware and software) usage by a chunk of code.
     """
+
     def __init__(self, tag, output_dir, logging_interval=1, num_batches=None, num_examples=None):
         """
         tag: one of `train` or `evaluate`.
@@ -96,7 +93,8 @@ class Tracker:
         self.info['start_disk_usage'] = shutil.disk_usage(os.path.expanduser('~')).used
 
         # CPU information
-        self.info['system']['python_packages_and_versions'] = [str(package) for package in get_python_packages_and_versions()]
+        self.info['system']['python_packages_and_versions'] = [str(package) for package in
+                                                               get_python_packages_and_versions()]
         cpu_info = get_my_cpu_info()
         self.info['system']['cpu_architecture'] = cpu_info['arch']
         self.info['system']['num_cpu'] = cpu_info['count']
@@ -133,7 +131,7 @@ class Tracker:
         try:
             self.p, self.queue = monitor(self.info, self.output_dir, self.logging_interval)
             self.launched = True
-        except:
+        except Exception as _:
             ex_type, ex_value, tb = sys.exc_info()
             print("Encountered exception when launching tracker.")
             print("".join(traceback.format_tb(tb)))
@@ -157,8 +155,8 @@ class Tracker:
         self.info['end_time'] = time.time()
         self.info['{}_total_duration'.format(self.tag)] = self.info['end_time'] - self.info['start_time']
 
-        #if self.num_batches:
-            #self.info['per_batch_duration'] = self.info['{}_total_duration'.format(self.tag)] / self.num_batches
+        # if self.num_batches:
+        # self.info['per_batch_duration'] = self.info['{}_total_duration'.format(self.tag)] / self.num_batches
         if self.num_examples:
             self.info['per_example_duration'] = self.info['{}_total_duration'.format(self.tag)] / self.num_examples
             self.info['examples_per_second'] = self.num_examples / self.info['{}_total_duration'.format(self.tag)]
