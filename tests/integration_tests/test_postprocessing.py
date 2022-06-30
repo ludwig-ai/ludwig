@@ -31,6 +31,7 @@ from tests.integration_tests.utils import (
     init_backend,
     RAY_BACKEND_CONFIG,
     set_feature,
+    text_feature,
 )
 
 
@@ -163,7 +164,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
 def test_set_feature_saving(tmpdir, pct_positive):
     backend = "local"
     input_features = [
-        category_feature(vocab_size=3),
+        text_feature(vocab_size=3),
     ]
 
     feature = set_feature()
