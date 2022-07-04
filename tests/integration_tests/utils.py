@@ -748,11 +748,11 @@ class ParameterUpdateError(Exception):
 
 
 def assert_model_parameters_updated(
-        model: LudwigModule,
-        model_input_args: Tuple,
-        max_steps: int = 1,
-        threshold: float = 1.0,
-        learning_rate: float = 0.001,
+    model: LudwigModule,
+    model_input_args: Tuple,
+    max_steps: int = 1,
+    threshold: float = 1.0,
+    learning_rate: float = 0.001,
 ) -> None:
     """
     Confirms that model parameters can be updated.
