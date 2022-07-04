@@ -747,21 +747,30 @@ class ParameterUpdateError(Exception):
     pass
 
 
-def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple, max_steps: int = 1) -> None:
+def assert_model_parameters_updated(
+        model: LudwigModule,
+        model_input_args: Tuple,
+        max_steps: int = 1,
+        threshold: float = 1.0,
+        learning_rate: float = 0.001,
+) -> None:
     """
     Confirms that model parameters can be updated.
     Args:
         model: (LudwigModel) model to be tested.
         model_input_args: (tuple) input for model
-        max_steps: (int) maximum number of steps allowed to test for parameter
+        max_steps: (int, default=1) maximum number of steps allowed to test for parameter
             updates.
+        threshold: (float, default=1.0) fraction of parameters that need to be updated
+            to pass this test.
+        learning_rate: (flaot, default=0.001) learning rate for the optimizaer
 
     Returns: None
 
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     model.train(True)
 
     # generate initial model output tensor
@@ -806,7 +815,13 @@ def assert_model_parameters_updated(model: LudwigModule, model_input_args: Tuple
             break
 
     # if not all layers are updated, raise exception
-    if not all(parameter_updated):
+    parameter_fraction_updated = float(sum(parameter_updated)) / len(parameter_updated)
+    # TODO: turn print() to logger.debug() call before final merge
+    print(
+        f"number parameters: {len(parameter_updated)}, number updated: {sum(parameter_updated)}"
+        f", fraction: {parameter_fraction_updated:0.2f}"
+    )
+    if not (all(parameter_updated) or (parameter_fraction_updated >= threshold)):
         parameters_not_updated = []
         for updated, b, a in zip(parameter_updated, before, after):
             if not updated:

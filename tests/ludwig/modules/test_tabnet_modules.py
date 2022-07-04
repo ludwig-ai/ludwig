@@ -5,6 +5,7 @@ import torch
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
 from ludwig.utils.entmax import sparsemax
+from tests.integration_tests.utils import assert_model_parameters_updated
 
 RANDOM_SEED = 67
 
@@ -63,6 +64,9 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
+    # use threshold 0.33 because batchnorm is bypassed when batch_size == 1
+    assert_model_parameters_updated(feature_block, (input_tensor,), threshold=0.33)
+
 
 @pytest.mark.parametrize("num_total_blocks, num_shared_blocks", [(4, 2), (6, 4), (3, 1)])
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -98,6 +102,9 @@ def test_feature_transformer(
     assert feature_transformer.input_shape[-1] == input_size
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
+
+    # use threshold 0.33 because batchnorm is bypassed when batch_size == 1
+    assert_model_parameters_updated(feature_transformer, (input_tensor,), threshold=0.33)
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -139,6 +146,9 @@ def test_attentive_transformer(
     if entmax_mode == "adaptive":
         assert isinstance(attentive_transformer.trainable_alpha, torch.Tensor)
 
+    # TODO:  Need variant of assert_model_parameters_updated() to account for the two step calling sequence
+    #        of AttentiveTransformer
+
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
 @pytest.mark.parametrize("size", [2, 4, 8])
@@ -171,3 +181,6 @@ def test_tabnet(
     assert tabnet.input_shape[-1] == input_size
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
+
+    # use threshold 0.27 because batchnorm is bypassed when batch_size == 1
+    assert_model_parameters_updated(tabnet, (input_tensor,), threshold=0.27)
