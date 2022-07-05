@@ -26,14 +26,6 @@ class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         description="Encoder to use for this text feature.",
     )
 
-    # TODO(#1673): Need some more logic here for validating against input features
-    tied: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-                    "feature of the same type and with the same encoder parameters.",
-    )
-
 
 @dataclass
 class TextOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):

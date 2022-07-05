@@ -22,11 +22,3 @@ class AudioInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
         default="parallel_cnn",
         description="Encoder to use for this audio feature.",
     )
-
-    tied: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-                    "feature of the same type and with the same encoder parameters.",
-    )
-
