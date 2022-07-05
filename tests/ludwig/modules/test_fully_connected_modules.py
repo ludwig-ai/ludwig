@@ -7,7 +7,7 @@ import torch
 from ludwig.modules.fully_connected_modules import FCLayer, FCStack
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import assert_model_parameters_updated
+from tests.integration_tests.utils import assert_module_parameters_updated
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
@@ -39,7 +39,7 @@ def test_fc_layer(
     else:
         # all parameters should be updated
         threshold = 1
-    assert_model_parameters_updated(fc_layer, (input_tensor,), threshold=threshold)
+    assert_module_parameters_updated(fc_layer, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize(
@@ -61,7 +61,7 @@ def test_fc_stack(
     output_tensor = fc_stack(input_tensor)
     assert output_tensor.shape[1:] == fc_stack.output_shape
 
-    assert_model_parameters_updated(fc_stack, (input_tensor,))
+    assert_module_parameters_updated(fc_stack, (input_tensor,))
 
 
 def test_fc_stack_input_size_mismatch_fails():

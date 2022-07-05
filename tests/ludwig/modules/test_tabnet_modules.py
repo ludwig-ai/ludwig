@@ -5,7 +5,7 @@ import torch
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
 from ludwig.utils.entmax import sparsemax
-from tests.integration_tests.utils import assert_model_parameters_updated
+from tests.integration_tests.utils import assert_module_parameters_updated
 
 RANDOM_SEED = 67
 
@@ -71,7 +71,7 @@ def test_feature_block(
     else:
         # all parameters should be updated
         threshold = 1
-    assert_model_parameters_updated(feature_block, (input_tensor,), threshold=threshold)
+    assert_module_parameters_updated(feature_block, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize("num_total_blocks, num_shared_blocks", [(4, 2), (6, 4), (3, 1)])
@@ -116,7 +116,7 @@ def test_feature_transformer(
     else:
         # all parameters should be updated
         threshold = 1
-    assert_model_parameters_updated(feature_transformer, (input_tensor,), threshold=threshold)
+    assert_module_parameters_updated(feature_transformer, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -201,4 +201,4 @@ def test_tabnet(
     else:
         # all parameters should be updated
         threshold = 1
-    assert_model_parameters_updated(tabnet, (input_tensor,), threshold=threshold)
+    assert_module_parameters_updated(tabnet, (input_tensor,), threshold=threshold)

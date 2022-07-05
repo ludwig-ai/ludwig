@@ -747,18 +747,18 @@ class ParameterUpdateError(Exception):
     pass
 
 
-def assert_model_parameters_updated(
-    model: LudwigModule,
-    model_input_args: Tuple,
-    max_steps: int = 1,
-    threshold: float = 1.0,
-    learning_rate: float = 0.001,
+def assert_module_parameters_updated(
+        module: LudwigModule,
+        module_input_args: Tuple,
+        max_steps: int = 1,
+        threshold: float = 1.0,
+        learning_rate: float = 0.001,
 ) -> None:
     """
-    Confirms that model parameters can be updated.
+    Confirms that module parameters can be updated.
     Args:
-        model: (LudwigModel) model to be tested.
-        model_input_args: (tuple) input for model
+        module: (LudwigModel) model to be tested.
+        module_input_args: (tuple) input for model
         max_steps: (int, default=1) maximum number of steps allowed to test for parameter
             updates.
         threshold: (float, default=1.0) fraction of parameters that need to be updated
@@ -770,26 +770,26 @@ def assert_model_parameters_updated(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-    model.train(True)
+    optimizer = torch.optim.SGD(module.parameters(), lr=learning_rate)
+    module.train(True)
 
     # generate initial model output tensor
-    model_output = model(*model_input_args)
+    module_output = module(*module_input_args)
 
     # create target tensor
-    if isinstance(model_output, torch.Tensor):
-        target_tensor = torch.randn(model_output.shape, dtype=model_output.dtype)
-    elif isinstance(model_output, tuple):
-        target_tensor = torch.randn(model_output[0].shape, dtype=model_output[0].dtype)
+    if isinstance(module_output, torch.Tensor):
+        target_tensor = torch.randn(module_output.shape, dtype=module_output.dtype)
+    elif isinstance(module_output, tuple):
+        target_tensor = torch.randn(module_output[0].shape, dtype=module_output[0].dtype)
     else:
         raise RuntimeError("Unable to setup target tensor for model parameter update testing.")
 
     for step in range(max_steps):
         # make pass through model
-        model_output = model(*model_input_args)
+        model_output = module(*module_input_args)
 
         # capture model parameters before doing parameter update pass
-        before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+        before = [(x[0], x[1].clone()) for x in module.named_parameters()]
 
         # do update of model parameters
         optimizer.zero_grad()
@@ -801,7 +801,7 @@ def assert_model_parameters_updated(
         optimizer.step()
 
         # capture model parameters after a pass
-        after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+        after = [(x[0], x[1].clone()) for x in module.named_parameters()]
 
         # check for parameter updates
         parameter_updated = []
@@ -835,18 +835,18 @@ def assert_model_parameters_updated(
         )
 
 
-def _assert_model_parameters_updated(
-    model: LudwigModule,
-    model_input: torch.Tensor,
-    extract_model_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
-    max_steps: int = 1,
+def _assert_module_parameters_updated(
+        module: LudwigModule,
+        module_input: torch.Tensor,
+        extract_module_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
+        max_steps: int = 1,
 ) -> None:
     """
     Confirms that model parameters can be updated.
     Args:
-        model: (LudwigModel) model to be tested.
-        model_input: (torch.Tensor) input for model
-        extract_model_output: (Callable[[Union[Dict, Tuple]], torch.Tensor])
+        module: (LudwigModel) moddule to be tested.
+        module_input: (torch.Tensor) input for model
+        extract_module_output: (Callable[[Union[Dict, Tuple]], torch.Tensor])
             function to extract tensor for use in parameter update testing
         max_steps: (int) maximum number of steps allowed to test for parameter
             updates.
@@ -856,26 +856,26 @@ def _assert_model_parameters_updated(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
-    model.train(True)
+    optimizer = torch.optim.SGD(module.parameters(), lr=0.001)
+    module.train(True)
 
     # create target tensor
-    model_output = extract_model_output(model(model_input))
-    target_tensor = torch.randn(model_output.shape, dtype=model_output.dtype)
+    module_output = extract_module_output(module(module_input))
+    target_tensor = torch.randn(module_output.shape, dtype=module_output.dtype)
 
     step = 1
     while True:
         # capture model parameters before doing parameter update pass
-        before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+        before = [(x[0], x[1].clone()) for x in module.named_parameters()]
 
         # do update of model parameters
         optimizer.zero_grad()
-        loss = loss_function(model_output, target_tensor)
+        loss = loss_function(module_output, target_tensor)
         loss.backward()
         optimizer.step()
 
         # capture model parameters after one pass
-        after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+        after = [(x[0], x[1].clone()) for x in module.named_parameters()]
 
         # check for parameter updates
         parameter_updated = []
@@ -901,12 +901,12 @@ def _assert_model_parameters_updated(
             )
 
         # make another pass through model
-        model_output = extract_model_output(model(model_input))
+        module_output = extract_module_output(module(module_input))
         step += 1
 
 
 def assert_model_parameters_updated_encoders(
-    model: LudwigModule, model_input: torch.Tensor, max_steps: int = 1
+        module: LudwigModule, module_input: torch.Tensor, max_steps: int = 1
 ) -> None:
     """
     Confirms that model parameters can be updated.
@@ -919,4 +919,4 @@ def assert_model_parameters_updated_encoders(
     Returns: None
 
     """
-    _assert_model_parameters_updated(model, model_input, lambda outputs: outputs["encoder_output"], max_steps)
+    _assert_module_parameters_updated(module, module_input, lambda outputs: outputs["encoder_output"], max_steps)
