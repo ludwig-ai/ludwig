@@ -7,11 +7,12 @@ from ludwig.encoders.registry import get_encoder_classes
 from ludwig.decoders.registry import get_decoder_classes
 
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class TextInputFeatureConfig(BaseInputFeatureConfig):
     """
     TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature.
     """
@@ -28,7 +29,7 @@ class TextInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class TextOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """
     TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature.
     """

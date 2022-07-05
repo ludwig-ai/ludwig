@@ -74,7 +74,6 @@ def get_input_feature_jsonschema():
                 "name": {"type": "string"},
                 "type": {"type": "string", "enum": input_feature_types},
                 "column": {"type": "string"},
-                "tied": {"type": "string"},
             },
             "additionalProperties": True,
             "allOf": get_input_feature_conds(),

@@ -7,11 +7,12 @@ from ludwig.encoders.registry import get_encoder_classes
 from ludwig.decoders.registry import get_decoder_classes
 
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
 
 @dataclass
-class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class NumberInputFeatureConfig(BaseInputFeatureConfig):
     """NumberInputFeature is a dataclass that configures the parameters used for a number input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
@@ -26,7 +27,7 @@ class NumberInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class NumberOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
 
     decoder: Optional[str] = schema_utils.StringOptions(
         list(get_decoder_classes(NUMBER).keys()),
