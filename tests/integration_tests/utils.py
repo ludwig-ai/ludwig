@@ -748,11 +748,11 @@ class ParameterUpdateError(Exception):
 
 
 def assert_module_parameters_updated(
-        module: LudwigModule,
-        module_input_args: Tuple,
-        max_steps: int = 1,
-        threshold: float = 1.0,
-        learning_rate: float = 0.001,
+    module: LudwigModule,
+    module_input_args: Tuple,
+    max_steps: int = 1,
+    threshold: float = 1.0,
+    learning_rate: float = 0.001,
 ) -> None:
     """
     Confirms that module parameters can be updated.
@@ -836,10 +836,10 @@ def assert_module_parameters_updated(
 
 
 def _assert_module_parameters_updated(
-        module: LudwigModule,
-        module_input: torch.Tensor,
-        extract_module_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
-        max_steps: int = 1,
+    module: LudwigModule,
+    module_input: torch.Tensor,
+    extract_module_output: Callable[[Union[Dict, Tuple]], torch.Tensor],
+    max_steps: int = 1,
 ) -> None:
     """
     Confirms that model parameters can be updated.
@@ -906,7 +906,7 @@ def _assert_module_parameters_updated(
 
 
 def assert_model_parameters_updated_encoders(
-        module: LudwigModule, module_input: torch.Tensor, max_steps: int = 1
+    module: LudwigModule, module_input: torch.Tensor, max_steps: int = 1
 ) -> None:
     """
     Confirms that model parameters can be updated.
