@@ -64,7 +64,7 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
-    # if non-zero dropout, possible that some parameters will not be updated
+    # based on batch_size set threshold for parameter updates
     if batch_size == 1:
         # allow for some parameters not updated due to bypassing GhostBatchNormalization
         threshold = 0.33
@@ -109,7 +109,7 @@ def test_feature_transformer(
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
 
-    # if non-zero dropout, possible that some parameters will not be updated
+    # based on batch_size set threshold for parameter updates
     if batch_size == 1:
         # allow for some parameters not updated due to bypassing GhostBatchNormalization
         threshold = 0.33
@@ -194,7 +194,7 @@ def test_tabnet(
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
 
-    # if non-zero dropout, possible that some parameters will not be updated
+    # based on batch_size set threshold for parameter updates
     if batch_size == 1:
         # allow for some parameters not updated due to bypassing GhostBatchNormalization
         threshold = 0.27
