@@ -100,6 +100,9 @@ def read_image_from_bytes_obj(
     try:
         with BytesIO(bytes_obj) as buffer:
             buffer_view = buffer.getbuffer()
+            if len(buffer_view) == 0:
+                del buffer_view
+                raise Exception("Bytes object is empty. This could be due to a failed load from storage.")
             image = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8), mode=mode)
             del buffer_view
             return image

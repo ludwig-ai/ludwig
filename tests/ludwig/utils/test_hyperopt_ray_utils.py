@@ -16,6 +16,8 @@ import pytest
 
 try:
     from ray import tune
+
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor
 except ImportError:
     RAY_AVAILABLE = False
 else:
@@ -23,7 +25,6 @@ else:
 
 # from ludwig.hyperopt.sampling import RayTuneSampler   TDOO: remove
 from ludwig.constants import RAY, TYPE
-from ludwig.hyperopt.execution import get_build_hyperopt_executor
 
 HYPEROPT_PARAMS = {
     "test_1": {

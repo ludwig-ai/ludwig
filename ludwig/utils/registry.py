@@ -61,3 +61,13 @@ class Registry(UserDict):
 
     def _merged(self):
         return {**self.parent, **self.data}
+
+    def register(self, name: str, default: bool = False):
+        def wrap(cls):
+            self[name] = cls
+            if default:
+                for key in DEFAULT_KEYS:
+                    self[key] = cls
+            return cls
+
+        return wrap

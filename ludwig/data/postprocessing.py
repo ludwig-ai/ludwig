@@ -14,13 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import torch
 
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.data.utils import convert_to_dict
 from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS
 from ludwig.utils.dataframe_utils import to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
@@ -103,39 +104,17 @@ def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.T
     return pd.DataFrame.from_dict(output)
 
 
-def convert_predictions(predictions, output_features, return_type="dict"):
-    convert_fn = get_from_registry(return_type, conversion_registry)
-    return convert_fn(
-        predictions,
-        output_features,
-    )
-
-
-def convert_to_dict(
-    predictions,
-    output_features,
+def convert_predictions(
+    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None  # noqa: F821
 ):
-    output = {}
-    for of_name, output_feature in output_features.items():
-        feature_keys = {k for k in predictions.columns if k.startswith(of_name)}
-        feature_dict = {}
-        for key in feature_keys:
-            subgroup = key[len(of_name) + 1 :]
-
-            values = predictions[key]
-            try:
-                values = np.stack(values.to_numpy())
-            except ValueError:
-                values = values.to_list()
-
-            feature_dict[subgroup] = values
-        output[of_name] = feature_dict
-    return output
+    convert_fn = get_from_registry(return_type, conversion_registry)
+    return convert_fn(predictions, output_features, backend)
 
 
 def convert_to_df(
     predictions,
     output_features,
+    backend: Optional["Backend"] = None,  # noqa: F821
 ):
     return predictions
 
