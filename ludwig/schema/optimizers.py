@@ -355,7 +355,7 @@ class GradientClippingConfig(BaseMarshmallowConfig):
     clipvalue: Optional[float] = FloatRange(default=None, allow_none=True, description="")
 
 
-def GradientClippingDataclassField(description: str, default: Dict):
+def GradientClippingDataclassField(description: str, default: Dict = {}):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.
 
