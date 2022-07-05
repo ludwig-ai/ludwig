@@ -11,6 +11,7 @@ from tests.integration_tests.utils import assert_model_parameters_updated
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
+RANDOM_SEED = 1919
 
 
 @pytest.mark.parametrize("input_size", [2, 3])
@@ -23,7 +24,7 @@ def test_fc_layer(
     activation: str,
     dropout: float,
 ):
-    set_random_seed(1919)  # make repeatable
+    set_random_seed(RANDOM_SEED)  # make repeatable
     fc_layer = FCLayer(input_size=input_size, output_size=output_size, activation=activation, dropout=dropout).to(
         DEVICE
     )
@@ -31,9 +32,14 @@ def test_fc_layer(
     output_tensor = fc_layer(input_tensor)
     assert output_tensor.shape[1:] == fc_layer.output_shape
 
-    # check to confirm parameter updates, given seed setting and layer configuration
-    # max_steps=3 is sufficient to show all parameters are updated
-    assert_model_parameters_updated(fc_layer, (input_tensor,), max_steps=3)
+    # if non-zero dropout, possible that some parameters will not be updated
+    if dropout > 0:
+        # allow for parameters not updated
+        threshold = 0
+    else:
+        # all parameters should be updated
+        threshold = 1
+    assert_model_parameters_updated(fc_layer, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize(
@@ -49,15 +55,13 @@ def test_fc_stack(
     layers: Optional[List],
     num_layers: Optional[int],
 ):
-    set_random_seed(1919)
+    set_random_seed(RANDOM_SEED)
     fc_stack = FCStack(first_layer_input_size=first_layer_input_size, layers=layers, num_layers=num_layers).to(DEVICE)
     input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
     output_tensor = fc_stack(input_tensor)
     assert output_tensor.shape[1:] == fc_stack.output_shape
 
-    # check to confirm parameter updates, given seed setting and layer configuration
-    # max_steps=1 is sufficient to show all parameters are updated
-    assert_model_parameters_updated(fc_stack, (input_tensor,), max_steps=1)
+    assert_model_parameters_updated(fc_stack, (input_tensor,))
 
 
 def test_fc_stack_input_size_mismatch_fails():

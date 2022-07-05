@@ -64,8 +64,14 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
-    # use threshold 0.33 because batchnorm is bypassed when batch_size == 1
-    assert_model_parameters_updated(feature_block, (input_tensor,), threshold=0.33)
+    # if non-zero dropout, possible that some parameters will not be updated
+    if batch_size == 1:
+        # allow for some parameters not updated due to bypassing GhostBatchNormalization
+        threshold = 0.33
+    else:
+        # all parameters should be updated
+        threshold = 1
+    assert_model_parameters_updated(feature_block, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize("num_total_blocks, num_shared_blocks", [(4, 2), (6, 4), (3, 1)])
@@ -103,8 +109,14 @@ def test_feature_transformer(
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
 
-    # use threshold 0.33 because batchnorm is bypassed when batch_size == 1
-    assert_model_parameters_updated(feature_transformer, (input_tensor,), threshold=0.33)
+    # if non-zero dropout, possible that some parameters will not be updated
+    if batch_size == 1:
+        # allow for some parameters not updated due to bypassing GhostBatchNormalization
+        threshold = 0.33
+    else:
+        # all parameters should be updated
+        threshold = 1
+    assert_model_parameters_updated(feature_transformer, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -182,5 +194,11 @@ def test_tabnet(
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
 
-    # use threshold 0.27 because batchnorm is bypassed when batch_size == 1
-    assert_model_parameters_updated(tabnet, (input_tensor,), threshold=0.27)
+    # if non-zero dropout, possible that some parameters will not be updated
+    if batch_size == 1:
+        # allow for some parameters not updated due to bypassing GhostBatchNormalization
+        threshold = 0.27
+    else:
+        # all parameters should be updated
+        threshold = 1
+    assert_model_parameters_updated(tabnet, (input_tensor,), threshold=threshold)
