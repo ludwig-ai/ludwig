@@ -2,10 +2,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
+from ludwig.utils.defaults import default_random_seed
 
 
 def get_repeatable_train_val_test_split(
-    df_input, stratify_colname="", random_seed=42, frac_train=0.7, frac_val=0.1, frac_test=0.2
+    df_input, stratify_colname="", random_seed=default_random_seed, frac_train=0.7, frac_val=0.1, frac_test=0.2
 ):
     """Return df_input with split column containing (if possible) non-zero rows in the train, validation, and test
     data subset categories.
