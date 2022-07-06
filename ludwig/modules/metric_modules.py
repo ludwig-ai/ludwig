@@ -248,7 +248,11 @@ class RMSPEMetric(MeanMetric):
 @register_metric(R2, [NUMBER, VECTOR])
 class R2Score(LudwigMetric):
     """Custom R-squared metric implementation that modifies torchmetrics R-squared implementation in scenarios
-    where there is only one sample."""
+    where there is only one sample.
+
+    Custom implementation uses code from torchmetrics v0.9.2's implementation of R2:
+    https://github.com/Lightning-AI/metrics/blob/master/src/torchmetrics/regression/r2.py
+    """
 
     def __init__(
         self, num_outputs: int = 1, adjusted: int = 0, multioutput: str = "uniform_average", **kwargs: Any
