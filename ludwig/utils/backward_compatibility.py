@@ -187,7 +187,7 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
         )
 
         if "type" not in split_params:
-            split_params["type"] = "random" if force_split else "fixed"
+            split_params["type"] = "fixed" if force_split else "random"
 
     if split_params:
         preprocessing["split"] = split_params
