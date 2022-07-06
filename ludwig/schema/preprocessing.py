@@ -21,6 +21,7 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.utils.registry import Registry
 from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils import strings_utils
@@ -133,6 +134,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
 
@@ -159,6 +161,7 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     normalization: str = schema_utils.StringOptions(
@@ -202,6 +205,7 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         max=1,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     fallback_true_label: str = schema_utils.String(
@@ -235,6 +239,7 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     lowercase: bool = schema_utils.Boolean(
@@ -371,6 +376,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
 
@@ -397,6 +403,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     height: int = schema_utils.PositiveInteger(
@@ -514,6 +521,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     in_memory: bool = schema_utils.Boolean(
@@ -597,6 +605,7 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
 
@@ -632,6 +641,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     lowercase: bool = schema_utils.Boolean(
@@ -669,6 +679,7 @@ class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
 
@@ -694,6 +705,7 @@ class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
     datetime_format: str = schema_utils.String(
@@ -734,6 +746,7 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
         description="The internally computed fill value to replace missing values with in case the "
                     "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
     )
 
 
