@@ -130,7 +130,7 @@ def String(
 
 
 def StringOptions(
-    options: List[str],
+    options: TList[str],
     default: Union[None, str] = None,
     allow_none: bool = True,
     description: str = "",
@@ -374,7 +374,7 @@ def FloatRange(
     )
 
 
-def Dict(default: Union[None, tDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
+def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
@@ -397,7 +397,7 @@ def Dict(default: Union[None, tDict] = None, description: str = "", parameter_me
 
 
 def DictList(
-    default: Union[None, List[tDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
