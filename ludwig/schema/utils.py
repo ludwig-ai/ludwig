@@ -114,14 +114,25 @@ def String(
     description: str,
     default: Union[None, str] = None,
     allow_none: bool = True,
+    pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
+
+    if pattern is not None:
+        validation = validate.Regexp(pattern)
+    else:
+        validation = None
+
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                validate=validation,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description}
             ),
             "parameter_metadata": parameter_metadata,
         },
@@ -650,10 +661,10 @@ def NumericOrStringOptionsField(
     options: TList[str],
     allow_none: bool,
     description: str,
-    parameter_metadata: ParameterMetadata,
     default: Union[None, int, float, str],
     default_numeric: Union[None, int, float],
     default_option: Union[None, str],
+    parameter_metadata: ParameterMetadata = None,
     is_integer: bool = False,
     min: Union[None, int] = None,
     max: Union[None, int] = None,
