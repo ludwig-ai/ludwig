@@ -52,9 +52,12 @@ class DataframeSourceMixin:
         unique_values = self.df[column].dropna().unique()
         num_unique_values = len(unique_values)
         unique_values_counts = self.df[column].value_counts()
-        unique_majority_values = unique_values_counts[unique_values_counts.idxmax()]
-        unique_minority_values = unique_values_counts[unique_values_counts.idxmin()]
-        unique_values_balance = unique_minority_values / unique_majority_values
+        if len(unique_values_counts) != 0:
+            unique_majority_values = unique_values_counts[unique_values_counts.idxmax()]
+            unique_minority_values = unique_values_counts[unique_values_counts.idxmin()]
+            unique_values_balance = unique_minority_values / unique_majority_values
+        else:
+            unique_values_balance = 1.0
         return num_unique_values, unique_values[:max_values_to_return], unique_values_balance
 
     def get_nonnull_values(self, column: str) -> int:
