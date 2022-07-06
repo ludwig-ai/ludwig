@@ -24,7 +24,7 @@ class _GenericLoss(nn.Module):
         if self.reduction == "sum":
             loss = loss.sum()
         elif self.reduction == "elementwise_mean":
-            loss = loss.sum() / size
+            loss = torch.nan_to_num(loss.sum() / size)
         return loss
 
 
