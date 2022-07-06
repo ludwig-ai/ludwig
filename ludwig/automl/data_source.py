@@ -18,7 +18,7 @@ class DataSource(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_distinct_values(self, column: str, max_values_to_return: int) -> Tuple[int, List[str]]:
+    def get_distinct_values(self, column: str, max_values_to_return: int) -> Tuple[int, List[str], float]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -48,7 +48,7 @@ class DataframeSourceMixin:
     def get_dtype(self, column: str) -> str:
         return self.df[column].dtype.name
 
-    def get_distinct_values(self, column, max_values_to_return: int) -> Tuple[int, List[str]]:
+    def get_distinct_values(self, column, max_values_to_return: int) -> Tuple[int, List[str], float]:
         unique_values = self.df[column].dropna().unique()
         num_unique_values = len(unique_values)
         unique_values_counts = self.df[column].value_counts()
