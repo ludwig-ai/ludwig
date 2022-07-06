@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any, List, Union
 
 
-class ExpectedImpact(Enum):
+class ExpectedImpact(int, Enum):
     """The expected impact of determining a "good" value for a specific parameter.
 
     - HIGH: this parameter should almost always be included in a hyperopt run and can make or break a good model.
