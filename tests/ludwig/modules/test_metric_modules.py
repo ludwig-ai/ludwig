@@ -44,6 +44,12 @@ def test_r2_score(preds: torch.Tensor, target: torch.Tensor, num_outputs: int, o
     assert metric.compute() == output
 
 
+def test_r2_score_single_sample():
+    metric = metric_modules.R2Score(num_outputs=1)
+    metric.update(preds=torch.tensor([0.8]), target=torch.arange(1))
+    assert torch.isnan(metric.compute())
+
+
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])
 @pytest.mark.parametrize("target", [torch.arange(6, 12).reshape(3, 2).float()])
 @pytest.mark.parametrize("output", [torch.tensor(-21.4655).float()])
