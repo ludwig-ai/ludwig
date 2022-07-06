@@ -37,7 +37,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.models.trainer import Trainer
+from ludwig.trainers.trainer import Trainer
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 from ludwig.utils.torch_utils import LudwigModule
 
@@ -142,7 +142,7 @@ class LocalTestBackend(LocalBackend):
 
 # Simulates running training on a separate node from the driver process
 class FakeRemoteBackend(LocalBackend):
-    def create_trainer(self, **kwargs):
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
         return FakeRemoteTrainer(**kwargs)
 
     @property
@@ -502,6 +502,17 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
+def has_no_grad(
+    val: Union[np.ndarray, torch.Tensor, str, list],
+):
+    """Checks if two values are close to each other."""
+    if isinstance(val, list):
+        return all(has_no_grad(v) for v in val)
+    if isinstance(val, torch.Tensor):
+        return not val.requires_grad
+    return True
+
+
 def is_all_close(
     val1: Union[np.ndarray, torch.Tensor, str, list],
     val2: Union[np.ndarray, torch.Tensor, str, list],
@@ -513,10 +524,19 @@ def is_all_close(
     if isinstance(val1, str):
         return val1 == val2
     if isinstance(val1, torch.Tensor):
-        val1 = val1.detach().numpy()
+        val1 = val1.cpu().detach().numpy()
     if isinstance(val2, torch.Tensor):
-        val2 = val2.detach().numpy()
+        val2 = val2.cpu().detach().numpy()
     return val1.shape == val2.shape and np.allclose(val1, val2, atol=tolerance)
+
+
+def is_all_tensors_cuda(val: Union[np.ndarray, torch.Tensor, str, list]) -> bool:
+    if isinstance(val, list):
+        return all(is_all_tensors_cuda(v) for v in val)
+
+    if isinstance(val, torch.Tensor):
+        return val.is_cuda
+    return True
 
 
 def run_api_experiment(input_features, output_features, data_csv):

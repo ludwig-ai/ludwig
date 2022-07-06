@@ -14,13 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+from typing import Iterable, Optional
 
 import numpy as np
+from pandas import DataFrame
 
 from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
+from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, save_hdf5
 from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5
@@ -33,6 +36,12 @@ class PandasDataset(Dataset):
         self.data_hdf5_fp = data_hdf5_fp
         self.size = len(dataset)
         self.dataset = to_numpy_dataset(dataset)
+
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        """Convert the dataset to a Pandas DataFrame."""
+        if features:
+            return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
+        return from_numpy_dataset(self.dataset)
 
     def get(self, proc_column, idx=None):
         if idx is None:
@@ -70,9 +79,6 @@ class PandasDataset(Dataset):
         sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, horovod=horovod)
         batcher = RandomAccessBatcher(self, sampler, batch_size=batch_size, ignore_last=ignore_last)
         yield batcher
-
-    def to_df(self):
-        return from_numpy_dataset(self.dataset)
 
 
 class PandasDatasetManager(DatasetManager):

@@ -48,28 +48,41 @@ logger = logging.getLogger(__name__)
 
 class _VectorPreprocessing(torch.nn.Module):
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        if not torch.jit.isinstance(v, List[str]):
+        if torch.jit.isinstance(v, torch.Tensor):
+            out = v
+        elif torch.jit.isinstance(v, List[torch.Tensor]):
+            out = torch.stack(v)
+        elif torch.jit.isinstance(v, List[str]):
+            vectors = []
+            for sample in v:
+                vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
+                vectors.append(vector)
+            out = torch.stack(vectors)
+        else:
             raise ValueError(f"Unsupported input: {v}")
 
-        vectors = []
-        for sample in v:
-            vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
-            vectors.append(vector)
-        return torch.stack(vectors)
+        if out.isnan().any():
+            raise ValueError("Scripted NaN handling not implemented for Vector feature")
+        return out
 
 
 class _VectorPostprocessing(torch.nn.Module):
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        # Workaround to convert type annotation from Dict[str, torch.Tensor] to Dict[str, Any]
-        preds_any: Dict[str, Any] = {}
-        for k, v in preds.items():
-            preds_any[k] = v
-        return preds_any
+    def __init__(self):
+        super().__init__()
+        self.predictions_key = PREDICTIONS
+        self.logits_key = LOGITS
+
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
+
+        return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class _VectorPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
         return {self.predictions_key: logits, self.logits_key: logits}
 
 

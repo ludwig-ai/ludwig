@@ -1,7 +1,8 @@
 import logging
 import os
+from collections import defaultdict
 from pprint import pformat
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import pandas as pd
 import yaml
@@ -9,10 +10,25 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
-from ludwig.constants import COMBINED, EXECUTOR, HYPEROPT, LOSS, MINIMIZE, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.constants import (
+    COMBINED,
+    DECODER,
+    ENCODER,
+    EXECUTOR,
+    HYPEROPT,
+    INPUT_FEATURES,
+    LOSS,
+    MINIMIZE,
+    NAME,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    TEST,
+    TRAINING,
+    TYPE,
+    VALIDATION,
+)
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import output_type_registry
-from ludwig.hyperopt.execution import executor_registry, get_build_hyperopt_executor, RayTuneExecutor
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -162,6 +178,8 @@ def hyperopt(
     :return: (List[dict]) List of results for each trial, ordered by
         descending performance on the target metric.
     """
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor, RayTuneExecutor
+
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
         with open_file(config, "r") as def_file:
@@ -169,22 +187,35 @@ def hyperopt(
     else:
         config_dict = config
 
+    # Get mapping of input/output features that don't have an encoder for shared parameters
+    features_eligible_for_shared_params = {
+        INPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, INPUT_FEATURES),
+        OUTPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, OUTPUT_FEATURES),
+    }
+
     # merge config with defaults
     config = merge_with_defaults(config_dict)
 
     if HYPEROPT not in config:
         raise ValueError("Hyperopt Section not present in config")
 
-    hyperopt_config = config["hyperopt"]
+    hyperopt_config = config[HYPEROPT]
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
+    logging.info("Hyperopt config")
     logging.info(pformat(hyperopt_config, indent=4))
     logging.info("\n")
 
+    logging.info(
+        "Features that may be updated in hyperopt trials if default parameters are specified in the search space"
+    )
+    logging.info(pformat(dict(features_eligible_for_shared_params), indent=4))
+    logging.info("\n")
+
     search_alg = hyperopt_config["search_alg"]
-    executor = hyperopt_config["executor"]
+    executor = hyperopt_config[EXECUTOR]
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
@@ -194,7 +225,7 @@ def hyperopt(
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
-    splitter = get_splitter(**config["preprocessing"]["split"])
+    splitter = get_splitter(**config[PREPROCESSING]["split"])
     if split == TRAINING:
         if training_set is None and not splitter.has_split(0):
             raise ValueError(
@@ -227,7 +258,7 @@ def hyperopt(
         if metric != LOSS:
             raise ValueError('The only valid metric for "combined" output feature is "loss"')
     else:
-        output_feature_names = {of["name"] for of in config["output_features"]}
+        output_feature_names = {of[NAME] for of in config[OUTPUT_FEATURES]}
         if output_feature not in output_feature_names:
             raise ValueError(
                 'The output feature specified for hyperopt "{}" '
@@ -236,8 +267,8 @@ def hyperopt(
             )
 
         output_feature_type = None
-        for of in config["output_features"]:
-            if of["name"] == output_feature:
+        for of in config[OUTPUT_FEATURES]:
+            if of[NAME] == output_feature:
                 output_feature_type = of[TYPE]
         feature_class = get_from_registry(output_feature_type, output_type_registry)
         if metric not in feature_class.metric_functions:
@@ -331,6 +362,7 @@ def hyperopt(
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,
+        features_eligible_for_shared_params=features_eligible_for_shared_params,
         **kwargs,
     )
 
@@ -359,6 +391,8 @@ def hyperopt(
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
+    from ludwig.hyperopt.execution import executor_registry
+
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
@@ -372,3 +406,45 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
         hyperopt_params[EXECUTOR],
         executor_defaults,
     )
+
+
+def get_features_eligible_for_shared_params(
+    config_dict: Dict[str, Any], config_feature_type: str
+) -> Dict[str, Dict[str, Set]]:
+    """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
+    default encoder for that feature type.
+
+    These features may be considered for potential shared parameter search spaces depending on the parameter space
+    defined later within the hyperopt config. This applies to both config_feature_types (input_features and
+    output_features). The shared parameters for both config_feature_types must be specified separately.
+
+    Note that shared default parameter search spaces are not applied to features with non-default encoders or
+    non-default decoders, since shared default parameter values should only apply to default modules.
+
+    Returns:
+      Dict of feature type -> set of feature names with that type that are eligible for shared parameters (they use
+      the default encoder or default decoder).
+
+    TODO(#2167): Make sure each feature has a type defined in the JSONSchema for Hyperopt
+    """
+
+    if config_feature_type not in config_dict:
+        raise ValueError(f"{config_feature_type} must be defined in Ludwig config.")
+
+    features_eligible_for_shared_params = defaultdict(set)
+
+    features = config_dict.get(config_feature_type)
+
+    for feature in features:
+        if TYPE not in feature:
+            raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
+        if config_feature_type == INPUT_FEATURES:
+            default_encoder = get_from_registry(feature.get(TYPE), input_type_registry).encoder
+            if not feature.get(ENCODER, 0) or feature.get(ENCODER) == default_encoder:
+                features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
+        else:
+            default_decoder = get_from_registry(feature.get(TYPE), output_type_registry).decoder
+            if not feature.get(DECODER, 0) or feature.get(DECODER) == default_decoder:
+                features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
+
+    return features_eligible_for_shared_params
