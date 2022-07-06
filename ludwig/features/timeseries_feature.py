@@ -19,17 +19,11 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import (
-    COLUMN,
-    FILL_WITH_CONST,
-    MISSING_VALUE_STRATEGY_OPTIONS,
-    NAME,
-    PROC_COLUMN,
-    TIED,
-    TIMESERIES,
-)
+from ludwig.constants import COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
@@ -125,18 +119,6 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "timeseries_length_limit": {"type": "integer", "minimum": 0},
-            "padding_value": {"type": "number"},
-            "padding": {"type": "string", "enum": ["right", "left"]},
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 
@@ -199,6 +181,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -242,6 +225,10 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
                 "encoder": "parallel_cnn",
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return TimeseriesInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

@@ -26,7 +26,6 @@ from ludwig.constants import (
     JACCARD,
     LOGITS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -39,6 +38,8 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
+from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
@@ -167,17 +168,6 @@ class SetFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "most_common": {"type": "integer", "minimum": 0},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -223,6 +213,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []
@@ -259,6 +250,10 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return SetInputFeatureConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
@@ -268,6 +263,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return _SetPreprocessing(metadata)
 
 
+@register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
@@ -397,3 +393,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, "dependencies", [])
         set_default_value(output_feature, "reduce_input", SUM)
         set_default_value(output_feature, "reduce_dependencies", SUM)
+
+    @staticmethod
+    def get_schema_cls():
+        return SetOutputFeatureConfig

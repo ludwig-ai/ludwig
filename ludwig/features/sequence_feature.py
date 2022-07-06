@@ -29,7 +29,6 @@ from ludwig.constants import (
     LAST_PREDICTIONS,
     LENGTHS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PERPLEXITY,
     PREDICTIONS,
@@ -45,6 +44,8 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
@@ -205,22 +206,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "max_sequence_length": {"type": "integer", "minimum": 0},
-            "most_common": {"type": "integer", "minimum": 0},
-            "padding_symbol": {"type": "string"},
-            "unknown_symbol": {"type": "string"},
-            "padding": {"type": "string", "enum": ["right", "left"]},
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "lowercase": {"type": "boolean"},
-            "vocab_file": {"type": ["string", "null"]},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -275,6 +260,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -315,6 +301,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "encoder", "parallel_cnn")
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceInputFeatureConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -328,6 +318,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
+@register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
     loss = {TYPE: "sequence_softmax_cross_entropy"}
@@ -537,6 +528,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceOutputFeatureConfig
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
