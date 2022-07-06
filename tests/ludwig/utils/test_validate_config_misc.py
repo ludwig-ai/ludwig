@@ -197,9 +197,7 @@ def test_config_fill_values():
 
     bad_vector_fill_values = ["one two three", "1,2,3", 0]
     bad_binary_fill_values = ["one", 2, "maybe"]
-    for vector_fill_value, binary_fill_value in zip(
-            bad_vector_fill_values, bad_binary_fill_values
-    ):
+    for vector_fill_value, binary_fill_value in zip(bad_vector_fill_values, bad_binary_fill_values):
         config = {
             "input_features": [
                 vector_feature(preprocessing={"fill_value": vector_fill_value}),

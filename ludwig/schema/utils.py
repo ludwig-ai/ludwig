@@ -132,7 +132,7 @@ def String(
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description}
+                metadata={"description": description},
             ),
             "parameter_metadata": parameter_metadata,
         },

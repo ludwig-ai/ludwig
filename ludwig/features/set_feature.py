@@ -38,14 +38,13 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
+from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
-from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 

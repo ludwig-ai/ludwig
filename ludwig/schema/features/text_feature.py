@@ -1,11 +1,10 @@
 from typing import Optional
-from ludwig.constants import TEXT
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import get_encoder_classes
+from ludwig.constants import TEXT
 from ludwig.decoders.registry import get_decoder_classes
-
+from ludwig.encoders.registry import get_encoder_classes
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
@@ -13,13 +12,9 @@ from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDa
 
 @dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig):
-    """
-    TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature.
-    """
+    """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type=TEXT
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
     encoder: Optional[str] = schema_utils.StringOptions(
         list(get_encoder_classes(TEXT).keys()),
@@ -30,9 +25,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 
 @dataclass
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
-    """
-    TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature.
-    """
+    """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
     decoder: Optional[str] = schema_utils.StringOptions(
         list(get_decoder_classes(TEXT).keys()),

@@ -1,11 +1,10 @@
 from typing import Optional
-from ludwig.constants import CATEGORY
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import get_encoder_classes
+from ludwig.constants import CATEGORY
 from ludwig.decoders.registry import get_decoder_classes
-
+from ludwig.encoders.registry import get_encoder_classes
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
@@ -15,9 +14,7 @@ from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDa
 class CategoryInputFeatureConfig(BaseInputFeatureConfig):
     """CategoryInputFeature is a dataclass that configures the parameters used for a category input feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type=CATEGORY
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
     encoder: Optional[str] = schema_utils.StringOptions(
         list(get_encoder_classes(CATEGORY).keys()),

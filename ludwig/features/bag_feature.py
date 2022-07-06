@@ -24,11 +24,10 @@ from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TI
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
+from ludwig.schema.features.bag_feature import BagInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
-
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 

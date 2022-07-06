@@ -1,8 +1,11 @@
 from abc import ABC
 from dataclasses import field
 from typing import ClassVar, Optional, Union
+
+from marshmallow import fields, ValidationError
+from marshmallow_dataclass import dataclass
+
 from ludwig.constants import (
-    MISSING_VALUE_STRATEGY_OPTIONS,
     AUDIO,
     BAG,
     BINARY,
@@ -10,21 +13,19 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
+    MISSING_VALUE_STRATEGY_OPTIONS,
     NUMBER,
-    SET,
     SEQUENCE,
+    SET,
     TEXT,
     TIMESERIES,
-    VECTOR,)
-
-from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
-
+    VECTOR,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
+from ludwig.utils import strings_utils
 from ludwig.utils.registry import Registry
 from ludwig.utils.tokenizers import tokenizer_registry
-from ludwig.utils import strings_utils
 
 preprocessing_registry = Registry()
 
@@ -33,6 +34,7 @@ def register_preprocessor(name: str):
     def wrap(preprocessing_config: BasePreprocessingConfig):
         preprocessing_registry[name] = preprocessing_config
         return preprocessing_config
+
     return wrap
 
 
@@ -41,8 +43,8 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for input feature preprocessing. Not meant to be used directly.
 
     The dataclass format prevents arbitrary properties from being set. Consequently, in child classes, all properties
-    from the corresponding input feature class are copied over: check each class to check which attributes are
-    different from the preprocessing of each feature.
+    from the corresponding input feature class are copied over: check each class to check which attributes are different
+    from the preprocessing of each feature.
     """
 
     feature_type: ClassVar[Optional[str]] = None
@@ -64,7 +66,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),
-        default='space_punct',
+        default="space_punct",
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
     )
@@ -73,35 +75,35 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
-                    "first string until \t or \n is considered a word.",
+        "first string until \t or \n is considered a word.",
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-                    "truncated, while texts that are shorter will be padded.",
+        "truncated, while texts that are shorter will be padded.",
     )
 
     most_common: int = schema_utils.PositiveInteger(
         default=20000,
         allow_none=False,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
-                    "amount, the most infrequent symbols will be treated as unknown.",
+        "amount, the most infrequent symbols will be treated as unknown.",
     )
 
     padding_symbol: str = schema_utils.String(
         default="<PAD>",
         allow_none=False,
         description="The string used as the padding symbol for sequence features. Ignored for features using "
-                    "huggingface encoders, which have their own vocabulary.",
+        "huggingface encoders, which have their own vocabulary.",
     )
 
     unknown_symbol: str = schema_utils.String(
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The string used as the unknown symbol for sequence features. Ignored for features using "
-                    "huggingface encoders, which have their own vocabulary.",
+        "huggingface encoders, which have their own vocabulary.",
     )
 
     padding: str = schema_utils.StringOptions(
@@ -133,8 +135,8 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
 
@@ -160,8 +162,8 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=0.0,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     normalization: str = schema_utils.StringOptions(
@@ -204,22 +206,23 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         min=0,
         max=1,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     fallback_true_label: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
-                    "conventional boolean value"
+        "conventional boolean value",
     )
 
 
 @register_preprocessor(CATEGORY)
 @dataclass
 class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
-    """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input feature."""
+    """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input
+    feature."""
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -238,8 +241,8 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     lowercase: bool = schema_utils.Boolean(
@@ -251,7 +254,7 @@ class CategoryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. if the data contains more than this "
-                    "amount, the most infrequent tokens will be treated as unknown.",
+        "amount, the most infrequent tokens will be treated as unknown.",
     )
 
 
@@ -263,9 +266,9 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="space",
         allow_none=False,
         description="Defines how to transform the raw text content of the dataset column to a set of elements. The "
-                    "default value space splits the string on spaces. Common options include: underscore (splits on "
-                    "underscore), comma (splits on comma), json (decodes the string into a set or a list through a "
-                    "JSON parser).",
+        "default value space splits the string on spaces. Common options include: underscore (splits on "
+        "underscore), comma (splits on comma), json (decodes the string into a set or a list through a "
+        "JSON parser).",
     )
 
     missing_value_strategy: str = schema_utils.StringOptions(
@@ -285,7 +288,7 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
     )
 
     lowercase: bool = schema_utils.Boolean(
@@ -297,7 +300,7 @@ class SetPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
-                    "amount, the most infrequent tokens will be treated as unknown.",
+        "amount, the most infrequent tokens will be treated as unknown.",
     )
 
 
@@ -315,35 +318,35 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="Filepath string to a UTF-8 encoded file containing the sequence's vocabulary. On each line the "
-                    "first string until \t or \n is considered a word.",
+        "first string until \t or \n is considered a word.",
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
-                    "truncated, while texts that are shorter will be padded.",
+        "truncated, while texts that are shorter will be padded.",
     )
 
     most_common: int = schema_utils.PositiveInteger(
         default=20000,
         allow_none=False,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
-                    "amount, the most infrequent symbols will be treated as unknown.",
+        "amount, the most infrequent symbols will be treated as unknown.",
     )
 
     padding_symbol: str = schema_utils.String(
         default="<PAD>",
         allow_none=False,
         description="The string used as a padding symbol. This special token is mapped to the integer ID 0 in the "
-                    "vocabulary.",
+        "vocabulary.",
     )
 
     unknown_symbol: str = schema_utils.String(
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The string used as an unknown placeholder. This special token is mapped to the integer ID 1 in "
-                    "the vocabulary.",
+        "the vocabulary.",
     )
 
     padding: str = schema_utils.StringOptions(
@@ -375,8 +378,8 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
 
@@ -395,39 +398,39 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
-                    "amount, the most infrequent tokens will be treated as unknown.",
+        "amount, the most infrequent tokens will be treated as unknown.",
     )
 
     computed_fill_value: float = schema_utils.NonNegativeFloat(
         default=None,
         allow_none=True,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     height: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image height in pixels. If this parameter is set, images will be resized to the specified "
-                    "height using the resize_method parameter. If None, images will be resized to the size of the "
-                    "first image in the dataset.",
+        "height using the resize_method parameter. If None, images will be resized to the size of the "
+        "first image in the dataset.",
     )
 
     width: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image width in pixels. If this parameter is set, images will be resized to the specified "
-                    "width using the resize_method parameter. If None, images will be resized to the size of the "
-                    "first image in the dataset.",
+        "width using the resize_method parameter. If None, images will be resized to the size of the "
+        "first image in the dataset.",
     )
 
     num_channels: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="Number of channels in the images. If specified, images will be read in the mode specified by the "
-                    "number of channels. If not specified, the number of channels will be inferred from the image "
-                    "format of the first valid image in the dataset.",
+        "number of channels. If not specified, the number of channels will be inferred from the image "
+        "format of the first valid image in the dataset.",
     )
 
     resize_method: str = schema_utils.StringOptions(
@@ -440,29 +443,29 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     infer_image_num_channels: bool = schema_utils.Boolean(
         default=True,
         description="If true, then the number of channels in the dataset is inferred from a sample of the first image "
-                    "in the dataset.",
+        "in the dataset.",
     )
 
     infer_image_dimensions: bool = schema_utils.Boolean(
         default=True,
         description="If true, then the height and width of images in the dataset will be inferred from a sample of "
-                    "the first image in the dataset. Each image that doesn't conform to these dimensions will be "
-                    "resized according to resize_method. If set to false, then the height and width of images in the "
-                    "dataset will be specified by the user.",
+        "the first image in the dataset. Each image that doesn't conform to these dimensions will be "
+        "resized according to resize_method. If set to false, then the height and width of images in the "
+        "dataset will be specified by the user.",
     )
 
     infer_image_max_height: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="If infer_image_dimensions is set, this is used as the maximum height of the images in "
-                    "the dataset.",
+        "the dataset.",
     )
 
     infer_image_max_width: int = schema_utils.PositiveInteger(
         default=256,
         allow_none=False,
         description="If infer_image_dimensions is set, this is used as the maximum width of the images in "
-                    "the dataset.",
+        "the dataset.",
     )
 
     infer_image_sample_size: int = schema_utils.PositiveInteger(
@@ -481,8 +484,8 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether image dataset will reside in memory during the training process or will be "
-                    "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
-                    "of input images will be fetched from disk each training iteration.",
+        "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
+        "of input images will be fetched from disk each training iteration.",
     )
 
     num_processes: int = schema_utils.PositiveInteger(
@@ -500,7 +503,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=7.5,
         allow_none=False,
         description="Float value that defines the maximum limit of the audio file in seconds. All files longer than "
-                    "this limit are cut off. All files shorter than this limit are padded with padding_value",
+        "this limit are cut off. All files shorter than this limit are padded with padding_value",
     )
 
     missing_value_strategy: str = schema_utils.StringOptions(
@@ -520,21 +523,19 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether the audio dataset will reside in memory during the training process or will be "
-                    "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
-                    "of input audio will be fetched from disk each training iteration.",
+        "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
+        "of input audio will be fetched from disk each training iteration.",
     )
 
     padding_value: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        allow_none=False,
-        description="Float value that is used for padding."
+        default=0.0, allow_none=False, description="Float value that is used for padding."
     )
 
     norm: str = schema_utils.StringOptions(
@@ -542,18 +543,18 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         description="Normalization strategy for the audio files. If None, no normalization is performed. If "
-                    "per_file, z-norm is applied on a 'per file' level",
+        "per_file, z-norm is applied on a 'per file' level",
     )
 
     audio_feature: dict = schema_utils.Dict(
         default={
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
+            "type": "fbank",
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
+        },
         description="Dictionary that takes as input the audio feature type as well as additional parameters if type "
-                    "!= raw. The following parameters can/should be defined in the dictionary "
+        "!= raw. The following parameters can/should be defined in the dictionary ",
     )
 
 
@@ -604,8 +605,8 @@ class TimeseriesPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="",
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
 
@@ -618,9 +619,9 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="space",
         allow_none=False,
         description="Defines how to transform the raw text content of the dataset column to a set of elements. The "
-                    "default value space splits the string on spaces. Common options include: underscore (splits on "
-                    "underscore), comma (splits on comma), json (decodes the string into a set or a list through a "
-                    "JSON parser).",
+        "default value space splits the string on spaces. Common options include: underscore (splits on "
+        "underscore), comma (splits on comma), json (decodes the string into a set or a list through a "
+        "JSON parser).",
     )
 
     missing_value_strategy: str = schema_utils.StringOptions(
@@ -640,8 +641,8 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=strings_utils.UNKNOWN_SYMBOL,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     lowercase: bool = schema_utils.Boolean(
@@ -653,7 +654,7 @@ class BagPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=10000,
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
-                    "amount, the most infrequent tokens will be treated as unknown.",
+        "amount, the most infrequent tokens will be treated as unknown.",
     )
 
 
@@ -678,8 +679,8 @@ class H3PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=576495936675512319,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
 
@@ -704,15 +705,15 @@ class DatePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default="",
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
     datetime_format: str = schema_utils.String(
         default=None,
         allow_none=True,
         description="This parameter can either be a datetime format string, or null, in which case the datetime "
-                    "format will be inferred automatically.",
+        "format will be inferred automatically.",
     )
 
 
@@ -745,23 +746,21 @@ class VectorPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=False,
         pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
         description="The internally computed fill value to replace missing values with in case the "
-                    "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA['computed_fill_value'],
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
 
 def PreprocessingDataclassField(feature_type: str):
-    """
-    Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing config.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing
+    config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a preprocessing config.
     """
 
     class PreprocessingMarshmallowField(fields.Field):
-        """
-        Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
-        preprocessing_registry and creates a corresponding JSON schema for external usage.
-        """
+        """Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
+        preprocessing_registry and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -792,8 +791,8 @@ def PreprocessingDataclassField(feature_type: str):
 
     try:
         preprocessor = preprocessing_registry[feature_type]
-        load_default = preprocessor.Schema().load({'feature_type': feature_type})
-        dump_default = preprocessor.Schema().dump({'feature_type': feature_type})
+        load_default = preprocessor.Schema().load({"feature_type": feature_type})
+        dump_default = preprocessor.Schema().dump({"feature_type": feature_type})
 
         return field(
             metadata={
@@ -806,5 +805,6 @@ def PreprocessingDataclassField(feature_type: str):
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported preprocessing type: {feature_type}. See preprocessing_registry. "
-                              f"Details: {e}")
+        raise ValidationError(
+            f"Unsupported preprocessing type: {feature_type}. See preprocessing_registry. " f"Details: {e}"
+        )

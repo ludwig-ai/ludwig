@@ -11,9 +11,7 @@ def test_config_input_output_features():
             category_feature(),
             number_feature(),
         ],
-        "output_features": [
-            binary_feature()
-        ],
+        "output_features": [binary_feature()],
     }
 
     validate_config(config)
@@ -24,9 +22,7 @@ def test_incorrect_input_features_config():
         "input_features": [
             category_feature(preprocessing={"normalization": "zscore"}),
         ],
-        "output_features": [
-            binary_feature()
-        ],
+        "output_features": [binary_feature()],
     }
 
     # Not a preprocessing param for category feature
@@ -37,9 +33,7 @@ def test_incorrect_input_features_config():
         "input_features": [
             text_feature(preprocessing={"padding_symbol": 0}),
         ],
-        "output_features": [
-            binary_feature()
-        ],
+        "output_features": [binary_feature()],
     }
 
     # Incorrect type for padding_symbol preprocessing param
@@ -50,11 +44,9 @@ def test_incorrect_input_features_config():
         "input_features": [
             binary_feature(),
         ],
-        "output_features": [
-            binary_feature()
-        ],
+        "output_features": [binary_feature()],
     }
-    del config['input_features'][0]['type']
+    del config["input_features"][0]["type"]
 
     # Incorrect type for padding_symbol preprocessing param
     with pytest.raises(ValidationError):
@@ -67,9 +59,7 @@ def test_incorrect_output_features_config():
         "input_features": [
             number_feature(),
         ],
-        "output_features": [
-            binary_feature(decoder="classifier")
-        ],
+        "output_features": [binary_feature(decoder="classifier")],
     }
 
     # Invalid decoder for binary output feature
