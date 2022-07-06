@@ -24,7 +24,11 @@ class _GenericLoss(nn.Module):
         if self.reduction == "sum":
             loss = loss.sum()
         elif self.reduction == "elementwise_mean":
-            loss = 0 if size == 0 else torch.nan_to_num(loss.sum() / float(size))
+            if size == 0:
+                # Returns zero loss and zero gradient in the rare case that all row targets are ignored.
+                loss = loss.sum() * 0.0
+            else:
+                loss = loss.sum() / float(size)
         return loss
 
 
