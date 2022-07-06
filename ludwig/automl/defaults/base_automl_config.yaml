@@ -2,11 +2,6 @@ trainer:
   batch_size: auto #256
   learning_rate: auto #.001
   # validation_metric: accuracy
-preprocessing:
-  # AutoML expects pre-defined train/validation/test split input
-  split:
-    type: fixed
-    column: split
 
 hyperopt:
   search_alg:
