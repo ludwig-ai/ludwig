@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 import torch
 
@@ -37,17 +36,18 @@ def test_rmspe_metric(preds: torch.Tensor, target: torch.Tensor, output: torch.T
     [
         (torch.arange(3), torch.arange(3, 6), 1, torch.tensor(-12.5)),
         (torch.arange(6).reshape(3, 2), torch.arange(6, 12).reshape(3, 2), 2, torch.tensor(-12.5)),
-        (torch.tensor([0.8]), torch.arange(1), 1, np.nan),
     ],
 )
 def test_r2_score(preds: torch.Tensor, target: torch.Tensor, num_outputs: int, output: torch.Tensor):
     metric = metric_modules.R2Score(num_outputs=num_outputs)
     metric.update(preds, target)
-    computed_score = metric.compute()
-    if np.isnan(computed_score):
-        assert np.isnan(output)
-    else:
-        assert computed_score == output
+    assert metric.compute() == output
+
+
+def test_r2_score_single_sample():
+    metric = metric_modules.R2Score(num_outputs=1)
+    metric.update(preds=torch.tensor([0.8]), target=torch.arange(1))
+    assert torch.isnan(metric.compute())
 
 
 @pytest.mark.parametrize("preds", [torch.arange(6).reshape(3, 2).float()])

@@ -17,7 +17,6 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Any, Callable, Generator, Optional
 
-import numpy as np
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor, tensor
@@ -299,7 +298,7 @@ class R2Score(LudwigMetric):
             logger.warning(
                 """R-squared (r2) is not defined for one sample. It needs at least two samples. Returning NaN."""
             )
-            return np.nan
+            return torch.tensor(float("nan"))
 
         return _r2_score_compute(
             self.sum_squared_error, self.sum_error, self.residual, self.total, self.adjusted, self.multioutput
