@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Any, Callable, Generator, Optional
 
+import numpy as np
 import torch
 import torchmetrics.functional as metrics_F
-from torch import Tensor
+from torch import Tensor, tensor
 from torchmetrics import Accuracy as _Accuracy
 from torchmetrics import MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
-from torchmetrics import R2Score as _R2Score
+from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
 
 from ludwig.constants import (
@@ -62,6 +64,8 @@ from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_availa
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
+
+logger = logging.getLogger(__name__)
 
 
 class LudwigMetric(Metric, ABC):
@@ -241,13 +245,61 @@ class RMSPEMetric(MeanMetric):
         return PREDICTIONS
 
 
-# TODO(shreya): Double check difference in computation.
 @register_metric(R2, [NUMBER, VECTOR])
-class R2Score(_R2Score, LudwigMetric):
-    """R-squared metric."""
+class R2Score(LudwigMetric):
+    """Custom R-squared metric implementation that modifies torchmetrics R-squared implementation in scenarios
+    where there is only one sample."""
 
-    def __init__(self, num_outputs: int = 1, **kwargs):
-        super().__init__(num_outputs=num_outputs, dist_sync_fn=gather_all_tensors)
+    def __init__(
+        self, num_outputs: int = 1, adjusted: int = 0, multioutput: str = "uniform_average", **kwargs: Any
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.num_outputs = num_outputs
+
+        if adjusted < 0 or not isinstance(adjusted, int):
+            raise ValueError("`adjusted` parameter should be an integer larger or equal to 0.")
+        self.adjusted = adjusted
+
+        allowed_multioutput = ("raw_values", "uniform_average", "variance_weighted")
+        if multioutput not in allowed_multioutput:
+            raise ValueError(
+                f"Invalid input to argument `multioutput`. Choose one of the following: {allowed_multioutput}"
+            )
+        self.multioutput = multioutput
+
+        self.add_state("sum_squared_error", default=torch.zeros(self.num_outputs), dist_reduce_fx="sum")
+        self.add_state("sum_error", default=torch.zeros(self.num_outputs), dist_reduce_fx="sum")
+        self.add_state("residual", default=torch.zeros(self.num_outputs), dist_reduce_fx="sum")
+        self.add_state("total", default=tensor(0), dist_reduce_fx="sum")
+
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        """Update state with predictions and targets.
+
+        Args:
+            preds: Predictions from model
+            target: Ground truth values
+        """
+        sum_squared_error, sum_error, residual, n_obs = _r2_score_update(preds, target)
+
+        self.sum_squared_error += sum_squared_error
+        self.sum_error += sum_error
+        self.residual += residual
+        self.total += n_obs
+
+    def compute(self) -> Tensor:
+        """Computes r2 score over the metric states."""
+
+        # self.total maps to the number of observations in preds/target computed during update()
+        if self.total <= 1:
+            logger.warning(
+                """R-squared (r2) is not defined for one sample. It needs at least two samples. Returning NaN."""
+            )
+            return np.nan
+
+        return _r2_score_compute(
+            self.sum_squared_error, self.sum_error, self.residual, self.total, self.adjusted, self.multioutput
+        )
 
     @classmethod
     def get_objective(cls):
