@@ -17,14 +17,14 @@ class _GenericLoss(nn.Module):
         loss = self.loss(X, target)
         if self.ignore_index >= 0:
             ignored_positions = target == self.ignore_index
-            size = float((target.size(0) - ignored_positions.sum()).item())
+            size = (target.size(0) - ignored_positions.sum()).item()
             loss.masked_fill_(ignored_positions, 0.0)
         else:
-            size = float(target.size(0))
+            size = target.size(0)
         if self.reduction == "sum":
             loss = loss.sum()
         elif self.reduction == "elementwise_mean":
-            loss = torch.nan_to_num(loss.sum() / size)
+            loss = 0 if size == 0 else torch.nan_to_num(loss.sum() / float(size))
         return loss
 
 
