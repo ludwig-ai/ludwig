@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -90,6 +90,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
             "type": "fbank",
             "window_length_in_s": 0.04,
             "window_shift_in_s": 0.02,
+            "num_fft_points": None,
+            "window_type": "hamming",
             "num_filter_bands": 80,
         }
 
@@ -294,7 +296,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
 
-        if "num_fft_points" in preprocessing_parameters:
+        if preprocessing_parameters["num_fft_points"] is None:
+            num_fft_points = window_length_in_samp
+        else:
             num_fft_points = preprocessing_parameters["num_fft_points"]
             assert torch.jit.isinstance(num_fft_points, int)
 
@@ -304,8 +308,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
                     "samples: {} (corresponds to window length"
                     " in s: {}".format(num_fft_points, window_length_in_s, window_length_in_samp)
                 )
-        else:
-            num_fft_points = window_length_in_samp
 
         if "window_type" in preprocessing_parameters:
             window_type = preprocessing_parameters["window_type"]

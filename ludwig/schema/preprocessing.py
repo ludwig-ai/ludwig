@@ -557,6 +557,40 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         "!= raw. The following parameters can/should be defined in the dictionary ",
     )
 
+    type: str = schema_utils.StringOptions(
+        ["fbank", "group_delay", "raw", "stft", "stft_phase"],
+        default="fbank",
+        description="Defines the type of audio feature to be used."
+    )
+
+    window_length_in_s: float = schema_utils.NonNegativeFloat(
+        default=0.04,
+        description="Defines the window length used for the short time Fourier transformation. This is only needed if "
+                    "the audio_feature_type is 'raw'.",
+    )
+
+    window_shift_in_s: float = schema_utils.NonNegativeFloat(
+        default=0.02,
+        description="Defines the window shift used for the short time Fourier transformation (also called "
+                    "hop_length). This is only needed if the audio_feature_type is 'raw'. "
+    )
+
+    num_fft_points: float = schema_utils.NonNegativeFloat(
+        default=None,
+        description="Defines the number of fft points used for the short time Fourier transformation"
+    )
+
+    window_type: str = schema_utils.StringOptions(
+        ["bartlett", "blackman", "hamming", "hann"],
+        default="hamming",
+        description="Defines the type window the signal is weighted before the short time Fourier transformation."
+    )
+
+    num_filter_bands: int = schema_utils.PositiveInteger(
+        default=80,
+        description="Defines the number of filters used in the filterbank. Only needed if audio_feature_type is 'fbank'"
+    )
+
 
 @register_preprocessor(TIMESERIES)
 @dataclass
