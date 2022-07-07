@@ -28,7 +28,6 @@ from ludwig.constants import (
     LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROC_COLUMN,
@@ -38,6 +37,8 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
@@ -99,16 +100,6 @@ class VectorFeatureMixin:
         }
 
     @staticmethod
-    def preprocessing_schema():
-        fill_value_schema = {"type": "string", "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"}
-        return {
-            "vector_size": {"type": "integer", "minimum": 0},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": fill_value_schema,
-            "computed_fill_value": fill_value_schema,
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 
@@ -154,6 +145,7 @@ class VectorFeatureMixin:
         return proc_df
 
 
+@register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = "dense"
     vector_size = 0
@@ -198,7 +190,12 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _VectorPreprocessing()
 
+    @staticmethod
+    def get_schema_cls():
+        return VectorInputFeatureConfig
 
+
+@register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = "projector"
     loss = {TYPE: MEAN_SQUARED_ERROR}
@@ -277,3 +274,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _VectorPostprocessing()
+
+    @staticmethod
+    def get_schema_cls():
+        return VectorOutputFeatureConfig

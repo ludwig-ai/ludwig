@@ -20,12 +20,14 @@ from typing import Any, Dict
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, NAME, PROC_COLUMN, TIED
+from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
+from ludwig.schema.features.bag_feature import BagInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -43,17 +45,6 @@ class BagFeatureMixin(BaseFeatureMixin):
             "lowercase": False,
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": UNKNOWN_SYMBOL,
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "most_common": {"type": "integer", "minimum": 0},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
         }
 
     @staticmethod
@@ -101,6 +92,7 @@ class BagFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []
@@ -136,6 +128,10 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def get_schema_cls():
+        return BagInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

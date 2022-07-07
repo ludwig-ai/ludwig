@@ -117,6 +117,9 @@ VALIDATION = "validation"
 TEST = "test"
 SPLIT = "split"
 FULL = "full"
+TRAIN_SPLIT = 0
+VALIDATION_SPLIT = 1
+TEST_SPLIT = 2
 
 META = "meta"
 
@@ -129,6 +132,9 @@ SAMPLER = "sampler"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
 
 NAME = "name"
 COLUMN = "column"

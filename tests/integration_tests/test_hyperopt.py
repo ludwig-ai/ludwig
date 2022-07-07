@@ -13,16 +13,31 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import json
 import logging
 import os.path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import pytest
 import torch
+from packaging import version
 
-from ludwig.constants import ACCURACY, RAY, TRAINER
+from ludwig.constants import (
+    ACCURACY,
+    CATEGORY,
+    COMBINER,
+    HYPEROPT,
+    INPUT_FEATURES,
+    NAME,
+    OUTPUT_FEATURES,
+    RAY,
+    TEXT,
+    TRAINER,
+    TYPE,
+)
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -30,8 +45,12 @@ try:
     import ray
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
+
+    _ray113 = version.parse(ray.__version__) > version.parse("1.13")
+
 except ImportError:
     ray = None
+    _ray113 = None
 
 
 logger = logging.getLogger(__name__)
@@ -86,24 +105,77 @@ SCHEDULERS = [
 
 def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(vocab_size=3),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=3)]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {"type": "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
     config = merge_with_defaults(config)
 
     return config, rel_path
+
+
+def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]:
+    input_features = [
+        text_feature(name="title", encoder="parallel_cnn"),
+        text_feature(name="summary"),
+        category_feature(vocab_size=3),
+        category_feature(vocab_size=3),
+    ]
+
+    output_features = [category_feature(vocab_size=3)]
+
+    rel_path = generate_data(input_features, output_features, dataset_fp)
+
+    num_filters_search_space = [4, 8]
+    embedding_size_search_space = [4, 8]
+
+    # Add default parameters in hyperopt parameter search space
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        HYPEROPT: {
+            "parameters": {
+                "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
+                "defaults.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
+                "defaults.category.embedding_size": {
+                    "space": "choice",
+                    "categories": embedding_size_search_space,
+                },
+            },
+            "goal": "minimize",
+            "output_feature": output_features[0][NAME],
+            "validation_metrics": "loss",
+            "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
+            "search_alg": {"type": "variant_generator"},
+        },
+    }
+
+    return config, rel_path, num_filters_search_space, embedding_size_search_space
+
+
+def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
+    """Returns the parameter value from the Ray trial row, which has slightly different column names depending on
+    the version of Ray. Returns None if the parameter key is not found.
+
+    TODO(#2176): There are different key name delimiters depending on Ray version. The delimiter in future versions of
+    Ray (> 1.13) will be '/' instead of '.' Simplify this as Ray is upgraded.
+    """
+    if _ray113:
+        return trial_row[f"config/{parameter_key}"]
+    return trial_row[f"config.{parameter_key}"]
 
 
 @contextlib.contextmanager
@@ -135,6 +207,7 @@ def test_hyperopt_search_alg(
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
+
     # finalize hyperopt config settings
     if search_alg == "dragonfly":
         hyperopt_config["search_alg"] = {
@@ -150,7 +223,7 @@ def test_hyperopt_search_alg(
         }
 
     if validate_output_feature:
-        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+        hyperopt_config["output_feature"] = config[OUTPUT_FEATURES][0][NAME]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
@@ -191,6 +264,7 @@ def test_hyperopt_scheduler(
     config, rel_path = _setup_ludwig_config(csv_filename)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
+
     # finalize hyperopt config settings
     if scheduler == "pb2":
         # setup scheduler hyperparam_bounds parameter
@@ -209,7 +283,7 @@ def test_hyperopt_scheduler(
         }
 
     if validate_output_feature:
-        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+        hyperopt_config["output_feature"] = config[OUTPUT_FEATURES][0][NAME]
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
@@ -241,22 +315,22 @@ def test_hyperopt_scheduler(
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(vocab_size=3),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=3)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
-    output_feature_name = output_features[0]["name"]
+    output_feature_name = output_features[0][NAME]
 
     if search_space == "random":
         # random search will be size of num_samples
@@ -314,5 +388,69 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
 
-    if os.path.isfile(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")):
-        os.remove(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json"))
+
+def _test_hyperopt_with_shared_params_trial_table(
+    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+):
+    # Check that hyperopt trials sample from defaults in the search space
+    for _, trial_row in hyperopt_results_df.iterrows():
+        embedding_size = _get_trial_parameter_value("defaults.category.embedding_size", trial_row)
+        num_filters = _get_trial_parameter_value("defaults.text.num_filters", trial_row)
+        assert embedding_size in embedding_size_search_space
+        assert num_filters in num_filters_search_space
+
+
+def _test_hyperopt_with_shared_params_written_config(
+    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+):
+    # Check that each hyperopt trial's written input/output configs got updated
+    for _, trial_row in hyperopt_results_df.iterrows():
+        model_parameters = json.load(
+            open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
+        )
+
+        # Check that num_filters got updated from the sampler correctly
+        for input_feature in model_parameters[INPUT_FEATURES]:
+            if input_feature[TYPE] == TEXT:
+                assert input_feature["num_filters"] in num_filters_search_space
+            elif input_feature[TYPE] == CATEGORY:
+                assert input_feature["embedding_size"] in embedding_size_search_space
+
+        # All text features with defaults should have the same num_filters for this trial
+        text_input_num_filters = get_feature_type_parameter_values_from_section(
+            model_parameters, INPUT_FEATURES, TEXT, "num_filters"
+        )
+        assert len(text_input_num_filters) == 1
+
+        # Check that embedding_size got updated from the sampler
+        for output_feature in model_parameters[OUTPUT_FEATURES]:
+            if output_feature[TYPE] == CATEGORY:
+                assert output_feature["embedding_size"] in embedding_size_search_space
+
+        # All category features with defaults should have the same embedding_size for this trial
+        input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
+            model_parameters, INPUT_FEATURES, CATEGORY, "embedding_size"
+        )
+        output_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
+            model_parameters, OUTPUT_FEATURES, CATEGORY, "embedding_size"
+        )
+        trial_embedding_sizes = input_category_features_embedding_sizes.union(output_category_features_embedding_sizes)
+        assert len(trial_embedding_sizes) == 1
+
+
+@pytest.mark.distributed
+def test_hyperopt_with_shared_params(csv_filename, tmpdir):
+    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
+        csv_filename
+    )
+
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
+
+    _test_hyperopt_with_shared_params_trial_table(
+        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    )
+
+    _test_hyperopt_with_shared_params_written_config(
+        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    )
