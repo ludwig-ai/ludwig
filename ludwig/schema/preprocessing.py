@@ -588,7 +588,8 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     num_filter_bands: int = schema_utils.PositiveInteger(
         default=80,
-        description="Defines the number of filters used in the filterbank. Only needed if audio_feature_type is 'fbank'"
+        description="Defines the number of filters used in the filterbank. Only needed if audio_feature_type "
+                    "is 'fbank'"
     )
 
 
