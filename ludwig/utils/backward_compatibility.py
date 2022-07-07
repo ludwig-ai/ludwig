@@ -186,7 +186,7 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
             DeprecationWarning,
         )
 
-        if "type" not in split_params:
+        if "type" not in split_params and force_split:
             split_params["type"] = "random"
 
     if split_params:
