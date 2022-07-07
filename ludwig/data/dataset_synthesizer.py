@@ -140,7 +140,7 @@ parameters_builders_registry = {
 
 
 def build_synthetic_dataset(dataset_size: int, features: List[dict]):
-    """Symthesizes a dataset for testing purposes.
+    """Synthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
     :param features: (List[dict]) list of features to generate in YAML format.

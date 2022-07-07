@@ -1570,12 +1570,12 @@ def preprocess_for_training(
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
 
             validation_dataset = None
-            if validation_set is not None:
+            if validation_set is not None and not validation_set.empty:
                 logger.debug("create validation dataset")
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
 
             test_dataset = None
-            if test_set is not None:
+            if test_set is not None and not test_set.empty:
                 logger.debug("create test dataset")
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
 
