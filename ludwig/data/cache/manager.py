@@ -46,7 +46,7 @@ class DatasetCache:
             TRAINING,
         )
 
-        if test_set is not None and not test_set.empty:
+        if test_set is not None:
             logger.info("Writing preprocessed test set cache")
             test_set = self.dataset_manager.save(
                 self.cache_map[TEST],
@@ -56,7 +56,7 @@ class DatasetCache:
                 TEST,
             )
 
-        if validation_set is not None and not validation_set.empty:
+        if validation_set is not None:
             logger.info("Writing preprocessed validation set cache")
             validation_set = self.dataset_manager.save(
                 self.cache_map[VALIDATION],
