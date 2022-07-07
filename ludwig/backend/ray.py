@@ -28,6 +28,7 @@ import torch
 import tqdm
 from fsspec.config import conf
 from packaging import version
+from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -44,7 +45,7 @@ from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
-from ludwig.utils.fs_utils import get_bytes_obj_if_path
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -860,7 +861,31 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
     def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
-        ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+        # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
+        # are literally billions of filenames.
+        # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
+        #  a directory. If so, we can do some preprocessing to determine if it makes sense to read the full directory
+        #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
+        #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
+        #  there should not be any difference between providing a directory versus a list of files.
+        fnames = self.df_engine.compute(column).values.tolist()
+
+        # Sample a filename to extract the filesystem info
+        sample_fname = fnames[0]
+
+        if isinstance(sample_fname, str):
+            # TODO(travis): handle missing filenames. Current implementation will try and read None, which will
+            #  almost certainly fail. This can be done pretty easily by implementing a custom Ray DataSource that
+            #  tweaks the existing BinaryDataSource.
+            fs, _ = get_fs_and_path(sample_fname)
+
+            # TODO(travis): figure out how to align partitions between this series and the original series. Ideally,
+            #  we should coerce the original dataframe to use the partition structure of this series, as in general
+            #  the size of the binary files series will be orders of magnitude larger than the metadata DF.
+            ds = ray.data.read_binary_files(fnames, filesystem=PyFileSystem(FSSpecHandler(fs)))
+        else:
+            # Assume the path has already been read in, so just convert directly to a dataset
+            ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
             # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
@@ -868,7 +893,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 df[column.name] = df[column.name].map(fn)
                 return df
 
-        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_if_path), batch_format="pandas")
         if map_fn is not None:
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
