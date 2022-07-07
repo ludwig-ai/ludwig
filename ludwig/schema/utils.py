@@ -1,7 +1,7 @@
 from dataclasses import field
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Tuple, Type, Union, Any
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
