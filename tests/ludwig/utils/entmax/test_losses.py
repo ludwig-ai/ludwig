@@ -51,4 +51,5 @@ def test_index_ignored(Loss):
     loss_ignore = Loss(reduction="sum", ignore_index=y[0])
     loss_noignore = Loss(reduction="sum", ignore_index=-100)
 
-    assert loss_ignore(x, y) < loss_noignore(x, y)
+    # Note: since these are sparse losses, it is possible that an element makes no contribution to the loss.
+    assert loss_ignore(x, y) <= loss_noignore(x, y)

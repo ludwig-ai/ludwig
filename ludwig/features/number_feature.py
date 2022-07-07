@@ -30,7 +30,6 @@ from ludwig.constants import (
     LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     NUMBER,
     PREDICTIONS,
@@ -43,6 +42,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -231,21 +232,6 @@ class NumberFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {
-                "type": "string",
-                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
-            },
-            "fill_value": {"type": "number"},
-            "computed_fill_value": {"type": "number"},
-            "normalization": {
-                "type": ["string", "null"],
-                "enum": list(numeric_transformation_registry.keys()),
-            },
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return backend.df_engine.df_lib.to_numeric(column, errors="coerce").astype(np.float32)
 
@@ -295,6 +281,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
     encoder = "passthrough"
 
@@ -339,6 +326,10 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return NumberInputFeatureConfig
+
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "float32"
@@ -348,6 +339,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return _NumberPreprocessing(metadata)
 
 
+@register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: MEAN_SQUARED_ERROR}
@@ -448,6 +440,10 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return NumberOutputFeatureConfig
 
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:

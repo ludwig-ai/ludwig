@@ -28,7 +28,6 @@ from ludwig.constants import (
     HIDDEN,
     LOGITS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -40,6 +39,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import calibration, output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
@@ -136,25 +137,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema() -> Dict[str, Any]:
-        fill_value_schema = {
-            "anyOf": [
-                {"type": "integer", "minimum": 0, "maximum": 1},
-                {"type": "string", "enum": strings_utils.all_bool_strs()},
-            ]
-        }
-
-        return {
-            "missing_value_strategy": {
-                "type": "string",
-                "enum": [FILL_WITH_FALSE] + MISSING_VALUE_STRATEGY_OPTIONS,
-            },
-            "fill_value": fill_value_schema,
-            "computed_fill_value": fill_value_schema,
-            "fallback_true_label": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         """Cast column of dtype object to bool.
 
@@ -230,6 +212,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     encoder = "passthrough"
     norm = None
@@ -273,6 +256,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return BinaryInputFeatureConfig
+
     def create_sample_input(self):
         return torch.Tensor([True, False])
 
@@ -285,6 +272,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return _BinaryPreprocessing(metadata)
 
 
+@register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
@@ -434,6 +422,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return BinaryOutputFeatureConfig
 
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:

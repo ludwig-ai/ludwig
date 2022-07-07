@@ -1,6 +1,7 @@
 from dataclasses import field
-from typing import Dict as tDict
-from typing import List, Tuple, Type, Union
+from typing import Dict as TDict
+from typing import List as TList
+from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_jsonschema import JSONSchema as js
@@ -50,7 +51,7 @@ def load_config_with_kwargs(
     }
 
 
-def create_cond(if_pred: tDict, then_pred: tDict):
+def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
@@ -81,7 +82,7 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_jsonschema_from_marshmallow_class(mclass) -> tDict:
+def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
@@ -113,14 +114,25 @@ def String(
     description: str,
     default: Union[None, str] = None,
     allow_none: bool = True,
+    pattern: str = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
+
+    if pattern is not None:
+        validation = validate.Regexp(pattern)
+    else:
+        validation = None
+
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                validate=validation,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
             ),
             "parameter_metadata": parameter_metadata,
         },
@@ -129,7 +141,7 @@ def String(
 
 
 def StringOptions(
-    options: List[str],
+    options: TList[str],
     default: Union[None, str] = None,
     allow_none: bool = True,
     description: str = "",
@@ -373,7 +385,7 @@ def FloatRange(
     )
 
 
-def Dict(default: Union[None, tDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
+def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
@@ -396,7 +408,7 @@ def Dict(default: Union[None, tDict] = None, description: str = "", parameter_me
 
 
 def DictList(
-    default: Union[None, List[tDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -605,7 +617,7 @@ def FloatOrAutoField(
     max_exclusive: Union[None, int] = None,
 ):
     """Float that also permits an `auto` string value."""
-    options: List[str] = ["auto"]
+    options: TList[str] = ["auto"]
     return NumericOrStringOptionsField(**locals())
 
 
@@ -622,12 +634,12 @@ def IntegerOrAutoField(
     max_exclusive: Union[None, int] = None,
 ):
     """Integer that also permits an `auto` string value."""
-    options: List[str] = ["auto"]
+    options: TList[str] = ["auto"]
     return IntegerOrStringOptionsField(**locals())
 
 
 def IntegerOrStringOptionsField(
-    options: List[str],
+    options: TList[str],
     allow_none: bool,
     description: str,
     parameter_metadata: ParameterMetadata,
@@ -646,13 +658,13 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: List[str],
+    options: TList[str],
     allow_none: bool,
     description: str,
-    parameter_metadata: ParameterMetadata,
     default: Union[None, int, float, str],
     default_numeric: Union[None, int, float],
     default_option: Union[None, str],
+    parameter_metadata: ParameterMetadata = None,
     is_integer: bool = False,
     min: Union[None, int] = None,
     max: Union[None, int] = None,
