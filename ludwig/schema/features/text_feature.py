@@ -24,7 +24,6 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=TEXT,
         default="parallel_cnn",
-        description="Encoder to use for this text feature.",
     )
 
 
