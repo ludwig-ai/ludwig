@@ -18,7 +18,7 @@ import copy
 import logging
 import sys
 from dataclasses import asdict
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import yaml
 
@@ -53,6 +53,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
+from ludwig.utils.config_utils import get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
@@ -128,18 +129,14 @@ def _perform_sanity_checks(config):
         ), "Ludwig expects model type as a string. Please check your model config format."
 
     if DEFAULTS in config:
-        defaults = config.get(DEFAULTS)
-
-        for feature_type in defaults.keys():
+        for feature_type in config.get(DEFAULTS).keys():
             # output_feature_types is a subset of input_feature_types so just check input_feature_types
             assert feature_type in set(
                 input_type_registry.keys()
             ), f"""Defaults specified for `{feature_type}` but `{feature_type}` is
                 not a feature type recognised by Ludwig."""
 
-            feature_type_params = list(defaults.get(feature_type).keys())
-
-            for feature_type_param in feature_type_params:
+            for feature_type_param in config.get(DEFAULTS).get(feature_type).keys():
                 assert feature_type_param in {
                     PREPROCESSING,
                     ENCODER,
@@ -202,23 +199,6 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def get_defaults_section_for_feature_type(
-    feature_type: str,
-    config_defaults: Dict[str, Dict[str, Any]],
-    config_defaults_section: str,
-) -> Union[Dict[str, Any], Dict]:
-    """Returns a dictionary of all default parameter values specified in the global defaults section for the
-    config_defaults_section of the feature_type."""
-
-    if feature_type not in config_defaults:
-        return {}
-
-    if config_defaults_section not in config_defaults[feature_type]:
-        return {}
-
-    return config_defaults[feature_type][config_defaults_section]
-
-
 def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
     """Updates feature_dict belonging to an input or output feature using global encoder, decoder and loss related
     default parameters specified in the Ludwig config.
@@ -260,7 +240,9 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
         feature_dict[LOSS].update(merge_dict(feature_dict[LOSS], default_loss_params_for_feature_type))
 
 
-def _merge_preprocessing_with_defaults(preprocessing: Dict[str, Any], config_defaults: Dict[str, Any]):
+def _merge_global_preprocessing_defaults_with_config_defaults(
+    preprocessing: Dict[str, Any], config_defaults: Dict[str, Any]
+):
     """Update default_preprocessing_parameters used by the preprocessing module with updated values from
     preprocessing and default sections of the Ludwig config."""
     global default_preprocessing_parameters
@@ -307,7 +289,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     splitter.validate(config)
 
     # Update default preprocessing dictionary for preprocessing module
-    _merge_preprocessing_with_defaults(config[PREPROCESSING], config[DEFAULTS])
+    _merge_global_preprocessing_defaults_with_config_defaults(config[PREPROCESSING], config[DEFAULTS])
 
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)

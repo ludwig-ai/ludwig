@@ -166,16 +166,12 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
 
 def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
-    # Use base registry since it contains all feature types
-    input_feature_types = set(base_type_registry)
-    preprocessing_parameters = list(config.get(PREPROCESSING))
-
     type_specific_preprocessing_params = dict()
 
-    # If preprocessing section specified and it contains feature specific preprocessing parameters, make a copy
-    # and delete them from the preprocessing section
-    for parameter in preprocessing_parameters:
-        if parameter in input_feature_types:
+    # If preprocessing section specified and it contains feature specific preprocessing parameters,
+    # make a copy and delete it from the preprocessing section
+    for parameter in list(config.get(PREPROCESSING)):
+        if parameter in base_type_registry:
             warnings.warn(
                 f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
                 " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
@@ -242,7 +238,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
         )
 
         if TYPE not in split_params:
-            split_params[TYPE] = "random" if force_split else "fixed"
+            split_params[TYPE] = "random"
 
     if split_params:
         preprocessing[SPLIT] = split_params
