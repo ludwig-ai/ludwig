@@ -1,4 +1,4 @@
-from ludwig.utils.backward_compatibility import _upgrade_preprocessing
+from ludwig.utils.backward_compatibility import _upgrade_preprocessing_split
 
 
 def test_preprocessing_backward_compatibility():
@@ -9,7 +9,7 @@ def test_preprocessing_backward_compatibility():
         "stratify": None,
     }
 
-    _upgrade_preprocessing(preprocessing_config)
+    _upgrade_preprocessing_split(preprocessing_config)
 
     assert preprocessing_config == {
         "split": {"probabilities": [0.7, 0.1, 0.2], "type": "random"},
