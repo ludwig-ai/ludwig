@@ -156,7 +156,6 @@ def _get_df_engine(processor):
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    shards_metadata: Dict[str, Any] = None,
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -170,8 +169,6 @@ def train_fn(
             rt.get_dataset_shard("train"),
             features,
             training_set_metadata,
-            shards_metadata.get("training_num_partitions"),
-            shards_metadata.get("training_window_status"),
         )
 
         try:
@@ -184,8 +181,6 @@ def train_fn(
                 val_shard,
                 features,
                 training_set_metadata,
-                shards_metadata.get("validation_num_partitions"),
-                shards_metadata.get("validation_window_status"),
             )
 
         try:
@@ -198,8 +193,6 @@ def train_fn(
                 test_shard,
                 features,
                 training_set_metadata,
-                shards_metadata.get("test_num_partitions"),
-                shards_metadata.get("test_window_status"),
             )
 
         model = ray.get(model_ref)
@@ -241,7 +234,9 @@ def tune_batch_size_fn(
 
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
-            pipe, features, training_set_metadata, dataset.num_partitions, dataset.window_status
+            pipe,
+            features,
+            training_set_metadata,
         )
 
         device = get_torch_device()
@@ -272,7 +267,9 @@ def tune_learning_rate_fn(
 
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
-            pipe, features, training_set_metadata, dataset.num_partitions, dataset.window_status
+            pipe,
+            features,
+            training_set_metadata,
         )
 
         device = get_torch_device()
@@ -362,13 +359,6 @@ class RayTrainerV2(BaseTrainer):
         test_set: Optional[RayDataset] = None,
         **kwargs,
     ):
-
-        dataset = {"train": training_set.pipeline(**self.data_loader_kwargs)}
-        if validation_set is not None:
-            dataset["val"] = validation_set.pipeline(shuffle=False, **self.data_loader_kwargs)
-        if test_set is not None:
-            dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
-
         executable_kwargs = self.executable_kwargs
 
         kwargs = {
@@ -377,24 +367,16 @@ class RayTrainerV2(BaseTrainer):
             **kwargs,
         }
 
-        shards_metadata = {
-            "training_num_partitions": training_set.num_partitions,
-            "training_window_status": training_set.window_status,
-            "validation_num_partitions": validation_set.num_partitions if validation_set else 0,
-            "validation_window_status": validation_set.window_status if validation_set else False,
-            "test_num_partitions": validation_set.num_partitions if validation_set else 0,
-            "test_window_status": validation_set.window_status if validation_set else False,
-        }
+        dataset = {"train": training_set.pipeline(**self.data_loader_kwargs)}
+        if validation_set is not None:
+            dataset["val"] = validation_set.pipeline(shuffle=False, **self.data_loader_kwargs)
+        if test_set is not None:
+            dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
         with self.create_runner() as runner:
             results, self._validation_field, self._validation_metric = runner.run(
                 lambda config: train_fn(**config),
-                config={
-                    "executable_kwargs": executable_kwargs,
-                    "model_ref": ray.put(self.model),
-                    "shards_metadata": shards_metadata,
-                    **kwargs,
-                },
+                config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
             )[0]
@@ -500,7 +482,6 @@ def legacy_train_fn(
     train_shards: List[DatasetPipeline] = None,
     val_shards: List[DatasetPipeline] = None,
     test_shards: List[DatasetPipeline] = None,
-    shards_metadata: Dict[str, Any] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -511,8 +492,6 @@ def legacy_train_fn(
         train_shards[hvd.rank()],
         features,
         training_set_metadata,
-        shards_metadata.get("training_num_partitions"),
-        shards_metadata.get("training_window_status"),
     )
 
     val_shard = val_shards[hvd.rank()] if val_shards else None
@@ -521,8 +500,6 @@ def legacy_train_fn(
             val_shard,
             features,
             training_set_metadata,
-            shards_metadata.get("validation_num_partitions"),
-            shards_metadata.get("validation_window_status"),
         )
 
     test_shard = test_shards[hvd.rank()] if test_shards else None
@@ -531,8 +508,6 @@ def legacy_train_fn(
             test_shard,
             features,
             training_set_metadata,
-            shards_metadata.get("test_num_partitions"),
-            shards_metadata.get("test_window_status"),
         )
 
     results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
@@ -565,7 +540,6 @@ class RayLegacyTrainer(BaseTrainer):
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers
-
         train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers, equal=True)
         val_shards = (
             validation_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers)
@@ -576,15 +550,6 @@ class RayLegacyTrainer(BaseTrainer):
             test_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers) if test_set else None
         )
 
-        shards_metadata = {
-            "training_num_partitions": training_set.num_partitions,
-            "training_window_status": training_set.window_status,
-            "validation_num_partitions": validation_set.num_partitions if validation_set else 0,
-            "validation_window_status": training_set.window_status if validation_set else False,
-            "test_num_partitions": test_set.num_partitions if test_set else 0,
-            "test_window_status": test_set.window_status if test_set else False,
-        }
-
         results = self.executor.execute(
             lambda trainer: legacy_train_fn(
                 trainer,
@@ -594,7 +559,6 @@ class RayLegacyTrainer(BaseTrainer):
                 train_shards,
                 val_shards,
                 test_shards,
-                shards_metadata,
                 **kwargs,
             )
         )
@@ -623,7 +587,6 @@ def eval_fn(
     model_ref: ObjectRef = None,  # noqa: F821
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
-    shards_metadata: Dict[str, Any] = None,
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -635,8 +598,6 @@ def eval_fn(
             rt.get_dataset_shard("eval"),
             features,
             training_set_metadata,
-            shards_metadata.get("evaluation_num_partitions"),
-            shards_metadata.get("evaluation_window_status"),
         )
 
         model = ray.get(model_ref)
@@ -738,10 +699,6 @@ class RayPredictor(BasePredictor):
                 **self.predictor_kwargs,
                 "collect_predictions": False,
             }
-            shards_metadata = {
-                "evaluation_num_partitions": dataset.num_partitions,
-                "evaluation_window_status": dataset.window_status,
-            }
             eval_stats, _ = runner.run(
                 lambda config: eval_fn(**config),
                 config={
@@ -749,7 +706,6 @@ class RayPredictor(BasePredictor):
                     "model_ref": ray.put(self.model),
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
-                    "shards_metadata": shards_metadata,
                     **kwargs,
                 },
                 dataset=datasets,
