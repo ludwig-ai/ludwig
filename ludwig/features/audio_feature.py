@@ -15,13 +15,22 @@
 # ==============================================================================
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Union, Optional, Tuple
 
 import numpy as np
 import torch
 import torchaudio
 
-from ludwig.constants import AUDIO, BACKFILL, COLUMN, NAME, PREPROCESSING, PROC_COLUMN, SRC, TIED, TYPE
+from ludwig.constants import (AUDIO,
+                              BACKFILL,
+                              COLUMN,
+                              NAME,
+                              PREPROCESSING,
+                              PROC_COLUMN,
+                              SRC,
+                              TIED,
+                              TYPE,
+                              AUDIO_FEATURE_KEYS)
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
@@ -47,9 +56,12 @@ from ludwig.utils.types import TorchscriptPreprocessingInput
 
 class _AudioPreprocessing(torch.nn.Module):
 
+    audio_feature_dict: Dict[str, Union[float, int, str]]
+
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        self.preprocessing_parameters = metadata["preprocessing"]
+        self.audio_feature_dict = {key: value for key, value in metadata["preprocessing"].items()
+                                   if key in AUDIO_FEATURE_KEYS and value is not None}
         self.feature_dim = metadata["feature_dim"]
         self.max_length = metadata["max_length"]
         self.padding_value = metadata["preprocessing"]["padding_value"]
@@ -64,7 +76,7 @@ class _AudioPreprocessing(torch.nn.Module):
             processed_audio = AudioFeatureMixin._transform_to_feature(
                 audio,
                 sampling_rate_in_hz,
-                self.preprocessing_parameters,
+                self.audio_feature_dict,
                 self.feature_dim,
                 self.max_length,
                 self.padding_value,
@@ -140,7 +152,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _process_in_memory(
         column,
-        preprocessing_parameters,
+        audio_feature_dict,
         feature_dim,
         max_length,
         padding_value,
@@ -170,7 +182,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             lambda row: AudioFeatureMixin._transform_to_feature(
                 audio=row[0],
                 sampling_rate_in_hz=row[1],
-                preprocessing_parameters=preprocessing_parameters,
+                audio_feature_dict=audio_feature_dict,
                 feature_dim=feature_dim,
                 max_length=max_length,
                 padding_value=padding_value,
@@ -225,19 +237,19 @@ class AudioFeatureMixin(BaseFeatureMixin):
     def _transform_to_feature(
         audio: torch.Tensor,
         sampling_rate_in_hz: int,
-        preprocessing_parameters: Dict[str, Any],
+        audio_feature_dict: Dict[str, Union[float, int, str]],
         feature_dim: int,
         max_length: int,
         padding_value: int,
         normalization_type: Optional[str] = None,
         type_key: str = TYPE,
     ):
-        feature_type: str = str(preprocessing_parameters[type_key])
+        feature_type: str = str(audio_feature_dict[type_key])
         if feature_type == "raw":
             audio_feature = torch.unsqueeze(audio[0], dim=-1)
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
             audio_feature = AudioFeatureMixin._get_2D_feature(
-                audio, feature_type, preprocessing_parameters, sampling_rate_in_hz
+                audio, feature_type, audio_feature_dict, sampling_rate_in_hz
             )
             audio_feature = torch.transpose(audio_feature, 0, 1)
         else:
@@ -286,20 +298,18 @@ class AudioFeatureMixin(BaseFeatureMixin):
     def _get_2D_feature(
         audio: torch.Tensor,
         feature_type: str,
-        preprocessing_parameters: Dict[str, Any],
+        audio_feature_dict: Dict[str, Union[float, int, str]],
         sampling_rate_in_hz: int,
     ) -> torch.Tensor:
-        window_length_in_s = preprocessing_parameters["window_length_in_s"]
-        window_shift_in_s = preprocessing_parameters["window_shift_in_s"]
+        window_length_in_s = audio_feature_dict["window_length_in_s"]
+        window_shift_in_s = audio_feature_dict["window_shift_in_s"]
         assert torch.jit.isinstance(window_length_in_s, float)
         assert torch.jit.isinstance(window_shift_in_s, float)
 
         window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
 
-        if preprocessing_parameters["num_fft_points"] is None:
-            num_fft_points = window_length_in_samp
-        else:
-            num_fft_points = preprocessing_parameters["num_fft_points"]
+        if "num_fft_points" in audio_feature_dict:
+            num_fft_points = audio_feature_dict["num_fft_points"]
             assert torch.jit.isinstance(num_fft_points, int)
 
             if num_fft_points < window_length_in_samp:
@@ -308,9 +318,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
                     "samples: {} (corresponds to window length"
                     " in s: {}".format(num_fft_points, window_length_in_s, window_length_in_samp)
                 )
+        else:
+            num_fft_points = window_length_in_samp
 
-        if "window_type" in preprocessing_parameters:
-            window_type = preprocessing_parameters["window_type"]
+        if "window_type" in audio_feature_dict:
+            window_type = audio_feature_dict["window_type"]
             assert torch.jit.isinstance(window_type, str)
         else:
             window_type = "hamming"
@@ -328,7 +340,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 audio, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type
             )
         elif feature_type == "fbank":
-            num_filter_bands = preprocessing_parameters["num_filter_bands"]
+            num_filter_bands = audio_feature_dict["num_filter_bands"]
             assert torch.jit.isinstance(num_filter_bands, int)
 
             return get_fbank(
@@ -379,6 +391,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         feature_dim = metadata[name]["feature_dim"]
         max_length = metadata[name]["max_length"]
+        audio_feature_dict = {key: value for key, value in preprocessing_parameters.items()
+                              if key in AUDIO_FEATURE_KEYS and value is not None}
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
 
         if num_audio_utterances == 0:
@@ -387,7 +401,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if feature_config[PREPROCESSING]["in_memory"]:
             audio_features = AudioFeatureMixin._process_in_memory(
                 abs_path_column,
-                preprocessing_parameters,
+                audio_feature_dict,
                 feature_dim,
                 max_length,
                 padding_value,
