@@ -70,17 +70,17 @@ class InferenceModule(nn.Module):
             predictions_flattened = self.predictor(preproc_inputs)
             return predictions_flattened
 
-    def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Any]:
+    def postprocessor_forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, Any]]:
         """Forward pass through the postprocessor."""
         postproc_outputs_flattened: Dict[str, Any] = self.postprocessor(predictions_flattened)
-        return postproc_outputs_flattened
+        # Turn flat inputs into nested predictions per feature name
+        postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
+        return postproc_outputs
 
     def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, Dict[str, Any]]:
         preproc_inputs: Dict[str, torch.Tensor] = self.preprocessor_forward(inputs)
         predictions_flattened: Dict[str, torch.Tensor] = self.predictor_forward(preproc_inputs)
-        postproc_outputs_flattened: Dict[str, Any] = self.postprocessor_forward(predictions_flattened)
-        # Turn flat inputs into nested predictions per feature name
-        postproc_outputs: Dict[str, Dict[str, Any]] = _unflatten_dict_by_feature_name(postproc_outputs_flattened)
+        postproc_outputs: Dict[str, Dict[str, Any]] = self.postprocessor_forward(predictions_flattened)
         return postproc_outputs
 
     @torch.jit.unused
