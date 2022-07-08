@@ -64,7 +64,6 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
-        self.dataset_window_status = False
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -96,7 +95,6 @@ class RayDataset(Dataset):
             pipe = self.ds.repeat()
         else:
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
-            self.dataset_window_status = True
         if shuffle:
             pipe = pipe.random_shuffle_each_window()
         return pipe
@@ -117,14 +115,6 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
-
-    @property
-    def num_partitions(self):
-        return self.ds.num_blocks()
-
-    @property
-    def window_status(self):
-        return self.dataset_window_status
 
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
@@ -162,21 +152,16 @@ class RayDatasetShard(Dataset):
         dataset_shard: DatasetPipeline,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
-        num_dataset_partitions: int,
-        window_status: bool,
     ):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.num_dataset_partitions = num_dataset_partitions
-        self.window_status = window_status
-
-        self.dataset_iter = dataset_shard.iter_datasets()
+        self.epoch_iter = dataset_shard.iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
         yield RayDatasetBatcher(
-            self.dataset_iter,
+            self.epoch_iter,
             self.features,
             self.training_set_metadata,
             batch_size,
@@ -186,10 +171,7 @@ class RayDatasetShard(Dataset):
     @lru_cache(1)
     def __len__(self):
         # TODO(travis): find way to avoid calling this, as it's expensive
-        next_iteration_length = next(self.dataset_iter).count()
-        if self.num_dataset_partitions > 1 and self.window_status:
-            return next_iteration_length * self.num_dataset_partitions
-        return next_iteration_length
+        return next(self.epoch_iter).count()
 
     @property
     def size(self):
@@ -199,7 +181,7 @@ class RayDatasetShard(Dataset):
 class RayDatasetBatcher(Batcher):
     def __init__(
         self,
-        dataset_epoch_iterator: Iterator[ray.data.Dataset],
+        dataset_epoch_iterator: Iterator[DatasetPipeline],
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
         batch_size: int,
@@ -251,17 +233,17 @@ class RayDatasetBatcher(Batcher):
         return math.ceil(self.samples_per_epoch / self.batch_size)
 
     def _fetch_next_epoch(self):
-        dataset = next(self.dataset_epoch_iterator)
+        pipeline = next(self.dataset_epoch_iterator)
 
         read_parallelism = 1
         if read_parallelism == 1:
-            self.dataset_batch_iter = self._create_async_reader(dataset)
+            self.dataset_batch_iter = self._create_async_reader(pipeline)
         elif read_parallelism > 1:
             # TODO: consider removing this. doesn't work currently and read performance seems generally
             #  very good with 1 parallelism
-            self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
+            self.dataset_batch_iter = self._create_async_parallel_reader(pipeline, read_parallelism)
         else:
-            self.dataset_batch_iter = self._create_sync_reader(dataset)
+            self.dataset_batch_iter = self._create_sync_reader(pipeline)
 
         self._step = 0
         self._fetch_next_batch()
@@ -303,18 +285,19 @@ class RayDatasetBatcher(Batcher):
 
         return res
 
-    def _create_sync_reader(self, dataset: ray.data.Dataset):
+    def _create_sync_reader(self, pipeline: DatasetPipeline):
         to_tensors = self._to_tensors_fn()
 
         def sync_read():
-            for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
-            ):
-                yield self._prepare_batch(batch)
+            for dataset in pipeline.iter_datasets():
+                for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
+                    prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
+                ):
+                    yield self._prepare_batch(batch)
 
         return sync_read()
 
-    def _create_async_reader(self, dataset: ray.data.Dataset):
+    def _create_async_reader(self, pipeline: DatasetPipeline):
         q = queue.Queue(maxsize=100)
 
         batch_size = self.batch_size
@@ -322,12 +305,14 @@ class RayDatasetBatcher(Batcher):
         to_tensors = self._to_tensors_fn()
 
         def producer():
-            for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
-            ):
-                res = self._prepare_batch(batch)
-                q.put(res)
-            q.put(None)
+            for dataset in pipeline.iter_datasets():
+                print("Dataset Count: ", dataset.count())
+                for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
+                    prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
+                ):
+                    res = self._prepare_batch(batch)
+                    q.put(res)
+                q.put(None)
 
         def async_read():
             t = threading.Thread(target=producer)
@@ -341,17 +326,18 @@ class RayDatasetBatcher(Batcher):
 
         return async_read()
 
-    def _create_async_parallel_reader(self, dataset: ray.data.Dataset, num_threads: int):
+    def _create_async_parallel_reader(self, pipeline: DatasetPipeline, num_threads: int):
         q = queue.Queue(maxsize=100)
 
         batch_size = self.batch_size
 
         to_tensors = self._to_tensors_fn()
-        splits = dataset.split(n=num_threads)
+        splits = pipeline.split(n=num_threads)
 
         def producer(i):
             for batch in (
                 splits[i]
+                .iter_datasets()
                 .map_batches(to_tensors, batch_format="pandas")
                 .iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas")
             ):
