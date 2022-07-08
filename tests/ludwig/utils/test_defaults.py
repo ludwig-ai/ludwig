@@ -274,10 +274,6 @@ def test_deprecated_split_aliases(stratify, force_split):
     if stratify is None:
         if force_split:
             assert split.get(TYPE) == "random"
-        elif force_split is False:
-            assert split.get(TYPE) == "fixed"
-        else:
-            assert split.get(TYPE) is None
     else:
         assert split.get(TYPE) == "stratify"
         assert split.get("column") == stratify

@@ -242,7 +242,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
         )
 
         if TYPE not in split_params:
-            split_params[TYPE] = "random" if force_split else "fixed"
+            split_params[TYPE] = "random"
 
     if split_params:
         preprocessing[SPLIT] = split_params
