@@ -159,7 +159,7 @@ def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     }
 
     model = LudwigModel(config)
-    train_set, val_set, test_set, _ = model.preprocess(
+    model.preprocess(
         data_csv,
         skip_save_processed_input=False,
     )
@@ -193,8 +193,7 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     df_with_images_as_numpy_arrays = pd.DataFrame(processed_df_rows)
 
     model = LudwigModel(config)
-
-    train_set, val_set, test_set, _ = model.preprocess(
+    model.preprocess(
         df_with_images_as_numpy_arrays,
         skip_save_processed_input=False,
     )
