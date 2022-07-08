@@ -1,6 +1,6 @@
 from typing import Any, Dict, Set, Union
 
-from ludwig.constants import TYPE
+from ludwig.constants import PREPROCESSING, TYPE
 
 
 def get_feature_type_parameter_values_from_section(
@@ -30,3 +30,15 @@ def get_defaults_section_for_feature_type(
         return {}
 
     return config_defaults[feature_type][config_defaults_section]
+
+
+def merge_config_preprocessing_with_feature_specific_defaults(
+    config_preprocessing: Dict[str, Any], config_defaults: Dict[str, Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
+    parameters from config defaults."""
+    preprocessing_params = {}
+    preprocessing_params.update(config_preprocessing)
+    for feature_type in config_defaults:
+        preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
+    return preprocessing_params

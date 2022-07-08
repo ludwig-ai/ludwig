@@ -62,15 +62,11 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
-base_preprocessing_undersample_majority = None
-base_preprocessing_oversample_minority = None
-base_preprocessing_sample_ratio = 1.0
-
 base_preprocessing_parameters = {
     "split": {},
-    "undersample_majority": base_preprocessing_undersample_majority,
-    "oversample_minority": base_preprocessing_oversample_minority,
-    "sample_ratio": base_preprocessing_sample_ratio,
+    "undersample_majority": None,
+    "oversample_minority": None,
+    "sample_ratio": 1.0,
 }
 
 default_feature_specific_preprocessing_parameters = {
@@ -240,20 +236,6 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
         feature_dict[LOSS].update(merge_dict(feature_dict[LOSS], default_loss_params_for_feature_type))
 
 
-def _merge_global_preprocessing_defaults_with_config_defaults(
-    preprocessing: Dict[str, Any], config_defaults: Dict[str, Any]
-):
-    """Update default_preprocessing_parameters used by the preprocessing module with updated values from
-    preprocessing and default sections of the Ludwig config."""
-    global default_preprocessing_parameters
-
-    config_defaults_feature_types = list(config_defaults.keys())
-    for feature_type in config_defaults_feature_types:
-        default_preprocessing_parameters[feature_type] = config_defaults.get(feature_type).get(PREPROCESSING, {})
-
-    default_preprocessing_parameters = merge_dict(default_preprocessing_parameters, preprocessing)
-
-
 def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
     upgrade_deprecated_fields(config)
@@ -287,9 +269,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     config[PREPROCESSING] = merge_dict(base_preprocessing_parameters, config.get(PREPROCESSING, {}))
     splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
     splitter.validate(config)
-
-    # Update default preprocessing dictionary for preprocessing module
-    _merge_global_preprocessing_defaults_with_config_defaults(config[PREPROCESSING], config[DEFAULTS])
 
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)
