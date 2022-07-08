@@ -30,12 +30,12 @@ from ludwig.utils.strings_utils import make_safe_filename
 
 
 def postprocess(
-        predictions,
-        output_features,
-        training_set_metadata,
-        output_directory="",
-        backend=LOCAL_BACKEND,
-        skip_save_unprocessed_output=False,
+    predictions,
+    output_features,
+    training_set_metadata,
+    output_directory="",
+    backend=LOCAL_BACKEND,
+    skip_save_unprocessed_output=False,
 ):
     if not backend.is_coordinator():
         # Only save unprocessed output on the coordinator
@@ -110,16 +110,16 @@ def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.T
 
 
 def convert_predictions(
-        predictions, output_features, return_type="dict", backend: Optional["Backend"] = None  # noqa: F821
+    predictions, output_features, return_type="dict", backend: Optional["Backend"] = None  # noqa: F821
 ):
     convert_fn = get_from_registry(return_type, conversion_registry)
     return convert_fn(predictions, output_features, backend)
 
 
 def convert_to_df(
-        predictions,
-        output_features,
-        backend: Optional["Backend"] = None,  # noqa: F821
+    predictions,
+    output_features,
+    backend: Optional["Backend"] = None,  # noqa: F821
 ):
     return predictions
 
