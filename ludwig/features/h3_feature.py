@@ -14,20 +14,57 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.h3_feature import H3InputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
 MAX_H3_RESOLUTION = 15
 H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
+
+
+class _H3Preprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.max_h3_resolution = MAX_H3_RESOLUTION
+        self.h3_padding_value = H3_PADDING_VALUE
+        self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
+
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            v = torch.stack(v)
+
+        if not torch.jit.isinstance(v, torch.Tensor):
+            raise ValueError(f"Unsupported input: {v}")
+
+        v = torch.nan_to_num(v, nan=self.computed_fill_value)
+        v = v.long()
+
+        outputs: List[torch.Tensor] = []
+        for v_i in v:
+            components = h3_to_components(v_i)
+            header: List[int] = [
+                components.mode,
+                components.edge,
+                components.resolution,
+                components.base_cell,
+            ]
+            cells_padding: List[int] = [self.h3_padding_value] * (self.max_h3_resolution - len(components.cells))
+            output = torch.tensor(header + components.cells + cells_padding, dtype=torch.uint8, device=v.device)
+            outputs.append(output)
+
+        return torch.stack(outputs)
 
 
 class H3FeatureMixin(BaseFeatureMixin):
@@ -44,17 +81,12 @@ class H3FeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "integer"},
-            "computed_fill_value": {"type": "integer"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
-        # todo: add cast to int64
-        return column
+        try:
+            return column.astype(int)
+        except ValueError:
+            logging.warning("H3Feature could not be read as int directly. Reading as float and converting to int.")
+            return column.astype(float).astype(int)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -63,9 +95,9 @@ class H3FeatureMixin(BaseFeatureMixin):
     @staticmethod
     def h3_to_list(h3_int):
         components = h3_to_components(h3_int)
-        header = [components["mode"], components["edge"], components["resolution"], components["base_cell"]]
-        cells_padding = [H3_PADDING_VALUE] * (MAX_H3_RESOLUTION - len(components["cells"]))
-        return header + components["cells"] + cells_padding
+        header = [components.mode, components.edge, components.resolution, components.base_cell]
+        cells_padding = [H3_PADDING_VALUE] * (MAX_H3_RESOLUTION - len(components.cells))
+        return header + components.cells + cells_padding
 
     @staticmethod
     def add_feature_data(
@@ -73,8 +105,8 @@ class H3FeatureMixin(BaseFeatureMixin):
     ):
         column = input_df[feature_config[COLUMN]]
         if column.dtype == object:
-            column = column.map(int)
-        column = column.map(H3FeatureMixin.h3_to_list)
+            column = backend.df_engine.map_objects(column, int)
+        column = backend.df_engine.map_objects(column, H3FeatureMixin.h3_to_list)
 
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(
             column, lambda x: np.array(x, dtype=np.uint8)
@@ -82,6 +114,7 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
     encoder = "embed"
 
@@ -121,3 +154,11 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _H3Preprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return H3InputFeatureConfig

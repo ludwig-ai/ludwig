@@ -22,13 +22,14 @@ from dataclasses import asdict
 import yaml
 
 from ludwig.constants import (
-    BINARY,
-    CATEGORY,
     COLUMN,
     COMBINER,
     DROP_ROW,
     EXECUTOR,
     HYPEROPT,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
@@ -37,12 +38,12 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.combiners.utils import combiner_registry
-from ludwig.schema.trainer import TrainerConfig
-from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
@@ -52,17 +53,12 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
-default_preprocessing_force_split = False
-default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
-default_preprocessing_stratify = None
 default_preprocessing_undersample_majority = None
 default_preprocessing_oversample_minority = None
 default_preprocessing_sample_ratio = 1.0
 
 default_preprocessing_parameters = {
-    "force_split": default_preprocessing_force_split,
-    "split_probabilities": default_preprocessing_split_probabilities,
-    "stratify": default_preprocessing_stratify,
+    "split": {},
     "undersample_majority": default_preprocessing_undersample_majority,
     "oversample_minority": default_preprocessing_oversample_minority,
     "sample_ratio": default_preprocessing_sample_ratio,
@@ -70,6 +66,8 @@ default_preprocessing_parameters = {
 default_preprocessing_parameters.update(
     {name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()}
 )
+
+default_model_type = MODEL_ECD
 
 default_combiner_type = "concat"
 
@@ -111,6 +109,11 @@ def _perform_sanity_checks(config):
             "config. The parameters are expected to be read"
             "as a dictionary. Please check your config format."
         )
+
+    if MODEL_TYPE in config:
+        assert isinstance(
+            config[MODEL_TYPE], str
+        ), "Ludwig expects model type as a string. Please check your model config format."
 
 
 def _set_feature_column(config: dict) -> None:
@@ -166,7 +169,7 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def merge_with_defaults(config):
+def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
     upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
@@ -176,18 +179,15 @@ def merge_with_defaults(config):
 
     # ===== Preprocessing =====
     config["preprocessing"] = merge_dict(default_preprocessing_parameters, config.get("preprocessing", {}))
+    splitter = get_splitter(**config["preprocessing"].get("split", {}))
+    splitter.validate(config)
 
-    stratify = config["preprocessing"]["stratify"]
-    if stratify is not None:
-        features = config["input_features"] + config["output_features"]
-        feature_names = {f[COLUMN] for f in features}
-        if stratify not in feature_names:
-            logger.warning("Stratify is not among the features. " "Cannot establish if it is a binary or category")
-        elif [f for f in features if f[COLUMN] == stratify][0][TYPE] not in {BINARY, CATEGORY}:
-            raise ValueError("Stratify feature must be binary or category")
+    # ===== Model Type =====
+    set_default_value(config, MODEL_TYPE, default_model_type)
 
     # ===== Training =====
-    full_trainer_config, _ = load_config_with_kwargs(TrainerConfig, config[TRAINER] if TRAINER in config else {})
+    # Convert config dictionary into an instance of BaseTrainerConfig.
+    full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config[TRAINER] if TRAINER in config else {})
     config[TRAINER] = asdict(full_trainer_config)
 
     set_default_value(
@@ -198,6 +198,9 @@ def merge_with_defaults(config):
 
     # ===== Input Features =====
     for input_feature in config["input_features"]:
+        if config[MODEL_TYPE] == MODEL_GBM:
+            input_feature["encoder"] = "passthrough"
+            remove_ecd_params(input_feature)
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
     # ===== Combiner =====
@@ -209,6 +212,9 @@ def merge_with_defaults(config):
 
     # ===== Output features =====
     for output_feature in config["output_features"]:
+        if config[MODEL_TYPE] == MODEL_GBM:
+            output_feature["decoder"] = "passthrough"
+            remove_ecd_params(output_feature)
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
 
         # By default, drop rows with missing output features
@@ -220,6 +226,34 @@ def merge_with_defaults(config):
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
     return config
+
+
+def remove_ecd_params(feature):
+    feature.pop("tied", None)
+    feature.pop("fc_layers", None)
+    feature.pop("num_layers", None)
+    feature.pop("output_size", None)
+    feature.pop("use_bias", None)
+    feature.pop("weights_initializer", None)
+    feature.pop("bias_initializer", None)
+    feature.pop("norm", None)
+    feature.pop("norm_params", None)
+    feature.pop("activation", None)
+    feature.pop("dropout", None)
+    feature.pop("embedding_size", None)
+    feature.pop("embeddings_on_cpu", None)
+    feature.pop("pretrained_embeddings", None)
+    feature.pop("embeddings_trainable", None)
+    feature.pop("embedding_initializer", None)
+    # decoder params
+    feature.pop("reduce_input", None)
+    feature.pop("dependencies", None)
+    feature.pop("reduce_dependencies", None)
+    feature.pop("loss", None)
+    feature.pop("num_fc_layers", None)
+    feature.pop("threshold", None)
+    feature.pop("clip", None)
+    feature.pop("top_k", None)
 
 
 def render_config(config=None, output=None, **kwargs):

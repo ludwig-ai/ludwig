@@ -1,7 +1,7 @@
 import importlib.util
 import os
 import tempfile
-from typing import Any, Dict, Union
+from typing import Any, Dict, Tuple, Union
 
 import torch
 
@@ -164,7 +164,7 @@ def _get_model_config(model: LudwigModel) -> str:
 
 def export_triton(
     model: LudwigModel, output_path: str, model_name: str = "ludwig_model", model_version: Union[int, str] = 1
-) -> (str, str):
+) -> Tuple[str, str]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
     # Inputs

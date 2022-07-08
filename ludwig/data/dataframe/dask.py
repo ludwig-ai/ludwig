@@ -24,6 +24,7 @@ from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.utils.data_utils import split_by_slices
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
@@ -36,10 +37,11 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self, parallelism=None, persist=True, **kwargs):
+    def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
         self._parallelism = parallelism
         self._persist = persist
-        set_scheduler(ray_dask_get)
+        if _use_ray:
+            set_scheduler(ray_dask_get)
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
@@ -50,6 +52,7 @@ class DaskEngine(DataFrameEngine):
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
         for k, v in proc_cols.items():
+            v.divisions = dataset.divisions
             dataset[k] = v
         return dataset
 
@@ -88,12 +91,29 @@ class DaskEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=("data", "object")).compute()[0]
 
-    def to_parquet(self, df, path):
+    def split(self, df, probabilities):
+        # Split the DataFrame proprotionately along partitions. This is an inexact solution designed
+        # to speed up the split process, as splitting within partitions would be significantly
+        # more expensive.
+        # TODO(travis): revisit in the future to make this more precise
+
+        # First ensure that every split receives at least one partition.
+        # If not, we need to increase the number of partitions to satisfy this constraint.
+        min_prob = min(probabilities)
+        min_partitions = int(1 / min_prob)
+        if df.npartitions < min_partitions:
+            df = df.repartition(min_partitions)
+
+        n = df.npartitions
+        slices = df.partitions
+        return split_by_slices(slices, n, probabilities)
+
+    def to_parquet(self, df, path, index=False):
         with ProgressBar():
             df.to_parquet(
                 path,
                 engine="pyarrow",
-                write_index=False,
+                write_index=index,
                 schema="infer",
             )
 

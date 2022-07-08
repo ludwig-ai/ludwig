@@ -41,7 +41,7 @@ class HorovodConfig(BackendConfig):
     """
 
     nics: Optional[Set[str]] = None
-    verbose: int = 1
+    verbose: int = 0  # Turn off verbosity by default
     key: Optional[str] = None
     ssh_port: Optional[int] = None
     ssh_identity_file: Optional[str] = None

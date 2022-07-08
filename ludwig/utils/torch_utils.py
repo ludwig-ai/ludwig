@@ -21,6 +21,22 @@ def get_torch_device():
 DEVICE = get_torch_device()
 
 
+def place_on_device(x, device):
+    """Recursively places the input on the specified device."""
+    if isinstance(x, list):
+        return [place_on_device(xi, device) for xi in x]
+    elif isinstance(x, dict):
+        return {k: place_on_device(v, device) for k, v in x.items()}
+    elif isinstance(x, set):
+        return {place_on_device(xi, device) for xi in x}
+    elif isinstance(x, tuple):
+        return tuple(place_on_device(xi, device) for xi in x)
+    elif isinstance(x, torch.Tensor):
+        return x.to(device)
+    else:
+        return x
+
+
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-padding elements per sequence in batch.
 

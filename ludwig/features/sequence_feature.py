@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from functools import partial
 from typing import Any, Dict, List
 
 import numpy as np
@@ -28,7 +29,6 @@ from ludwig.constants import (
     LAST_PREDICTIONS,
     LENGTHS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PERPLEXITY,
     PREDICTIONS,
@@ -43,6 +43,9 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
@@ -83,42 +86,91 @@ class _SequencePreprocessing(torch.nn.Module):
         self.stop_symbol = STOP_SYMBOL
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
+        self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
+        futures: List[torch.jit.Future[torch.Tensor]] = []
+        for sequence in v:
+            futures.append(
+                torch.jit.fork(
+                    self._process_sequence,
+                    sequence,
+                )
+            )
+
+        sequence_matrix = []
+        for future in futures:
+            sequence_matrix.append(torch.jit.wait(future))
+
+        return torch.stack(sequence_matrix)
+
+    def _process_sequence(self, sequence: str) -> torch.Tensor:
+        sequence = self.computed_fill_value if sequence == "nan" else sequence
+
         if self.lowercase:
-            sequences = [sequence.lower() for sequence in v]
+            sequence_str: str = sequence.lower()
         else:
-            sequences = v
+            sequence_str: str = sequence
 
-        unit_sequences = self.tokenizer(sequences)
-        # refines type of unit_sequences from Any to List[List[str]]
-        assert torch.jit.isinstance(unit_sequences, List[List[str]]), "unit_sequences is not a list of lists."
+        unit_sequence = self.tokenizer(sequence_str)
+        assert torch.jit.isinstance(unit_sequence, List[str])
 
-        sequence_matrix = torch.full(
-            [len(unit_sequences), self.max_sequence_length], self.unit_to_id[self.padding_symbol]
-        )
-        sequence_matrix[:, 0] = self.unit_to_id[self.start_symbol]
-        for sample_idx, unit_sequence in enumerate(unit_sequences):
-            # Add <EOS> if sequence length is less than max_sequence_length. Else, truncate to max_sequence_length.
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_length = len(unit_sequence)
-                sequence_matrix[sample_idx][len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
+        sequence_vector[0] = self.unit_to_id[self.start_symbol]
+        if len(unit_sequence) + 1 < self.max_sequence_length:
+            sequence_length = len(unit_sequence)
+            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        else:
+            sequence_length = self.max_sequence_length - 1
+
+        for i in range(sequence_length):
+            curr_unit = unit_sequence[i]
+            if curr_unit in self.unit_to_id:
+                curr_id = self.unit_to_id[curr_unit]
             else:
-                sequence_length = self.max_sequence_length - 1
+                curr_id = self.unit_to_id[self.unknown_symbol]
+            sequence_vector[i + 1] = curr_id
+        return sequence_vector
 
-            for i in range(sequence_length):
-                curr_unit = unit_sequence[i]
-                if curr_unit in self.unit_to_id:
-                    curr_id = self.unit_to_id[curr_unit]
+
+class _SequencePostprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.max_sequence_length = int(metadata["max_sequence_length"])
+        self.idx2str = metadata["idx2str"]
+        self.unknown_symbol = UNKNOWN_SYMBOL
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.probability_key = PROBABILITY
+
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        pred_predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        pred_probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
+        predictions: List[List[str]] = []
+        for sequence in pred_predictions:
+            sequence_predictions: List[str] = []
+            for i in range(self.max_sequence_length):
+                unit_id = int(sequence[i].item())
+                if unit_id < len(self.idx2str):
+                    unit_prediction = self.idx2str[unit_id]
                 else:
-                    curr_id = self.unit_to_id[self.unknown_symbol]
-                sequence_matrix[sample_idx][i + 1] = curr_id
+                    unit_prediction = self.unknown_symbol
+                sequence_predictions.append(unit_prediction)
+            predictions.append(sequence_predictions)
 
-        return sequence_matrix
+        probabilities, _ = torch.max(pred_probabilities, dim=-1)
+        probability = torch.sum(torch.log(probabilities), dim=-1)
+
+        return {
+            self.predictions_key: predictions,
+            self.probabilities_key: probabilities,
+            self.probability_key: probability,
+        }
 
 
 class _SequencePredict(PredictModule):
@@ -151,22 +203,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             "vocab_file": None,
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": UNKNOWN_SYMBOL,
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "max_sequence_length": {"type": "integer", "minimum": 0},
-            "most_common": {"type": "integer", "minimum": 0},
-            "padding_symbol": {"type": "string"},
-            "unknown_symbol": {"type": "string"},
-            "padding": {"type": "string", "enum": ["right", "left"]},
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "lowercase": {"type": "boolean"},
-            "vocab_file": {"type": ["string", "null"]},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
         }
 
     @staticmethod
@@ -224,8 +260,9 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = "embed"
+    encoder = "parallel_cnn"
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
@@ -264,6 +301,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "encoder", "parallel_cnn")
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceInputFeatureConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -277,6 +318,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
+@register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
     loss = {TYPE: "sequence_softmax_cross_entropy"}
@@ -438,34 +480,20 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 result[last_preds_col] = backend.df_engine.map_objects(result[last_preds_col], last_idx2str)
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
+        prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
-
-            def token_prob(prob):
-                dim = len(prob.shape)
-                if dim != 2:
-                    # probs should be shape [s, nc]
-                    raise ValueError(
-                        f"Sequence probability array should be 2-dimensional "
-                        f"shape, instead shape is {dim}-dimensional ({prob.shape})"
-                    )
-                return np.amax(prob, axis=-1)
-
-            # get probability of token in that sequence position
-            result[probs_col] = backend.df_engine.map_objects(result[probs_col], token_prob)
-
-            def compute_log_prob(row):
-                # sum log probability for tokens up to sequence length
-                # create mask only tokens for sequence length
-                seq_prob = row[probs_col]
-                length = metadata["max_sequence_length"]
-                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
-                return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
-
-            # commenting probabilities out because usually it is huge:
+            # currently does not return full probabilties because usually it is huge:
             # dataset x length x classes
-            # todo: add a mechanism for letting the user decide to save it
-            probability_col = f"{self.feature_name}_{PROBABILITY}"
-            result[probability_col] = backend.df_engine.apply_objects(result, compute_log_prob)
+            # TODO: add a mechanism for letting the user decide to save it
+            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probs_col],
+                partial(
+                    compute_sequence_probability,
+                    max_sequence_length=metadata["max_sequence_length"],
+                    return_log_prob=True,
+                ),
+            )
 
         if lengths_col in result:
             del result[lengths_col]
@@ -496,6 +524,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, "dependencies", [])
         set_default_value(output_feature, "reduce_input", SUM)
         set_default_value(output_feature, "reduce_dependencies", SUM)
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SequencePostprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceOutputFeatureConfig
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"

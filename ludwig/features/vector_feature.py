@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
@@ -28,7 +28,6 @@ from ludwig.constants import (
     LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROC_COLUMN,
@@ -38,16 +37,53 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
+
+
+class _VectorPreprocessing(torch.nn.Module):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        if torch.jit.isinstance(v, torch.Tensor):
+            out = v
+        elif torch.jit.isinstance(v, List[torch.Tensor]):
+            out = torch.stack(v)
+        elif torch.jit.isinstance(v, List[str]):
+            vectors = []
+            for sample in v:
+                vector = torch.tensor([float(x) for x in sample.split()], dtype=torch.float32)
+                vectors.append(vector)
+            out = torch.stack(vectors)
+        else:
+            raise ValueError(f"Unsupported input: {v}")
+
+        if out.isnan().any():
+            raise ValueError("Scripted NaN handling not implemented for Vector feature")
+        return out
+
+
+class _VectorPostprocessing(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.predictions_key = PREDICTIONS
+        self.logits_key = LOGITS
+
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
+
+        return {self.predictions_key: predictions, self.logits_key: logits}
 
 
 class _VectorPredict(PredictModule):
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
+
         return {self.predictions_key: logits, self.logits_key: logits}
 
 
@@ -61,16 +97,6 @@ class VectorFeatureMixin:
         return {
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": "",
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        fill_value_schema = {"type": "string", "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"}
-        return {
-            "vector_size": {"type": "integer", "minimum": 0},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": fill_value_schema,
-            "computed_fill_value": fill_value_schema,
         }
 
     @staticmethod
@@ -119,6 +145,7 @@ class VectorFeatureMixin:
         return proc_df
 
 
+@register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = "dense"
     vector_size = 0
@@ -159,7 +186,16 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "preprocessing", {})
 
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _VectorPreprocessing()
 
+    @staticmethod
+    def get_schema_cls():
+        return VectorInputFeatureConfig
+
+
+@register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = "projector"
     loss = {TYPE: MEAN_SQUARED_ERROR}
@@ -234,3 +270,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         set_default_value(output_feature, "reduce_dependencies", None)
         set_default_value(output_feature, "decoder", "projector")
         set_default_value(output_feature, "dependencies", [])
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _VectorPostprocessing()
+
+    @staticmethod
+    def get_schema_cls():
+        return VectorOutputFeatureConfig

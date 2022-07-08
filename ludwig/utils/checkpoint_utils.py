@@ -13,6 +13,8 @@ from typing import Any, Dict, Optional
 
 import torch
 
+from ludwig.utils.fs_utils import safe_move_file
+
 LATEST_FNAME = "latest.ckpt"
 
 
@@ -131,10 +133,7 @@ class Checkpoint:
                 tmp_path = os.path.join(tmpdir, "temp.ckpt")
                 torch.save(state, tmp_path)
 
-                # replace is an atomic operation in python
-                # it is POSIX compliant according to docs
-                # https://docs.python.org/3/library/os.html#os.replace
-                os.replace(tmp_path, save_path)
+                safe_move_file(tmp_path, save_path)
                 logging.debug(f"Saved checkpoint at {save_path}.")
         finally:
             # restore SIGINT handler

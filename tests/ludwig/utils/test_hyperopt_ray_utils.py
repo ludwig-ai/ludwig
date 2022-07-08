@@ -16,12 +16,15 @@ import pytest
 
 try:
     from ray import tune
+
+    from ludwig.hyperopt.execution import get_build_hyperopt_executor
 except ImportError:
     RAY_AVAILABLE = False
 else:
     RAY_AVAILABLE = True
 
-from ludwig.hyperopt.sampling import RayTuneSampler
+# from ludwig.hyperopt.sampling import RayTuneSampler   TDOO: remove
+from ludwig.constants import RAY, TYPE
 
 HYPEROPT_PARAMS = {
     "test_1": {
@@ -63,14 +66,22 @@ if RAY_AVAILABLE:
 @pytest.mark.skipif(not RAY_AVAILABLE, reason="Ray is not installed for testing")
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
-
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     expected_search_space = EXPECTED_SEARCH_SPACE[key]
 
     tune_sampler_params = hyperopt_test_params["parameters"]
 
-    tune_sampler = RayTuneSampler(parameters=tune_sampler_params)
-    search_space = tune_sampler.search_space
+    hyperopt_executor = get_build_hyperopt_executor(RAY)(
+        tune_sampler_params,
+        "output_feature",
+        "mse",
+        "minimize",
+        "validation",
+        search_alg={TYPE: "variant_generator"},
+        **{"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}}
+    )
+
+    search_space = hyperopt_executor.search_space
 
     actual_params_keys = search_space.keys()
     expected_params_keys = expected_search_space.keys()

@@ -28,7 +28,6 @@ from ludwig.constants import (
     HITS_AT_K,
     LOGITS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -41,7 +40,9 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
-from ludwig.utils import output_feature_utils
+from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -57,7 +58,7 @@ class _CategoryPreprocessing(torch.nn.Module):
         self.str2idx = metadata["str2idx"]
         self.unk = self.str2idx[UNKNOWN_SYMBOL]
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -69,24 +70,36 @@ class _CategoryPostprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.unk = UNKNOWN_SYMBOL
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
-        self.unk = ""
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        predictions = preds[self.predictions_key]
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
         inv_preds = [self.idx2str.get(pred, self.unk) for pred in predictions]
+
         return {
             self.predictions_key: inv_preds,
-            self.probabilities_key: preds[self.probabilities_key],
+            self.probabilities_key: probabilities,
         }
 
 
 class _CategoryPredict(PredictModule):
+    def __init__(self, calibration_module=None):
+        super().__init__()
+        self.calibration_module = calibration_module
+
     def forward(self, inputs: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, torch.Tensor]:
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, self.logits_key)
-        probabilities = torch.softmax(logits, -1)
-        predictions = torch.argmax(logits, -1)
+
+        if self.calibration_module is not None:
+            probabilities = self.calibration_module(logits)
+        else:
+            probabilities = torch.softmax(logits, -1)
+
+        predictions = torch.argmax(probabilities, -1)
         predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
@@ -108,16 +121,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             "lowercase": False,
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": UNKNOWN_SYMBOL,
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "most_common": {"type": "integer", "minimum": 0},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
         }
 
     @staticmethod
@@ -156,6 +159,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = "dense"
 
@@ -207,10 +211,15 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     @staticmethod
+    def get_schema_cls():
+        return CategoryInputFeatureConfig
+
+    @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _CategoryPreprocessing(metadata)
 
 
+@register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
@@ -234,8 +243,19 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
+    def create_calibration_module(self, feature) -> torch.nn.Module:
+        """Creates the appropriate calibration module based on the feature config.
+
+        Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
+        the future.
+        """
+        if feature.get("calibration"):
+            calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
+            return calibration_cls(num_classes=feature["num_classes"])
+        return None
+
     def create_predict_module(self) -> PredictModule:
-        return _CategoryPredict()
+        return _CategoryPredict(calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -425,6 +445,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryOutputFeatureConfig
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

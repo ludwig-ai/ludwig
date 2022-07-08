@@ -15,20 +15,36 @@
 # ==============================================================================
 import logging
 from datetime import date, datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.date_feature import DateInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
 DATE_VECTOR_LENGTH = 9
+
+
+class _DatePreprocessing(torch.nn.Module):
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            v = torch.stack(v)
+
+        if torch.jit.isinstance(v, torch.Tensor):
+            return v.to(dtype=torch.int)
+        else:
+            raise ValueError(f"Unsupported input: {v}")
 
 
 class DateFeatureMixin(BaseFeatureMixin):
@@ -39,15 +55,6 @@ class DateFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_defaults():
         return {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "", "datetime_format": None}
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-            "datetime_format": {"type": ["string", "null"]},
-        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -72,7 +79,7 @@ class DateFeatureMixin(BaseFeatureMixin):
                 "in the config. "
                 "The preprocessing fill in value will be used."
                 "For more details: "
-                "https://ludwig.ai/user_guide/#date-features-preprocessing"
+                "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/date_features/#date-features-preprocessing"  # noqa
             )
             fill_value = preprocessing_parameters["fill_value"]
             if fill_value != "":
@@ -80,23 +87,9 @@ class DateFeatureMixin(BaseFeatureMixin):
             else:
                 datetime_obj = datetime.now()
 
-        yearday = datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
+        return create_vector_from_datetime_obj(datetime_obj)
 
-        midnight = datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
-        second_of_day = (datetime_obj - midnight).seconds
-
-        return [
-            datetime_obj.year,
-            datetime_obj.month,
-            datetime_obj.day,
-            datetime_obj.weekday(),
-            yearday,
-            datetime_obj.hour,
-            datetime_obj.minute,
-            datetime_obj.second,
-            second_of_day,
-        ]
-
+    @staticmethod
     def add_feature_data(
         feature_config: Dict[str, Any],
         input_df: DataFrame,
@@ -116,6 +109,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
     encoder = "embed"
 
@@ -155,3 +149,30 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def get_schema_cls():
+        return DateInputFeatureConfig
+
+    @staticmethod
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _DatePreprocessing(metadata)
+
+
+def create_vector_from_datetime_obj(datetime_obj):
+    yearday = datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
+
+    midnight = datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    second_of_day = (datetime_obj - midnight).seconds
+
+    return [
+        datetime_obj.year,
+        datetime_obj.month,
+        datetime_obj.day,
+        datetime_obj.weekday(),
+        yearday,
+        datetime_obj.hour,
+        datetime_obj.minute,
+        datetime_obj.second,
+        second_of_day,
+    ]

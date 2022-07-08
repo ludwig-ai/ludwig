@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import List, Set, Union
 
 import dask.dataframe as dd
+import numpy as np
 import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
@@ -189,6 +190,23 @@ def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> Da
     return get_dataset_info_from_source(source)
 
 
+def is_field_boolean(source: DataSource, field: str) -> bool:
+    num_unique_values, unique_values, _ = source.get_distinct_values(field, max_values_to_return=4)
+    if num_unique_values <= 3:
+        for entry in unique_values:
+            try:
+                if np.isnan(entry):
+                    continue
+            except TypeError:
+                # For some field types such as object arrays np.isnan throws a TypeError
+                # we catch it since we know in this case it is not a bool.
+                return False
+            if isinstance(entry, bool):
+                continue
+            return False
+    return True
+
+
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     row_count = len(source)
     fields = []
@@ -201,6 +219,12 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         image_values = source.get_image_values(field)
         audio_values = source.get_audio_values(field)
         avg_words = None
+        if dtype == "object":
+            # Check if it is a nullboolean field. We do this since if you read a csv with
+            # pandas that has a column of booleans and some missing values, the column is
+            # interpreted as object dtype instead of bool
+            if is_field_boolean(source, field):
+                dtype = "bool"
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
         fields.append(

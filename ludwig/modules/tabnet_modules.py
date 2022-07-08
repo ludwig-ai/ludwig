@@ -127,9 +127,10 @@ class TabNet(LudwigModule):
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
-            total_entropy += (
-                torch.mean(torch.sum(-mask_values * torch.log(mask_values + 0.00001), dim=1)) / self.num_steps
-            )
+            if self.sparsity.item() != 0.0:
+                total_entropy += (
+                    torch.mean(torch.sum(-mask_values * torch.log(mask_values + 0.00001), dim=1)) / self.num_steps
+                )
 
             masks.append(torch.unsqueeze(torch.unsqueeze(mask_values, 0), 3))  # [1, b_s, i_s, 1]
 

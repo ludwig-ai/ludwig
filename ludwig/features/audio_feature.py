@@ -21,20 +21,11 @@ import numpy as np
 import torch
 import torchaudio
 
-from ludwig.constants import (
-    AUDIO,
-    BACKFILL,
-    COLUMN,
-    MISSING_VALUE_STRATEGY_OPTIONS,
-    NAME,
-    PREPROCESSING,
-    PROC_COLUMN,
-    SRC,
-    TIED,
-    TYPE,
-)
+from ludwig.constants import AUDIO, BACKFILL, COLUMN, NAME, PREPROCESSING, PROC_COLUMN, SRC, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -66,7 +57,7 @@ class _AudioPreprocessing(torch.nn.Module):
         self.padding_value = metadata["preprocessing"]["padding_value"]
         self.normalization_type = metadata["preprocessing"]["norm"]
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[Tuple[torch.Tensor, int]]):
             raise ValueError(f"Unsupported input: {v}")
 
@@ -103,27 +94,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
                 "window_length_in_s": 0.04,
                 "window_shift_in_s": 0.02,
                 "num_filter_bands": 80,
-            },
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "in_memory": {"type": "boolean"},
-            "padding_value": {"type": "number", "minimum": 0},
-            "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
-            "audio_feature": {
-                "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
-                    "window_length_in_s": {"type": "number", "minimum": 0},
-                    "window_shift_in_s": {"type": "number", "minimum": 0},
-                    "num_fft_points": {"type": "number", "minimum": 0},
-                    "window_type": {"type": "string"},
-                    "num_filter_bands": {"type": "number", "minimum": 0},
-                },
             },
         }
 
@@ -285,7 +255,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         feature_length = audio_feature.shape[0]
         broadcast_feature_length = min(feature_length, max_length)
-        audio_feature_padded = torch.full((max_length, feature_dim), padding_value, dtype=torch.float32)
+        audio_feature_padded = torch.full(
+            (max_length, feature_dim), padding_value, dtype=torch.float32, device=audio_feature.device
+        )
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
 
         return audio_feature_padded
@@ -461,6 +433,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f"{feature_type} is not recognized.")
 
 
+@register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -503,3 +476,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _AudioPreprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return AudioInputFeatureConfig

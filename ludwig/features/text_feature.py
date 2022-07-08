@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from functools import partial
 from typing import Any, Dict
 
 import torch
@@ -26,7 +27,6 @@ from ludwig.constants import (
     LAST_PREDICTIONS,
     LENGTHS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PERPLEXITY,
     PREDICTIONS,
@@ -40,8 +40,15 @@ from ludwig.constants import (
 )
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
-from ludwig.features.feature_utils import compute_sequence_probability
-from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
+from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.features.sequence_feature import (
+    _SequencePostprocessing,
+    _SequencePreprocessing,
+    SequenceInputFeature,
+    SequenceOutputFeature,
+)
+from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import (
@@ -51,7 +58,6 @@ from ludwig.utils.strings_utils import (
     SpecialSymbol,
     UNKNOWN_SYMBOL,
 )
-from ludwig.utils.tokenizers import tokenizer_registry
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -76,23 +82,6 @@ class TextFeatureMixin(BaseFeatureMixin):
             "lowercase": True,
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": UNKNOWN_SYMBOL,
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "pretrained_model_name_or_path": {"type": ["string", "null"]},
-            "vocab_file": {"type": ["string", "null"]},
-            "max_sequence_length": {"type": "integer", "minimum": 0},
-            "most_common": {"type": "integer", "minimum": 0},
-            "padding_symbol": {"type": "string"},
-            "unknown_symbol": {"type": "string"},
-            "padding": {"type": "string", "enum": ["right", "left"]},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
         }
 
     @staticmethod
@@ -198,6 +187,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -249,6 +239,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         if hasattr(encoder_class, "default_params"):
             set_default_values(input_feature, encoder_class.default_params)
 
+    @staticmethod
+    def get_schema_cls():
+        return TextInputFeatureConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
@@ -258,6 +252,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return _SequencePreprocessing(metadata)
 
 
+@register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
@@ -344,19 +339,18 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
         if probs_col in result:
-
+            # currently does not return full probabilties because usually it is huge:
+            # dataset x length x classes
+            # TODO: add a mechanism for letting the user decide to save it
+            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],
-                compute_sequence_probability,
+                partial(
+                    compute_sequence_probability,
+                    max_sequence_length=metadata["max_sequence_length"],
+                    return_log_prob=True,
+                ),
             )
-
-            # commenting probabilities out because usually it is huge:
-            # dataset x length x classes
-            # todo: add a mechanism for letting the user decide to save it
-            # result[probs_col] = backend.df_engine.map_objects(
-            #     result[probs_col],
-            #     lambda prob: np.amax(prob, axis=-1),
-            # )
 
         lengths_col = f"{self.feature_name}_{LENGTHS}"
         if lengths_col in result:
@@ -365,8 +359,16 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         return result
 
     @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SequencePostprocessing(metadata)
+
+    @staticmethod
     def populate_defaults(output_feature):
         SequenceOutputFeature.populate_defaults(output_feature)
+
+    @staticmethod
+    def get_schema_cls():
+        return TextOutputFeatureConfig
 
     def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"

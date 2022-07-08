@@ -23,7 +23,6 @@ import signal
 import sys
 import threading
 import time
-from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -33,12 +32,11 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
@@ -47,7 +45,9 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.trainers.base import BaseTrainer
+from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -66,61 +66,17 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
-class BaseTrainer(ABC):
-    @abstractmethod
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def train_online(
-        self,
-        dataset,
-    ):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def tune_batch_size(
-        self,
-        config: Dict[str, Any],
-        training_set: Dataset,
-        random_seed: int = default_random_seed,
-        max_trials: int = 10,
-        halving_limit: int = 3,
-    ) -> int:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def validation_field(self):
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def validation_metric(self):
-        raise NotImplementedError()
-
-    # Remote implementations may override this
-    def shutdown(self):
-        pass
-
-    # Functions needed to treat Trainer as a context manager
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.shutdown()
-
-
+@register_trainer("trainer", MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
 
     @staticmethod
     def get_schema_cls():
-        return TrainerConfig
+        return ECDTrainerConfig
 
     def __init__(
         self,
-        config: TrainerConfig,
+        config: ECDTrainerConfig,
         model: ECD,
         resume: float = False,
         skip_save_model: bool = False,
@@ -140,15 +96,15 @@ class Trainer(BaseTrainer):
         :param resume: Resume training a model that was being trained. (default: False).
         :type resume: Boolean
         :param skip_save_model: Disables saving model weights and hyperparameters each time the model improves. By
-                default Ludwig saves model weights after each epoch the validation metric (improves, but if the model is
-                really big that can be time consuming. If you do not want to keep the weights and just find out what
-                performance a model can get with a set of hyperparameters, use this parameter to skip it, but the model
-                will not be loadable later on. (default: False).
+                default Ludwig saves model weights after each round of evaluation the validation metric (improves, but
+                if the model is really big that can be time consuming. If you do not want to keep the weights and just
+                find out what performance a model can get with a set of hyperparameters, use this parameter to skip it,
+                but the model will not be loadable later on. (default: False).
         :type skip_save_model: Boolean
-        :param skip_save_progress: Disables saving progress each epoch. By default Ludwig saves weights and stats after
-                each epoch for enabling resuming of training, but if the model is really big that can be time consuming
-                and will uses twice as much space, use this parameter to skip it, but training cannot be resumed later
-                on. (default: False).
+        :param skip_save_progress: Disables saving progress each round of evaluation. By default Ludwig saves weights
+                and stats after each round of evaluation for enabling resuming of training, but if the model is really
+                big that can be time consuming and will uses twice as much space, use this parameter to skip it, but
+                training cannot be resumed later on. (default: False).
         :type skip_save_progress: Boolean
         :param skip_save_log: Disables saving TensorBoard logs. By default Ludwig saves logs for the TensorBoard, but if
                 it is not needed turning it off can slightly increase the overall speed. (default: False).
@@ -163,8 +119,8 @@ class Trainer(BaseTrainer):
         :type horovod: dict
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
-        :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
-                `ludwig.models.trainer.TrainerConfig()`).
+        :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
+                (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
 
         self.epochs = config.epochs
@@ -355,11 +311,15 @@ class Trainer(BaseTrainer):
             while not batcher.last_batch() and step_count < total_steps:
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                    i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                        self.device
+                    )
                     for i_feat in self.model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
+                        self.device
+                    )
                     for o_feat in self.model.output_features.values()
                 }
 
@@ -421,11 +381,15 @@ class Trainer(BaseTrainer):
                 while not batcher.last_batch() and step_count < total_training_steps:
                     batch = batcher.next_batch()
                     inputs = {
-                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                            self.device
+                        )
                         for i_feat in self.model.input_features.values()
                     }
                     targets = {
-                        o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                        o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
+                            self.device
+                        )
                         for o_feat in self.model.output_features.values()
                     }
 
@@ -533,7 +497,6 @@ class Trainer(BaseTrainer):
         train_summary_writer,
         validation_summary_writer,
         test_summary_writer,
-        model_weights_path,
         model_hyperparameters_path,
         output_features,
         metrics_names,
@@ -600,7 +563,7 @@ class Trainer(BaseTrainer):
             # eval metrics on validation set
             self.evaluation(
                 validation_set,
-                "vali",
+                VALIDATION,
                 progress_tracker.validation_metrics,
                 tables,
                 self.eval_batch_size,
@@ -645,7 +608,7 @@ class Trainer(BaseTrainer):
                 progress_tracker,
                 self.validation_field,
                 self.validation_metric,
-                model_weights_path,
+                save_path,
                 model_hyperparameters_path,
                 self.reduce_learning_rate_on_plateau,
                 self.reduce_learning_rate_on_plateau_patience,
@@ -664,7 +627,7 @@ class Trainer(BaseTrainer):
         else:
             # There's no validation, so we save the model.
             if self.is_coordinator() and not self.skip_save_model:
-                torch.save(self.model.state_dict(), model_weights_path)
+                self.model.save(save_path)
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
@@ -727,12 +690,11 @@ class Trainer(BaseTrainer):
             )
 
         # ====== Setup file names =======
-        model_weights_path = model_hyperparameters_path = None
+        model_hyperparameters_path = None
         training_checkpoints_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
-            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
             tensorboard_log_dir = os.path.join(save_path, "logs")
@@ -852,7 +814,6 @@ class Trainer(BaseTrainer):
                         start_time,
                         validation_summary_writer,
                         test_summary_writer,
-                        model_weights_path,
                         model_hyperparameters_path,
                         output_features,
                         metrics_names,
@@ -897,7 +858,7 @@ class Trainer(BaseTrainer):
 
             # Load the best weights from saved checkpoint
             if self.is_coordinator() and not self.skip_save_model:
-                self.model.load_state_dict(torch.load(model_weights_path))
+                self.model.load(save_path)
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
@@ -923,7 +884,6 @@ class Trainer(BaseTrainer):
         start_time,
         validation_summary_writer,
         test_summary_writer,
-        model_weights_path,
         model_hyperparameters_path,
         output_features,
         metrics_names,
@@ -971,11 +931,11 @@ class Trainer(BaseTrainer):
 
             # Move tensors to cuda here.
             inputs = {
-                i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
                 for i_feat in self.model.input_features.values()
             }
             targets = {
-                o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
                 for o_feat in self.model.output_features.values()
             }
 
@@ -1016,7 +976,6 @@ class Trainer(BaseTrainer):
                     train_summary_writer,
                     validation_summary_writer,
                     test_summary_writer,
-                    model_weights_path,
                     model_hyperparameters_path,
                     output_features,
                     metrics_names,
@@ -1050,11 +1009,15 @@ class Trainer(BaseTrainer):
             while not batcher.last_batch():
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                    i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                        self.device
+                    )
                     for i_feat in self.model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
+                        self.device
+                    )
                     for o_feat in self.model.output_features.values()
                 }
 
@@ -1115,7 +1078,7 @@ class Trainer(BaseTrainer):
         progress_tracker,
         validation_output_feature_name,
         validation_metric,
-        model_weights_path,
+        save_path,
         model_hyperparameters_path,
         reduce_learning_rate_on_plateau,
         reduce_learning_rate_on_plateau_patience,
@@ -1142,13 +1105,15 @@ class Trainer(BaseTrainer):
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
         validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
-        if improved(validation_metrics[validation_metric][-1][-1], progress_tracker.best_eval_metric):
+        last_validation_metric = validation_metrics[validation_metric][-1]
+        last_validation_metric_value = last_validation_metric[-1]
+
+        if improved(last_validation_metric_value, progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric = progress_tracker.validation_metrics[validation_output_feature_name][
-                validation_metric
-            ][-1][-1]
+            progress_tracker.best_eval_metric = last_validation_metric_value
+
             if self.is_coordinator() and not skip_save_model:
-                torch.save(self.model.state_dict(), model_weights_path)
+                self.model.save(save_path)
                 logger.info(
                     f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
                 )
@@ -1180,10 +1145,10 @@ class Trainer(BaseTrainer):
                 and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
             ):
                 logger.info(
-                    f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} epoch(s) "
+                    f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} step(s) "
                     f"ago, improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
                     f"{reduce_learning_rate_eval_metric} happened "
-                    f"{progress_tracker.last_reduce_learning_rate_eval_metric_improvement} epoch(s) ago."
+                    f"{progress_tracker.last_reduce_learning_rate_eval_metric_improvement} step(s) ago."
                 )
 
         # ========== Increase Batch Size Plateau logic =========
@@ -1209,10 +1174,10 @@ class Trainer(BaseTrainer):
             ):
                 logger.info(
                     "Last batch size increase "
-                    f"happened {progress_tracker.last_increase_batch_size} epoch(s) ago, "
+                    f"happened {progress_tracker.last_increase_batch_size} step(s) ago, "
                     f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
                     f"{increase_batch_size_eval_metric} happened "
-                    f"{progress_tracker.last_increase_batch_size_eval_metric_improvement} epoch(s) ago."
+                    f"{progress_tracker.last_increase_batch_size_eval_metric_improvement} step(s) ago."
                 )
 
         # ========== Early Stop logic ==========
@@ -1269,14 +1234,15 @@ class Trainer(BaseTrainer):
 
     def reduce_learning_rate(
         self,
-        progress_tracker,
-        validation_output_feature_name,
-        reduce_learning_rate_on_plateau,
-        reduce_learning_rate_on_plateau_patience,
-        reduce_learning_rate_on_plateau_rate,
-        reduce_learning_rate_eval_metric=LOSS,
-        reduce_learning_rate_eval_split=TRAINING,
+        progress_tracker: ProgressTracker,
+        validation_output_feature_name: str,
+        reduce_learning_rate_on_plateau: int,
+        reduce_learning_rate_on_plateau_patience: int,
+        reduce_learning_rate_on_plateau_rate: float,
+        reduce_learning_rate_eval_metric: str = LOSS,
+        reduce_learning_rate_eval_split: str = TRAINING,
     ):
+        """Uses the progress tracker to determine if the learning rate should be reduced."""
         if not (progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau):
 
             if reduce_learning_rate_eval_split == TRAINING:
@@ -1287,21 +1253,22 @@ class Trainer(BaseTrainer):
                 split_metrics = progress_tracker.test_metrics
 
             validation_metric = reduce_learning_rate_eval_metric
-            last_metric_value = split_metrics[validation_output_feature_name][validation_metric][-1]
+            last_metric: TrainerMetric = split_metrics[validation_output_feature_name][validation_metric][-1]
+            last_metric_value = last_metric[-1]
 
             improved = get_improved_fun(validation_metric)
             is_improved = improved(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
             if is_improved:
                 # we update the best metric value and set it to the current one
-                # and reset last improvement epoch count
+                # and reset last improvement step count
                 progress_tracker.best_reduce_learning_rate_eval_metric = last_metric_value
                 progress_tracker.last_reduce_learning_rate_eval_metric_improvement = 0
             else:
                 progress_tracker.last_reduce_learning_rate_eval_metric_improvement += 1
                 if not is_improved and (
-                    # learning rate reduction happened more than N epochs ago
+                    # learning rate reduction happened more than N steps ago
                     progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
-                    # No improvement of the evaluation metric since more than N epochs ago
+                    # No improvement of the evaluation metric since more than N steps ago
                     and progress_tracker.last_reduce_learning_rate_eval_metric_improvement
                     >= reduce_learning_rate_on_plateau_patience
                 ):
@@ -1327,15 +1294,16 @@ class Trainer(BaseTrainer):
 
     def increase_batch_size(
         self,
-        progress_tracker,
-        validation_output_feature_name,
-        increase_batch_size_on_plateau,
-        increase_batch_size_on_plateau_patience,
-        increase_batch_size_on_plateau_rate,
-        increase_batch_size_on_plateau_max,
-        increase_batch_size_eval_metric=LOSS,
-        increase_batch_size_eval_split=TRAINING,
+        progress_tracker: ProgressTracker,
+        validation_output_feature_name: str,
+        increase_batch_size_on_plateau: int,
+        increase_batch_size_on_plateau_patience: int,
+        increase_batch_size_on_plateau_rate: float,
+        increase_batch_size_on_plateau_max: int,
+        increase_batch_size_eval_metric: str = LOSS,
+        increase_batch_size_eval_split: str = TRAINING,
     ):
+        """Uses the progress tracker to determine if the batch size should be increased."""
         if (
             not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
             and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
@@ -1349,22 +1317,23 @@ class Trainer(BaseTrainer):
                 split_metrics = progress_tracker.test_metrics
 
             validation_metric = increase_batch_size_eval_metric
-            last_metric_value = split_metrics[validation_output_feature_name][validation_metric][-1]
+            last_metric = split_metrics[validation_output_feature_name][validation_metric][-1]
+            last_metric_value = last_metric[-1]
 
             improved = get_improved_fun(validation_metric)
             is_improved = improved(last_metric_value, progress_tracker.best_increase_batch_size_eval_metric)
             if is_improved:
                 # We update the best metric value and set it to the current one, and reset last
-                # improvement epoch count
+                # improvement step count
                 progress_tracker.best_increase_batch_size_eval_metric = last_metric_value
                 progress_tracker.last_increase_batch_size_eval_metric_improvement = 0
             else:
                 progress_tracker.last_increase_batch_size_eval_metric_improvement += 1
                 if not is_improved and (
-                    # Batch size increase happened more than N epochs ago
+                    # Batch size increase happened more than N steps ago
                     progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
                     and (
-                        # No improvement of the evaluation metric since more than N epochs ago
+                        # No improvement of the evaluation metric since more than N steps ago
                         progress_tracker.last_increase_batch_size_eval_metric_improvement
                         >= increase_batch_size_on_plateau_patience
                     )

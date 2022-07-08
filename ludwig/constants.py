@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
+
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"
@@ -114,6 +117,9 @@ VALIDATION = "validation"
 TEST = "test"
 SPLIT = "split"
 FULL = "full"
+TRAIN_SPLIT = 0
+VALIDATION_SPLIT = 1
+TEST_SPLIT = 2
 
 META = "meta"
 
@@ -126,6 +132,9 @@ SAMPLER = "sampler"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
 
 NAME = "name"
 COLUMN = "column"
@@ -150,6 +159,11 @@ CONFIG = "config"
 
 COMBINER = "combiner"
 
+ENCODER = "encoder"
+DECODER = "decoder"
+
+DEFAULTS = "defaults"
+
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05
 
@@ -173,4 +187,7 @@ CONTINUE_PROMPT = "Do you want to continue? "
 
 DEFAULT_AUDIO_TENSOR_LENGTH = 70000
 
+MODEL_TYPE = "model_type"
+MODEL_ECD = "ecd"
+MODEL_GBM = "gbm"
 DASK_MODULE_NAME = "dask.dataframe"

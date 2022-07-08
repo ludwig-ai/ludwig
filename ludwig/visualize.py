@@ -26,6 +26,7 @@ import sklearn
 from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
+from yaml import warnings
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
@@ -44,7 +45,6 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.strings_utils import column_is_bool
 
 logger = logging.getLogger(__name__)
 
@@ -68,15 +68,8 @@ def _convert_ground_truth(ground_truth, feature_metadata, ground_truth_apply_idx
             # non-standard boolean representation
             ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2bool"], ground_truth_apply_idx)
         else:
-            # If the values in column could have been inferred as boolean dtype, cast (strings) as booleans.
-            # This preserves the behavior of this feature before #2058.
-            if column_is_bool(ground_truth):
-                ground_truth = _vectorize_ground_truth(
-                    ground_truth, {"false": False, "False": False, "true": True, "True": True}, ground_truth_apply_idx
-                )
-            else:
-                # standard boolean representation
-                ground_truth = ground_truth.values
+            # standard boolean representation
+            ground_truth = ground_truth.values
 
         # ensure positive_label is 1 for binary feature
         positive_label = 1
@@ -233,7 +226,10 @@ def _extract_ground_truth_values(
     reader = get_from_registry(data_format, external_data_reader_registry)
 
     # retrieve ground truth from source data set
-    gt_df = reader(ground_truth)
+    if data_format in {"csv", "tsv"}:
+        gt_df = reader(ground_truth, dtype=None)  # allow type inference
+    else:
+        gt_df = reader(ground_truth)
 
     # extract ground truth for visualization
     if SPLIT in gt_df:
@@ -242,8 +238,25 @@ def _extract_ground_truth_values(
         gt = gt_df[output_feature_name][split == ground_truth_split]
     elif split_file is not None:
         # retrieve from split file
-        split = load_array(split_file)
-        gt = gt_df[output_feature_name][split == ground_truth_split]
+        if split_file.endswith(".csv"):
+            # Legacy code path for previous split file format
+            warnings.warn(
+                "Using a CSV split file is deprecated and will be removed in v0.7. "
+                "Please retrain or convert to Parquet",
+                DeprecationWarning,
+            )
+            split = load_array(split_file)
+            mask = split == ground_truth_split
+        else:
+            split = pd.read_parquet(split_file)
+
+            # Realign index from the split file with the ground truth to account for
+            # dropped rows during preprocessing.
+            # https://stackoverflow.com/a/65731168
+            mask = split.iloc[:, 0] == ground_truth_split
+            mask = mask.reindex(gt_df.index, fill_value=False)
+
+        gt = gt_df[output_feature_name][mask]
     else:
         # use all the data in ground_truth
         gt = gt_df[output_feature_name]

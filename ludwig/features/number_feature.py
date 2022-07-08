@@ -30,7 +30,6 @@ from ludwig.constants import (
     LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     NUMBER,
     PREDICTIONS,
@@ -43,6 +42,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -176,11 +177,15 @@ def get_transformer(metadata, preprocessing_parameters):
 class _NumberPreprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
+        self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, torch.Tensor):
             raise ValueError(f"Unsupported input: {v}")
+
+        v = torch.nan_to_num(v, nan=self.computed_fill_value)
+
         v = v.to(dtype=torch.float32)
         return self.numeric_transformer.transform_inference(v)
 
@@ -191,8 +196,10 @@ class _NumberPostprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
         self.predictions_key = PREDICTIONS
 
-    def forward(self, preds: Dict[str, torch.Tensor]) -> Dict[str, Any]:
-        return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(preds[self.predictions_key])}
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+
+        return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(predictions)}
 
 
 class _NumberPredict(PredictModule):
@@ -222,21 +229,6 @@ class NumberFeatureMixin(BaseFeatureMixin):
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": 0,
             "normalization": None,
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {
-                "type": "string",
-                "enum": MISSING_VALUE_STRATEGY_OPTIONS,
-            },
-            "fill_value": {"type": "number"},
-            "computed_fill_value": {"type": "number"},
-            "normalization": {
-                "type": ["string", "null"],
-                "enum": list(numeric_transformation_registry.keys()),
-            },
         }
 
     @staticmethod
@@ -289,6 +281,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
     encoder = "passthrough"
 
@@ -333,6 +326,10 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return NumberInputFeatureConfig
+
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "float32"
@@ -342,6 +339,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return _NumberPreprocessing(metadata)
 
 
+@register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     decoder = "regressor"
     loss = {TYPE: MEAN_SQUARED_ERROR}
@@ -442,6 +440,10 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return NumberOutputFeatureConfig
 
     @classmethod
     def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:

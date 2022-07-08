@@ -26,7 +26,6 @@ from ludwig.constants import (
     JACCARD,
     LOGITS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -39,6 +38,8 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
+from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
@@ -70,7 +71,7 @@ class _SetPreprocessing(torch.nn.Module):
         self.unit_to_id = metadata["str2idx"]
         self.is_bag = is_bag
 
-    def forward(self, v: TorchscriptPreprocessingInput):
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of counts for each token."""
         if not torch.jit.isinstance(v, List[str]):
             raise ValueError(f"Unsupported input: {v}")
@@ -102,6 +103,40 @@ class _SetPreprocessing(torch.nn.Module):
         return set_matrix
 
 
+class _SetPostprocessing(torch.nn.Module):
+    """Torchscript-enabled version of postprocessing done by SetFeatureMixin.add_feature_data."""
+
+    def __init__(self, metadata: Dict[str, Any]):
+        super().__init__()
+        self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
+        self.predictions_key = PREDICTIONS
+        self.probabilities_key = PROBABILITIES
+        self.unk = UNKNOWN_SYMBOL
+
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+        predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
+        probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
+
+        inv_preds: List[List[str]] = []
+        filtered_probs: List[torch.Tensor] = []
+        for sample_idx, sample in enumerate(predictions):
+            sample_preds: List[str] = []
+            pos_sample_idxs: List[int] = []
+            pos_class_idxs: List[int] = []
+            for class_idx, is_positive in enumerate(sample):
+                if is_positive == 1:
+                    sample_preds.append(self.idx2str.get(class_idx, self.unk))
+                    pos_sample_idxs.append(sample_idx)
+                    pos_class_idxs.append(class_idx)
+            inv_preds.append(sample_preds)
+            filtered_probs.append(probabilities[pos_sample_idxs, pos_class_idxs])
+
+        return {
+            self.predictions_key: inv_preds,
+            self.probabilities_key: filtered_probs,
+        }
+
+
 class _SetPredict(PredictModule):
     def __init__(self, threshold):
         super().__init__()
@@ -130,17 +165,6 @@ class SetFeatureMixin(BaseFeatureMixin):
             "lowercase": False,
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": UNKNOWN_SYMBOL,
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "most_common": {"type": "integer", "minimum": 0},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
         }
 
     @staticmethod
@@ -189,6 +213,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = "embed"
     vocab = []
@@ -225,6 +250,10 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    @staticmethod
+    def get_schema_cls():
+        return SetInputFeatureConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
@@ -234,6 +263,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return _SetPreprocessing(metadata)
 
 
+@register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
@@ -339,7 +369,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             threshold = self.threshold
 
             def get_prob(prob_set):
-                return [prob for prob in prob_set if prob >= threshold]
+                # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
+                return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
 
             result[probabilities_col] = backend.df_engine.map_objects(
                 result[probabilities_col],
@@ -347,6 +378,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             )
 
         return result
+
+    @staticmethod
+    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        return _SetPostprocessing(metadata)
 
     @staticmethod
     def populate_defaults(output_feature):
@@ -358,3 +393,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, "dependencies", [])
         set_default_value(output_feature, "reduce_input", SUM)
         set_default_value(output_feature, "reduce_dependencies", SUM)
+
+    @staticmethod
+    def get_schema_cls():
+        return SetOutputFeatureConfig

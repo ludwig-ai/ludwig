@@ -1,5 +1,4 @@
-"""Ludwig: Data-centric declarative deep learning framework
-"""
+"""Ludwig: Data-centric declarative deep learning framework."""
 from codecs import open
 from os import path
 
@@ -28,6 +27,12 @@ with open(path.join(here, "requirements_distributed.txt"), encoding="utf-8") as 
 with open(path.join(here, "requirements_hyperopt.txt"), encoding="utf-8") as f:
     extra_requirements["hyperopt"] = [line.strip() for line in f if line]
 
+with open(path.join(here, "requirements_tree.txt"), encoding="utf-8") as f:
+    extra_requirements["tree"] = [line.strip() for line in f if line]
+
+with open(path.join(here, "requirements_explain.txt"), encoding="utf-8") as f:
+    extra_requirements["explain"] = [line.strip() for line in f if line]
+
 extra_requirements["full"] = [item for sublist in extra_requirements.values() for item in sublist]
 
 with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
@@ -35,7 +40,7 @@ with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
 
 setup(
     name="ludwig",
-    version="0.5.2",
+    version="0.6.dev",
     description="Data-centric declarative deep learning framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
