@@ -67,36 +67,6 @@ class ECD(BaseModel):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    def get_model_inputs(self):
-        inputs = {
-            input_feature_name: input_feature.create_sample_input()
-            for input_feature_name, input_feature in self.input_features.items()
-        }
-        return inputs
-
-    # Return total number of parameters in model
-    def get_model_size(self) -> int:
-        model_tensors = self.collect_weights()
-        total_size = 0
-        for tnsr in model_tensors:
-            total_size += tnsr[1].detach().cpu().numpy().size
-        return total_size
-
-    def to_torchscript(self):
-        self.eval()
-        model_inputs = self.get_model_inputs()
-        # We set strict=False to enable dict inputs and outputs.
-        return torch.jit.trace(self, model_inputs, strict=False)
-
-    def save_torchscript(self, save_path):
-        traced = self.to_torchscript()
-        traced.save(save_path)
-
-    @property
-    def input_shape(self):
-        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
-        return torch.Size([1, 1])
-
     def encode(
         self,
         inputs: Union[
