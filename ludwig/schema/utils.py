@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import typing
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
+from typing import Iterable
 from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Optional, Sequence, Set, Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
@@ -73,7 +75,7 @@ def load_config_with_kwargs(
     }
 
 
-def create_anyof_cond(if_pred: tDict, then_preds: List[tDict]):
+def create_anyof_cond(if_pred: TDict, then_preds: TList[TDict]):
     """Returns a JSONSchema conditional for the given if-then predicates which matches any of the predicates in
     then_preds."""
     return {
@@ -82,7 +84,7 @@ def create_anyof_cond(if_pred: tDict, then_preds: List[tDict]):
     }
 
 
-def create_cond(if_pred: tDict, then_pred: tDict):
+def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
@@ -148,6 +150,71 @@ def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True
     return StringOptions(["l1", "l2", "l1_l2"], default=default, allow_none=allow_none, description=description)
 
 
+class OneOfOrURL(validate.Validator):
+    """Custom validator which combines OneOf and URL. Input must be either one of the provided choices or a valid
+    URL.
+
+    :param choices: A sequence of valid values.
+    :param labels: Optional sequence of labels to pair with the choices.
+    :param allow_url: Whether the field is allowed to be a URL.
+    :param relative: Whether to allow relative URLs.
+    :param schemes: Valid schemes. By default, ``http``, ``https``, and ``file`` are allowed.
+    :param require_tld: Whether to reject non-FQDN hostnames.
+    """
+
+    def __init__(
+        self,
+        choices: Iterable,
+        labels: Optional[Iterable[str]] = None,
+        allow_url: bool = False,
+        relative: bool = False,
+        schemes: Optional[Union[Sequence[str], Set[str]]] = {"http", "https", "file"},
+        require_tld: bool = True,
+    ):
+        self.oneof_validator = validate.OneOf(
+            choices,
+            labels=labels,
+        )
+        if allow_url:
+            self.url_validator = validate.URL(relative=relative, schemes=schemes, require_tld=require_tld)
+        else:
+            self.url_validator = None
+
+    def _repr_args(self) -> str:
+        return ", ".join([self.oneof_validator._repr_args(), self.url_validator._repr_args()])
+
+    def __call__(self, value: Any) -> Any:
+        errors = []
+        kwargs = {}
+
+        try:
+            oneof_valid = self.oneof_validator(value)
+        except ValidationError as err:
+            oneof_valid = False
+            kwargs.update(err.kwargs)
+            if isinstance(err.messages, dict):
+                errors.append(err.messages)
+            else:
+                errors.extend(typing.cast(list, err.messages))
+
+        if self.url_validator is None:
+            url_valid = False
+        else:
+            try:
+                url_valid = self.url_validator(value)
+            except ValidationError as err:
+                url_valid = False
+                kwargs.update(err.kwargs)
+                if isinstance(err.messages, dict):
+                    errors.append(err.messages)
+                else:
+                    errors.extend(typing.cast(list, err.messages))
+
+        if not oneof_valid and not url_valid:
+            raise ValidationError(errors, **kwargs)
+        return value
+
+
 def String(
     description: str,
     default: Union[None, str] = None,
@@ -182,6 +249,7 @@ def StringOptions(
     options: TList[str],
     default: Union[None, str] = None,
     allow_none: bool = True,
+    allow_url: bool = False,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -204,7 +272,7 @@ def StringOptions(
     return field(
         metadata={
             "marshmallow_field": fields.String(
-                validate=validate.OneOf(options),
+                validate=OneOfOrURL(options, allow_url=allow_url),
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
