@@ -289,11 +289,10 @@ class RayDatasetBatcher(Batcher):
         to_tensors = self._to_tensors_fn()
 
         def sync_read():
-            for dataset in pipeline.iter_datasets():
-                for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                    prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
-                ):
-                    yield self._prepare_batch(batch)
+            for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
+                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
+            ):
+                yield self._prepare_batch(batch)
 
         return sync_read()
 
@@ -305,14 +304,12 @@ class RayDatasetBatcher(Batcher):
         to_tensors = self._to_tensors_fn()
 
         def producer():
-            for dataset in pipeline.iter_datasets():
-                print("Dataset Count: ", dataset.count())
-                for batch in dataset.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                    prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
-                ):
-                    res = self._prepare_batch(batch)
-                    q.put(res)
-                q.put(None)
+            for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
+                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
+            ):
+                res = self._prepare_batch(batch)
+                q.put(res)
+            q.put(None)
 
         def async_read():
             t = threading.Thread(target=producer)
@@ -337,7 +334,6 @@ class RayDatasetBatcher(Batcher):
         def producer(i):
             for batch in (
                 splits[i]
-                .iter_datasets()
                 .map_batches(to_tensors, batch_format="pandas")
                 .iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas")
             ):
