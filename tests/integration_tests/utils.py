@@ -854,14 +854,15 @@ def assert_module_parameters_updated(
             f"Not all model parameters updated after {max_steps} iteration(s):" f"{''.join(parameters_not_updated)}"
         )
 
+
 def check_module_parameters_updated(
-        module: LudwigModule,
-        module_input_args: Tuple,
-        module_target: torch.Tensor,
-        loss_function: Union[Callable, None] = None,
-        max_steps: int = 1,
-        threshold: float = 1.0,
-        learning_rate: float = 0.001,
+    module: LudwigModule,
+    module_input_args: Tuple,
+    module_target: torch.Tensor,
+    loss_function: Union[Callable, None] = None,
+    max_steps: int = 1,
+    threshold: float = 1.0,
+    learning_rate: float = 0.001,
 ) -> Tuple:
     """
     Confirms that module parameters can be updated.
@@ -927,6 +928,7 @@ def check_module_parameters_updated(
     parameters_updated = sum(parameter_updated)
 
     return trainable_parameters, parameters_updated, parameters_not_updated
+
 
 def _assert_module_parameters_updated(
     module: LudwigModule,
