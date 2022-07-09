@@ -854,6 +854,79 @@ def assert_module_parameters_updated(
             f"Not all model parameters updated after {max_steps} iteration(s):" f"{''.join(parameters_not_updated)}"
         )
 
+def check_module_parameters_updated(
+        module: LudwigModule,
+        module_input_args: Tuple,
+        module_target: torch.Tensor,
+        loss_function: Union[Callable, None] = None,
+        max_steps: int = 1,
+        threshold: float = 1.0,
+        learning_rate: float = 0.001,
+) -> Tuple:
+    """
+    Confirms that module parameters can be updated.
+    Args:
+        module: (LudwigModel) model to be tested.
+        module_input_args: (tuple) input for model
+        module_target: (Tensor) target values for computing loss and parameter updates
+        max_steps: (int, default=1) maximum number of steps allowed to test for parameter
+            updates.
+        threshold: (float, default=1.0) fraction of parameters that need to be updated
+            to pass this test.
+        learning_rate: (flaot, default=0.001) learning rate for the optimizaer
+
+    Returns: Tuple
+
+    """
+    # setup
+    if loss_function is None:
+        loss_function = torch.nn.MSELoss()
+    optimizer = torch.optim.SGD(module.parameters(), lr=learning_rate)
+    module.train(True)
+
+    target_tensor = module_target
+
+    for step in range(max_steps):
+        # make pass through model
+        module_output = module(*module_input_args)
+
+        # capture model parameters before doing parameter update pass
+        before = [(x[0], x[1].clone()) for x in module.named_parameters()]
+
+        # do update of model parameters
+        optimizer.zero_grad()
+        if isinstance(module_output, torch.Tensor):
+            loss = loss_function(module_output, target_tensor)
+        elif isinstance(module_output, dict):
+            loss = loss_function(module_output["logits"], target_tensor)
+        else:
+            loss = loss_function(module_output[0], target_tensor)
+        loss.backward()
+        optimizer.step()
+
+        # capture model parameters after a pass
+        after = [(x[0], x[1].clone()) for x in module.named_parameters()]
+
+        # check for parameter updates
+        parameter_updated = []
+        for b, a in zip(before, after):
+            parameter_updated.append((a[1] != b[1]).any())
+
+        # if parameters were updated in all layers, the exit loop
+        if all(parameter_updated):
+            logger.debug(f"\nall model parameters updated at step {step + 1}")
+            # early stop
+            break
+
+    parameters_not_updated = []
+    for updated, b in zip(parameter_updated, before):
+        if not updated:
+            parameters_not_updated.append(b[0])
+
+    trainable_parameters = len(parameter_updated)
+    parameters_updated = sum(parameter_updated)
+
+    return trainable_parameters, parameters_updated, parameters_not_updated
 
 def _assert_module_parameters_updated(
     module: LudwigModule,
