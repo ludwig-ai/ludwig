@@ -17,7 +17,7 @@ from ludwig.constants import TRAINER, TRAINING
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
-from ludwig.globals import TRAINING_PREPROC_FILE_NAME
+from ludwig.globals import TRAINING_PREPROC_FILE_NAME, DESCRIPTION_FILE_NAME
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
@@ -122,7 +122,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
 
     # test existence of required files
     train_stats_fp = os.path.join(output_dir, "training_statistics.json")
-    metadata_fp = os.path.join(output_dir, "description.json")
+    metadata_fp = os.path.join(output_dir, DESCRIPTION_FILE_NAME)
     assert os.path.isfile(train_stats_fp)
     assert os.path.isfile(metadata_fp)
 
@@ -370,7 +370,7 @@ def test_regularization(generated_data, tmp_path):
 
         # test existence of required files
         train_stats_fp = os.path.join(output_dir, "training_statistics.json")
-        metadata_fp = os.path.join(output_dir, "description.json")
+        metadata_fp = os.path.join(output_dir, DESCRIPTION_FILE_NAME)
         assert os.path.isfile(train_stats_fp)
         assert os.path.isfile(metadata_fp)
 
