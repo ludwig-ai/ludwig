@@ -1,4 +1,6 @@
 import os
+import random
+import string
 
 import numpy as np
 import pandas as pd
@@ -6,6 +8,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, PROC_COLUMN
+from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
     binary_feature,
@@ -14,6 +17,7 @@ from tests.integration_tests.utils import (
     image_feature,
     init_backend,
     LocalTestBackend,
+    number_feature,
     sequence_feature,
 )
 
@@ -139,3 +143,34 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
             data_df,
             skip_save_processed_input=False,
         )
+
+
+def test_number_feature_wrong_dtype(csv_filename, tmpdir):
+    """Tests that a number feature with all string values is treated as having missing values by default."""
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+
+    num_feat = number_feature()
+    input_features = [num_feat]
+    output_features = [binary_feature()]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # convert numbers to random strings
+    def random_string():
+        letters = string.ascii_lowercase
+        return "".join(random.choice(letters) for _ in range(10))
+
+    df[num_feat[COLUMN]] = df[num_feat[COLUMN]].apply(lambda _: random_string())
+
+    # run preprocessing
+    backend = LocalTestBackend()
+    ludwig_model = LudwigModel(config, backend=backend)
+    train_ds, val_ds, test_ds, _ = ludwig_model.preprocess(dataset=df)
+
+    concatenated_df = concatenate_df(train_ds.to_df(), val_ds.to_df(), test_ds.to_df(), backend)
+
+    # check that train_ds had invalid values replaced with the missing value
+    assert len(concatenated_df) == len(df)
+    assert np.all(concatenated_df[num_feat[PROC_COLUMN]] == 0.0)

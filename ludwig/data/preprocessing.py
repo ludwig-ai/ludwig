@@ -1288,6 +1288,10 @@ def build_data(
     proc_cols = {}
     for feature_config in feature_configs:
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
+
+        # Need to run this again here as cast_columns may have introduced new missing values
+        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
             input_cols,
