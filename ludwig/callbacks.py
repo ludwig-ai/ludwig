@@ -142,7 +142,7 @@ class Callback(ABC):
         """Called after creation of trainer, before the start of training.
 
         :param model: The ludwig model.
-        :type model: ludwig.utils.torch_utils.LudwigModule
+        :type model: ludwig.modules.ludwig_module.LudwigModule
         :param config: The config dictionary.
         :param config_fp: The file path to the config, or none if config was passed to stdin.
         """

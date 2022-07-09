@@ -29,6 +29,7 @@ def assert_module_states_equal(a: LudwigModuleState, b: LudwigModuleState):
     assert a.type == b.type
     assert a.ludwig_version == b.ludwig_version
     assert a.config == b.config
+    assert a.metadata == b.metadata
     assert sorted(a.saved_weights.keys()) == sorted(b.saved_weights.keys())
     for ak, av in a.saved_weights.items():
         assert ak in b.saved_weights

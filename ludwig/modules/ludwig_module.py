@@ -44,6 +44,7 @@ class LudwigModuleState:
     type: str  # Module Type
     ludwig_version: str  # Version of ludwig which saved this object
     config: dict  # Module Config
+    metadata: dict  # Module internal parameters, includes training_set_metadata
     saved_weights: dict[str, np.ndarray]  # Saved weights of this module
     children: dict[str, "LudwigModuleState"]  # Child modules
 
@@ -58,13 +59,14 @@ class LudwigModule(Module):
     def device(self):
         return self.device_tensor.device
 
-    def get_state(self, config=None, saved_weights=None, children=None) -> LudwigModuleState:
+    def get_state(self, config=None, metadata=None, saved_weights=None, children=None) -> LudwigModuleState:
         if saved_weights is None:
             saved_weights = {k: v.detach().cpu().numpy() for k, v in self.state_dict().items()}
         return LudwigModuleState(
             type=type(self).__name__,
             ludwig_version=LUDWIG_VERSION,
             config={} if config is None else config,
+            metadata={} if metadata is None else metadata,
             saved_weights={} if saved_weights is None else saved_weights,
             children={} if children is None else children,
         )

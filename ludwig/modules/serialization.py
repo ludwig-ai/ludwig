@@ -67,6 +67,7 @@ def _save_state_to_group(state: LudwigModuleState, group: h5py.Group):
     group.attrs["type"] = state.type
     group.attrs["ludwig_version"] = state.ludwig_version
     group.attrs["config"] = json.dumps(state.config, cls=NumpyEncoder, sort_keys=True)
+    group.attrs["metadata"] = json.dumps(state.metadata, cls=NumpyEncoder, sort_keys=True)
     for k, w in state.saved_weights.items():
         group.create_dataset(k, data=w)
     for k, child in state.children.items():
@@ -87,6 +88,7 @@ def _load_state_from_group(group) -> LudwigModuleState:
         type=group.attrs["type"],
         ludwig_version=group.attrs["ludwig_version"],
         config=json.loads(group.attrs["config"]),
+        metadata=json.loads(group.attrs["metadata"]),
         saved_weights={k: v[()] for k, v in group.items() if isinstance(v, h5py.Dataset)},
         children={k: _load_state_from_group(v) for k, v in group.items() if isinstance(v, h5py.Group)},
     )
@@ -97,7 +99,8 @@ def load_state_from_file(path_or_uri: str) -> LudwigModuleState:
     with download_h5(path_or_uri) as f:
         # with h5py.File(f, "r") as f:
         # The file object does double duty as the HDF5 root group
-        return _load_state_from_group(f)
+        state = _load_state_from_group(f)
+    return update_state_for_current_version(state)
 
 
 def instantiate_module_from_state(state: LudwigModuleState, device: str = None) -> LudwigModule:
@@ -130,7 +133,6 @@ def load(path_or_uri: str, device: str = None) -> LudwigModule:
         device: 'cuda' or 'cpu'
     """
     state = load_state_from_file(path_or_uri)
-    state = update_state_for_current_version(state)
     return instantiate_module_from_state(state, device=device)
 
 

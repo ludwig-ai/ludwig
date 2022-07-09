@@ -3,7 +3,7 @@ from typing import Callable, Tuple, Union
 
 import torch
 
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.modules.ludwig_module import LudwigModule
 
 logger = logging.getLogger(__name__)
 
