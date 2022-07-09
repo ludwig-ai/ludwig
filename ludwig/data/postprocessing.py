@@ -72,7 +72,7 @@ def _save_as_numpy(predictions, output_directory, saved_keys, backend):
                     np.save(f, v)
             else:
                 np.save(npy_filename.format(make_safe_filename(k)), v)
-                saved_keys.add(k)
+            saved_keys.add(k)
 
 
 def convert_dict_to_df(predictions: Dict[str, Dict[str, Union[List[Any], torch.Tensor, np.array]]]) -> pd.DataFrame:
