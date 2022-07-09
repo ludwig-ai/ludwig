@@ -10,7 +10,7 @@ import pandas as pd
 from dataclasses import dataclass
 from ludwig.api import LudwigModel
 from ludwig.models.inference import InferenceModule, _InferencePreprocessor, _InferencePredictor, \
-    _InferencePostprocessor, INFERENCE_STAGES
+    _InferencePostprocessor, INFERENCE_STAGES, PREPROCESSOR, PREDICTOR, POSTPROCESSOR
 from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchscriptPreprocessingInput, TorchAudioTuple
@@ -29,7 +29,7 @@ class GeneratedInferenceModule(torch.nn.Module):
         self.inference_module = inference_module
 
     def forward(self, {input_signature}):
-        inputs: Dict[str, TorchscriptPreprocessingInput] = {input_dict}
+        inputs: Dict[str, {input_type}] = {input_dict}
         results = self.inference_module(inputs)
         return {output_tuple}
 """
@@ -47,8 +47,7 @@ INSTANCE_SPEC = """
         kind: {kind}
     }}"""
 
-TRITON_CONFIG_TEMPLATE = """
-name: "{model_name}"
+TRITON_CONFIG_TEMPLATE = """name: "{model_name}"
 platform: "pytorch_libtorch"
 max_batch_size: 0 # Disable dynamic batching?
 input [{input_spec}
@@ -67,19 +66,35 @@ def _get_type_map(dtype: str) -> str:
     """
     # see: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
     return {
-        "bool": "BOOL",
-        "uint8": "UINT8",
-        "uint16": "UINT16",
-        "uint32": "UINT32",
-        "uint64": "UINT64",
-        "int8": "INT8",
-        "int16": "INT16",
-        "int32": "INT32",
-        "int64": "INT64",
-        "float16": "FP16",
-        "float32": "FP32",
-        "float64": "FP64",
-        "string": "BYTES",
+        "bool": "TYPE_BOOL",
+        "uint8": "TYPE_UINT8",
+        "uint16": "TYPE_UINT16",
+        "uint32": "TYPE_UINT32",
+        "uint64": "TYPE_UINT64",
+        "int8": "TYPE_INT8",
+        "int16": "TYPE_INT16",
+        "int32": "TYPE_INT32",
+        "int64": "TYPE_INT64",
+        "float16": "TYPE_FP16",
+        "float32": "TYPE_FP32",
+        "float64": "TYPE_FP64",
+        "string": "TYPE_STRING",
+
+        "torch.float32": "TYPE_FP32",
+        "torch.float": "TYPE_FP32",
+        "torch.float64": "TYPE_FP64",
+        "torch.double": "TYPE_FP64",
+        "torch.float16": "TYPE_FP16",
+        "torch.half": "TYPE_FP16",
+        "torch.uint8": "TYPE_UINT8",
+        "torch.int8": "TYPE_INT8",
+        "torch.int16": "TYPE_INT16",
+        "torch.short": "TYPE_INT16",
+        "torch.int32": "TYPE_INT32",
+        "torch.int": "TYPE_INT32",
+        "torch.int64": "TYPE_INT64",
+        "torch.long": "TYPE_INT64",
+        "torch.bool": "TYPE_BOOL",
     }[dtype]
 
 
@@ -101,7 +116,7 @@ def raw_to_inference_input(df: pd.DataFrame, model: LudwigModel):
 def to_triton_dimension(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
     if isinstance(content, list) and content:
         if isinstance(content[0], str):
-            return (len(content))
+            return [len(content)]
         """
         todo (Wael): check these and add other types
         
@@ -111,7 +126,7 @@ def to_triton_dimension(content: Union[List[str], List[torch.Tensor], List[Torch
             return (len(content))
         """
     elif isinstance(content, torch.Tensor):
-        return tuple(content.size())
+        return list(content.size())
 
 
 def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
@@ -127,7 +142,7 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
             return _get_type_map(content.dtype)
         """
     elif isinstance(content, torch.Tensor):
-        return _get_type_map(content.dtype)
+        return _get_type_map(str(content.dtype))
 
 
 @dataclass
@@ -190,8 +205,10 @@ class TritonMaster:  # change name
         if not isinstance(version, int) or version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
         pass
-        model_path = os.path.join(path, self.inference_stage, str(version), "model.pt")
-        model_ts = TritonModel(self.module, self.output_features, self.output_features).generate_scripted_module()
+
+        os.makedirs(os.path.join(path, str(version)), exist_ok=True)
+        model_path = os.path.join(path, str(version), "model.pt")
+        model_ts = TritonModel(self.module, self.output_features, self.output_features, self.inference_stage).generate_scripted_module()
         model_ts.save(model_path)
         return model_path
 
@@ -199,7 +216,7 @@ class TritonMaster:  # change name
         """Save the Triton config to path
         """
         config = TritonConfig(full_model_name, self.input_features, self.output_features)
-        config_path = os.path.join(path, self.inference_stage, "config.pbtxt")
+        config_path = os.path.join(path, "config.pbtxt")
         with open(config_path, "w") as f:
             f.write(config.get_model_config())
         return config_path
@@ -247,9 +264,18 @@ class TritonModel:
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
     triton_input_features: List[TritonConfigFeature]
     triton_output_features: List[TritonConfigFeature]
+    inference_stage: str
+
+    def _get_wrapper_signature_type(self) -> str:
+        return {
+            PREPROCESSOR: "TorchscriptPreprocessingInput",
+            PREDICTOR: "torch.Tensor",
+            POSTPROCESSOR: "torch.Tensor",
+        }[self.inference_stage]
 
     def _get_input_signature(self, triton_features: List[TritonConfigFeature]) -> str:
-        elems = [f"{feature.wrapper_signature_name}: TorchscriptPreprocessingInput" for feature in triton_features]
+        signature_type = self._get_wrapper_signature_type()
+        elems = [f"{feature.wrapper_signature_name}: {signature_type}" for feature in triton_features]
         return ", ".join(elems)
 
     def _get_input_dict(self, triton_features: List[TritonConfigFeature]) -> str:
@@ -263,12 +289,18 @@ class TritonModel:
     def generate_inference_module_wrapper(self) -> str:
         return INFERENCE_MODULE_TEMPLATE.format(
             input_signature=self._get_input_signature(self.triton_input_features),
+            input_type=self._get_wrapper_signature_type(),
             input_dict=self._get_input_dict(self.triton_input_features),
             output_tuple=self._get_output_tuple(self.triton_output_features),
         )
 
     def generate_scripted_module(self):
         wrapper_definition = self.generate_inference_module_wrapper()
+        print()
+        print("-" * 10)
+        print(wrapper_definition)
+        print("-" * 10)
+        print()
         with tempfile.TemporaryDirectory() as tmpdir:
             ts_path = os.path.join(tmpdir, "generated.py")
             with open(ts_path, "w") as f:
@@ -312,7 +344,7 @@ def export_triton(model: LudwigModel, data_example: pd.DataFrame, output_path: s
         os.makedirs(base_path, exist_ok=True)
 
         config_path = triton_master.save_config(base_path, full_model_name)
-        model_path = triton_master.save_model(path=base_path, version=model_version)
+        model_path = triton_master.save_model(base_path, model_version)
         paths[INFERENCE_STAGES[i]] = (config_path, model_path)
 
     return paths
