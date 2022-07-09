@@ -9,6 +9,7 @@ from ludwig.constants import (
     AUDIO,
     BAG,
     BINARY,
+    BACKFILL,
     CATEGORY,
     DATE,
     H3,
@@ -508,7 +509,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="backfill",
+        default=BACKFILL,
         allow_none=False,
         description="What strategy to follow when there's a missing value in an audio column",
     )
@@ -544,17 +545,6 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="Normalization strategy for the audio files. If None, no normalization is performed. If "
         "per_file, z-norm is applied on a 'per file' level",
-    )
-
-    audio_feature: dict = schema_utils.Dict(
-        default={
-            "type": "fbank",
-            "window_length_in_s": 0.04,
-            "window_shift_in_s": 0.02,
-            "num_filter_bands": 80,
-        },
-        description="Dictionary that takes as input the audio feature type as well as additional parameters if type "
-        "!= raw. The following parameters can/should be defined in the dictionary ",
     )
 
     type: str = schema_utils.StringOptions(
