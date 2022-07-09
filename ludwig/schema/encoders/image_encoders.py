@@ -41,7 +41,7 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "will be used for each layer. ",
     )
 
-    kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=3,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
                     "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
@@ -49,7 +49,7 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "each layer.",
     )
 
-    stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of integers specifying the stride of the convolution along the height and "
                     "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
@@ -63,7 +63,7 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "kernels. ",
     )
 
-    dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An int or pair of ints specifying the dilation rate to use for dilated convolution. If dilation "
                     "is not already specified in conv_layers, specifies the default dilation of the 2D convolutional "
@@ -124,24 +124,24 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
         description="Pooling function to use.",
     )
 
-    pool_kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    pool_kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=2,
         description="An integer or pair of integers specifying the pooling size. If pool_kernel_size is not specified "
                     "in conv_layers this is the default value that will be used for each layer.",
     )
 
-    pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="An integer or pair of integers specifying the pooling stride, which is the factor by which the "
                     "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
     )
 
-    pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=0,
         description="An integer or pair of ints specifying pooling padding (h, w).",
     )
 
-    pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
     )
@@ -235,7 +235,7 @@ class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "will be used for each layer. ",
     )
 
-    kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrTupleOfIntegers(
+    kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=3,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
                     "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
@@ -243,17 +243,17 @@ class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "each layer.",
     )
 
-    conv_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrTupleOfIntegers(
+    conv_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of integers specifying the stride of the initial convolutional layer.",
     )
 
-    first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.IntegerOrTupleOfIntegers(
+    first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.",
     )
 
-    first_pool_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrTupleOfIntegers(
+    first_pool_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="Stride for first pooling layer. If null, defaults to first_pool_kernel_size.",
     )
