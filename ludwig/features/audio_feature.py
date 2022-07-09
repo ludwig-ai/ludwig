@@ -15,22 +15,24 @@
 # ==============================================================================
 import logging
 import os
-from typing import Any, Dict, List, Union, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torchaudio
 
-from ludwig.constants import (AUDIO,
-                              BACKFILL,
-                              COLUMN,
-                              NAME,
-                              PREPROCESSING,
-                              PROC_COLUMN,
-                              SRC,
-                              TIED,
-                              TYPE,
-                              AUDIO_FEATURE_KEYS)
+from ludwig.constants import (
+    AUDIO,
+    AUDIO_FEATURE_KEYS,
+    BACKFILL,
+    COLUMN,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    SRC,
+    TIED,
+    TYPE,
+)
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
@@ -60,8 +62,11 @@ class _AudioPreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        self.audio_feature_dict = {key: value for key, value in metadata["preprocessing"].items()
-                                   if key in AUDIO_FEATURE_KEYS and value is not None}
+        self.audio_feature_dict = {
+            key: value
+            for key, value in metadata["preprocessing"].items()
+            if key in AUDIO_FEATURE_KEYS and value is not None
+        }
         self.feature_dim = metadata["feature_dim"]
         self.max_length = metadata["max_length"]
         self.padding_value = metadata["preprocessing"]["padding_value"]
@@ -135,12 +140,14 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if feature_type == "raw":
             feature_dim = 1
         elif feature_type == "stft_phase":
-            feature_dim_symmetric = get_length_in_samp(preprocessing_parameters["window_length_in_s"],
-                                                       sampling_rate_in_hz)
+            feature_dim_symmetric = get_length_in_samp(
+                preprocessing_parameters["window_length_in_s"], sampling_rate_in_hz
+            )
             feature_dim = 2 * get_non_symmetric_length(feature_dim_symmetric)
         elif feature_type in ["stft", "group_delay"]:
-            feature_dim_symmetric = get_length_in_samp(preprocessing_parameters["window_length_in_s"],
-                                                       sampling_rate_in_hz)
+            feature_dim_symmetric = get_length_in_samp(
+                preprocessing_parameters["window_length_in_s"], sampling_rate_in_hz
+            )
             feature_dim = get_non_symmetric_length(feature_dim_symmetric)
         elif feature_type == "fbank":
             feature_dim = preprocessing_parameters["num_filter_bands"]
@@ -391,8 +398,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         feature_dim = metadata[name]["feature_dim"]
         max_length = metadata[name]["max_length"]
-        audio_feature_dict = {key: value for key, value in preprocessing_parameters.items()
-                              if key in AUDIO_FEATURE_KEYS and value is not None}
+        audio_feature_dict = {
+            key: value
+            for key, value in preprocessing_parameters.items()
+            if key in AUDIO_FEATURE_KEYS and value is not None
+        }
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
 
         if num_audio_utterances == 0:
