@@ -44,7 +44,14 @@ def _has_ray():
     except ImportError:
         return False
 
-    return ray.is_initialized()
+    if ray.is_initialized():
+        return True
+
+    try:
+        ray.init("auto", ignore_reinit_error=True)
+        return True
+    except Exception:
+        return False
 
 
 def get_local_backend(**kwargs):
