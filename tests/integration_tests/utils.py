@@ -873,7 +873,7 @@ def check_module_parameters_updated(
         loss_function: (None or Callable) Optional for module specific loss calculation
         max_steps: (int, default=1) maximum number of steps allowed to test for parameter
             updates.
-        learning_rate: (flaot, default=0.001) learning rate for the optimizaer
+        learning_rate: (float, default=0.001) learning rate for the optimizer
 
     Returns: Tuple(frozen_parameters, trainable_parameters, parameters_updated, not_updated)
         frozen_parameters: count of frozen parameters
