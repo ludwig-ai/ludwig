@@ -486,12 +486,15 @@ def test_resnet_block_layer(
 @pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels", [(224, 224, 3, 64)])
 @pytest.mark.parametrize("resnet_size", [18, 34, 50])
 def test_resnet(
-    img_height: int,
-    img_width: int,
-    first_in_channels: int,
-    out_channels: int,
-    resnet_size: int,
+        img_height: int,
+        img_width: int,
+        first_in_channels: int,
+        out_channels: int,
+        resnet_size: int,
 ):
+    # make repeatable
+    torch.manual_seed(RANDOM_SEED)
+
     resnet = ResNet(
         img_height=img_height,
         img_width=img_width,
@@ -502,3 +505,11 @@ def test_resnet(
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet(input_tensor)
     assert output_tensor.shape[1:] == resnet.output_shape
+
+    # check for parameter updates
+    target = torch.randn(output_tensor.shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (input_tensor,), target)
+    # all trainable parameters should be updated
+    assert tpc == upc, (
+        f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{resnet}"
+    )
