@@ -5,7 +5,7 @@ import torch
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
 from ludwig.utils.entmax import sparsemax
-from tests.integration_tests.utils import assert_module_parameters_updated
+from tests.integration_tests.utils import check_module_parameters_updated
 
 RANDOM_SEED = 67
 
@@ -64,15 +64,6 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
-    # based on batch_size set threshold for parameter updates
-    if batch_size == 1:
-        # allow for some parameters not updated due to bypassing GhostBatchNormalization
-        threshold = 0.33
-    else:
-        # all parameters should be updated
-        threshold = 1
-    assert_module_parameters_updated(feature_block, (input_tensor,), threshold=threshold)
-
 
 @pytest.mark.parametrize("num_total_blocks, num_shared_blocks", [(4, 2), (6, 4), (3, 1)])
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -108,15 +99,6 @@ def test_feature_transformer(
     assert feature_transformer.input_shape[-1] == input_size
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
-
-    # based on batch_size set threshold for parameter updates
-    if batch_size == 1:
-        # allow for some parameters not updated due to bypassing GhostBatchNormalization
-        threshold = 0.33
-    else:
-        # all parameters should be updated
-        threshold = 1
-    assert_module_parameters_updated(feature_transformer, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
@@ -194,11 +176,14 @@ def test_tabnet(
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
 
-    # based on batch_size set threshold for parameter updates
+    # check for parameter updates
+    target = torch.randn([batch_size, 1])
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(tabnet, (input_tensor,), target)
+
     if batch_size == 1:
-        # allow for some parameters not updated due to bypassing GhostBatchNormalization
-        threshold = 0.27
+        assert upc == 15, f"Updated parameter count not expected value. Parameters not updated: {not_updated}" \
+                          f"\nModule structure:\n{tabnet}"
     else:
-        # all parameters should be updated
-        threshold = 1
-    assert_module_parameters_updated(tabnet, (input_tensor,), threshold=threshold)
+        # update count should equal trainable number of parameters
+        assert tpc == upc, f"All parameter not updated. Parameters not updated: {not_updated}" \
+                           f"\nModule structure:\n{tabnet}"

@@ -7,7 +7,6 @@ import torch
 from ludwig.modules.fully_connected_modules import FCLayer, FCStack
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import assert_module_parameters_updated
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
@@ -17,7 +16,7 @@ RANDOM_SEED = 1919
 @pytest.mark.parametrize("input_size", [2, 3])
 @pytest.mark.parametrize("output_size", [3, 4])
 @pytest.mark.parametrize("activation", ["relu", "sigmoid", "tanh"])
-@pytest.mark.parametrize("dropout", [0.0, 0.5])
+@pytest.mark.parametrize("dropout", [0.0, 0.6])
 def test_fc_layer(
     input_size: int,
     output_size: int,
@@ -31,15 +30,6 @@ def test_fc_layer(
     input_tensor = torch.randn(BATCH_SIZE, input_size, device=DEVICE)
     output_tensor = fc_layer(input_tensor)
     assert output_tensor.shape[1:] == fc_layer.output_shape
-
-    # if non-zero dropout, possible that some parameters will not be updated
-    if dropout > 0:
-        # allow for parameters not updated
-        threshold = 0
-    else:
-        # all parameters should be updated
-        threshold = 1
-    assert_module_parameters_updated(fc_layer, (input_tensor,), threshold=threshold)
 
 
 @pytest.mark.parametrize(
@@ -60,8 +50,6 @@ def test_fc_stack(
     input_tensor = torch.randn(BATCH_SIZE, first_layer_input_size, device=DEVICE)
     output_tensor = fc_stack(input_tensor)
     assert output_tensor.shape[1:] == fc_stack.output_shape
-
-    assert_module_parameters_updated(fc_stack, (input_tensor,))
 
 
 def test_fc_stack_input_size_mismatch_fails():
