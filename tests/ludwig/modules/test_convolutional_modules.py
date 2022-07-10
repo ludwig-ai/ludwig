@@ -486,11 +486,11 @@ def test_resnet_block_layer(
 @pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels", [(224, 224, 3, 64)])
 @pytest.mark.parametrize("resnet_size", [18, 34, 50])
 def test_resnet(
-        img_height: int,
-        img_width: int,
-        first_in_channels: int,
-        out_channels: int,
-        resnet_size: int,
+    img_height: int,
+    img_width: int,
+    first_in_channels: int,
+    out_channels: int,
+    resnet_size: int,
 ):
     # make repeatable
     torch.manual_seed(RANDOM_SEED)
