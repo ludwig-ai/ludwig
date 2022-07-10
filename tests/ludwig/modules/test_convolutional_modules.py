@@ -32,9 +32,9 @@ RANDOM_SEED = 1919
 # for Conv1D related layers
 ###
 def expected_seq_size(
-        seq_size: int,  # input max sequence length
-        padding: str,  # conv1d padding: 'same' or 'valid'
-        kernel_size: int,  # conv1d kernel size
+    seq_size: int,  # input max sequence length
+    padding: str,  # conv1d padding: 'same' or 'valid'
+    kernel_size: int,  # conv1d kernel size
     stride: int,  # conv1d stride
     dilation: int,  # conv1d dilation rate
     pool_size: Union[None, int],  # pooling layer kernel size
@@ -75,14 +75,14 @@ def expected_seq_size(
 @pytest.mark.parametrize("strides, padding", [(1, "same"), (1, "valid"), (2, "valid")])
 @pytest.mark.parametrize("kernel_size", [3, 5])
 def test_conv1d_layer(
-        kernel_size: int,
-        strides: int,
-        padding: str,
-        dilation: int,
-        pool_size: Union[None, int],
-        pool_padding: str,
-        pool_stride: int,
-        pool_function: str,
+    kernel_size: int,
+    strides: int,
+    padding: str,
+    dilation: int,
+    pool_size: Union[None, int],
+    pool_padding: str,
+    pool_stride: int,
+    pool_function: str,
 ) -> None:
     # make test repeatable
     torch.manual_seed(RANDOM_SEED)
@@ -287,7 +287,7 @@ def test_parallel_conv1d_stack(stacked_layers: Union[None, list], dropout: float
         max_sequence_length=SEQ_SIZE,
         stacked_layers=stacked_layers,
         default_num_filters=NUM_FILTERS,
-        default_dropout=dropout
+        default_dropout=dropout,
     )
 
     # check for correct stack formation
