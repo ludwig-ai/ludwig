@@ -766,6 +766,7 @@ def train_with_backend(
 class ParameterUpdateError(Exception):
     pass
 
+
 # TODO: do we need this version of parameter update checking
 def assert_module_parameters_updated(
     module: LudwigModule,
@@ -926,7 +927,7 @@ def check_module_parameters_updated(
             parameters_not_updated.append(p[0])
 
     trainable_parameters = len([p[1] for p in parameter_updated])
-    parameters_updated = sum([p[1] for p in parameter_updated])
+    parameters_updated = sum(p[1] for p in parameter_updated)
 
     return frozen_parameters, trainable_parameters, parameters_updated, parameters_not_updated
 
