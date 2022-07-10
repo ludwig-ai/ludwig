@@ -140,11 +140,7 @@ def test_image_encoders_resnet():
     image_tensor = torch.rand(input_image.shape)
 
     # check for parameter updates
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(
-        encoder,
-        (image_tensor,),
-        target
-    )
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
     assert upc == tpc, (
         f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
         f"  Module structure\n{encoder}"
@@ -199,11 +195,7 @@ def test_image_encoders_stacked_2dcnn():
     image_tensor = torch.rand(input_image.shape)
 
     # check for parameter updates
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(
-        encoder,
-        (image_tensor,),
-        target
-    )
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
     assert upc == tpc, (
         f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
         f"  Module structure\n{encoder}"
@@ -260,11 +252,7 @@ def test_image_encoders_mlpmixer():
     image_tensor = torch.rand(input_image.shape)
 
     # check for parameter updates
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(
-        encoder,
-        (image_tensor,),
-        target
-    )
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
     assert upc == tpc, (
         f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
         f"  Module structure\n{encoder}"
@@ -319,9 +307,7 @@ def test_sequence_encoder_embed():
 
             # check for parameter updates
             fpc, tpc, upc, not_updated = check_module_parameters_updated(
-                encoder,
-                (torch.tensor(text, dtype=torch.int32),),
-                target
+                encoder, (torch.tensor(text, dtype=torch.int32),), target
             )
             assert upc == tpc, (
                 f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
@@ -380,9 +366,7 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
 
     # check for parameter updates
     fpc, tpc, upc, not_updated = check_module_parameters_updated(
-        encoder,
-        (torch.tensor(text, dtype=torch.int32),),
-        target
+        encoder, (torch.tensor(text, dtype=torch.int32),), target
     )
 
     if trainable:
