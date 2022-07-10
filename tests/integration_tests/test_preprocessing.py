@@ -186,6 +186,8 @@ def test_presplit_override(format, tmpdir):
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
     data_df = pd.read_csv(data_csv)
 
+    # Set the feature value equal to an ordinal index so we can ensure the splits are identical before and after
+    # preprocessing.
     data_df[num_feat[COLUMN]] = data_df.index
 
     train_df = data_df[:15]
@@ -227,3 +229,27 @@ def test_presplit_override(format, tmpdir):
     assert np.all(train_set.to_df()[num_feat[PROC_COLUMN]].values == train_df[num_feat[COLUMN]].values)
     assert np.all(val_set.to_df()[num_feat[PROC_COLUMN]].values == val_df[num_feat[COLUMN]].values)
     assert np.all(test_set.to_df()[num_feat[PROC_COLUMN]].values == test_df[num_feat[COLUMN]].values)
+
+
+@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.distributed
+def test_empty_split_error(backend, tmpdir):
+    """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+
+    out_feat = binary_feature()
+    input_features = [number_feature()]
+    output_features = [out_feat]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # Convert all the output features rows to null. Because the default missing value strategy is to drop empty output
+    # rows, this will result in the dataset being empty after preprocessing.
+    df[out_feat[COLUMN]] = None
+
+    with init_backend(backend):
+        ludwig_model = LudwigModel(config, backend=backend)
+        with pytest.raises(ValueError, match="Dataset is empty following preprocessing"):
+            ludwig_model.preprocess(dataset=df)
