@@ -890,38 +890,58 @@ def check_module_parameters_updated(
 
     target_tensor = module_target
 
+    trainable_parameter_list = []
+    frozen_parameter_list = []
+    parameter_updated = []
+    parameters_not_updated = []
     for step in range(max_steps):
         # make pass through model
         module_output = module(*module_input_args)
 
-        # do update of model parameters
-        optimizer.zero_grad()
-        if isinstance(module_output, torch.Tensor):
-            loss = loss_function(module_output, target_tensor)
-        elif isinstance(module_output, dict):
-            loss = loss_function(module_output["logits"], target_tensor)
-        else:
-            loss = loss_function(module_output[0], target_tensor)
-        loss.backward()
-        optimizer.step()
-
-        # check for parameter updates
-        parameter_updated = []
-        frozen_parameters = 0
-        # create tuple for each parameter: (parameter name, update indicator True/False)
-        # parameter is deemed updated if the gradient is not None and the gradient has non-zero value
+        # check for any frozen parameters
+        frozen_parameter_list = []
+        trainable_parameter_list = []
         for p in module.named_parameters():
-            parameter_updated.append((p[0], (p[1].grad is not None) and (not torch.all(p[1].grad == 0))))
-            frozen_parameters += 0 if p[1].requires_grad else 1
+            if p[1].requires_grad:
+                trainable_parameter_list.append(p)
+            else:
+                frozen_parameter_list.append(p)
 
-    parameters_not_updated = []
-    for p in parameter_updated:
-        # if not updated, record parameter name
-        if not p[1]:
-            parameters_not_updated.append(p[0])
+        # check parameter updates only if there are some unfrozen parameters
+        if len(trainable_parameter_list) > 0:
+            # do update of model parameters
+            optimizer.zero_grad()
+            if isinstance(module_output, torch.Tensor):
+                loss = loss_function(module_output, target_tensor)
+            elif isinstance(module_output, dict):
+                if "logits" in module_output:
+                    loss = loss_function(module_output["logits"], target_tensor)
+                elif "encoder_output" in module_output:
+                    loss = loss_function(module_output["encoder_output"], target_tensor)
+            else:
+                loss = loss_function(module_output[0], target_tensor)
 
-    trainable_parameters = len([p[1] for p in parameter_updated])
+            loss.backward()
+            optimizer.step()
+
+            # check for parameter updates
+            parameter_updated = []
+            # create tuple for each parameter: (parameter name, update indicator True/False)
+            # parameter is deemed updated if the gradient is not None and the gradient has non-zero value
+            for p in module.named_parameters():
+                parameter_updated.append((p[0], (p[1].grad is not None) and (not torch.all(p[1].grad == 0))))
+        else:
+            parameter_updated = []
+
+        parameters_not_updated = []
+        for p in parameter_updated:
+            # if not updated, record parameter name
+            if not p[1]:
+                parameters_not_updated.append(p[0])
+
+    trainable_parameters = len(trainable_parameter_list)
     parameters_updated = sum(p[1] for p in parameter_updated)
+    frozen_parameters = len(frozen_parameter_list)
 
     return frozen_parameters, trainable_parameters, parameters_updated, parameters_not_updated
 
