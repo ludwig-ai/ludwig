@@ -94,8 +94,6 @@ ensemble_scheduling {{
 
 def _get_type_map(dtype: str) -> str:
     """Return the Triton API type mapped to numpy type.
-
-    todo (Wael): add pytorch types and what they correspond to.
     """
     # see: https://github.com/triton-inference-server/server/blob/main/docs/model_configuration.md
     return {
@@ -180,6 +178,14 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
 
 @dataclass
 class TritonConfigFeature:
+    """Represents a input/output feature in a Triton config.
+
+    :param name: name of the feature.
+    :param content: the data contents of the feature.
+    :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
+    :param kind: one of INPUT, OUTPUT.
+    :param index: index of the feature in the Triton Config.
+    """
     name: str
     content: Union[TorchscriptPreprocessingInput, torch.Tensor]
     inference_stage: str
@@ -206,10 +212,20 @@ class TritonConfigFeature:
 
 
 @dataclass
-class TritonMaster:  # change name
+class TritonMaster:
+    """Provides access to the Triton Config and the scripted module.
+
+    :param module: the inference module.
+    :param input_data_example: an input for the module that will help determine the
+        input and output dimensions.
+    :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
+    """
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
     input_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]]
     inference_stage: str
+    model_name: str
+    output_path: str
+    model_version: int
 
     def __post_init__(self):
         """Extract input and output features and necessary information for a Triton config.
@@ -217,8 +233,15 @@ class TritonMaster:  # change name
         if self.inference_stage not in INFERENCE_STAGES:
             raise ValueError("Invalid inference stage. Choose one of {}".format(INFERENCE_STAGES))
 
+        self.full_model_name = self.model_name + "_" + self.inference_stage
+        self.base_path = os.path.join(self.output_path, self.full_model_name)
+        os.makedirs(self.base_path, exist_ok=True)
+
+        # get output for sample input.
         self.output_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]] = self.module(
             self.input_data_example)
+
+        # generate input and output features.
         self.input_features: List[TritonConfigFeature] = [
             TritonConfigFeature(feature_name, content, self.inference_stage, INPUT, i) for i, (feature_name, content) in
             enumerate(self.input_data_example.items())]
@@ -227,26 +250,27 @@ class TritonMaster:  # change name
             in
             enumerate(self.output_data_example.items())]
 
-    def get_inference_module(self):
-        pass
+    def save_model(self) -> str:
+        """Scripts the model and saves it.
 
-    def save_model(self, path, version=1) -> str:
-        if not isinstance(version, int) or version < 1:
+        :param version: model version. Must be an integer that is >= 1.
+        """
+        if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
         pass
 
-        os.makedirs(os.path.join(path, str(version)), exist_ok=True)
-        model_path = os.path.join(path, str(version), "model.pt")
+        os.makedirs(os.path.join(self.base_path, str(self.model_version)), exist_ok=True)
+        model_path = os.path.join(self.base_path, str(self.model_version), "model.pt")
         self.model_ts = TritonModel(self.module, self.output_features, self.output_features,
                                     self.inference_stage).generate_scripted_module()
         self.model_ts.save(model_path)
         return model_path
 
-    def save_config(self, path: str, full_model_name: str) -> str:
+    def save_config(self) -> str:
         """Save the Triton config to path
         """
-        self.config = TritonConfig(full_model_name, self.input_features, self.output_features)
-        config_path = os.path.join(path, "config.pbtxt")
+        self.config = TritonConfig(self.full_model_name, self.input_features, self.output_features)
+        config_path = os.path.join(self.base_path, "config.pbtxt")
         with open(config_path, "w") as f:
             f.write(self.config.get_model_config())
         return config_path
@@ -258,10 +282,16 @@ class TritonEnsembleConfig:
     will store triton config template, call the proper functions to populate it.
     could store path and have a function for save.
     """
-    triton_ensemble_name: str
     triton_master_preprocessor: TritonMaster
     triton_master_predictor: TritonMaster
     triton_master_postprocessor: TritonMaster
+    model_name: str
+    output_path: str
+
+    def __post_init__(self):
+        self.ensemble_model_name = self.model_name + "_" + ENSEMBLE
+        self.base_path = os.path.join(self.output_path, self.ensemble_model_name)
+        os.makedirs(self.base_path, exist_ok=True)
 
     def _get_ensemble_scheduling_input_maps(self, triton_features: List[TritonConfigFeature]) -> str:
         return "".join(
@@ -297,14 +327,14 @@ class TritonEnsembleConfig:
         ensemble_scheduling_steps = ",".join(
             [self._get_ensemble_scheduling_step(triton_master) for triton_master in triton_masters])
         return TRITON_ENSEMBLE_CONFIG_TEMPLATE.format(
-            model_name=self.triton_ensemble_name,
+            model_name=self.ensemble_model_name,
             input_spec=self._get_ensemble_spec(self.triton_master_preprocessor.input_features),
             output_spec=self._get_ensemble_spec(self.triton_master_postprocessor.output_features),
             ensemble_scheduling_steps=ensemble_scheduling_steps,
         )
 
-    def save_ensemble_config(self, path):
-        config_path = os.path.join(path, "config.pbtxt")
+    def save_ensemble_config(self):
+        config_path = os.path.join(self.base_path, "config.pbtxt")
         with open(config_path, "w") as f:
             f.write(self.get_config())
         return config_path
@@ -415,31 +445,27 @@ def export_triton(model: LudwigModel, data_example: pd.DataFrame, output_path: s
     """
 
     inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata, DEVICE)
+    split_modules = [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
     example_input = raw_to_inference_input(data_example.head(1), model)
     paths = {}
     triton_masters = []
-    for i, module in enumerate(
-            [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]):
-        triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i])
+    for i, module in enumerate(split_modules):
+        triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i], model_name, output_path, model_version)
         example_input = triton_master.output_data_example
 
-        full_model_name = model_name + "_" + INFERENCE_STAGES[i]
-        base_path = os.path.join(output_path, full_model_name)
-        os.makedirs(base_path, exist_ok=True)
-
-        config_path = triton_master.save_config(base_path, full_model_name)
-        model_path = triton_master.save_model(base_path, model_version)
+        config_path = triton_master.save_config()
+        model_path = triton_master.save_model()
         paths[INFERENCE_STAGES[i]] = (config_path, model_path)
         triton_masters.append(triton_master)
 
+    # saving ensemble config
     triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
-    ensemble_model_name = model_name + "_" + ENSEMBLE
-    base_path = os.path.join(output_path, ensemble_model_name)
-    os.makedirs(base_path, exist_ok=True)
-    ensemble_config = TritonEnsembleConfig(ensemble_model_name,
-                                           triton_master_preprocessor,
+    ensemble_config = TritonEnsembleConfig(triton_master_preprocessor,
                                            triton_master_predictor,
-                                           triton_master_postprocessor)
-    ensemble_config.save_ensemble_config(base_path)
+                                           triton_master_postprocessor,
+                                           model_name,
+                                           output_path)
+    ensemble_config_path = ensemble_config.save_ensemble_config()
+    paths[ENSEMBLE] = (ensemble_config_path, )
 
     return paths
