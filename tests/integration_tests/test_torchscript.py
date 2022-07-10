@@ -16,6 +16,7 @@ import os
 import shutil
 import tempfile
 from copy import deepcopy
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -52,43 +53,54 @@ from tests.integration_tests.utils import (
 
 
 @pytest.mark.parametrize("should_load_model", [True, False])
-def test_torchscript(csv_filename, should_load_model):
+@pytest.mark.parametrize("model_type", ["ecd", "gbm"])
+def test_torchscript(csv_filename, should_load_model, model_type):
     #######
     # Setup
     #######
     with tempfile.TemporaryDirectory() as tmpdir:
         dir_path = tmpdir
         data_csv_path = os.path.join(tmpdir, csv_filename)
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
         # Single sequence input, single category output
         input_features = [
             binary_feature(),
             number_feature(),
             category_feature(vocab_size=3),
-            sequence_feature(vocab_size=3),
-            text_feature(vocab_size=3),
-            vector_feature(),
-            image_feature(image_dest_folder),
-            audio_feature(audio_dest_folder),
-            timeseries_feature(),
-            date_feature(),
-            date_feature(),
-            h3_feature(),
-            set_feature(vocab_size=3),
-            bag_feature(vocab_size=3),
         ]
+        if model_type == "ecd":
+            image_dest_folder = os.path.join(tmpdir, "generated_images")
+            audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+            input_features.extend(
+                [
+                    sequence_feature(vocab_size=3),
+                    text_feature(vocab_size=3),
+                    vector_feature(),
+                    image_feature(image_dest_folder),
+                    audio_feature(audio_dest_folder),
+                    timeseries_feature(),
+                    date_feature(),
+                    date_feature(),
+                    h3_feature(),
+                    set_feature(vocab_size=3),
+                    bag_feature(vocab_size=3),
+                ]
+            )
 
         output_features = [
             category_feature(vocab_size=3),
-            binary_feature(),
-            number_feature(),
-            set_feature(vocab_size=3),
-            vector_feature(),
-            sequence_feature(vocab_size=3),
-            text_feature(vocab_size=3),
         ]
+        if model_type == "ecd":
+            output_features.extend(
+                [
+                    binary_feature(),
+                    number_feature(),
+                    set_feature(vocab_size=3),
+                    vector_feature(),
+                    sequence_feature(vocab_size=3),
+                    text_feature(vocab_size=3),
+                ]
+            )
 
         predictions_column_name = "{}_predictions".format(output_features[0]["name"])
 
@@ -99,7 +111,15 @@ def test_torchscript(csv_filename, should_load_model):
         # Train model
         #############
         backend = LocalTestBackend()
-        config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+        config = {
+            "model_type": model_type,
+            "input_features": input_features,
+            "output_features": output_features,
+        }
+        if model_type == "ecd":
+            config[TRAINER] = {"epochs": 2}
+        else:
+            config[TRAINER] = {"num_boost_round": 2}
         ludwig_model = LudwigModel(config, backend=backend)
         ludwig_model.train(
             dataset=data_csv_path,
@@ -406,6 +426,114 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.parametrize("vector_type", [torch.Tensor, List[torch.Tensor]])
+def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vector_type):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    feature = vector_feature()
+    input_features = [
+        feature,
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    # Initialize Ludwig model
+    ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
+
+    # Obtain preprocessed inputs from Python model
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config,
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
+
+    def transform_vector_list(vector_list, vector_type):
+        vectors = []
+        for vector_str in vector_list:
+            vectors.append(torch.tensor([float(x) for x in vector_str.split()]))
+
+        if vector_type == torch.Tensor:
+            vectors = torch.stack(vectors)
+        return vectors
+
+    inputs[feature[NAME]] = transform_vector_list(inputs[feature[NAME]], vector_type)
+
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        if feature_name not in preproc_inputs.keys():
+            continue
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f"feature: {feature_name}"
+
+
+@pytest.mark.parametrize("padding", ["left", "right"])
+@pytest.mark.parametrize("fill_value", ["", "1.0"])
+def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, padding, fill_value):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    feature = timeseries_feature(
+        preprocessing={
+            "padding": padding,
+            "timeseries_length_limit": 4,
+            "fill_value": "1.0",
+        },
+        max_len=7,
+    )
+    input_features = [
+        feature,
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
+
+    # Initialize Ludwig model
+    ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
+
+    # Obtain preprocessed inputs from Python model
+    preproc_inputs_expected, _ = preprocess_for_prediction(
+        ludwig_model.config,
+        training_data_csv_path,
+        ludwig_model.training_set_metadata,
+        backend=backend,
+        include_outputs=False,
+    )
+
+    df = pd.read_csv(training_data_csv_path)
+    inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
+
+    def transform_timeseries_from_str_list_to_tensor_list(timeseries_list):
+        timeseries = []
+        for timeseries_str in timeseries_list:
+            timeseries.append(torch.tensor([float(x) for x in timeseries_str.split()]))
+        return timeseries
+
+    inputs[feature[NAME]] = transform_timeseries_from_str_list_to_tensor_list(inputs[feature[NAME]])
+
+    preproc_inputs = script_module.preprocessor_forward(inputs)
+
+    # Check that preproc_inputs is the same as preproc_inputs_expected.
+    for feature_name_expected, feature_values_expected in preproc_inputs_expected.dataset.items():
+        feature_name = feature_name_expected[: feature_name_expected.rfind("_")]  # remove proc suffix
+        assert feature_name in preproc_inputs.keys(), f'feature "{feature_name}" not found.'
+
+        feature_values = preproc_inputs[feature_name]
+        assert utils.is_all_close(feature_values, feature_values_expected), f'feature "{feature_name}" value mismatch.'
+
+
 @pytest.mark.parametrize(
     "feature",
     [
@@ -427,9 +555,9 @@ def test_torchscript_e2e_date(tmpdir, csv_filename):
 )
 def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-
-    input_features = [feature]
-
+    input_features = [
+        feature,
+    ]
     output_features = [
         binary_feature(),
     ]
@@ -438,16 +566,9 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path, nan_percent=0.2)
 
     # Initialize Ludwig model
-    ludwig_model = LudwigModel(config, backend=backend)
-    ludwig_model.train(
-        dataset=training_data_csv_path,
-        skip_save_training_description=True,
-        skip_save_training_statistics=True,
-        skip_save_model=True,
-        skip_save_progress=True,
-        skip_save_log=True,
-        skip_save_processed_input=True,
-    )
+    ludwig_model, script_module = initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path)
+
+    # Obtain preprocessed inputs from Python model
     preproc_inputs_expected, _ = preprocess_for_prediction(
         ludwig_model.config,
         training_data_csv_path,
@@ -455,13 +576,6 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
         backend=backend,
         include_outputs=False,
     )
-
-    # Create graph inference model (Torchscript) from trained Ludwig model.
-    script_module = ludwig_model.to_torchscript()
-    # Ensure torchscript saving/loading does not affect final predictions.
-    script_module_path = os.path.join(tmpdir, "inference_module.pt")
-    torch.jit.save(script_module, script_module_path)
-    script_module = torch.jit.load(script_module_path)
 
     df = pd.read_csv(training_data_csv_path)
     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
@@ -622,9 +736,10 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
             assert output_name in feature_outputs
             output_values = feature_outputs[output_name]
+            assert utils.has_no_grad(output_values), f'"{feature_name}.{output_name}" tensors have gradients'
             assert utils.is_all_close(
                 output_values, output_values_expected
-            ), f"feature: {feature_name}, output: {output_name}"
+            ), f'"{feature_name}.{output_name}" tensors are not close to ludwig model'
 
 
 def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path, device=None):

@@ -23,7 +23,6 @@ import signal
 import sys
 import threading
 import time
-from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -33,12 +32,11 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, VALIDATION
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
 )
@@ -47,7 +45,9 @@ from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.trainers.base import BaseTrainer
+from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -66,61 +66,17 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
-class BaseTrainer(ABC):
-    @abstractmethod
-    def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def train_online(
-        self,
-        dataset,
-    ):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def tune_batch_size(
-        self,
-        config: Dict[str, Any],
-        training_set: Dataset,
-        random_seed: int = default_random_seed,
-        max_trials: int = 10,
-        halving_limit: int = 3,
-    ) -> int:
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def validation_field(self):
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def validation_metric(self):
-        raise NotImplementedError()
-
-    # Remote implementations may override this
-    def shutdown(self):
-        pass
-
-    # Functions needed to treat Trainer as a context manager
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.shutdown()
-
-
+@register_trainer("trainer", MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
 
     @staticmethod
     def get_schema_cls():
-        return TrainerConfig
+        return ECDTrainerConfig
 
     def __init__(
         self,
-        config: TrainerConfig,
+        config: ECDTrainerConfig,
         model: ECD,
         resume: float = False,
         skip_save_model: bool = False,
@@ -163,8 +119,8 @@ class Trainer(BaseTrainer):
         :type horovod: dict
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
-        :param config: `ludwig.models.trainer.TrainerConfig` instance that specifies training hyperparameters (default:
-                `ludwig.models.trainer.TrainerConfig()`).
+        :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
+                (default: `ludwig.schema.trainer.ECDTrainerConfig()`).
         """
 
         self.epochs = config.epochs
@@ -541,7 +497,6 @@ class Trainer(BaseTrainer):
         train_summary_writer,
         validation_summary_writer,
         test_summary_writer,
-        model_weights_path,
         model_hyperparameters_path,
         output_features,
         metrics_names,
@@ -653,7 +608,7 @@ class Trainer(BaseTrainer):
                 progress_tracker,
                 self.validation_field,
                 self.validation_metric,
-                model_weights_path,
+                save_path,
                 model_hyperparameters_path,
                 self.reduce_learning_rate_on_plateau,
                 self.reduce_learning_rate_on_plateau_patience,
@@ -672,7 +627,7 @@ class Trainer(BaseTrainer):
         else:
             # There's no validation, so we save the model.
             if self.is_coordinator() and not self.skip_save_model:
-                torch.save(self.model.state_dict(), model_weights_path)
+                self.model.save(save_path)
 
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
@@ -735,12 +690,11 @@ class Trainer(BaseTrainer):
             )
 
         # ====== Setup file names =======
-        model_weights_path = model_hyperparameters_path = None
+        model_hyperparameters_path = None
         training_checkpoints_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
-            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
             tensorboard_log_dir = os.path.join(save_path, "logs")
@@ -860,7 +814,6 @@ class Trainer(BaseTrainer):
                         start_time,
                         validation_summary_writer,
                         test_summary_writer,
-                        model_weights_path,
                         model_hyperparameters_path,
                         output_features,
                         metrics_names,
@@ -905,7 +858,7 @@ class Trainer(BaseTrainer):
 
             # Load the best weights from saved checkpoint
             if self.is_coordinator() and not self.skip_save_model:
-                self.model.load_state_dict(torch.load(model_weights_path))
+                self.model.load(save_path)
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
@@ -931,7 +884,6 @@ class Trainer(BaseTrainer):
         start_time,
         validation_summary_writer,
         test_summary_writer,
-        model_weights_path,
         model_hyperparameters_path,
         output_features,
         metrics_names,
@@ -1024,7 +976,6 @@ class Trainer(BaseTrainer):
                     train_summary_writer,
                     validation_summary_writer,
                     test_summary_writer,
-                    model_weights_path,
                     model_hyperparameters_path,
                     output_features,
                     metrics_names,
@@ -1127,7 +1078,7 @@ class Trainer(BaseTrainer):
         progress_tracker,
         validation_output_feature_name,
         validation_metric,
-        model_weights_path,
+        save_path,
         model_hyperparameters_path,
         reduce_learning_rate_on_plateau,
         reduce_learning_rate_on_plateau_patience,
@@ -1162,7 +1113,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = last_validation_metric_value
 
             if self.is_coordinator() and not skip_save_model:
-                torch.save(self.model.state_dict(), model_weights_path)
+                self.model.save(save_path)
                 logger.info(
                     f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
                 )

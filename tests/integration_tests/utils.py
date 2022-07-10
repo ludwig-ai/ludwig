@@ -37,7 +37,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.models.trainer import Trainer
+from ludwig.trainers.trainer import Trainer
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 try:
@@ -141,7 +141,7 @@ class LocalTestBackend(LocalBackend):
 
 # Simulates running training on a separate node from the driver process
 class FakeRemoteBackend(LocalBackend):
-    def create_trainer(self, **kwargs):
+    def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
         return FakeRemoteTrainer(**kwargs)
 
     @property
@@ -296,12 +296,10 @@ def audio_feature(folder, **kwargs):
         "name": "audio_" + random_string(),
         "type": "audio",
         "preprocessing": {
-            "audio_feature": {
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
+            "type": "fbank",
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
         "encoder": "stacked_cnn",
@@ -499,6 +497,17 @@ def spawn(fn):
 
 def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
     return [param.data for param in model.parameters()]
+
+
+def has_no_grad(
+    val: Union[np.ndarray, torch.Tensor, str, list],
+):
+    """Checks if two values are close to each other."""
+    if isinstance(val, list):
+        return all(has_no_grad(v) for v in val)
+    if isinstance(val, torch.Tensor):
+        return not val.requires_grad
+    return True
 
 
 def is_all_close(

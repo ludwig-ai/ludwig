@@ -168,8 +168,6 @@ def test_datetime_split(df_engine):
     npartitions = 10
 
     df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
-    if isinstance(df_engine, DaskEngine):
-        df = df_engine.df_lib.from_pandas(df, npartitions=npartitions)
 
     def random_date(*args, **kwargs):
         start = datetime.strptime("1/1/1990 1:30 PM", "%m/%d/%Y %I:%M %p")
@@ -180,6 +178,9 @@ def test_datetime_split(df_engine):
         return str(start + timedelta(seconds=random_second))
 
     df["date_col"] = df["C"].map(random_date)
+
+    if isinstance(df_engine, DaskEngine):
+        df = df_engine.df_lib.from_pandas(df, npartitions=npartitions)
 
     probs = (0.7, 0.1, 0.2)
     split_params = {

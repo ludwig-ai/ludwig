@@ -45,6 +45,7 @@ from ludwig.constants import (
     HYPEROPT,
     HYPEROPT_WARNING,
     LEARNING_RATE,
+    MODEL_TYPE,
     PREPROCESSING,
     TEST,
     TRAINER,
@@ -58,12 +59,11 @@ from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
-    MODEL_WEIGHTS_FILE_NAME,
     set_disable_progressbar,
     TRAIN_SET_METADATA_FILE_NAME,
 )
+from ludwig.models.base import BaseModel
 from ludwig.models.calibrator import Calibrator
-from ludwig.models.ecd import ECD
 from ludwig.models.inference import InferenceModule, save_ludwig_model_for_inference
 from ludwig.models.predictor import (
     calculate_overall_stats,
@@ -71,10 +71,10 @@ from ludwig.models.predictor import (
     save_evaluation_stats,
     save_prediction_outputs,
 )
-from ludwig.models.trainer import Trainer
+from ludwig.models.registry import model_type_registry
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
-from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -85,10 +85,15 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import makedirs, open_file, path_exists, upload_output_directory
-from ludwig.utils.misc_utils import get_file_names, get_output_directory, set_saved_weights_in_checkpoint_flag
+from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
+from ludwig.utils.misc_utils import (
+    get_file_names,
+    get_from_registry,
+    get_output_directory,
+    set_saved_weights_in_checkpoint_flag,
+)
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.torch_utils import DEVICE, get_torch_device
+from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -495,8 +500,8 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
                 set_saved_weights_in_checkpoint_flag(self.config)
 
-            # Convert config dictionary into an instance of TrainerConfig.
-            trainer_config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+            # Convert config dictionary into an instance of BaseTrainerConfig.
+            trainer_config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
 
             with self.backend.create_trainer(
                 model=self.model,
@@ -509,7 +514,7 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                if self.config[TRAINER][BATCH_SIZE] == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
+                if self.config[TRAINER].get(BATCH_SIZE, None) == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(self.config, training_set, random_seed=random_seed)
 
@@ -568,8 +573,7 @@ class LudwigModel:
                             )
                             calibrator.train_calibration(training_set, TRAINING)
                         if not skip_save_model:
-                            model_weights_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-                            torch.save(self.model.state_dict(), model_weights_path)
+                            self.model.save(model_dir)
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
@@ -636,10 +640,7 @@ class LudwigModel:
 
                 # Ensure model weights are saved to the driver if training was done remotely
                 if self.backend.is_coordinator() and not skip_save_model:
-                    weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-                    if not path_exists(weights_save_path):
-                        with open_file(weights_save_path, "wb") as f:
-                            torch.save(self.model.state_dict(), f)
+                    self.model.save(model_dir)
 
                 # Synchronize model weights between workers
                 self.backend.sync_model(self.model)
@@ -705,7 +706,7 @@ class LudwigModel:
             set_saved_weights_in_checkpoint_flag(self.config)
 
         if not self._online_trainer:
-            config, _ = load_config_with_kwargs(Trainer.get_schema_cls(), self.config[TRAINER])
+            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
             self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
 
         self.model = self._online_trainer.train_online(training_dataset)
@@ -1368,6 +1369,9 @@ class LudwigModel:
 
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
+        # Upgrades deprecated fields and adds new required fields, in case the config loaded from disk is old.
+        config = merge_with_defaults(config)
+
         if backend_param is None and "backend" in config:
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))
@@ -1417,9 +1421,7 @@ class LudwigModel:
         ```
         """
         if self.backend.is_coordinator():
-            weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
-            device = torch.device(get_torch_device())
-            self.model.load_state_dict(torch.load(weights_save_path, map_location=device))
+            self.model.load(model_dir)
 
         self.backend.sync_model(self.model)
 
@@ -1449,8 +1451,7 @@ class LudwigModel:
         self.save_config(save_path)
 
         # save model weights
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.model.state_dict(), model_weights_path)
+        self.model.save(save_path)
 
         # save training set metadata
         training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
@@ -1528,8 +1529,8 @@ class LudwigModel:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config: dict, random_seed: int = default_random_seed) -> ECD:
-        """Instantiates Encoder-Combiner-Decoder (ECD) object.
+    def create_model(config: dict, random_seed: int = default_random_seed) -> BaseModel:
+        """Instantiates BaseModel object.
 
         # Inputs
         :param config: (dict) Ludwig config
@@ -1538,15 +1539,10 @@ class LudwigModel:
             splits and any other random function.
 
         # Return
-        :return: (ludwig.models.ECD) Instance of the Ludwig model object.
+        :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
-        # todo: support loading other model types based on config
-        return ECD(
-            input_features_def=config["input_features"],
-            combiner_def=config["combiner"],
-            output_features_def=config["output_features"],
-            random_seed=random_seed,
-        )
+        model_type = get_from_registry(config[MODEL_TYPE], model_type_registry)
+        return model_type(**config, random_seed=random_seed)
 
     @staticmethod
     def set_logging_level(logging_level: int) -> None:

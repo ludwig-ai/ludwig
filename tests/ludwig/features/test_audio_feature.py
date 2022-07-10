@@ -27,12 +27,10 @@ def test_audio_input_feature(encoder: str) -> None:
         "name": "audio_feature",
         "type": "audio",
         "preprocessing": {
-            "audio_feature": {
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
+            "type": "fbank",
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
         "should_embed": False,
@@ -55,12 +53,12 @@ def test_add_feature_data(feature_type, tmpdir):
         "in_memory": True,
         "padding_value": 0,
         "norm": "per_file",
-        "audio_feature": {
-            "type": feature_type,
-            "window_length_in_s": 0.04,
-            "window_shift_in_s": 0.02,
-            "num_filter_bands": 80,
-        },
+        "type": feature_type,
+        "window_length_in_s": 0.04,
+        "window_shift_in_s": 0.02,
+        "num_fft_points": None,
+        "window_type": "hamming",
+        "num_filter_bands": 80,
     }
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     audio_feature_config = audio_feature(audio_dest_folder, preprocessing=preprocessing_params)

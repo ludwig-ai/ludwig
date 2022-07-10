@@ -23,9 +23,9 @@ import torchaudio
 
 from ludwig.constants import (
     AUDIO,
+    AUDIO_FEATURE_KEYS,
     BACKFILL,
     COLUMN,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
@@ -35,6 +35,8 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -60,7 +62,11 @@ class _AudioPreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        self.audio_feature_dict = metadata["preprocessing"]["audio_feature"]
+        self.audio_feature_dict = {
+            key: value
+            for key, value in metadata["preprocessing"].items()
+            if key in AUDIO_FEATURE_KEYS and value is not None
+        }
         self.feature_dim = metadata["feature_dim"]
         self.max_length = metadata["max_length"]
         self.padding_value = metadata["preprocessing"]["padding_value"]
@@ -98,33 +104,12 @@ class AudioFeatureMixin(BaseFeatureMixin):
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
-            "audio_feature": {
-                TYPE: "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "audio_file_length_limit_in_s": {"type": "number", "minimum": 0},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "in_memory": {"type": "boolean"},
-            "padding_value": {"type": "number", "minimum": 0},
-            "norm": {"type": ["string", "null"], "enum": [None, "per_file", "global"]},
-            "audio_feature": {
-                "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": ["raw", "stft", "stft_phase", "group_delay", "fbank"]},
-                    "window_length_in_s": {"type": "number", "minimum": 0},
-                    "window_shift_in_s": {"type": "number", "minimum": 0},
-                    "num_fft_points": {"type": "number", "minimum": 0},
-                    "window_type": {"type": "string"},
-                    "num_filter_bands": {"type": "number", "minimum": 0},
-                },
-            },
+            "type": "fbank",
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_fft_points": None,
+            "window_type": "hamming",
+            "num_filter_bands": 80,
         }
 
     @staticmethod
@@ -133,14 +118,13 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        audio_feature_dict = preprocessing_parameters["audio_feature"]
         first_audio_file_path = column.head(1)[0]
         _, sampling_rate_in_hz = torchaudio.load(first_audio_file_path)
 
-        feature_dim = AudioFeatureMixin._get_feature_dim(audio_feature_dict, sampling_rate_in_hz)
+        feature_dim = AudioFeatureMixin._get_feature_dim(preprocessing_parameters, sampling_rate_in_hz)
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
         max_length = AudioFeatureMixin._get_max_length_feature(
-            audio_feature_dict, sampling_rate_in_hz, audio_file_length_limit_in_s
+            preprocessing_parameters, sampling_rate_in_hz, audio_file_length_limit_in_s
         )
         return {
             "feature_dim": feature_dim,
@@ -150,19 +134,23 @@ class AudioFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def _get_feature_dim(audio_feature_dict, sampling_rate_in_hz):
-        feature_type = audio_feature_dict[TYPE]
+    def _get_feature_dim(preprocessing_parameters, sampling_rate_in_hz):
+        feature_type = preprocessing_parameters[TYPE]
 
         if feature_type == "raw":
             feature_dim = 1
         elif feature_type == "stft_phase":
-            feature_dim_symmetric = get_length_in_samp(audio_feature_dict["window_length_in_s"], sampling_rate_in_hz)
+            feature_dim_symmetric = get_length_in_samp(
+                preprocessing_parameters["window_length_in_s"], sampling_rate_in_hz
+            )
             feature_dim = 2 * get_non_symmetric_length(feature_dim_symmetric)
         elif feature_type in ["stft", "group_delay"]:
-            feature_dim_symmetric = get_length_in_samp(audio_feature_dict["window_length_in_s"], sampling_rate_in_hz)
+            feature_dim_symmetric = get_length_in_samp(
+                preprocessing_parameters["window_length_in_s"], sampling_rate_in_hz
+            )
             feature_dim = get_non_symmetric_length(feature_dim_symmetric)
         elif feature_type == "fbank":
-            feature_dim = audio_feature_dict["num_filter_bands"]
+            feature_dim = preprocessing_parameters["num_filter_bands"]
         else:
             raise ValueError(f"{feature_type} is not recognized.")
 
@@ -380,11 +368,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
         set_default_value(feature_config["preprocessing"], "in_memory", preprocessing_parameters["in_memory"])
 
-        if "audio_feature" not in preprocessing_parameters:
-            raise ValueError("audio_feature dictionary has to be present in preprocessing for audio.")
-        if TYPE not in preprocessing_parameters["audio_feature"]:
-            raise ValueError("type has to be present in audio_feature dictionary for audio.")
-
         name = feature_config[NAME]
         column = input_df[feature_config[COLUMN]]
 
@@ -415,7 +398,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
         feature_dim = metadata[name]["feature_dim"]
         max_length = metadata[name]["max_length"]
-        audio_feature_dict = preprocessing_parameters["audio_feature"]
+        audio_feature_dict = {
+            key: value
+            for key, value in preprocessing_parameters.items()
+            if key in AUDIO_FEATURE_KEYS and value is not None
+        }
         audio_file_length_limit_in_s = preprocessing_parameters["audio_file_length_limit_in_s"]
 
         if num_audio_utterances == 0:
@@ -439,8 +426,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
         return proc_df
 
     @staticmethod
-    def _get_max_length_feature(audio_feature_dict, sampling_rate_in_hz, audio_length_limit_in_s):
-        feature_type = audio_feature_dict[TYPE]
+    def _get_max_length_feature(preprocessing_parameters, sampling_rate_in_hz, audio_length_limit_in_s):
+        feature_type = preprocessing_parameters[TYPE]
         audio_length_limit_in_samp = audio_length_limit_in_s * sampling_rate_in_hz
 
         if not audio_length_limit_in_samp.is_integer():
@@ -454,8 +441,8 @@ class AudioFeatureMixin(BaseFeatureMixin):
         if feature_type == "raw":
             return audio_length_limit_in_samp
         elif feature_type in ["stft", "stft_phase", "group_delay", "fbank"]:
-            window_length_in_s = audio_feature_dict["window_length_in_s"]
-            window_shift_in_s = audio_feature_dict["window_shift_in_s"]
+            window_length_in_s = preprocessing_parameters["window_length_in_s"]
+            window_shift_in_s = preprocessing_parameters["window_shift_in_s"]
             return get_max_length_stft_based(
                 audio_length_limit_in_samp, window_length_in_s, window_shift_in_s, sampling_rate_in_hz
             )
@@ -463,6 +450,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f"{feature_type} is not recognized.")
 
 
+@register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -505,3 +493,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _AudioPreprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return AudioInputFeatureConfig

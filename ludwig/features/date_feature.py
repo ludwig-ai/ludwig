@@ -21,8 +21,10 @@ import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.date_feature import DateInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -53,15 +55,6 @@ class DateFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def preprocessing_defaults():
         return {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "", "datetime_format": None}
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-            "datetime_format": {"type": ["string", "null"]},
-        }
 
     @staticmethod
     def cast_column(column, backend):
@@ -96,6 +89,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
         return create_vector_from_datetime_obj(datetime_obj)
 
+    @staticmethod
     def add_feature_data(
         feature_config: Dict[str, Any],
         input_df: DataFrame,
@@ -115,6 +109,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
     encoder = "embed"
 
@@ -154,6 +149,10 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    @staticmethod
+    def get_schema_cls():
+        return DateInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

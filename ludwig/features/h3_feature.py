@@ -19,8 +19,10 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, MISSING_VALUE_STRATEGY_OPTIONS, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.h3_feature import H3InputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -79,14 +81,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "integer"},
-            "computed_fill_value": {"type": "integer"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         try:
             return column.astype(int)
@@ -120,6 +114,7 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
     encoder = "embed"
 
@@ -163,3 +158,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _H3Preprocessing(metadata)
+
+    @staticmethod
+    def get_schema_cls():
+        return H3InputFeatureConfig

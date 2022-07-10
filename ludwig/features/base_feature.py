@@ -56,11 +56,6 @@ class BaseFeatureMixin(ABC):
         raise NotImplementedError
 
     @abstractstaticmethod
-    def preprocessing_schema() -> Dict[str, Any]:
-        """Returns schema for the preprocessing configuration."""
-        raise NotImplementedError
-
-    @abstractstaticmethod
     def cast_column(column: DataFrame, backend) -> DataFrame:
         """Returns a copy of the dataset column for the given feature, potentially after a type cast.
 
@@ -290,7 +285,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         if isinstance(self.eval_loss_metric, MeanMetric):
             # MeanMetric's forward() implicitly updates the running average.
             # For MeanMetrics, we use get_current_value() to compute the loss without changing the state. All metrics
-            # are updated at the ECD level as part of update_metrics().
+            # are updated at the BaseModel level as part of update_metrics().
             return self.eval_loss_metric.get_current_value(predictions[prediction_key].detach(), targets)
         return self.eval_loss_metric(predictions[prediction_key].detach(), targets)
 
