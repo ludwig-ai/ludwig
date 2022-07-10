@@ -174,3 +174,56 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     # check that train_ds had invalid values replaced with the missing value
     assert len(concatenated_df) == len(df)
     assert np.all(concatenated_df[num_feat[PROC_COLUMN]] == 0.0)
+
+
+@pytest.mark.parametrize("format", ["file", "df"])
+def test_presplit_override(format, tmpdir):
+    """Tests that provising a pre-split file or dataframe overrides the user's split config."""
+    num_feat = number_feature(normalization=None)
+    input_features = [num_feat, sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
+    data_df = pd.read_csv(data_csv)
+
+    data_df[num_feat[COLUMN]] = data_df.index
+
+    train_df = data_df[:15]
+    val_df = data_df[15:20]
+    test_df = data_df[20:]
+
+    train_data = train_df
+    val_data = val_df
+    test_data = test_df
+
+    if format == "file":
+        train_data = os.path.join(tmpdir, "train.csv")
+        val_data = os.path.join(tmpdir, "val.csv")
+        test_data = os.path.join(tmpdir, "test.csv")
+
+        train_df.to_csv(train_data)
+        val_df.to_csv(val_data)
+        test_df.to_csv(test_data)
+
+    data_df.to_csv(data_csv, index=False)
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {
+            "epochs": 2,
+        },
+        "preprocessing": {"split": {"type": "random"}},
+    }
+
+    model = LudwigModel(config, backend=LocalTestBackend())
+    train_set, val_set, test_set, _ = model.preprocess(
+        training_set=train_data, validation_set=val_data, test_set=test_data
+    )
+
+    assert len(train_set) == len(train_df)
+    assert len(val_set) == len(val_df)
+    assert len(test_set) == len(test_df)
+
+    assert np.all(train_set.to_df()[num_feat[PROC_COLUMN]].values == train_df[num_feat[COLUMN]].values)
+    assert np.all(val_set.to_df()[num_feat[PROC_COLUMN]].values == val_df[num_feat[COLUMN]].values)
+    assert np.all(test_set.to_df()[num_feat[PROC_COLUMN]].values == test_df[num_feat[COLUMN]].values)
