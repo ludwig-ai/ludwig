@@ -766,7 +766,7 @@ def train_with_backend(
 class ParameterUpdateError(Exception):
     pass
 
-
+# TODO: do we need this version of parameter update checking
 def assert_module_parameters_updated(
     module: LudwigModule,
     module_input_args: Tuple,
@@ -847,8 +847,8 @@ def assert_module_parameters_updated(
             if not updated:
                 parameters_not_updated.append(
                     f"\n\tParameter {a[0]} not updated.\n"
-                    f"\tbefore values (requires grad:{b[1].requires_grad}): {b[1]}\n"
-                    f"\tafter values (requires grad:{a[1].requires_grad}): {a[1]}\n"
+                    f"\tbefore values (requires grad:{b[1].requires_grad}): {b[1]} {b[1].grad}\n"
+                    f"\tafter values (requires grad:{a[1].requires_grad}): {a[1]} {a[1].grad}\n"
                 )
         raise ParameterUpdateError(
             f"Not all model parameters updated after {max_steps} iteration(s):" f"{''.join(parameters_not_updated)}"
@@ -861,7 +861,6 @@ def check_module_parameters_updated(
     module_target: torch.Tensor,
     loss_function: Union[Callable, None] = None,
     max_steps: int = 1,
-    threshold: float = 1.0,
     learning_rate: float = 0.001,
 ) -> Tuple:
     """
@@ -870,13 +869,16 @@ def check_module_parameters_updated(
         module: (LudwigModel) model to be tested.
         module_input_args: (tuple) input for model
         module_target: (Tensor) target values for computing loss and parameter updates
+        loss_function: (None or Callable) Optional for module specific loss calculation
         max_steps: (int, default=1) maximum number of steps allowed to test for parameter
             updates.
-        threshold: (float, default=1.0) fraction of parameters that need to be updated
-            to pass this test.
         learning_rate: (flaot, default=0.001) learning rate for the optimizaer
 
-    Returns: Tuple
+    Returns: Tuple(frozen_parameters, trainable_parameters, parameters_updated, not_updated)
+        frozen_parameters: count of frozen parameters
+        trainable_parameters: count of trainable parameters
+        parameters_updated: count of trainable parameters that were updated
+        not_updated: list of parameters that were not updated
 
     """
     # setup
@@ -910,24 +912,23 @@ def check_module_parameters_updated(
 
         # check for parameter updates
         parameter_updated = []
-        for b, a in zip(before, after):
-            parameter_updated.append((a[1] != b[1]).any())
-
-        # if parameters were updated in all layers, the exit loop
-        if all(parameter_updated):
-            logger.debug(f"\nall model parameters updated at step {step + 1}")
-            # early stop
-            break
+        frozen_parameters = 0
+        # create tuple for each parameter: (parameter name, update indicator True/False)
+        # parameter is deemed updated if the gradient is not None and the gradient has non-zero value
+        for p in module.named_parameters():
+            parameter_updated.append((p[0], (p[1].grad is not None) and (not torch.all(p[1].grad == 0))))
+            frozen_parameters += 0 if p[1].requires_grad else 1
 
     parameters_not_updated = []
-    for updated, b in zip(parameter_updated, before):
-        if not updated:
-            parameters_not_updated.append(b[0])
+    for p in parameter_updated:
+        # if not updated, record parameter name
+        if not p[1]:
+            parameters_not_updated.append(p[0])
 
-    trainable_parameters = len(parameter_updated)
-    parameters_updated = sum(parameter_updated)
+    trainable_parameters = len([p[1] for p in parameter_updated])
+    parameters_updated = sum([p[1] for p in parameter_updated])
 
-    return trainable_parameters, parameters_updated, parameters_not_updated
+    return frozen_parameters, trainable_parameters, parameters_updated, parameters_not_updated
 
 
 def _assert_module_parameters_updated(
