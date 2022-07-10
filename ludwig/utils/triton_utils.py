@@ -17,6 +17,7 @@ from ludwig.utils.types import TorchscriptPreprocessingInput, TorchAudioTuple
 
 INPUT = "INPUT"
 OUTPUT = "OUTPUT"
+ENSEMBLE = "ensemble"
 
 INFERENCE_MODULE_TEMPLATE = """
 from typing import Any, Dict, List, Union
@@ -58,16 +59,16 @@ instance_group [{instance_spec}
 ]
 """
 
-ENSEMBLE_SCHEDULING_INPUT_MAP = """input_map {
+ENSEMBLE_SCHEDULING_INPUT_MAP = """
+      input_map {{
         key: "{key}"
         value: "{value}"
-      }
-"""
-ENSEMBLE_SCHEDULING_OUTPUT_MAP = """output_map {
+      }}"""
+ENSEMBLE_SCHEDULING_OUTPUT_MAP = """
+      output_map {{
         key: "{key}"
         value: "{value}"
-      }
-"""
+      }}"""
 
 ENSEMBLE_SCHEDULING_STEP = """
     {{
@@ -75,22 +76,20 @@ ENSEMBLE_SCHEDULING_STEP = """
       model_version: -1
       {input_maps}
       {output_maps}
-    }
-"""
+    }}"""
 
 TRITON_ENSEMBLE_CONFIG_TEMPLATE = """name: "{model_name}"
-platform: "pytorch_libtorch"
-max_batch_size: 0 # Disable dynamic batching?
+platform: "ensemble"
+max_batch_size: 0 # Dynamic batch not supported
 input [{input_spec}
 ]
 output [{output_spec}
 ]
-ensemble_scheduling {
+ensemble_scheduling {{
   step [{ensemble_scheduling_steps}
   ]
-}
+}}
 """
-
 
 
 def _get_type_map(dtype: str) -> str:
@@ -196,44 +195,14 @@ class TritonConfigFeature:
         self.dimension = to_triton_dimension(self.content)
         # get ensemble_scheduling output_map key (same as "name" in input/output)
         self.key = f"{self.kind}__{self.index}"
+
         # get ensemble_scheduling output_map value
-        self.value = f"{self.name}_{self.inference_stage}_{self.kind}"
-
-
-
-ENSEMBLE_SCHEDULING_INPUT_MAP = """
-      input_map {
-        key: "{key}"
-        value: "{value}"
-      }
-"""
-ENSEMBLE_SCHEDULING_OUTPUT_MAP = """
-      output_map {
-        key: "{key}"
-        value: "{value}"
-      }
-"""
-
-ENSEMBLE_SCHEDULING_STEP = """
-    {{
-      model_name: "{ensemble_model_name}"
-      model_version: -1
-      {input_maps}
-      {output_maps}
-    }}"""
-
-TRITON_ENSEMBLE_CONFIG_TEMPLATE = """name: "{model_name}"
-platform: "pytorch_libtorch"
-max_batch_size: 0 # Disable dynamic batching?
-input [{input_spec}
-]
-output [{output_spec}
-]
-ensemble_scheduling {
-  step [{ensemble_scheduling_steps}
-  ]
-}
-"""
+        if self.inference_stage == PREDICTOR and self.kind == INPUT:
+            self.value = f"{PREPROCESSOR}_{OUTPUT}_{self.index}"
+        elif self.inference_stage == POSTPROCESSOR and self.kind == INPUT:
+            self.value = f"{PREDICTOR}_{OUTPUT}_{self.index}"
+        else:
+            self.value = f"{self.inference_stage}_{self.kind}_{self.index}"
 
 
 @dataclass
@@ -268,7 +237,8 @@ class TritonMaster:  # change name
 
         os.makedirs(os.path.join(path, str(version)), exist_ok=True)
         model_path = os.path.join(path, str(version), "model.pt")
-        self.model_ts = TritonModel(self.module, self.output_features, self.output_features, self.inference_stage).generate_scripted_module()
+        self.model_ts = TritonModel(self.module, self.output_features, self.output_features,
+                                    self.inference_stage).generate_scripted_module()
         self.model_ts.save(model_path)
         return model_path
 
@@ -281,51 +251,64 @@ class TritonMaster:  # change name
             f.write(self.config.get_model_config())
         return config_path
 
+
 @dataclass
 class TritonEnsembleConfig:
     """
     will store triton config template, call the proper functions to populate it.
     could store path and have a function for save.
     """
+    triton_ensemble_name: str
     triton_master_preprocessor: TritonMaster
     triton_master_predictor: TritonMaster
     triton_master_postprocessor: TritonMaster
 
     def _get_ensemble_scheduling_input_maps(self, triton_features: List[TritonConfigFeature]) -> str:
-        return "".join(ENSEMBLE_SCHEDULING_INPUT_MAP.format(key=feature.key, value=feature.value) for feature in triton_features)
+        return "".join(
+            ENSEMBLE_SCHEDULING_INPUT_MAP.format(key=feature.key, value=feature.value) for feature in triton_features)
 
     def _get_ensemble_scheduling_output_maps(self, triton_features: List[TritonConfigFeature]) -> str:
-        return "".join(ENSEMBLE_SCHEDULING_OUTPUT_MAP.format(key=feature.key, value=feature.value) for feature in triton_features)
+        return "".join(
+            ENSEMBLE_SCHEDULING_OUTPUT_MAP.format(key=feature.key, value=feature.value) for feature in triton_features)
 
     def _get_ensemble_scheduling_step(self, triton_master: TritonMaster):
-
         return ENSEMBLE_SCHEDULING_STEP.format(
             ensemble_model_name=triton_master.config.full_model_name,
             input_maps=self._get_ensemble_scheduling_input_maps(triton_master.input_features),
             output_maps=self._get_ensemble_scheduling_output_maps(triton_master.output_features),
         )
 
-    def _get_ensemble_scheduling_steps(self, triton_masters: List[TritonMaster]):
-        TRITON_ENSEMBLE_CONFIG_TEMPLATE = """name: "{model_name}"
-        platform: "pytorch_libtorch"
-        max_batch_size: 0 # Disable dynamic batching?
-        input [{input_spec}
-        ]
-        output [{output_spec}
-        ]
-        ensemble_scheduling {
-          step [{ensemble_scheduling_steps}
-          ]
-        }
-        """
-        triton_masters = [self.triton_master_preprocessor, self.triton_master_predictor, self.triton_master_postprocessor]
-        ensemble_scheduling_steps = ",".join([self._get_ensemble_scheduling_step(triton_master) for triton_master in triton_masters])
+    def _get_ensemble_spec(self, triton_features: List[TritonConfigFeature]) -> str:
+        spec = []
+        for feature in triton_features:
+            spec.append(
+                TRITON_SPEC.format(
+                    key=feature.value,
+                    name=feature.name,
+                    data_type=feature.type,
+                    data_dims=", ".join(str(dim) for dim in feature.dimension),  # check correctness
+                )
+            )
+        return ",".join(spec)
+
+    def get_config(self):
+        triton_masters = [self.triton_master_preprocessor, self.triton_master_predictor,
+                          self.triton_master_postprocessor]
+        ensemble_scheduling_steps = ",".join(
+            [self._get_ensemble_scheduling_step(triton_master) for triton_master in triton_masters])
         return TRITON_ENSEMBLE_CONFIG_TEMPLATE.format(
-            model_name=,
-            input_spec=,
-            output_spec=,
+            model_name=self.triton_ensemble_name,
+            input_spec=self._get_ensemble_spec(self.triton_master_preprocessor.input_features),
+            output_spec=self._get_ensemble_spec(self.triton_master_postprocessor.output_features),
             ensemble_scheduling_steps=ensemble_scheduling_steps,
         )
+
+    def save_ensemble_config(self, path):
+        config_path = os.path.join(path, "config.pbtxt")
+        with open(config_path, "w") as f:
+            f.write(self.get_config())
+        return config_path
+
 
 @dataclass
 class TritonConfig:
@@ -434,6 +417,7 @@ def export_triton(model: LudwigModel, data_example: pd.DataFrame, output_path: s
     inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata, DEVICE)
     example_input = raw_to_inference_input(data_example.head(1), model)
     paths = {}
+    triton_masters = []
     for i, module in enumerate(
             [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]):
         triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i])
@@ -446,5 +430,16 @@ def export_triton(model: LudwigModel, data_example: pd.DataFrame, output_path: s
         config_path = triton_master.save_config(base_path, full_model_name)
         model_path = triton_master.save_model(base_path, model_version)
         paths[INFERENCE_STAGES[i]] = (config_path, model_path)
+        triton_masters.append(triton_master)
+
+    triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
+    ensemble_model_name = model_name + "_" + ENSEMBLE
+    base_path = os.path.join(output_path, ensemble_model_name)
+    os.makedirs(base_path, exist_ok=True)
+    ensemble_config = TritonEnsembleConfig(ensemble_model_name,
+                                           triton_master_preprocessor,
+                                           triton_master_predictor,
+                                           triton_master_postprocessor)
+    ensemble_config.save_ensemble_config(base_path)
 
     return paths
