@@ -22,12 +22,6 @@ from ludwig.utils.horovod_utils import has_horovodrun
 
 logger = logging.getLogger(__name__)
 
-try:
-    import ray as _ray
-except Exception as e:
-    logger.warning(f"import ray failed with exception: {e}")
-    _ray = None
-
 
 LOCAL_BACKEND = LocalBackend()
 
@@ -45,18 +39,12 @@ def _has_ray():
     if "PYTEST_CURRENT_TEST" in os.environ:
         return False
 
-    if _ray is None:
-        return False
-
-    if _ray.is_initialized():
-        return True
-
     try:
-        _ray.init("auto", ignore_reinit_error=True)
-        return True
-    except Exception as e:
-        logger.error(f"ray.init() failed: {e}")
+        import ray
+    except ImportError:
         return False
+
+    return ray.is_initialized()
 
 
 def get_local_backend(**kwargs):
