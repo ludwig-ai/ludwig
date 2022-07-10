@@ -864,7 +864,7 @@ def check_module_parameters_updated(
     learning_rate: float = 0.001,
 ) -> Tuple:
     """
-    Confirms that module parameters can be updated.
+    Reports on the number of parameters in a Ludwig component and their update status.
     Args:
         module: (LudwigModel) model to be tested.
         module_input_args: (tuple) input for model
@@ -893,9 +893,6 @@ def check_module_parameters_updated(
         # make pass through model
         module_output = module(*module_input_args)
 
-        # capture model parameters before doing parameter update pass
-        before = [(x[0], x[1].clone()) for x in module.named_parameters()]
-
         # do update of model parameters
         optimizer.zero_grad()
         if isinstance(module_output, torch.Tensor):
@@ -906,9 +903,6 @@ def check_module_parameters_updated(
             loss = loss_function(module_output[0], target_tensor)
         loss.backward()
         optimizer.step()
-
-        # capture model parameters after a pass
-        after = [(x[0], x[1].clone()) for x in module.named_parameters()]
 
         # check for parameter updates
         parameter_updated = []
