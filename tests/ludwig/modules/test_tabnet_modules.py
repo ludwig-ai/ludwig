@@ -181,9 +181,12 @@ def test_tabnet(
     fpc, tpc, upc, not_updated = check_module_parameters_updated(tabnet, (input_tensor,), target)
 
     if batch_size == 1:
-        assert upc == 15, f"Updated parameter count not expected value. Parameters not updated: {not_updated}" \
-                          f"\nModule structure:\n{tabnet}"
+        assert upc == 15, (
+            f"Updated parameter count not expected value. Parameters not updated: {not_updated}"
+            f"\nModule structure:\n{tabnet}"
+        )
     else:
         # update count should equal trainable number of parameters
-        assert tpc == upc, f"All parameter not updated. Parameters not updated: {not_updated}" \
-                           f"\nModule structure:\n{tabnet}"
+        assert tpc == upc, (
+            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{tabnet}"
+        )
