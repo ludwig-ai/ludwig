@@ -125,7 +125,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
-    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=1)
+    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=10)
     assert data_df.known_divisions
 
     config = {
