@@ -1716,6 +1716,22 @@ def _preprocess_df_for_training(
         # needs preprocessing
         logger.info("Using training dataframe")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
+
+        # Data is pre-split, so we override whatever split policy the user specified
+        if preprocessing_params["split"]:
+            warnings.warn(
+                'Preprocessing "split" section provided, but pre-split dataset given as input. '
+                "Ignoring split configuration."
+            )
+
+        preprocessing_params = {
+            **preprocessing_params,
+            "split": {
+                "type": "fixed",
+                "column": SPLIT,
+            },
+        }
+
     logger.info("Building dataset (it may take a while)")
 
     data, training_set_metadata = build_dataset(
