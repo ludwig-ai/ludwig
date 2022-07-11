@@ -166,7 +166,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_if_bytes_obj_and_resize(
-        img_entry: Union[bytes, torch.Tensor],
+        img_entry: Union[bytes, torch.Tensor, np.ndarray],
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -175,7 +175,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         user_specified_num_channels: bool,
     ) -> Optional[np.ndarray]:
         """
-        :param img_entry Union[bytes, torch.Tensor]: if str file path to the
+        :param img_entry Union[bytes, torch.Tensor, np.ndarray]: if str file path to the
             image else torch.Tensor of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
@@ -194,8 +194,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
+
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
+        elif isinstance(img_entry, np.ndarray):
+            img = torch.from_numpy(img_entry).permute(2, 0, 1)
         else:
             img = img_entry
 
@@ -333,16 +336,26 @@ class ImageFeatureMixin(BaseFeatureMixin):
         else:
             sample_size = 1  # Take first image
 
+        failed_entries = []
         for image_entry in column.head(sample_size):
             if isinstance(image_entry, str):
+                # Tries to read image as PNG or numpy file from the path.
                 image = read_image_from_path(image_entry)
             else:
                 image = image_entry
 
             if isinstance(image, torch.Tensor):
                 sample.append(image)
+            elif isinstance(image, np.ndarray):
+                sample.append(torch.from_numpy(image).permute(2, 0, 1))
+            else:
+                failed_entries.append(image_entry)
         if len(sample) == 0:
-            raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+            failed_entries_repr = "\n\t- ".join(failed_entries)
+            raise ValueError(
+                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
+                f"{failed_entries_repr}."
+            )
 
         should_resize = False
         if explicit_height_width:
