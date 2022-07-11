@@ -178,7 +178,7 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
 
 @dataclass
 class TritonConfigFeature:
-    """Represents a input/output feature in a Triton config.
+    """Represents an input/output feature in a Triton config.
 
     :param name: name of the feature.
     :param content: the data contents of the feature.
@@ -254,8 +254,6 @@ class TritonMaster:
 
     def save_model(self) -> str:
         """Scripts the model and saves it.
-
-        :param version: model version. Must be an integer that is >= 1.
         """
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
@@ -453,7 +451,7 @@ def export_triton(model: LudwigModel, data_example: pd.DataFrame, output_path: s
         Used to get dimensions throughout the pipeline.
     :param output_path: (str) The output path for the model repository.
     :param model_name: (str) The optional model name.
-    :param model_name: (Union[int,str]) The optional model verison.
+    :param model_version: (Union[int,str]) The optional model verison.
 
     # Return
     :return: (str, str) The saved model path, and config path.
