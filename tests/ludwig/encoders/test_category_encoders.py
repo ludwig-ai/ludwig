@@ -36,9 +36,9 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, traina
     fpc, tpc, upc, not_updated = check_module_parameters_updated(dense_encoder, (inputs,), target)
 
     if trainable:
-        assert fpc == 0, f"Embedding layer should be trainable, but found to be frozen."
+        assert fpc == 0, "Embedding layer should be trainable, but found to be frozen."
     else:
-        assert fpc == 1, f"Embedding layer should be frozen, but found to be trainable."
+        assert fpc == 1, "Embedding layer should be frozen, but found to be trainable."
 
     assert upc == tpc, f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {dense_encoder}"
 
@@ -63,8 +63,8 @@ def test_categorical_sparse_encoder(vocab: List[str], trainable: bool):
     fpc, tpc, upc, not_updated = check_module_parameters_updated(sparse_encoder, (inputs,), target)
     print(fpc, tpc, upc)
     if trainable:
-        assert fpc == 0, f"Embedding layer should be trainable, but found to be frozen."
+        assert fpc == 0, "Embedding layer should be trainable, but found to be frozen."
     else:
-        assert fpc == 1, f"Embedding layer should be frozen, but found to be trainable."
+        assert fpc == 1, "Embedding layer should be frozen, but found to be trainable."
 
     assert upc == tpc, f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {sparse_encoder}"
