@@ -311,6 +311,7 @@ class ViTEncoder(Encoder):
         gradient_checkpointing: bool = False,
         patch_size: int = 16,
         trainable: bool = True,
+        output_attentions: bool = False,
         **kwargs,
     ):
         """Creates a ViT encoder using transformers.ViTModel.
@@ -367,10 +368,14 @@ class ViTEncoder(Encoder):
             freeze_parameters(self.transformer)
 
         self._output_shape = (self.transformer.config.hidden_size,)
+        self.output_attentions = output_attentions
 
     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-        output = self.transformer(inputs, head_mask=head_mask)
-        return {"encoder_output": output.pooler_output}
+        output = self.transformer(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
+        return_dict = {"encoder_output": output.pooler_output}
+        if self.output_attentions:
+            return_dict["attentions"] = output.attentions
+        return return_dict
 
     @property
     def input_shape(self) -> torch.Size:

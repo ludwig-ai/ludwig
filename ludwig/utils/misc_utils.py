@@ -23,6 +23,7 @@ import numpy
 import torch
 
 from ludwig.constants import PROC_COLUMN
+from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
@@ -112,7 +113,7 @@ def get_output_directory(output_directory, experiment_name, model_name="run"):
 
 
 def get_file_names(output_directory):
-    description_fn = os.path.join(output_directory, "description.json")
+    description_fn = os.path.join(output_directory, DESCRIPTION_FILE_NAME)
     training_stats_fn = os.path.join(output_directory, "training_statistics.json")
 
     model_dir = os.path.join(output_directory, "model")

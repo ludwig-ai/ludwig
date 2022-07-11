@@ -1288,6 +1288,10 @@ def build_data(
     proc_cols = {}
     for feature_config in feature_configs:
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
+
+        # Need to run this again here as cast_columns may have introduced new missing values
+        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
             input_cols,
@@ -1712,6 +1716,22 @@ def _preprocess_df_for_training(
         # needs preprocessing
         logger.info("Using training dataframe")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
+
+        # Data is pre-split, so we override whatever split policy the user specified
+        if preprocessing_params["split"]:
+            warnings.warn(
+                'Preprocessing "split" section provided, but pre-split dataset given as input. '
+                "Ignoring split configuration."
+            )
+
+        preprocessing_params = {
+            **preprocessing_params,
+            "split": {
+                "type": "fixed",
+                "column": SPLIT,
+            },
+        }
+
     logger.info("Building dataset (it may take a while)")
 
     data, training_set_metadata = build_dataset(
