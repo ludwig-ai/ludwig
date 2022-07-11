@@ -5,9 +5,10 @@ import string
 import numpy as np
 import pandas as pd
 import pytest
+from PIL import Image
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, PROC_COLUMN
+from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
@@ -20,6 +21,8 @@ from tests.integration_tests.utils import (
     number_feature,
     sequence_feature,
 )
+
+NUM_EXAMPLES = 10
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
@@ -80,7 +83,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
 def test_with_split(backend, csv_filename, tmpdir):
-    num_examples = 10
+    num_examples = NUM_EXAMPLES
     train_set_size = int(num_examples * 0.8)
     val_set_size = int(num_examples * 0.1)
     test_set_size = int(num_examples * 0.1)
@@ -118,7 +121,7 @@ def test_with_split(backend, csv_filename, tmpdir):
 def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     import dask.dataframe as dd
 
-    num_examples = 10
+    num_examples = NUM_EXAMPLES
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
@@ -143,6 +146,61 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
             data_df,
             skip_save_processed_input=False,
         )
+
+
+@pytest.mark.parametrize("generate_images_as_numpy", [False, True])
+def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
+    input_features = [image_feature(os.path.join(tmpdir, "generated_output"), save_as_numpy=generate_images_as_numpy)]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"epochs": 2},
+    }
+
+    model = LudwigModel(config)
+    model.preprocess(
+        data_csv,
+        skip_save_processed_input=False,
+    )
+
+
+def test_read_image_from_numpy_array(tmpdir, csv_filename):
+    input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2},
+    }
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    df = pd.read_csv(data_csv)
+    processed_df_rows = []
+
+    for _, row in df.iterrows():
+        processed_df_rows.append(
+            {
+                input_features[0][NAME]: np.array(Image.open(row[input_features[0][NAME]])),
+                output_features[0][NAME]: row[output_features[0][NAME]],
+            }
+        )
+
+    df_with_images_as_numpy_arrays = pd.DataFrame(processed_df_rows)
+
+    model = LudwigModel(config)
+    model.preprocess(
+        df_with_images_as_numpy_arrays,
+        skip_save_processed_input=False,
+    )
 
 
 def test_number_feature_wrong_dtype(csv_filename, tmpdir):
