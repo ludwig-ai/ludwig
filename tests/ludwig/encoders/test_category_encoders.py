@@ -19,7 +19,9 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, traina
     torch.manual_seed(RANDOM_SEED)
 
     dense_encoder = CategoricalEmbedEncoder(
-        vocab=vocab, embedding_size=embedding_size, embeddings_trainable=trainable,
+        vocab=vocab,
+        embedding_size=embedding_size,
+        embeddings_trainable=trainable,
     ).to(DEVICE)
     inputs = torch.randint(len(vocab), (10,)).to(DEVICE)  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
@@ -38,9 +40,7 @@ def test_categorical_dense_encoder(vocab: List[str], embedding_size: int, traina
     else:
         assert fpc == 1, f"Embedding layer should be frozen, but found to be trainable."
 
-    assert (
-            upc == tpc
-    ), f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {dense_encoder}"
+    assert upc == tpc, f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {dense_encoder}"
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -67,6 +67,4 @@ def test_categorical_sparse_encoder(vocab: List[str], trainable: bool):
     else:
         assert fpc == 1, f"Embedding layer should be frozen, but found to be trainable."
 
-    assert (
-            upc == tpc
-    ), f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {sparse_encoder}"
+    assert upc == tpc, f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {sparse_encoder}"
