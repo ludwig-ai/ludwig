@@ -202,10 +202,12 @@ class TritonConfigFeature:
         # get ensemble_scheduling output_map key (same as "name" in input/output)
         self.key = f"{self.kind}__{self.index}"
 
-        # get ensemble_scheduling output_map value
+        # get ensemble_scheduling output_map value.
         if self.inference_stage == PREDICTOR and self.kind == INPUT:
+            # PREPROCESSOR outputs and PREDICTOR inputs must have the same "value" attribute.
             self.value = f"{PREPROCESSOR}_{OUTPUT}_{self.index}"
         elif self.inference_stage == POSTPROCESSOR and self.kind == INPUT:
+            # PREDICTOR outputs and POSTPROCESSOR inputs must have the same "value" attribute.
             self.value = f"{PREDICTOR}_{OUTPUT}_{self.index}"
         else:
             self.value = f"{self.inference_stage}_{self.kind}_{self.index}"
@@ -267,7 +269,7 @@ class TritonMaster:
         return model_path
 
     def save_config(self) -> str:
-        """Save the Triton config to path
+        """Save the Triton config.
         """
         self.config = TritonConfig(self.full_model_name, self.input_features, self.output_features)
         config_path = os.path.join(self.base_path, "config.pbtxt")
@@ -278,9 +280,7 @@ class TritonMaster:
 
 @dataclass
 class TritonEnsembleConfig:
-    """
-    will store triton config template, call the proper functions to populate it.
-    could store path and have a function for save.
+    """Dataclass for creating and saving the Triton ensemble config.
     """
     triton_master_preprocessor: TritonMaster
     triton_master_predictor: TritonMaster
@@ -342,6 +342,12 @@ class TritonEnsembleConfig:
 
 @dataclass
 class TritonConfig:
+    """Enables the creation and export of a Triton config.
+
+    :param full_model_name: name of the model. Must be the same as the directory where the config is saved.
+    :param input_features: input features of the model.
+    :param output_features: output features of the model.
+    """
     full_model_name: str
     input_features: List[TritonConfigFeature]
     output_features: List[TritonConfigFeature]
@@ -365,8 +371,6 @@ class TritonConfig:
 
     def get_model_config(self) -> str:
         """Generate a Triton config for a model from the input and output features.
-
-        todo (Wael): add parameters to _get_instance_spec
         """
         config = TRITON_CONFIG_TEMPLATE.format(
             model_name=self.full_model_name,
@@ -379,9 +383,16 @@ class TritonConfig:
 
 @dataclass
 class TritonModel:
+    """Enables the scripting and export of a model.
+
+    :param module: the inference module.
+    :param input_features: input features of the model.
+    :param output_features: output features of the model.
+    :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
+    """
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
-    triton_input_features: List[TritonConfigFeature]
-    triton_output_features: List[TritonConfigFeature]
+    input_features: List[TritonConfigFeature]
+    output_features: List[TritonConfigFeature]
     inference_stage: str
 
     def _get_wrapper_signature_type(self) -> str:
@@ -405,14 +416,18 @@ class TritonModel:
         return "(" + ", ".join(elems) + ")"
 
     def generate_inference_module_wrapper(self) -> str:
+        """Generate the class wrapper around an inference module.
+        """
         return INFERENCE_MODULE_TEMPLATE.format(
-            input_signature=self._get_input_signature(self.triton_input_features),
+            input_signature=self._get_input_signature(self.input_features),
             input_type=self._get_wrapper_signature_type(),
-            input_dict=self._get_input_dict(self.triton_input_features),
-            output_tuple=self._get_output_tuple(self.triton_output_features),
+            input_dict=self._get_input_dict(self.input_features),
+            output_tuple=self._get_output_tuple(self.output_features),
         )
 
     def generate_scripted_module(self):
+        """Generate the scripted module from the wrapper class.
+        """
         wrapper_definition = self.generate_inference_module_wrapper()
         with tempfile.TemporaryDirectory() as tmpdir:
             ts_path = os.path.join(tmpdir, "generated.py")
