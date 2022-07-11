@@ -70,6 +70,14 @@ def _upgrade_feature(feature: Dict[str, Any]):
     if feature.get(TYPE) == "numerical":
         warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
         feature[TYPE] = NUMBER
+    if feature.get(TYPE) == "audio":
+        if "preprocessing" in feature:
+            if "audio_feature" in feature["preprocessing"]:
+                for k, v in feature["preprocessing"]["audio_feature"].items():
+                    feature["preprocessing"][k] = v
+                del feature["preprocessing"]["audio_feature"]
+        warnings.warn('Parameters specified at the `audio_feature` parameter level have been unnested and should now '
+                      'be specified at the preprocessing level', DeprecationWarning)
     _traverse_dicts(feature, _upgrade_use_bias)
 
 
@@ -191,6 +199,14 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
 
     if split_params:
         preprocessing["split"] = split_params
+
+    if "audio" in preprocessing:
+        if "audio_feature" in preprocessing["audio"]:
+            for k, v in preprocessing["audio"]["audio_feature"].items():
+                preprocessing["audio"][k] = v
+            del preprocessing["audio"]["audio_feature"]
+        warnings.warn('Parameters specified at the `audio_feature` parameter level have been unnested and should now '
+                      'be specified at the preprocessing level', DeprecationWarning)
 
 
 def upgrade_deprecated_fields(config: Dict[str, Any]):
