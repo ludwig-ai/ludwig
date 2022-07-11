@@ -1,4 +1,4 @@
-from ludwig.utils.backward_compatibility import _upgrade_preprocessing, _upgrade_feature
+from ludwig.utils.backward_compatibility import _upgrade_feature, _upgrade_preprocessing
 
 
 def test_preprocessing_backward_compatibility():
@@ -35,7 +35,7 @@ def test_audio_feature_backward_compatibility():
                 "num_fft_points": None,
                 "window_type": "hamming",
                 "num_filter_bands": 80,
-            }
+            },
         },
     }
 
@@ -52,9 +52,10 @@ def test_audio_feature_backward_compatibility():
                 "window_shift_in_s": 0.02,
                 "num_fft_points": None,
                 "window_type": "hamming",
-                "num_filter_bands": 80, }
+                "num_filter_bands": 80,
             },
-     }
+        },
+    }
 
     _upgrade_feature(audio_feature_preprocessing_config)
     _upgrade_preprocessing(global_preprocessing_config)
@@ -73,7 +74,7 @@ def test_audio_feature_backward_compatibility():
             "window_type": "hamming",
             "num_filter_bands": 80,
         }
-     }
+    }
 
     assert audio_feature_preprocessing_config == {
         "name": "audio_feature",
