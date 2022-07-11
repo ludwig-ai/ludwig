@@ -28,7 +28,7 @@ def _get_or_create_experiment_id(experiment_name):
 
 
 class MlflowCallback(Callback):
-    def __init__(self, tracking_uri=None):
+    def __init__(self, tracking_uri=None, skip_artifact_logging: bool = False):
         self.experiment_id = None
         self.run = None
         self.run_ended = False
@@ -38,6 +38,7 @@ class MlflowCallback(Callback):
         self.save_in_background = True
         self.save_fn = None
         self.save_thread = None
+        self.skip_artifact_logging = skip_artifact_logging
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
 
@@ -87,7 +88,8 @@ class MlflowCallback(Callback):
         self._log_params({TRAINER: config[TRAINER]})
 
     def on_train_end(self, output_directory):
-        _log_artifacts(output_directory)
+        if not self.skip_artifact_logging:
+            _log_artifacts(output_directory)
         if self.run is not None:
             mlflow.end_run()
             self.run_ended = True
