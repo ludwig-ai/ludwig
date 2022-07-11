@@ -96,7 +96,8 @@ def _upgrade_feature(feature: Dict[str, Any]):
                     feature[PREPROCESSING][k] = v
                 del feature[PREPROCESSING]["audio_feature"]
         warnings.warn('Parameters specified at the `audio_feature` parameter level have been unnested and should now '
-                      'be specified at the preprocessing level', DeprecationWarning)
+                      'be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7',
+                      DeprecationWarning)
     _traverse_dicts(feature, _upgrade_use_bias)
 
 
@@ -225,7 +226,8 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
                 preprocessing[AUDIO][k] = v
             del preprocessing[AUDIO]["audio_feature"]
         warnings.warn('Parameters specified at the `audio_feature` parameter level have been unnested and should now '
-                      'be specified at the preprocessing level', DeprecationWarning)
+                      'be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7',
+                      DeprecationWarning)
 
 
 def upgrade_deprecated_fields(config: Dict[str, Any]):
