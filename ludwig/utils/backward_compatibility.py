@@ -18,16 +18,22 @@ import warnings
 from typing import Any, Callable, Dict
 
 from ludwig.constants import (
+    AUDIO,
+    COLUMN,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
     NUMBER,
     PARAMETERS,
     PREPROCESSING,
+    PROBABILITIES,
     RAY,
     SAMPLER,
+    SCHEDULER,
     SEARCH_ALG,
+    SPLIT,
     TRAINER,
+    TRAINING,
     TYPE,
 )
 
@@ -70,12 +76,12 @@ def _upgrade_feature(feature: Dict[str, Any]):
     if feature.get(TYPE) == "numerical":
         warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
         feature[TYPE] = NUMBER
-    if feature.get(TYPE) == "audio":
-        if "preprocessing" in feature:
-            if "audio_feature" in feature["preprocessing"]:
-                for k, v in feature["preprocessing"]["audio_feature"].items():
-                    feature["preprocessing"][k] = v
-                del feature["preprocessing"]["audio_feature"]
+    if feature.get(TYPE) == AUDIO:
+        if PREPROCESSING in feature:
+            if "audio_feature" in feature[PREPROCESSING]:
+                for k, v in feature[PREPROCESSING]["audio_feature"].items():
+                    feature[PREPROCESSING][k] = v
+                del feature[PREPROCESSING]["audio_feature"]
         warnings.warn('Parameters specified at the `audio_feature` parameter level have been unnested and should now '
                       'be specified at the preprocessing level', DeprecationWarning)
     _traverse_dicts(feature, _upgrade_use_bias)
@@ -136,8 +142,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
             hyperopt[EXECUTOR]["num_samples"] = hyperopt[SAMPLER]["num_samples"]
             warnings.warn('Moved "num_samples" from "sampler" to "executor"', DeprecationWarning)
 
-        if "scheduler" in hyperopt[SAMPLER] and "scheduler" not in hyperopt[EXECUTOR]:
-            hyperopt[EXECUTOR]["scheduler"] = hyperopt[SAMPLER]["scheduler"]
+        if SCHEDULER in hyperopt[SAMPLER] and SCHEDULER not in hyperopt[EXECUTOR]:
+            hyperopt[EXECUTOR][SCHEDULER] = hyperopt[SAMPLER][SCHEDULER]
             warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
 
         # remove legacy section
@@ -170,7 +176,7 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
     stratify = preprocessing.pop("stratify", None)
 
     if split_probabilities is not None:
-        split_params["probabilities"] = split_probabilities
+        split_params[PROBABILITIES] = split_probabilities
         warnings.warn(
             "`preprocessing.split_probabilities` has been replaced by `preprocessing.split.probabilities`, "
             "will be flagged as error in v0.7",
@@ -178,8 +184,8 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
         )
 
     if stratify is not None:
-        split_params["type"] = "stratify"
-        split_params["column"] = stratify
+        split_params[TYPE] = "stratify"
+        split_params[COLUMN] = stratify
         warnings.warn(
             "`preprocessing.stratify` has been replaced by `preprocessing.split.column` "
             'when setting `preprocessing.split.type` to "stratify", '
@@ -194,17 +200,17 @@ def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
             DeprecationWarning,
         )
 
-        if "type" not in split_params:
-            split_params["type"] = "random"
+        if TYPE not in split_params:
+            split_params[TYPE] = "random"
 
     if split_params:
-        preprocessing["split"] = split_params
+        preprocessing[SPLIT] = split_params
 
-    if "audio" in preprocessing:
-        if "audio_feature" in preprocessing["audio"]:
-            for k, v in preprocessing["audio"]["audio_feature"].items():
-                preprocessing["audio"][k] = v
-            del preprocessing["audio"]["audio_feature"]
+    if AUDIO in preprocessing:
+        if "audio_feature" in preprocessing[AUDIO]:
+            for k, v in preprocessing[AUDIO]["audio_feature"].items():
+                preprocessing[AUDIO][k] = v
+            del preprocessing[AUDIO]["audio_feature"]
         warnings.warn('Parameters specified at the `audio_feature` parameter level have been unnested and should now '
                       'be specified at the preprocessing level', DeprecationWarning)
 
@@ -214,10 +220,10 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
 
     Logs deprecation warnings
     """
-    if "training" in config:
+    if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
-        config[TRAINER] = config["training"]
-        del config["training"]
+        config[TRAINER] = config[TRAINING]
+        del config[TRAINING]
 
     for feature in config.get("input_features", []) + config.get("output_features", []):
         _upgrade_feature(feature)
