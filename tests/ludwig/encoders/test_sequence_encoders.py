@@ -56,6 +56,6 @@ def test_sequence_encoders(encoder_type: Type, reduce_output: str, vocab_size: i
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(sequence_encoder, (inputs,), target)
 
-    assert upc == tpc, (
-        f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {sequence_encoder}"
-    )
+    assert (
+        upc == tpc
+    ), f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {sequence_encoder}"

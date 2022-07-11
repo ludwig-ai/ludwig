@@ -36,11 +36,9 @@ def test_set_encoder(vocab: List[str], embedding_size: int, representation: str,
     fpc, tpc, upc, not_updated = check_module_parameters_updated(bag_encoder, (inputs,), target)
 
     if dropout == 0:
-        assert upc == tpc, (
-            f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {bag_encoder}"
-        )
+        assert upc == tpc, f"Not all parameters updated.  Parameters not updated: {not_updated}.\nModule: {bag_encoder}"
     else:
         # given random seed and configuration, non-zero dropout can take various values
-        assert (upc == tpc) or (upc == 0), (
-            f"Not all parameterss updated.  Parameters not updated: {not_updated}.\nModule: {bag_encoder}"
-        )
+        assert (upc == tpc) or (
+            upc == 0
+        ), f"Not all parameterss updated.  Parameters not updated: {not_updated}.\nModule: {bag_encoder}"
