@@ -70,15 +70,14 @@ def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str,
         time.sleep(logging_interval)
 
 
-class Tracker:
-    """Track system resource (hardware and software) usage by a chunk of code.
+class ResourceUsageTracker:
+    """Track system resource (hardware and software) usage.
 
     Attributes:
         tag: a string tag about the process that we're tracking. Examples: train, evaluate, preprocess, etc.
         output_dir: path where metrics are saved.
         logging_interval: time interval in seconds at which system is polled for resource usage.
-        num_batches: number of batches of training or evaluation process.
-        num_batches: number of examples of training or evaluation process.
+        num_examples: number of examples of training or evaluation process.
     """
 
     def __init__(
@@ -86,13 +85,11 @@ class Tracker:
         tag: str,
         output_dir: str,
         logging_interval: int = 1,
-        num_batches: Optional[int] = None,
         num_examples: Optional[int] = None,
     ) -> None:
         self.output_dir = output_dir
         self.tag = tag
         self.info = {"tag": self.tag, "system": {}}
-        self.num_batches = num_batches
         self.num_examples = num_examples
         self.logging_interval = logging_interval
         self.launched = False
