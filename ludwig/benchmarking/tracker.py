@@ -13,24 +13,32 @@ import traceback
 import sys
 
 from queue import Empty as EmptyQueueException
+from typing import Dict, Any, Optional
+from statistics import mean
+from ludwig.utils.data_utils import save_json, load_json
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.misc_utils import processify
 from gpustat.core import GPUStatCollection
+
+# disabling print because the following imports are verbose
+f = open(os.devnull, 'w')
+sys.stdout = f
 from experiment_impact_tracker.py_environment.common import get_python_packages_and_versions
 from experiment_impact_tracker.gpu.nvidia import get_gpu_info
 from experiment_impact_tracker.cpu.common import get_my_cpu_info
 
-from ludwig.utils.data_utils import save_json, load_json
-from ludwig.utils.misc_utils import processify
-from ludwig.globals import LUDWIG_VERSION
+f.close()
+sys.stdout = sys.__stdout__
 
 STOP_MESSAGE = 'stop'
 
 
 @processify
-def monitor(queue, info, output_dir, logging_interval):
+def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str, logging_interval: int) -> None:
     """
     Monitors hardware resource use as part of a separate process.
 
-    Populate `info` with system specific metrics (GPU, CPU, RAM, swap) at a `logging_interval` interval
+    Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval
     and saves the output in `output_dir`.
     """
     for key in info['system']:
@@ -38,7 +46,6 @@ def monitor(queue, info, output_dir, logging_interval):
             info['system'][key]['memory_used'] = []
     info['system']['cpu_utilization'] = []
     info['system']['ram_utilization'] = []
-    info['system']['swap_utilization'] = []
 
     while True:
         try:
@@ -51,14 +58,13 @@ def monitor(queue, info, output_dir, logging_interval):
                 queue.put(message)
         except EmptyQueueException:
             pass
-
-        gpu_infos = GPUStatCollection.new_query()
-        for i, gpu_info in enumerate(gpu_infos):
-            gpu_key = 'gpu_{}'.format(i)
-            info['system'][gpu_key]['memory_used'].append(gpu_info.memory_used)
+        if torch.cuda.is_available():
+            gpu_infos = GPUStatCollection.new_query()
+            for i, gpu_info in enumerate(gpu_infos):
+                gpu_key = 'gpu_{}'.format(i)
+                info['system'][gpu_key]['memory_used'].append(gpu_info.memory_used)
         info['system']['cpu_utilization'].append(psutil.cpu_percent())
         info['system']['ram_utilization'].append(psutil.virtual_memory().percent)
-        info['system']['swap_utilization'].append(psutil.swap_memory().percent)
         time.sleep(logging_interval)
 
 
@@ -67,7 +73,8 @@ class Tracker:
     Track system resource (hardware and software) usage by a chunk of code.
     """
 
-    def __init__(self, tag, output_dir, logging_interval=1, num_batches=None, num_examples=None):
+    def __init__(self, tag: str, output_dir: str, logging_interval: int = 1,
+                 num_batches: Optional[int] = None, num_examples: Optional[int] = None) -> None:
         """
         tag: one of `train` or `evaluate`.
         output_dir: path where metrics are saved.
@@ -84,7 +91,7 @@ class Tracker:
         self.launched = False
         os.makedirs(os.path.join(self.output_dir), exist_ok=True)
 
-    def populate_static_information(self):
+    def populate_static_information(self) -> None:
         """
         Populates the report with static software and hardware information.
         """
@@ -100,16 +107,17 @@ class Tracker:
         self.info['system']['cpu_name'] = cpu_info['brand_raw']
 
         # GPU information
-        gpu_infos = get_gpu_info()
-        for i, gpu_info in enumerate(gpu_infos):
-            gpu_key = 'gpu_{}'.format(i)
-            self.info['system'][gpu_key] = {}
-            self.info['system'][gpu_key]['name'] = gpu_info['name']
-            self.info['system'][gpu_key]['total_memory'] = gpu_info['total_memory']
-            self.info['system'][gpu_key]['driver_version'] = gpu_info['driver_version']
-            self.info['system'][gpu_key]['cuda_version'] = gpu_info['cuda_version']
+        if torch.cuda.is_available():
+            gpu_infos = get_gpu_info()
+            for i, gpu_info in enumerate(gpu_infos):
+                gpu_key = 'gpu_{}'.format(i)
+                self.info['system'][gpu_key] = {}
+                self.info['system'][gpu_key]['name'] = gpu_info['name']
+                self.info['system'][gpu_key]['total_memory'] = gpu_info['total_memory']
+                self.info['system'][gpu_key]['driver_version'] = gpu_info['driver_version']
+                self.info['system'][gpu_key]['cuda_version'] = gpu_info['cuda_version']
 
-        torch.cuda.synchronize()
+            torch.cuda.synchronize()
         self.info['start_time'] = time.time()
         self.info['num_examples'] = self.num_examples
 
@@ -138,14 +146,15 @@ class Tracker:
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Waits for monitoring process to exit.
         Computes and postprocesses more metrics.
         Saves report.
         """
         self.queue.put(STOP_MESSAGE)
-        torch.cuda.synchronize()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
         self.p.join()
 
         self.info = load_json(os.path.join(self.output_dir, self.info['tag'] + "_temp.json"))
@@ -154,10 +163,7 @@ class Tracker:
         self.info['end_time'] = time.time()
         self.info['{}_total_duration'.format(self.tag)] = self.info['end_time'] - self.info['start_time']
 
-        # if self.num_batches:
-        # self.info['per_batch_duration'] = self.info['{}_total_duration'.format(self.tag)] / self.num_batches
         if self.num_examples:
-            self.info['per_example_duration'] = self.info['{}_total_duration'.format(self.tag)] / self.num_examples
             self.info['examples_per_second'] = self.num_examples / self.info['{}_total_duration'.format(self.tag)]
         self.info['end_disk_usage'] = shutil.disk_usage(os.path.expanduser('~')).used
         self.info['disk_footprint'] = self.info['end_disk_usage'] - self.info['start_disk_usage']
@@ -167,6 +173,8 @@ class Tracker:
                 self.info['system'][key]['max_memory_used'] = max(self.info['system'][key]['memory_used'])
         self.info['system']['max_cpu_utilization'] = max(self.info['system']['cpu_utilization'])
         self.info['system']['max_ram_utilization'] = max(self.info['system']['ram_utilization'])
-        self.info['system']['max_swap_utilization'] = max(self.info['system']['swap_utilization'])
+
+        self.info['system']['average_cpu_utilization'] = mean(self.info['system']['cpu_utilization'])
+        self.info['system']['average_ram_utilization'] = mean(self.info['system']['ram_utilization'])
 
         save_json(os.path.join(self.output_dir, self.info['tag'] + "_metrics.json"), self.info)
