@@ -135,7 +135,15 @@ class Tracker:
         try:
             ctx = multiprocessing.get_context("fork")
             self.queue = ctx.Queue()
-            self.p = ctx.Process(target=monitor, args=(self.queue, self.info, self.output_dir, self.logging_interval,))
+            self.p = ctx.Process(
+                target=monitor,
+                args=(
+                    self.queue,
+                    self.info,
+                    self.output_dir,
+                    self.logging_interval,
+                ),
+            )
             self.p.start()
             self.launched = True
         except Exception as _:
