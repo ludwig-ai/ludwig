@@ -38,6 +38,12 @@ def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str,
 
     Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval and saves the output
     in `output_dir`.
+
+    Args:
+        queue: queue from which we can push and retrieve messages sent to the child process.
+        info: dictionary containing system resource usage information about the parent process.
+        output_dir: directory where the contents of `info` will be saved.
+        logging_interval: time interval at which we will poll the system for usage metrics.
     """
     for key in info["system"]:
         if "gpu_" in key:
@@ -67,7 +73,15 @@ def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str,
 
 
 class Tracker:
-    """Track system resource (hardware and software) usage by a chunk of code."""
+    """Track system resource (hardware and software) usage by a chunk of code.
+
+    Attributes:
+        tag: a string tag about the process that we're tracking. Examples: train, evaluate, preprocess, etc.
+        output_dir: path where metrics are saved.
+        logging_interval: time interval in seconds at which system is polled for resource usage.
+        num_batches: number of batches of training or evaluation process.
+        num_batches: number of examples of training or evaluation process.
+    """
 
     def __init__(
         self,
@@ -77,13 +91,6 @@ class Tracker:
         num_batches: Optional[int] = None,
         num_examples: Optional[int] = None,
     ) -> None:
-        """
-        tag: one of `train` or `evaluate`.
-        output_dir: path where metrics are saved.
-        logging_interval: time interval in seconds at which system is polled for resource usage.
-        num_batches: number of batches of training or evaluation process.
-        num_batches: number of examples of training or evaluation process.
-        """
         self.output_dir = output_dir
         self.tag = tag
         self.info = {"tag": self.tag, "system": {}}
