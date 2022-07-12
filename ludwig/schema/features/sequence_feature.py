@@ -4,10 +4,10 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import SEQUENCE
 from ludwig.decoders.registry import get_decoder_classes
-from ludwig.encoders.registry import get_encoder_classes
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
@@ -17,10 +17,9 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes(SEQUENCE).keys()),
-        default="embed",
-        description="Encoder to use for this sequence feature.",
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=SEQUENCE,
+        default='embed',
     )
 
 
