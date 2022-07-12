@@ -1,0 +1,15 @@
+# This is an example benchmarking config.yaml
+# Modify this file to run your experiments
+
+global_experiment_name: <GLOBAL_EXPERIMENT_NAME>
+export:
+  - export_artifacts: True
+    export_base_path: s3://benchmarking.us-west-2.predibase.com/bench/    # include the slash at the end.
+datasets:
+  - dataset_name: ames_housing
+    config_path: ames_housing.yaml
+  - dataset_name: protein
+    config_path: protein.yaml
+  - dataset_name: protein
+    config_path: protein-decay.yaml
+    experiment_name: zscore_normalization_decay
