@@ -22,6 +22,7 @@ from ludwig.constants import CATEGORY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
+from ludwig.schema.encoders.category_encoders import CategoricalEmbedConfig, CategoricalSparseConfig
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,10 @@ class CategoricalEmbedEncoder(Encoder):
         """
         embedded = self.embed(inputs)
         return embedded
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoricalEmbedConfig
 
     @property
     def output_shape(self) -> torch.Size:
@@ -111,6 +116,10 @@ class CategoricalSparseEncoder(Encoder):
         """
         embedded = self.embed(inputs)
         return embedded
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoricalSparseConfig
 
     @property
     def output_shape(self) -> torch.Size:
