@@ -1,4 +1,4 @@
-from typing import Optional, Union, List, ClassVar
+from typing import Union, List, ClassVar
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
 
@@ -23,27 +23,27 @@ class DenseEncoder(schema_utils.BaseMarshmallowConfig):
 
     type: str = "dense"
 
-    fc_layers: Optional[List[dict]] = schema_utils.DictList(
+    fc_layers: List[dict] = schema_utils.DictList(
         default=None,
         description="List of fully connected layers to use in the encoder.",
     )
 
-    num_layers: Optional[int] = schema_utils.PositiveInteger(
+    num_layers: int = schema_utils.PositiveInteger(
         default=1,
         description="Number of stacked fully connected layers that the input to the feature passes through.",
     )
 
-    output_size: Optional[int] = schema_utils.PositiveInteger(
+    output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Size of the output of the feature.",
     )
 
-    use_bias: Optional[bool] = schema_utils.Boolean(
+    use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
     )
 
-    weights_initializer: Optional[Union[str, dict]] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
+    weights_initializer: Union[str, dict] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
         ["constant", "identity", "zeros", "ones", "orthogonal", "normal", "uniform", "truncated_normal",
          "variance_scaling", "glorot_normal", "glorot_uniform", "xavier_normal", "xavier_uniform", "he_normal",
          "he_uniform", "lecun_normal", "lecun_uniform"],
@@ -51,7 +51,7 @@ class DenseEncoder(schema_utils.BaseMarshmallowConfig):
         description="Initializer for the weight matrix.",
     )
 
-    bias_initializer: Optional[Union[str, dict]] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
+    bias_initializer: Union[str, dict] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
         ["constant", "identity", "zeros", "ones", "orthogonal", "normal", "uniform", "truncated_normal",
          "variance_scaling", "glorot_normal", "glorot_uniform", "xavier_normal", "xavier_uniform", "he_normal",
          "he_uniform", "lecun_normal", "lecun_uniform"],
@@ -59,25 +59,25 @@ class DenseEncoder(schema_utils.BaseMarshmallowConfig):
         description="Initializer for the bias vector.",
     )
 
-    norm: Optional[Union[str]] = schema_utils.StringOptions(
+    norm: Union[str] = schema_utils.StringOptions(
         ["batch", "layer"],
         allow_none=True,
         default=None,
         description="Normalization to use in the dense layer.",
     )
 
-    norm_params: Optional[dict] = schema_utils.Dict(
+    norm_params: dict = schema_utils.Dict(
         default=None,
         description="Parameters for normalization if norm is either batch or layer.",
     )
 
-    activation: Optional[str] = schema_utils.StringOptions(
+    activation: str = schema_utils.StringOptions(
         ["elu", "leakyRelu", "logSigmoid", "relu", "sigmoid", "tanh", "softmax"],
         default="relu",
         description="Activation function to apply to the output.",
     )
 
-    dropout: Optional[float] = schema_utils.FloatRange(
+    dropout: float = schema_utils.FloatRange(
         default=0.0,
         min=0.0,
         max=1.0,
