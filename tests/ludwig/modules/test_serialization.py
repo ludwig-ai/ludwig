@@ -120,7 +120,7 @@ def test_transfer_learning(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
     }
     model1 = LudwigModel(model1_config)
-    train_stats1, _, _ = model1.train(dataset=data_csv, output_directory=tmpdir)
+    train_stats1, _, _ = model1.train(dataset=data_csv, output_directory=os.path.join(tmpdir, "model1"))
     # Saves pre-trained encoder to file.
     trained_input_feature = model1.model.input_features[text_input_name]
     input_feature_encoder = trained_input_feature.encoder_obj
@@ -147,7 +147,9 @@ def test_transfer_learning(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
     }
     model2 = LudwigModel(model2_config)
-    train_stats2, preproc_data, _ = model2.train(dataset=new_training_set, output_directory=tmpdir)
+    train_stats2, preproc_data, _ = model2.train(
+        dataset=new_training_set, output_directory=os.path.join(tmpdir, "model2")
+    )
     # Assert that final train loss is lower for model 2 using the pre-trained encoder.
     assert (
         train_stats2["training"][category_output_name]["loss"][-1]

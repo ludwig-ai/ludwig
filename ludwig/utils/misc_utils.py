@@ -77,7 +77,7 @@ def resolve_pointers(dict1, dict2, dict2_name):
     resolved_dict = copy.deepcopy(dict1)
     for key in dict1:
         value = dict1[key]
-        if value.startswith(dict2_name):
+        if isinstance(value, str) and value.startswith(dict2_name):
             key_in_dict2 = value[len(dict2_name) :]
             if key_in_dict2 in dict2.keys():
                 value = dict2[key_in_dict2]

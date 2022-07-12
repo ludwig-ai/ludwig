@@ -1276,8 +1276,8 @@ def build_preprocessing_parameters(
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
             encoder_fixed_parameters = {}
-            if URL in feature_config[ENCODER]:
-                encoder_state = serialization.load_state_from_file(feature_config["encoder"])
+            if "url" in feature_config[ENCODER]:
+                encoder_state = serialization.load_state_from_file(feature_config["url"])
                 encoder_fixed_parameters = encoder_state.metadata
             elif TYPE in feature_config[ENCODER]:
                 encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
