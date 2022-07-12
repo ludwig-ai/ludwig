@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = "0.5.3"
+LUDWIG_VERSION = "0.5.4"
 
 INFERENCE_MODULE_FILE_NAME = "inference_module"
 MODEL_WEIGHTS_FILE_NAME = "model_weights"
