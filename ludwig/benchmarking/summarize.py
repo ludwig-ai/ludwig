@@ -1,21 +1,23 @@
-import functools
-import os
-import fsspec
 import argparse
 import asyncio
-
-from typing import List, Dict, Tuple, Any, Union
+import functools
+import os
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List, Tuple, Union
+
+import fsspec
+from summary_dataclasses import ExperimentsDiff
+
+from ludwig.globals import CONFIG_YAML, REPORT_JSON
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.fs_utils import get_fs_and_path
 
-from ludwig.globals import CONFIG_YAML, REPORT_JSON
-from summary_dataclasses import ExperimentsDiff
 # todo (Wael): to update once summary dataclasses PR is merged.
 
 
-def download_artifacts(bench_config: Dict[str, Any], base_experiment: str,
-                       experimental_experiment: str, download_base_path: str) -> List[Union[Tuple[str, str], Any]]:
+def download_artifacts(
+    bench_config: Dict[str, Any], base_experiment: str, experimental_experiment: str, download_base_path: str
+) -> List[Union[Tuple[str, str], Any]]:
     """Download benchmarking artifacts for two experiments.
 
     bench_config: bench config file. Can be the same one that was used to run
@@ -31,7 +33,7 @@ def download_artifacts(bench_config: Dict[str, Any], base_experiment: str,
     os.makedirs(local_dir, exist_ok=True)
 
     coroutines = []
-    for experiment in bench_config['datasets']:
+    for experiment in bench_config["datasets"]:
         dataset_name = experiment["dataset_name"]
         for experiment_name in [base_experiment, experimental_experiment]:
             coroutines.append(download_one(fs, download_base_path, dataset_name, experiment_name, local_dir))
@@ -42,8 +44,9 @@ def download_artifacts(bench_config: Dict[str, Any], base_experiment: str,
     return downloaded_names
 
 
-async def download_one(fs, download_base_path: str, dataset_name: str,
-                       experiment_name: str, local_dir: str) -> Tuple[str, str]:
+async def download_one(
+    fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
+) -> Tuple[str, str]:
     """Download `config.yaml` and `report.json` for an experiment.
 
     fs: filesystem to use to download.
@@ -58,15 +61,19 @@ async def download_one(fs, download_base_path: str, dataset_name: str,
     os.makedirs(local_experiment_dir, exist_ok=True)
     with ThreadPoolExecutor() as pool:
         for f_name in [CONFIG_YAML, REPORT_JSON]:
-            func = functools.partial(fs.get, os.path.join(download_base_path, dataset_name, experiment_name, f_name),
-                                     os.path.join(local_experiment_dir, f_name),
-                                     recursive=True)
+            func = functools.partial(
+                fs.get,
+                os.path.join(download_base_path, dataset_name, experiment_name, f_name),
+                os.path.join(local_experiment_dir, f_name),
+                recursive=True,
+            )
             await loop.run_in_executor(pool, func)
     return dataset_name, local_dir
 
 
-def build_summary(bench_config_path: str, base_experiment: str,
-                  experimental_experiment: str, download_base_path: str) -> List[ExperimentsDiff]:
+def build_summary(
+    bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
+) -> List[ExperimentsDiff]:
     """Build summary and diffs of artifacts.
 
     bench_config_path: bench config file path. Can be the same one that was used to run
@@ -97,13 +104,30 @@ def export_summary(experiment_diffs: List[ExperimentsDiff]) -> None:
     example_diff = experiment_diffs[0]
     spacing_str = "{:<33} {:<20} {:<23} {:<13} {:<13} {:<13} {:<5}"
     csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
-    print(spacing_str.format("Dataset Name", "Output Feature Name", "Metric Name", example_diff.base_experiment_name,
-                             example_diff.experimental_experiment_name, "Diff", "Diff Percentage"))
+    print(
+        spacing_str.format(
+            "Dataset Name",
+            "Output Feature Name",
+            "Metric Name",
+            example_diff.base_experiment_name,
+            example_diff.experimental_experiment_name,
+            "Diff",
+            "Diff Percentage",
+        )
+    )
 
-    with open("report_{}_{}.csv".format(example_diff.base_experiment_name, example_diff.experimental_experiment_name),
-              'w') as f:
-        f.write(csv_str.format("Dataset Name", "Output Feature Name", "Metric Name", example_diff.base_experiment_name,
-                               example_diff.experimental_experiment_name, "Diff", "Diff Percentage"))
+    with open(f"report_{example_diff.base_experiment_name}_{example_diff.experimental_experiment_name}.csv", "w") as f:
+        f.write(
+            csv_str.format(
+                "Dataset Name",
+                "Output Feature Name",
+                "Metric Name",
+                example_diff.base_experiment_name,
+                example_diff.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            )
+        )
         for experiment_diff in experiment_diffs:
             for metric in experiment_diff.metrics:
                 output_feature_name = experiment_diff.base_summary.output_feature_name
@@ -113,30 +137,50 @@ def export_summary(experiment_diffs: List[ExperimentsDiff]) -> None:
                 diff = round(metric.diff, 3)
                 diff_percentage = round(metric.diff_percentage, 3)
                 print(
-                    spacing_str.format(experiment_diff.dataset_name, output_feature_name, metric_name, experiment1_val,
-                                       experiment2_val, diff,
-                                       diff_percentage))
-                f.write(csv_str.format(experiment_diff.dataset_name, output_feature_name, metric_name, experiment1_val,
-                                       experiment2_val, diff,
-                                       diff_percentage))
+                    spacing_str.format(
+                        experiment_diff.dataset_name,
+                        output_feature_name,
+                        metric_name,
+                        experiment1_val,
+                        experiment2_val,
+                        diff,
+                        diff_percentage,
+                    )
+                )
+                f.write(
+                    csv_str.format(
+                        experiment_diff.dataset_name,
+                        output_feature_name,
+                        metric_name,
+                        experiment1_val,
+                        experiment2_val,
+                        diff,
+                        diff_percentage,
+                    )
+                )
 
-    print("Exported report to",
-          "report_{}_{}.csv".format(example_diff.base_experiment_name, example_diff.experimental_experiment_name))
+    print(
+        "Exported report to",
+        f"report_{example_diff.base_experiment_name}_{example_diff.experimental_experiment_name}.csv",
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment-one", type=str, help="Name of first experiment", default="0.5.2")
     parser.add_argument("--experiment-two", type=str, help="Name of first experiment", default="0.5.3")
-    parser.add_argument("--download-base-path", type=str,
-                        help="Base path under which benchmarking experiment artifacts (config.yaml, report.json, "
-                             "etc.) are saved",
-                        default="s3://benchmarking.us-west-2.predibase.com/bench/")
+    parser.add_argument(
+        "--download-base-path",
+        type=str,
+        help="Base path under which benchmarking experiment artifacts (config.yaml, report.json, " "etc.) are saved",
+        default="s3://benchmarking.us-west-2.predibase.com/bench/",
+    )
     args, unknown = parser.parse_known_args()
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     os.chdir("bench")
 
-    summary = build_summary('./configs/temp.yaml', args.experiment_one, args.experiment_two,
-                            download_base_path=args.download_base_path)
+    summary = build_summary(
+        "./configs/temp.yaml", args.experiment_one, args.experiment_two, download_base_path=args.download_base_path
+    )
     export_summary(summary)
