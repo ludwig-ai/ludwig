@@ -125,7 +125,6 @@ class Tracker:
                 self.info["system"][gpu_key]["driver_version"] = gpu_info["driver_version"]
                 self.info["system"][gpu_key]["cuda_version"] = gpu_info["cuda_version"]
 
-            torch.cuda.synchronize()
         self.info["start_time"] = time.time()
         self.info["num_examples"] = self.num_examples
 
