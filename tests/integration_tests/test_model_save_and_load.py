@@ -221,19 +221,20 @@ def test_model_weights_match_training(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Generate test data
         data_csv_path = generate_data(
-            input_features,
-            output_features,
-            os.path.join(tmpdir, csv_filename),
-            num_examples=100
+            input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100
         )
 
-        config = {"input_features": input_features, "output_features": output_features,
-                  "trainer": {"epochs": 5, "batch_size": 32}}
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "trainer": {"epochs": 5, "batch_size": 32},
+        }
 
-        model = LudwigModel(config=config, )
+        model = LudwigModel(
+            config=config,
+        )
 
-        training_stats, _, _ = model.train(
-            training_set=data_csv_path, random_seed=1919)
+        training_stats, _, _ = model.train(training_set=data_csv_path, random_seed=1919)
 
         # generate predicitons from training data
         df = pd.read_csv(data_csv_path)
