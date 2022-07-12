@@ -30,7 +30,8 @@ SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
-TORCHTEXT_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
+TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
+TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
 
 class BaseTokenizer:
@@ -891,7 +892,7 @@ try:
     import torchtext
 
     if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
-        """Torchscript-enabled tokenizers.
+        """torchtext 0.12.0 tokenizers.
 
         Only available with torchtext>=0.12.0.
         """
@@ -992,11 +993,49 @@ try:
                 "gpt2bpe": GPT2BPETokenizer,
             }
         )
-        TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_TOKENIZERS)
+        TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_12_0_TOKENIZERS)
     else:
         raise ImportError
 
 except ImportError:
     logger.warning(
-        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: " f"{TORCHTEXT_TOKENIZERS}"
+        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
+        f"{TORCHTEXT_0_12_0_TOKENIZERS}"
+    )
+
+
+try:
+    import torchtext
+
+    if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 13, 0):
+        pass
+    else:
+        raise ImportError
+
+    class BERTTokenizer(torch.nn.Module):
+        def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+            super().__init__()
+            if pretrained_model_name_or_path is None:
+                vocab_path = "https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt"
+            else:
+                # TODO: add way to map pretrained model names to vocab paths
+                pass
+            self.tokenizer = torchtext.transforms.BERTTokenizer(vocab_path=vocab_path, return_tokens=True)
+
+        def forward(self, v: Union[str, List[str], torch.Tensor]):
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+            return self.tokenizer(v)
+
+    tokenizer_registry.update(
+        {
+            "bert": BERTTokenizer,
+        }
+    )
+    TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_13_0_TOKENIZERS)
+
+except ImportError:
+    logger.warning(
+        f"torchtext>=0.13.0 is not installed, so the following tokenizers are not available: "
+        f"{TORCHTEXT_0_13_0_TOKENIZERS}"
     )
