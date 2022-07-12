@@ -3,7 +3,7 @@ import copy
 from typing import Dict, Tuple, Any
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.misc_utils import merge_dict
-from globals import CACHE, EXPERIMENT_RUN, TRAIN_TAG, EVAL_TAG
+from ludwig.constants import CACHE, EXPERIMENT_RUN, TRAIN_TAG, EVAL_TAG
 
 
 def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:

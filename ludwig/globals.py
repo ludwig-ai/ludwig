@@ -31,6 +31,9 @@ PREDICTIONS_SHAPES_FILE_NAME = "predictions.shapes.json"
 
 TRAINING_PREPROC_FILE_NAME = "training.hdf5"
 
+REPORT_JSON = "report.json"
+CONFIG_YAML = "config.yaml"
+
 DISABLE_PROGRESSBAR = False
 
 

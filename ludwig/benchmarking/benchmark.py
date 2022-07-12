@@ -8,9 +8,12 @@ from typing import Dict, Any, Union
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import load_yaml
 from utils import load_from_module, export_artifacts
+# todo (Wael): to update once benchmarking utils PR merged.
 from reporting import create_metrics_report
 from ludwig_with_benchmarks import ludwig_experiment_with_benchmarks
+# todo (Wael): to update once api.py PR is merged.
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     """Set up the backend and load the Ludwig config.
@@ -72,9 +75,3 @@ def benchmark(bench_config_path: str) -> None:
         except Exception as e:
             print("Benchmarking {} {} failed".format(experiment["dataset_name"], experiment["experiment_name"]))
             print(traceback.format_exc())
-
-
-if __name__ == "__main__":
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    os.chdir("/root/bench")
-    benchmark('./configs/temp.yaml')

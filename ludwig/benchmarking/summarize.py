@@ -9,8 +9,9 @@ from concurrent.futures import ThreadPoolExecutor
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.fs_utils import get_fs_and_path
 
-from globals import CONFIG_YAML, REPORT_JSON
+from ludwig.globals import CONFIG_YAML, REPORT_JSON
 from summary_dataclasses import ExperimentsDiff
+# todo (Wael): to update once summary dataclasses PR is merged.
 
 
 def download_artifacts(bench_config: Dict[str, Any], base_experiment: str,
