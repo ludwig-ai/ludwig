@@ -1,38 +1,77 @@
 from typing import ClassVar, List
 from ludwig.encoders.base import Encoder
-from ludwig.encoders.binary_encoders import BinaryPassthroughEncoder
+from ludwig.encoders.date_encoders import DateEmbed
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class DateEmbedEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class DateEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
-    encoder_class: ClassVar[Encoder] = BinaryPassthroughEncoder
+    encoder_class: ClassVar[Encoder] = DateEmbed
 
     type: str = "embed"
 
-    embedding_size: int = 10,
+    embedding_size: int = schema_utils.PositiveInteger(
+        default=10,
+        description="The maximum embedding size adopted.",
+    )
 
-    embeddings_on_cpu: bool = False,
-    
-    fc_layers: List[dict] = None,
+    embeddings_on_cpu: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
+                    "resolve them.",
+    )
 
-    num_fc_layers: int = 0,
+    fc_layers = List[dict] = schema_utils.DictList(
+        default=None,
+        description="List of dictionaries containing the parameters for each fully connected layer.",
+    )
 
-    output_size: int = 10,
+    num_fc_layers: int = schema_utils.PositiveInteger(
+        default=0,
+        description="The number of stacked fully connected layers.",
+    )
 
-    use_bias: bool = True,
+    output_size: int = schema_utils.PositiveInteger(
+        default=10,
+        description="If an output_size is not already specified in fc_layers this is the default output_size that "
+                    "will be used for each layer. It indicates the size of the output of a fully connected layer.",
+    )
 
-    weights_initializer: str = "xavier_uniform",
+    use_bias: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether the layer uses a bias vector.",
+    )
 
-    bias_initializer: str = "zeros",
+    weights_initializer: str = schema_utils.InitializerOptions(
+        description="Initializer to use for the weights matrix.",
+    )
 
-    norm: str = None,
+    bias_initializer: str = schema_utils.InitializerOptions(
+        default="zeros",
+        description="Initializer to use for the bias vector.",
+    )
 
-    norm_params: Dict = None,
+    norm: str = schema_utils.StringOptions(
+        ["batch", "layer"],
+        default=None,
+        description="The default norm that will be used for each layer.",
+    )
 
-    activation: str = "relu",
+    norm_params: dict = schema_utils.Dict(
+        default=None,
+        description="Parameters used if norm is either `batch` or `layer`.",
+    )
 
-    dropout: float = 0,
+    activation: str = schema_utils.ActivationOptions(
+        description="The default activation function that will be used for each layer."
+    )
+
+    dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        description="Dropout probability for the embedding.",
+    )
