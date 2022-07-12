@@ -1368,6 +1368,9 @@ class LudwigModel:
 
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
+        # Upgrades deprecated fields and adds new required fields, in case the config loaded from disk is old.
+        config = merge_with_defaults(config)
+
         if backend_param is None and "backend" in config:
             # Reset backend from config
             backend = initialize_backend(config.get("backend"))
