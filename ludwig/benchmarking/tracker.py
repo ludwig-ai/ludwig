@@ -17,7 +17,6 @@ from gpustat.core import GPUStatCollection
 
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json, save_json
-from ludwig.utils.misc_utils import processify
 
 # disabling print because the following imports are verbose
 f = open(os.devnull, "w")
@@ -32,7 +31,6 @@ sys.stdout = sys.__stdout__
 STOP_MESSAGE = "stop"
 
 
-@processify
 def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str, logging_interval: int) -> None:
     """Monitors hardware resource use as part of a separate process.
 
@@ -134,15 +132,14 @@ class Tracker:
             raise ValueError("Tracker already launched.")
 
         self.populate_static_information()
-
         try:
-            multiprocessing.set_start_method("fork")
-        except RuntimeError:
-            pass
-        try:
-            self.p, self.queue = monitor(self.info, self.output_dir, self.logging_interval)
+            ctx = multiprocessing.get_context("fork")
+            self.queue = ctx.Queue()
+            self.p = ctx.Process(target=monitor, args=(self.queue, self.info, self.output_dir, self.logging_interval,))
+            self.p.start()
             self.launched = True
         except Exception as _:
+            self.launched = False
             ex_type, ex_value, tb = sys.exc_info()
             print("Encountered exception when launching tracker.")
             print("".join(traceback.format_tb(tb)))
