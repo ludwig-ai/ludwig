@@ -26,7 +26,7 @@ from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class ALBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
     encoder_class: ClassVar[Encoder] = ALBERTEncoder
@@ -181,7 +181,7 @@ class ALBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class MT5EncoderConfig(schema_utils.BaseMarshmallowConfig):
+class MT5Config(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
     encoder_class: ClassVar[Encoder] = MT5Encoder
@@ -326,7 +326,7 @@ class MT5EncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class XLMRoBERTaEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class XLMRoBERTaConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
     encoder_class: ClassVar[Encoder] = XLMRoBERTaEncoder
@@ -395,7 +395,7 @@ class XLMRoBERTaEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class BERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class BERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
     encoder_class: ClassVar[Encoder] = BERTEncoder
@@ -529,7 +529,7 @@ class BERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class XLMEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class XLMConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
     encoder_class: ClassVar[Encoder] = XLMEncoder
@@ -727,7 +727,7 @@ class XLMEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class GPTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class GPTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
     encoder_class: ClassVar[Encoder] = GPTEncoder
@@ -834,7 +834,7 @@ class GPTEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class GPT2EncoderConfig(schema_utils.BaseMarshmallowConfig):
+class GPT2Config(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
     encoder_class: ClassVar[Encoder] = GPT2Encoder
@@ -952,7 +952,7 @@ class GPT2EncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class RoBERTaEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
     encoder_class: ClassVar[Encoder] = RoBERTaEncoder
@@ -1011,7 +1011,7 @@ class RoBERTaEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class TransformerXLEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
     encoder_class: ClassVar[Encoder] = TransformerXLEncoder
@@ -1190,7 +1190,7 @@ class TransformerXLEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class XLNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class XLNetConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
     encoder_class: ClassVar[Encoder] = XLNetEncoder
@@ -1379,7 +1379,7 @@ class XLNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class DistilBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
     encoder_class: ClassVar[Encoder] = DistilBERTEncoder
@@ -1499,7 +1499,7 @@ class DistilBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class CTRLEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class CTRLConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
     encoder_class: ClassVar[Encoder] = CTRLEncoder
@@ -1607,7 +1607,7 @@ class CTRLEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class CamemBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
     encoder_class: ClassVar[Encoder] = CamemBERTEncoder
@@ -1740,7 +1740,7 @@ class CamemBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class T5EncoderConfig(schema_utils.BaseMarshmallowConfig):
+class T5Config(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
     encoder_class: ClassVar[Encoder] = T5Encoder
@@ -1850,7 +1850,7 @@ class T5EncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class FlauBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
     encoder_class: ClassVar[Encoder] = FlauBERTEncoder
@@ -2042,7 +2042,7 @@ class FlauBERTEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class ELECTRAEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
     encoder_class: ClassVar[Encoder] = ELECTRAEncoder
@@ -2171,7 +2171,7 @@ class ELECTRAEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class LongformerEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class LongformerConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an Longformer encoder."""
 
     encoder_class: ClassVar[Encoder] = LongformerEncoder
@@ -2232,7 +2232,7 @@ class LongformerEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class AutoTransformerEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class AutoTransformerConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
     encoder_class: ClassVar[Encoder] = AutoTransformerEncoder

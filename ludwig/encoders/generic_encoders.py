@@ -21,6 +21,7 @@ from ludwig.constants import BINARY, CATEGORY, NUMBER, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.schema.encoders.generic_encoders import PassthroughEncoderConfig, DenseEncoderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,10 @@ class PassthroughEncoder(Encoder):
                Shape: [batch x 1], type tf.float32
         """
         return {"encoder_output": inputs}
+
+    @staticmethod
+    def get_schema_cls():
+        return PassthroughEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -90,6 +95,10 @@ class DenseEncoder(Encoder):
                Shape: [batch x 1], type tf.float32
         """
         return {"encoder_output": self.fc_stack(inputs)}
+
+    @staticmethod
+    def get_schema_cls():
+        return DenseEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:

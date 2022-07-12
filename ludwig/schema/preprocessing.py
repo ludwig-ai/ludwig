@@ -182,7 +182,7 @@ class NumberPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
 @register_preprocessor(BINARY)
 @dataclass
-@register_preprocessor("binary")
+@register_preprocessor(BINARY)
 class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 

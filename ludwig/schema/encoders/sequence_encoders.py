@@ -1,6 +1,7 @@
 from typing import List, ClassVar
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.sequence_encoders import (
+    SequencePassthroughEncoder,
     SequenceEmbedEncoder,
     ParallelCNN,
     StackedCNN,
@@ -16,7 +17,31 @@ from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class EmbedEncoderConfig(schema_utils.BaseMarshmallowConfig):
+class SequencePassthroughConfig(schema_utils.BaseMarshmallowConfig):
+
+    encoder_class: ClassVar[Encoder] = SequencePassthroughEncoder
+
+    type: str = "passthrough"
+
+    reduce_output: str = schema_utils.ReductionOptions(
+        default=None,
+        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
+                    "tensor is greater than 2.",
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        description="The maximum length of a sequence.",
+    )
+
+    encoding_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="The size of the encoding vector, or None if sequence elements are scalars.",
+    )
+
+
+@dataclass
+class SequenceEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
     encoder_class: ClassVar[Encoder] = SequenceEmbedEncoder
 
@@ -729,7 +754,7 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
-        description="by default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
+        description="By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
                     "access, but in some cases the embedding matrix may be too large. This parameter forces the "
                     "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
                     "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",

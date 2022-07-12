@@ -7,7 +7,7 @@ from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class PassthroughEncoder(schema_utils.BaseMarshmallowConfig):
+class PassthroughEncoderConfig(schema_utils.BaseMarshmallowConfig):
     """PassthroughEncoder is a dataclass that configures the parameters used for a passthrough encoder."""
 
     encoder_class: ClassVar[Encoder] = PassthroughEncoder
@@ -16,7 +16,7 @@ class PassthroughEncoder(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class DenseEncoder(schema_utils.BaseMarshmallowConfig):
+class DenseEncoderConfig(schema_utils.BaseMarshmallowConfig):
     """DenseEncoder is a dataclass that configures the parameters used for a dense encoder."""
 
     encoder_class: ClassVar[Encoder] = DenseEncoder
