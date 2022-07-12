@@ -9,12 +9,13 @@ import fsspec
 import pandas as pd
 from botocore.exceptions import ClientError
 from globals import CONFIG_YAML, EXPERIMENT_RUN, REPORT_JSON
+
 # todo (Wael): add to ludwig.globals
 from s3fs.errors import translate_boto_error
 
 from ludwig.constants import CATEGORY
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -23,8 +24,8 @@ from ludwig.utils.fs_utils import get_fs_and_path
 def load_from_module(
     dataset_module: BaseDataset, output_feature: Dict[str, str], subsample_frac: float = 1
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split.
-    A stratified split is used for classification datasets.
+    """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
+    used for classification datasets.
 
     dataset_module: ludwig datasets module (e.g. ludwig.datasets.sst2, ludwig.datasets.ames_housing, etc.)
     subsample_frac: percentage of the total dataset to load.
@@ -34,8 +35,11 @@ def load_from_module(
         dataset = dataset.sample(frac=subsample_frac, replace=False, random_state=default_random_seed)
 
     if output_feature["type"] == CATEGORY:
-        dataset = get_repeatable_train_val_test_split(dataset, stratify_colname=output_feature["name"],
-                                                      random_seed=default_random_seed,)
+        dataset = get_repeatable_train_val_test_split(
+            dataset,
+            stratify_colname=output_feature["name"],
+            random_seed=default_random_seed,
+        )
     else:
         dataset = get_repeatable_train_val_test_split(dataset, random_seed=default_random_seed)
 
