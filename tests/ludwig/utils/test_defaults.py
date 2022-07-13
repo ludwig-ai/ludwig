@@ -1,6 +1,7 @@
 import copy
 
 import pytest
+from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
@@ -8,6 +9,9 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     FILL_WITH_MODE,
     HYPEROPT,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NUMBER,
     PREPROCESSING,
     SCHEDULER,
@@ -16,7 +20,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.data.preprocessing import merge_preprocessing
-from ludwig.schema.trainer import TrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     binary_feature,
@@ -93,7 +97,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
-    expected = -1 if use_hyperopt_scheduler else TrainerConfig().early_stop
+    expected = -1 if use_hyperopt_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
 
@@ -165,6 +169,83 @@ def test_deprecated_field_aliases():
     assert "scheduler" in merged_config[HYPEROPT]["executor"]
 
 
+def test_default_model_type():
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[MODEL_TYPE] == MODEL_ECD
+
+
+@pytest.mark.parametrize(
+    "model_trainer_type",
+    [
+        (MODEL_ECD, "trainer"),
+        (MODEL_GBM, "lightgbm_trainer"),
+    ],
+)
+def test_default_trainer_type(model_trainer_type):
+    model_type, expected_trainer_type = model_trainer_type
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        MODEL_TYPE: model_type,
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[TRAINER][TYPE] == expected_trainer_type
+
+
+def test_overwrite_trainer_type():
+    expected_trainer_type = "ray_legacy_trainer"
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        MODEL_TYPE: MODEL_ECD,
+        "trainer": {"type": expected_trainer_type},
+    }
+
+    merged_config = merge_with_defaults(config)
+
+    assert merged_config[TRAINER][TYPE] == expected_trainer_type
+
+
+@pytest.mark.parametrize(
+    "model_type",
+    [MODEL_ECD, MODEL_GBM],
+)
+def test_invalid_trainer_type(model_type):
+    config = {
+        "input_features": [
+            category_feature(),
+        ],
+        "output_features": [
+            category_feature(),
+        ],
+        MODEL_TYPE: model_type,
+        "trainer": {"type": "invalid_trainer"},
+    }
+
+    with pytest.raises(ValidationError):
+        merge_with_defaults(config)
+
+
 @pytest.mark.parametrize("force_split", [None, False, True])
 @pytest.mark.parametrize("stratify", [None, "cat_in"])
 def test_deprecated_split_aliases(stratify, force_split):
@@ -192,10 +273,6 @@ def test_deprecated_split_aliases(stratify, force_split):
     if stratify is None:
         if force_split:
             assert split.get(TYPE) == "random"
-        elif force_split is False:
-            assert split.get(TYPE) == "fixed"
-        else:
-            assert split.get(TYPE) is None
     else:
         assert split.get(TYPE) == "stratify"
         assert split.get("column") == stratify
@@ -252,6 +329,7 @@ def test_merge_with_defaults():
 
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
+        "model_type": "ecd",
         "input_features": [
             {
                 "type": "number",
@@ -301,6 +379,7 @@ def test_merge_with_defaults():
             "search_alg": {"type": "variant_generator"},
         },
         "trainer": {
+            "type": "trainer",
             "eval_batch_size": None,
             "optimizer": {"type": "adadelta", "rho": 0.9, "eps": 1e-06, "lr": 1.0, "weight_decay": 0.0},
             "epochs": 100,
@@ -413,12 +492,12 @@ def test_merge_with_defaults():
                 "in_memory": True,
                 "padding_value": 0,
                 "norm": None,
-                "audio_feature": {
-                    "type": "fbank",
-                    "window_length_in_s": 0.04,
-                    "window_shift_in_s": 0.02,
-                    "num_filter_bands": 80,
-                },
+                "type": "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_fft_points": None,
+                "window_type": "hamming",
+                "num_filter_bands": 80,
             },
             "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
             "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},

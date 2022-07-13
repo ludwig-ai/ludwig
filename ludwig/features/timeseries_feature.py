@@ -19,17 +19,11 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import (
-    COLUMN,
-    FILL_WITH_CONST,
-    MISSING_VALUE_STRATEGY_OPTIONS,
-    NAME,
-    PROC_COLUMN,
-    TIED,
-    TIMESERIES,
-)
+from ludwig.constants import COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
@@ -50,34 +44,62 @@ class _TimeseriesPreprocessing(torch.nn.Module):
             )
         self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
         self.padding = metadata["preprocessing"]["padding"]
-        self.padding_value = metadata["preprocessing"]["padding_value"]
+        self.padding_value = float(metadata["preprocessing"]["padding_value"])
         self.max_timeseries_length = int(metadata["max_timeseries_length"])
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
 
-    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
-        """Takes a list of strings and returns a tensor of token ids."""
-        if not torch.jit.isinstance(v, List[str]):
-            raise ValueError(f"Unsupported input: {v}")
+    def _process_str_sequence(self, sequence: List[str], limit: int) -> torch.Tensor:
+        float_sequence = [float(s) for s in sequence[:limit]]
+        return torch.tensor(float_sequence)
 
+    def _nan_to_fill_value(self, v: torch.Tensor) -> torch.Tensor:
+        if v.isnan().any():
+            tokenized_fill_value = self.tokenizer(self.computed_fill_value)
+            # refines type of sequences from Any to List[str]
+            assert torch.jit.isinstance(tokenized_fill_value, List[str])
+            return self._process_str_sequence(tokenized_fill_value, self.max_timeseries_length)
+        return v
+
+    def forward_list_of_tensors(self, v: List[torch.Tensor]) -> torch.Tensor:
+        v = [self._nan_to_fill_value(v_i) for v_i in v]
+
+        if self.padding == "right":
+            timeseries_matrix = torch.nn.utils.rnn.pad_sequence(v, batch_first=True, padding_value=self.padding_value)
+            timeseries_matrix = timeseries_matrix[:, : self.max_timeseries_length]
+        else:
+            reversed_timeseries = [torch.flip(v_i[: self.max_timeseries_length], dims=(0,)) for v_i in v]
+            reversed_timeseries_padded = torch.nn.utils.rnn.pad_sequence(
+                reversed_timeseries, batch_first=True, padding_value=self.padding_value
+            )
+            timeseries_matrix = torch.flip(reversed_timeseries_padded, dims=(1,))
+        return timeseries_matrix
+
+    def forward_list_of_strs(self, v: List[str]) -> torch.Tensor:
         v = [self.computed_fill_value if s == "nan" else s for s in v]
 
         sequences = self.tokenizer(v)
         # refines type of sequences from Any to List[List[str]]
         assert torch.jit.isinstance(sequences, List[List[str]]), "sequences is not a list of lists."
 
-        float_sequences: List[List[float]] = [[float(s) for s in sequence] for sequence in sequences]
         timeseries_matrix = torch.full(
-            [len(float_sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
+            [len(sequences), self.max_timeseries_length], self.padding_value, dtype=torch.float32
         )
-        for sample_idx, float_sequence in enumerate(float_sequences):
-            limit = min(len(float_sequence), self.max_timeseries_length)
+        for sample_idx, str_sequence in enumerate(sequences):
+            limit = min(len(str_sequence), self.max_timeseries_length)
+            float_sequence = self._process_str_sequence(str_sequence, limit)
             if self.padding == "right":
-                timeseries_matrix[sample_idx][:limit] = torch.tensor(float_sequence[:limit])
+                timeseries_matrix[sample_idx][:limit] = float_sequence
             else:  # if self.padding == 'left
-                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = torch.tensor(
-                    float_sequence[:limit]
-                )
+                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = float_sequence
         return timeseries_matrix
+
+    def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
+        """Takes a list of float values and creates a padded torch.Tensor."""
+        if torch.jit.isinstance(v, List[torch.Tensor]):
+            return self.forward_list_of_tensors(v)
+        if torch.jit.isinstance(v, List[str]):
+            return self.forward_list_of_strs(v)
+        raise ValueError(f"Unsupported input: {v}")
 
 
 class TimeseriesFeatureMixin(BaseFeatureMixin):
@@ -94,18 +116,6 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
             "tokenizer": "space",
             "missing_value_strategy": FILL_WITH_CONST,
             "fill_value": "",
-        }
-
-    @staticmethod
-    def preprocessing_schema():
-        return {
-            "timeseries_length_limit": {"type": "integer", "minimum": 0},
-            "padding_value": {"type": "number"},
-            "padding": {"type": "string", "enum": ["right", "left"]},
-            "tokenizer": {"type": "string", "enum": sorted(list(tokenizer_registry.keys()))},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
         }
 
     @staticmethod
@@ -171,6 +181,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = "parallel_cnn"
     max_sequence_length = None
@@ -214,6 +225,10 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
                 "encoder": "parallel_cnn",
             },
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return TimeseriesInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

@@ -24,7 +24,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
 
 ## Creating Pull Requests
 
-1. Fork the [repository](https://github.com/ludwig-ai/ludwig) by clicking on the 'Fork' button on
+1. Fork the [repository](https://github.com/ludwig-ai/ludwig) by clicking on the "Fork" button on
    the repository's page. This creates a copy of the code under your GitHub user account.
 
 1. Clone your fork to your local disk, and add the base repository as a remote:
@@ -83,7 +83,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
    ```
 
 1. Once you are satisfied, go the webpage of your fork on GitHub. Click on "Pull request" to send
-   your to the project maintainers for review.
+   your contribution to the project maintainers for review.
 
 ## Other tips
 

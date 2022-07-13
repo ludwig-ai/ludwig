@@ -2,9 +2,9 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
-from ludwig.models.trainer import TrainerConfig
 from ludwig.schema import validate_config
 from ludwig.schema.optimizers import optimizer_registry
+from ludwig.schema.trainer import ECDTrainerConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 # Note: simple tests for now, but once we add dependent fields we can add tests for more complex relationships in this
@@ -29,7 +29,7 @@ def test_config_trainer_empty_null_and_default():
     with pytest.raises(ValidationError):
         validate_config(config)
 
-    config[TRAINER] = TrainerConfig.Schema().dump({})
+    config[TRAINER] = ECDTrainerConfig.Schema().dump({})
     validate_config(config)
 
 
@@ -51,7 +51,7 @@ def test_config_trainer_bad_optimizer():
     config[TRAINER]["optimizer"] = None
     with pytest.raises(ValidationError):
         validate_config(config)
-    assert TrainerConfig.Schema().load({}).optimizer is not None
+    assert ECDTrainerConfig.Schema().load({}).optimizer is not None
 
     # Test all types in optimizer_registry supported:
     for key in optimizer_registry.keys():
@@ -96,7 +96,7 @@ def test_optimizer_property_validation():
     config[TRAINER]["optimizer"]["momentum"] = 10
     config[TRAINER]["optimizer"]["extra_key"] = "invalid"
     validate_config(config)
-    assert not hasattr(TrainerConfig.Schema().load(config[TRAINER]).optimizer, "extra_key")
+    assert not hasattr(ECDTrainerConfig.Schema().load(config[TRAINER]).optimizer, "extra_key")
 
     # Test bad parameter range:
     config[TRAINER]["optimizer"] = {"type": "rmsprop", "eps": -1}
@@ -128,8 +128,8 @@ def test_clipper_property_validation():
     config[TRAINER]["gradient_clipping"] = {}
     validate_config(config)
     assert (
-        TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping
-        == TrainerConfig.Schema().load({}).gradient_clipping
+        ECDTrainerConfig.Schema().load(config[TRAINER]).gradient_clipping
+        == ECDTrainerConfig.Schema().load({}).gradient_clipping
     )
 
     # Test invalid clipper type:
@@ -153,4 +153,4 @@ def test_clipper_property_validation():
     config[TRAINER]["gradient_clipping"] = {"clipnorm": 1}
     config[TRAINER]["gradient_clipping"]["extra_key"] = "invalid"
     validate_config(config)
-    assert not hasattr(TrainerConfig.Schema().load(config[TRAINER]).gradient_clipping, "extra_key")
+    assert not hasattr(ECDTrainerConfig.Schema().load(config[TRAINER]).gradient_clipping, "extra_key")

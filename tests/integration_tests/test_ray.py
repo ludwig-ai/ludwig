@@ -297,12 +297,10 @@ def test_ray_audio(dataset_type, feature_type):
             "in_memory": True,
             "padding_value": 0,
             "norm": "per_file",
-            "audio_feature": {
-                "type": feature_type,
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
+            "type": feature_type,
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
         }
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]

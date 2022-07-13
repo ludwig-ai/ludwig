@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = "0.5.3"
+LUDWIG_VERSION = "0.6.dev"
 
 MODEL_WEIGHTS_FILE_NAME = "model_weights"
 MODEL_HYPERPARAMETERS_FILE_NAME = "model_hyperparameters.json"
@@ -23,6 +23,8 @@ TRAINING_PROGRESS_TRACKER_FILE_NAME = "training_progress.json"
 TRAINING_CHECKPOINTS_DIR_PATH = "training_checkpoints"
 
 TEST_STATISTICS_FILE_NAME = "test_statistics.json"
+
+DESCRIPTION_FILE_NAME = "description.json"
 
 PREDICTIONS_PARQUET_FILE_NAME = "predictions.parquet"
 PREDICTIONS_SHAPES_FILE_NAME = "predictions.shapes.json"

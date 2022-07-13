@@ -89,29 +89,29 @@ def test_OptimizerDataclassField():
 
 def test_ClipperDataclassField():
     # Test default case:
-    default_clipper_field = lso.GradientClippingDataclassField()
+    default_clipper_field = lso.GradientClippingDataclassField(description="", default={})
     assert default_clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(default_clipper_field).allow_none is True
     assert default_clipper_field.default_factory() == lso.GradientClippingConfig()
 
     # Test normal cases:
-    clipper_field = lso.GradientClippingDataclassField({"clipglobalnorm": 0.1})
+    clipper_field = lso.GradientClippingDataclassField(description="", default={"clipglobalnorm": 0.1})
     assert clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
     assert clipper_field.default_factory() == lso.GradientClippingConfig(clipglobalnorm=0.1)
 
-    clipper_field = lso.GradientClippingDataclassField({"clipglobalnorm": None})
+    clipper_field = lso.GradientClippingDataclassField(description="", default={"clipglobalnorm": None})
     assert clipper_field.default_factory is not None
     assert get_marshmallow_from_dataclass_field(clipper_field).allow_none is True
     assert clipper_field.default_factory() == lso.GradientClippingConfig(clipglobalnorm=None)
 
     # Test invalid default case:
     with pytest.raises(MarshmallowValidationError):
-        lso.GradientClippingDataclassField("test")
+        lso.GradientClippingDataclassField(description="", default="test")
     with pytest.raises(MarshmallowValidationError):
-        lso.GradientClippingDataclassField(None)
+        lso.GradientClippingDataclassField(description="", default=None)
     with pytest.raises(MarshmallowValidationError):
-        lso.GradientClippingDataclassField(1)
+        lso.GradientClippingDataclassField(description="", default=1)
 
     # Test creating a schema with default options:
     @dataclass
@@ -126,7 +126,9 @@ def test_ClipperDataclassField():
     # Test creating a schema with set default:
     @dataclass
     class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
-        foo: Optional[lso.GradientClippingConfig] = lso.GradientClippingDataclassField({"clipglobalnorm": 0.1})
+        foo: Optional[lso.GradientClippingConfig] = lso.GradientClippingDataclassField(
+            description="", default={"clipglobalnorm": 0.1}
+        )
 
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "test"})

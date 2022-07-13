@@ -61,6 +61,7 @@ PREDICTIONS = "predictions"
 TOP_K_PREDICTIONS = "top_k_predictions"
 PROBABILITY = "probability"
 PROBABILITIES = "probabilities"
+SPLIT_PROBABILITIES = "split_probabilities"
 TOKEN_ACCURACY = "token_accuracy"
 LAST_ACCURACY = "last_accuracy"
 SEQUENCE_ACCURACY = "sequence_accuracy"
@@ -104,6 +105,7 @@ LAST_HIDDEN = "last_hidden"
 ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
 
+RANDOM = "random"
 SUM = "sum"
 APPEND = "append"
 SEQ_SUM = "seq_sum"
@@ -113,7 +115,12 @@ TRAINING = "training"
 VALIDATION = "validation"
 TEST = "test"
 SPLIT = "split"
+FORCE_SPLIT = "force_split"
+STRATIFY = "stratify"
 FULL = "full"
+TRAIN_SPLIT = 0
+VALIDATION_SPLIT = 1
+TEST_SPLIT = 2
 
 META = "meta"
 
@@ -123,9 +130,13 @@ EXECUTOR = "executor"
 MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
+NUM_SAMPLES = "num_samples"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
 
 NAME = "name"
 COLUMN = "column"
@@ -145,10 +156,21 @@ SRC = "dataset_src"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 LEARNING_RATE = "learning_rate"
+USE_BIAS = "use_bias"
+BIAS = "bias"
+DEFAULT_USE_BIAS = "default_use_bias"
+DEFAULT_BIAS = "default_bias"
+CONV_USE_BIAS = "conv_use_bias"
+CONV_BIAS = "conv_bias"
 AUTO = "auto"
 CONFIG = "config"
 
 COMBINER = "combiner"
+
+ENCODER = "encoder"
+DECODER = "decoder"
+
+DEFAULTS = "defaults"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05
@@ -172,7 +194,18 @@ HYPEROPT_WARNING = (
 CONTINUE_PROMPT = "Do you want to continue? "
 
 DEFAULT_AUDIO_TENSOR_LENGTH = 70000
+AUDIO_FEATURE_KEYS = [
+    "type",
+    "window_length_in_s",
+    "window_shift_in_s",
+    "num_fft_points",
+    "window_type",
+    "num_filter_bands",
+]
 
+MODEL_TYPE = "model_type"
+MODEL_ECD = "ecd"
+MODEL_GBM = "gbm"
 DASK_MODULE_NAME = "dask.dataframe"
 
 PREPROCESSOR = "preprocessor"

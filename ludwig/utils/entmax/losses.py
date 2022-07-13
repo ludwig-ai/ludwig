@@ -17,14 +17,18 @@ class _GenericLoss(nn.Module):
         loss = self.loss(X, target)
         if self.ignore_index >= 0:
             ignored_positions = target == self.ignore_index
-            size = float((target.size(0) - ignored_positions.sum()).item())
+            size = (target.size(0) - ignored_positions.sum()).item()
             loss.masked_fill_(ignored_positions, 0.0)
         else:
-            size = float(target.size(0))
+            size = target.size(0)
         if self.reduction == "sum":
             loss = loss.sum()
         elif self.reduction == "elementwise_mean":
-            loss = loss.sum() / size
+            if size == 0:
+                # Returns zero loss and zero gradient in the rare case that all row targets are ignored.
+                loss = loss.sum() * 0.0
+            else:
+                loss = loss.sum() / float(size)
         return loss
 
 

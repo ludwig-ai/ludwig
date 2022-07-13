@@ -33,12 +33,10 @@ from ludwig.constants import (
     INFER_IMAGE_MAX_HEIGHT,
     INFER_IMAGE_MAX_WIDTH,
     INFER_IMAGE_SAMPLE_SIZE,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     NUM_CHANNELS,
     PREPROCESSING,
     PROC_COLUMN,
-    RESIZE_METHODS,
     SRC,
     TIED,
     TRAINING,
@@ -46,6 +44,8 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
@@ -139,24 +139,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "in_memory": {"type": "boolean"},
-            "resize_method": {"type": "string", "enum": RESIZE_METHODS},
-            "scaling": {"type": "string", "enum": list(image_scaling_registry.keys())},
-            "num_processes": {"type": "integer", "minimum": 0},
-            "height": {"type": "integer", "minimum": 0},
-            "width": {"type": "integer", "minimum": 0},
-            "num_channels": {"type": "integer", "minimum": 0},
-            "infer_image_num_channels": {"type": "boolean"},
-            "infer_image_dimensions": {"type": "boolean"},
-            "infer_image_max_height": {"type": "integer", "minimum": 0},
-            "infer_image_max_width": {"type": "integer", "minimum": 0},
-            "infer_image_sample_size": {"type": "integer", "minimum": 0},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 
@@ -166,7 +148,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_if_bytes_obj_and_resize(
-        img_entry: Union[bytes, torch.Tensor],
+        img_entry: Union[bytes, torch.Tensor, np.ndarray],
         img_width: int,
         img_height: int,
         should_resize: bool,
@@ -175,7 +157,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         user_specified_num_channels: bool,
     ) -> Optional[np.ndarray]:
         """
-        :param img_entry Union[bytes, torch.Tensor]: if str file path to the
+        :param img_entry Union[bytes, torch.Tensor, np.ndarray]: if str file path to the
             image else torch.Tensor of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
@@ -194,8 +176,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
+
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
+        elif isinstance(img_entry, np.ndarray):
+            img = torch.from_numpy(img_entry).permute(2, 0, 1)
         else:
             img = img_entry
 
@@ -333,16 +318,26 @@ class ImageFeatureMixin(BaseFeatureMixin):
         else:
             sample_size = 1  # Take first image
 
+        failed_entries = []
         for image_entry in column.head(sample_size):
             if isinstance(image_entry, str):
+                # Tries to read image as PNG or numpy file from the path.
                 image = read_image_from_path(image_entry)
             else:
                 image = image_entry
 
             if isinstance(image, torch.Tensor):
                 sample.append(image)
+            elif isinstance(image, np.ndarray):
+                sample.append(torch.from_numpy(image).permute(2, 0, 1))
+            else:
+                failed_entries.append(image_entry)
         if len(sample) == 0:
-            raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+            failed_entries_repr = "\n\t- ".join(failed_entries)
+            raise ValueError(
+                f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
+                f"{failed_entries_repr}."
+            )
 
         should_resize = False
         if explicit_height_width:
@@ -461,6 +456,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
     height = 0
     width = 0
@@ -508,6 +504,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
+
+    @staticmethod
+    def get_schema_cls():
+        return ImageInputFeatureConfig
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
