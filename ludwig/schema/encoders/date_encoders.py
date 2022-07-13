@@ -1,6 +1,4 @@
-from typing import ClassVar, List
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.date_encoders import DateEmbed, DateWave
+from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -8,8 +6,6 @@ from ludwig.schema import utils as schema_utils
 
 @dataclass
 class DateEmbedConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = DateEmbed
 
     type: str = "embed"
 
@@ -25,7 +21,7 @@ class DateEmbedConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     # TODO (Connor): Add nesting logic for fc_layers, see fully_connected_module.py
-    fc_layers = List[dict] = schema_utils.DictList(
+    fc_layers: List[dict] = schema_utils.DictList(
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
@@ -72,8 +68,8 @@ class DateEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
@@ -81,12 +77,10 @@ class DateEmbedConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class DateWaveConfig(schema_utils.BaseMarshmallowConfig):
 
-    encoder_class: ClassVar[Encoder] = DateWave
-
     type: str = "wave"
 
     # TODO (Connor): Add nesting logic for fc_layers, see fully_connected_module.py
-    fc_layers = List[dict] = schema_utils.DictList(
+    fc_layers: List[dict] = schema_utils.DictList(
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
@@ -133,7 +127,7 @@ class DateWaveConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )

@@ -1,15 +1,10 @@
-from typing import List, ClassVar
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
-
+from typing import List
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 
 
 @dataclass
-class BagEmbedWeightedEncoderConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = BagEmbedWeightedEncoder
+class BagEmbedWeightedConfig(schema_utils.BaseMarshmallowConfig):
 
     type: str = "embed"
 
@@ -64,12 +59,12 @@ class BagEmbedWeightedEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
     )
 
-    fc_layers = List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
 
-    num_fc_layers: int = schema_utils.PositiveInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="This is the number of stacked fully connected layers that the input to the feature passes "
                     "through. Their output is projected in the feature's output space.",
@@ -112,7 +107,7 @@ class BagEmbedWeightedEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )

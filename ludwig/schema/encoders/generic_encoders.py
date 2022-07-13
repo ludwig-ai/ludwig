@@ -1,6 +1,4 @@
-from typing import Union, List, ClassVar
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.generic_encoders import DenseEncoder, PassthroughEncoder
+from typing import Union, List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -10,16 +8,12 @@ from ludwig.schema import utils as schema_utils
 class PassthroughEncoderConfig(schema_utils.BaseMarshmallowConfig):
     """PassthroughEncoder is a dataclass that configures the parameters used for a passthrough encoder."""
 
-    encoder_class: ClassVar[Encoder] = PassthroughEncoder
-
     type: str = "passthrough"
 
 
 @dataclass
 class DenseEncoderConfig(schema_utils.BaseMarshmallowConfig):
     """DenseEncoder is a dataclass that configures the parameters used for a dense encoder."""
-
-    encoder_class: ClassVar[Encoder] = DenseEncoder
 
     type: str = "dense"
 
@@ -79,7 +73,7 @@ class DenseEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate.",
     )

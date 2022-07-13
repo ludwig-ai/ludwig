@@ -1,10 +1,4 @@
-from typing import List, ClassVar
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.h3_encoders import (
-    H3Embed,
-    H3WeightedSum,
-    H3RNN,
-)
+from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -12,8 +6,6 @@ from ludwig.schema import utils as schema_utils
 
 @dataclass
 class H3EmbedConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = H3Embed
 
     type: str = "embed"
 
@@ -28,7 +20,7 @@ class H3EmbedConfig(schema_utils.BaseMarshmallowConfig):
                     "resolve them.",
     )
 
-    fc_layers = List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
@@ -75,16 +67,14 @@ class H3EmbedConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
 
 @dataclass
 class H3WeightedSumConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = H3WeightedSum
 
     type: str = "embed"
 
@@ -105,7 +95,7 @@ class H3WeightedSumConfig(schema_utils.BaseMarshmallowConfig):
                     "being used.",
     )
 
-    fc_layers = List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
@@ -152,16 +142,14 @@ class H3WeightedSumConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
 
 @dataclass
 class H3RNNConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = H3RNN
 
     type: str = "rnn"
 
@@ -239,15 +227,15 @@ class H3RNNConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate"
     )
 
     recurrent_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for the recurrent state"
     )
 

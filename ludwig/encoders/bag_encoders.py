@@ -23,7 +23,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedEncoderConfig
+from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class BagEmbedWeightedEncoder(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return BagEmbedWeightedEncoderConfig
+        return BagEmbedWeightedConfig
 
     @property
     def input_shape(self) -> torch.Size:

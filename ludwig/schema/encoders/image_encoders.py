@@ -1,12 +1,5 @@
-from typing import Optional, Union, List, ClassVar, Tuple, Dict, Any
+from typing import Optional, Union, List, Tuple, Dict, Any
 from ludwig.utils.torch_utils import activations, initializer_registry
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.image_encoders import (
-    Stacked2DCNN,
-    ResNetEncoder,
-    MLPMixerEncoder,
-    ViTEncoder,
-)
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -14,8 +7,6 @@ from ludwig.schema import utils as schema_utils
 
 @dataclass
 class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = Stacked2DCNN
 
     type: str = "stacked_cnn"
 
@@ -113,8 +104,8 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     conv_dropout: Optional[int] = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate",
     )
 
@@ -207,16 +198,14 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     fc_dropout: Optional[float] = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate",
     )
 
 
 @dataclass
 class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = ResNetEncoder
 
     resnet_size: Optional[int] = schema_utils.PositiveInteger(
         default=50,
@@ -329,16 +318,14 @@ class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: Optional[float] = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate",
     )
 
 
 @dataclass
 class MLPMixerEncoderConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = MLPMixerEncoder
 
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
@@ -368,8 +355,8 @@ class MLPMixerEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate.",
     )
 
@@ -383,8 +370,6 @@ class MLPMixerEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class ViTEncoderConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = ViTEncoder
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
@@ -461,4 +446,4 @@ class ViTEncoderConfig(schema_utils.BaseMarshmallowConfig):
     trainable: bool = schema_utils.Boolean(
         default=True,
         description="Is the encoder trainable.",
-    ),
+    )

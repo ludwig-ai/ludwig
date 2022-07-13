@@ -1,25 +1,4 @@
-from typing import ClassVar, List, Union, Callable
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.text_encoders import (
-    ALBERTEncoder,
-    MT5Encoder,
-    XLMRoBERTaEncoder,
-    BERTEncoder,
-    XLMEncoder,
-    XLNetEncoder,
-    GPTEncoder,
-    GPT2Encoder,
-    RoBERTaEncoder,
-    TransformerXLEncoder,
-    DistilBERTEncoder,
-    CTRLEncoder,
-    CamemBERTEncoder,
-    T5Encoder,
-    FlauBERTEncoder,
-    ELECTRAEncoder,
-    LongformerEncoder,
-    AutoTransformerEncoder
-)
+from typing import List, Union, Callable
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -28,8 +7,6 @@ from ludwig.schema import utils as schema_utils
 @dataclass
 class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
-
-    encoder_class: ClassVar[Encoder] = ALBERTEncoder
 
     type: str = "albert"
 
@@ -113,15 +90,15 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     hidden_dropout_prob: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     attention_probs_dropout_prob: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the attention probabilities.",
     )
 
@@ -148,8 +125,8 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     classifier_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for attached classifiers.",
     )
 
@@ -183,8 +160,6 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class MT5Config(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
-
-    encoder_class: ClassVar[Encoder] = MT5Encoder
 
     type: str = "mt5"
 
@@ -329,8 +304,6 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
 class XLMRoBERTaConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
-    encoder_class: ClassVar[Encoder] = XLMRoBERTaEncoder
-
     type: str = "xlmroberta"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -398,8 +371,6 @@ class XLMRoBERTaConfig(schema_utils.BaseMarshmallowConfig):
 class BERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
-    encoder_class: ClassVar[Encoder] = BERTEncoder
-
     type: str = "bert"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -466,15 +437,15 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
 
     hidden_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     attention_probs_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the attention probabilities.",
     )
 
@@ -517,8 +488,8 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
 
     classifier_dropout: float = schema_utils.FloatRange(
         default=None,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the classification head.",
     )
 
@@ -531,8 +502,6 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class XLMConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an XLM encoder."""
-
-    encoder_class: ClassVar[Encoder] = XLMEncoder
 
     type: str = "xlm"
 
@@ -589,15 +558,15 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     attention_dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for the attention mechanism.",
     )
 
@@ -730,8 +699,6 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
 class GPTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
-    encoder_class: ClassVar[Encoder] = GPTEncoder
-
     type: str = "gpt"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -837,8 +804,6 @@ class GPTConfig(schema_utils.BaseMarshmallowConfig):
 class GPT2Config(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
-    encoder_class: ClassVar[Encoder] = GPT2Encoder
-
     type: str = "gpt2"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -911,22 +876,22 @@ class GPT2Config(schema_utils.BaseMarshmallowConfig):
 
     resid_pdrop: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     embd_pdrop: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the embeddings.",
     )
 
     attn_pdrop: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the attention.",
     )
 
@@ -954,8 +919,6 @@ class GPT2Config(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
-
-    encoder_class: ClassVar[Encoder] = RoBERTaEncoder
 
     type: str = "roberta"
 
@@ -1014,8 +977,6 @@ class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
 class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
-    encoder_class: ClassVar[Encoder] = TransformerXLEncoder
-
     type: str = "transformer_xl"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1055,7 +1016,8 @@ class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     cutoffs: List[int] = schema_utils.List(
-        default= [20000, 40000, 200000],
+        int,
+        default=[20000, 40000, 200000],
         description="Cutoffs for the adaptive softmax.",
     )
 
@@ -1138,8 +1100,8 @@ class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
@@ -1192,8 +1154,6 @@ class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class XLNetConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
-
-    encoder_class: ClassVar[Encoder] = XLNetEncoder
 
     type: str = "xlnet"
 
@@ -1382,8 +1342,6 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
 class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
-    encoder_class: ClassVar[Encoder] = DistilBERTEncoder
-
     type: str = "distilbert"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1455,8 +1413,8 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
@@ -1465,7 +1423,7 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
         description="The dropout ratio for the attention probabilities.",
     )
 
-    activation: Union[str, Callable] = schema_utils.StringOptions( # TODO: Add support for callable
+    activation: Union[str, Callable] = schema_utils.StringOptions(  # TODO: Add support for callable
         ["gelu", "relu", "silu", "gelu_new"],
         default="gelu",
         description="The non-linear activation function (function or string) in the encoder and pooler. If string, "
@@ -1479,15 +1437,15 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     qa_dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probabilities used in the question answering model DistilBertForQuestionAnswering.",
     )
 
     seq_classif_dropout: float = schema_utils.FloatRange(
         default=0.2,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probabilities used in the sequence classification and the multiple choice model "
                     "DistilBertForSequenceClassification.",
     )
@@ -1501,8 +1459,6 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class CTRLConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
-
-    encoder_class: ClassVar[Encoder] = CTRLEncoder
 
     type: str = "ctrl"
 
@@ -1575,8 +1531,8 @@ class CTRLConfig(schema_utils.BaseMarshmallowConfig):
 
     resid_pdrop: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description=" The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
@@ -1609,8 +1565,6 @@ class CTRLConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
-
-    encoder_class: ClassVar[Encoder] = CamemBERTEncoder
 
     type: str = "camembert"
 
@@ -1677,15 +1631,15 @@ class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     hidden_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     attention_probs_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the attention probabilities.",
     )
 
@@ -1728,8 +1682,8 @@ class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     classifier_dropout: float = schema_utils.FloatRange(
         default=None,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the classification head.",
     )
 
@@ -1742,8 +1696,6 @@ class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class T5Config(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an T5 encoder."""
-
-    encoder_class: ClassVar[Encoder] = T5Encoder
 
     type: str = "t5"
 
@@ -1853,8 +1805,6 @@ class T5Config(schema_utils.BaseMarshmallowConfig):
 class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
-    encoder_class: ClassVar[Encoder] = FlauBERTEncoder
-
     type: str = "flaubert"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1901,8 +1851,8 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     layerdrop: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Probability to drop layers during training (Fan et al., Reducing Transformer Depth on Demand "
                     "with Structured Dropout. ICLR 2020)",
     )
@@ -1924,15 +1874,15 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     attention_dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for the attention mechanism",
     )
 
@@ -2045,8 +1995,6 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
 class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
-    encoder_class: ClassVar[Encoder] = ELECTRAEncoder
-
     type: str = "electra"
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2118,15 +2066,15 @@ class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
 
     hidden_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.",
     )
 
     attention_probs_dropout_prob: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the attention probabilities.",
     )
 
@@ -2159,8 +2107,8 @@ class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
 
     classifier_dropout: float = schema_utils.FloatRange(
         default=None,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout ratio for the classification head.",
     )
 
@@ -2173,8 +2121,6 @@ class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class LongformerConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an Longformer encoder."""
-
-    encoder_class: ClassVar[Encoder] = LongformerEncoder
 
     type: str = "longformer"
 
@@ -2234,8 +2180,6 @@ class LongformerConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class AutoTransformerConfig(schema_utils.BaseMarshmallowConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
-
-    encoder_class: ClassVar[Encoder] = AutoTransformerEncoder
 
     type: str = "auto_transformer"
 

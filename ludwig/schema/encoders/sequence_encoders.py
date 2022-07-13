@@ -1,16 +1,4 @@
-from typing import List, ClassVar
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.sequence_encoders import (
-    SequencePassthroughEncoder,
-    SequenceEmbedEncoder,
-    ParallelCNN,
-    StackedCNN,
-    StackedParallelCNN,
-    StackedRNN,
-    StackedCNNRNN,
-    StackedTransformer,
-
-)
+from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -18,8 +6,6 @@ from ludwig.schema import utils as schema_utils
 
 @dataclass
 class SequencePassthroughConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = SequencePassthroughEncoder
 
     type: str = "passthrough"
 
@@ -42,8 +28,6 @@ class SequencePassthroughConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class SequenceEmbedConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = SequenceEmbedEncoder
 
     type: str = "embed"
 
@@ -76,8 +60,8 @@ class SequenceEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
@@ -95,8 +79,6 @@ class SequenceEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class ParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = ParallelCNN
 
     type: str = "parallel_cnn"
 
@@ -203,8 +185,8 @@ class ParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
@@ -217,8 +199,6 @@ class ParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class StackedCNNConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = StackedCNN
 
     type: str = "stacked_cnn"
 
@@ -352,8 +332,8 @@ class StackedCNNConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
@@ -366,8 +346,6 @@ class StackedCNNConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class StackedParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = StackedParallelCNN
 
     type: str = "stacked_parallel_cnn"
 
@@ -507,8 +485,8 @@ class StackedParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout probability for the embedding.",
     )
 
@@ -521,8 +499,6 @@ class StackedParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = StackedRNN
 
     type: str = "rnn"
 
@@ -628,15 +604,15 @@ class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate"
     )
 
     recurrent_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for the recurrent state"
     )
 
@@ -686,8 +662,8 @@ class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
 
     fc_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for fully connected layers"
     )
 
@@ -700,8 +676,6 @@ class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = StackedCNNRNN
 
     type: str = "cnnrnn"
 
@@ -802,8 +776,8 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
 
     conv_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for the convolutional layers"
     )
 
@@ -875,15 +849,15 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate"
     )
 
     recurrent_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for the recurrent state"
     )
 
@@ -933,8 +907,8 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
 
     fc_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for fully connected layers"
     )
 
@@ -947,8 +921,6 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class StackedTransformerConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = StackedTransformer
 
     type: str = "transformer"
 
@@ -1020,8 +992,8 @@ class StackedTransformerConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.1,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for the transformer block",
     )
 
@@ -1071,8 +1043,8 @@ class StackedTransformerConfig(schema_utils.BaseMarshmallowConfig):
 
     fc_dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="The dropout rate for fully connected layers"
     )
 
