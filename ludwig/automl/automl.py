@@ -20,14 +20,8 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
-from ludwig.automl.utils import (
-    _add_transfer_config,
-    _ray_init,
-    get_available_resources,
-    get_model_type,
-    has_imbalanced_output,
-    set_output_feature_metric,
-)
+from ludwig.automl.ray_utils import _ray_init, get_available_resources
+from ludwig.automl.utils import _add_transfer_config, get_model_type, has_imbalanced_output, set_output_feature_metric
 from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,

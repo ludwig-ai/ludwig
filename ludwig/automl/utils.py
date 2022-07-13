@@ -1,6 +1,5 @@
 import bisect
 import logging
-import os
 from typing import Dict
 
 from numpy import nan_to_num
@@ -24,14 +23,6 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
 from ludwig.utils.defaults import default_combiner_type
 
-try:
-    import ray
-except ImportError:
-    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
-
-
-logger = logging.getLogger(__name__)
-
 
 def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
@@ -40,15 +31,6 @@ def avg_num_tokens(field: Series) -> int:
     unique_entries = field.unique()
     avg_words = round(nan_to_num(Series(unique_entries).str.split().str.len().mean()))
     return avg_words
-
-
-def get_available_resources() -> dict:
-    # returns total number of gpus and cpus
-    resources = ray.cluster_resources()
-    gpus = resources.get("GPU", 0)
-    cpus = resources.get("CPU", 0)
-    resources = {"gpu": gpus, "cpu": cpus}
-    return resources
 
 
 def get_model_type(config: dict) -> str:
@@ -64,20 +46,6 @@ def get_model_type(config: dict) -> str:
     else:
         model_type = default_combiner_type
     return model_type
-
-
-def _ray_init():
-    if ray.is_initialized():
-        return
-
-    # Forcibly terminate trial requested to stop after this amount of time passes
-    os.environ.setdefault("TUNE_FORCE_TRIAL_CLEANUP_S", "120")
-
-    try:
-        ray.init("auto", ignore_reinit_error=True)
-    except ConnectionError:
-        logger.info("Initializing new Ray cluster...")
-        ray.init()
 
 
 # ref_configs comes from a file storing the config for a high-performing model per reference dataset.
@@ -100,7 +68,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
                 min_dataset = dataset
 
     if min_dataset is not None:
-        logger.info("Transfer config from dataset {}".format(min_dataset["name"]))
+        logging.info("Transfer config from dataset {}".format(min_dataset["name"]))
         min_dataset_config = min_dataset[CONFIG]
         hyperopt_params = base_config[HYPEROPT][PARAMETERS]
         point_to_evaluate = {}
