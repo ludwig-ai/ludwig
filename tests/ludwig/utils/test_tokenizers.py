@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torchtext
+from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
 
-from transformers.models.bert.tokenization_bert import PRETRAINED_VOCAB_FILES_MAP, PRETRAINED_INIT_CONFIGURATION
 from ludwig.utils.tokenizers import SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
 
 
@@ -23,7 +23,7 @@ from ludwig.utils.tokenizers import SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
     ],
 )
 def test_bert_hf_tokenizer_parity(pretrained_model_name_or_path):
-    from ludwig.utils.tokenizers import get_hf_tokenizer, HFTokenizer, BERTTokenizer
+    from ludwig.utils.tokenizers import BERTTokenizer, get_hf_tokenizer, HFTokenizer
 
     inputs = "Hello, I'm a single sentence!"
     hf_tokenizer = HFTokenizer(pretrained_model_name_or_path)
