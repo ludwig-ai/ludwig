@@ -23,7 +23,7 @@ from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights, print_model_summary
 from ludwig.constants import TRAINER
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature, spawn
+from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature
 
 DEVICE = get_torch_device()
 
@@ -53,13 +53,11 @@ def _train(input_features, output_features, data_csv, **kwargs):
     return model, output_dir
 
 
-@spawn
 def _get_layers(model_path):
     model = LudwigModel.load(model_path)
     return [name for name, _ in model.model.named_children()]
 
 
-@spawn
 def _collect_activations(model_path, layers, csv_filename, output_directory):
     return collect_activations(model_path, layers, dataset=csv_filename, output_directory=output_directory)
 

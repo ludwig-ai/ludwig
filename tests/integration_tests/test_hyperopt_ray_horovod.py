@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-import logging
 import os.path
 import shutil
 import uuid
@@ -45,17 +44,11 @@ except ImportError:
     ray = None
     RayTuneExecutor = object
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logging.getLogger("ludwig").setLevel(logging.INFO)
-
 # Ray mocks
 
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
 LOCAL_DELETE_TEMPLATE = "echo {target}"
-
-logger = logging.getLogger(__name__)
 
 
 def mock_storage_client(path):

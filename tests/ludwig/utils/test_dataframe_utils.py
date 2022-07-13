@@ -29,7 +29,6 @@ def test_to_numpy_dataset_with_dask_backend_mismatch():
         to_numpy_dataset(dd_df, backend=LOCAL_BACKEND)
 
 
-@pytest.mark.distributed
 def test_to_numpy_dataset_with_pandas():
     pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])
 
