@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABC
 from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
