@@ -67,7 +67,7 @@ def run_test_gbm_output_not_supported(tmpdir, backend_config):
     with pytest.raises(
         ValueError, match="Model type GBM only supports numerical, categorical, or binary output features"
     ):
-        model.train(dataset=dataset_filename, output_directory=str(tmpdir))
+        model.train(dataset=dataset_filename, output_directory=tmpdir)
 
 
 def test_local_gbm_output_not_supported(tmpdir, local_backend):
@@ -249,13 +249,13 @@ def run_test_gbm_number(tmpdir, backend_config):
 
 
 def test_local_gbm_number(tmpdir, local_backend):
-    run_test_gbm_number(local_backend)
+    run_test_gbm_number(tmpdir, local_backend)
 
 
 @pytest.mark.distributed
 def test_ray_gbm_number(tmpdir, ray_backend):
     with ray_start():
-        run_test_gbm_number(ray_backend)
+        run_test_gbm_number(tmpdir, ray_backend)
 
 
 def run_test_gbm_schema(backend_config):
