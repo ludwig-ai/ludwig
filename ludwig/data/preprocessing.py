@@ -1127,7 +1127,6 @@ def build_dataset(
         callback.on_build_data_start(dataset_df, mode)
 
     logger.debug("build data")
-
     proc_cols = build_data(dataset_cols, feature_configs, metadata, backend, skip_save_processed_input)
 
     for callback in callbacks or []:

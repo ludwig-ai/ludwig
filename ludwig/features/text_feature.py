@@ -134,8 +134,6 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol,
             unknown_symbol,
         ) = tf_meta
-        print("inside get_feature_meta")
-        print(padding_symbol, unknown_symbol)
         max_len = min(preprocessing_parameters["max_sequence_length"], max_len)
         max_len_99ptile = min(max_len, max_len_99ptile)
         return {

@@ -311,9 +311,6 @@ def create_vocabulary(
     if padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
 
-    print("inside create_vocabulary")
-    print("padding_symbol", padding_symbol)
-
     return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
 
 

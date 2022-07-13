@@ -91,8 +91,6 @@ class _SequencePreprocessing(torch.nn.Module):
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
-        print("inside _SequencePreprocessing")
-        print("self.padding_symbol", self.padding_symbol)
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
@@ -131,31 +129,32 @@ class _SequencePreprocessing(torch.nn.Module):
             # Handles start, stop, and unknown symbols implicitly
             sequence_vector[: len(unit_sequence)] = torch.tensor(unit_sequence)
             return sequence_vector
+
+        # If tokenizer is not HF, we manually convert tokens to IDs and insert start, stop, and unknown symbols.
+        unit_sequence = self.tokenizer(sequence_str)
+        assert torch.jit.isinstance(unit_sequence, List[str])
+
+        if len(unit_sequence) + 1 < self.max_sequence_length:
+            sequence_length = len(unit_sequence)
+            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
         else:
-            unit_sequence = self.tokenizer(sequence_str)
-            assert torch.jit.isinstance(unit_sequence, List[str])
+            sequence_length = self.max_sequence_length - 1
 
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_length = len(unit_sequence)
-                sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        sequence_vector[0] = self.unit_to_id[self.start_symbol]
+        if len(unit_sequence) + 1 < self.max_sequence_length:
+            sequence_length = len(unit_sequence)
+            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        else:
+            sequence_length = self.max_sequence_length - 1
+
+        for i in range(sequence_length):
+            curr_unit = unit_sequence[i]
+            if curr_unit in self.unit_to_id:
+                curr_id = self.unit_to_id[curr_unit]
             else:
-                sequence_length = self.max_sequence_length - 1
-
-            sequence_vector[0] = self.unit_to_id[self.start_symbol]
-            if len(unit_sequence) + 1 < self.max_sequence_length:
-                sequence_length = len(unit_sequence)
-                sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
-            else:
-                sequence_length = self.max_sequence_length - 1
-
-            for i in range(sequence_length):
-                curr_unit = unit_sequence[i]
-                if curr_unit in self.unit_to_id:
-                    curr_id = self.unit_to_id[curr_unit]
-                else:
-                    curr_id = self.unit_to_id[self.unknown_symbol]
-                sequence_vector[i + 1] = curr_id
-            return sequence_vector
+                curr_id = self.unit_to_id[self.unknown_symbol]
+            sequence_vector[i + 1] = curr_id
+        return sequence_vector
 
 
 class _SequencePostprocessing(torch.nn.Module):

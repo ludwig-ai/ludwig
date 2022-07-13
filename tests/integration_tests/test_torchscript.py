@@ -352,7 +352,10 @@ def test_torchscript_e2e_image(tmpdir, csv_filename):
 
 def test_torchscript_e2e_text(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer}) for tokenizer in {"bert"}]
+    input_features = [
+        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
+        for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+    ]
     output_features = [
         text_feature(vocab_size=3),
     ]
@@ -718,7 +721,6 @@ def test_torchscript_postproc_gpu(tmpdir, csv_filename, feature_fn):
 
 def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-8):
     # Train Ludwig (Pythonic) model:
-    print("initializing modules")
     ludwig_model, script_module = initialize_torchscript_module(
         tmpdir,
         config,
@@ -726,11 +728,9 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
         training_data_csv_path,
     )
 
-    print("predicting with ludwig model")
     # Obtain predictions from Python model
     preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
 
-    print("predicting with torchscript module")
     df = pd.read_csv(training_data_csv_path)
     inputs = to_inference_module_input_from_dataframe(df, config, load_paths=True)
     outputs = script_module(inputs)
@@ -757,9 +757,7 @@ def validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path
 
 def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_path, device=None):
     # Initialize Ludwig model
-    print("initializing ludwig model")
     ludwig_model = LudwigModel(config, backend=backend)
-    print("training ludwig model")
     ludwig_model.train(
         dataset=training_data_csv_path,
         skip_save_training_description=True,
@@ -774,7 +772,6 @@ def initialize_torchscript_module(tmpdir, config, backend, training_data_csv_pat
     if device is None:
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    print("creating graph inference model")
     # Create graph inference model (Torchscript) from trained Ludwig model.
     script_module = ludwig_model.to_torchscript(device=device)
     # Ensure torchscript saving/loading does not affect final predictions.

@@ -926,7 +926,8 @@ try:
 
             def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
                 super().__init__()
-                self.vocab, self.idx2str = self._init_vocab(vocab_file)  # removable in torchtext 0.13.0 (API change)
+                self.str2idx, self.idx2str = self._init_vocab(vocab_file)
+                # TODO(geoffrey): If we move to torchtext>=0.13.0, we can use return_tokens kwarg to get tokens directly
                 self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
 
             def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
@@ -962,7 +963,7 @@ try:
                 return tokens[0] if isinstance(v, str) else tokens
 
             def get_vocab(self) -> Dict[str, str]:
-                return self.vocab
+                return self.str2idx
 
         class CLIPTokenizer(_BPETokenizer):
             def __init__(
