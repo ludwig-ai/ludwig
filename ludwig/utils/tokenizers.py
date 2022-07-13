@@ -1129,7 +1129,6 @@ except ImportError:
 def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
-
         from transformers.models.bert.tokenization_bert import PRETRAINED_VOCAB_FILES_MAP, PRETRAINED_INIT_CONFIGURATION
 
         if (
@@ -1151,7 +1150,6 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     return HFTokenizer(pretrained_model_name_or_path)
 
 
-TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update({"hf_tokenizer"})
 tokenizer_registry.update(
     {
         "hf_tokenizer": get_hf_tokenizer,
