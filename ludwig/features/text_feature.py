@@ -162,6 +162,19 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol_metadata_key = "word_pad_symbol"
             unknown_symbol_metadata_key = "word_unk_symbol"
 
+        # ensure preprocessing param values match the metadata determined from dataset
+        metadata["preprocessing"]["padding_symbol"] = metadata[padding_symbol_metadata_key]
+        metadata["preprocessing"]["unknown_symbol"] = metadata[unknown_symbol_metadata_key]
+        if metadata["preprocessing"]["fill_value"] == UNKNOWN_SYMBOL:
+            metadata["preprocessing"]["fill_value"] = metadata["preprocessing"][unknown_symbol_metadata_key]
+        if (
+            "computed_fill_value" in metadata["preprocessing"]
+            and metadata["preprocessing"]["computed_fill_value"] == UNKNOWN_SYMBOL
+        ):
+            metadata["preprocessing"]["computed_fill_value"] = metadata["preprocessing"][unknown_symbol_metadata_key]
+
+        print("inside feature data", metadata)
+
         return build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata[f"{prefix}str2idx"],

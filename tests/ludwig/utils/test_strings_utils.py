@@ -138,7 +138,7 @@ def test_create_vocabulary_from_hf():
         lowercase=preprocessing_parameters["lowercase"],
         unknown_symbol=preprocessing_parameters["unknown_symbol"],
         padding_symbol=preprocessing_parameters["padding_symbol"],
-        pretrained_model_name_or_path="albert-base-v2",
+        pretrained_model_name_or_path="bert-base-uncased",
     )
 
     assert len(vocabulary_output[0]) == 30000

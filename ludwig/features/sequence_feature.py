@@ -32,6 +32,7 @@ from ludwig.constants import (
     NAME,
     PERPLEXITY,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -76,8 +77,11 @@ class _SequencePreprocessing(torch.nn.Module):
                 f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
             )
 
+        # print("metadata preprocessing", metadata["preprocessing"])
+
         self.lowercase = metadata["preprocessing"]["lowercase"]
-        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
+        self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
+        self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
             pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
         self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
@@ -113,6 +117,27 @@ class _SequencePreprocessing(torch.nn.Module):
     def _process_sequence(self, sequence: str) -> torch.Tensor:
         sequence = self.computed_fill_value if sequence == "nan" else sequence
 
+        # If tokenizer is HF, we defer lowercase to the tokenizer.
+        if self.lowercase and self.tokenizer_type != "hf_tokenizer":
+            sequence_str: str = sequence.lower()
+        else:
+            sequence_str: str = sequence
+
+        unit_sequence = self.tokenizer(sequence)
+        assert torch.jit.isinstance(unit_sequence, List[str])
+
+        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
+
+        if self.tokenizer_type == "hf_tokenizer":
+            # Handles start, stop, and unknown symbols implicitly
+            sequence_vector[: len(unit_sequence)] = unit_sequence
+            return sequence_vector
+
+        if len(unit_sequence) + 1 < self.max_sequence_length:
+            sequence_length = len(unit_sequence)
+            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
+        else:
+            sequence_length = self.max_sequence_length - 1
         if self.lowercase:
             sequence_str: str = sequence.lower()
         else:
@@ -121,7 +146,6 @@ class _SequencePreprocessing(torch.nn.Module):
         unit_sequence = self.tokenizer(sequence_str)
         assert torch.jit.isinstance(unit_sequence, List[str])
 
-        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
         sequence_vector[0] = self.unit_to_id[self.start_symbol]
         if len(unit_sequence) + 1 < self.max_sequence_length:
             sequence_length = len(unit_sequence)
