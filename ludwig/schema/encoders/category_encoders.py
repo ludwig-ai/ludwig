@@ -1,6 +1,4 @@
-from typing import ClassVar, List
-from ludwig.encoders.base import Encoder
-from ludwig.encoders.category_encoders import CategoricalEmbedEncoder, CategoricalSparseEncoder
+from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -8,8 +6,6 @@ from ludwig.schema import utils as schema_utils
 
 @dataclass
 class CategoricalEmbedConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = CategoricalEmbedEncoder
 
     type: str = "dense"
 
@@ -54,8 +50,8 @@ class CategoricalEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate.",
     )
 
@@ -70,8 +66,6 @@ class CategoricalEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class CategoricalSparseConfig(schema_utils.BaseMarshmallowConfig):
-
-    encoder_class: ClassVar[Encoder] = CategoricalSparseEncoder
 
     type: str = "sparse"
 
@@ -108,8 +102,8 @@ class CategoricalSparseConfig(schema_utils.BaseMarshmallowConfig):
 
     dropout: float = schema_utils.FloatRange(
         default=0.0,
-        min=0.0,
-        max=1.0,
+        min=0,
+        max=1,
         description="Dropout rate.",
     )
 

@@ -407,6 +407,38 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
     )
 
 
+def List(list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""):
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
+    if default is not None:
+        try:
+            assert isinstance(default, list)
+
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+
+    if list_type is str:
+        field_type = fields.String()
+    elif list_type is int:
+        field_type = fields.Integer()
+    elif list_type is float:
+        field_type = fields.Float()
+    else:
+        raise ValueError(f"Invalid list type: `{list_type}`")
+
+    return field(
+        metadata={
+            "marshmallow_field": fields.List(
+                field_type,
+                allow_none=True,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
+            )
+        },
+        default_factory=lambda: default,
+    )
+
+
 def DictList(
     default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):

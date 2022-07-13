@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import DATE
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.encoders import BaseEncoderConfig, EncoderDataclassField
+from ludwig.schema.encoders.utils import BaseEncoderConfig, EncoderDataclassField
 
 
 @dataclass
