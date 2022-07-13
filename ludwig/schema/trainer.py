@@ -64,7 +64,11 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         min_exclusive=0,
-        description="Size of batch to pass to the model for evaluation.",
+        description=(
+            "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
+            "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
+            "memory is available."
+        ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 
