@@ -21,8 +21,9 @@ import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.automl.data_source import DataframeSource, DataSource
+from ludwig.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.automl.type_inference import infer_type, should_exclude
-from ludwig.automl.utils import _ray_init, FieldConfig, FieldInfo, FieldMetadata, get_available_resources
+from ludwig.automl.utils import _ray_init, get_available_resources
 from ludwig.constants import COMBINER, EXECUTOR, HYPEROPT, SCHEDULER, SEARCH_ALG, TEXT, TYPE
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed

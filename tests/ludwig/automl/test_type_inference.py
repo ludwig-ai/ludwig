@@ -2,8 +2,8 @@ import random
 
 import pytest
 
+from ludwig.automl.field_info import FieldInfo
 from ludwig.automl.type_inference import infer_type, should_exclude
-from ludwig.automl.utils import FieldInfo
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.data.dataset_synthesizer import generate_string
 

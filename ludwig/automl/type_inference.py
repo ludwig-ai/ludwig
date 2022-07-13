@@ -1,6 +1,6 @@
 from typing import Set
 
-from ludwig.automl.utils import FieldInfo
+from ludwig.automl.field_info import FieldInfo
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.utils import strings_utils
 
