@@ -1,6 +1,6 @@
+from abc import ABCMeta
 from typing import List, Optional, Union
 
-from abc import ABCMeta
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
