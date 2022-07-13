@@ -258,7 +258,7 @@ def create_vocabulary(
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
         try:
-            vocab = tokenizer.tokenizer.get_vocab()
+            vocab = tokenizer.get_vocab()
             vocab = list(vocab.keys())
         except NotImplementedError:
             vocab = []
@@ -266,8 +266,8 @@ def create_vocabulary(
                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
             vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
 
-        pad_token = tokenizer.tokenizer.pad_token
-        unk_token = tokenizer.tokenizer.unk_token
+        pad_token = tokenizer.get_pad_token()
+        unk_token = tokenizer.get_unk_token()
 
         if unk_token is None:
             vocab = [unknown_symbol] + vocab
@@ -280,6 +280,7 @@ def create_vocabulary(
             padding_symbol = pad_token
     elif hasattr(tokenizer, "get_vocab"):
         vocab = tokenizer.get_vocab()
+        vocab = list(vocab.keys())
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
@@ -309,6 +310,9 @@ def create_vocabulary(
     pad_idx = None
     if padding_symbol in str2idx.keys():
         pad_idx = str2idx[padding_symbol]
+
+    print("inside create_vocabulary")
+    print("padding_symbol", padding_symbol)
 
     return vocab, str2idx, str2freq, line_length_max, line_length_99ptile, pad_idx, padding_symbol, unknown_symbol
 

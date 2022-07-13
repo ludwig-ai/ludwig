@@ -352,10 +352,20 @@ def test_torchscript_e2e_image(tmpdir, csv_filename):
 
 def test_torchscript_e2e_text(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [
-        text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer})
-        for tokenizer in TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+    input_features = [text_feature(vocab_size=3, preprocessing={"tokenizer": tokenizer}) for tokenizer in {"clip"}]
+    output_features = [
+        text_feature(vocab_size=3),
     ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [text_feature(vocab_size=3, encoder="bert")]
     output_features = [
         text_feature(vocab_size=3),
     ]

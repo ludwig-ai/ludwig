@@ -87,6 +87,8 @@ class _SequencePreprocessing(torch.nn.Module):
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.unit_to_id = metadata["str2idx"]
         self.computed_fill_value = metadata["preprocessing"]["computed_fill_value"]
+        print("inside _SequencePreprocessing")
+        print("self.padding_symbol", self.padding_symbol)
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of strings and returns a tensor of token ids."""
