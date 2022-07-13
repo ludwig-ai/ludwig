@@ -26,7 +26,7 @@ def register_trainer_schema(name: str):
 
 
 @dataclass
-class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, metaclass=ABCMeta):
+class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
     type: str
