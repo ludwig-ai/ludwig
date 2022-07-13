@@ -1,5 +1,6 @@
 from typing import List, Optional, Union
 
+from abc import ABCMeta
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
@@ -25,7 +26,7 @@ def register_trainer_schema(name: str):
 
 
 @dataclass
-class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
+class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, metaclass=ABCMeta):
     """Common trainer parameter values."""
 
     type: str
