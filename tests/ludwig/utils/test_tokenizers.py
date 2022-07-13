@@ -3,13 +3,7 @@ import torch
 import torchtext
 
 from transformers.models.bert.tokenization_bert import PRETRAINED_VOCAB_FILES_MAP, PRETRAINED_INIT_CONFIGURATION
-
-SKIP_MODEL_NAMES = {
-    "bert-base-german-cased",
-    "bert-base-german-dbmdz-cased",
-    "bert-base-german-dbmdz-uncased",
-    "TurkuNLP/bert-base-finnish-cased-v1",
-}  # Known issues with tokenization
+from ludwig.utils.tokenizers import SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
 
 
 @pytest.mark.parametrize(
@@ -22,7 +16,7 @@ SKIP_MODEL_NAMES = {
                     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
                     reason="requires torchtext 0.13.0 or higher",
                 ),
-                pytest.mark.skipif(model_name in SKIP_MODEL_NAMES, reason="issue on torchtext side"),
+                pytest.mark.skipif(model_name in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES, reason="issue on torchtext side"),
             ],
         )
         for model_name in PRETRAINED_VOCAB_FILES_MAP["vocab_file"].keys()

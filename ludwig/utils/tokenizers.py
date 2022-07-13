@@ -29,9 +29,18 @@ logger = logging.getLogger(__name__)
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
+
 TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
+
+# Do not use torchtext implementation of BERT tokenizer for these model names due to known token mismatch with HF.
+SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
+    "bert-base-german-cased",
+    "bert-base-german-dbmdz-cased",
+    "bert-base-german-dbmdz-uncased",
+    "TurkuNLP/bert-base-finnish-cased-v1",
+}
 
 
 class BaseTokenizer:
@@ -1121,7 +1130,10 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
         from transformers.models.bert.tokenization_bert import PRETRAINED_VOCAB_FILES_MAP, PRETRAINED_INIT_CONFIGURATION
 
-        if pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]:
+        if (
+            pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
+            and pretrained_model_name_or_path not in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
+        ):
             logging.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
             vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][pretrained_model_name_or_path]
             init_kwargs = PRETRAINED_INIT_CONFIGURATION.get(pretrained_model_name_or_path, {})
