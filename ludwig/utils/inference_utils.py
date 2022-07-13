@@ -5,30 +5,29 @@ import pandas as pd
 import torch
 
 from ludwig.constants import (
-    PREPROCESSOR,
-    PREDICTOR,
-    POSTPROCESSOR,
+    AUDIO,
+    BAG,
     BINARY,
     CATEGORY,
-    BAG,
+    COLUMN,
+    DATE,
+    IMAGE,
+    NAME,
+    POSTPROCESSOR,
+    PREDICTOR,
+    PREPROCESSOR,
+    SEQUENCE,
     SET,
     TEXT,
-    SEQUENCE,
     TIMESERIES,
-    VECTOR,
-    IMAGE,
-    AUDIO,
-    DATE,
-    COLUMN,
     TYPE,
-    NAME,
+    VECTOR,
 )
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.image_utils import read_image_from_path
 from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
-
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 

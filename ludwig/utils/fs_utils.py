@@ -22,15 +22,15 @@ import os
 import pathlib
 import shutil
 import tempfile
-import certifi
-import urllib3
 import uuid
 from typing import Any, Optional, Union
 from urllib.parse import unquote, urlparse
 
+import certifi
 import fsspec
 import h5py
 import requests
+import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
 
