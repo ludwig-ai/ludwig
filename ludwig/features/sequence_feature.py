@@ -59,7 +59,6 @@ from ludwig.utils.strings_utils import (
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
-from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -70,17 +69,15 @@ class _SequencePreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
-            raise ValueError(
-                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
-                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
-            )
-
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
         self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
             pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
+
+        if not isinstance(self.tokenizer, torch.nn.Module):
+            raise ValueError(f"tokenizer must be a torch.nn.Module, got {self.tokenizer}")
+
         self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
         self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
         self.start_symbol = START_SYMBOL
