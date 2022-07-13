@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+import torchtext
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY
@@ -366,6 +367,10 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
+    reason="requires torchtext 0.13.0 or higher",
+)
 def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [text_feature(vocab_size=3, encoder="bert")]

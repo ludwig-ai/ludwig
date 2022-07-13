@@ -164,12 +164,12 @@ class TextFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters["padding_symbol"] = metadata[padding_symbol_metadata_key]
         preprocessing_parameters["unknown_symbol"] = metadata[unknown_symbol_metadata_key]
         if preprocessing_parameters["fill_value"] == UNKNOWN_SYMBOL:
-            preprocessing_parameters["fill_value"] = preprocessing_parameters[unknown_symbol_metadata_key]
+            preprocessing_parameters["fill_value"] = preprocessing_parameters["unknown_symbol"]
         if (
             "computed_fill_value" in preprocessing_parameters
             and preprocessing_parameters["computed_fill_value"] == UNKNOWN_SYMBOL
         ):
-            preprocessing_parameters["computed_fill_value"] = preprocessing_parameters[unknown_symbol_metadata_key]
+            preprocessing_parameters["computed_fill_value"] = preprocessing_parameters["unknown_symbol"]
 
         return build_sequence_matrix(
             sequences=column,
