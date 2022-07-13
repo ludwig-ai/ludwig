@@ -32,7 +32,6 @@ from ludwig.constants import (
     NAME,
     PERPLEXITY,
     PREDICTIONS,
-    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -133,12 +132,6 @@ class _SequencePreprocessing(torch.nn.Module):
         # If tokenizer is not HF, we manually convert tokens to IDs and insert start, stop, and unknown symbols.
         unit_sequence = self.tokenizer(sequence_str)
         assert torch.jit.isinstance(unit_sequence, List[str])
-
-        if len(unit_sequence) + 1 < self.max_sequence_length:
-            sequence_length = len(unit_sequence)
-            sequence_vector[len(unit_sequence) + 1] = self.unit_to_id[self.stop_symbol]
-        else:
-            sequence_length = self.max_sequence_length - 1
 
         sequence_vector[0] = self.unit_to_id[self.start_symbol]
         if len(unit_sequence) + 1 < self.max_sequence_length:

@@ -1030,23 +1030,24 @@ try:
             **kwargs,
         ):
             super().__init__()
+            from transformers.utils.hub import cached_path
+
             if vocab_file is None:
                 vocab_file = "https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt"
-            vocab_file = torchtext.utils.get_asset_local_path(vocab_file)
+            self.vocab_file = cached_path(vocab_file)
 
             self.is_hf_tokenizer = is_hf_tokenizer
             if self.is_hf_tokenizer:
-                # Always return token IDs if being used as a HF tokenizer.
                 self.tokenizer = torchtext.transforms.BERTTokenizer(
-                    vocab_path=vocab_file, return_tokens=False, do_lower_case=do_lower_case
+                    vocab_path=self.vocab_file, return_tokens=False, do_lower_case=do_lower_case
                 )
             else:
                 # Return tokens as raw tokens if not being used as a HF tokenizer.
                 self.tokenizer = torchtext.transforms.BERTTokenizer(
-                    vocab_path=vocab_file, return_tokens=True, do_lower_case=do_lower_case
+                    vocab_path=self.vocab_file, return_tokens=True, do_lower_case=do_lower_case
                 )
 
-            self.str2idx = self._init_vocab(vocab_file)
+            self.str2idx = self._init_vocab(self.vocab_file)
 
             # Values from
             # https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/tokenization_bert.py
@@ -1057,11 +1058,11 @@ try:
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
             str2idx = {}
-            with open(torchtext.utils.get_asset_local_path(vocab_file), "r") as f:
-                tokens = f.readlines()
-                for index, token in enumerate(tokens):
-                    token = token.rstrip("\n")
-                    str2idx[token] = index
+            with open(vocab_file, "r", encoding="utf-8") as reader:
+                tokens = reader.readlines()
+            for index, token in enumerate(tokens):
+                token = token.rstrip("\n")
+                str2idx[token] = index
             return str2idx
 
         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:

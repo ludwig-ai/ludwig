@@ -161,17 +161,15 @@ class TextFeatureMixin(BaseFeatureMixin):
             unknown_symbol_metadata_key = "word_unk_symbol"
 
         # ensure preprocessing param values match the metadata determined from dataset
-        metadata["preprocessing"]["padding_symbol"] = metadata[padding_symbol_metadata_key]
-        metadata["preprocessing"]["unknown_symbol"] = metadata[unknown_symbol_metadata_key]
-        if metadata["preprocessing"]["fill_value"] == UNKNOWN_SYMBOL:
-            metadata["preprocessing"]["fill_value"] = metadata["preprocessing"][unknown_symbol_metadata_key]
+        preprocessing_parameters["padding_symbol"] = metadata[padding_symbol_metadata_key]
+        preprocessing_parameters["unknown_symbol"] = metadata[unknown_symbol_metadata_key]
+        if preprocessing_parameters["fill_value"] == UNKNOWN_SYMBOL:
+            preprocessing_parameters["fill_value"] = preprocessing_parameters[unknown_symbol_metadata_key]
         if (
-            "computed_fill_value" in metadata["preprocessing"]
-            and metadata["preprocessing"]["computed_fill_value"] == UNKNOWN_SYMBOL
+            "computed_fill_value" in preprocessing_parameters
+            and preprocessing_parameters["computed_fill_value"] == UNKNOWN_SYMBOL
         ):
-            metadata["preprocessing"]["computed_fill_value"] = metadata["preprocessing"][unknown_symbol_metadata_key]
-
-        print("inside feature data", metadata)
+            preprocessing_parameters["computed_fill_value"] = preprocessing_parameters[unknown_symbol_metadata_key]
 
         return build_sequence_matrix(
             sequences=column,
