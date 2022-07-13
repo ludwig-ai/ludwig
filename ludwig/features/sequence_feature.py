@@ -112,7 +112,7 @@ class _SequencePreprocessing(torch.nn.Module):
     def _process_sequence(self, sequence: str) -> torch.Tensor:
         sequence = self.computed_fill_value if sequence == "nan" else sequence
 
-        # If tokenizer is HF, we defer lowercase to the tokenizer.
+        # If tokenizer is HF, we defer lowercase transformation to the tokenizer.
         if self.lowercase and self.tokenizer_type != "hf_tokenizer":
             sequence_str: str = sequence.lower()
         else:
