@@ -1079,7 +1079,6 @@ try:
             if self.is_hf_tokenizer:
                 token_ids_str = self.tokenizer(inputs)
                 assert torch.jit.isinstance(token_ids_str, List[List[str]])
-
                 # Must cast token_ids to ints because they are used directly as indices.
                 token_ids: List[List[int]] = []
                 for token_ids_str_i in token_ids_str:
@@ -1091,7 +1090,6 @@ try:
 
             tokens = self.tokenizer(inputs)
             assert torch.jit.isinstance(tokens, List[List[str]])
-
             return tokens[0] if isinstance(v, str) else tokens
 
         def get_vocab(self) -> Dict[str, str]:

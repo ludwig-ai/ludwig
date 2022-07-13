@@ -76,8 +76,6 @@ class _SequencePreprocessing(torch.nn.Module):
                 f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
             )
 
-        # print("metadata preprocessing", metadata["preprocessing"])
-
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
         self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
