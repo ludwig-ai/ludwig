@@ -1069,7 +1069,7 @@ try:
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
             str2idx = {}
-            with open(vocab_file, "r", encoding="utf-8") as reader:
+            with open(vocab_file, encoding="utf-8") as reader:
                 tokens = reader.readlines()
             for index, token in enumerate(tokens):
                 token = token.rstrip("\n")
@@ -1129,7 +1129,7 @@ except ImportError:
 def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
-        from transformers.models.bert.tokenization_bert import PRETRAINED_VOCAB_FILES_MAP, PRETRAINED_INIT_CONFIGURATION
+        from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
 
         if (
             pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
