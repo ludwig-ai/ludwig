@@ -1251,11 +1251,8 @@ def build_metadata(
 ) -> Dict[str, Any]:
     for feature_config in feature_configs:
         feature_name = feature_config[NAME]
-        print(feature_name)
         if feature_name in metadata:
             continue
-
-        print("inside build_metadata")
 
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_name]
 
@@ -1263,8 +1260,6 @@ def build_metadata(
         metadata[feature_name] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
             column, preprocessing_parameters, backend
         )
-
-        print(metadata)
 
         metadata[feature_name][PREPROCESSING] = preprocessing_parameters
 

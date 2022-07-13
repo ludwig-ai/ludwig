@@ -1039,25 +1039,20 @@ try:
                 self.tokenizer = torchtext.transforms.BERTTokenizer(
                     vocab_path=vocab_file, return_tokens=False, do_lower_case=do_lower_case
                 )
-                self.vocab = self._init_vocab(vocab_file)
-                # Values from
-                # https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/tokenization_bert.py
-                self.pad_token = "[PAD]"
-                self.unk_token = "[UNK]"
-                self.cls_token_id = self.vocab["[CLS]"]  # Used as start symbol
-                self.sep_token_id = self.vocab["[SEP]"]  # Used as stop symbol
             else:
                 # Return tokens as raw tokens if not being used as a HF tokenizer.
                 self.tokenizer = torchtext.transforms.BERTTokenizer(
                     vocab_path=vocab_file, return_tokens=True, do_lower_case=do_lower_case
                 )
-                # Unused
-                self.pad_token = None
-                self.unk_token = None
-                self.cls_token_id = None
-                self.sep_token_id = None
 
             self.str2idx = self._init_vocab(vocab_file)
+
+            # Values from
+            # https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/tokenization_bert.py
+            self.pad_token = "[PAD]"
+            self.unk_token = "[UNK]"
+            self.cls_token_id = self.str2idx["[CLS]"]  # Used as start symbol
+            self.sep_token_id = self.str2idx["[SEP]"]  # Used as stop symbol
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
             str2idx = {}
@@ -1090,8 +1085,6 @@ try:
                     token_ids_i.insert(0, self.cls_token_id)
                     token_ids_i.append(self.sep_token_id)
                     token_ids.append(token_ids_i)
-                print(inputs)
-                print(token_ids)
                 return token_ids[0] if isinstance(v, str) else token_ids
 
             tokens = self.tokenizer(inputs)
