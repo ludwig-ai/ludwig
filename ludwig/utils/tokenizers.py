@@ -1042,7 +1042,9 @@ try:
             from transformers.utils.hub import cached_path
 
             if vocab_file is None:
+                # By default, we use the uncased (all lowercased) BERT tokenizer from huggingface.
                 vocab_file = "https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt"
+                do_lower_case = True
             self.vocab_file = cached_path(vocab_file)
 
             self.is_hf_tokenizer = is_hf_tokenizer
