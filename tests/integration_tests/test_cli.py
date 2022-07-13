@@ -114,7 +114,7 @@ def test_train_cli_dataset(tmpdir, csv_filename):
     """Test training using `ludwig train --dataset`."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
 def test_train_cli_training_set(tmpdir, csv_filename):
@@ -129,7 +129,7 @@ def test_train_cli_training_set(tmpdir, csv_filename):
         validation_set=validation_filename,
         test_set=test_filename,
         config=config_filename,
-        output_directory=tmpdir,
+        output_directory=str(tmpdir),
     )
 
 
@@ -173,14 +173,14 @@ def test_experiment_cli(tmpdir, csv_filename):
     """Test experiment cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("experiment", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("experiment", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
 def test_predict_cli(tmpdir, csv_filename):
     """Test predict cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "predict",
         dataset=dataset_filename,
@@ -193,7 +193,7 @@ def test_evaluate_cli(tmpdir, csv_filename):
     """Test evaluate cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "evaluate",
         dataset=dataset_filename,
@@ -207,14 +207,14 @@ def test_hyperopt_cli(tmpdir, csv_filename):
     """Test hyperopt cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_hyperopt_data(csv_filename, config_filename)
-    _run_ludwig("hyperopt", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("hyperopt", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
 def test_visualize_cli(tmpdir, csv_filename):
     """Test Ludwig 'visualize' cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     _run_ludwig(
         "visualize",
         visualization="learning_curves",
@@ -228,7 +228,7 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     """Test collect_summary cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
-    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
     completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
     stdout = completed_process.stdout.decode("utf-8")
 

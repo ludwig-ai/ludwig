@@ -67,11 +67,11 @@ def run_test_gbm_output_not_supported(tmpdir, backend_config):
     with pytest.raises(
         ValueError, match="Model type GBM only supports numerical, categorical, or binary output features"
     ):
-        model.train(dataset=dataset_filename, output_directory=tmpdir)
+        model.train(dataset=dataset_filename, output_directory=str(tmpdir))
 
 
-def test_local_gbm_output_not_supported(local_backend):
-    run_test_gbm_output_not_supported(local_backend)
+def test_local_gbm_output_not_supported(tmpdir, local_backend):
+    run_test_gbm_output_not_supported(tmpdir, local_backend)
 
 
 @pytest.mark.distributed
@@ -104,14 +104,14 @@ def run_test_gbm_multiple_outputs(tmpdir, backend_config):
         model.train(dataset=dataset_filename, output_directory=tmpdir)
 
 
-def test_local_gbm_multiple_outputs(local_backend):
-    run_test_gbm_multiple_outputs(local_backend)
+def test_local_gbm_multiple_outputs(tmpdir, local_backend):
+    run_test_gbm_multiple_outputs(tmpdir, local_backend)
 
 
 @pytest.mark.distributed
-def test_ray_gbm_multiple_outputs(ray_backend):
+def test_ray_gbm_multiple_outputs(tmpdir, ray_backend):
     with ray_start():
-        run_test_gbm_multiple_outputs(ray_backend)
+        run_test_gbm_multiple_outputs(tmpdir, ray_backend)
 
 
 def run_test_gbm_binary(tmpdir, backend_config):
@@ -149,14 +149,14 @@ def run_test_gbm_binary(tmpdir, backend_config):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
-def test_local_gbm_binary(local_backend):
-    run_test_gbm_binary(local_backend)
+def test_local_gbm_binary(tmpdir, local_backend):
+    run_test_gbm_binary(tmpdir, local_backend)
 
 
 @pytest.mark.distributed
-def test_ray_gbm_binary(ray_backend):
+def test_ray_gbm_binary(tmpdir, ray_backend):
     with ray_start():
-        run_test_gbm_binary(ray_backend)
+        run_test_gbm_binary(tmpdir, ray_backend)
 
 
 def run_test_gbm_category(tmpdir, backend_config):
@@ -196,14 +196,14 @@ def run_test_gbm_category(tmpdir, backend_config):
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
-def test_local_gbm_category(local_backend):
-    run_test_gbm_category(local_backend)
+def test_local_gbm_category(tmpdir, local_backend):
+    run_test_gbm_category(tmpdir, local_backend)
 
 
 @pytest.mark.distributed
-def test_ray_gbm_category(ray_backend):
+def test_ray_gbm_category(tmpdir, ray_backend):
     with ray_start():
-        run_test_gbm_category(ray_backend)
+        run_test_gbm_category(tmpdir, ray_backend)
 
 
 def run_test_gbm_number(tmpdir, backend_config):
@@ -248,12 +248,12 @@ def run_test_gbm_number(tmpdir, backend_config):
     assert pred_col.dtype == float
 
 
-def test_local_gbm_number(local_backend):
+def test_local_gbm_number(tmpdir, local_backend):
     run_test_gbm_number(local_backend)
 
 
 @pytest.mark.distributed
-def test_ray_gbm_number(ray_backend):
+def test_ray_gbm_number(tmpdir, ray_backend):
     with ray_start():
         run_test_gbm_number(ray_backend)
 
