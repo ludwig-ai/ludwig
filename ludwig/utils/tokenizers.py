@@ -1077,6 +1077,14 @@ try:
             return str2idx
 
         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+            """Implements forward pass for tokenizer.
+
+            If the is_hf_tokenizer flag is set to True, then the output follows the HF convention, i.e. the output is an
+            List[List[int]] of tokens and the cls and sep tokens are automatically added as the start and stop symbols.
+
+            If the is_hf_tokenizer flag is set to False, then the output follows the Ludwig convention, i.e. the output
+            is a List[List[str]] of tokens.
+            """
             if isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
@@ -1127,6 +1135,13 @@ except ImportError:
 
 
 def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
+    """Gets a potentially torchscript-compatible tokenizer that follows HF convention.
+
+    Args:
+        pretrained_model_name_or_path: Name of the model in the HF repo. Example: "bert-base-uncased".
+    Returns:
+        A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
+    """
 
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
         from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
