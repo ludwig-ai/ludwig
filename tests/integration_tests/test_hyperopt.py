@@ -14,7 +14,6 @@
 # ==============================================================================
 import contextlib
 import json
-import logging
 import os.path
 from typing import Dict, Optional, Tuple, Union
 
@@ -53,10 +52,6 @@ except ImportError:
     _ray113 = None
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logging.getLogger("ludwig").setLevel(logging.INFO)
-
 RANDOM_SEARCH_SIZE = 4
 
 HYPEROPT_CONFIG = {
@@ -73,33 +68,33 @@ HYPEROPT_CONFIG = {
     "search_alg": {"type": "variant_generator"},
 }
 
-SEARCH_ALGS = [
-    None,
-    "variant_generator",
+SEARCH_ALGS_FOR_TESTING = [
+    # None,
+    # "variant_generator",
     "random",
-    "hyperopt",
     "bohb",
-    "ax",
-    "bayesopt",
-    "blendsearch",
-    "cfo",
-    "dragonfly",
-    "hebo",
-    "skopt",
-    "optuna",
+    # "hyperopt",
+    # "ax",
+    # "bayesopt",
+    # "blendsearch",
+    # "cfo",
+    # "dragonfly",
+    # "hebo",
+    # "skopt",
+    # "optuna",
 ]
 
-SCHEDULERS = [
+SCHEDULERS_FOR_TESTING = [
     "fifo",
     "asynchyperband",
-    "async_hyperband",
-    "median_stopping_rule",
-    "medianstopping",
-    "hyperband",
-    "hb_bohb",
-    "pbt",
+    # "async_hyperband",
+    # "median_stopping_rule",
+    # "medianstopping",
+    # "hyperband",
+    # "hb_bohb",
+    # "pbt",
     # "pb2",  commented out for now: https://github.com/ray-project/ray/issues/24815
-    "resource_changing",
+    # "resource_changing",
 ]
 
 
@@ -200,7 +195,7 @@ def ray_cluster():
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("search_alg", SEARCH_ALGS)
+@pytest.mark.parametrize("search_alg", SEARCH_ALGS_FOR_TESTING)
 def test_hyperopt_search_alg(
     search_alg, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
 ):
@@ -257,7 +252,7 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("scheduler", SCHEDULERS)
+@pytest.mark.parametrize("scheduler", SCHEDULERS_FOR_TESTING)
 def test_hyperopt_scheduler(
     scheduler, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
 ):
