@@ -94,7 +94,7 @@ from ludwig.utils.data_utils import (
     SPSS_FORMATS,
     STATA_FORMATS,
     TSV_FORMATS,
-    use_credentials,
+    use_credentials, DATA_TEST_PARQUET_FP, DATA_VALIDATION_PARQUET_FP,
 )
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
@@ -557,7 +557,13 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         random_seed=default_random_seed,
     ):
         test_set = test_set if test_set and path_exists(test_set) else None
+        if test_set and isinstance(test_set, str) and DATA_TEST_PARQUET_FP not in training_set_metadata:
+            training_set_metadata[DATA_TEST_PARQUET_FP] = test_set
+
         validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        if validation_set and isinstance(validation_set, str) and DATA_VALIDATION_PARQUET_FP not in training_set_metadata:
+            training_set_metadata[DATA_VALIDATION_PARQUET_FP] = validation_set
+
         if training_set and isinstance(training_set, str) and DATA_TRAIN_PARQUET_FP not in training_set_metadata:
             training_set_metadata[DATA_TRAIN_PARQUET_FP] = training_set
         return training_set, test_set, validation_set, training_set_metadata
