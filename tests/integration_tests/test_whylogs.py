@@ -6,7 +6,7 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs import WhyLogsCallback
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, spawn
+from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
 
 
 def test_whylogs_callback_local(tmpdir):
@@ -65,7 +65,6 @@ def test_whylogs_callback_dask(tmpdir, ray_cluster_4cpu):
     assert os.path.isdir(local_prediction_output_dir) is True
 
 
-@spawn
 def run_dask(input_features, output_features, data_csv, val_csv, test_csv):
     epochs = 2
     batch_size = 8
