@@ -14,7 +14,6 @@
 # ==============================================================================
 import os
 import random
-import tempfile
 
 import numpy as np
 import pandas as pd
@@ -36,34 +35,31 @@ from tests.integration_tests.utils import (
 )
 
 
-def test_missing_value_prediction(csv_filename):
+def test_missing_value_prediction(tmpdir, csv_filename):
     random.seed(1)
     np.random.seed(1)
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_features = [
-            category_feature(
-                vocab_size=2, reduce_input="sum", preprocessing=dict(missing_value_strategy="fill_with_mode")
-            )
-        ]
-        output_features = [binary_feature()]
+    input_features = [
+        category_feature(vocab_size=2, reduce_input="sum", preprocessing=dict(missing_value_strategy="fill_with_mode"))
+    ]
+    output_features = [binary_feature()]
 
-        dataset = pd.read_csv(generate_data(input_features, output_features, csv_filename))
+    dataset = pd.read_csv(generate_data(input_features, output_features, csv_filename))
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-        }
-        model = LudwigModel(config)
-        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+    }
+    model = LudwigModel(config)
+    _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
 
-        # Set the input column to None, we should be able to replace the missing value with the mode
-        # from the training set
-        dataset[input_features[0]["name"]] = None
-        model.predict(dataset=dataset)
+    # Set the input column to None, we should be able to replace the missing value with the mode
+    # from the training set
+    dataset[input_features[0]["name"]] = None
+    model.predict(dataset=dataset)
 
-        model = LudwigModel.load(os.path.join(output_dir, "model"))
-        model.predict(dataset=dataset)
+    model = LudwigModel.load(os.path.join(output_dir, "model"))
+    model.predict(dataset=dataset)
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
