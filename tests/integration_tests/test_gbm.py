@@ -75,9 +75,9 @@ def test_local_gbm_output_not_supported(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_output_not_supported(ray_backend):
+def test_ray_gbm_output_not_supported(tmpdir, ray_backend):
     with ray_start():
-        run_test_gbm_output_not_supported(ray_backend)
+        run_test_gbm_output_not_supported(tmpdir, ray_backend)
 
 
 def run_test_gbm_multiple_outputs(tmpdir, backend_config):
