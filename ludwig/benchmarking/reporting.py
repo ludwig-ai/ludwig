@@ -19,7 +19,9 @@ def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:
             resource_usage_path = os.path.join(os.getcwd(), experiment_name, CACHE, "train_resource_usage_metrics.json")
             performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "training_statistics.json")
         elif tag == EVAL_TAG:
-            resource_usage_path = os.path.join(os.getcwd(), experiment_name, CACHE, "evaluate_resource_usage_metrics.json")
+            resource_usage_path = os.path.join(
+                os.getcwd(), experiment_name, CACHE, "evaluate_resource_usage_metrics.json"
+            )
             performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "test_statistics.json")
         else:
             raise ValueError("Tag unrecognized. Please choose 'train' or 'evaluate'.")
