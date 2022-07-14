@@ -69,7 +69,7 @@ class ExperimentsDiff:
 def build_experiment_summary(experiment_local_directory: str) -> ExperimentSummary:
     config = load_json(os.path.join(experiment_local_directory, MODEL_HYPERPARAMETERS_FILE_NAME))
     report = load_json(os.path.join(experiment_local_directory, REPORT_JSON))
-    performance_metrics = report["evaluate"]["performance_metrics"]
+    performance_metrics = report["evaluate"]
     output_feature_type: str = config["output_features"][0]["type"]
     output_feature_name: str = config["output_features"][0]["name"]
     metric_dict = performance_metrics[output_feature_name]
