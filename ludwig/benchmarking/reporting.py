@@ -1,4 +1,3 @@
-import copy
 import os
 from typing import Any, Dict, Tuple
 
@@ -17,20 +16,17 @@ def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:
     os.makedirs(os.path.join(os.getcwd(), experiment_name, "metrics_report"), exist_ok=True)
     for tag in [TRAIN_TAG, EVAL_TAG]:
         if tag == TRAIN_TAG:
-            non_performance_path = os.path.join(os.getcwd(), experiment_name, CACHE, "train_resource_usage_metrics.json")
+            resource_usage_path = os.path.join(os.getcwd(), experiment_name, CACHE, "train_resource_usage_metrics.json")
             performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "training_statistics.json")
         elif tag == EVAL_TAG:
-            non_performance_path = os.path.join(os.getcwd(), experiment_name, CACHE, "evaluate_resource_usage_metrics.json")
+            resource_usage_path = os.path.join(os.getcwd(), experiment_name, CACHE, "evaluate_resource_usage_metrics.json")
             performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "test_statistics.json")
         else:
             raise ValueError("Tag unrecognized. Please choose 'train' or 'evaluate'.")
 
-        non_performance_metrics = load_json(non_performance_path)
+        resource_usage_metrics = load_json(resource_usage_path)
         performance_metrics = load_json(performance_path)
-        performance_metrics_copy = copy.deepcopy(performance_metrics)
-        full_report[tag] = merge_dict(
-            {"performance_metrics": performance_metrics_copy}, {"non_performance_metrics": non_performance_metrics}
-        )
+        full_report[tag] = merge_dict(performance_metrics, resource_usage_metrics)
 
     merged_file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", "{}.json".format("full_report"))
     save_json(merged_file_path, full_report)
