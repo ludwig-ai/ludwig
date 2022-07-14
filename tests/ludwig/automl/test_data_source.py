@@ -20,7 +20,7 @@ Jim,m,FALSE
 
 
 @pytest.mark.distributed
-def test_mixed_csv_data_source():
+def test_mixed_csv_data_source(ray_cluster_2cpu):
     try:
         temp = tempfile.NamedTemporaryFile(mode="w+")
         temp.write(CSV_CONTENT)
