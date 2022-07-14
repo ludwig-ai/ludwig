@@ -1,4 +1,3 @@
-import contextlib
 import os
 import shutil
 import tempfile
@@ -9,14 +8,13 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from tests.integration_tests.utils import create_data_set_to_use, spawn
+from tests.integration_tests.utils import create_data_set_to_use
 
 try:
-    import ray
-
     from ludwig.backend.ray import RayBackend
 except ImportError:
-    ray = None
+    pass
+
 
 rs = np.random.RandomState(42)
 RAY_BACKEND_CONFIG = {
@@ -35,21 +33,6 @@ RAY_BACKEND_CONFIG = {
 }
 
 
-@contextlib.contextmanager
-def ray_start(num_cpus=2, num_gpus=None):
-    res = ray.init(
-        num_cpus=num_cpus,
-        num_gpus=num_gpus,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
-@spawn
 def run_test_imbalance_ray(
     input_df,
     config,
@@ -57,45 +40,44 @@ def run_test_imbalance_ray(
     num_cpus=2,
     num_gpus=None,
 ):
-    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            csv_filename = os.path.join(tmpdir, "dataset.csv")
-            input_df.to_csv(csv_filename)
-            dataset_parquet = create_data_set_to_use("parquet", csv_filename)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, "dataset.csv")
+        input_df.to_csv(csv_filename)
+        dataset_parquet = create_data_set_to_use("parquet", csv_filename)
 
-            model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
-            output_dir = None
+        model = LudwigModel(config, backend=RAY_BACKEND_CONFIG, callbacks=None)
+        output_dir = None
 
-            try:
-                _, output_dataset, output_dir = model.train(
-                    dataset=dataset_parquet,
-                    training_set=None,
-                    validation_set=None,
-                    test_set=None,
-                    skip_save_processed_input=True,
-                    skip_save_progress=True,
-                    skip_save_unprocessed_output=True,
-                    skip_save_log=True,
-                )
-            finally:
-                # Remove results/intermediate data saved to disk
-                shutil.rmtree(output_dir, ignore_errors=True)
+        try:
+            _, output_dataset, output_dir = model.train(
+                dataset=dataset_parquet,
+                training_set=None,
+                validation_set=None,
+                test_set=None,
+                skip_save_processed_input=True,
+                skip_save_progress=True,
+                skip_save_unprocessed_output=True,
+                skip_save_log=True,
+            )
+        finally:
+            # Remove results/intermediate data saved to disk
+            shutil.rmtree(output_dir, ignore_errors=True)
 
-            input_train_set = input_df.sample(frac=0.7, replace=False)
-            processed_len = output_dataset[0].ds.count()
-            processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
-            processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
-            assert len(input_train_set) == 140
-            assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
-            assert round(processed_target_pos / processed_target_neg, 1) == 0.5
-            assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
-            assert isinstance(model.backend, RayBackend)
+        input_train_set = input_df.sample(frac=0.7, replace=False)
+        processed_len = output_dataset[0].ds.count()
+        processed_target_pos = output_dataset[0].ds.sum(on="Label_mZFLky")
+        processed_target_neg = output_dataset[0].ds.count() - output_dataset[0].ds.sum(on="Label_mZFLky")
+        assert len(input_train_set) == 140
+        assert 0.05 <= len(input_train_set[input_train_set["Label"] == 1]) / len(input_train_set) <= 0.15
+        assert round(processed_target_pos / processed_target_neg, 1) == 0.5
+        assert model.backend.df_engine.parallelism == RAY_BACKEND_CONFIG["processor"]["parallelism"]
+        assert isinstance(model.backend, RayBackend)
 
-        if balance == "oversample_minority":
-            assert len(input_train_set) < processed_len
+    if balance == "oversample_minority":
+        assert len(input_train_set) < processed_len
 
-        if balance == "undersample_majority":
-            assert len(input_train_set) > processed_len
+    if balance == "undersample_majority":
+        assert len(input_train_set) > processed_len
 
 
 def run_test_imbalance_local(
@@ -140,7 +122,7 @@ def run_test_imbalance_local(
 )
 @pytest.mark.distributed
 @pytest.mark.skip(reason="Flaky")
-def test_imbalance_ray(balance):
+def test_imbalance_ray(balance, ray_cluster_2cpu):
     config = {
         "input_features": [
             {"name": "Index", "column": "Index", "type": "numerical"},

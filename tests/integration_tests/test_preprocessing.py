@@ -16,7 +16,6 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     image_feature,
-    init_backend,
     LocalTestBackend,
     number_feature,
     sequence_feature,
@@ -27,7 +26,7 @@ NUM_EXAMPLES = 10
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_sample_ratio(backend, tmpdir):
+def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_ratio = 0.25
 
@@ -45,16 +44,15 @@ def test_sample_ratio(backend, tmpdir):
         "preprocessing": {"sample_ratio": sample_ratio},
     }
 
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_csv,
-            skip_save_processed_input=True,
-        )
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_csv,
+        skip_save_processed_input=True,
+    )
 
-        sample_size = num_examples * sample_ratio
-        count = len(train_set) + len(val_set) + len(test_set)
-        assert sample_size == count
+    sample_size = num_examples * sample_ratio
+    count = len(train_set) + len(val_set) + len(test_set)
+    assert sample_size == count
 
 
 def test_strip_whitespace_category(csv_filename, tmpdir):
@@ -82,7 +80,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_with_split(backend, csv_filename, tmpdir):
+def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
     num_examples = NUM_EXAMPLES
     train_set_size = int(num_examples * 0.8)
     val_set_size = int(num_examples * 0.1)
@@ -105,20 +103,19 @@ def test_with_split(backend, csv_filename, tmpdir):
         "preprocessing": {"split": {"type": "fixed"}},
     }
 
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_csv,
-            skip_save_processed_input=False,
-        )
-        assert len(train_set) == train_set_size
-        assert len(val_set) == val_set_size
-        assert len(test_set) == test_set_size
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_csv,
+        skip_save_processed_input=False,
+    )
+    assert len(train_set) == train_set_size
+    assert len(val_set) == val_set_size
+    assert len(test_set) == test_set_size
 
 
 @pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
 @pytest.mark.distributed
-def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
+def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
     num_examples = NUM_EXAMPLES
@@ -140,12 +137,11 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     }
 
     backend = "ray"
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_df,
-            skip_save_processed_input=False,
-        )
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_df,
+        skip_save_processed_input=False,
+    )
 
 
 @pytest.mark.parametrize("generate_images_as_numpy", [False, True])
@@ -291,7 +287,7 @@ def test_presplit_override(format, tmpdir):
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_empty_split_error(backend, tmpdir):
+def test_empty_split_error(backend, tmpdir, ray_cluster_2cpu):
     """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -307,7 +303,6 @@ def test_empty_split_error(backend, tmpdir):
     # rows, this will result in the dataset being empty after preprocessing.
     df[out_feat[COLUMN]] = None
 
-    with init_backend(backend):
-        ludwig_model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Dataset is empty following preprocessing"):
-            ludwig_model.preprocess(dataset=df)
+    ludwig_model = LudwigModel(config, backend=backend)
+    with pytest.raises(ValueError, match="Dataset is empty following preprocessing"):
+        ludwig_model.preprocess(dataset=df)

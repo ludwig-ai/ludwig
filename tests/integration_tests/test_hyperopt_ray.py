@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import logging
 import os.path
 
@@ -29,12 +28,10 @@ from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 try:
-    import ray
-
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
     from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
-    ray = None
+    pass
 
 
 logger = logging.getLogger(__name__)
@@ -101,25 +98,6 @@ def _get_config(search_alg, executor):
             "search_alg": search_alg,
         },
     }
-
-
-@contextlib.contextmanager
-def ray_start_4_cpus():
-    res = ray.init(
-        num_cpus=4,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
-@pytest.fixture(scope="module")
-def ray_cluster_4cpu():
-    with ray_start_4_cpus():
-        yield
 
 
 def run_hyperopt_executor(

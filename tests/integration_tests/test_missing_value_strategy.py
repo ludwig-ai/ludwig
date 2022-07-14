@@ -26,7 +26,6 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
-    init_backend,
     LocalTestBackend,
     number_feature,
     read_csv_with_nan,
@@ -69,7 +68,7 @@ def test_missing_value_prediction(csv_filename):
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir):
+def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluster_2cpu):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     kwargs = {PREPROCESSING: {"missing_value_strategy": FILL_WITH_MEAN}}
@@ -82,10 +81,10 @@ def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir):
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-    with init_backend(backend):
-        # run preprocessing
-        ludwig_model = LudwigModel(config, backend=backend)
-        ludwig_model.preprocess(dataset=training_data_csv_path)
+
+    # run preprocessing
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.preprocess(dataset=training_data_csv_path)
 
 
 def test_missing_values_drop_rows(csv_filename, tmpdir):

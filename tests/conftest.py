@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import os
 import tempfile
 import uuid
@@ -21,6 +22,11 @@ import pytest
 from ludwig.constants import TRAINER
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+try:
+    import ray
+except ImportError:
+    ray = None
 
 
 @pytest.fixture()
@@ -89,3 +95,40 @@ def hyperopt_results():
     hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
 
     return os.path.join(os.path.abspath("results"), "hyperopt_test")
+
+
+@contextlib.contextmanager
+def ray_start(num_cpus=2):
+    res = ray.init(
+        num_cpus=num_cpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_2cpu():
+    with ray_start(num_cpus=2):
+        yield
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_3cpu():
+    with ray_start(num_cpus=3):
+        yield
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_4cpu():
+    with ray_start(num_cpus=4):
+        yield
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_7cpu():
+    with ray_start(num_cpus=7):
+        yield

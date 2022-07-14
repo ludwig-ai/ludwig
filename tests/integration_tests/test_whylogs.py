@@ -1,4 +1,3 @@
-import contextlib
 import os
 import shutil
 
@@ -8,24 +7,6 @@ from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.contribs import WhyLogsCallback
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, spawn
-
-try:
-    import ray
-except ImportError:
-    ray = None
-
-
-@contextlib.contextmanager
-def ray_start(num_cpus=2):
-    res = ray.init(
-        num_cpus=num_cpus,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
 
 
 def test_whylogs_callback_local(tmpdir):
@@ -64,7 +45,7 @@ def test_whylogs_callback_local(tmpdir):
 
 
 @pytest.mark.distributed
-def test_whylogs_callback_dask(tmpdir):
+def test_whylogs_callback_dask(tmpdir, ray_cluster_4cpu):
     num_examples = 100
 
     input_features = [sequence_feature(reduce_output="sum")]
@@ -109,9 +90,8 @@ def run_dask(input_features, output_features, data_csv, val_csv, test_csv):
         TRAINER: {"epochs": epochs, "batch_size": batch_size},
     }
 
-    with ray_start(num_cpus=4):
-        exp_name = "whylogs_test_ray"
-        callback = WhyLogsCallback()
-        model = LudwigModel(config, backend=backend, callbacks=[callback])
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, experiment_name=exp_name)
-        _, _ = model.predict(test_csv)
+    exp_name = "whylogs_test_ray"
+    callback = WhyLogsCallback()
+    model = LudwigModel(config, backend=backend, callbacks=[callback])
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, experiment_name=exp_name)
+    _, _ = model.predict(test_csv)

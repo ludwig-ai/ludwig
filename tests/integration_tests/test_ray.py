@@ -37,7 +37,6 @@ from tests.integration_tests.utils import (
     image_feature,
     number_feature,
     RAY_BACKEND_CONFIG,
-    ray_start,
     sequence_feature,
     set_feature,
     text_feature,
@@ -147,43 +146,42 @@ def run_test_with_features(
     skip_save_processed_input=True,
     nan_percent=0.0,
 ):
-    with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "batch_size": 8},
-        }
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": 2, "batch_size": 8},
+    }
 
-        backend_config = {**RAY_BACKEND_CONFIG}
-        if df_engine:
-            backend_config["processor"]["type"] = df_engine
+    backend_config = {**RAY_BACKEND_CONFIG}
+    if df_engine:
+        backend_config["processor"]["type"] = df_engine
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            csv_filename = os.path.join(tmpdir, "dataset.csv")
-            dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-            dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, "dataset.csv")
+        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
+        dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
 
-            if expect_error:
-                with pytest.raises(ValueError):
-                    run_fn(
-                        config,
-                        dataset=dataset,
-                        backend_config=backend_config,
-                        skip_save_processed_input=skip_save_processed_input,
-                    )
-            else:
+        if expect_error:
+            with pytest.raises(ValueError):
                 run_fn(
                     config,
                     dataset=dataset,
                     backend_config=backend_config,
                     skip_save_processed_input=skip_save_processed_input,
                 )
+        else:
+            run_fn(
+                config,
+                dataset=dataset,
+                backend_config=backend_config,
+                skip_save_processed_input=skip_save_processed_input,
+            )
 
 
 @pytest.mark.parametrize("df_engine", ["pandas", "dask"])
 @pytest.mark.distributed
-def test_ray_read_binary_files(tmpdir, df_engine):
+def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BACKFILL,
@@ -204,26 +202,25 @@ def test_ray_read_binary_files(tmpdir, df_engine):
     dataset_path = generate_data([audio_params], [], dataset_path, num_examples=100)
     dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.1)
 
-    with ray_start(num_cpus=2, num_gpus=None):
-        backend_config = {**RAY_BACKEND_CONFIG}
-        backend_config["processor"]["type"] = df_engine
-        backend = initialize_backend(backend_config)
-        df = backend.df_engine.df_lib.read_csv(dataset_path)
-        series = df[audio_params[COLUMN]]
-        proc_col = backend.read_binary_files(series)
-        proc_col = backend.df_engine.compute(proc_col)
+    backend_config = {**RAY_BACKEND_CONFIG}
+    backend_config["processor"]["type"] = df_engine
+    backend = initialize_backend(backend_config)
+    df = backend.df_engine.df_lib.read_csv(dataset_path)
+    series = df[audio_params[COLUMN]]
+    proc_col = backend.read_binary_files(series)
+    proc_col = backend.df_engine.compute(proc_col)
 
-        backend = initialize_backend(LOCAL_BACKEND)
-        df = backend.df_engine.df_lib.read_csv(dataset_path)
-        series = df[audio_params[COLUMN]]
-        proc_col_expected = backend.read_binary_files(series)
+    backend = initialize_backend(LOCAL_BACKEND)
+    df = backend.df_engine.df_lib.read_csv(dataset_path)
+    series = df[audio_params[COLUMN]]
+    proc_col_expected = backend.read_binary_files(series)
 
-        assert proc_col.equals(proc_col_expected)
+    assert proc_col.equals(proc_col_expected)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_save_processed_input(dataset_type):
+def test_ray_save_processed_input(dataset_type, ray_cluster_2cpu):
     input_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
     ]
@@ -242,7 +239,7 @@ def test_ray_save_processed_input(dataset_type):
 
 @pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.distributed
-def test_ray_tabular(df_engine):
+def test_ray_tabular(df_engine, ray_cluster_2cpu):
     input_features = [
         sequence_feature(reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -268,7 +265,7 @@ def test_ray_tabular(df_engine):
 
 @pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
-def test_ray_text():
+def test_ray_text(ray_cluster_2cpu):
     input_features = [
         text_feature(),
     ]
@@ -280,7 +277,7 @@ def test_ray_text():
 
 @pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
-def test_ray_sequence():
+def test_ray_sequence(ray_cluster_2cpu):
     input_features = [sequence_feature(max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
     output_features = [sequence_feature(max_len=10, decoder="tagger", attention=False, reduce_input=None)]
     run_test_with_features(input_features, output_features)
@@ -289,7 +286,7 @@ def test_ray_sequence():
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.parametrize("feature_type", ["raw", "fbank"])
 @pytest.mark.distributed
-def test_ray_audio(dataset_type, feature_type):
+def test_ray_audio(dataset_type, feature_type, ray_cluster_2cpu):
     with tempfile.TemporaryDirectory() as tmpdir:
         preprocessing_params = {
             "audio_file_length_limit_in_s": 3.0,
@@ -310,7 +307,7 @@ def test_ray_audio(dataset_type, feature_type):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_image(dataset_type):
+def test_ray_image(dataset_type, ray_cluster_2cpu):
     with tempfile.TemporaryDirectory() as tmpdir:
         image_dest_folder = os.path.join(tmpdir, "generated_images")
         input_features = [
@@ -328,7 +325,7 @@ def test_ray_image(dataset_type):
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
 @pytest.mark.distributed
-def test_ray_split():
+def test_ray_split(ray_cluster_2cpu):
     input_features = [
         number_feature(normalization="zscore"),
         set_feature(),
@@ -344,14 +341,14 @@ def test_ray_split():
 
 
 @pytest.mark.distributed
-def test_ray_timeseries():
+def test_ray_timeseries(ray_cluster_2cpu):
     input_features = [timeseries_feature()]
     output_features = [number_feature()]
     run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_audio_error():
+def test_ray_lazy_load_audio_error(ray_cluster_2cpu):
     with tempfile.TemporaryDirectory() as tmpdir:
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [
@@ -367,7 +364,7 @@ def test_ray_lazy_load_audio_error():
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_image_error():
+def test_ray_lazy_load_image_error(ray_cluster_2cpu):
     with tempfile.TemporaryDirectory() as tmpdir:
         image_dest_folder = os.path.join(tmpdir, "generated_images")
         input_features = [
@@ -386,7 +383,7 @@ def test_ray_lazy_load_image_error():
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
 @pytest.mark.distributed
-def test_train_gpu_load_cpu():
+def test_train_gpu_load_cpu(ray_cluster_2cpu):
     input_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
         number_feature(normalization="zscore"),
@@ -409,7 +406,7 @@ def test_train_gpu_load_cpu():
         ("undersample_majority", 0.75),
     ],
 )
-def test_balance_ray(method, balance):
+def test_balance_ray(method, balance, ray_cluster_2cpu):
     config = {
         "input_features": [
             {"name": "Index", "proc_column": "Index", "type": "number"},
@@ -431,16 +428,15 @@ def test_balance_ray(method, balance):
     config["preprocessing"][method] = balance
     target = config["output_features"][0][NAME]
 
-    with ray_start(num_cpus=2, num_gpus=None):
-        backend = create_ray_backend()
-        input_df = backend.df_engine.from_pandas(input_df)
-        test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
+    backend = create_ray_backend()
+    input_df = backend.df_engine.from_pandas(input_df)
+    test_df = balance_data(input_df, config["output_features"], config["preprocessing"], backend)
 
-        majority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmax()]
-        minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
-        new_class_balance = round(minority_class / majority_class, 2)
+    majority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmax()]
+    minority_class = test_df[target].value_counts().compute()[test_df[target].value_counts().compute().idxmin()]
+    new_class_balance = round(minority_class / majority_class, 2)
 
-        assert abs(balance - new_class_balance) < BALANCE_PERCENTAGE_TOLERANCE
+    assert abs(balance - new_class_balance) < BALANCE_PERCENTAGE_TOLERANCE
 
 
 def _run_train_gpu_load_cpu(config, data_parquet):
@@ -450,34 +446,31 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 
 @pytest.mark.distributed
-def test_tune_batch_size_lr():
-    with ray_start(num_cpus=2, num_gpus=None):
-        config = {
-            "input_features": [
-                number_feature(normalization="zscore"),
-                set_feature(),
-                binary_feature(),
-            ],
-            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
-        }
+def test_tune_batch_size_lr(ray_cluster_2cpu):
+    config = {
+        "input_features": [
+            number_feature(normalization="zscore"),
+            set_feature(),
+            binary_feature(),
+        ],
+        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
+    }
 
-        backend_config = {**RAY_BACKEND_CONFIG}
+    backend_config = {**RAY_BACKEND_CONFIG}
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            csv_filename = os.path.join(tmpdir, "dataset.csv")
-            dataset_csv = generate_data(
-                config["input_features"], config["output_features"], csv_filename, num_examples=100
-            )
-            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
-            model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-            assert model.config[TRAINER]["batch_size"] != "auto"
-            assert model.config[TRAINER]["learning_rate"] != "auto"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, "dataset.csv")
+        dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
+        dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+        model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+        assert model.config[TRAINER]["batch_size"] != "auto"
+        assert model.config[TRAINER]["learning_rate"] != "auto"
 
 
 @pytest.mark.distributed
-def test_ray_progress_bar():
+def test_ray_progress_bar(ray_cluster_2cpu):
     # This is a simple test that is just meant to make sure that the progress bar isn't breaking
     input_features = [
         sequence_feature(reduce_output="sum"),
@@ -494,7 +487,7 @@ def test_ray_progress_bar():
 
 @pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed
-def test_ray_calibration(calibration):
+def test_ray_calibration(calibration, ray_cluster_2cpu):
     input_features = [
         number_feature(normalization="zscore"),
         set_feature(),
