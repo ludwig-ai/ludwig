@@ -203,6 +203,8 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
+    type: str = "resnet"
+
     resnet_size: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         description="The size of the ResNet model to use.",
@@ -321,6 +323,8 @@ class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass
 class MLPMixerEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
+    type: str = "mlp_mixer"
+
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
@@ -364,6 +368,8 @@ class MLPMixerEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
 @dataclass
 class ViTEncoderConfig(schema_utils.BaseMarshmallowConfig):
+
+    type: str = "vit"
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,

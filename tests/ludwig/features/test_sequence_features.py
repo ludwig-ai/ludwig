@@ -58,7 +58,7 @@ def test_sequence_input_feature(
     # sequence definition and then augment with
     # pre-processing metadata parameters
     input_feature_defn = sequence_feature(
-        encoder=encoder,
+        type=encoder,
         max_len=SEQ_SIZE,
         # augment with emulated pre-processing metadata
         max_sequence_length=SEQ_SIZE,

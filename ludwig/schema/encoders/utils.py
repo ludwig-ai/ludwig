@@ -53,7 +53,7 @@ def EncoderDataclassField(feature_type: str, default: str):
 
         @staticmethod
         def _jsonschema_type_mapping():
-            encoder_classes = get_encoder_classes(feature_type)
+            encoder_classes = list(get_encoder_classes(feature_type).keys())
 
             return {
                 "type": "object",
@@ -61,7 +61,7 @@ def EncoderDataclassField(feature_type: str, default: str):
                     "type": {"type": "string", "enum": encoder_classes, "default": default},
                 },
                 "title": "encoder_options",
-                "allOf": get_encoder_conds(),
+                "allOf": get_encoder_conds(feature_type),
                 "required": ["type"],
             }
 

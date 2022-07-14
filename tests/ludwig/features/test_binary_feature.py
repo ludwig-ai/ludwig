@@ -3,6 +3,7 @@ from typing import Dict
 import pytest
 import torch
 
+from ludwig.constants import ENCODER
 from ludwig.features.binary_feature import BinaryInputFeature, BinaryOutputFeature
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -21,7 +22,7 @@ def binary_config():
 
 @pytest.mark.parametrize("encoder", ["passthrough"])
 def test_binary_input_feature(binary_config: Dict, encoder: str):
-    binary_config.update({"encoder": encoder})
+    binary_config[ENCODER].update({"type": encoder})
     binary_input_feature = BinaryInputFeature(binary_config)
     binary_tensor = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 

@@ -14,7 +14,7 @@ class CategoricalEmbedConfig(schema_utils.BaseMarshmallowConfig):
         description="Vocabulary of the encoder",
     )
 
-    embedding_size: int = schema_utils.PositiveIntegerOrTupleOrStringOptions(
+    embedding_size: int = schema_utils.NonNegativeInteger(
         default=50,
         description="The maximum embedding size, the actual size will be min(vocabulary_size, embedding_size) for "
                     "dense representations and exactly vocabulary_size for the sparse encoding, where vocabulary_size "
