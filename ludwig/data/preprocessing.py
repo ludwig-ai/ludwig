@@ -1277,8 +1277,10 @@ def build_preprocessing_parameters(
         if ENCODER in feature_config:
             encoder_fixed_parameters = {}
             if "url" in feature_config[ENCODER]:
+                # If we are loading in a pre-trained encoder, copy its preprocessing metadata.
+                # TODO(daniel): Update this to use schema of encoder class to copy encoder preprocessing params only.
                 encoder_state = serialization.load_state_from_file(feature_config["url"])
-                encoder_fixed_parameters = encoder_state.metadata
+                encoder_fixed_parameters = encoder_state.config
             elif TYPE in feature_config[ENCODER]:
                 encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
                 if hasattr(encoder_class, "fixed_preprocessing_parameters"):

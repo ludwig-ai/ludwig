@@ -39,7 +39,7 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     TYPE,
 )
-from ludwig.encoders.registry import get_encoder_cls
+from ludwig.encoders.registry import get_encoder_default_params
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
