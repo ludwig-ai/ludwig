@@ -403,7 +403,6 @@ combiner:
   bn_virtual_bs: 4096
 trainer:
   batch_size: 256
-  eval_batch_size: 0
   epochs: 300
   early_stop: 30
   learning_rate: 0.01
