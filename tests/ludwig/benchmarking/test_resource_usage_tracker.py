@@ -1,7 +1,8 @@
 import os
 import shutil
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.resource_usage_tracker import ResourceUsageTracker
@@ -22,14 +23,16 @@ def test_resource_usage_tracker(tmpdir):
     model = LudwigModel(config=config, backend="local")
 
     with ResourceUsageTracker(tag="train", output_dir=tmpdir, logging_interval=0.1, num_examples=len(train_df)):
-        model.train(dataset=train_df,
-                    output_directory=tmpdir,
-                    skip_save_training_description=True,
-                    skip_save_training_statistics=True,
-                    skip_save_model=True,
-                    skip_save_progress=True,
-                    skip_save_log=True,
-                    skip_save_processed_input=True)
+        model.train(
+            dataset=train_df,
+            output_directory=tmpdir,
+            skip_save_training_description=True,
+            skip_save_training_statistics=True,
+            skip_save_model=True,
+            skip_save_progress=True,
+            skip_save_log=True,
+            skip_save_processed_input=True,
+        )
 
     with ResourceUsageTracker(tag="eval", output_dir=tmpdir, logging_interval=0.1, num_examples=len(eval_df)):
         model.evaluate(dataset=eval_df)
