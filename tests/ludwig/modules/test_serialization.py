@@ -91,7 +91,7 @@ def test_load_save_encoder(tmpdir):
     assert restored_encoder is not None
     # Creates new model referencing the pre-trained encoder.
     model2_config = {
-        "input_features": [input_features[0] | {"encoder": f"file://{saved_path}", "trainable": True}],
+        "input_features": [{**input_features[0], "encoder": f"file://{saved_path}", "trainable": True}],
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 20},
     }
