@@ -84,7 +84,7 @@ class ResourceUsageTracker:
         self,
         tag: str,
         output_dir: str,
-        logging_interval: int = 1,
+        logging_interval: float = 1.0,
         num_examples: Optional[int] = None,
     ) -> None:
         self.output_dir = output_dir
@@ -182,4 +182,4 @@ class ResourceUsageTracker:
         self.info["system"]["average_cpu_utilization"] = mean(self.info["system"]["cpu_utilization"])
         self.info["system"]["average_ram_utilization"] = mean(self.info["system"]["ram_utilization"])
 
-        save_json(os.path.join(self.output_dir, self.info["tag"] + "_metrics.json"), self.info)
+        save_json(os.path.join(self.output_dir, self.info["tag"] + "_resource_usage_metrics.json"), self.info)
