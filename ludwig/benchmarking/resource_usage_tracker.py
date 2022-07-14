@@ -88,9 +88,10 @@ class ResourceUsageTracker:
         num_examples: Optional[int] = None,
     ) -> None:
         if tag not in ["train", "evaluate", "preprocess"]:
-            raise ValueError(f"{self.__class__.__name__} tag unrecognized. Please choose one from [train, evaluate, "
-                             f"preprocess]")
-        
+            raise ValueError(
+                f"{self.__class__.__name__} tag unrecognized. Please choose one from [train, evaluate, " f"preprocess]"
+            )
+
         self.output_dir = output_dir
         self.tag = tag
         self.info = {"tag": self.tag, "system": {}}
