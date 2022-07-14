@@ -14,6 +14,7 @@
 # ==============================================================================
 from abc import abstractmethod
 from functools import lru_cache
+from typing import Dict
 
 import numpy as np
 import torch
@@ -43,10 +44,10 @@ class LudwigModuleState:
 
     type: str  # Module Type
     ludwig_version: str  # Version of ludwig which saved this object
-    config: dict  # Module Config
-    metadata: dict  # Preprocessing data (same a straining_set_metadata.json)
-    saved_weights: dict[str, np.ndarray]  # Saved weights of this module
-    children: dict[str, "LudwigModuleState"]  # Child modules
+    config: Dict  # Module Config
+    metadata: Dict  # Preprocessing data (same a straining_set_metadata.json)
+    saved_weights: Dict[str, np.ndarray]  # Saved weights of this module
+    children: Dict[str, "LudwigModuleState"]  # Child modules
 
 
 class LudwigModule(Module):

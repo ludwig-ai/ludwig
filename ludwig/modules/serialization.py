@@ -14,6 +14,7 @@
 # ==============================================================================
 import json
 import logging
+from functools import lru_cache
 from typing import Any, Dict
 
 import h5py
@@ -95,6 +96,7 @@ def _load_state_from_group(group) -> LudwigModuleState:
     )
 
 
+@lru_cache(maxsize=3)
 def load_state_from_file(path_or_uri: str) -> LudwigModuleState:
     """Loads Ludwig Module state from a file."""
     with download_h5(path_or_uri) as f:
