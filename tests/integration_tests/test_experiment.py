@@ -25,7 +25,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import H3, TRAINER
+from ludwig.constants import H3, TRAINER, ENCODER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
@@ -66,7 +66,7 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_text_feature_non_HF(encoder, csv_filename):
-    input_features = [text_feature(vocab_size=30, min_len=1, encoder=encoder, preprocessing={"tokenizer": "space"})]
+    input_features = [text_feature(vocab_size=30, min_len=1, type=encoder, preprocessing={"tokenizer": "space"})]
     output_features = [category_feature(vocab_size=2)]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -80,7 +80,7 @@ def run_experiment_with_encoder(encoder, csv_filename):
         text_feature(
             vocab_size=30,
             min_len=1,
-            encoder=encoder,
+            type=encoder,
         )
     ]
     output_features = [category_feature(vocab_size=2)]
@@ -102,7 +102,7 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
 
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_seq_seq_generator(csv_filename, encoder):
-    input_features = [text_feature(reduce_output=None, encoder=encoder)]
+    input_features = [text_feature(reduce_output=None, type=encoder)]
     output_features = [text_feature(decoder="generator")]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
@@ -111,7 +111,7 @@ def test_experiment_seq_seq_generator(csv_filename, encoder):
 
 @pytest.mark.parametrize("encoder", ["embed", "rnn", "parallel_cnn", "stacked_parallel_cnn", "transformer"])
 def test_experiment_seq_seq_tagger(csv_filename, encoder):
-    input_features = [text_feature(reduce_output=None, encoder=encoder)]
+    input_features = [text_feature(reduce_output=None, type=encoder)]
     output_features = [text_feature(decoder="tagger")]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
@@ -120,7 +120,7 @@ def test_experiment_seq_seq_tagger(csv_filename, encoder):
 
 @pytest.mark.parametrize("encoder", ["cnnrnn", "stacked_cnn"])
 def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_filename, encoder):
-    input_features = [text_feature(reduce_output=None, encoder=encoder)]
+    input_features = [text_feature(reduce_output=None, type=encoder)]
     output_features = [text_feature(decoder="tagger")]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
@@ -130,7 +130,7 @@ def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_
 
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     # seq-to-seq test to use config file instead of dictionary
-    input_features = [text_feature(reduce_output=None, encoder="embed")]
+    input_features = [text_feature(reduce_output=None, type="embed")]
     output_features = [text_feature(reduce_input=None, vocab_size=3, decoder="tagger")]
 
     # Save the config to a yaml file
@@ -149,7 +149,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 
 def test_experiment_seq_seq_train_test_valid(tmpdir):
     # seq-to-seq test to use train, test, validation files
-    input_features = [text_feature(reduce_output=None, encoder="rnn")]
+    input_features = [text_feature(reduce_output=None, type="rnn")]
     output_features = [text_feature(reduce_input=None, vocab_size=3, decoder="tagger")]
 
     train_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"))
@@ -175,7 +175,7 @@ def test_experiment_multi_input_intent_classification(csv_filename, encoder):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    input_features[0]["encoder"] = encoder
+    input_features[0][ENCODER][TYPE] = encoder
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
@@ -241,11 +241,11 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder="stacked_cnn"),
+        text_feature(vocab_size=100, min_len=1, type="stacked_cnn"),
         number_feature(normalization="zscore"),
         category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(vocab_size=10, max_len=10, type="embed"),
     ]
     output_features = output_features
 
@@ -264,7 +264,7 @@ def test_basic_image_feature(num_channels, image_source, in_memory, skip_save_pr
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="stacked_cnn",
+            type="stacked_cnn",
             preprocessing={
                 "in_memory": in_memory,
                 "height": 12,
@@ -300,8 +300,8 @@ def test_experiment_infer_image_metadata(tmpdir):
 
     # Resnet encoder
     input_features = [
-        image_feature(folder=image_dest_folder, encoder="stacked_cnn", output_size=16, num_filters=8),
-        text_feature(encoder="embed", min_len=1),
+        image_feature(folder=image_dest_folder, type="stacked_cnn", output_size=16, num_filters=8),
+        text_feature(type="embed", min_len=1),
         number_feature(normalization="zscore"),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input="sum"), number_feature()]
@@ -333,12 +333,12 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="resnet",
+            type="resnet",
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
             output_size=16,
             num_filters=8,
         ),
-        text_feature(encoder="embed", min_len=1),
+        text_feature(type="embed", min_len=1),
         number_feature(normalization="zscore"),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input="sum"), number_feature()]
@@ -368,7 +368,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="stacked_cnn",
+            type="stacked_cnn",
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
             output_size=16,
             num_filters=8,
@@ -507,8 +507,8 @@ def test_experiment_audio_inputs(tmpdir):
 def test_experiment_tied_weights(csv_filename):
     # Single sequence input, single category output
     input_features = [
-        text_feature(name="text_feature1", min_len=1, encoder="cnnrnn", reduce_output="sum"),
-        text_feature(name="text_feature2", min_len=1, encoder="cnnrnn", reduce_output="sum", tied="text_feature1"),
+        text_feature(name="text_feature1", min_len=1, type="cnnrnn", reduce_output="sum"),
+        text_feature(name="text_feature2", min_len=1, type="cnnrnn", reduce_output="sum", tied="text_feature1"),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
@@ -524,7 +524,7 @@ def test_experiment_tied_weights(csv_filename):
 @pytest.mark.parametrize("attention", [False, True])
 def test_sequence_tagger(enc_cell_type, attention, csv_filename):
     # Define input and output features
-    input_features = [sequence_feature(max_len=10, encoder="rnn", cell_type=enc_cell_type, reduce_output=None)]
+    input_features = [sequence_feature(max_len=10, type="rnn", cell_type=enc_cell_type, reduce_output=None)]
     output_features = [sequence_feature(max_len=10, decoder="tagger", attention=attention, reduce_input=None)]
 
     # Generate test data
@@ -536,7 +536,7 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
 
 def test_sequence_tagger_text(csv_filename):
     # Define input and output features
-    input_features = [text_feature(max_len=10, encoder="rnn", reduce_output=None)]
+    input_features = [text_feature(max_len=10, type="rnn", reduce_output=None)]
     output_features = [sequence_feature(max_len=10, decoder="tagger", reduce_input=None)]
 
     # Generate test data
@@ -553,7 +553,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
                 name="seq1",
                 min_len=5,
                 max_len=5,
-                encoder="embed",
+                type="embed",
                 cell_type="lstm",
                 reduce_output="sum",
             ),
@@ -561,7 +561,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
                 name="seq2",
                 min_len=5,
                 max_len=5,
-                encoder="embed",
+                type="embed",
                 cell_type="lstm",
                 reduce_output="sum",
             ),
@@ -591,10 +591,10 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
     config = {
         "input_features": [
             sequence_feature(
-                name="seq1", min_len=5, max_len=5, encoder=sequence_encoder, cell_type="lstm", reduce_output=None
+                name="seq1", min_len=5, max_len=5, type=sequence_encoder, cell_type="lstm", reduce_output=None
             ),
             sequence_feature(
-                name="seq2", min_len=5, max_len=5, encoder=sequence_encoder, cell_type="lstm", reduce_output=None
+                name="seq2", min_len=5, max_len=5, type=sequence_encoder, cell_type="lstm", reduce_output=None
             ),
             category_feature(vocab_size=5),
         ],
@@ -617,7 +617,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
 def test_experiment_model_resume(tmpdir):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
-    input_features = [sequence_feature(encoder="rnn", reduce_output="sum")]
+    input_features = [sequence_feature(type="rnn", reduce_output="sum")]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
     # Generate test data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
@@ -661,12 +661,12 @@ def test_visual_question_answering(tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="resnet",
+            type="resnet",
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
             output_size=8,
             num_filters=8,
         ),
-        text_feature(encoder="embed", min_len=1),
+        text_feature(type="embed", min_len=1),
     ]
     output_features = [sequence_feature(decoder="generator", cell_type="lstm")]
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
@@ -688,12 +688,12 @@ def test_image_resizing_num_channel_handling(tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="resnet",
+            type="resnet",
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
             output_size=8,
             num_filters=8,
         ),
-        text_feature(encoder="embed", min_len=1),
+        text_feature(type="embed", min_len=1),
         number_feature(normalization="minmax"),
     ]
     output_features = [binary_feature(), number_feature()]
