@@ -2,9 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
 
-from ludwig.globals import REPORT_JSON
-
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
 from ludwig.modules.metric_registry import get_metric_classes
 from ludwig.utils.data_utils import load_json
 
