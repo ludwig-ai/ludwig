@@ -42,9 +42,9 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
+from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
-from ludwig.modules.ludwig_module import LudwigModule
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
