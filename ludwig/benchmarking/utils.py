@@ -72,12 +72,7 @@ def export_artifacts(
     protocol, _ = fsspec.core.split_protocol(export_base_path)
     fs, _ = get_fs_and_path(export_base_path)
     try:
-        experiment_name = (
-            experiment["experiment_name"]
-            if experiment["experiment_name"]
-            else datetime.now().strftime("%Y.%m.%d.%H:%M:%S")
-        )
-        export_full_path = os.path.join(export_base_path, experiment["dataset_name"], experiment_name)
+        export_full_path = os.path.join(export_base_path, experiment["dataset_name"], experiment["experiment_name"])
         fs.put(report_path, os.path.join(export_full_path, REPORT_JSON), recursive=True)
         fs.put(
             os.path.join("configs", experiment["config_path"]),
