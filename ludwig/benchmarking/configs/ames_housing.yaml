@@ -174,3 +174,6 @@ trainer:
   learning_rate: 0.01
   decay_steps: 20000
   decay_rate: 0.95
+preprocessing:
+  split:
+    type: fixed

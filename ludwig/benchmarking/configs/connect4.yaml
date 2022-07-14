@@ -102,3 +102,6 @@ trainer:
   decay: true
   decay_steps: 2000
   decay_rate: 0.95
+preprocessing:
+  split:
+    type: fixed

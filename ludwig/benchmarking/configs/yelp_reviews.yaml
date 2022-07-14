@@ -5,14 +5,13 @@ input_features:
   - name: text
     type: text
     encoder: bert
-    trainable: true
 preprocessing:
   text:
     max_sequence_length: 128
 trainer:
   batch_size: 16
   learning_rate: 0.00002
-  epochs: 5
+  #epochs: 5
   checkpoints_per_epoch: 2
   evaluate_training_set: False
   learning_rate_warmup_epochs: 0
@@ -20,3 +19,4 @@ trainer:
     type: adamw
   validation_field: label
   validation_metric: accuracy
+  epochs: 1

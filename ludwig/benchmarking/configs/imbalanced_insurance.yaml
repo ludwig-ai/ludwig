@@ -29,3 +29,6 @@ trainer:
   decay_steps: 30000
   staircase: True
   epochs: 50
+preprocessing:
+  split:
+    type: fixed

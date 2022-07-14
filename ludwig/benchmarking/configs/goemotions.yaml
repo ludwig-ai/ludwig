@@ -5,8 +5,10 @@ input_features:
   - name: text
     type: text
     encoder: bert
-    trainable: true
+    trainable: True
 preprocessing:
+  split:
+    type: fixed
   text:
     max_sequence_length: 40
 trainer:

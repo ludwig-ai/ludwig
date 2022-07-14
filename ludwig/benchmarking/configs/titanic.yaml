@@ -21,3 +21,6 @@ input_features:
 output_features:
     - name: Survived
       type: binary
+preprocessing:
+  split:
+    type: fixed

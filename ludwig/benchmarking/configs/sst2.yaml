@@ -5,7 +5,7 @@ input_features:
   - name: sentence
     type: text
     encoder: bert
-    trainable: true
+    trainable: True
 trainer:
   batch_size: 64
   learning_rate: 0.00002
@@ -15,3 +15,6 @@ trainer:
     type: adamw
   validation_field: label
   validation_metric: roc_auc
+preprocessing:
+  split:
+    type: fixed

@@ -761,3 +761,6 @@ trainer:
   decay_steps: 10000
   decay_rate: 0.8
   validation_metric: accuracy
+preprocessing:
+  split:
+    type: fixed

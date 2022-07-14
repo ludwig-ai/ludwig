@@ -765,6 +765,7 @@ combiner:
   bn_virtual_bs: 256
 trainer:
   batch_size: 256
+  #batch_size: 2560
   eval_batch_size: 0
   epochs: 300
   early_stop: 30
@@ -775,3 +776,6 @@ trainer:
   decay_steps: 500
   decay_rate: 0.95
   validation_metric: root_mean_squared_error
+preprocessing:
+  split:
+    type: fixed
