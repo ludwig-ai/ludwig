@@ -46,7 +46,7 @@ def yaml_filename():
 
 
 @pytest.fixture(scope="module")
-def hyperopt_results():
+def hyperopt_results(ray_cluster_2cpu):
     """This function generates hyperopt results."""
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
