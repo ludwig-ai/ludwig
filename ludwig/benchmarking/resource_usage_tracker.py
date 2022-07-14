@@ -24,6 +24,7 @@ sys.stdout = f
 from experiment_impact_tracker.cpu.common import get_my_cpu_info
 from experiment_impact_tracker.gpu.nvidia import get_gpu_info
 from experiment_impact_tracker.py_environment.common import get_python_packages_and_versions
+
 f.close()
 sys.stdout = sys.__stdout__
 
@@ -80,11 +81,11 @@ class ResourceUsageTracker:
     """
 
     def __init__(
-            self,
-            tag: str,
-            output_dir: str,
-            logging_interval: float = 1.0,
-            num_examples: Optional[int] = None,
+        self,
+        tag: str,
+        output_dir: str,
+        logging_interval: float = 1.0,
+        num_examples: Optional[int] = None,
     ) -> None:
         if tag not in ["train", "evaluate", "preprocess"]:
             raise ValueError(
