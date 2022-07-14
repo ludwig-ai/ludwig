@@ -1,7 +1,16 @@
+from abc import ABC
 from typing import Union, List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
+
+
+@dataclass
+class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
+    """Base class for encoders. Not meant to be used directly."""
+
+    type: str
+    "Name corresponding to an encoder."
 
 
 @dataclass

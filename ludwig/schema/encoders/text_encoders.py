@@ -136,17 +136,17 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
         description="",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=0,
         description="The ID of the token to use as padding.",
     )
 
-    bos_token_id: int = schema_utils.PositiveInteger(
+    bos_token_id: int = schema_utils.Integer(
         default=2,
         description="The beginning of sequence token ID.",
     )
 
-    eos_token_id: int = schema_utils.PositiveInteger(
+    eos_token_id: int = schema_utils.Integer(
         default=3,
         description="The end of sequence token ID.",
     )
@@ -278,17 +278,17 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
         description="Whether the model's input and output word embeddings should be tied.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=0,
         description="The ID of the token to use as padding.",
     )
 
-    eos_token_id: int = schema_utils.PositiveInteger(
+    eos_token_id: int = schema_utils.Integer(
         default=1,
         description="The end of sequence token ID.",
     )
 
-    decoder_start_token_id: int = schema_utils.PositiveInteger(
+    decoder_start_token_id: int = schema_utils.Integer(
         default=0,
         description="If an encoder-decoder model starts decoding with a different token than _bos_, the id of that "
                     "token.",
@@ -341,17 +341,17 @@ class XLMRoBERTaConfig(schema_utils.BaseMarshmallowConfig):
         description="Vocabulary size of the XLMRoBERTa model.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=1,
         description="The ID of the token to use as padding.",
     )
 
-    bos_token_id: int = schema_utils.PositiveInteger(
+    bos_token_id: int = schema_utils.Integer(
         default=0,
         description="The beginning of sequence token ID.",
     )
 
-    eos_token_id: int = schema_utils.PositiveInteger(
+    eos_token_id: int = schema_utils.Integer(
         default=2,
         description="The end of sequence token ID.",
     )
@@ -470,7 +470,7 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
         description="The epsilon used by the layer normalization layers.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=0,
         description="The ID of the token to use as padding.",
     )
@@ -627,27 +627,27 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
                     "except the embedding matrices.",
     )
 
-    bos_index: int = schema_utils.PositiveInteger(
+    bos_index: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The index of the beginning of sentence token in the vocabulary.",
     )
 
-    eos_index: int = schema_utils.PositiveInteger(
+    eos_index: int = schema_utils.NonNegativeInteger(
         default=1,
         description="The index of the end of sentence token in the vocabulary.",
     )
 
-    pad_index: int = schema_utils.PositiveInteger(
+    pad_index: int = schema_utils.NonNegativeInteger(
         default=2,
         description="The index of the padding token in the vocabulary.",
     )
 
-    unk_index: int = schema_utils.PositiveInteger(
+    unk_index: int = schema_utils.NonNegativeInteger(
         default=3,
         description="The index of the unknown token in the vocabulary."
     )
 
-    mask_index: int = schema_utils.PositiveInteger(
+    mask_index: int = schema_utils.NonNegativeInteger(
         default=5,
         description="The index of the masking token in the vocabulary.",
     )
@@ -668,23 +668,23 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
         description="Used in the SQuAD evaluation script.",
     )
 
-    mask_token_id: int = schema_utils.PositiveInteger(
+    mask_token_id: int = schema_utils.Integer(
         default=0,
         description="Model agnostic parameter to identify masked tokens when generating text in an MLM context.",
     )
 
-    lang_id: int = schema_utils.PositiveInteger(
+    lang_id: int = schema_utils.Integer(
         default=0,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
                     "language.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=2,
         description="The ID of the token to use as padding.",
     )
 
-    bos_token_id: int = schema_utils.PositiveInteger(
+    bos_token_id: int = schema_utils.Integer(
         default=0,
         description="The beginning of sequence token ID.",
     )
@@ -952,17 +952,17 @@ class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
         description="Vocabulary size of the RoBERTa model.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=1,
         description="The ID of the token to use as padding.",
     )
 
-    bos_token_id: int = schema_utils.PositiveInteger(
+    bos_token_id: int = schema_utils.Integer(
         default=0,
         description="The beginning of sequence token ID.",
     )
 
-    eos_token_id: int = schema_utils.PositiveInteger(
+    eos_token_id: int = schema_utils.Integer(
         default=2,
         description="The end of sequence token ID.",
     )
@@ -1140,7 +1140,7 @@ class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
         description="The epsilon to use in the layer normalization layers",
     )
 
-    eos_token_id: int = schema_utils.PositiveInteger(
+    eos_token_id: int = schema_utils.Integer(
         default=0,
         description="The end of sequence token ID.",
     )
@@ -1317,17 +1317,17 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
         description=" Used in the SQuAD evaluation script.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=5,
         description="The ID of the token to use as padding.",
     )
 
-    bos_token_id: int = schema_utils.PositiveInteger(
+    bos_token_id: int = schema_utils.Integer(
         default=1,
         description="The beginning of sequence token ID.",
     )
 
-    eos_token_id: int = schema_utils.PositiveInteger(
+    eos_token_id: int = schema_utils.Integer(
         default=2,
         description="The end of sequence token ID.",
     )
@@ -1664,7 +1664,7 @@ class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
         description="The epsilon used by the layer normalization layers.",
     )
 
-    pad_token_id: int = schema_utils.PositiveInteger(
+    pad_token_id: int = schema_utils.Integer(
         default=0,
         description="The ID of the token to use as padding.",
     )
@@ -1943,27 +1943,27 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
         description="The epsilon used by the layer normalization layers.",
     )
 
-    bos_index: int = schema_utils.PositiveInteger(
+    bos_index: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The index of the beginning of sentence token in the vocabulary.",
     )
 
-    eos_index: int = schema_utils.PositiveInteger(
+    eos_index: int = schema_utils.NonNegativeInteger(
         default=1,
         description="The index of the end of sentence token in the vocabulary.",
     )
 
-    pad_index: int = schema_utils.PositiveInteger(
+    pad_index: int = schema_utils.NonNegativeInteger(
         default=2,
         description="The index of the padding token in the vocabulary.",
     )
 
-    unk_index: int = schema_utils.PositiveInteger(
+    unk_index: int = schema_utils.NonNegativeInteger(
         default=3,
         description="The index of the unknown token in the vocabulary.",
     )
 
-    mask_index: int = schema_utils.PositiveInteger(
+    mask_index: int = schema_utils.NonNegativeInteger(
         default=5,
         description="The index of the masking token in the vocabulary.",
     )
@@ -1974,12 +1974,12 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
                     "Vaswani et al.",
     )
 
-    mask_token_id: int = schema_utils.PositiveInteger(
+    mask_token_id: int = schema_utils.Integer(
         default=0,
         description="Model agnostic parameter to identify masked tokens when generating text in an MLM context.",
     )
 
-    lang_id: int = schema_utils.PositiveInteger(
+    lang_id: int = schema_utils.Integer(
         default=1,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
                     "language.",
@@ -2141,7 +2141,7 @@ class LongformerConfig(schema_utils.BaseMarshmallowConfig):
                     "num_hidden_layers.",
     )
 
-    sep_token_id: int = schema_utils.PositiveInteger(
+    sep_token_id: int = schema_utils.Integer(
         default=2,
         description="ID of the separator token, which is used when building a sequence from multiple sequences",
         )

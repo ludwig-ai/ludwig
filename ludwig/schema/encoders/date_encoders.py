@@ -26,7 +26,7 @@ class DateEmbedConfig(schema_utils.BaseMarshmallowConfig):
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
 
-    num_fc_layers: int = schema_utils.PositiveInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="The number of stacked fully connected layers.",
     )
