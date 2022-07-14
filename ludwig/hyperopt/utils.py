@@ -4,6 +4,7 @@ import logging
 import os
 
 from ludwig.constants import HYPEROPT, PARAMETERS, PREPROCESSING
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.print_utils import print_boxed
@@ -20,7 +21,7 @@ def print_hyperopt_results(hyperopt_results: HyperoptResults):
 
 
 def save_hyperopt_stats(hyperopt_stats, hyperopt_dir_name):
-    hyperopt_stats_fn = os.path.join(hyperopt_dir_name, "hyperopt_statistics.json")
+    hyperopt_stats_fn = os.path.join(hyperopt_dir_name, HYPEROPT_STATISTICS_FILE_NAME)
     save_json(hyperopt_stats_fn, hyperopt_stats)
 
 
