@@ -1,9 +1,7 @@
-import copy
 import logging
 import os
 import shutil
-from datetime import datetime
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict
 
 import fsspec
 import pandas as pd
@@ -23,7 +21,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 
 def load_from_module(
     dataset_module: BaseDataset, output_feature: Dict[str, str], subsample_frac: float = 1
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
 
@@ -43,10 +41,7 @@ def load_from_module(
     else:
         dataset = get_repeatable_train_val_test_split(dataset, random_seed=default_random_seed)
 
-    train_df = dataset[dataset["split"] == 0]
-    val_df = dataset[dataset["split"] == 1]
-    test_df = dataset[dataset["split"] == 2]
-    return train_df, val_df, test_df, dataset
+    return dataset
 
 
 def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:
