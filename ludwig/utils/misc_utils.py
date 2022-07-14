@@ -16,12 +16,8 @@
 import copy
 import os
 import random
-import sys
-import traceback
 from collections import OrderedDict
 from collections.abc import Mapping
-from functools import wraps
-from multiprocessing import Process, Queue
 
 import numpy
 import torch
