@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import List, Union
+from typing import List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -1098,6 +1098,7 @@ def calibration_1_vs_all_cli(
     ground_truth_metadata: str,
     output_feature_name: str,
     output_directory: str,
+    output_feature_proc_name: Optional[str] = None,
     ground_truth_apply_idx: bool = True,
     **kwargs: dict,
 ) -> None:
@@ -1117,9 +1118,11 @@ def calibration_1_vs_all_cli(
     :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
          results.
-    :param kwargs: (dict) parameters for the requested visualizations.
+    :param output_feature_proc_name: (str) name of the output feature column in ground_truth. If ground_truth is a
+        preprocessed parquet or hdf5 file, the column name will be <output_feature>_<hash>
     :param ground_truth_apply_idx: (bool, default: `True`) whether to use
         metadata['str2idx'] in np.vectorize
+    :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
 
@@ -1130,7 +1133,9 @@ def calibration_1_vs_all_cli(
     metadata = load_json(ground_truth_metadata)
 
     # retrieve ground truth from source data set
-    ground_truth = _extract_ground_truth_values(ground_truth, output_feature_name, ground_truth_split, split_file)
+    ground_truth = _extract_ground_truth_values(
+        ground_truth, output_feature_proc_name or output_feature_name, ground_truth_split, split_file
+    )
     feature_metadata = metadata[output_feature_name]
     ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
