@@ -45,6 +45,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +202,10 @@ def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
 
 
 def _extract_ground_truth_values(
-    ground_truth: str, output_feature_name: str, ground_truth_split: int, split_file: Union[str, None] = None
+    ground_truth: Union[str, DataFrame],
+    output_feature_name: str,
+    ground_truth_split: int,
+    split_file: Union[str, None] = None,
 ) -> pd.Series:
     """Helper function to extract ground truth values.
 
@@ -217,19 +221,23 @@ def _extract_ground_truth_values(
 
     :return pd.Series: ground truth values from source data set
     """
-    # determine ground truth data format and get appropriate reader
-    data_format = figure_data_format_dataset(ground_truth)
-    if data_format not in CACHEABLE_FORMATS:
-        raise ValueError(
-            "{} is not supported for ground truth file, " "valid types are {}".format(data_format, CACHEABLE_FORMATS)
-        )
-    reader = get_from_registry(data_format, external_data_reader_registry)
-
-    # retrieve ground truth from source data set
-    if data_format in {"csv", "tsv"}:
-        gt_df = reader(ground_truth, dtype=None)  # allow type inference
+    if not isinstance(ground_truth, str):
+        gt_df = ground_truth
     else:
-        gt_df = reader(ground_truth)
+        # determine ground truth data format and get appropriate reader
+        data_format = figure_data_format_dataset(ground_truth)
+        if data_format not in CACHEABLE_FORMATS:
+            raise ValueError(
+                "{} is not supported for ground truth file, "
+                "valid types are {}".format(data_format, CACHEABLE_FORMATS)
+            )
+        reader = get_from_registry(data_format, external_data_reader_registry)
+
+        # retrieve ground truth from source data set
+        if data_format in {"csv", "tsv"}:
+            gt_df = reader(ground_truth, dtype=None, df_lib=pd)  # allow type inference
+        else:
+            gt_df = reader(ground_truth, df_lib=pd)
 
     # extract ground truth for visualization
     if SPLIT in gt_df:
