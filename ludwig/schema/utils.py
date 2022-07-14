@@ -422,7 +422,8 @@ def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
                                           default_tuple: Union[None, Tuple[int, ...]] = None,
                                           default_option: Union[None, str] = None,
                                           description=""):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs. """
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs,
+    or a string value. """
 
     class IntegerTupleStringOptionsField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
@@ -461,8 +462,9 @@ def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
                 "description": "Set to a valid number.",
             }
             tuple_option = {
-                "type": "tuple",
+                "type": "array",
                 "title": "tuple_option",
+                "items": [{"type": "number", "minimum": 0, "maximum": 999999}] * 2,
                 "default": default_tuple,
                 "description": "Set to a valid number.",
             }
@@ -482,13 +484,6 @@ def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
                 tuple_option,
                 string_option,
             ]
-
-            # Add null as an option if applicable:
-            oneof_list += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none
-                else []
-            )
 
             return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
 

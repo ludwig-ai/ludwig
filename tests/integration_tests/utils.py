@@ -33,7 +33,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
+from ludwig.constants import COLUMN, ENCODER, NAME, TIED, PROC_COLUMN, TRAINER, VECTOR, PREPROCESSING
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -217,11 +217,18 @@ def number_feature(normalization=None, **kwargs):
     feature = {
         "name": "num_" + random_string(),
         "type": "number",
+        "encoder": {},
         "preprocessing": {
             "normalization": normalization
         }
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING].update(kwargs[PREPROCESSING])
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -233,7 +240,13 @@ def category_feature(**kwargs):
                "encoder": {
                    "vocab_size": 10,
                    "embedding_size": 5}}
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -251,7 +264,13 @@ def text_feature(**kwargs):
             "state_size": 8,
         }
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -267,7 +286,13 @@ def set_feature(**kwargs):
             "embedding_size": 5
         }
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -288,7 +313,13 @@ def sequence_feature(**kwargs):
             "hidden_size": 8,
         }
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -307,7 +338,13 @@ def image_feature(folder, **kwargs):
         },
         "destination_folder": folder,
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING].update(kwargs[PREPROCESSING])
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -335,7 +372,13 @@ def audio_feature(folder, **kwargs):
         },
         "destination_folder": folder,
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING].update(kwargs[PREPROCESSING])
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -349,8 +392,13 @@ def timeseries_feature(**kwargs):
             "max_len": 7
         }
     }
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    feature[ENCODER].update(kwargs)
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -359,8 +407,15 @@ def timeseries_feature(**kwargs):
 def binary_feature(**kwargs):
     feature = {
         "name": "binary_" + random_string(),
-        "type": "binary"}
-    feature[ENCODER].update(kwargs)
+        "type": "binary"
+    }
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -376,7 +431,13 @@ def bag_feature(**kwargs):
             "embedding_size": 5
         }
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -390,7 +451,13 @@ def date_feature(**kwargs):
             "datetime_format": random.choice(list(DATETIME_FORMATS.keys()))
         },
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING].update(kwargs[PREPROCESSING])
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -401,7 +468,13 @@ def h3_feature(**kwargs):
         "name": "h3_" + random_string(),
         "type": "h3"
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING] = kwargs[PREPROCESSING]
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -411,11 +484,18 @@ def vector_feature(**kwargs):
     feature = {
         "type": VECTOR,
         "name": "vector_" + random_string(),
+        "encoder": {},
         "preprocessing": {
             "vector_size": 5,
         }
     }
-    feature[ENCODER].update(kwargs)
+    if TIED in kwargs:
+        feature[TIED] = kwargs[TIED]
+    if PREPROCESSING in kwargs:
+        feature[PREPROCESSING].update(kwargs[PREPROCESSING])
+
+    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    feature[ENCODER].update(encoder_params)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
