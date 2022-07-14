@@ -151,7 +151,7 @@ def test_train_cli_horovod(tmpdir, csv_filename):
         "train",
         dataset=dataset_filename,
         config=config_filename,
-        output_directory=tmpdir,
+        output_directory=str(tmpdir),
         model_load_path=os.path.join(tmpdir, "horovod_experiment_run", "model"),
     )
 
