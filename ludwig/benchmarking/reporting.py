@@ -17,10 +17,10 @@ def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:
     os.makedirs(os.path.join(os.getcwd(), experiment_name, "metrics_report"), exist_ok=True)
     for tag in [TRAIN_TAG, EVAL_TAG]:
         if tag == TRAIN_TAG:
-            non_performance_path = os.path.join(os.getcwd(), experiment_name, CACHE, "train_metrics.json")
+            non_performance_path = os.path.join(os.getcwd(), experiment_name, CACHE, "train_resource_usage_metrics.json")
             performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "training_statistics.json")
         elif tag == EVAL_TAG:
-            non_performance_path = os.path.join(os.getcwd(), experiment_name, CACHE, "evaluate_metrics.json")
+            non_performance_path = os.path.join(os.getcwd(), experiment_name, CACHE, "evaluate_resource_usage_metrics.json")
             performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "test_statistics.json")
         else:
             raise ValueError("Tag unrecognized. Please choose 'train' or 'evaluate'.")
