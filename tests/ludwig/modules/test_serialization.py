@@ -162,9 +162,3 @@ def test_transfer_learning(tmpdir):
     )
     # Assert that vocabulary of model2 input feature matches vocabulary of model1 encoder.
     assert model1.config["input_features"][0]["vocab"] == model2.config["input_features"][0]["vocab"]
-
-
-if __name__ == "__main__":
-    import pytest
-
-    pytest.main(["-k", "test_transfer_learning"])
