@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple, Union
 
 import fsspec
-from summary_dataclasses import ExperimentsDiff
+from ludwig.benchmarking.summary_dataclasses import ExperimentsDiff
 
 from ludwig.globals import CONFIG_YAML, REPORT_JSON
 from ludwig.utils.data_utils import load_yaml
