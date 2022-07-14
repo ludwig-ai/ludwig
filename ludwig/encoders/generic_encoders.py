@@ -26,7 +26,7 @@ from ludwig.schema.encoders.base import PassthroughEncoderConfig, DenseEncoderCo
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR], default=True)
+@register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
     def __init__(self, input_size=1, **kwargs):
         super().__init__()

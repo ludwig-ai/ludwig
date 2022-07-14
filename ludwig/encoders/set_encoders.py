@@ -28,7 +28,7 @@ from ludwig.schema.encoders. set_encoders import SetSparseEncoderConfig
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("embed", SET, default=True)
+@register_encoder("embed", SET)
 class SetSparseEncoder(Encoder):
     def __init__(
         self,

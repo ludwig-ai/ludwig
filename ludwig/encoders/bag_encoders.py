@@ -28,7 +28,7 @@ from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("embed", BAG, default=True)
+@register_encoder("embed", BAG)
 class BagEmbedWeightedEncoder(Encoder):
     def __init__(
         self,

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO(shreya): Add type hints for missing args
-@register_encoder("stacked_cnn", IMAGE, default=True)
+@register_encoder("stacked_cnn", IMAGE)
 class Stacked2DCNN(Encoder):
     def __init__(
         self,

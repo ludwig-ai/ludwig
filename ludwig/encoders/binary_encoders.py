@@ -25,7 +25,7 @@ from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfi
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", BINARY, default=True)
+@register_encoder("passthrough", BINARY)
 class BinaryPassthroughEncoder(Encoder):
     def __init__(self, **kwargs):
         super().__init__()
