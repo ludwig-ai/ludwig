@@ -14,6 +14,7 @@
 # ==============================================================================
 import json
 import logging
+from typing import Any, Dict
 
 import h5py
 import numpy as np
@@ -118,9 +119,9 @@ def instantiate_module_from_state(state: LudwigModuleState, device: str = None) 
     return restored_module
 
 
-def save(object: LudwigModule, path_or_uri: str):
+def save(object: LudwigModule, path_or_uri: str, metadata: Dict[str, Any] = None):
     """Saves Ludwig object to file or buffer."""
-    object_state = object.get_state()
+    object_state = object.get_state(metadata=metadata)
     save_state_to_file(object_state, path_or_uri)
 
 

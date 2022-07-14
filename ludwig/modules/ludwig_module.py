@@ -44,7 +44,7 @@ class LudwigModuleState:
     type: str  # Module Type
     ludwig_version: str  # Version of ludwig which saved this object
     config: dict  # Module Config
-    metadata: dict  # Module internal parameters, includes training_set_metadata
+    metadata: dict  # Preprocessing data (same a straining_set_metadata.json)
     saved_weights: dict[str, np.ndarray]  # Saved weights of this module
     children: dict[str, "LudwigModuleState"]  # Child modules
 

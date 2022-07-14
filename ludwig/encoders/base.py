@@ -15,6 +15,7 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 
 import torch
 
@@ -41,7 +42,8 @@ class Encoder(LudwigModule, ABC):
         encoder.load_state_dict({k: torch.from_numpy(v) for k, v in state.saved_weights.items()})
         return encoder
 
-    def get_state(self) -> LudwigModuleState:
+    def get_state(self, metadata: Dict[str, Any] = None) -> LudwigModuleState:
         return super().get_state(
             config=self.config,
+            metadata=metadata,
         )

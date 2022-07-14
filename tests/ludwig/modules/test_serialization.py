@@ -125,7 +125,12 @@ def test_transfer_learning(tmpdir):
     trained_input_feature = model1.model.input_features[text_input_name]
     input_feature_encoder = trained_input_feature.encoder_obj
     saved_path = os.path.join(tmpdir, "text_encoder.h5")
-    serialization.save(input_feature_encoder, saved_path)
+    # Note: I'd like to make the preprocessing metadata a property of the encoder, instead of having to get it from
+    # training_set_metadata and pass it in as it is here.
+    # I'd also like to call it preprocessing_data - I'd make that change in a separate PR which merges into this one.
+    serialization.save(
+        input_feature_encoder, saved_path, metadata=model1.training_set_metadata[trained_input_feature.feature_name]
+    )
     # Trains model 2 on new dataset with different input column name.
     original_training_set = pd.read_csv(data_csv)
     new_training_set = original_training_set.rename(columns={text_input_name: "text_column"})

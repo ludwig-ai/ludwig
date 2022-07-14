@@ -1280,7 +1280,7 @@ def build_preprocessing_parameters(
                 # If we are loading in a pre-trained encoder, copy its preprocessing metadata.
                 # TODO(daniel): Update this to use schema of encoder class to copy encoder preprocessing params only.
                 encoder_state = serialization.load_state_from_file(feature_config["url"])
-                encoder_fixed_parameters = encoder_state.config
+                encoder_fixed_parameters = encoder_state.metadata
             elif TYPE in feature_config[ENCODER]:
                 encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
                 if hasattr(encoder_class, "fixed_preprocessing_parameters"):
@@ -1557,6 +1557,17 @@ def preprocess_for_training(
 
         # setup
         features = config["input_features"] + config["output_features"]
+
+        # Load metadata for any columns which are using pre-trained encoders.
+        for input_feature in config["input_features"]:
+            encoder_name_or_url = input_feature.get("encoder", "")
+            if is_url(encoder_name_or_url):
+                try:
+                    encoder_state = serialization.load_state_from_file(encoder_name_or_url)
+                    training_set_metadata[input_feature["name"]] = encoder_state.metadata
+                except Exception as e:
+                    logger.error(f"Failed to load encoder from {encoder_name_or_url}.")
+                    logger.exception(e)
 
         # in case data_format is one of the cacheable formats,
         # check if there's a cached hdf5 file with the same name,
