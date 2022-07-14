@@ -5,13 +5,9 @@ import shutil
 import traceback
 from typing import Any, Dict, Union
 
-from ludwig_with_benchmarks import ludwig_experiment_with_benchmarks
-
-# todo (Wael): to update once benchmarking utils PR merged.
-from reporting import create_metrics_report
-from utils import export_artifacts, load_from_module
-
 from ludwig.api import LudwigModel
+from ludwig.benchmarking.reporting import create_metrics_report
+from ludwig.benchmarking.utils import export_artifacts, load_from_module
 from ludwig.utils.data_utils import load_yaml
 
 # todo (Wael): to update once api.py PR is merged.
@@ -47,17 +43,15 @@ def benchmark_one_local(experiment: Dict[str, str], export_artifacts_dict: Dict[
 
     # loading dataset
     dataset_module = importlib.import_module("ludwig.datasets.{}".format(experiment["dataset_name"]))
-    train_df, val_df, test_df, _ = load_from_module(dataset_module, model_config["output_features"][0])
+    dataset = load_from_module(dataset_module, model_config["output_features"][0])
 
     # running model and capturing metrics
     experiment_output_directory = os.path.join(os.getcwd(), experiment["dataset_name"])
     model = LudwigModel(config=model_config, logging_level=logging.ERROR)
-    ludwig_experiment_with_benchmarks(
-        model,
-        training_set=train_df,
-        validation_set=val_df,
-        test_set=test_df,
+    model.experiment(
+        dataset=dataset,
         output_directory=experiment_output_directory,
+        track_resource_usage=True,
     )
 
     # creating full report containing performance metrics (e.g. accuracy) and non-performance metrics (e.g. RAM usage)
@@ -82,6 +76,6 @@ def benchmark(bench_config_path: str) -> None:
             if "experiment_name" not in experiment:
                 experiment["experiment_name"] = config["global_experiment_name"]
             benchmark_one_local(experiment, export_artifacts_dict=config["export"][0])
-        except Exception as e:
+        except Exception:
             print("Benchmarking {} {} failed".format(experiment["dataset_name"], experiment["experiment_name"]))
             print(traceback.format_exc())
