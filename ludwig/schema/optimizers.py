@@ -309,7 +309,8 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 )
             raise ValidationError("Field should be None or dict")
 
-        def _jsonschema_type_mapping(self):
+        @staticmethod
+        def _jsonschema_type_mapping():
             # Note that this uses the same conditional pattern as combiners:
             return {
                 "type": "object",

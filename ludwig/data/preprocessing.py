@@ -1235,7 +1235,7 @@ def build_preprocessing_parameters(
 
         # deal with encoders that have fixed preprocessing
         if "encoder" in feature_config:
-            encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"])
+            encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"]["type"])
             if hasattr(encoder_class, "fixed_preprocessing_parameters"):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
