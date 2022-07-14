@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any, Dict, List
 
 import numpy as np
@@ -25,6 +25,7 @@ from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, PROC_COLUMN, TIED
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -157,22 +158,3 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _DatePreprocessing(metadata)
-
-
-def create_vector_from_datetime_obj(datetime_obj):
-    yearday = datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
-
-    midnight = datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
-    second_of_day = (datetime_obj - midnight).seconds
-
-    return [
-        datetime_obj.year,
-        datetime_obj.month,
-        datetime_obj.day,
-        datetime_obj.weekday(),
-        yearday,
-        datetime_obj.hour,
-        datetime_obj.minute,
-        datetime_obj.second,
-        second_of_day,
-    ]

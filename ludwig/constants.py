@@ -208,7 +208,10 @@ MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
 DASK_MODULE_NAME = "dask.dataframe"
 
-BENCHMARKING_BUCKET = "benchmarking.us-west-2.predibase.com"
+PREPROCESSOR = "preprocessor"
+PREDICTOR = "predictor"
+POSTPROCESSOR = "postprocessor"
+
 S3 = "s3"
 CACHE = "cache"
 EXPERIMENT_RUN = "experiment_run"
