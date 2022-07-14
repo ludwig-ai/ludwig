@@ -2,7 +2,7 @@ import logging
 import os
 import queue
 import threading
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
@@ -27,8 +27,44 @@ def _get_or_create_experiment_id(experiment_name):
     return mlflow.create_experiment(name=experiment_name)
 
 
+def _log_mlflow_loop(q: queue.Queue, artifact_logger: Callable):
+    should_continue = True
+    while should_continue:
+        elem = q.get()
+        log_metrics, steps, save_path, should_continue = elem
+        mlflow.log_metrics(log_metrics, step=steps)
+
+        if not q.empty():
+            # in other words, don't bother saving the model artifacts
+            # if we're about to do it again
+            continue
+
+        artifact_logger(save_path)
+
+
+def _log_mlflow(log_metrics, steps, save_path, should_continue, artifact_logger):
+    mlflow.log_metrics(log_metrics, step=steps)
+    artifact_logger(save_path)
+
+
+def _log_artifacts(output_directory, artifact_logger):
+    for fname in os.listdir(output_directory):
+        lpath = os.path.join(output_directory, fname)
+        if fname == "model":
+            artifact_logger(lpath)
+        else:
+            mlflow.log_artifact(lpath)
+
+
+def _log_model(lpath):
+    # Lazy import to avoid requiring this package
+    from ludwig.contribs.mlflow.model import log_saved_model
+
+    log_saved_model(lpath)
+
+
 class MlflowCallback(Callback):
-    def __init__(self, tracking_uri=None, skip_artifact_logging: bool = False):
+    def __init__(self, tracking_uri=None, skip_artifact_logging: bool = False, artifact_logger: Callable = _log_model):
         self.experiment_id = None
         self.run = None
         self.run_ended = False
@@ -41,6 +77,7 @@ class MlflowCallback(Callback):
         self.skip_artifact_logging = skip_artifact_logging
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
+        self.artifact_logger = artifact_logger
 
     def on_preprocess_end(
         self, training_set: Dataset, validation_set: Dataset, test_set: Dataset, training_set_metadata: Dict[str, Any]
@@ -89,7 +126,7 @@ class MlflowCallback(Callback):
 
     def on_train_end(self, output_directory):
         if not self.skip_artifact_logging:
-            _log_artifacts(output_directory)
+            _log_artifacts(output_directory, self.artifact_logger)
         if self.run is not None:
             mlflow.end_run()
             self.run_ended = True
@@ -111,10 +148,10 @@ class MlflowCallback(Callback):
         if self.save_in_background:
             save_queue = queue.Queue()
             self.save_fn = lambda args: save_queue.put(args)
-            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue,))
+            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue, self.artifact_logger))
             self.save_thread.start()
         else:
-            self.save_fn = lambda args: _log_mlflow(*args)
+            self.save_fn = lambda args: _log_mlflow(*args, self.artifact_logger)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
         self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
@@ -153,39 +190,3 @@ class MlflowCallback(Callback):
         if self.run and not self.run_ended:
             mlflow.end_run()
             self.run = mlflow.start_run(run_id=self.run.info.run_id, experiment_id=self.run.info.experiment_id)
-
-
-def _log_mlflow_loop(q: queue.Queue):
-    should_continue = True
-    while should_continue:
-        elem = q.get()
-        log_metrics, steps, save_path, should_continue = elem
-        mlflow.log_metrics(log_metrics, step=steps)
-
-        if not q.empty():
-            # in other words, don't bother saving the model artifacts
-            # if we're about to do it again
-            continue
-
-        _log_model(save_path)
-
-
-def _log_mlflow(log_metrics, steps, save_path, should_continue):
-    mlflow.log_metrics(log_metrics, step=steps)
-    _log_model(save_path)
-
-
-def _log_artifacts(output_directory):
-    for fname in os.listdir(output_directory):
-        lpath = os.path.join(output_directory, fname)
-        if fname == "model":
-            _log_model(lpath)
-        else:
-            mlflow.log_artifact(lpath)
-
-
-def _log_model(lpath):
-    # Lazy import to avoid requiring this package
-    from ludwig.contribs.mlflow.model import log_saved_model
-
-    log_saved_model(lpath)
