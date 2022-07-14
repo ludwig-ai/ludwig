@@ -2,17 +2,19 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
+from ludwig.utils.defaults import default_random_seed
 
 
 def get_repeatable_train_val_test_split(
-    df_input, stratify_colname, random_seed, frac_train=0.7, frac_val=0.1, frac_test=0.2
+    df_input, stratify_colname="", random_seed=default_random_seed, frac_train=0.7, frac_val=0.1, frac_test=0.2
 ):
     """Return df_input with split column containing (if possible) non-zero rows in the train, validation, and test
     data subset categories.
 
     If the input dataframe does not contain an existing split column or if the
-    number of rows in both the validation and test split is 0, return df_input
-    with split column set according to frac_<subset_name> and stratify_colname.
+    number of rows in both the validation and test split is 0 and non-empty
+    stratify_colname specified, return df_input with split column set according
+    to frac_<subset_name> and stratify_colname.
 
     Else stratify_colname is ignored, and:
      If the input dataframe contains an existing split column and non-zero row
@@ -26,7 +28,7 @@ def get_repeatable_train_val_test_split(
     df_input : Pandas dataframe
         Input dataframe to be split.
     stratify_colname : str
-        The column used for stratification; usually the label column.
+        The column used for stratification (if desired); usually the label column.
     random_seed : int
         Seed used to get repeatable split.
     frac_train : float
@@ -43,15 +45,20 @@ def get_repeatable_train_val_test_split(
 
     if frac_train + frac_val + frac_test != 1.0:
         raise ValueError(f"fractions {frac_train:f}, {frac_val:f}, {frac_test:f} do not add up to 1.0")
-    if stratify_colname not in df_input.columns:
-        raise ValueError("%s is not a column in the dataframe" % (stratify_colname))
+    if stratify_colname:
+        do_stratify_split = True
+        if stratify_colname not in df_input.columns:
+            raise ValueError("%s is not a column in the dataframe" % (stratify_colname))
+    else:
+        do_stratify_split = False
+        if "split" not in df_input.columns:
+            df_input["split"] = 0  # set up for non-stratified split path
 
-    do_stratify_split = True
     if "split" in df_input.columns:
         df_train = df_input[df_input["split"] == TRAIN_SPLIT]
         df_val = df_input[df_input["split"] == VALIDATION_SPLIT]
         df_test = df_input[df_input["split"] == TEST_SPLIT]
-        if len(df_val) != 0 or len(df_test) != 0:
+        if not do_stratify_split or len(df_val) != 0 or len(df_test) != 0:
             if len(df_val) == 0:
                 df_val = df_train.sample(frac=frac_val, replace=False, random_state=random_seed)
                 df_train = df_train.drop(df_val.index)

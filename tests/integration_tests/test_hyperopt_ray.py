@@ -23,6 +23,7 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.contribs import MlflowCallback
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -284,4 +285,4 @@ def run_hyperopt(
     assert isinstance(hyperopt_results, RayTuneResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(os.path.join(tmpdir, experiment_name, "hyperopt_statistics.json"))
+    assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))

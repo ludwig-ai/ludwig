@@ -296,12 +296,10 @@ def audio_feature(folder, **kwargs):
         "name": "audio_" + random_string(),
         "type": "audio",
         "preprocessing": {
-            "audio_feature": {
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
+            "type": "fbank",
+            "window_length_in_s": 0.04,
+            "window_shift_in_s": 0.02,
+            "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
         "encoder": "stacked_cnn",

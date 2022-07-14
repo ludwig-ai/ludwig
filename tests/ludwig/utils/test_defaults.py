@@ -273,10 +273,6 @@ def test_deprecated_split_aliases(stratify, force_split):
     if stratify is None:
         if force_split:
             assert split.get(TYPE) == "random"
-        elif force_split is False:
-            assert split.get(TYPE) == "fixed"
-        else:
-            assert split.get(TYPE) is None
     else:
         assert split.get(TYPE) == "stratify"
         assert split.get("column") == stratify
@@ -496,12 +492,12 @@ def test_merge_with_defaults():
                 "in_memory": True,
                 "padding_value": 0,
                 "norm": None,
-                "audio_feature": {
-                    "type": "fbank",
-                    "window_length_in_s": 0.04,
-                    "window_shift_in_s": 0.02,
-                    "num_filter_bands": 80,
-                },
+                "type": "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_fft_points": None,
+                "window_type": "hamming",
+                "num_filter_bands": 80,
             },
             "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
             "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},

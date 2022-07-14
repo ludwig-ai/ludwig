@@ -1,3 +1,4 @@
+from abc import ABC
 from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
@@ -25,7 +26,7 @@ def register_trainer_schema(name: str):
 
 
 @dataclass
-class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
+class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
     type: str

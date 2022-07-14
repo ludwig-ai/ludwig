@@ -28,7 +28,6 @@ from ludwig.constants import (
     HITS_AT_K,
     LOGITS,
     LOSS,
-    MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -41,6 +40,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -123,16 +124,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def preprocessing_schema():
-        return {
-            "most_common": {"type": "integer", "minimum": 0},
-            "lowercase": {"type": "boolean"},
-            "missing_value_strategy": {"type": "string", "enum": MISSING_VALUE_STRATEGY_OPTIONS},
-            "fill_value": {"type": "string"},
-            "computed_fill_value": {"type": "string"},
-        }
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -168,6 +159,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
+@register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = "dense"
 
@@ -219,10 +211,15 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     @staticmethod
+    def get_schema_cls():
+        return CategoryInputFeatureConfig
+
+    @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _CategoryPreprocessing(metadata)
 
 
+@register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = "classifier"
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
@@ -448,6 +445,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoryOutputFeatureConfig
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
