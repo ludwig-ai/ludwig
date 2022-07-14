@@ -59,7 +59,7 @@ class SetSparseEncoderConfig(schema_utils.BaseMarshmallowConfig):
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
 
-    num_fc_layers: int = schema_utils.PositiveInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="This is the number of stacked fully connected layers that the input to the feature passes "
                     "through. Their output is projected in the feature's output space.",

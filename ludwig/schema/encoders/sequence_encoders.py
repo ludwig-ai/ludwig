@@ -479,7 +479,7 @@ class StackedParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
         description="Parameters used if norm is either `batch` or `layer`.",
     )
 
-    activation = schema_utils.ActivationOptions(
+    activation: str = schema_utils.ActivationOptions(
         description="The default activation function that will be used for each layer."
     )
 
@@ -621,7 +621,7 @@ class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
 
-    num_fc_layers: int = schema_utils.PositiveInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="Number of parallel fully connected layers to use.",
     )
@@ -866,7 +866,7 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
 
-    num_fc_layers: int = schema_utils.PositiveInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="Number of parallel fully connected layers to use.",
     )
@@ -1002,7 +1002,7 @@ class StackedTransformerConfig(schema_utils.BaseMarshmallowConfig):
         description="List of dictionaries containing the parameters for each fully connected layer.",
     )
 
-    num_fc_layers: int = schema_utils.PositiveInteger(
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="Number of parallel fully connected layers to use.",
     )

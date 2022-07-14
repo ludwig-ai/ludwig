@@ -95,9 +95,7 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
         description="Parameters used if conv_norm is either batch or layer. ",
     )
 
-    conv_activation: Optional[str] = schema_utils.StringOptions(
-        sorted(list(activations.keys())),
-        default="relu",
+    conv_activation: str = schema_utils.ActivationOptions(
         description="If an activation is not already specified in conv_layers this is the default activation that "
                     "will be used for each layer. It indicates the activation function applied to the output.",
     )
@@ -154,7 +152,7 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
 
     output_size: Optional[int] = schema_utils.PositiveInteger(
         default=128,
-        description="if output_size is not already specified in fc_layers this is the default output_size that will "
+        description="If output_size is not already specified in fc_layers this is the default output_size that will "
                     "be used for each layer. It indicates the size of the output of a fully connected layer. "
     )
 
@@ -172,27 +170,25 @@ class Stacked2DCNNEncoderConfig(schema_utils.BaseMarshmallowConfig):
     fc_bias_initializer: Optional[str] = schema_utils.StringOptions(
         sorted(list(initializer_registry.keys())),
         default="zeros",
-        description="initializer for the bias vector.",
+        description="Initializer for the bias vector.",
     )
 
     fc_norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
-        description="if a norm is not already specified in fc_layers this is the default norm that will be used for "
+        description="If a norm is not already specified in fc_layers this is the default norm that will be used for "
                     "each layer. It indicates the norm of the output and can be null, batch or layer.",
     )
 
     fc_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
         default=None,
-        description="parameters used if norm is either batch or layer. For information on parameters used with batch "
+        description="Parameters used if norm is either batch or layer. For information on parameters used with batch "
                     "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
                     "normalization.",
     )
 
-    fc_activation: Optional[str] = schema_utils.StringOptions(
-        sorted(list(activations.keys())),
-        default="relu",
-        description="if an activation is not already specified in fc_layers this is the default activation that will "
+    fc_activation: Optional[str] = schema_utils.ActivationOptions(
+        description="If an activation is not already specified in fc_layers this is the default activation that will "
                     "be used for each layer. It indicates the activation function applied to the output.",
     )
 
@@ -309,9 +305,7 @@ class ResNetEncoderConfig(schema_utils.BaseMarshmallowConfig):
                     "normalization.",
     )
 
-    activation: Optional[str] = schema_utils.StringOptions(
-        sorted(list(activations.keys())),
-        default="relu",
+    activation: Optional[str] = schema_utils.ActivationOptions(
         description="if an activation is not already specified in fc_layers this is the default activation that will "
                     "be used for each layer. It indicates the activation function applied to the output.",
     )

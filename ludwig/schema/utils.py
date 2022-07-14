@@ -385,6 +385,125 @@ def FloatRange(
     )
 
 
+def IntegerOrSequenceOfIntegers(default: Union[None, int, Tuple[int, ...], TList[int]] = None,
+                                allow_none=False,
+                                description=""):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric inputs. """
+    val = validate.OneOf([int, tuple, list])
+    allow_none = allow_none or default is None
+
+    if default is not None:
+        try:
+            assert isinstance(default, int) or isinstance(default, tuple) or isinstance(default, list)
+            val(type(default))
+            if isinstance(default, tuple) or isinstance(default, list):
+                for i in default:
+                    assert isinstance(i, int)
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+    return field(
+        metadata={
+            "marshmallow_field": fields.Integer(
+                validate=val,
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
+            )
+        },
+        default=default,
+    )
+
+
+def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
+                                          allow_none=False,
+                                          default: Union[None, int, Tuple[int, ...], str] = None,
+                                          default_integer: Union[None, int] = None,
+                                          default_tuple: Union[None, Tuple[int, ...]] = None,
+                                          default_option: Union[None, str] = None,
+                                          description=""):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs. """
+
+    class IntegerTupleStringOptionsField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, int):
+                if value < 0:
+                    raise ValidationError("Value must be positive.")
+                return value
+            if isinstance(value, tuple):
+                for v in value:
+                    if v < 0:
+                        raise ValidationError("Values must be positive.")
+                return value
+            if isinstance(value, str):
+                if value not in options:
+                    raise ValidationError(f"String value should be one of {options}")
+                return value
+
+            raise ValidationError(f"Field should be either an integer, tuple of integers, or a string")
+
+        def _jsonschema_type_mapping(self):
+            # Note: schemas can normally support a list of enums that includes 'None' as an option, as we currently have
+            # in 'initializers_registry'. But to make the schema here a bit more straightforward, the user must
+            # explicitly state if 'None' is going to be supported; if this conflicts with the list of enums then an
+            # error is raised and if it's going to be supported then it will be as a separate subschema rather than as
+            # part of the string subschema (see below):
+            if None in options and not self.allow_none:
+                raise AssertionError(
+                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
+                )
+
+            # Prepare numeric option:
+            numeric_option = {
+                "type": "integer",
+                "title": "integer_option",
+                "default": default_integer,
+                "description": "Set to a valid number.",
+            }
+            tuple_option = {
+                "type": "tuple",
+                "title": "tuple_option",
+                "default": default_tuple,
+                "description": "Set to a valid number.",
+            }
+
+            # Prepare string option (remove None):
+            if None in options:
+                options.remove(None)
+            string_option = {
+                "type": "string",
+                "enum": options,
+                "default": default_option,
+                "title": "preconfigured_option",
+                "description": "Choose a preconfigured option.",
+            }
+            oneof_list = [
+                numeric_option,
+                tuple_option,
+                string_option,
+            ]
+
+            # Add null as an option if applicable:
+            oneof_list += (
+                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
+                if allow_none
+                else []
+            )
+
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
+
+    return field(
+        metadata={
+            "marshmallow_field": IntegerTupleStringOptionsField(allow_none=allow_none,
+                                                                load_default=default,
+                                                                dump_default=default,
+                                                                metadata={"description": description}
+                                                                )
+        },
+        default=default,
+    )
+
+
 def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:

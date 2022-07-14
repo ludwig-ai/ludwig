@@ -7,7 +7,8 @@ from ludwig.decoders.registry import get_decoder_classes
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.utils import BaseEncoderConfig, EncoderDataclassField
+from ludwig.schema.encoders.utils import EncoderDataclassField
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
