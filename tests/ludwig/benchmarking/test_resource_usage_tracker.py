@@ -34,7 +34,7 @@ def test_resource_usage_tracker(tmpdir):
             skip_save_processed_input=True,
         )
 
-    with ResourceUsageTracker(tag="eval", output_dir=tmpdir, logging_interval=0.1, num_examples=len(eval_df)):
+    with ResourceUsageTracker(tag="evaluate", output_dir=tmpdir, logging_interval=0.1, num_examples=len(eval_df)):
         model.evaluate(dataset=eval_df)
 
     assert os.path.exists(os.path.join(tmpdir, "train_resource_usage_metrics.json"))
