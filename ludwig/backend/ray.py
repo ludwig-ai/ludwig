@@ -18,7 +18,7 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import dask
 import numpy as np
@@ -33,6 +33,9 @@ from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
+
+if TYPE_CHECKING:
+    from ludwig.api import LudwigModel
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
@@ -879,24 +882,24 @@ class RayBackend(RemoteTrainingMixin, Backend):
             #  tweaks the existing BinaryDataSource.
             fs, _ = get_fs_and_path(sample_fname)
 
-            # TODO(travis): figure out how to align partitions between this series and the original series. Ideally,
-            #  we should coerce the original dataframe to use the partition structure of this series, as in general
-            #  the size of the binary files series will be orders of magnitude larger than the metadata DF.
+            # The resulting column is named "value"
             ds = ray.data.read_binary_files(fnames, filesystem=PyFileSystem(FSSpecHandler(fs)))
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
-            ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+            # Name the column "value" to match the behavior of ray.data.read_binary_files
+            ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
             # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
             with use_credentials(conf):
-                df[column.name] = df[column.name].map(fn)
+                df["value"] = df["value"].map(fn)
                 return df
 
         if map_fn is not None:
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
-        return self.df_engine.from_ray_dataset(ds)[column.name]
+        df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+        return df[column.name]
 
     @property
     def num_nodes(self) -> int:

@@ -36,6 +36,31 @@ def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
+def set_index_name(pd_df, name):
+    pd_df.index.name = name
+    return pd_df
+
+
+def reset_index_across_all_partitions(df):
+    """Compute a monotonically increasing index across all partitions.
+
+    This differs from dd.reset_index, which computes an independent index for each partition.
+
+    Source: https://stackoverflow.com/questions/61395351/how-to-reset-index-on-concatenated-dataframe-in-dask
+    """
+
+    # Create temporary column of ones
+    df = df.assign(**{TMP_COLUMN: 1})
+
+    # Set the index to the cumulative sum of TMP_COLUMN, which we know to be sorted; this improves efficiency.
+    df = df.set_index(df[TMP_COLUMN].cumsum() - 1, sorted=True)
+
+    # Drop temporary column and ensure the index is not named TMP_COLUMN
+    df = df.drop(columns=TMP_COLUMN)
+    df = df.map_partitions(lambda pd_df: set_index_name(pd_df, None))
+    return df
+
+
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
         self._parallelism = parallelism
@@ -46,13 +71,49 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
+    def _align_partitions(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
+        """Aligns the partitions of df and all proc_cols.
+
+        This is commonly required after reading in file paths, because doing so creates new Dask series which may have
+        a number of partitions different from the original DataFrame.
+
+        NOTE: The index values of the DataFrame are not preserved. This is because the index is re-assigned to be usable
+        for sorting and repartitioning the data.
+        """
+
+        # function assumes that the columns and dataframe have the same number of samples in the same order.
+        assert all(
+            len(df) == len(proc_cols[k]) for k in proc_cols
+        ), "Length of columns do not match. Please file an issue in the Ludwig repository."
+
+        # Reset the index across all partitions so that divisions can be computed
+        df = reset_index_across_all_partitions(df)
+        proc_cols = {
+            k: reset_index_across_all_partitions(v.to_frame(name=v.name))[v.name] for k, v in proc_cols.items()
+        }
+
+        # Find the divisions of the column with the largest number of partitions
+        proc_col_with_max_npartitions = max(proc_cols.values(), key=lambda x: x.npartitions)
+        new_divisions = proc_col_with_max_npartitions.divisions
+
+        # Repartition all columns to have the same divisions
+        df = df.repartition(divisions=new_divisions)
+        proc_cols = {k: v.repartition(divisions=new_divisions) for k, v in proc_cols.items()}
+
+        return df, proc_cols
+
     def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
-        # Our goal is to preserve the index of the input dataframe but to drop
-        # all its columns. Because to_frame() creates a column from the index,
-        # we need to drop it immediately following creation.
-        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
+
+        if any(df.npartitions != proc_cols[k].npartitions for k in proc_cols):
+            # If any of the partitions were changed during preprocessing, align them.
+            dataset, proc_cols = self._align_partitions(df, proc_cols)
+        else:
+            # Our goal is to preserve the index of the input dataframe but to drop
+            # all its columns. Because to_frame() creates a column from the index,
+            # we need to drop it immediately following creation.
+            dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
         for k, v in proc_cols.items():
-            v.divisions = dataset.divisions
+            v.divisions = dataset.divisions  # no-op if partitions were explicitly realigned with self._align_partitions
             dataset[k] = v
         return dataset
 
