@@ -33,7 +33,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
+from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -44,7 +44,6 @@ try:
     import ray
 except ImportError:
     ray = None
-
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,6 @@ HF_ENCODERS = [
     "electra",
     "mt5",
 ]
-
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -185,11 +183,11 @@ def slow(test_case):
 
 
 def generate_data(
-    input_features,
-    output_features,
-    filename="test_csv.csv",
-    num_examples=25,
-    nan_percent=0.0,
+        input_features,
+        output_features,
+        filename="test_csv.csv",
+        num_examples=25,
+        nan_percent=0.0,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -216,16 +214,26 @@ def random_string(length=5):
 
 
 def number_feature(normalization=None, **kwargs):
-    feature = {"name": "num_" + random_string(), "type": "number", "preprocessing": {"normalization": normalization}}
-    feature.update(kwargs)
+    feature = {
+        "name": "num_" + random_string(),
+        "type": "number",
+        "preprocessing": {
+            "normalization": normalization
+        }
+    }
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def category_feature(**kwargs):
-    feature = {"type": "category", "name": "category_" + random_string(), "vocab_size": 10, "embedding_size": 5}
-    feature.update(kwargs)
+    feature = {"type": "category",
+               "name": "category_" + random_string(),
+               "encoder": {
+                   "vocab_size": 10,
+                   "embedding_size": 5}}
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -235,21 +243,31 @@ def text_feature(**kwargs):
     feature = {
         "name": "text_" + random_string(),
         "type": "text",
-        "vocab_size": 5,
-        "min_len": 7,
-        "max_len": 7,
-        "embedding_size": 8,
-        "state_size": 8,
+        "encoder": {
+            "vocab_size": 5,
+            "min_len": 7,
+            "max_len": 7,
+            "embedding_size": 8,
+            "state_size": 8,
+        }
     }
-    feature.update(kwargs)
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def set_feature(**kwargs):
-    feature = {"type": "set", "name": "set_" + random_string(), "vocab_size": 10, "max_len": 5, "embedding_size": 5}
-    feature.update(kwargs)
+    feature = {
+        "type": "set",
+        "name": "set_" + random_string(),
+        "encoder": {
+            "vocab_size": 10,
+            "max_len": 5,
+            "embedding_size": 5
+        }
+    }
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -259,10 +277,10 @@ def sequence_feature(**kwargs):
     feature = {
         "type": "sequence",
         "name": "sequence_" + random_string(),
-        "vocab_size": 10,
-        "max_len": 7,
         "encoder": {
             "type": "embed",
+            "vocab_size": 10,
+            "max_len": 7,
             "embedding_size": 8,
             "output_size": 8,
             "state_size": 8,
@@ -270,7 +288,7 @@ def sequence_feature(**kwargs):
             "hidden_size": 8,
         }
     }
-    feature.update(kwargs)
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -289,7 +307,7 @@ def image_feature(folder, **kwargs):
         },
         "destination_folder": folder,
     }
-    feature.update(kwargs)
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -317,31 +335,48 @@ def audio_feature(folder, **kwargs):
         },
         "destination_folder": folder,
     }
-    feature.update(kwargs)
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def timeseries_feature(**kwargs):
-    feature = {"name": "timeseries_" + random_string(), "type": "timeseries", "max_len": 7}
-    feature.update(kwargs)
+    feature = {
+        "name": "timeseries_" + random_string(),
+        "type": "timeseries",
+        "encoder": {
+            "max_len": 7
+        }
+    }
+
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def binary_feature(**kwargs):
-    feature = {"name": "binary_" + random_string(), "type": "binary"}
-    feature.update(kwargs)
+    feature = {
+        "name": "binary_" + random_string(),
+        "type": "binary"}
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def bag_feature(**kwargs):
-    feature = {"name": "bag_" + random_string(), "type": "bag", "max_len": 5, "vocab_size": 10, "embedding_size": 5}
-    feature.update(kwargs)
+    feature = {
+        "name": "bag_" + random_string(),
+        "type": "bag",
+        "encoder": {
+            "max_len": 5,
+            "vocab_size": 10,
+            "embedding_size": 5
+        }
+    }
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -351,32 +386,43 @@ def date_feature(**kwargs):
     feature = {
         "name": "date_" + random_string(),
         "type": "date",
-        "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
+        "preprocessing": {
+            "datetime_format": random.choice(list(DATETIME_FORMATS.keys()))
+        },
     }
-    feature.update(kwargs)
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def h3_feature(**kwargs):
-    feature = {"name": "h3_" + random_string(), "type": "h3"}
-    feature.update(kwargs)
+    feature = {
+        "name": "h3_" + random_string(),
+        "type": "h3"
+    }
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def vector_feature(**kwargs):
-    feature = {"type": VECTOR, "vector_size": 5, "name": "vector_" + random_string()}
-    feature.update(kwargs)
+    feature = {
+        "type": VECTOR,
+        "name": "vector_" + random_string(),
+        "preprocessing": {
+            "vector_size": 5,
+        }
+    }
+    feature[ENCODER].update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def run_experiment(
-    input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
+        input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
     """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk related to
     running an experiment.
@@ -506,7 +552,7 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
 
 
 def has_no_grad(
-    val: Union[np.ndarray, torch.Tensor, str, list],
+        val: Union[np.ndarray, torch.Tensor, str, list],
 ):
     """Checks if two values are close to each other."""
     if isinstance(val, list):
@@ -517,9 +563,9 @@ def has_no_grad(
 
 
 def is_all_close(
-    val1: Union[np.ndarray, torch.Tensor, str, list],
-    val2: Union[np.ndarray, torch.Tensor, str, list],
-    tolerance=1e-4,
+        val1: Union[np.ndarray, torch.Tensor, str, list],
+        val2: Union[np.ndarray, torch.Tensor, str, list],
+        tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val1, list):
@@ -693,16 +739,16 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def train_with_backend(
-    backend,
-    config,
-    dataset=None,
-    training_set=None,
-    validation_set=None,
-    test_set=None,
-    predict=True,
-    evaluate=True,
-    callbacks=None,
-    skip_save_processed_input=True,
+        backend,
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        predict=True,
+        evaluate=True,
+        callbacks=None,
+        skip_save_processed_input=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None

@@ -91,7 +91,7 @@ def get_input_feature_conds():
         schema_cls = feature_cls.get_schema_cls()
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
-        update_encoders(feature_props, feature_type)
+        # update_encoders(feature_props, feature_type)
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds
@@ -133,7 +133,7 @@ def get_output_feature_conds():
         schema_cls = feature_cls.get_schema_cls()
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
-        update_decoders(feature_props, feature_type)
+        # update_decoders(feature_props, feature_type)
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds
