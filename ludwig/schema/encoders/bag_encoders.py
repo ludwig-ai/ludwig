@@ -1,10 +1,11 @@
 from typing import List
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
-class BagEmbedWeightedConfig(schema_utils.BaseMarshmallowConfig):
+class BagEmbedWeightedConfig(BaseEncoderConfig):
 
     type: str = "embed"
 

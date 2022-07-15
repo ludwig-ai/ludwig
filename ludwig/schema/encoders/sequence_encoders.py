@@ -2,10 +2,11 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
-class SequencePassthroughConfig(schema_utils.BaseMarshmallowConfig):
+class SequencePassthroughConfig(BaseEncoderConfig):
 
     type: str = "passthrough"
 
@@ -27,7 +28,7 @@ class SequencePassthroughConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class SequenceEmbedConfig(schema_utils.BaseMarshmallowConfig):
+class SequenceEmbedConfig(BaseEncoderConfig):
 
     type: str = "embed"
 
@@ -78,7 +79,7 @@ class SequenceEmbedConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class ParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
+class ParallelCNNConfig(BaseEncoderConfig):
 
     type: str = "parallel_cnn"
 
@@ -198,7 +199,7 @@ class ParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class StackedCNNConfig(schema_utils.BaseMarshmallowConfig):
+class StackedCNNConfig(BaseEncoderConfig):
 
     type: str = "stacked_cnn"
 
@@ -345,7 +346,7 @@ class StackedCNNConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class StackedParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
+class StackedParallelCNNConfig(BaseEncoderConfig):
 
     type: str = "stacked_parallel_cnn"
 
@@ -498,7 +499,7 @@ class StackedParallelCNNConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
+class StackedRNNConfig(BaseEncoderConfig):
 
     type: str = "rnn"
 
@@ -675,7 +676,7 @@ class StackedRNNConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
+class StackedCNNRNNConfig(BaseEncoderConfig):
 
     type: str = "cnnrnn"
 
@@ -920,7 +921,7 @@ class StackedCNNRNNConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class StackedTransformerConfig(schema_utils.BaseMarshmallowConfig):
+class StackedTransformerConfig(BaseEncoderConfig):
 
     type: str = "transformer"
 
