@@ -14,15 +14,16 @@ from ludwig.models.inference import (
     _InferencePostprocessor,
     _InferencePredictor,
     _InferencePreprocessor,
-    INFERENCE_STAGES,
     InferenceModule,
     POSTPROCESSOR,
     PREDICTOR,
     PREPROCESSOR,
 )
 from ludwig.utils.torch_utils import DEVICE
+from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
 
+INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
 INPUT = "INPUT"
 OUTPUT = "OUTPUT"
 ENSEMBLE = "ensemble"
@@ -133,21 +134,6 @@ def _get_type_map(dtype: str) -> str:
         "torch.long": "TYPE_INT64",
         "torch.bool": "TYPE_BOOL",
     }[dtype]
-
-
-def raw_feature_to_inference_input(s: pd.Series, feature) -> Union[List[str], torch.Tensor]:
-    """Transform input for a feature to be compatible with what's required by TorchScript."""
-    if s.dtype == "object" or type(feature) is CategoryInputFeature:
-        return s.astype("str").to_list()
-    return torch.from_numpy(s.to_numpy())
-
-
-def raw_to_inference_input(df: pd.DataFrame, model: LudwigModel):
-    """Transform input for all features to be compatible with what's required by TorchScript."""
-    return {
-        name: raw_feature_to_inference_input(df[feature.column], feature)
-        for name, feature in model.model.input_features.items()
-    }
 
 
 def to_triton_dimension(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
@@ -477,7 +463,7 @@ def export_triton(
 
     inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata, DEVICE)
     split_modules = [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
-    example_input = raw_to_inference_input(data_example.head(1), model)
+    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config)
     paths = {}
     triton_masters = []
     for i, module in enumerate(split_modules):
