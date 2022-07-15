@@ -1,9 +1,11 @@
 from dataclasses import field
+from typing import Any as TAny
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
+from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
@@ -768,4 +770,81 @@ def NumericOrStringOptionsField(
             "parameter_metadata": parameter_metadata,
         },
         default=default,
+    )
+
+
+def OneOfOptionsField(
+    default: TAny,
+    description: str,
+    allow_none: bool,
+    field_options: TList,
+    parameter_metadata: ParameterMetadata = None,
+):
+    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
+
+    class OneOfOptionsCombinatorialField(fields.Field):
+        def _serialize(self, value, attr, obj, **kwargs):
+            print(value)
+            print(attr)
+            print(obj)
+            print(kwargs)
+            for option in field_options:
+                mfield_meta = option.metadata["marshmallow_field"]
+                print(mfield_meta)
+                try:
+                    return mfield_meta._serialize(value)
+                except Exception:
+                    print("dog")
+                    continue
+            raise ValidationError(f"Value to serialize does not match any valid option schemas: {value}")
+
+        def _deserialize(self, value, attr, obj, **kwargs):
+            for option in field_options:
+                mfield_meta = option.metadata["marshmallow_field"]
+                try:
+                    return mfield_meta._deserialize(value, attr, obj, **kwargs)
+                except Exception:
+                    continue
+            raise ValidationError(f"Value to deserialize does not match any valid option schemas: {value}")
+
+        def _jsonschema_type_mapping(self):
+            """Constructs a oneOf schema by iteratively adding the schemas of `field_options` to a list."""
+            oneOf = {"oneOf": [], "description": description, "default": default}
+            for option in field_options:
+                mfield_meta = option.metadata["marshmallow_field"]
+
+                # If the option inherits from a custom dataclass-field, then use the custom jsonschema:
+                if hasattr(mfield_meta, "_jsonschema_type_mapping"):
+                    oneOf["oneOf"].append(mfield_meta._jsonschema_type_mapping())
+                # Otherwise, extract the jsonschema using a dummy dataclass as intermediary:
+                else:
+
+                    @m_dataclass
+                    class DummyClass:
+                        tmp: TAny = mfield_meta
+
+                    dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
+                    tmp_json_schema = dummy_schema["properties"]["tmp"]
+                    oneOf["oneOf"].append(tmp_json_schema)
+            return oneOf
+
+    # Create correct default kwarg to pass to dataclass field constructor:
+    def is_primitive(value):
+        primitive = (int, str, bool)
+        return isinstance(value, primitive)
+
+    default_kwarg = {}
+    if is_primitive(default):
+        default_kwarg["default"] = default
+    else:
+        default_kwarg["default_factory"] = lambda: default
+
+    return field(
+        metadata={
+            "marshmallow_field": OneOfOptionsCombinatorialField(
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+            ),
+            "parameter_metadata": parameter_metadata,
+        },
+        **default_kwarg,
     )

@@ -142,16 +142,30 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["should_shuffle"],
     )
 
-    batch_size: Union[int, str] = schema_utils.IntegerOrAutoField(
+    # batch_size: Union[int, str] = schema_utils.IntegerOrAutoField(
+    #     default=128,
+    #     default_numeric=128,
+    #     allow_none=False,
+    #     min_exclusive=0,
+    #     description=(
+    #         "The number of training examples utilized in one training step of the model. If ’auto’, the "
+    #         "biggest batch size (power of 2) that can fit in memory will be used."
+    #     ),
+    #     parameter_metadata=TRAINER_METADATA["batch_size"],
+    # )
+
+    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
         default=128,
-        default_numeric=128,
         allow_none=False,
-        min_exclusive=0,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
             "biggest batch size (power of 2) that can fit in memory will be used."
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger("", None, False, None),
+            schema_utils.StringOptions(["auto"], "auto", False, "", None),
+        ],
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
