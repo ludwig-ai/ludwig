@@ -14,15 +14,15 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @dataclass
-class PassthroughEncoderConfig(schema_utils.BaseMarshmallowConfig):
-    """PassthroughEncoder is a dataclass that configures the parameters used for a passthrough encoder."""
+class PassthroughEncoderConfig(BaseEncoderConfig):
+    """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
     type: str = "passthrough"
 
 
 @dataclass
-class DenseEncoderConfig(schema_utils.BaseMarshmallowConfig):
-    """DenseEncoder is a dataclass that configures the parameters used for a dense encoder."""
+class DenseEncoderConfig(BaseEncoderConfig):
+    """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 
     type: str = "dense"
 

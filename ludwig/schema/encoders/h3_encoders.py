@@ -2,10 +2,11 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
-class H3EmbedConfig(schema_utils.BaseMarshmallowConfig):
+class H3EmbedConfig(BaseEncoderConfig):
 
     type: str = "embed"
 
@@ -74,7 +75,7 @@ class H3EmbedConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class H3WeightedSumConfig(schema_utils.BaseMarshmallowConfig):
+class H3WeightedSumConfig(BaseEncoderConfig):
 
     type: str = "embed"
 
@@ -149,7 +150,7 @@ class H3WeightedSumConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class H3RNNConfig(schema_utils.BaseMarshmallowConfig):
+class H3RNNConfig(BaseEncoderConfig):
 
     type: str = "rnn"
 

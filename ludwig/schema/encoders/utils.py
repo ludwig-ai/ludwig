@@ -23,15 +23,15 @@ def get_encoder_conds(feature_type: str):
 
 def EncoderDataclassField(feature_type: str, default: str):
     """
-    Custom dataclass field that when used inside a dataclass will allow the user to specify a preprocessing config.
+    Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
-    Returns: Initialized dataclass field that converts an untyped dict with params to a preprocessing config.
+    Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
     """
 
     class EncoderMarshmallowField(fields.Field):
         """
-        Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
-        preprocessing_registry and creates a corresponding `oneOf` JSON schema for external usage.
+        Custom marshmallow field that deserializes a dict for a valid encoder config from the
+        encoder_registry and creates a corresponding `oneOf` JSON schema for external usage.
         """
 
         def _deserialize(self, value, attr, data, **kwargs):

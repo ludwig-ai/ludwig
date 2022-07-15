@@ -2,10 +2,11 @@ from typing import List, Union, Callable
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
-class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
+class ALBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
     type: str = "albert"
@@ -158,7 +159,7 @@ class ALBERTConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class MT5Config(schema_utils.BaseMarshmallowConfig):
+class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
     type: str = "mt5"
@@ -301,7 +302,7 @@ class MT5Config(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class XLMRoBERTaConfig(schema_utils.BaseMarshmallowConfig):
+class XLMRoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
     type: str = "xlmroberta"
@@ -368,7 +369,7 @@ class XLMRoBERTaConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class BERTConfig(schema_utils.BaseMarshmallowConfig):
+class BERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
     type: str = "bert"
@@ -500,7 +501,7 @@ class BERTConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class XLMConfig(schema_utils.BaseMarshmallowConfig):
+class XLMConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
     type: str = "xlm"
@@ -696,7 +697,7 @@ class XLMConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class GPTConfig(schema_utils.BaseMarshmallowConfig):
+class GPTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
     type: str = "gpt"
@@ -801,7 +802,7 @@ class GPTConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class GPT2Config(schema_utils.BaseMarshmallowConfig):
+class GPT2Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
     type: str = "gpt2"
@@ -917,7 +918,7 @@ class GPT2Config(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
+class RoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
     type: str = "roberta"
@@ -974,7 +975,7 @@ class RoBERTaConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
+class TransformerXLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
     type: str = "transformer_xl"
@@ -1152,7 +1153,7 @@ class TransformerXLConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class XLNetConfig(schema_utils.BaseMarshmallowConfig):
+class XLNetConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
     type: str = "xlnet"
@@ -1339,7 +1340,7 @@ class XLNetConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
+class DistilBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
     type: str = "distilbert"
@@ -1457,7 +1458,7 @@ class DistilBERTConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class CTRLConfig(schema_utils.BaseMarshmallowConfig):
+class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
     type: str = "ctrl"
@@ -1563,7 +1564,7 @@ class CTRLConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
+class CamemBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
     type: str = "camembert"
@@ -1694,7 +1695,7 @@ class CamemBERTConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class T5Config(schema_utils.BaseMarshmallowConfig):
+class T5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
     type: str = "t5"
@@ -1802,7 +1803,7 @@ class T5Config(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
+class FlauBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
     type: str = "flaubert"
@@ -1992,7 +1993,7 @@ class FlauBERTConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
+class ELECTRAConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
     type: str = "electra"
@@ -2119,7 +2120,7 @@ class ELECTRAConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class LongformerConfig(schema_utils.BaseMarshmallowConfig):
+class LongformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an Longformer encoder."""
 
     type: str = "longformer"
@@ -2178,7 +2179,7 @@ class LongformerConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @dataclass
-class AutoTransformerConfig(schema_utils.BaseMarshmallowConfig):
+class AutoTransformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
     type: str = "auto_transformer"

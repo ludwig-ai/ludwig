@@ -95,7 +95,7 @@ def InitializerOptions(default: str = "xavier_uniform", description=""):
     return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
 
 
-def ActivationOptions(default: str = "relu", description=""):
+def ActivationOptions(default: Union[str, None] = "relu", description=""):
     """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
     return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
 
