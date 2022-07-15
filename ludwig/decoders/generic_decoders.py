@@ -22,6 +22,7 @@ from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.utils.torch_utils import Dense, get_activation
+from ludwig.schema.decoders.base import PassthroughDecoderConfig, RegressorConfig, ProjectorConfig, ClassifierConfig
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,10 @@ class PassthroughDecoder(Decoder):
 
     def forward(self, inputs, **kwargs):
         return inputs
+
+    @staticmethod
+    def get_schema_cls():
+        return PassthroughDecoderConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -69,6 +74,10 @@ class Regressor(Decoder):
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
         )
+
+    @staticmethod
+    def get_schema_cls():
+        return RegressorConfig
 
     @property
     def input_shape(self):
@@ -116,6 +125,10 @@ class Projector(Decoder):
         else:
             self.clip = None
 
+    @staticmethod
+    def get_schema_cls():
+        return ProjectorConfig
+
     @property
     def input_shape(self):
         return self.dense.input_shape
@@ -159,6 +172,10 @@ class Classifier(Decoder):
         # so the first time we need to compute the full dense,
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
+
+    @staticmethod
+    def get_schema_cls():
+        return ClassifierConfig
 
     @property
     def input_shape(self):

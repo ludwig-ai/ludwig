@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import List
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -98,6 +99,31 @@ class ClassifierConfig(BaseDecoderConfig):
         description="Number of classes to predict.",
     )
 
+    fc_layers: List[dict] = schema_utils.DictList(
+        default=None,
+        description="List of dictionaries containing the parameters for each fully connected layer.",
+    )
+
+    output_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description="The default output_size that will be used for each layer.",
+    )
+
+    activation: str = schema_utils.ActivationOptions(
+        description="The default activation function that will be used for each layer."
+    )
+
+    norm: str = schema_utils.StringOptions(
+        ["batch", "layer"],
+        default=None,
+        description="The default norm that will be used for each layer.",
+    )
+
+    norm_params: dict = schema_utils.Dict(
+        default=None,
+        description="Parameters used if norm is either `batch` or `layer`.",
+    )
+
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
@@ -110,5 +136,14 @@ class ClassifierConfig(BaseDecoderConfig):
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+    )
+
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="The threshold above (greater or equal) which the predicted output of the sigmoid will be mapped "
+                    "to 1.",
+
     )
 

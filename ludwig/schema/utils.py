@@ -111,11 +111,11 @@ def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True
 
 
 def String(
-    description: str,
-    default: Union[None, str] = None,
-    allow_none: bool = True,
-    pattern: str = None,
-    parameter_metadata: ParameterMetadata = None,
+        description: str,
+        default: Union[None, str] = None,
+        allow_none: bool = True,
+        pattern: str = None,
+        parameter_metadata: ParameterMetadata = None,
 ):
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
@@ -141,11 +141,11 @@ def String(
 
 
 def StringOptions(
-    options: TList[str],
-    default: Union[None, str] = None,
-    allow_none: bool = True,
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
+        options: TList[str],
+        default: Union[None, str] = None,
+        allow_none: bool = True,
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
@@ -199,7 +199,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 
 
 def Integer(
-    default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
+        default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
     allow_none = allow_none or default is None
@@ -224,7 +224,8 @@ def Integer(
 
 
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
+        description: str, default: Union[None, int], allow_none: bool = False,
+        parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -253,10 +254,10 @@ def PositiveInteger(
 
 
 def NonNegativeInteger(
-    description: str,
-    default: Union[None, int] = None,
-    allow_none: bool = False,
-    parameter_metadata: ParameterMetadata = None,
+        description: str,
+        default: Union[None, int] = None,
+        allow_none: bool = False,
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
@@ -285,14 +286,14 @@ def NonNegativeInteger(
 
 
 def IntegerRange(
-    description: str,
-    default: Union[None, int] = None,
-    allow_none=False,
-    parameter_metadata: ParameterMetadata = None,
-    min: int = None,
-    max: int = None,
-    min_inclusive: bool = True,
-    max_inclusive: bool = True,
+        description: str,
+        default: Union[None, int] = None,
+        allow_none=False,
+        parameter_metadata: ParameterMetadata = None,
+        min: int = None,
+        max: int = None,
+        min_inclusive: bool = True,
+        max_inclusive: bool = True,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
@@ -321,10 +322,10 @@ def IntegerRange(
 
 
 def NonNegativeFloat(
-    default: Union[None, float] = None,
-    allow_none=False,
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
+        default: Union[None, float] = None,
+        allow_none=False,
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
@@ -351,14 +352,14 @@ def NonNegativeFloat(
 
 
 def FloatRange(
-    default: Union[None, float] = None,
-    allow_none: bool = False,
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
-    min: int = None,
-    max: int = None,
-    min_inclusive: bool = True,
-    max_inclusive: bool = True,
+        default: Union[None, float] = None,
+        allow_none: bool = False,
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
+        min: int = None,
+        max: int = None,
+        min_inclusive: bool = True,
+        max_inclusive: bool = True,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
@@ -521,7 +522,8 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
     )
 
 
-def List(list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""):
+def List(list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None,
+         description=""):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
     if default is not None:
         try:
@@ -554,7 +556,7 @@ def List(list_type: Union[Type[str], Type[int], Type[float]] = str, default: Uni
 
 
 def DictList(
-    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+        default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -751,33 +753,33 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 
 def FloatOrAutoField(
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        allow_none: bool,
+        description: str,
+        parameter_metadata: ParameterMetadata,
+        default: Union[None, int, str],
+        default_numeric: Union[None, int] = None,
+        default_option: Union[None, str] = "auto",
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Float that also permits an `auto` string value."""
     options: TList[str] = ["auto"]
     return NumericOrStringOptionsField(**locals())
 
 
-def IntegerOrAutoField(
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+def IntegerOrAutoField(  # TODO: Write test for this
+        allow_none: bool,
+        description: str,
+        parameter_metadata: ParameterMetadata,
+        default: Union[None, int, str],
+        default_numeric: Union[None, int] = None,
+        default_option: Union[None, str] = "auto",
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Integer that also permits an `auto` string value."""
     options: TList[str] = ["auto"]
@@ -785,18 +787,18 @@ def IntegerOrAutoField(
 
 
 def IntegerOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int],
-    default_numeric: Union[None, int],
-    default_option: Union[None, str],
-    is_integer: bool = True,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        options: TList[str],
+        allow_none: bool,
+        description: str,
+        parameter_metadata: ParameterMetadata,
+        default: Union[None, int],
+        default_numeric: Union[None, int],
+        default_option: Union[None, str],
+        is_integer: bool = True,
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
     is_integer = True
@@ -804,18 +806,18 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    default: Union[None, int, float, str],
-    default_numeric: Union[None, int, float],
-    default_option: Union[None, str],
-    parameter_metadata: ParameterMetadata = None,
-    is_integer: bool = False,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        options: TList[str],
+        allow_none: bool,
+        description: str,
+        default: Union[None, int, float, str],
+        default_numeric: Union[None, int, float],
+        default_option: Union[None, str],
+        parameter_metadata: ParameterMetadata = None,
+        is_integer: bool = False,
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
 

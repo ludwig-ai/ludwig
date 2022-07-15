@@ -246,7 +246,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_values(input_feature, {TIED: None, "encoder": "parallel_cnn"})
+        set_default_values(input_feature, {TIED: None, "encoder": {"type": "parallel_cnn"}})
 
         encoder_class = get_encoder_cls(input_feature["type"], input_feature["encoder"]["type"])
 
