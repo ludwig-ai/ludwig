@@ -98,7 +98,7 @@ def test_load_save_encoder(tmpdir):
     model2 = LudwigModel(model2_config)
     train_stats2, _, _ = model2.train(dataset=data_csv, output_directory=tmpdir)
     # Assert that final train loss is lower for model 2 using the pre-trained encoder.
-    # TODO: Due to randomness, this fails sometimes. Find a better way to test transfer.
+    # TODO(daniel): Due to randomness, this fails sometimes. Find a better way to test transfer.
     # Maybe train to a specified performance level and ensure that model2 gets there faster?
     assert (
         train_stats2["training"][category_output_name]["loss"][-1]

@@ -58,7 +58,6 @@ def get_encoder_default_params(feature: str, encoder_name_or_url: str) -> Dict:
 
     Encoder may be the name of an encoder, or the URL of a pre-trained encoder.
     """
-    # TODO(daniel): Cache referenced encoders so we don't load from disk multiple times.
     if is_url(encoder_name_or_url):
         try:
             encoder_state = serialization.load_state_from_file(encoder_name_or_url)
