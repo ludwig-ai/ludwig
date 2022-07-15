@@ -33,7 +33,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, ENCODER, NAME, TIED, PROC_COLUMN, TRAINER, VECTOR, PREPROCESSING
+from ludwig.constants import COLUMN, ENCODER, DECODER, NAME, TIED, PROC_COLUMN, TRAINER, VECTOR, PREPROCESSING
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -195,6 +195,7 @@ def generate_data(
     :param input_features: schema
     :param output_features: schema
     :param filename: path to the file where data is stored
+    :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
     features = input_features + output_features
@@ -217,36 +218,49 @@ def number_feature(normalization=None, **kwargs):
     feature = {
         "name": "num_" + random_string(),
         "type": "number",
-        "encoder": {},
         "preprocessing": {
             "normalization": normalization
-        }
+        },
+        "encoder": {},
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING].update(kwargs[PREPROCESSING])
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def category_feature(**kwargs):
-    feature = {"type": "category",
-               "name": "category_" + random_string(),
-               "encoder": {
-                   "vocab_size": 10,
-                   "embedding_size": 5}}
+    feature = {
+        "type": "category",
+        "name": "category_" + random_string(),
+        "encoder": {
+            "vocab_size": 10,
+            "embedding_size": 5
+        },
+        "decoder": {},
+    }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -262,15 +276,20 @@ def text_feature(**kwargs):
             "max_len": 7,
             "embedding_size": 8,
             "state_size": 8,
-        }
+        },
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -284,15 +303,20 @@ def set_feature(**kwargs):
             "vocab_size": 10,
             "max_len": 5,
             "embedding_size": 5
-        }
+        },
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -311,15 +335,20 @@ def sequence_feature(**kwargs):
             "state_size": 8,
             "num_filters": 8,
             "hidden_size": 8,
-        }
+        },
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -336,6 +365,7 @@ def image_feature(folder, **kwargs):
             "num_filters": 8,
             "output_size": 8,
         },
+        "decoder": {},
         "destination_folder": folder,
     }
     if TIED in kwargs:
@@ -343,8 +373,12 @@ def image_feature(folder, **kwargs):
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING].update(kwargs[PREPROCESSING])
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -370,6 +404,7 @@ def audio_feature(folder, **kwargs):
             ],
             "output_size": 16,
         },
+        "decoder": {},
         "destination_folder": folder,
     }
     if TIED in kwargs:
@@ -377,8 +412,12 @@ def audio_feature(folder, **kwargs):
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING].update(kwargs[PREPROCESSING])
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -390,15 +429,20 @@ def timeseries_feature(**kwargs):
         "type": "timeseries",
         "encoder": {
             "max_len": 7
-        }
+        },
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -407,15 +451,21 @@ def timeseries_feature(**kwargs):
 def binary_feature(**kwargs):
     feature = {
         "name": "binary_" + random_string(),
-        "type": "binary"
+        "type": "binary",
+        "encoder": {},
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -429,15 +479,20 @@ def bag_feature(**kwargs):
             "max_len": 5,
             "vocab_size": 10,
             "embedding_size": 5
-        }
+        },
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -450,14 +505,20 @@ def date_feature(**kwargs):
         "preprocessing": {
             "datetime_format": random.choice(list(DATETIME_FORMATS.keys()))
         },
+        "encoder": {},
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING].update(kwargs[PREPROCESSING])
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -466,15 +527,21 @@ def date_feature(**kwargs):
 def h3_feature(**kwargs):
     feature = {
         "name": "h3_" + random_string(),
-        "type": "h3"
+        "type": "h3",
+        "encoder": {},
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING] = kwargs[PREPROCESSING]
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -484,18 +551,23 @@ def vector_feature(**kwargs):
     feature = {
         "type": VECTOR,
         "name": "vector_" + random_string(),
-        "encoder": {},
         "preprocessing": {
             "vector_size": 5,
-        }
+        },
+        "encoder": {},
+        "decoder": {},
     }
     if TIED in kwargs:
         feature[TIED] = kwargs[TIED]
     if PREPROCESSING in kwargs:
         feature[PREPROCESSING].update(kwargs[PREPROCESSING])
 
-    encoder_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
-    feature[ENCODER].update(encoder_params)
+    other_params = {key: value for key, value in kwargs.items() if key not in [TIED, PREPROCESSING]}
+    if ENCODER in kwargs:
+        feature[ENCODER].update(other_params)
+    if DECODER in kwargs:
+        feature[DECODER].update(other_params)
+
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature

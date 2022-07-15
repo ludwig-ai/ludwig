@@ -23,6 +23,7 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
+    DECODER,
     EDIT_DISTANCE,
     FILL_WITH_CONST,
     LAST_ACCURACY,
@@ -37,6 +38,7 @@ from ludwig.constants import (
     PROC_COLUMN,
     SEQUENCE,
     SEQUENCE_ACCURACY,
+    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     SUM,
     TIED,
     TOKEN_ACCURACY,
@@ -332,7 +334,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
-    loss = {TYPE: "sequence_softmax_cross_entropy"}
+    loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -517,7 +519,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             output_feature,
             LOSS,
             {
-                TYPE: "sequence_softmax_cross_entropy",
+                TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY,
                 "class_weights": 1,
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
@@ -527,9 +529,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         )
 
         set_default_value(output_feature[LOSS], "unique", False)
-        set_default_value(output_feature, "decoder", "generator")
+        set_default_value(output_feature, DECODER, {TYPE: "generator"})
 
-        if output_feature["decoder"] == "tagger":
+        if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)
 
         set_default_value(output_feature, "dependencies", [])

@@ -1,6 +1,7 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import NUMBER
+from ludwig.constants import NUMBER, MEAN_SQUARED_ERROR
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 from ludwig.schema.encoders.utils import EncoderDataclassField
@@ -11,7 +12,7 @@ from ludwig.schema.decoders.base import BaseDecoderConfig
 
 @dataclass
 class NumberInputFeatureConfig(BaseInputFeatureConfig):
-    """NumberInputFeature is a dataclass that configures the parameters used for a number input feature."""
+    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
@@ -23,6 +24,15 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig):
 
 @dataclass
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
+    """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output feature."""
+
+    loss: dict = schema_utils.Dict(
+        default={
+            "type": MEAN_SQUARED_ERROR,
+            "weight": 1,
+            },
+        description="A dictionary containing a loss type and its hyper-parameters.",
+    )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=NUMBER,

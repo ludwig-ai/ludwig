@@ -100,7 +100,14 @@ def set_default_value(dictionary, key, value):
 def set_default_values(dictionary, default_value_dictionary):
     # Set multiple default values
     for key, value in default_value_dictionary.items():
-        set_default_value(dictionary, key, value)
+        if key not in dictionary:  # Event where the key is not in the dictionary yet
+            dictionary[key] = value
+        elif isinstance(value, dict) and not value:  # Event where dict is empty
+            set_default_value(dictionary, key, value)
+        elif isinstance(value, dict) and bool(value):  # Event where dictionary is nested - recursive call
+            set_default_values(dictionary[key], value)
+        else:
+            set_default_value(dictionary, key, value)
 
 
 def get_class_attributes(c):

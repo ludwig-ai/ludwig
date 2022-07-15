@@ -1,6 +1,7 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, SOFTMAX_CROSS_ENTROPY
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 from ludwig.schema.encoders.utils import EncoderDataclassField
@@ -11,7 +12,7 @@ from ludwig.schema.decoders.base import BaseDecoderConfig
 
 @dataclass
 class CategoryInputFeatureConfig(BaseInputFeatureConfig):
-    """CategoryInputFeature is a dataclass that configures the parameters used for a category input feature."""
+    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input feature."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
@@ -23,7 +24,19 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig):
 
 @dataclass
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
-    """CategoryOutputFeature is a dataclass that configures the parameters used for a category output feature."""
+    """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output feature."""
+
+    loss: dict = schema_utils.Dict(
+        default={
+            "type": SOFTMAX_CROSS_ENTROPY,
+            "class_weights": 1,
+            "robust_lambda": 0,
+            "confidence_penalty": 0,
+            "class_similarities_temperature": 0,
+            "weight": 1,
+            },
+        description="A dictionary containing a loss type and its hyper-parameters.",
+    )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,
