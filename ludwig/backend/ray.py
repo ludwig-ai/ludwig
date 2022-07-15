@@ -31,6 +31,7 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
+from ray.data.datasource import FastFileMetadataProvider
 from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
@@ -883,7 +884,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
             fs, _ = get_fs_and_path(sample_fname)
 
             # The resulting column is named "value"
-            ds = ray.data.read_binary_files(fnames, filesystem=PyFileSystem(FSSpecHandler(fs)))
+            ds = ray.data.read_binary_files(
+                fnames, filesystem=PyFileSystem(FSSpecHandler(fs)), meta_provider=FastFileMetadataProvider()
+            )
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of ray.data.read_binary_files

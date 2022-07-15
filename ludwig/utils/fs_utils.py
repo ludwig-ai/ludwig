@@ -23,7 +23,7 @@ import pathlib
 import shutil
 import tempfile
 import uuid
-from typing import Any, Optional, Union
+from typing import Optional
 from urllib.parse import unquote, urlparse
 
 import certifi
@@ -60,16 +60,6 @@ def upgrade_http(urlpath):
     if protocol == "http":
         return "https://" + url
     return None
-
-
-def get_bytes_obj_if_path(path: Any) -> Union[Any, Optional[bytes]]:
-    """Gets bytes string if `path` is a path (e.g. a string).
-
-    If it is not a path, return as-is.
-    """
-    if not isinstance(path, str):
-        return path
-    return get_bytes_obj_from_path(path)
 
 
 @functools.lru_cache(maxsize=32)

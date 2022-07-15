@@ -24,10 +24,42 @@ import torchaudio
 
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
-from ludwig.utils.types import TorchAudioTuple
+from ludwig.utils.types import Series, TorchAudioTuple
 
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
+
+
+def is_torch_audio_tuple(audio: Any) -> bool:
+    if isinstance(audio, tuple):
+        if len(audio) == 2 and isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
+            return True
+    return False
+
+
+def get_audio_samples(column: Series, sample_size: int = 1) -> List[TorchAudioTuple]:
+    sample_size = min(len(column), sample_size)
+
+    sample = []
+    failed_entries = []
+    for audio_entry in column.head(sample_size):
+        if isinstance(audio_entry, str):
+            # Tries to read image as PNG or numpy file from the path.
+            audio = read_audio_from_path(audio_entry)
+
+        if is_torch_audio_tuple(audio):
+            sample.append(audio)
+        else:
+            failed_entries.append(audio_entry)
+
+    if len(sample) == 0:
+        failed_entries_repr = "\n\t- ".join(failed_entries)
+        raise ValueError(
+            f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
+            f"{failed_entries_repr}."
+        )
+
+    return sample
 
 
 def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
@@ -46,32 +78,12 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     return default_audio_tensor, default_sampling_rate
 
 
-def read_audio_if_path(path: Any) -> Union[Any, TorchAudioTuple]:
-    """Reads audio if `path` is a path (e.g. a string).
-
-    If it is not a path, return as-is.
-    """
-    if not isinstance(path, str):
-        return path
-    return read_audio_from_path(path)
-
-
 def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
     """Reads audio from path.
 
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
     """
     bytes_obj = get_bytes_obj_from_path(path)
-    return read_audio_from_bytes_obj(bytes_obj)
-
-
-def read_audio_if_bytes_obj(bytes_obj: Any) -> Union[Any, Optional[TorchAudioTuple]]:
-    """Reads audio if `bytes_obj` is a bytes object.
-
-    If it is not a bytes object, return as-is.
-    """
-    if not isinstance(bytes_obj, bytes):
-        return bytes_obj
     return read_audio_from_bytes_obj(bytes_obj)
 
 

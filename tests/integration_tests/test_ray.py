@@ -202,7 +202,8 @@ def test_ray_read_binary_files(tmpdir, df_engine):
 
     dataset_path = os.path.join(tmpdir, "dataset.csv")
     dataset_path = generate_data([audio_params], [], dataset_path, num_examples=100)
-    # TODO: add test with nan_percent > 0.0.
+    # TODO(geoffrey): implement a solution such that this test can pass with nan_percent > 0.0.
+    # for now, backend.read_binary_files is called after NaNs are handled, so NaNs should not appear in inputs.
     dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.0)
 
     with ray_start(num_cpus=2, num_gpus=None):
@@ -307,8 +308,7 @@ def test_ray_audio(dataset_type, feature_type):
         audio_dest_folder = os.path.join(tmpdir, "generated_audio")
         input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
         output_features = [binary_feature()]
-        # TODO: add test with nan_percent > 0.0.
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.0)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
@@ -326,8 +326,7 @@ def test_ray_image(dataset_type):
             ),
         ]
         output_features = [binary_feature()]
-        # TODO: add test with nan_percent > 0.0.
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.0)
+        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
