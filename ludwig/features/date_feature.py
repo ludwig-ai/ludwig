@@ -68,7 +68,9 @@ class DateFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def date_to_list(date_str, datetime_format, preprocessing_parameters):
         try:
-            if datetime_format is not None:
+            if isinstance(date_str, datetime): 
+                datetime_obj = date_str
+            elif datetime_format is not None:
                 datetime_obj = datetime.strptime(date_str, datetime_format)
             else:
                 datetime_obj = parse(date_str)

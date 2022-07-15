@@ -1,5 +1,6 @@
 import pytest
 
+from datetime import datetime
 from ludwig.features import date_feature
 
 
@@ -16,6 +17,21 @@ def test_date_to_list(date_str, datetime_format, expected_list):
     assert (
         date_feature.DateInputFeature.date_to_list(date_str, datetime_format, preprocessing_parameters) == expected_list
     )
+
+def test_date_to_list__DatetimeObjectFromParsedJSON():
+    preprocessing_parameters = None
+    datetime_obj = datetime.fromisoformat('2022-06-25')
+    assert date_feature.DateInputFeature.date_to_list(datetime_obj, None, preprocessing_parameters) == [
+        2022,
+        6,
+        25,
+        5,
+        176,
+        0,
+        0,
+        0,
+        0,
+    ]
 
 
 def test_date_to_list__UsesFillValueOnInvalidDate():
