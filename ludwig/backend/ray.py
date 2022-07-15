@@ -878,9 +878,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         sample_fname = fnames[0]
 
         if isinstance(sample_fname, str):
-            # TODO(travis): handle missing filenames. Current implementation will try and read None, which will
-            #  almost certainly fail. This can be done pretty easily by implementing a custom Ray DataSource that
-            #  tweaks the existing BinaryDataSource.
             fs, _ = get_fs_and_path(sample_fname)
 
             # The resulting column is named "value"
