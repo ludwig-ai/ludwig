@@ -46,7 +46,7 @@ class PassthroughDecoder(Decoder):
         return self.input_shape
 
 
-@register_decoder("regressor", [BINARY, NUMBER], default=True)
+@register_decoder("regressor", [BINARY, NUMBER])
 class Regressor(Decoder):
     def __init__(
         self,
@@ -78,7 +78,7 @@ class Regressor(Decoder):
         return self.dense(inputs)
 
 
-@register_decoder("projector", [VECTOR], default=True)
+@register_decoder("projector", [VECTOR])
 class Projector(Decoder):
     def __init__(
         self,
@@ -127,7 +127,7 @@ class Projector(Decoder):
         return values
 
 
-@register_decoder("classifier", [CATEGORY, SET], default=True)
+@register_decoder("classifier", [CATEGORY, SET])
 class Classifier(Decoder):
     def __init__(
         self,
