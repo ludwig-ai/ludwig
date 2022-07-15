@@ -112,8 +112,9 @@ def build_metric_diff(name: str, base_value: float, experimental_value: float) -
     )
 
 
-def build_experiments_diff(dataset_name: str, base_experiment_name: str, experimental_experiment_name: str,
-                           local_directory: str) -> ExperimentsDiff:
+def build_experiments_diff(
+    dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
+) -> ExperimentsDiff:
     base_summary: ExperimentSummary = build_experiment_summary(
         os.path.join(local_directory, dataset_name, base_experiment_name)
     )
