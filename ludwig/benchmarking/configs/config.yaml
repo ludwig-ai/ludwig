@@ -1,0 +1,39 @@
+global_experiment_name: <GLOBAL_EXPERIMENT_NAME>
+export:
+  - export_artifacts: True
+    export_base_path: s3://<S3_BUCKET>/    # include the slash at the end.
+datasets:
+  - dataset_name: ames_housing
+    config_path: ames_housing.yaml
+  - dataset_name: protein
+    config_path: protein.yaml
+  - dataset_name: mercedes_benz_greener
+    config_path: mercedes_benz_greener.yaml
+  - dataset_name: santander_customer_satisfaction
+    config_path: santander_customer_satisfaction.yaml
+  - dataset_name: connect4
+    config_path: connect4.yaml
+  - dataset_name: otto_group_product
+    config_path: otto_group_product.yaml
+  - dataset_name: imbalanced_insurance
+    config_path: imbalanced_insurance.yaml
+  - dataset_name: sst2
+    config_path: sst2.yaml
+  - dataset_name: bnp_claims_management
+    config_path: bnp_claims_management.yaml
+  - dataset_name: sst3
+    config_path: sst3.yaml
+  - dataset_name: sst5
+    config_path: sst5.yaml
+  - dataset_name: porto_seguro_safe_driver
+    config_path: porto_seguro_safe_driver.yaml
+  - dataset_name: santander_customer_transaction
+    config_path: santander_customer_transaction.yaml
+  - dataset_name: goemotions
+    config_path: goemotions.yaml
+  - dataset_name: allstate_claims_severity
+    config_path: allstate_claims_severity.yaml
+  - dataset_name: higgs
+    config_path: higgs.yaml
+  - dataset_name: ieee_fraud
+    config_path: ieee_fraud.yaml

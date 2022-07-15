@@ -1,13 +1,14 @@
 import os.path
 import random
-import tempfile
 
 import numpy as np
+import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import LOSS, NAME, TRAINER, TRAINING
 from ludwig.data.split import get_splitter
+from ludwig.modules.loss_modules import MSELoss
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     audio_feature,
@@ -28,7 +29,7 @@ from tests.integration_tests.utils import (
 )
 
 
-def test_model_save_reload_api(csv_filename, tmp_path):
+def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
     np.random.seed(1)
@@ -119,18 +120,16 @@ def test_model_save_reload_api(csv_filename, tmp_path):
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
-    # Test saving and loading the model explicitly
-    with tempfile.TemporaryDirectory() as tmpdir:
-        ludwig_model1.save(tmpdir)
-        ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
-        check_model_equal(ludwig_model_loaded)
+    ludwig_model1.save(tmpdir)
+    ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
+    check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
     check_model_equal(ludwig_model_exp)
 
 
-def test_gbm_model_save_reload_api(csv_filename, tmp_path):
+def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
     np.random.seed(1)
@@ -198,11 +197,53 @@ def test_gbm_model_save_reload_api(csv_filename, tmp_path):
                 assert torch.allclose(of1_w, of2_w)
 
     # Test saving and loading the model explicitly
-    with tempfile.TemporaryDirectory() as tmpdir:
-        ludwig_model1.save(tmpdir)
-        ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
-        check_model_equal(ludwig_model_loaded)
+    ludwig_model1.save(tmpdir)
+    ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
+    check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
     check_model_equal(ludwig_model_exp)
+
+
+def test_model_weights_match_training(tmpdir, csv_filename):
+    np.random.seed(1)
+
+    input_features = [number_feature()]
+    output_features = [number_feature()]
+    output_feature_name = output_features[0][NAME]
+
+    # Generate test data
+    data_csv_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"epochs": 5, "batch_size": 32},
+    }
+
+    model = LudwigModel(
+        config=config,
+    )
+
+    training_stats, _, _ = model.train(training_set=data_csv_path, random_seed=1919)
+
+    # generate predicitons from training data
+    df = pd.read_csv(data_csv_path)
+    predictions = model.predict(df)
+
+    # compute loss on predictions from training data
+    loss_function = MSELoss()
+    loss = loss_function(
+        torch.tensor(predictions[0][output_feature_name + "_predictions"].values),  # predictions
+        torch.tensor(df[output_feature_name].values),  # target
+    ).type(torch.float32)
+
+    # get last loss value from training
+    last_training_loss = torch.tensor(training_stats[TRAINING][output_feature_name][LOSS][-1])
+
+    # loss from predictions should match last loss value recorded during training
+    assert torch.isclose(loss, last_training_loss), (
+        "Model predictions on training set did not generate same loss value as in training. "
+        "Need to confirm that weights were correctly captured in model."
+    )

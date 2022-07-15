@@ -15,7 +15,6 @@
 import json
 import os
 import shutil
-import tempfile
 from unittest import mock
 
 import pandas as pd
@@ -342,6 +341,7 @@ def run_api_commands(
 @pytest.mark.parametrize("skip_save_log", [False, True])
 @pytest.mark.parametrize("skip_save_processed_input", [False, True])
 def test_api_skip_parameters_train(
+    tmpdir,
     csv_filename,
     skip_save_training_description,
     skip_save_training_statistics,
@@ -354,26 +354,26 @@ def test_api_skip_parameters_train(
     input_features = [category_feature(vocab_size=5)]
     output_features = [category_feature(vocab_size=5)]
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        # Generate test data
-        rel_path = generate_data(input_features, output_features, os.path.join(output_dir, csv_filename))
-        run_api_commands(
-            input_features,
-            output_features,
-            data_csv=rel_path,
-            output_dir=output_dir,
-            skip_save_training_description=skip_save_training_description,
-            skip_save_training_statistics=skip_save_training_statistics,
-            skip_save_model=skip_save_model,
-            skip_save_progress=skip_save_progress,
-            skip_save_log=skip_save_log,
-            skip_save_processed_input=skip_save_processed_input,
-        )
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
+    run_api_commands(
+        input_features,
+        output_features,
+        data_csv=rel_path,
+        output_dir=tmpdir,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+    )
 
 
 @pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
 @pytest.mark.parametrize("skip_save_predictions", [False, True])
 def test_api_skip_parameters_predict(
+    tmpdir,
     csv_filename,
     skip_save_unprocessed_output,
     skip_save_predictions,
@@ -382,17 +382,16 @@ def test_api_skip_parameters_predict(
     input_features = [category_feature(vocab_size=5)]
     output_features = [category_feature(vocab_size=5)]
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        # Generate test data
-        rel_path = generate_data(input_features, output_features, os.path.join(output_dir, csv_filename))
-        run_api_commands(
-            input_features,
-            output_features,
-            data_csv=rel_path,
-            output_dir=output_dir,
-            skip_save_unprocessed_output=skip_save_unprocessed_output,
-            skip_save_predictions=skip_save_predictions,
-        )
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
+    run_api_commands(
+        input_features,
+        output_features,
+        data_csv=rel_path,
+        output_dir=tmpdir,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+    )
 
 
 @pytest.mark.parametrize("skip_save_unprocessed_output", [False, True])
@@ -401,6 +400,7 @@ def test_api_skip_parameters_predict(
 @pytest.mark.parametrize("skip_collect_predictions", [False, True])
 @pytest.mark.parametrize("skip_collect_overall_stats", [False, True])
 def test_api_skip_parameters_evaluate(
+    tmpdir,
     csv_filename,
     skip_save_unprocessed_output,
     skip_save_predictions,
@@ -412,52 +412,50 @@ def test_api_skip_parameters_evaluate(
     input_features = [category_feature(vocab_size=5)]
     output_features = [category_feature(vocab_size=5)]
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        # Generate test data
-        rel_path = generate_data(input_features, output_features, os.path.join(output_dir, csv_filename))
-        run_api_commands(
-            input_features,
-            output_features,
-            data_csv=rel_path,
-            output_dir=output_dir,
-            skip_save_unprocessed_output=skip_save_unprocessed_output,
-            skip_save_predictions=skip_save_predictions,
-            skip_save_eval_stats=skip_save_eval_stats,
-            skip_collect_predictions=skip_collect_predictions,
-            skip_collect_overall_stats=skip_collect_overall_stats,
-        )
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
+    run_api_commands(
+        input_features,
+        output_features,
+        data_csv=rel_path,
+        output_dir=tmpdir,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        skip_collect_predictions=skip_collect_predictions,
+        skip_collect_overall_stats=skip_collect_overall_stats,
+    )
 
 
 @pytest.mark.parametrize("epochs", [1, 2])
 @pytest.mark.parametrize("batch_size", [4, 8])
 @pytest.mark.parametrize("num_examples", [16, 32])
 @pytest.mark.parametrize("steps_per_checkpoint", [1, 2])
-def test_api_callbacks(csv_filename, epochs, batch_size, num_examples, steps_per_checkpoint):
+def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, steps_per_checkpoint):
     mock_callback = mock.Mock(wraps=Callback())
 
     steps_per_epoch = num_examples / batch_size
     total_checkpoints = (steps_per_epoch / steps_per_checkpoint) * epochs
     total_batches = epochs * (num_examples / batch_size)
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": epochs, "batch_size": batch_size, "steps_per_checkpoint": steps_per_checkpoint},
-        }
-        model = LudwigModel(config, callbacks=[mock_callback])
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": epochs, "batch_size": batch_size, "steps_per_checkpoint": steps_per_checkpoint},
+    }
+    model = LudwigModel(config, callbacks=[mock_callback])
 
-        data_csv = generate_data(
-            input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
-        )
-        val_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "test.csv"))
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
+    )
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
     assert mock_callback.on_epoch_start.call_count == epochs
     assert mock_callback.on_epoch_end.call_count == epochs
@@ -481,31 +479,32 @@ def test_api_callbacks(csv_filename, epochs, batch_size, num_examples, steps_per
 @pytest.mark.parametrize("batch_size", [4, 8])
 @pytest.mark.parametrize("num_examples", [32, 64])
 @pytest.mark.parametrize("checkpoints_per_epoch", [1, 2, 4])
-def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, num_examples, checkpoints_per_epoch):
+def test_api_callbacks_checkpoints_per_epoch(
+    tmpdir, csv_filename, epochs, batch_size, num_examples, checkpoints_per_epoch
+):
     mock_callback = mock.Mock(wraps=Callback())
 
     total_checkpoints = epochs * checkpoints_per_epoch
     total_batches = epochs * (num_examples / batch_size)
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": epochs, "batch_size": batch_size, "checkpoints_per_epoch": checkpoints_per_epoch},
-        }
-        model = LudwigModel(config, callbacks=[mock_callback])
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": epochs, "batch_size": batch_size, "checkpoints_per_epoch": checkpoints_per_epoch},
+    }
+    model = LudwigModel(config, callbacks=[mock_callback])
 
-        data_csv = generate_data(
-            input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
-        )
-        val_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "validation.csv"))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, "test.csv"))
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
+    )
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
 
     assert mock_callback.on_epoch_start.call_count == epochs
     assert mock_callback.on_epoch_end.call_count == epochs
@@ -525,7 +524,7 @@ def test_api_callbacks_checkpoints_per_epoch(csv_filename, epochs, batch_size, n
     assert mock_callback.on_eval_start.call_count == total_checkpoints
 
 
-def test_api_callbacks_default_train_steps(csv_filename):
+def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
     # Default for train_steps is -1: use epochs.
     train_steps = None
     epochs = 10
@@ -533,27 +532,26 @@ def test_api_callbacks_default_train_steps(csv_filename):
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
-        }
-        model = LudwigModel(config, callbacks=[mock_callback])
-        model.train(
-            training_set=generate_data(
-                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
-            )
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
+    }
+    model = LudwigModel(config, callbacks=[mock_callback])
+    model.train(
+        training_set=generate_data(
+            input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
         )
+    )
 
     assert mock_callback.on_epoch_start.call_count == epochs
 
 
-def test_api_callbacks_fixed_train_steps(csv_filename):
+def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
     train_steps = 100
     epochs = 2
@@ -561,27 +559,26 @@ def test_api_callbacks_fixed_train_steps(csv_filename):
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
-        }
-        model = LudwigModel(config, callbacks=[mock_callback])
-        model.train(
-            training_set=generate_data(
-                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
-            )
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": epochs, "train_steps": train_steps, "batch_size": batch_size},
+    }
+    model = LudwigModel(config, callbacks=[mock_callback])
+    model.train(
+        training_set=generate_data(
+            input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
         )
+    )
 
     # There are 10 steps per epoch, so 100 train steps => 10 epochs.
     assert mock_callback.on_epoch_start.call_count == 10
 
 
-def test_api_callbacks_fixed_train_steps_less_than_one_epoch(csv_filename):
+def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filename):
     # If train_steps is set manually, epochs is ignored.
     train_steps = total_batches = 6
     steps_per_checkpoint = 2
@@ -589,25 +586,24 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(csv_filename):
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
 
-    with tempfile.TemporaryDirectory() as output_dir:
-        input_features = [sequence_feature(reduce_output="sum")]
-        output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-        config = {
-            "input_features": input_features,
-            "output_features": output_features,
-            "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {
-                "train_steps": train_steps,
-                "steps_per_checkpoint": steps_per_checkpoint,
-                "batch_size": batch_size,
-            },
-        }
-        model = LudwigModel(config, callbacks=[mock_callback])
-        model.train(
-            training_set=generate_data(
-                input_features, output_features, os.path.join(output_dir, csv_filename), num_examples=num_examples
-            )
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {
+            "train_steps": train_steps,
+            "steps_per_checkpoint": steps_per_checkpoint,
+            "batch_size": batch_size,
+        },
+    }
+    model = LudwigModel(config, callbacks=[mock_callback])
+    model.train(
+        training_set=generate_data(
+            input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
         )
+    )
 
     assert mock_callback.on_epoch_start.call_count == 1
     assert mock_callback.on_epoch_end.call_count == 1

@@ -24,11 +24,3 @@ def test_contrib_experiment(csv_filename, tmpdir):
     print(cmdline)
     exit_code = subprocess.call(" ".join(cmdline), shell=True, env=os.environ.copy())
     assert exit_code == 0
-
-
-if __name__ == "__main__":
-    """To run tests individually, run:
-
-    ```python -m pytest tests/integration_tests/test_contrib_aim.py::test_name```
-    """
-    pass
