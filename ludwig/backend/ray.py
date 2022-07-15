@@ -31,7 +31,6 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
-from ray.data.datasource import FastFileMetadataProvider
 from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
@@ -877,29 +876,28 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
 
-        if isinstance(sample_fname, str):
-            fs, _ = get_fs_and_path(sample_fname)
+        # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
+        with use_credentials(conf):
 
-            # The resulting column is named "value"
-            ds = ray.data.read_binary_files(
-                fnames, filesystem=PyFileSystem(FSSpecHandler(fs)), meta_provider=FastFileMetadataProvider()
-            )
-        else:
-            # Assume the path has already been read in, so just convert directly to a dataset
-            # Name the column "value" to match the behavior of ray.data.read_binary_files
-            ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
+            if isinstance(sample_fname, str):
+                fs, _ = get_fs_and_path(sample_fname)
 
-        def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
-            # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
-            with use_credentials(conf):
+                # The resulting column is named "value"
+                ds = ray.data.read_binary_files(fnames, filesystem=PyFileSystem(FSSpecHandler(fs)))
+            else:
+                # Assume the path has already been read in, so just convert directly to a dataset
+                # Name the column "value" to match the behavior of ray.data.read_binary_files
+                ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
+
+            def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
                 df["value"] = df["value"].map(fn)
                 return df
 
-        if map_fn is not None:
-            ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
+            if map_fn is not None:
+                ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
-        df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
-        return df[column.name]
+            df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+            return df[column.name]
 
     @property
     def num_nodes(self) -> int:
