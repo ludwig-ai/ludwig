@@ -181,10 +181,12 @@ class ResourceUsageTracker:
         for key in self.info["system"]:
             if "gpu_" in key:
                 self.info["system"][key]["max_memory_used"] = max(self.info["system"][key]["memory_used"])
-        self.info["system"]["max_cpu_utilization"] = max(self.info["system"]["cpu_utilization"])
-        self.info["system"]["max_ram_utilization"] = max(self.info["system"]["ram_utilization"])
+        self.info["system"]["max_cpu_utilization"] = max(self.info["system"]["cpu_utilization"], default=None)
+        self.info["system"]["max_ram_utilization"] = max(self.info["system"]["ram_utilization"], default=None)
 
-        self.info["system"]["average_cpu_utilization"] = mean(self.info["system"]["cpu_utilization"])
-        self.info["system"]["average_ram_utilization"] = mean(self.info["system"]["ram_utilization"])
+        if self.info["system"]["cpu_utilization"]:
+            self.info["system"]["average_cpu_utilization"] = mean(self.info["system"]["cpu_utilization"])
+        if self.info["system"]["ram_utilization"]:
+            self.info["system"]["average_ram_utilization"] = mean(self.info["system"]["ram_utilization"])
 
         save_json(os.path.join(self.output_dir, self.info["tag"] + "_resource_usage_metrics.json"), self.info)
