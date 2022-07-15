@@ -6,7 +6,7 @@ from typing import Any, Dict
 import fsspec
 import pandas as pd
 from botocore.exceptions import ClientError
-from globals import CONFIG_YAML, EXPERIMENT_RUN, REPORT_JSON
+from ludwig.globals import CONFIG_YAML, EXPERIMENT_RUN, REPORT_JSON
 
 # todo (Wael): add to ludwig.globals
 from s3fs.errors import translate_boto_error
@@ -20,7 +20,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def load_from_module(
-    dataset_module: BaseDataset, output_feature: Dict[str, str], subsample_frac: float = 1
+        dataset_module: BaseDataset, output_feature: Dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
@@ -33,15 +33,13 @@ def load_from_module(
         dataset = dataset.sample(frac=subsample_frac, replace=False, random_state=default_random_seed)
 
     if output_feature["type"] == CATEGORY:
-        dataset = get_repeatable_train_val_test_split(
+        return get_repeatable_train_val_test_split(
             dataset,
             stratify_colname=output_feature["name"],
             random_seed=default_random_seed,
         )
     else:
-        dataset = get_repeatable_train_val_test_split(dataset, random_seed=default_random_seed)
-
-    return dataset
+        return get_repeatable_train_val_test_split(dataset, random_seed=default_random_seed)
 
 
 def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:
@@ -50,7 +48,7 @@ def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:
 
 
 def export_artifacts(
-    experiment: Dict[str, str], report_path: str, experiment_output_directory: str, export_base_path: str
+        experiment: Dict[str, str], report_path: str, experiment_output_directory: str, export_base_path: str
 ) -> None:
     """Save the experiment artifacts to the `bench_export_directory`.
 
