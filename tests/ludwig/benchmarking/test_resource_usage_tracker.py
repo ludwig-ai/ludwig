@@ -38,6 +38,6 @@ def test_resource_usage_tracker(tmpdir):
         model.evaluate(dataset=eval_df)
 
     assert os.path.exists(os.path.join(tmpdir, "train_resource_usage_metrics.json"))
-    assert os.path.exists(os.path.join(tmpdir, "eval_resource_usage_metrics.json"))
+    assert os.path.exists(os.path.join(tmpdir, "evaluate_resource_usage_metrics.json"))
 
     shutil.rmtree(tmpdir)
