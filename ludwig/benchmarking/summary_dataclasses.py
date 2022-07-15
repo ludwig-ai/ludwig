@@ -9,60 +9,70 @@ from ludwig.utils.data_utils import load_json
 
 @dataclass
 class ExperimentSummary:
-    """Summary of metrics from one experiment.
+    """Summary of metrics from one experiment."""
 
-    experiment_local_directory: path containing the artifacts for the experiment.
-    output_feature_type: LudwigModel output feature type.
-    output_feature_name: LudwigModel output feature name.
-    metric_to_values: dictionary that maps from metric name to their values.
-    metric_names: names of metrics for the output feature.
-    """
-
+    # path containing the artifacts for the experiment.
     experiment_local_directory: str
+
+    # Full Ludwig config.
     config: Dict[str, Any]
+
+    # LudwigModel output feature type.
     output_feature_type: str
+
+    # LudwigModel output feature name.
     output_feature_name: str
+
+    # Dictionary that maps from metric name to their values.
     metric_to_values: Dict[str, Union[float, int]]
+
+    # Names of metrics for the output feature.
     metric_names: set
 
 
 @dataclass
 class MetricDiff:
-    """Diffs for a metric.
+    """Diffs for a metric."""
 
-    name: name of the metric.
-    base_value: value of the metric in base experiment (the one we benchmark against).
-    experimental_value: value of the metric in the experimental experiment.
-    diff: experimental_value - base_value.
-    diff_percentage: percentage of change the metric with respect to base_value.
-    """
-
+    # Name of the metric.
     name: str
+
+    # Value of the metric in base experiment (the one we benchmark against).
     base_value: float
+
+    # Value of the metric in the experimental experiment.
     experimental_value: float
+
+    # Experimental_value - base_value.
     diff: float
+
+    # Percentage of change the metric with respect to base_value.
     diff_percentage: float
 
 
 @dataclass
 class ExperimentsDiff:
-    """Store diffs for two experiments.
+    """Store diffs for two experiments."""
 
-    dataset_name: dataset the two experiments are being compared on.
-    base_experiment_name: name of the base experiment (the one we benchmark against).
-    experimental_experiment_name: name of the experimental experiment.
-    local_directory: path under which all artifacts live on the local machine.
-    base_summary: `ExperimentSummary` of the base_experiment.
-    experimental_summary: `ExperimentSummary` of the experimental_experiment.
-    metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
-    """
-
+    # Dataset the two experiments are being compared on.
     dataset_name: str
+
+    # Name of the base experiment (the one we benchmark against).
     base_experiment_name: str
+
+    # Name of the experimental experiment.
     experimental_experiment_name: str
+
+    # Path under which all artifacts live on the local machine.
     local_directory: str
+
+    # Experiment summary of the base experiment.
     base_summary: ExperimentSummary
+
+    # Experiment summary of the experimental experiment.
     experimental_summary: ExperimentSummary
+
+    # List of metric diffs for a metric of the two experiments.
     metrics: List[MetricDiff]
 
 
@@ -102,7 +112,8 @@ def build_metric_diff(name: str, base_value: float, experimental_value: float) -
     )
 
 
-def build_experiments_diff(dataset_name, base_experiment_name, experimental_experiment_name, local_directory):
+def build_experiments_diff(dataset_name: str, base_experiment_name: str, experimental_experiment_name: str,
+                           local_directory: str) -> ExperimentsDiff:
     base_summary: ExperimentSummary = build_experiment_summary(
         os.path.join(local_directory, dataset_name, base_experiment_name)
     )
