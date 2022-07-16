@@ -40,7 +40,6 @@ from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
-    get_audio_samples,
     get_default_audio,
     get_fbank,
     get_group_delay,
@@ -174,21 +173,13 @@ class AudioFeatureMixin(BaseFeatureMixin):
     ):
 
         df_engine = backend.df_engine
-
-        # Get sample audio tuples to create default audio
-        sample_audio = get_audio_samples(column, sample_size=INFER_AUDIO_SAMPLE_SIZE)
-
-        # Get mean audio and make it accessible by filepath
-        default_audio = get_default_audio(sample_audio)
-        torch.save(default_audio, TMP_DEFAULT_AUDIO_PATH)
-        column = backend.df_engine.map_objects(column, lambda row: TMP_DEFAULT_AUDIO_PATH if row is None else row)
+        raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
 
         try:
-            raw_audio = backend.read_binary_files(column, map_fn=read_audio_from_bytes_obj)
-        finally:
-            # Ensure the default image is always deleted
-            if os.path.exists(TMP_DEFAULT_AUDIO_PATH):
-                os.remove(TMP_DEFAULT_AUDIO_PATH)
+            default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
+        except RuntimeError:
+            logging.info("Unable to process audio files provided")
+            raise RuntimeError
 
         raw_audio = df_engine.map_objects(raw_audio, lambda row: row if is_torch_audio_tuple(row) else default_audio)
         processed_audio = df_engine.map_objects(

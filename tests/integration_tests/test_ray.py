@@ -181,7 +181,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("df_engine", ["pandas", "dask"])
+@pytest.mark.parametrize("df_engine", ["dask"])
 @pytest.mark.distributed
 def test_ray_read_binary_files(tmpdir, df_engine):
     preprocessing_params = {
@@ -204,7 +204,7 @@ def test_ray_read_binary_files(tmpdir, df_engine):
     dataset_path = generate_data([audio_params], [], dataset_path, num_examples=100)
     # TODO(geoffrey): implement a solution such that this test can pass with nan_percent > 0.0.
     # for now, backend.read_binary_files is called after NaNs are handled, so NaNs should not appear in inputs.
-    dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.0)
+    dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.1)
 
     with ray_start(num_cpus=2, num_gpus=None):
         backend_config = {**RAY_BACKEND_CONFIG}
@@ -220,6 +220,9 @@ def test_ray_read_binary_files(tmpdir, df_engine):
         df = backend.df_engine.df_lib.read_csv(dataset_path)
         series = df[audio_params[COLUMN]]
         proc_col_expected = backend.read_binary_files(series)
+
+        print(proc_col)
+        print(proc_col_expected)
 
         assert proc_col.equals(proc_col_expected)
 

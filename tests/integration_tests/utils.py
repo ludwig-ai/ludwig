@@ -590,6 +590,8 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     """Adds nans to a pandas dataframe in-place."""
     if nan_percent < 0 or nan_percent > 1:
         raise ValueError("nan_percent must be between 0 and 1")
+    if nan_percent == 0:
+        return None
 
     num_rows = len(df)
     num_nans_per_col = int(round(nan_percent * num_rows))
@@ -604,8 +606,7 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
 def read_csv_with_nan(path, nan_percent=0.0):
     """Converts `nan_percent` of samples in each row of the CSV at `path` to NaNs."""
     df = pd.read_csv(path)
-    if nan_percent > 0:
-        add_nans_to_df_in_place(df, nan_percent)
+    add_nans_to_df_in_place(df, nan_percent)
     return df
 
 

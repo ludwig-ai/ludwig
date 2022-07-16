@@ -24,7 +24,7 @@ import torchaudio
 
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
-from ludwig.utils.types import Series, TorchAudioTuple
+from ludwig.utils.types import TorchAudioTuple
 
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
@@ -35,31 +35,6 @@ def is_torch_audio_tuple(audio: Any) -> bool:
         if len(audio) == 2 and isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
             return True
     return False
-
-
-def get_audio_samples(column: Series, sample_size: int = 1) -> List[TorchAudioTuple]:
-    sample_size = min(len(column), sample_size)
-
-    sample = []
-    failed_entries = []
-    for audio_entry in column.head(sample_size):
-        if isinstance(audio_entry, str):
-            # Tries to read image as PNG or numpy file from the path.
-            audio = read_audio_from_path(audio_entry)
-
-        if is_torch_audio_tuple(audio):
-            sample.append(audio)
-        else:
-            failed_entries.append(audio_entry)
-
-    if len(sample) == 0:
-        failed_entries_repr = "\n\t- ".join(failed_entries)
-        raise ValueError(
-            f"Images dimensions cannot be inferred. Failed to read {sample_size} images as samples:\n\t- "
-            f"{failed_entries_repr}."
-        )
-
-    return sample
 
 
 def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
