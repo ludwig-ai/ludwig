@@ -115,7 +115,7 @@ class LocalPreprocessingMixin:
         pass
 
     def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
-        column = column.fillna(np.nan).replace([np.nan], [None])
+        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
         print("inside local")
         print(column.values.tolist())
         df = column.to_frame(name=column.name)

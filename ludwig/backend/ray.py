@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.backend.datasource import BinaryNaNCompatibleDatasource
+from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
@@ -872,7 +872,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
         #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
         #  there should not be any difference between providing a directory versus a list of files.
-        column = column.fillna(np.nan).replace([np.nan], [None])
+        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
         fnames = self.df_engine.compute(column).values.tolist()
 
         print("before")
@@ -889,7 +889,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             # The resulting column is named "value"
             ds = ray.data.read_datasource(
-                BinaryNaNCompatibleDatasource(), paths=fnames, filesystem=PyFileSystem(FSSpecHandler(fs))
+                BinaryIgnoreNoneTypeDatasource(), paths=fnames, filesystem=PyFileSystem(FSSpecHandler(fs))
             )
         else:
             # Assume the path has already been read in, so just convert directly to a dataset

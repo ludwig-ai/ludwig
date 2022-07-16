@@ -27,8 +27,8 @@ from ludwig.utils.strings_utils import is_nan_or_none
 logger = logging.getLogger(__name__)
 
 
-class BinaryNaNCompatibleDatasource(BinaryDatasource):
-    """Binary datasource, for reading and writing binary files. Ignores NaNs and None values.
+class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
+    """Binary datasource, for reading and writing binary files. Ignores  None values.
 
     Examples:
         >>> import ray
@@ -122,6 +122,7 @@ class BinaryNaNCompatibleDatasource(BinaryDatasource):
             read_paths = []
             file_sizes = []
             for raw_path in raw_paths:
+                print(raw_path)
                 if is_nan_or_none(raw_path) or is_http(raw_path):
                     read_paths.append(raw_path)
                     file_sizes.append(None)  # unknown file size is None
