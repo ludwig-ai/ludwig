@@ -13,6 +13,8 @@ from typing import (
 
 from ray.data.datasource.partitioning import PathPartitionFilter
 
+from ludwig.utils.fs_utils import get_bytes_obj_from_http_path, is_http
+
 if TYPE_CHECKING:
     import pyarrow
 
@@ -83,6 +85,7 @@ class BinaryNaNCompatibleDatasource(BinaryDatasource):
             ctx = DatasetContext.get_current()
             output_buffer = BlockOutputBuffer(block_udf=_block_udf, target_max_block_size=ctx.target_max_block_size)
             for read_path in read_paths:
+                # Get reader_args and open_stream_args only if valid path.
                 if not is_nan_or_none(read_path):
                     compression = open_stream_args.pop("compression", None)
                     if compression is None:
@@ -131,7 +134,7 @@ class BinaryNaNCompatibleDatasource(BinaryDatasource):
             read_paths = []
             file_sizes = []
             for raw_path in raw_paths:
-                if is_nan_or_none(raw_path):
+                if is_nan_or_none(raw_path) or is_http(raw_path):
                     read_paths.append(raw_path)
                     file_sizes.append(None)  # unknown file size is None
                 else:
@@ -169,13 +172,19 @@ class BinaryNaNCompatibleDatasource(BinaryDatasource):
         Implementations that do not support streaming reads (e.g. that require random
         access) should override this method.
         """
-        if is_nan_or_none(path):
+        if is_nan_or_none(path) or is_http(path):
             return contextlib.nullcontext()
         return filesystem.open_input_stream(path, **open_args)
 
     def _read_file(self, f: Union["pyarrow.NativeFile", contextlib.nullcontext], path: str, **reader_args):
+        include_paths = reader_args.get("include_paths", False)
         if is_nan_or_none(path):
-            if reader_args.get("include_paths", False):
+            if include_paths:
                 return [(path, None)]
             return [None]
+        if is_http(path):
+            data = get_bytes_obj_from_http_path(path)
+            if include_paths:
+                return [(path, data)]
+            return [data]
         return super()._read_file(f, path, **reader_args)
