@@ -29,6 +29,7 @@ from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.strings_utils import is_nan_or_none
 from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import Series
 
@@ -115,9 +116,14 @@ class LocalPreprocessingMixin:
     def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
         df = column.to_frame(name=column.name)
 
+        def get_bytes_obj_from_path_nan_compatible(path):
+            if is_nan_or_none(path):
+                return None
+            return get_bytes_obj_from_path(path)
+
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
             result = executor.map(
-                lambda idx_and_row: get_bytes_obj_from_path(idx_and_row[1][column.name]), df.iterrows()
+                lambda idx_and_row: get_bytes_obj_from_path_nan_compatible(idx_and_row[1][column.name]), df.iterrows()
             )
             if map_fn is not None:
                 result = executor.map(map_fn, result)

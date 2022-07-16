@@ -70,10 +70,6 @@ image_scaling_registry = {
 }
 
 
-# Temporary file – deleted after use
-TMP_DEFAULT_IMAGE_PATH = "./default_image.npy"
-
-
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
@@ -431,12 +427,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         # TODO: alternatively use get_average_image() for unreachable images
         default_image = get_gray_default_image(num_channels, height, width)
 
-        # Make the default image reachable by filepath
-        np.save(TMP_DEFAULT_IMAGE_PATH, default_image)
-        abs_path_column = backend.df_engine.map_objects(
-            abs_path_column, lambda row: TMP_DEFAULT_IMAGE_PATH if row is None else row
-        )
-
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
         backend.check_lazy_load_supported(feature_config)
@@ -445,14 +435,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if in_memory or skip_save_processed_input:
             metadata[name]["reshape"] = (num_channels, height, width)
 
-            try:
-                proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
-            finally:
-                # Ensure the default image is always deleted
-                if os.path.exists(TMP_DEFAULT_IMAGE_PATH):
-                    os.remove(TMP_DEFAULT_IMAGE_PATH)
-
-            # If the default image path was not loaded, we have to load it now
+            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
             proc_col = backend.df_engine.map_objects(
                 proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
             )

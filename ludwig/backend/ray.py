@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
+from ludwig.backend.datasource import BinaryNaNCompatibleDatasource
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
@@ -864,20 +865,43 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
     def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
-        ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+        # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
+        # are literally billions of filenames.
+        # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
+        #  a directory. If so, we can do some preprocessing to determine if it makes sense to read the full directory
+        #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
+        #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
+        #  there should not be any difference between providing a directory versus a list of files.
+        fnames = self.df_engine.compute(column).values.tolist()
+
+        # Sample a filename to extract the filesystem info
+        sample_fname = fnames[0]
+
+        if isinstance(sample_fname, str):
+            # TODO(travis): handle missing filenames. Current implementation will try and read None, which will
+            #  almost certainly fail. This can be done pretty easily by implementing a custom Ray DataSource that
+            #  tweaks the existing BinaryDataSource.
+            fs, _ = get_fs_and_path(sample_fname)
+
+            # The resulting column is named "value"
+            ds = ray.data.read_datasource(
+                BinaryNaNCompatibleDatasource(), paths=fnames, filesystem=PyFileSystem(FSSpecHandler(fs))
+            )
+        else:
+            # Assume the path has already been read in, so just convert directly to a dataset
+            # Name the column "value" to match the behavior of ray.data.read_binary_files
+            ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
             # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
             with use_credentials(conf):
-                df[column.name] = df[column.name].map(fn)
+                df["value"] = df["value"].map(fn)
                 return df
 
-        ds = ds.repartition(num_blocks=len(column))
-        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_from_path), batch_format="pandas")
         if map_fn is not None:
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
-        df = self.df_engine.from_ray_dataset(ds)
+        df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
         return df[column.name]
 
     @property

@@ -1,32 +1,26 @@
+import contextlib
 import logging
-import pathlib
-import posixpath
 from typing import (
     Callable,
     Optional,
     List,
-    Tuple,
     Union,
     Any,
     Dict,
-    Iterator,
     Iterable,
     TYPE_CHECKING,
 )
-import urllib.parse
 
 from ray.data.datasource.partitioning import PathPartitionFilter
 
 if TYPE_CHECKING:
     import pyarrow
 
-from ray.types import ObjectRef
-from ray.data.block import Block, BlockAccessor
+from ray.data.block import Block
 from ray.data.context import DatasetContext
-from ray.data.impl.arrow_block import ArrowRow
-from ray.data.impl.block_list import BlockMetadata
 from ray.data.impl.output_buffer import BlockOutputBuffer
-from ray.data.datasource.datasource import Datasource, ReadTask, WriteResult
+from ray.data.datasource.binary_datasource import BinaryDatasource
+from ray.data.datasource.datasource import ReadTask
 from ray.data.datasource.file_based_datasource import (
     _resolve_paths_and_filesystem,
     _wrap_s3_serialization_workaround,
@@ -36,22 +30,23 @@ from ray.data.datasource.file_meta_provider import (
     BaseFileMetadataProvider,
     DefaultFileMetadataProvider,
 )
-from ray.util.annotations import DeveloperAPI
 from ray.data.impl.util import _check_pyarrow_version
-from ray.data.impl.remote_fn import cached_remote_fn
+
+from ludwig.utils.strings_utils import is_nan_or_none
 
 logger = logging.getLogger(__name__)
 
 
-class FileBasedDatasource(Datasource[Union[ArrowRow, Any]]):
-    """File-based datasource, for reading and writing files.
+class BinaryNaNCompatibleDatasource(BinaryDatasource):
+    """Binary datasource, for reading and writing binary files. Ignores NaNs and None values.
 
-    This class should not be used directly, and should instead be subclassed
-    and tailored to particular file formats. Classes deriving from this class
-    must implement _read_file().
-
-    Current subclasses:
-        JSONDatasource, CSVDatasource, NumpyDatasource, BinaryDatasource
+    Examples:
+        >>> import ray
+        >>> from ray.data.datasource import BinaryDatasource
+        >>> source = BinaryDatasource() # doctest: +SKIP
+        >>> ray.data.read_datasource( # doctest: +SKIP
+        ...     source, paths=["/path/to/dir", None]).take()
+        [b"file_data", ...]
     """
 
     def prepare_read(
@@ -71,11 +66,6 @@ class FileBasedDatasource(Datasource[Union[ArrowRow, Any]]):
         _check_pyarrow_version()
         import numpy as np
 
-        paths, filesystem = _resolve_paths_and_filesystem(paths, filesystem)
-        paths, file_sizes = meta_provider.expand_paths(paths, filesystem)
-        if partition_filter is not None:
-            paths = partition_filter(paths)
-
         read_stream = self._read_stream
 
         filesystem = _wrap_s3_serialization_workaround(filesystem)
@@ -93,34 +83,36 @@ class FileBasedDatasource(Datasource[Union[ArrowRow, Any]]):
             ctx = DatasetContext.get_current()
             output_buffer = BlockOutputBuffer(block_udf=_block_udf, target_max_block_size=ctx.target_max_block_size)
             for read_path in read_paths:
-                compression = open_stream_args.pop("compression", None)
-                if compression is None:
-                    import pyarrow as pa
+                if not is_nan_or_none(read_path):
+                    compression = open_stream_args.pop("compression", None)
+                    if compression is None:
+                        import pyarrow as pa
 
-                    try:
-                        # If no compression manually given, try to detect
-                        # compression codec from path.
-                        compression = pa.Codec.detect(read_path).name
-                    except (ValueError, TypeError):
-                        # Arrow's compression inference on the file path
-                        # doesn't work for Snappy, so we double-check ourselves.
-                        import pathlib
+                        try:
+                            # If no compression manually given, try to detect
+                            # compression codec from path.
+                            compression = pa.Codec.detect(read_path).name
+                        except (ValueError, TypeError):
+                            # Arrow's compression inference on the file path
+                            # doesn't work for Snappy, so we double-check ourselves.
+                            import pathlib
 
-                        suffix = pathlib.Path(read_path).suffix
-                        if suffix and suffix[1:] == "snappy":
-                            compression = "snappy"
-                        else:
-                            compression = None
-                if compression == "snappy":
-                    # Pass Snappy compression as a reader arg, so datasource subclasses
-                    # can manually handle streaming decompression in
-                    # self._read_stream().
-                    reader_args["compression"] = compression
-                    reader_args["filesystem"] = fs
-                elif compression is not None:
-                    # Non-Snappy compression, pass as open_input_stream() arg so Arrow
-                    # can take care of streaming decompression for us.
-                    open_stream_args["compression"] = compression
+                            suffix = pathlib.Path(read_path).suffix
+                            if suffix and suffix[1:] == "snappy":
+                                compression = "snappy"
+                            else:
+                                compression = None
+                    if compression == "snappy":
+                        # Pass Snappy compression as a reader arg, so datasource subclasses
+                        # can manually handle streaming decompression in
+                        # self._read_stream().
+                        reader_args["compression"] = compression
+                        reader_args["filesystem"] = fs
+                    elif compression is not None:
+                        # Non-Snappy compression, pass as open_input_stream() arg so Arrow
+                        # can take care of streaming decompression for us.
+                        open_stream_args["compression"] = compression
+
                 with self._open_input_source(fs, read_path, **open_stream_args) as f:
                     for data in read_stream(f, read_path, **reader_args):
                         output_buffer.add_block(data)
@@ -134,7 +126,22 @@ class FileBasedDatasource(Datasource[Union[ArrowRow, Any]]):
         parallelism = min(parallelism, len(paths))
 
         read_tasks = []
-        for read_paths, file_sizes in zip(np.array_split(paths, parallelism), np.array_split(file_sizes, parallelism)):
+        for raw_paths in np.array_split(paths, parallelism):
+            # Paths must be resolved and expanded
+            read_paths = []
+            file_sizes = []
+            for raw_path in raw_paths:
+                if is_nan_or_none(raw_path):
+                    read_paths.append(raw_path)
+                    file_sizes.append(None)  # unknown file size is None
+                else:
+                    resolved_path, filesystem = _resolve_paths_and_filesystem([raw_path], filesystem)
+                    read_path, file_size = meta_provider.expand_paths(resolved_path, filesystem)
+                    if partition_filter is not None:
+                        read_path = partition_filter(read_path)
+                    read_paths.append(read_path[0])
+                    file_sizes.append(file_size[0])
+
             if len(read_paths) <= 0:
                 continue
 
@@ -149,24 +156,6 @@ class FileBasedDatasource(Datasource[Union[ArrowRow, Any]]):
 
         return read_tasks
 
-    def _rows_per_file(self):
-        """Returns the number of rows per file, or None if unknown."""
-        return None
-
-    def _read_stream(self, f: "pyarrow.NativeFile", path: str, **reader_args) -> Iterator[Block]:
-        """Streaming read a single file, passing all kwargs to the reader.
-
-        By default, delegates to self._read_file().
-        """
-        yield self._read_file(f, path, **reader_args)
-
-    def _read_file(self, f: "pyarrow.NativeFile", path: str, **reader_args) -> Block:
-        """Reads a single file, passing all kwargs to the reader.
-
-        This method should be implemented by subclasses.
-        """
-        raise NotImplementedError("Subclasses of FileBasedDatasource must implement _read_file().")
-
     def _open_input_source(
         self,
         filesystem: "pyarrow.fs.FileSystem",
@@ -180,4 +169,13 @@ class FileBasedDatasource(Datasource[Union[ArrowRow, Any]]):
         Implementations that do not support streaming reads (e.g. that require random
         access) should override this method.
         """
+        if is_nan_or_none(path):
+            return contextlib.nullcontext()
         return filesystem.open_input_stream(path, **open_args)
+
+    def _read_file(self, f: Union["pyarrow.NativeFile", contextlib.nullcontext], path: str, **reader_args):
+        if is_nan_or_none(path):
+            if reader_args.get("include_paths", False):
+                return [(path, None)]
+            return [None]
+        return super()._read_file(f, path, **reader_args)

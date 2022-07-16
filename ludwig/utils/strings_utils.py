@@ -117,6 +117,10 @@ def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
     return True
 
 
+def is_nan_or_none(s):
+    return s is None or s != s
+
+
 def is_number(s: Union[str, int, float]):
     """Returns whether specified value is number."""
     if isinstance(s, str) and s.lower() == "nan":
