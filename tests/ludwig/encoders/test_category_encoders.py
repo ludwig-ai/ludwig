@@ -61,7 +61,7 @@ def test_categorical_sparse_encoder(vocab: List[str], trainable: bool):
     # check for parameter updating
     target = torch.randn(outputs.shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(sparse_encoder, (inputs,), target)
-    print(fpc, tpc, upc)
+
     if trainable:
         assert fpc == 0, "Embedding layer should be trainable, but found to be frozen."
     else:
