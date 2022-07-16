@@ -1,15 +1,6 @@
 import contextlib
 import logging
-from typing import (
-    Callable,
-    Optional,
-    List,
-    Union,
-    Any,
-    Dict,
-    Iterable,
-    TYPE_CHECKING,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
 
 from ray.data.datasource.partitioning import PathPartitionFilter
 
@@ -20,18 +11,15 @@ if TYPE_CHECKING:
 
 from ray.data.block import Block
 from ray.data.context import DatasetContext
-from ray.data.impl.output_buffer import BlockOutputBuffer
 from ray.data.datasource.binary_datasource import BinaryDatasource
 from ray.data.datasource.datasource import ReadTask
 from ray.data.datasource.file_based_datasource import (
     _resolve_paths_and_filesystem,
-    _wrap_s3_serialization_workaround,
     _S3FileSystemWrapper,
+    _wrap_s3_serialization_workaround,
 )
-from ray.data.datasource.file_meta_provider import (
-    BaseFileMetadataProvider,
-    DefaultFileMetadataProvider,
-)
+from ray.data.datasource.file_meta_provider import BaseFileMetadataProvider, DefaultFileMetadataProvider
+from ray.data.impl.output_buffer import BlockOutputBuffer
 from ray.data.impl.util import _check_pyarrow_version
 
 from ludwig.utils.strings_utils import is_nan_or_none
