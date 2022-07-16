@@ -49,7 +49,7 @@ from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
-from ludwig.utils.fs_utils import get_bytes_obj_from_path, get_fs_and_path
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -872,7 +872,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
         #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
         #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
         #  there should not be any difference between providing a directory versus a list of files.
+        column = column.fillna(np.nan).replace([np.nan], [None])
         fnames = self.df_engine.compute(column).values.tolist()
+
+        print("before")
+        print(fnames)
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
@@ -902,6 +906,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
         df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+
+        print("after")
+        print(self.df_engine.compute(df))
         return df[column.name]
 
     @property

@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Callable, Optional, Union
 
+import numpy as np
 import pandas as pd
 
 from ludwig.data.cache.manager import CacheManager
@@ -114,6 +115,9 @@ class LocalPreprocessingMixin:
         pass
 
     def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
+        column = column.fillna(np.nan).replace([np.nan], [None])
+        print("inside local")
+        print(column.values.tolist())
         df = column.to_frame(name=column.name)
 
         def get_bytes_obj_from_path_nan_compatible(path):

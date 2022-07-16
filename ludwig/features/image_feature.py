@@ -439,6 +439,12 @@ class ImageFeatureMixin(BaseFeatureMixin):
             proc_col = backend.df_engine.map_objects(
                 proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
             )
+
+            print("final with", backend)
+            print("mean:", np.mean(np.mean(backend.df_engine.compute(proc_col).values)))
+            print("std: ", np.std(np.std(backend.df_engine.compute(proc_col).values)))
+            print(backend.df_engine.compute(proc_col))
+
             proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
             num_images = len(abs_path_column)
