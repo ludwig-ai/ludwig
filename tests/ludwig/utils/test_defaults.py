@@ -1,5 +1,4 @@
 import copy
-from typing import Any, Dict
 
 import pytest
 from marshmallow import ValidationError
@@ -13,6 +12,7 @@ from ludwig.constants import (
     FILL_WITH_MODE,
     HYPEROPT,
     INPUT_FEATURES,
+    MISSING_VALUE_STRATEGY,
     MODEL_ECD,
     MODEL_GBM,
     MODEL_TYPE,
@@ -63,21 +63,6 @@ HYPEROPT_CONFIG = {
 SCHEDULER_DICT = {"type": "async_hyperband", "time_attr": "time_total_s"}
 
 
-def _merge_preprocessing(
-    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Returns default preprocessing parameters for the feature type in feature_config if preprocessing is defined.
-
-    Otherwise, it merges feature specific preprocessing with default preprocessing.
-    """
-    if PREPROCESSING not in feature_config:
-        return global_preprocessing_parameters[feature_config[TYPE]][PREPROCESSING]
-
-    return merge_dict(
-        global_preprocessing_parameters[feature_config[TYPE]][PREPROCESSING], feature_config[PREPROCESSING]
-    )
-
-
 @pytest.mark.parametrize(
     "use_train,use_hyperopt_scheduler",
     [
@@ -125,20 +110,24 @@ def test_missing_outputs_drop_rows():
     config = {
         INPUT_FEATURES: [category_feature()],
         OUTPUT_FEATURES: [category_feature()],
-        PREPROCESSING: {CATEGORY: {"missing_value_strategy": FILL_WITH_MODE}},
+        PREPROCESSING: {CATEGORY: {MISSING_VALUE_STRATEGY: FILL_WITH_MODE}},
     }
 
     merged_config = merge_with_defaults(config)
 
-    output_feature_config = merged_config[OUTPUT_FEATURES][0]
-    assert output_feature_config[PREPROCESSING]["missing_value_strategy"] == DROP_ROW
-
     global_preprocessing = merged_config[DEFAULTS]
-    feature_preprocessing = _merge_preprocessing(output_feature_config, global_preprocessing)
-    assert feature_preprocessing["missing_value_strategy"] == DROP_ROW
+    input_feature_config = merged_config[INPUT_FEATURES][0]
+    output_feature_config = merged_config[OUTPUT_FEATURES][0]
 
-    feature_preprocessing = _merge_preprocessing(merged_config[INPUT_FEATURES][0], global_preprocessing)
-    assert feature_preprocessing["missing_value_strategy"] == FILL_WITH_MODE
+    assert output_feature_config[PREPROCESSING][MISSING_VALUE_STRATEGY] == DROP_ROW
+
+    feature_preprocessing = merge_dict(
+        global_preprocessing[output_feature_config[TYPE]][PREPROCESSING], output_feature_config[PREPROCESSING]
+    )
+    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == DROP_ROW
+
+    feature_preprocessing = global_preprocessing[input_feature_config[TYPE]][PREPROCESSING]
+    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
 
 
 def test_deprecated_field_aliases():
