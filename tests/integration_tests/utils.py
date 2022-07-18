@@ -24,13 +24,13 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from PIL import Image
 from typing import List, Union
 
 import cloudpickle
 import numpy as np
 import pandas as pd
 import torch
+from PIL import Image
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
