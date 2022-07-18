@@ -169,6 +169,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def evaluation_step(self, inputs, targets):
         """Predict the inputs and update evaluation metrics."""
         predictions = self.predictions(inputs)
+        print(predictions, targets)
         self.update_metrics(targets, predictions)
         return predictions
 

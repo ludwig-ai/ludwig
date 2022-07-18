@@ -56,9 +56,6 @@ from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
-TMP_DEFAULT_AUDIO_PATH = "tmp_default_audio.pt"
-INFER_AUDIO_SAMPLE_SIZE = 100
-
 
 class _AudioPreprocessing(torch.nn.Module):
 

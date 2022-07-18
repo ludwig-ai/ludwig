@@ -122,7 +122,6 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
             read_paths = []
             file_sizes = []
             for raw_path in raw_paths:
-                print(raw_path)
                 if is_nan_or_none(raw_path) or is_http(raw_path):
                     read_paths.append(raw_path)
                     file_sizes.append(None)  # unknown file size is None

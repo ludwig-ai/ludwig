@@ -876,7 +876,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         fnames = self.df_engine.compute(column).values.tolist()
 
         print("before")
-        print(fnames)
+        print(self.df_engine.compute(column))
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]

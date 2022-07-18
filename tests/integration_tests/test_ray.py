@@ -221,9 +221,6 @@ def test_ray_read_binary_files(tmpdir, df_engine):
         series = df[audio_params[COLUMN]]
         proc_col_expected = backend.read_binary_files(series)
 
-        print(proc_col)
-        print(proc_col_expected)
-
         assert proc_col.equals(proc_col_expected)
 
 
@@ -292,8 +289,8 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.parametrize("feature_type", ["raw", "fbank"])
+@pytest.mark.parametrize("dataset_type", ["parquet"])
+@pytest.mark.parametrize("feature_type", ["fbank"])
 @pytest.mark.distributed
 def test_ray_audio(dataset_type, feature_type):
     with tempfile.TemporaryDirectory() as tmpdir:
