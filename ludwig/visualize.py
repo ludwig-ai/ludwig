@@ -201,6 +201,22 @@ def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
     return str2idx[raw]
 
 
+def _get_ground_truth_df(ground_truth: str) -> DataFrame:
+    # determine ground truth data format and get appropriate reader
+    data_format = figure_data_format_dataset(ground_truth)
+    if data_format not in CACHEABLE_FORMATS:
+        raise ValueError(
+            "{} is not supported for ground truth file, "
+            "valid types are {}".format(data_format, CACHEABLE_FORMATS)
+        )
+    reader = get_from_registry(data_format, external_data_reader_registry)
+
+    # retrieve ground truth from source data set
+    if data_format in {"csv", "tsv"}:
+        return reader(ground_truth, dtype=None, df_lib=pd)  # allow type inference
+    return reader(ground_truth, df_lib=pd)
+
+
 def _extract_ground_truth_values(
     ground_truth: Union[str, DataFrame],
     output_feature_name: str,
@@ -210,7 +226,7 @@ def _extract_ground_truth_values(
     """Helper function to extract ground truth values.
 
     Args:
-    :param ground_truth: (str) path to source data containing ground truth.
+    :param ground_truth: (str, DataFrame) path to source data containing ground truth or ground truth dataframe
     :param output_feature_name: (str) output feature name for ground
         truth values.
     :param ground_truth_split: (int) dataset split to use for ground truth,
@@ -221,29 +237,13 @@ def _extract_ground_truth_values(
 
     :return pd.Series: ground truth values from source data set
     """
-    if not isinstance(ground_truth, str):
-        gt_df = ground_truth
-    else:
-        # determine ground truth data format and get appropriate reader
-        data_format = figure_data_format_dataset(ground_truth)
-        if data_format not in CACHEABLE_FORMATS:
-            raise ValueError(
-                "{} is not supported for ground truth file, "
-                "valid types are {}".format(data_format, CACHEABLE_FORMATS)
-            )
-        reader = get_from_registry(data_format, external_data_reader_registry)
-
-        # retrieve ground truth from source data set
-        if data_format in {"csv", "tsv"}:
-            gt_df = reader(ground_truth, dtype=None, df_lib=pd)  # allow type inference
-        else:
-            gt_df = reader(ground_truth, df_lib=pd)
+    ground_truth_df = _get_ground_truth_df(ground_truth) if isinstance(ground_truth, str) else ground_truth
 
     # extract ground truth for visualization
-    if SPLIT in gt_df:
+    if SPLIT in ground_truth_df:
         # get split value from source data set
-        split = gt_df[SPLIT]
-        gt = gt_df[output_feature_name][split == ground_truth_split]
+        split = ground_truth_df[SPLIT]
+        gt = ground_truth_df[output_feature_name][split == ground_truth_split]
     elif split_file is not None:
         # retrieve from split file
         if split_file.endswith(".csv"):
@@ -262,12 +262,12 @@ def _extract_ground_truth_values(
             # dropped rows during preprocessing.
             # https://stackoverflow.com/a/65731168
             mask = split.iloc[:, 0] == ground_truth_split
-            mask = mask.reindex(gt_df.index, fill_value=False)
+            mask = mask.reindex(ground_truth_df.index, fill_value=False)
 
-        gt = gt_df[output_feature_name][mask]
+        gt = ground_truth_df[output_feature_name][mask]
     else:
         # use all the data in ground_truth
-        gt = gt_df[output_feature_name]
+        gt = ground_truth_df[output_feature_name]
 
     return gt
 

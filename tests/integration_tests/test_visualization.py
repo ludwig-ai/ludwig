@@ -1475,6 +1475,25 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
         assert 2 == len(figure_cnt)
 
 
+def test_load_ground_truth_split_from_df(csv_filename):
+    import pandas as pd
+    ground_truth = pd.DataFrame(
+        {
+            "PassengerId": [1], "Survived": [0], "Pclass": [3], "Name": ["Braund, Mr. Owen Harris"],
+            "Sex": ["male"], "Age": [22.0], "SibSp": [1], "Parch": [0], "Ticket": ["A/5 21171"], "Fare": ["7.25"],
+            "Cabin": [None], "Embarked": ["S"], "split": [0]
+        }
+    )
+    output_feature = "Survived"
+    ground_truth_train_split = _extract_ground_truth_values(ground_truth, output_feature, 0)
+    ground_truth_val_split = _extract_ground_truth_values(ground_truth, output_feature, 1)
+    ground_truth_test_split = _extract_ground_truth_values(ground_truth, output_feature, 2)
+
+    assert ground_truth_train_split.equals(pd.Series([0]))
+    assert ground_truth_val_split.empty
+    assert ground_truth_test_split.empty
+
+
 def test_load_ground_truth_split_from_file(csv_filename):
     """Ensure correct ground truth split is loaded when ground_truth_split is given.
 
