@@ -115,21 +115,21 @@ class LocalPreprocessingMixin:
 
     def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
-        df = column.to_frame(name=column.name)
 
-        def get_bytes_obj_from_path_ignore_none_type(path):
-            if path is None:
-                return path
-            return get_bytes_obj_from_path(path)
-
+        sample_fname = column.head(1).values[0]
         with ThreadPoolExecutor() as executor:  # number of threads is inferred
-            result = executor.map(
-                lambda idx_and_row: get_bytes_obj_from_path_ignore_none_type(idx_and_row[1][column.name]), df.iterrows()
-            )
+            if isinstance(sample_fname, str):
+                result = executor.map(
+                    lambda path: get_bytes_obj_from_path(path) if path is not None else path, column.values
+                )
+            else:
+                # If the sample path is not a string, assume the paths has already been read in
+                result = column.values
+
             if map_fn is not None:
                 result = executor.map(map_fn, result)
 
-        return pd.Series(result, index=df.index, name=column.name)
+        return pd.Series(result, index=column.index, name=column.name)
 
 
 class LocalTrainingMixin:

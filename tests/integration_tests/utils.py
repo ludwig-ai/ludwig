@@ -24,6 +24,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
+from PIL import Image
 from typing import List, Union
 
 import cloudpickle
@@ -681,6 +682,20 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     elif data_format == "tsv":
         dataset_to_use = replace_file_extension(raw_data, "tsv")
         read_csv_with_nan(raw_data, nan_percent=nan_percent).to_csv(dataset_to_use, sep="\t", index=False)
+
+    elif data_format == "pandas+numpy_images":
+        df = read_csv_with_nan(raw_data, nan_percent=nan_percent)
+        processed_df_rows = []
+        for _, row in df.iterrows():
+            processed_df_row = {}
+            for feature_name, raw_feature in row.iteritems():
+                if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
+                    feature = np.array(Image.open(raw_feature))
+                else:
+                    feature = raw_feature
+                processed_df_row[feature_name] = feature
+            processed_df_rows.append(processed_df_row)
+        dataset_to_use = pd.DataFrame(processed_df_rows)
 
     else:
         ValueError(f"'{data_format}' is an unrecognized data format")
