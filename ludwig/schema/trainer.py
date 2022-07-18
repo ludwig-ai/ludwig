@@ -31,11 +31,22 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str
 
-    learning_rate: float = schema_utils.FloatOrAutoField(
+    # learning_rate: float = schema_utils.FloatOrAutoField(
+    #     default=0.001,
+    #     min=0.0,
+    #     max=1.0,
+    #     default_numeric=0.001,
+    #     allow_none=False,
+    #     description=(
+    #         "Controls how much to change the model in response to the estimated error each time the model weights are"
+    #         "updated. If 'auto', the optimal learning rate is estimated by choosing the learning rate that produces "
+    #         "the smallest non-diverging gradient update."
+    #     ),
+    #     parameter_metadata=TRAINER_METADATA["learning_rate"],
+    # )
+
+    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
-        min=0.0,
-        max=1.0,
-        default_numeric=0.001,
         allow_none=False,
         description=(
             "Controls how much to change the model in response to the estimated error each time the model weights are "
@@ -43,6 +54,10 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
             "the smallest non-diverging gradient update."
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
+        field_options=[
+            schema_utils.FloatRange(default=0.001, min=0, max=1),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     validation_metric: str = schema_utils.String(
@@ -61,16 +76,31 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
-    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrAutoField(
+    # eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrAutoField(
+    #     default=None,
+    #     allow_none=True,
+    #     min_exclusive=0,
+    #     description=(
+    #         "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size"
+    #         "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
+    #         "memory is available. If ’auto’, the biggest batch size (power of 2) that can fit in memory will be used."
+    #     ),
+    #     parameter_metadata=TRAINER_METADATA["eval_batch_size"],
+    # )
+
+    eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
-        min_exclusive=0,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
             "memory is available. If ’auto’, the biggest batch size (power of 2) that can fit in memory will be used."
         ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=None, allow_none=True),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     early_stop: int = schema_utils.IntegerRange(
@@ -163,8 +193,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger("", None, False, None),
-            schema_utils.StringOptions(["auto"], "auto", False, "", None),
+            schema_utils.PositiveInteger(default=128),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
 
