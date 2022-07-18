@@ -2,12 +2,9 @@ import contextlib
 import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
 
-import urllib3
 import ray
+import urllib3
 from packaging import version
-
-from ludwig.utils.fs_utils import get_bytes_obj_from_http_path, is_http
-
 from ray.data.block import Block
 from ray.data.context import DatasetContext
 from ray.data.datasource.binary_datasource import BinaryDatasource
@@ -19,6 +16,8 @@ from ray.data.datasource.file_based_datasource import (
 )
 from ray.data.impl.output_buffer import BlockOutputBuffer
 from ray.data.impl.util import _check_pyarrow_version
+
+from ludwig.utils.fs_utils import get_bytes_obj_from_http_path, is_http
 
 _ray113 = version.parse("1.13") <= version.parse(ray.__version__) == version.parse("1.13.0")
 
