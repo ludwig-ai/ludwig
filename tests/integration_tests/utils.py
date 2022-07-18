@@ -599,7 +599,6 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
         col_idx = df.columns.get_loc(col)
         for row_idx in random.sample(range(num_rows), num_nans_per_col):
             df.iloc[row_idx, col_idx] = np.nan
-        df.iloc[-1, col_idx] = np.nan  # last row is always nan to catch errors from BACKFILL missing value strategy
     return None
 
 
