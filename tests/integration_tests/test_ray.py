@@ -181,7 +181,7 @@ def run_test_with_features(
                 )
 
 
-@pytest.mark.parametrize("df_engine", ["dask"])
+@pytest.mark.parametrize("df_engine", ["pandas", "dask"])
 @pytest.mark.distributed
 def test_ray_read_binary_files(tmpdir, df_engine):
     preprocessing_params = {
@@ -287,8 +287,8 @@ def test_ray_sequence():
     run_test_with_features(input_features, output_features)
 
 
-@pytest.mark.parametrize("dataset_type", ["parquet"])
-@pytest.mark.parametrize("feature_type", ["fbank"])
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.parametrize("feature_type", ["raw", "fbank"])
 @pytest.mark.distributed
 def test_ray_audio(tmpdir, dataset_type, feature_type):
     preprocessing_params = {

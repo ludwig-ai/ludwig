@@ -865,6 +865,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
     def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
+
         # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
         # are literally billions of filenames.
         # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
@@ -872,12 +874,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
         #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
         #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
         #  there should not be any difference between providing a directory versus a list of files.
-        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
         fnames = self.df_engine.compute(column).values.tolist()
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
-
         if isinstance(sample_fname, str):
             # TODO(travis): handle missing filenames. Current implementation will try and read None, which will
             #  almost certainly fail. This can be done pretty easily by implementing a custom Ray DataSource that
