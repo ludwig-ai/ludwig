@@ -61,7 +61,11 @@ logger = logging.getLogger(__name__)
 DATASET_SPLIT_URL = "dataset_{}_fp"
 DATA_PROCESSED_CACHE_DIR = "data_processed_cache_dir"
 DATA_TRAIN_HDF5_FP = "data_train_hdf5_fp"
+
 DATA_TRAIN_PARQUET_FP = "data_train_parquet_fp"
+DATA_VALIDATION_PARQUET_FP = "data_validation_parquet_fp"
+DATA_TEST_PARQUET_FP = "data_test_parquet_fp"
+
 HDF5_COLUMNS_KEY = "columns"
 DICT_FORMATS = {"dict", "dictionary", dict}
 DATAFRAME_FORMATS = {"dataframe", "df", pd.DataFrame} | DASK_DF_FORMATS
