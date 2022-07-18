@@ -18,25 +18,37 @@ import warnings
 from typing import Any, Callable, Dict
 
 from ludwig.constants import (
+    AUDIO,
+    BIAS,
     COLUMN,
+    CONV_BIAS,
+    CONV_USE_BIAS,
+    DEFAULT_BIAS,
+    DEFAULT_USE_BIAS,
     DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
+    FORCE_SPLIT,
     HYPEROPT,
     INPUT_FEATURES,
+    NUM_SAMPLES,
     NUMBER,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
     PROBABILITIES,
+    RANDOM,
     RAY,
     SAMPLER,
     SCHEDULER,
     SEARCH_ALG,
     SPLIT,
+    SPLIT_PROBABILITIES,
+    STRATIFY,
     TRAINER,
     TRAINING,
     TYPE,
+    USE_BIAS,
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.utils.misc_utils import merge_dict
@@ -57,22 +69,22 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
 
 
 def _upgrade_use_bias(config):
-    if "bias" in config:
+    if BIAS in config:
         warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
-        config["use_bias"] = config["bias"]
-        del config["bias"]
-    if "conv_bias" in config:
+        config[USE_BIAS] = config[BIAS]
+        del config[BIAS]
+    if CONV_BIAS in config:
         warnings.warn(
             'Parameter "conv_bias" renamed to "conv_use_bias" and will be removed in v0.6', DeprecationWarning
         )
-        config["conv_use_bias"] = config["conv_bias"]
-        del config["conv_bias"]
-    if "default_bias" in config:
+        config[CONV_USE_BIAS] = config[CONV_BIAS]
+        del config[CONV_BIAS]
+    if DEFAULT_BIAS in config:
         warnings.warn(
             'Parameter "default_bias" renamed to "default_use_bias" and will be removed in v0.6', DeprecationWarning
         )
-        config["default_use_bias"] = config["default_bias"]
-        del config["default_bias"]
+        config[DEFAULT_USE_BIAS] = config[DEFAULT_BIAS]
+        del config[DEFAULT_BIAS]
 
 
 def _upgrade_feature(feature: Dict[str, Any]):
@@ -80,6 +92,17 @@ def _upgrade_feature(feature: Dict[str, Any]):
     if feature.get(TYPE) == "numerical":
         warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
         feature[TYPE] = NUMBER
+    if feature.get(TYPE) == AUDIO:
+        if PREPROCESSING in feature:
+            if "audio_feature" in feature[PREPROCESSING]:
+                for k, v in feature[PREPROCESSING]["audio_feature"].items():
+                    feature[PREPROCESSING][k] = v
+                del feature[PREPROCESSING]["audio_feature"]
+        warnings.warn(
+            "Parameters specified at the `audio_feature` parameter level have been unnested and should now "
+            "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
+            DeprecationWarning,
+        )
     _traverse_dicts(feature, _upgrade_use_bias)
 
 
@@ -134,8 +157,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
                 warnings.warn('Moved "search_alg" to hyperopt config top-level', DeprecationWarning)
 
         # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
-        if "num_samples" in hyperopt[SAMPLER] and "num_samples" not in hyperopt[EXECUTOR]:
-            hyperopt[EXECUTOR]["num_samples"] = hyperopt[SAMPLER]["num_samples"]
+        if NUM_SAMPLES in hyperopt[SAMPLER] and NUM_SAMPLES not in hyperopt[EXECUTOR]:
+            hyperopt[EXECUTOR][NUM_SAMPLES] = hyperopt[SAMPLER][NUM_SAMPLES]
             warnings.warn('Moved "num_samples" from "sampler" to "executor"', DeprecationWarning)
 
         if SCHEDULER in hyperopt[SAMPLER] and SCHEDULER not in hyperopt[EXECUTOR]:
@@ -208,9 +231,9 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
     """Upgrade split related parameters in preprocessing."""
     split_params = {}
 
-    force_split = preprocessing.pop("force_split", None)
-    split_probabilities = preprocessing.pop("split_probabilities", None)
-    stratify = preprocessing.pop("stratify", None)
+    force_split = preprocessing.pop(FORCE_SPLIT, None)
+    split_probabilities = preprocessing.pop(SPLIT_PROBABILITIES, None)
+    stratify = preprocessing.pop(STRATIFY, None)
 
     if split_probabilities is not None:
         split_params[PROBABILITIES] = split_probabilities
@@ -221,7 +244,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
         )
 
     if stratify is not None:
-        split_params[TYPE] = "stratify"
+        split_params[TYPE] = STRATIFY
         split_params[COLUMN] = stratify
         warnings.warn(
             "`preprocessing.stratify` has been replaced by `preprocessing.split.column` "
@@ -238,10 +261,21 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
         )
 
         if TYPE not in split_params:
-            split_params[TYPE] = "random"
+            split_params[TYPE] = RANDOM
 
     if split_params:
         preprocessing[SPLIT] = split_params
+
+    if AUDIO in preprocessing:
+        if "audio_feature" in preprocessing[AUDIO]:
+            for k, v in preprocessing[AUDIO]["audio_feature"].items():
+                preprocessing[AUDIO][k] = v
+            del preprocessing[AUDIO]["audio_feature"]
+        warnings.warn(
+            "Parameters specified at the `audio_feature` parameter level have been unnested and should now "
+            "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
+            DeprecationWarning,
+        )
 
 
 def upgrade_deprecated_fields(config: Dict[str, Any]):

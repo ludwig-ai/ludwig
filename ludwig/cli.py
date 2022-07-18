@@ -17,6 +17,7 @@ import argparse
 import sys
 
 import ludwig.contrib
+from ludwig.utils.print_utils import get_logo
 
 
 class CLI:
@@ -28,7 +29,8 @@ class CLI:
     def __init__(self):
         parser = argparse.ArgumentParser(
             description="ludwig cli runner",
-            usage="""ludwig <command> [<args>]
+            usage=f"""\n{get_logo("ludwig cli", ludwig.__version__)}
+ludwig <command> [<args>]
 
 Available sub-commands:
    train                 Trains a model

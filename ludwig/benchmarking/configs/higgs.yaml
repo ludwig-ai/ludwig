@@ -1,0 +1,78 @@
+input_features:
+  - name: lepton_pT
+    type: number
+  - name: lepton_eta
+    type: number
+  - name: lepton_phi
+    type: number
+  - name: missing_energy_magnitude
+    type: number
+  - name: missing_energy_phi
+    type: number
+  - name: jet_1_pt
+    type: number
+  - name: jet_1_eta
+    type: number
+  - name: jet_1_phi
+    type: number
+  - name: jet_1_b-tag
+    type: number
+  - name: jet_2_pt
+    type: number
+  - name: jet_2_eta
+    type: number
+  - name: jet_2_phi
+    type: number
+  - name: jet_2_b-tag
+    type: number
+  - name: jet_3_pt
+    type: number
+  - name: jet_3_eta
+    type: number
+  - name: jet_3_phi
+    type: number
+  - name: jet_3_b-tag
+    type: number
+  - name: jet_4_pt
+    type: number
+  - name: jet_4_eta
+    type: number
+  - name: jet_4_phi
+    type: number
+  - name: jet_4_b-tag
+    type: number
+  - name: m_jj
+    type: number
+  - name: m_jjj
+    type: number
+  - name: m_lv
+    type: number
+  - name: m_jlv
+    type: number
+  - name: m_bb
+    type: number
+  - name: m_wbb
+    type: number
+  - name: m_wwbb
+    type: number
+output_features:
+  - name: label
+    type: binary
+    weight_regularization: null
+combiner:
+  type: tabnet
+  size: 128  # N_a
+  output_size: 16  # N_d
+  sparsity: 0.001  # lambda_sparse
+  bn_momentum: 0.8  # m_B
+  num_steps: 3  # N_steps
+  relaxation_factor: 1.2  # gamma
+  bn_virtual_bs: 256  # B_v
+trainer:
+  batch_size: 4096 # B
+  learning_rate: 0.005
+  decay_steps: 2000
+  decay_rate: 0.95
+preprocessing:
+  split:
+    type: fixed

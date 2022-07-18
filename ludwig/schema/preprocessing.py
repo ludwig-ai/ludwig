@@ -7,6 +7,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
     AUDIO,
+    BACKFILL,
     BAG,
     BINARY,
     CATEGORY,
@@ -508,7 +509,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="backfill",
+        default=BACKFILL,
         allow_none=False,
         description="What strategy to follow when there's a missing value in an audio column",
     )
@@ -546,15 +547,38 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         "per_file, z-norm is applied on a 'per file' level",
     )
 
-    audio_feature: dict = schema_utils.Dict(
-        default={
-            "type": "fbank",
-            "window_length_in_s": 0.04,
-            "window_shift_in_s": 0.02,
-            "num_filter_bands": 80,
-        },
-        description="Dictionary that takes as input the audio feature type as well as additional parameters if type "
-        "!= raw. The following parameters can/should be defined in the dictionary ",
+    type: str = schema_utils.StringOptions(
+        ["fbank", "group_delay", "raw", "stft", "stft_phase"],
+        default="fbank",
+        description="Defines the type of audio feature to be used.",
+    )
+
+    window_length_in_s: float = schema_utils.NonNegativeFloat(
+        default=0.04,
+        description="Defines the window length used for the short time Fourier transformation. This is only needed if "
+        "the audio_feature_type is 'raw'.",
+    )
+
+    window_shift_in_s: float = schema_utils.NonNegativeFloat(
+        default=0.02,
+        description="Defines the window shift used for the short time Fourier transformation (also called "
+        "hop_length). This is only needed if the audio_feature_type is 'raw'. ",
+    )
+
+    num_fft_points: float = schema_utils.NonNegativeFloat(
+        default=None, description="Defines the number of fft points used for the short time Fourier transformation"
+    )
+
+    window_type: str = schema_utils.StringOptions(
+        ["bartlett", "blackman", "hamming", "hann"],
+        default="hamming",
+        description="Defines the type window the signal is weighted before the short time Fourier transformation.",
+    )
+
+    num_filter_bands: int = schema_utils.PositiveInteger(
+        default=80,
+        description="Defines the number of filters used in the filterbank. Only needed if audio_feature_type "
+        "is 'fbank'",
     )
 
 
