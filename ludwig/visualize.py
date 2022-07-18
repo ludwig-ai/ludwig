@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -206,8 +206,7 @@ def _get_ground_truth_df(ground_truth: str) -> DataFrame:
     data_format = figure_data_format_dataset(ground_truth)
     if data_format not in CACHEABLE_FORMATS:
         raise ValueError(
-            "{} is not supported for ground truth file, "
-            "valid types are {}".format(data_format, CACHEABLE_FORMATS)
+            "{} is not supported for ground truth file, " "valid types are {}".format(data_format, CACHEABLE_FORMATS)
         )
     reader = get_from_registry(data_format, external_data_reader_registry)
 

@@ -1477,11 +1477,22 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
 
 def test_load_ground_truth_split_from_df(csv_filename):
     import pandas as pd
+
     ground_truth = pd.DataFrame(
         {
-            "PassengerId": [1], "Survived": [0], "Pclass": [3], "Name": ["Braund, Mr. Owen Harris"],
-            "Sex": ["male"], "Age": [22.0], "SibSp": [1], "Parch": [0], "Ticket": ["A/5 21171"], "Fare": ["7.25"],
-            "Cabin": [None], "Embarked": ["S"], "split": [0]
+            "PassengerId": [1],
+            "Survived": [0],
+            "Pclass": [3],
+            "Name": ["Braund, Mr. Owen Harris"],
+            "Sex": ["male"],
+            "Age": [22.0],
+            "SibSp": [1],
+            "Parch": [0],
+            "Ticket": ["A/5 21171"],
+            "Fare": ["7.25"],
+            "Cabin": [None],
+            "Embarked": ["S"],
+            "split": [0],
         }
     )
     output_feature = "Survived"
