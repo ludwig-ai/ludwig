@@ -1048,15 +1048,12 @@ try:
             self.vocab_file = cached_path(vocab_file)
 
             self.is_hf_tokenizer = is_hf_tokenizer
-            if self.is_hf_tokenizer:
-                self.tokenizer = torchtext.transforms.BERTTokenizer(
-                    vocab_path=self.vocab_file, return_tokens=False, do_lower_case=do_lower_case
-                )
-            else:
-                # Return tokens as raw tokens if not being used as a HF tokenizer.
-                self.tokenizer = torchtext.transforms.BERTTokenizer(
-                    vocab_path=self.vocab_file, return_tokens=True, do_lower_case=do_lower_case
-                )
+
+            # Return tokens as raw tokens only if not being used as a HF tokenizer.
+            self.return_tokens = not self.is_hf_tokenizer
+            self.tokenizer = torchtext.transforms.BERTTokenizer(
+                vocab_path=self.vocab_file, return_tokens=self.return_tokens, do_lower_case=do_lower_case
+            )
 
             self.str2idx = self._init_vocab(self.vocab_file)
 
