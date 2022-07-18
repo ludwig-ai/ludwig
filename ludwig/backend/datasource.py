@@ -2,12 +2,11 @@ import contextlib
 import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
 
-from ray.data.datasource.partitioning import PathPartitionFilter
+import urllib3
+import ray
+from packaging import version
 
 from ludwig.utils.fs_utils import get_bytes_obj_from_http_path, is_http
-
-if TYPE_CHECKING:
-    import pyarrow
 
 from ray.data.block import Block
 from ray.data.context import DatasetContext
@@ -18,9 +17,23 @@ from ray.data.datasource.file_based_datasource import (
     _S3FileSystemWrapper,
     _wrap_s3_serialization_workaround,
 )
-from ray.data.datasource.file_meta_provider import BaseFileMetadataProvider, DefaultFileMetadataProvider
 from ray.data.impl.output_buffer import BlockOutputBuffer
 from ray.data.impl.util import _check_pyarrow_version
+
+_ray113 = version.parse("1.13") <= version.parse(ray.__version__) == version.parse("1.13.0")
+
+if _ray113:
+    # Code refactored in Ray 1.13
+    from ray.data.datasource.file_meta_provider import BaseFileMetadataProvider, DefaultFileMetadataProvider
+else:
+    from ray.data.datasource.file_based_datasource import BaseFileMetadataProvider, DefaultFileMetadataProvider
+
+if TYPE_CHECKING:
+    import pyarrow
+
+    if _ray113:
+        # Only implemented starting in Ray 1.13
+        from ray.data.datasource.partitioning import PathPartitionFilter
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +58,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
         schema: Optional[Union[type, "pyarrow.lib.Schema"]] = None,
         open_stream_args: Optional[Dict[str, Any]] = None,
         meta_provider: BaseFileMetadataProvider = DefaultFileMetadataProvider(),
-        partition_filter: PathPartitionFilter = None,
+        partition_filter: "PathPartitionFilter" = None,
         # TODO(ekl) deprecate this once read fusion is available.
         _block_udf: Optional[Callable[[Block], Block]] = None,
         **reader_args,
@@ -169,7 +182,12 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
                 return [(path, None)]
             return [None]
         if is_http(path):
-            data = get_bytes_obj_from_http_path(path)
+            try:
+                data = get_bytes_obj_from_http_path(path)
+            except urllib3.exceptions.HTTPError as e:
+                logging.warning(e)
+                data = None
+
             if include_paths:
                 return [(path, data)]
             return [data]
