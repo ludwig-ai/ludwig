@@ -34,7 +34,8 @@ TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
-# Do not use torchtext implementation of BERT tokenizer for these model names due to known token mismatch with HF.
+# Do not use torchtext implementation of BERT tokenizer for these model names:
+# https://github.com/pytorch/text/issues/1840
 SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
     "bert-base-german-cased",
     "bert-base-german-dbmdz-cased",
