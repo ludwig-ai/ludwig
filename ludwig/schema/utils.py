@@ -620,6 +620,8 @@ def OneOfOptionsField(
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
+                    if value is None and mfield_meta.allow_none:
+                        return None
                     mfield_meta.validate(value)
                     return mfield_meta._serialize(value, attr, obj, **kwargs)
                 except Exception:
