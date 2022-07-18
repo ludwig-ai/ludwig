@@ -98,7 +98,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=None, allow_none=True),
+            schema_utils.PositiveInteger(default=None, allow_none=True, description=""),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -193,7 +193,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128),
+            schema_utils.PositiveInteger(default=128, description=""),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
