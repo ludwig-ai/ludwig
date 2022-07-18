@@ -606,171 +606,171 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
     )
 
 
-def FloatOrAutoField(
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
-):
-    """Float that also permits an `auto` string value."""
-    options: TList[str] = ["auto"]
-    return NumericOrStringOptionsField(**locals())
+# def FloatOrAutoField(
+#     allow_none: bool,
+#     description: str,
+#     parameter_metadata: ParameterMetadata,
+#     default: Union[None, int, str],
+#     default_numeric: Union[None, int] = None,
+#     default_option: Union[None, str] = "auto",
+#     min: Union[None, int] = None,
+#     max: Union[None, int] = None,
+#     min_exclusive: Union[None, int] = None,
+#     max_exclusive: Union[None, int] = None,
+# ):
+#     """Float that also permits an `auto` string value."""
+#     options: TList[str] = ["auto"]
+#     return NumericOrStringOptionsField(**locals())
 
 
-def IntegerOrAutoField(
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
-):
-    """Integer that also permits an `auto` string value."""
-    options: TList[str] = ["auto"]
-    return IntegerOrStringOptionsField(**locals())
+# def IntegerOrAutoField(
+#     allow_none: bool,
+#     description: str,
+#     parameter_metadata: ParameterMetadata,
+#     default: Union[None, int, str],
+#     default_numeric: Union[None, int] = None,
+#     default_option: Union[None, str] = "auto",
+#     min: Union[None, int] = None,
+#     max: Union[None, int] = None,
+#     min_exclusive: Union[None, int] = None,
+#     max_exclusive: Union[None, int] = None,
+# ):
+#     """Integer that also permits an `auto` string value."""
+#     options: TList[str] = ["auto"]
+#     return IntegerOrStringOptionsField(**locals())
 
 
-def IntegerOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int],
-    default_numeric: Union[None, int],
-    default_option: Union[None, str],
-    is_integer: bool = True,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
-):
-    """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
-    is_integer = True
-    return NumericOrStringOptionsField(**locals())
+# def IntegerOrStringOptionsField(
+#     options: TList[str],
+#     allow_none: bool,
+#     description: str,
+#     parameter_metadata: ParameterMetadata,
+#     default: Union[None, int],
+#     default_numeric: Union[None, int],
+#     default_option: Union[None, str],
+#     is_integer: bool = True,
+#     min: Union[None, int] = None,
+#     max: Union[None, int] = None,
+#     min_exclusive: Union[None, int] = None,
+#     max_exclusive: Union[None, int] = None,
+# ):
+#     """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
+#     is_integer = True
+#     return NumericOrStringOptionsField(**locals())
 
 
-def NumericOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    default: Union[None, int, float, str],
-    default_numeric: Union[None, int, float],
-    default_option: Union[None, str],
-    parameter_metadata: ParameterMetadata = None,
-    is_integer: bool = False,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
-):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
+# def NumericOrStringOptionsField(
+#     options: TList[str],
+#     allow_none: bool,
+#     description: str,
+#     default: Union[None, int, float, str],
+#     default_numeric: Union[None, int, float],
+#     default_option: Union[None, str],
+#     parameter_metadata: ParameterMetadata = None,
+#     is_integer: bool = False,
+#     min: Union[None, int] = None,
+#     max: Union[None, int] = None,
+#     min_exclusive: Union[None, int] = None,
+#     max_exclusive: Union[None, int] = None,
+# ):
+#     """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
 
-    In particular, numeric values can be constrained to a range through the other arguments, both inclusive and
-    exclusive. Strings must conform to the given set of options (and None/null must be set to be allowed or not).
-    """
+#     In particular, numeric values can be constrained to a range through the other arguments, both inclusive and
+#     exclusive. Strings must conform to the given set of options (and None/null must be set to be allowed or not).
+#     """
 
-    class IntegerOrStringOptionsField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            msg_type = "integer" if is_integer else "numeric"
-            if (is_integer and isinstance(value, int)) or isinstance(value, float):
-                if (
-                    (min is not None and value < min)
-                    or (min_exclusive is not None and value <= min_exclusive)
-                    or (max is not None and value > max)
-                    or (max_exclusive is not None and value >= max_exclusive)
-                ):
-                    err_min_r, err_min_n = "(", min_exclusive if min_exclusive is not None else "[", min
-                    errMaxR, errMaxN = ")", max_exclusive if max_exclusive is not None else "]", max
-                    raise ValidationError(
-                        f"If value is {msg_type} should be in range: {err_min_r}{err_min_n},{errMaxN}{errMaxR}"
-                    )
-                return value
-            if isinstance(value, str):
-                if value not in options:
-                    raise ValidationError(f"String value should be one of {options}")
-                return value
+#     class IntegerOrStringOptionsField(fields.Field):
+#         def _deserialize(self, value, attr, data, **kwargs):
+#             msg_type = "integer" if is_integer else "numeric"
+#             if (is_integer and isinstance(value, int)) or isinstance(value, float):
+#                 if (
+#                     (min is not None and value < min)
+#                     or (min_exclusive is not None and value <= min_exclusive)
+#                     or (max is not None and value > max)
+#                     or (max_exclusive is not None and value >= max_exclusive)
+#                 ):
+#                     err_min_r, err_min_n = "(", min_exclusive if min_exclusive is not None else "[", min
+#                     errMaxR, errMaxN = ")", max_exclusive if max_exclusive is not None else "]", max
+#                     raise ValidationError(
+#                         f"If value is {msg_type} should be in range: {err_min_r}{err_min_n},{errMaxN}{errMaxR}"
+#                     )
+#                 return value
+#             if isinstance(value, str):
+#                 if value not in options:
+#                     raise ValidationError(f"String value should be one of {options}")
+#                 return value
 
-            raise ValidationError(f"Field should be either a {msg_type} or string")
+#             raise ValidationError(f"Field should be either a {msg_type} or string")
 
-        def _jsonschema_type_mapping(self):
-            # Note: schemas can normally support a list of enums that includes 'None' as an option, as we currently have
-            # in 'initializers_registry'. But to make the schema here a bit more straightforward, the user must
-            # explicitly state if 'None' is going to be supported; if this conflicts with the list of enums then an
-            # error is raised and if it's going to be supported then it will be as a separate subschema rather than as
-            # part of the string subschema (see below):
-            if None in options and not self.allow_none:
-                raise AssertionError(
-                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
-                )
+#         def _jsonschema_type_mapping(self):
+#             # Note: schemas can normally support a list of enums that includes 'None' as an option, as we currently
+#             # in 'initializers_registry'. But to make the schema here a bit more straightforward, the user must
+#             # explicitly state if 'None' is going to be supported; if this conflicts with the list of enums then an
+#             # error is raised and if it's going to be supported then it will be as a separate subschema rather than as
+#             # part of the string subschema (see below):
+#             if None in options and not self.allow_none:
+#                 raise AssertionError(
+#                     f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
+#                 )
 
-            # Prepare numeric option:
-            numeric_type = "integer" if is_integer else "number"
-            numeric_option = {
-                "type": numeric_type,
-                "title": numeric_type + "_option",
-                "default": default_numeric,
-                "description": "Set to a valid number.",
-            }
-            if not is_integer:
-                numeric_option["format"] = "float"
-            if min is not None:
-                numeric_option["minimum"] = min
-            if min_exclusive is not None:
-                numeric_option["exclusiveMinimum"] = min_exclusive
-            if max is not None:
-                numeric_option["maximum"] = max
-            if max_exclusive is not None:
-                numeric_option["exclusiveMaximum"] = max_exclusive
+#             # Prepare numeric option:
+#             numeric_type = "integer" if is_integer else "number"
+#             numeric_option = {
+#                 "type": numeric_type,
+#                 "title": numeric_type + "_option",
+#                 "default": default_numeric,
+#                 "description": "Set to a valid number.",
+#             }
+#             if not is_integer:
+#                 numeric_option["format"] = "float"
+#             if min is not None:
+#                 numeric_option["minimum"] = min
+#             if min_exclusive is not None:
+#                 numeric_option["exclusiveMinimum"] = min_exclusive
+#             if max is not None:
+#                 numeric_option["maximum"] = max
+#             if max_exclusive is not None:
+#                 numeric_option["exclusiveMaximum"] = max_exclusive
 
-            # Prepare string option (remove None):
-            if None in options:
-                options.remove(None)
-            string_option = {
-                "type": "string",
-                "enum": options,
-                "default": default_option,
-                "title": "preconfigured_option",
-                "description": "Choose a preconfigured option.",
-            }
-            oneof_list = [
-                numeric_option,
-                string_option,
-            ]
+#             # Prepare string option (remove None):
+#             if None in options:
+#                 options.remove(None)
+#             string_option = {
+#                 "type": "string",
+#                 "enum": options,
+#                 "default": default_option,
+#                 "title": "preconfigured_option",
+#                 "description": "Choose a preconfigured option.",
+#             }
+#             oneof_list = [
+#                 numeric_option,
+#                 string_option,
+#             ]
 
-            # Add null as an option if applicable:
-            oneof_list += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none
-                else []
-            )
+#             # Add null as an option if applicable:
+#             oneof_list += (
+#                 [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
+#                 if allow_none
+#                 else []
+#             )
 
-            return {
-                "oneOf": oneof_list,
-                "title": self.name,
-                "description": description,
-                "default": default,
-                "parameter_metadata": parameter_metadata,
-            }
+#             return {
+#                 "oneOf": oneof_list,
+#                 "title": self.name,
+#                 "description": description,
+#                 "default": default,
+#                 "parameter_metadata": parameter_metadata,
+#             }
 
-    return field(
-        metadata={
-            "marshmallow_field": IntegerOrStringOptionsField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
-            ),
-            "parameter_metadata": parameter_metadata,
-        },
-        default=default,
-    )
+#     return field(
+#         metadata={
+#             "marshmallow_field": IntegerOrStringOptionsField(
+#                 allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": }
+#             ),
+#             "parameter_metadata": parameter_metadata,
+#         },
+#         default=default,
+#     )
 
 
 def OneOfOptionsField(
@@ -784,17 +784,12 @@ def OneOfOptionsField(
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
-            print(value)
-            print(attr)
-            print(obj)
-            print(kwargs)
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
-                print(mfield_meta)
                 try:
-                    return mfield_meta._serialize(value)
+                    mfield_meta.validate(value)
+                    return mfield_meta._serialize(value, attr, obj, **kwargs)
                 except Exception:
-                    print("dog")
                     continue
             raise ValidationError(f"Value to serialize does not match any valid option schemas: {value}")
 
@@ -802,6 +797,7 @@ def OneOfOptionsField(
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
+                    mfield_meta.validate(value)
                     return mfield_meta._deserialize(value, attr, obj, **kwargs)
                 except Exception:
                     continue
@@ -821,7 +817,7 @@ def OneOfOptionsField(
 
                     @m_dataclass
                     class DummyClass:
-                        tmp: TAny = mfield_meta
+                        tmp: TAny = option
 
                     dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
                     tmp_json_schema = dummy_schema["properties"]["tmp"]
