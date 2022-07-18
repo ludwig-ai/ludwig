@@ -14,7 +14,6 @@
 # ==============================================================================
 import os
 import shutil
-import tempfile
 
 import numpy as np
 import torch
@@ -62,7 +61,7 @@ def _collect_activations(model_path, layers, csv_filename, output_directory):
     return collect_activations(model_path, layers, dataset=csv_filename, output_directory=output_directory)
 
 
-def test_collect_weights(csv_filename):
+def test_collect_weights(tmpdir, csv_filename):
     output_dir = None
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
@@ -78,30 +77,28 @@ def test_collect_weights(csv_filename):
         tensor_names = [name for name, w in model_loaded.collect_weights()]
         assert len(tensor_names) == 3
 
-        with tempfile.TemporaryDirectory() as output_directory:
-            filenames = collect_weights(model_path, tensor_names, output_directory)
-            assert len(filenames) == 3
+        filenames = collect_weights(model_path, tensor_names, tmpdir)
+        assert len(filenames) == 3
 
-            for weight, filename in zip(weights, filenames):
-                saved_weight = np.load(filename)
-                assert torch.allclose(weight, torch.from_numpy(saved_weight).to(DEVICE), rtol=1.0e-4), filename
+        for weight, filename in zip(weights, filenames):
+            saved_weight = np.load(filename)
+            assert torch.allclose(weight, torch.from_numpy(saved_weight).to(DEVICE), rtol=1.0e-4), filename
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
 
 
-def test_collect_activations(csv_filename):
+def test_collect_activations(tmpdir, csv_filename):
     output_dir = None
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(output_dir, "model")
 
-        with tempfile.TemporaryDirectory() as output_directory:
-            # [last_hidden, logits, projection_input]
-            filenames = _collect_activations(
-                model_path, [name for name, _ in model.model.named_children()], csv_filename, output_directory
-            )
-            assert len(filenames) == 3
+        # [last_hidden, logits, projection_input]
+        filenames = _collect_activations(
+            model_path, [name for name, _ in model.model.named_children()], csv_filename, tmpdir
+        )
+        assert len(filenames) == 3
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)

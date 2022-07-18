@@ -292,41 +292,39 @@ def test_ray_sequence():
 @pytest.mark.parametrize("dataset_type", ["parquet"])
 @pytest.mark.parametrize("feature_type", ["fbank"])
 @pytest.mark.distributed
-def test_ray_audio(dataset_type, feature_type):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        preprocessing_params = {
-            "audio_file_length_limit_in_s": 3.0,
-            "missing_value_strategy": BACKFILL,
-            "in_memory": True,
-            "padding_value": 0,
-            "norm": "per_file",
-            "type": feature_type,
-            "window_length_in_s": 0.04,
-            "window_shift_in_s": 0.02,
-            "num_filter_bands": 80,
-        }
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-        output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
+def test_ray_audio(tmpdir, dataset_type, feature_type):
+    preprocessing_params = {
+        "audio_file_length_limit_in_s": 3.0,
+        "missing_value_strategy": BACKFILL,
+        "in_memory": True,
+        "padding_value": 0,
+        "norm": "per_file",
+        "type": feature_type,
+        "window_length_in_s": 0.04,
+        "window_shift_in_s": 0.02,
+        "num_filter_bands": 80,
+    }
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_image(dataset_type):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
-        input_features = [
-            image_feature(
-                folder=image_dest_folder,
-                encoder="resnet",
-                preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-                output_size=16,
-                num_filters=8,
-            ),
-        ]
-        output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
+def test_ray_image(tmpdir, dataset_type):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder="resnet",
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+            output_size=16,
+            num_filters=8,
+        ),
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
@@ -354,36 +352,34 @@ def test_ray_timeseries():
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_audio_error():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-        input_features = [
-            audio_feature(
-                folder=audio_dest_folder,
-                preprocessing={
-                    "in_memory": False,
-                },
-            )
-        ]
-        output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, expect_error=True)
+def test_ray_lazy_load_audio_error(tmpdir):
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    input_features = [
+        audio_feature(
+            folder=audio_dest_folder,
+            preprocessing={
+                "in_memory": False,
+            },
+        )
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, expect_error=True)
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_image_error():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        image_dest_folder = os.path.join(tmpdir, "generated_images")
-        input_features = [
-            image_feature(
-                folder=image_dest_folder,
-                encoder="resnet",
-                preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-                output_size=16,
-                num_filters=8,
-            ),
-        ]
-        output_features = [binary_feature()]
-        run_test_with_features(input_features, output_features, expect_error=True)
+def test_ray_lazy_load_image_error(tmpdir):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder="resnet",
+            preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+            output_size=16,
+            num_filters=8,
+        ),
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, expect_error=True)
 
 
 @pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
@@ -453,7 +449,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 
 @pytest.mark.distributed
-def test_tune_batch_size_lr():
+def test_tune_batch_size_lr(tmpdir):
     with ray_start(num_cpus=2, num_gpus=None):
         config = {
             "input_features": [
@@ -468,15 +464,12 @@ def test_tune_batch_size_lr():
 
         backend_config = {**RAY_BACKEND_CONFIG}
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            csv_filename = os.path.join(tmpdir, "dataset.csv")
-            dataset_csv = generate_data(
-                config["input_features"], config["output_features"], csv_filename, num_examples=100
-            )
-            dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
-            model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-            assert model.config[TRAINER]["batch_size"] != "auto"
-            assert model.config[TRAINER]["learning_rate"] != "auto"
+        csv_filename = os.path.join(tmpdir, "dataset.csv")
+        dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
+        dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+        model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+        assert model.config[TRAINER]["batch_size"] != "auto"
+        assert model.config[TRAINER]["learning_rate"] != "auto"
 
 
 @pytest.mark.distributed
