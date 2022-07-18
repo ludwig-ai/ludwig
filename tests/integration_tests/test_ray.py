@@ -202,8 +202,6 @@ def test_ray_read_binary_files(tmpdir, df_engine):
 
     dataset_path = os.path.join(tmpdir, "dataset.csv")
     dataset_path = generate_data([audio_params], [], dataset_path, num_examples=100)
-    # TODO(geoffrey): implement a solution such that this test can pass with nan_percent > 0.0.
-    # for now, backend.read_binary_files is called after NaNs are handled, so NaNs should not appear in inputs.
     dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.1)
 
     with ray_start(num_cpus=2, num_gpus=None):

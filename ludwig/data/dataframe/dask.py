@@ -48,7 +48,6 @@ def reset_index_across_all_partitions(df):
 
     Source: https://stackoverflow.com/questions/61395351/how-to-reset-index-on-concatenated-dataframe-in-dask
     """
-
     # Create temporary column of ones
     df = df.assign(**{TMP_COLUMN: 1})
 

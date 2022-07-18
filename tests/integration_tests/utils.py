@@ -591,6 +591,7 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     if nan_percent < 0 or nan_percent > 1:
         raise ValueError("nan_percent must be between 0 and 1")
     if nan_percent == 0:
+        # No-op if nan_percent is 0
         return None
 
     num_rows = len(df)

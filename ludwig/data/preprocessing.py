@@ -1172,9 +1172,6 @@ def build_dataset(
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
 
-    print("final build_dataset for", backend)
-    print(backend.df_engine.compute(dataset))
-
     return dataset, metadata
 
 
@@ -1561,10 +1558,6 @@ def preprocess_for_training(
                 callbacks=callbacks,
             )
             training_set, test_set, validation_set, training_set_metadata = processed
-            print("INSIDE PREPROCESSING FOR TRAINING with backend", backend)
-            print("training_set", len(training_set))
-            print("validation_set", len(validation_set))
-            print("test_set", len(test_set))
             processed = (training_set, test_set, validation_set, training_set_metadata)
 
             # cache the dataset

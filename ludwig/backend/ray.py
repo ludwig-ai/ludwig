@@ -875,9 +875,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
         fnames = self.df_engine.compute(column).values.tolist()
 
-        print("before")
-        print(self.df_engine.compute(column))
-
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
 
@@ -906,9 +903,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
         df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
-
-        print("after")
-        print(self.df_engine.compute(df))
         return df[column.name]
 
     @property

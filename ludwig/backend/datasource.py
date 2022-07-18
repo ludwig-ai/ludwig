@@ -22,13 +22,11 @@ from ray.data.datasource.file_meta_provider import BaseFileMetadataProvider, Def
 from ray.data.impl.output_buffer import BlockOutputBuffer
 from ray.data.impl.util import _check_pyarrow_version
 
-from ludwig.utils.strings_utils import is_nan_or_none
-
 logger = logging.getLogger(__name__)
 
 
 class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
-    """Binary datasource, for reading and writing binary files. Ignores  None values.
+    """Binary datasource, for reading and writing binary files. Ignores None values.
 
     Examples:
         >>> import ray
@@ -74,7 +72,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
             output_buffer = BlockOutputBuffer(block_udf=_block_udf, target_max_block_size=ctx.target_max_block_size)
             for read_path in read_paths:
                 # Get reader_args and open_stream_args only if valid path.
-                if not is_nan_or_none(read_path):
+                if read_path is not None:
                     compression = open_stream_args.pop("compression", None)
                     if compression is None:
                         import pyarrow as pa
@@ -122,7 +120,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
             read_paths = []
             file_sizes = []
             for raw_path in raw_paths:
-                if is_nan_or_none(raw_path) or is_http(raw_path):
+                if raw_path is None or is_http(raw_path):
                     read_paths.append(raw_path)
                     file_sizes.append(None)  # unknown file size is None
                 else:
@@ -160,13 +158,13 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
         Implementations that do not support streaming reads (e.g. that require random
         access) should override this method.
         """
-        if is_nan_or_none(path) or is_http(path):
+        if path is None or is_http(path):
             return contextlib.nullcontext()
         return filesystem.open_input_stream(path, **open_args)
 
     def _read_file(self, f: Union["pyarrow.NativeFile", contextlib.nullcontext], path: str, **reader_args):
         include_paths = reader_args.get("include_paths", False)
-        if is_nan_or_none(path):
+        if path is None:
             if include_paths:
                 return [(path, None)]
             return [None]
