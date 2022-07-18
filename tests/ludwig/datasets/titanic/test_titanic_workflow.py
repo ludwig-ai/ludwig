@@ -1,5 +1,4 @@
 import os
-import tempfile
 import zipfile
 from shutil import copy
 from unittest import mock
@@ -55,51 +54,50 @@ def test_download_titanic_dataset(tmpdir):
         }
     )
 
-    with tempfile.TemporaryDirectory() as source_dir:
-        train_fname = os.path.join(source_dir, "train.csv")
-        titanic_train_df.to_csv(train_fname, index=False)
+    train_fname = os.path.join(tmpdir, "train.csv")
+    titanic_train_df.to_csv(train_fname, index=False)
 
-        test_fname = os.path.join(source_dir, "test.csv")
-        titanic_test_df.to_csv(test_fname, index=False)
+    test_fname = os.path.join(tmpdir, "test.csv")
+    titanic_test_df.to_csv(test_fname, index=False)
 
-        archive_filename = os.path.join(source_dir, "titanic.zip")
-        with zipfile.ZipFile(archive_filename, "w") as z:
-            z.write(train_fname, "train.csv")
-            z.write(test_fname, "test.csv")
+    archive_filename = os.path.join(tmpdir, "titanic.zip")
+    with zipfile.ZipFile(archive_filename, "w") as z:
+        z.write(train_fname, "train.csv")
+        z.write(test_fname, "test.csv")
 
-        config = {
-            "version": 1.0,
-            "competition": "titanic",
-            "archive_filename": "titanic.zip",
-            "split_filenames": {
-                "train_file": "train.csv",
-                "test_file": "test.csv",
-            },
-            "csv_filename": "titanic.csv",
-        }
+    config = {
+        "version": 1.0,
+        "competition": "titanic",
+        "archive_filename": "titanic.zip",
+        "split_filenames": {
+            "train_file": "train.csv",
+            "test_file": "test.csv",
+        },
+        "csv_filename": "titanic.csv",
+    }
 
-        def download_files(competition_name, path):
-            assert competition_name == "titanic"
-            copy(archive_filename, path)
+    def download_files(competition_name, path):
+        assert competition_name == "titanic"
+        copy(archive_filename, path)
 
-        with mock.patch("ludwig.datasets.base_dataset.read_config", return_value=config):
-            with mock.patch("ludwig.datasets.mixins.kaggle.create_kaggle_client") as mock_kaggle_cls:
-                mock_kaggle_api = mock.MagicMock()
-                mock_kaggle_api.competition_download_files = download_files
-                mock_kaggle_cls.return_value = mock_kaggle_api
+    with mock.patch("ludwig.datasets.base_dataset.read_config", return_value=config):
+        with mock.patch("ludwig.datasets.mixins.kaggle.create_kaggle_client") as mock_kaggle_cls:
+            mock_kaggle_api = mock.MagicMock()
+            mock_kaggle_api.competition_download_files = download_files
+            mock_kaggle_cls.return_value = mock_kaggle_api
 
-                dataset = FakeTitanicDataset(tmpdir)
-                assert not dataset.is_downloaded()
+            dataset = FakeTitanicDataset(tmpdir)
+            assert not dataset.is_downloaded()
 
-                dataset.download()
-                assert dataset.is_downloaded()
-                mock_kaggle_api.authenticate.assert_called_once()
+            dataset.download()
+            assert dataset.is_downloaded()
+            mock_kaggle_api.authenticate.assert_called_once()
 
-                assert not dataset.is_processed()
-                dataset.process()
-                assert dataset.is_processed()
+            assert not dataset.is_processed()
+            dataset.process()
+            assert dataset.is_processed()
 
-                output_train_df, output_test_df, output_val_df = dataset.load(split=True)
-                assert len(output_train_df) == len(titanic_train_df)
-                assert len(output_test_df) == len(titanic_test_df)
-                assert len(output_val_df) == 0
+            output_train_df, output_test_df, output_val_df = dataset.load(split=True)
+            assert len(output_train_df) == len(titanic_train_df)
+            assert len(output_test_df) == len(titanic_test_df)
+            assert len(output_val_df) == 0

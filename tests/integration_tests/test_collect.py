@@ -14,7 +14,6 @@
 # ==============================================================================
 import os
 import shutil
-import tempfile
 
 import numpy as np
 import torch
@@ -23,7 +22,7 @@ from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights, print_model_summary
 from ludwig.constants import TRAINER
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature, spawn
+from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature
 
 DEVICE = get_torch_device()
 
@@ -53,18 +52,16 @@ def _train(input_features, output_features, data_csv, **kwargs):
     return model, output_dir
 
 
-@spawn
 def _get_layers(model_path):
     model = LudwigModel.load(model_path)
     return [name for name, _ in model.model.named_children()]
 
 
-@spawn
 def _collect_activations(model_path, layers, csv_filename, output_directory):
     return collect_activations(model_path, layers, dataset=csv_filename, output_directory=output_directory)
 
 
-def test_collect_weights(csv_filename):
+def test_collect_weights(tmpdir, csv_filename):
     output_dir = None
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
@@ -80,30 +77,28 @@ def test_collect_weights(csv_filename):
         tensor_names = [name for name, w in model_loaded.collect_weights()]
         assert len(tensor_names) == 3
 
-        with tempfile.TemporaryDirectory() as output_directory:
-            filenames = collect_weights(model_path, tensor_names, output_directory)
-            assert len(filenames) == 3
+        filenames = collect_weights(model_path, tensor_names, tmpdir)
+        assert len(filenames) == 3
 
-            for weight, filename in zip(weights, filenames):
-                saved_weight = np.load(filename)
-                assert torch.allclose(weight, torch.from_numpy(saved_weight).to(DEVICE), rtol=1.0e-4), filename
+        for weight, filename in zip(weights, filenames):
+            saved_weight = np.load(filename)
+            assert torch.allclose(weight, torch.from_numpy(saved_weight).to(DEVICE), rtol=1.0e-4), filename
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
 
 
-def test_collect_activations(csv_filename):
+def test_collect_activations(tmpdir, csv_filename):
     output_dir = None
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(output_dir, "model")
 
-        with tempfile.TemporaryDirectory() as output_directory:
-            # [last_hidden, logits, projection_input]
-            filenames = _collect_activations(
-                model_path, [name for name, _ in model.model.named_children()], csv_filename, output_directory
-            )
-            assert len(filenames) == 3
+        # [last_hidden, logits, projection_input]
+        filenames = _collect_activations(
+            model_path, [name for name, _ in model.model.named_children()], csv_filename, tmpdir
+        )
+        assert len(filenames) == 3
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)

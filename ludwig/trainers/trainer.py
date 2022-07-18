@@ -135,6 +135,7 @@ class Trainer(BaseTrainer):
         except ValueError:
             # TODO (ASN): Circle back on how we want to set default placeholder value
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
+
         self.base_learning_rate = base_learning_rate
         self.decay = config.decay
         self.decay_rate = config.decay_rate
@@ -856,9 +857,9 @@ class Trainer(BaseTrainer):
             if self.is_coordinator() and not self.skip_save_progress:
                 checkpoint_manager.close()
 
-            # Load the best weights from saved checkpoint
-            if self.is_coordinator() and not self.skip_save_model:
-                self.model.load(save_path)
+        # Load the best weights from saved checkpoint
+        if self.is_coordinator() and not self.skip_save_model:
+            self.model.load(save_path)
 
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():

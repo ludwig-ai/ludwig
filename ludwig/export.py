@@ -17,6 +17,7 @@ import argparse
 import logging
 import os
 import sys
+from typing import Optional
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
@@ -28,7 +29,9 @@ from ludwig.utils.triton_utils import export_triton as utils_export_triton
 logger = logging.getLogger(__name__)
 
 
-def export_torchscript(model_path: str, model_only: bool = False, output_path: str = "torchscript", **kwargs) -> None:
+def export_torchscript(
+    model_path: str, model_only: bool = False, output_path: str = "torchscript", device: Optional[str] = None, **kwargs
+) -> None:
     """Exports a model to torchscript.
 
     # Inputs
@@ -47,7 +50,7 @@ def export_torchscript(model_path: str, model_only: bool = False, output_path: s
 
     model = LudwigModel.load(model_path)
     os.makedirs(output_path, exist_ok=True)
-    model.save_torchscript(output_path, model_only=model_only)
+    model.save_torchscript(output_path, model_only=model_only, device=device)
 
     logger.info(f"Saved to: {output_path}")
 
@@ -148,6 +151,16 @@ def cli_export_torchscript(sys_argv):
         "--model_only",
         help="Script and export the model only.",
         action="store_true",
+    )
+    parser.add_argument(
+        "-d",
+        "--device",
+        type=str,
+        help=(
+            'Device to use for torchscript tracing (e.g. "cuda" or "cpu"). Ideally, this is the same as the device '
+            "used when the model is loaded."
+        ),
+        default=None,
     )
 
     # -----------------

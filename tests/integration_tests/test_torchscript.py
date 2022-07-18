@@ -14,7 +14,6 @@
 # ==============================================================================
 import os
 import shutil
-import tempfile
 from copy import deepcopy
 from typing import List
 
@@ -55,168 +54,165 @@ from tests.integration_tests.utils import (
 
 @pytest.mark.parametrize("should_load_model", [True, False])
 @pytest.mark.parametrize("model_type", ["ecd", "gbm"])
-def test_torchscript(csv_filename, should_load_model, model_type):
+def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     #######
     # Setup
     #######
-    with tempfile.TemporaryDirectory() as tmpdir:
-        dir_path = tmpdir
-        data_csv_path = os.path.join(tmpdir, csv_filename)
+    dir_path = tmpdir
+    data_csv_path = os.path.join(tmpdir, csv_filename)
 
-        # Single sequence input, single category output
-        input_features = [
-            binary_feature(),
-            number_feature(),
-            category_feature(vocab_size=3),
-        ]
-        if model_type == "ecd":
-            image_dest_folder = os.path.join(tmpdir, "generated_images")
-            audio_dest_folder = os.path.join(tmpdir, "generated_audio")
-            input_features.extend(
-                [
-                    sequence_feature(vocab_size=3),
-                    text_feature(vocab_size=3),
-                    vector_feature(),
-                    image_feature(image_dest_folder),
-                    audio_feature(audio_dest_folder),
-                    timeseries_feature(),
-                    date_feature(),
-                    date_feature(),
-                    h3_feature(),
-                    set_feature(vocab_size=3),
-                    bag_feature(vocab_size=3),
-                ]
-            )
-
-        output_features = [
-            category_feature(vocab_size=3),
-        ]
-        if model_type == "ecd":
-            output_features.extend(
-                [
-                    binary_feature(),
-                    number_feature(),
-                    set_feature(vocab_size=3),
-                    vector_feature(),
-                    sequence_feature(vocab_size=3),
-                    text_feature(vocab_size=3),
-                ]
-            )
-
-        predictions_column_name = "{}_predictions".format(output_features[0]["name"])
-
-        # Generate test data
-        data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-        #############
-        # Train model
-        #############
-        backend = LocalTestBackend()
-        config = {
-            "model_type": model_type,
-            "input_features": input_features,
-            "output_features": output_features,
-        }
-        if model_type == "ecd":
-            config[TRAINER] = {"epochs": 2}
-        else:
-            config[TRAINER] = {"num_boost_round": 2}
-        ludwig_model = LudwigModel(config, backend=backend)
-        ludwig_model.train(
-            dataset=data_csv_path,
-            skip_save_training_description=True,
-            skip_save_training_statistics=True,
-            skip_save_model=True,
-            skip_save_progress=True,
-            skip_save_log=True,
-            skip_save_processed_input=True,
+    # Single sequence input, single category output
+    input_features = [
+        binary_feature(),
+        number_feature(),
+        category_feature(vocab_size=3),
+    ]
+    if model_type == "ecd":
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+        input_features.extend(
+            [
+                sequence_feature(vocab_size=3),
+                text_feature(vocab_size=3),
+                vector_feature(),
+                image_feature(image_dest_folder),
+                audio_feature(audio_dest_folder),
+                timeseries_feature(),
+                date_feature(),
+                date_feature(),
+                h3_feature(),
+                set_feature(vocab_size=3),
+                bag_feature(vocab_size=3),
+            ]
         )
 
-        ###################
-        # save Ludwig model
-        ###################
-        ludwigmodel_path = os.path.join(dir_path, "ludwigmodel")
-        shutil.rmtree(ludwigmodel_path, ignore_errors=True)
-        ludwig_model.save(ludwigmodel_path)
+    output_features = [
+        category_feature(vocab_size=3),
+    ]
+    if model_type == "ecd":
+        output_features.extend(
+            [
+                binary_feature(),
+                number_feature(),
+                set_feature(vocab_size=3),
+                vector_feature(),
+                sequence_feature(vocab_size=3),
+                text_feature(vocab_size=3),
+            ]
+        )
 
-        ###################
-        # load Ludwig model
-        ###################
-        if should_load_model:
-            ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
+    predictions_column_name = "{}_predictions".format(output_features[0]["name"])
 
-        ##############################
-        # collect weight tensors names
-        ##############################
-        original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
-        original_weights = deepcopy(list(ludwig_model.model.parameters()))
-        original_weights = [t.cpu() for t in original_weights]
+    # Generate test data
+    data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
-        # Move the model to CPU for tracing
-        ludwig_model.model.cpu()
+    #############
+    # Train model
+    #############
+    backend = LocalTestBackend()
+    config = {
+        "model_type": model_type,
+        "input_features": input_features,
+        "output_features": output_features,
+    }
+    if model_type == "ecd":
+        config[TRAINER] = {"epochs": 2}
+    else:
+        config[TRAINER] = {"num_boost_round": 2}
+    ludwig_model = LudwigModel(config, backend=backend)
+    ludwig_model.train(
+        dataset=data_csv_path,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+    )
 
-        #################
-        # save torchscript
-        #################
-        torchscript_path = os.path.join(dir_path, "torchscript")
-        shutil.rmtree(torchscript_path, ignore_errors=True)
-        ludwig_model.model.save_torchscript(torchscript_path)
+    ###################
+    # save Ludwig model
+    ###################
+    ludwigmodel_path = os.path.join(dir_path, "ludwigmodel")
+    shutil.rmtree(ludwigmodel_path, ignore_errors=True)
+    ludwig_model.save(ludwigmodel_path)
 
-        ###################################################
-        # load Ludwig model, obtain predictions and weights
-        ###################################################
+    ###################
+    # load Ludwig model
+    ###################
+    if should_load_model:
         ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
-        loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
-        loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
-        loaded_weights = [t.cpu() for t in loaded_weights]
 
-        #####################################################
-        # restore torchscript, obtain predictions and weights
-        #####################################################
-        training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
+    ##############################
+    # collect weight tensors names
+    ##############################
+    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
+    original_weights = deepcopy(list(ludwig_model.model.parameters()))
+    original_weights = [t.cpu() for t in original_weights]
 
-        dataset, training_set_metadata = preprocess_for_prediction(
-            ludwig_model.config,
-            dataset=data_csv_path,
-            training_set_metadata=training_set_metadata_json_fp,
-            include_outputs=False,
-            backend=backend,
-        )
+    # Move the model to CPU for tracing
+    ludwig_model.model.cpu()
 
-        restored_model = torch.jit.load(torchscript_path)
+    #################
+    # save torchscript
+    #################
+    torchscript_path = os.path.join(dir_path, "torchscript")
+    shutil.rmtree(torchscript_path, ignore_errors=True)
+    ludwig_model.model.save_torchscript(torchscript_path)
 
-        # Check the outputs for one of the features for correctness
-        # Here we choose the first output feature (categorical)
-        of_name = list(ludwig_model.model.output_features.keys())[0]
+    ###################################################
+    # load Ludwig model, obtain predictions and weights
+    ###################################################
+    ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
+    loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
+    loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
+    loaded_weights = [t.cpu() for t in loaded_weights]
 
-        data_to_predict = {
-            name: torch.from_numpy(dataset.dataset[feature.proc_column])
-            for name, feature in ludwig_model.model.input_features.items()
-        }
+    #####################################################
+    # restore torchscript, obtain predictions and weights
+    #####################################################
+    training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
 
-        # Get predictions from restored torchscript.
-        logits = restored_model(data_to_predict)
-        restored_predictions = torch.argmax(
-            output_feature_utils.get_output_feature_tensor(logits, of_name, "logits"), -1
-        )
+    dataset, training_set_metadata = preprocess_for_prediction(
+        ludwig_model.config,
+        dataset=data_csv_path,
+        training_set_metadata=training_set_metadata_json_fp,
+        include_outputs=False,
+        backend=backend,
+    )
 
-        restored_predictions = [training_set_metadata[of_name]["idx2str"][idx] for idx in restored_predictions]
+    restored_model = torch.jit.load(torchscript_path)
 
-        restored_weights = deepcopy(list(restored_model.parameters()))
-        restored_weights = [t.cpu() for t in restored_weights]
+    # Check the outputs for one of the features for correctness
+    # Here we choose the first output feature (categorical)
+    of_name = list(ludwig_model.model.output_features.keys())[0]
 
-        ###############################################
-        # Check if weights and predictions are the same
-        ###############################################
+    data_to_predict = {
+        name: torch.from_numpy(dataset.dataset[feature.proc_column])
+        for name, feature in ludwig_model.model.input_features.items()
+    }
 
-        # Check to weight values match the original model.
-        assert utils.is_all_close(original_weights, loaded_weights)
-        assert utils.is_all_close(original_weights, restored_weights)
+    # Get predictions from restored torchscript.
+    logits = restored_model(data_to_predict)
+    restored_predictions = torch.argmax(output_feature_utils.get_output_feature_tensor(logits, of_name, "logits"), -1)
 
-        # Check that predictions are identical to the original model.
-        assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
+    restored_predictions = [training_set_metadata[of_name]["idx2str"][idx] for idx in restored_predictions]
 
-        assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
+    restored_weights = deepcopy(list(restored_model.parameters()))
+    restored_weights = [t.cpu() for t in restored_weights]
+
+    ###############################################
+    # Check if weights and predictions are the same
+    ###############################################
+
+    # Check to weight values match the original model.
+    assert utils.is_all_close(original_weights, loaded_weights)
+    assert utils.is_all_close(original_weights, restored_weights)
+
+    # Check that predictions are identical to the original model.
+    assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
+
+    assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)
 
 
 def test_torchscript_e2e_tabular(csv_filename, tmpdir):

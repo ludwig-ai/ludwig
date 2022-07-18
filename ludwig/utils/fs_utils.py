@@ -26,9 +26,11 @@ import uuid
 from typing import Any, Optional, Union
 from urllib.parse import unquote, urlparse
 
+import certifi
 import fsspec
 import h5py
 import requests
+import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
 
@@ -87,17 +89,31 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
             return None
 
 
+def stream_http_get_request(path: str) -> urllib3.response.HTTPResponse:
+    if upgrade_http(path):
+        http = urllib3.PoolManager()
+    else:
+        http = urllib3.PoolManager(ca_certs=certifi.where())
+    resp = http.request("GET", path, preload_content=False)
+    return resp
+
+
 @functools.lru_cache(maxsize=32)
 def get_bytes_obj_from_http_path(path: str) -> bytes:
-    data = requests.get(path, stream=True)
-    if data.status_code == 404:
+    resp = stream_http_get_request(path)
+    if resp.status == 404:
         upgraded = upgrade_http(path)
         if upgraded:
             logging.info(f"reading url {path} failed. upgrading to https and retrying")
             return get_bytes_obj_from_http_path(upgraded)
         else:
-            raise requests.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
-    return data.raw.read()
+            raise urllib3.exceptions.HTTPError(f"reading url {path} failed and cannot be upgraded to https")
+
+    # stream data
+    data = b""
+    for chunk in resp.stream(1024):
+        data += chunk
+    return data
 
 
 def find_non_existing_dir_by_adding_suffix(directory_name):
