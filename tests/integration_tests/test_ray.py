@@ -328,6 +328,7 @@ def test_ray_image(tmpdir, df_engine, dataset_type):
     )
 
 
+@pytest.mark.distributed
 def test_ray_multiple_image_features(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
