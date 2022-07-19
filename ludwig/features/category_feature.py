@@ -23,6 +23,8 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COLUMN,
+    DECODER,
+    ENCODER,
     FILL_WITH_CONST,
     HIDDEN,
     HITS_AT_K,
@@ -164,7 +166,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    encoder = "dense"
+    encoder = {TYPE: "dense"}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -207,11 +209,12 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_values(input_feature, {ENCODER: {TYPE: "dense"}})
 
     @staticmethod
     def get_schema_cls():
@@ -224,7 +227,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    decoder = "classifier"
+    decoder = {TYPE: "classifier"}
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
@@ -254,7 +257,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         """
         if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=feature["num_classes"])
+            return calibration_cls(num_classes=feature[ENCODER]["num_classes"])
         return None
 
     def create_predict_module(self) -> PredictModule:
@@ -280,11 +283,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["vocab_size"]
-        output_feature["top_k"] = min(output_feature["num_classes"], output_feature["top_k"])
+        output_feature[DECODER]["num_classes"] = feature_metadata["vocab_size"]
+        output_feature["top_k"] = min(output_feature[DECODER]["num_classes"], output_feature["top_k"])
 
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["num_classes"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -292,7 +295,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature["num_classes"],
+                        output_feature[DECODER]["num_classes"],
                         output_feature[COLUMN],
                     )
                 )
@@ -446,7 +449,14 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
 
         set_default_values(
-            output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
+            output_feature, {
+                "decoder": {
+                    "type": "classifier",
+                },
+                "top_k": 3,
+                "dependencies": [],
+                "reduce_input": SUM,
+                "reduce_dependencies": SUM}
         )
 
     @staticmethod

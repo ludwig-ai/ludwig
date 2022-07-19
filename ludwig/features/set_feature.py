@@ -22,6 +22,7 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
+    ENCODER,
     FILL_WITH_CONST,
     HIDDEN,
     JACCARD,
@@ -219,7 +220,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    encoder = "embed"
+    encoder = {TYPE: "embed"}
     vocab = []
 
     def __init__(self, feature, encoder_obj=None):
@@ -248,11 +249,12 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_values(input_feature, {ENCODER: {TYPE: "embed"}})
 
     @staticmethod
     def get_schema_cls():
@@ -269,7 +271,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 @register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    decoder = "classifier"
+    decoder = {TYPE: "classifier"}
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
@@ -313,9 +315,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["vocab_size"]
+        output_feature[DECODER]["num_classes"] = feature_metadata["vocab_size"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["num_classes"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -393,7 +395,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature[LOSS], "weight", 1)
         set_default_value(output_feature[LOSS], "class_weights", None)
 
-        set_default_values(output_feature, DECODER, {"threshold", 0.5})
+        set_default_values(output_feature, {DECODER: {TYPE: "classifier", "threshold": 0.5}})
         set_default_value(output_feature, "dependencies", [])
         set_default_value(output_feature, "reduce_input", SUM)
         set_default_value(output_feature, "reduce_dependencies", SUM)

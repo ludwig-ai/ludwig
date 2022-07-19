@@ -24,6 +24,8 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     COLUMN,
+    DECODER,
+    ENCODER,
     FILL_WITH_FALSE,
     HIDDEN,
     LOGITS,
@@ -217,7 +219,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    encoder = "passthrough"
+    encoder = {TYPE: "passthrough"}
     norm = None
     dropout = False
 
@@ -258,6 +260,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
 
     @staticmethod
     def get_schema_cls():
@@ -277,7 +280,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 @register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    decoder = "regressor"
+    decoder = {TYPE: "regressor"}
     loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC
@@ -419,6 +422,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature,
             {
+                DECODER: {
+                    TYPE: "regressor",
+                },
                 "threshold": 0.5,
                 "dependencies": [],
                 "reduce_input": SUM,

@@ -21,6 +21,8 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
+    DECODER,
+    ENCODER,
     EDIT_DISTANCE,
     FILL_WITH_CONST,
     LAST_ACCURACY,
@@ -203,12 +205,12 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    encoder = "parallel_cnn"
+    encoder = {TYPE: "parallel_cnn"}
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
-        self._input_shape = [feature["max_sequence_length"]]
+        self._input_shape = [feature[ENCODER]["max_sequence_length"]]
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -239,16 +241,16 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
-        input_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        input_feature["pad_idx"] = feature_metadata["pad_idx"]
-        input_feature["num_tokens"] = len(feature_metadata["idx2str"])
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
+        input_feature[ENCODER]["pad_idx"] = feature_metadata["pad_idx"]
+        input_feature[ENCODER]["num_tokens"] = len(feature_metadata["idx2str"])
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_values(input_feature, {TIED: None, "encoder": {"type": "parallel_cnn"}})
+        set_default_values(input_feature, {TIED: None, ENCODER: {"type": "parallel_cnn"}})
 
-        encoder_class = get_encoder_cls(input_feature["type"], input_feature["encoder"]["type"])
+        encoder_class = get_encoder_cls(input_feature["type"], input_feature[ENCODER]["type"])
 
         if hasattr(encoder_class, "default_params"):
             set_default_values(input_feature, encoder_class.default_params)
@@ -287,16 +289,16 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
+        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
+        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
             # [0, 0] for UNK and PAD
             output_feature[LOSS]["class_weights"] = [0, 0] + output_feature[LOSS]["class_weights"]
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({})".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature["vocab_size"]
+                        len(output_feature[LOSS]["class_weights"]), output_feature[DECODER]["vocab_size"]
                     )
                 )
 

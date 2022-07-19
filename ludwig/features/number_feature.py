@@ -24,6 +24,8 @@ from torch import nn
 
 from ludwig.constants import (
     COLUMN,
+    DECODER,
+    ENCODER,
     FILL_WITH_CONST,
     HIDDEN,
     LOGITS,
@@ -286,7 +288,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
-    encoder = "passthrough"
+    encoder = {TYPE: "passthrough"}
 
     def __init__(self, feature, encoder_obj=None):
         # Required for certain encoders, maybe pass into initialize_encoder
@@ -328,6 +330,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
 
     @staticmethod
     def get_schema_cls():
@@ -344,7 +347,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
 @register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
-    decoder = "regressor"
+    decoder = {TYPE: "regressor"}
     loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {
         LOSS: None,
@@ -430,6 +433,9 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         set_default_values(
             output_feature,
             {
+                DECODER: {
+                    TYPE: "regressor",
+                },
                 "clip": None,
                 "dependencies": [],
                 "reduce_input": SUM,

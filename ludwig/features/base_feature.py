@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
+from ludwig.constants import COLUMN, DECODER, ENCODER, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -170,7 +170,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_encoder(self, encoder_parameters):
-        return get_encoder_cls(self.type(), self.encoder[TYPE])(**encoder_parameters)
+        return get_encoder_cls(self.type(), self.encoder[TYPE])(**encoder_parameters[ENCODER])
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
@@ -267,12 +267,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_decoder(self, decoder_parameters):
         decoder_parameters_copy = copy.copy(decoder_parameters)
         # Input to the decoder is the output feature's FC hidden layer.
-        decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
-        if "decoder" in decoder_parameters:
-            decoder = decoder_parameters["decoder"]
+        decoder_parameters_copy[DECODER]["input_size"] = self.fc_stack.output_shape[-1]
+        if DECODER in decoder_parameters:
+            decoder = decoder_parameters[DECODER]
         else:
             decoder = self.decoder
-        return get_decoder_cls(self.type(), decoder)(**decoder_parameters_copy)
+        return get_decoder_cls(self.type(), decoder[TYPE])(**decoder_parameters_copy[DECODER])
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)

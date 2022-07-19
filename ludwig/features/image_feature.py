@@ -27,6 +27,7 @@ from ludwig.constants import (
     BACKFILL,
     CHECKSUM,
     COLUMN,
+    ENCODER,
     HEIGHT,
     IMAGE,
     INFER_IMAGE_DIMENSIONS,
@@ -39,6 +40,7 @@ from ludwig.constants import (
     PROC_COLUMN,
     SRC,
     TIED,
+    TYPE,
     TRAINING,
     WIDTH,
 )
@@ -56,7 +58,7 @@ from ludwig.utils.image_utils import (
     read_image_from_path,
     resize_image,
 )
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
@@ -465,7 +467,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     width = 0
     num_channels = 0
     scaling = "pixel_normalization"
-    encoder = "stacked_cnn"
+    encoder = {TYPE: "stacked_cnn"}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -501,12 +503,13 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         for key in ["height", "width", "num_channels", "scaling"]:
-            input_feature[key] = feature_metadata[PREPROCESSING][key]
+            input_feature[ENCODER][key] = feature_metadata[PREPROCESSING][key]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
+        set_default_values(input_feature, {ENCODER: {TYPE: "stacked_cnn"}})
 
     @staticmethod
     def get_schema_cls():

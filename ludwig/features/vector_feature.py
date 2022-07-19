@@ -22,6 +22,7 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
+    ENCODER,
     ERROR,
     FILL_WITH_CONST,
     HIDDEN,
@@ -151,13 +152,13 @@ class VectorFeatureMixin:
 
 @register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
-    encoder = "dense"
+    encoder = {TYPE: "dense"}
     vector_size = 0
 
     def __init__(self, feature: Dict[str, Any], encoder_obj: Optional[LudwigModule] = None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature["input_size"] = feature["vector_size"]
+        feature[ENCODER]["input_size"] = feature["vector_size"]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -189,6 +190,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, "preprocessing", {})
+        set_default_values(input_feature, {ENCODER: {TYPE: "dense"}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
@@ -201,7 +203,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 @register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    decoder = "projector"
+    decoder = {TYPE: "projector"}
     loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
     default_validation_metric = MEAN_SQUARED_ERROR
@@ -211,7 +213,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self._input_shape = feature["input_size"]
-        feature["output_size"] = feature["vector_size"]
+        feature[DECODER]["output_size"] = feature["vector_size"]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()

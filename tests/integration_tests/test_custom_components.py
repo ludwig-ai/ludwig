@@ -109,11 +109,11 @@ def test_custom_combiner():
 
 def test_custom_encoder_decoder():
     input_features = [
-        sequence_feature(reduce_output="sum"),
-        number_feature(encoder="custom_number_encoder"),
+        sequence_feature(encoder={"reduce_output": "sum"}),
+        number_feature(encoder={"type": "custom_number_encoder"}),
     ]
     output_features = [
-        number_feature(decoder="custom_number_decoder"),
+        number_feature(decoder={"type": "custom_number_decoder"}),
     ]
     _run_test(input_features=input_features, output_features=output_features)
 
@@ -128,10 +128,10 @@ def test_custom_loss_metric():
 def _run_test(input_features=None, output_features=None, combiner=None):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = input_features or [
-            sequence_feature(reduce_output="sum"),
+            sequence_feature(encoder={"reduce_output": "sum"}),
             number_feature(),
         ]
-        output_features = output_features or [category_feature(vocab_size=2, reduce_input="sum")]
+        output_features = output_features or [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
         combiner = combiner or {"type": "concat"}
 
         csv_filename = os.path.join(tmpdir, "training.csv")

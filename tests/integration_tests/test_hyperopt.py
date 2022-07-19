@@ -101,11 +101,11 @@ SCHEDULERS_FOR_TESTING = [
 
 def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="utterance", reduce_output="sum"),
-        category_feature(vocab_size=3),
+        text_feature(name="utterance", encoder={"reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 3}),
     ]
 
-    output_features = [category_feature(vocab_size=3)]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
@@ -123,13 +123,13 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
 
 def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]:
     input_features = [
-        text_feature(name="title", encoder="parallel_cnn"),
+        text_feature(name="title", encoder={"type": "parallel_cnn"}),
         text_feature(name="summary"),
-        category_feature(vocab_size=3),
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
     ]
 
-    output_features = [category_feature(vocab_size=3)]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
@@ -311,11 +311,11 @@ def test_hyperopt_scheduler(
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     input_features = [
-        text_feature(name="utterance", reduce_output="sum"),
-        category_feature(vocab_size=3),
+        text_feature(name="utterance", encoder={"reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 3}),
     ]
 
-    output_features = [category_feature(vocab_size=3)]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 

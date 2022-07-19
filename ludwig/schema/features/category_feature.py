@@ -42,3 +42,10 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
         feature_type=CATEGORY,
         default='classifier',
     )
+
+    top_k: int = schema_utils.NonNegativeInteger(
+        default=3,
+        description="Determines the parameter k, the number of categories to consider when computing the top_k "
+                    "measure. It computes accuracy but considering as a match if the true category appears in the "
+                    "first k predicted categories ranked by decoder's confidence.",
+    )

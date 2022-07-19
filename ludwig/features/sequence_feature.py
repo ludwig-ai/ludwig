@@ -24,6 +24,7 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
+    ENCODER,
     EDIT_DISTANCE,
     FILL_WITH_CONST,
     LAST_ACCURACY,
@@ -50,7 +51,7 @@ from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry, set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
@@ -275,14 +276,14 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = "parallel_cnn"
+    encoder = {TYPE: "parallel_cnn"}
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
-        if "vocab" in feature:
-            feature["vocab_size"] = len(feature["vocab"])
+        if "vocab" in feature[ENCODER]:
+            feature[ENCODER]["vocab_size"] = len(feature[ENCODER]["vocab"])
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -306,13 +307,13 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
-        input_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-        set_default_value(input_feature, "encoder", "parallel_cnn")
+        set_default_values(input_feature, {ENCODER: {"type": "parallel_cnn"}})
 
     @staticmethod
     def get_schema_cls():
@@ -333,7 +334,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = "generator"
+    decoder = {TYPE: "generator"}
     loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
@@ -378,10 +379,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
+        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
+        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -389,7 +390,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature["vocab_size"],
+                        output_feature[DECODER]["vocab_size"],
                         output_feature[COLUMN],
                     )
                 )
@@ -431,14 +432,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         )
                     )
 
-                if all_rows_length != output_feature["vocab_size"]:
+                if all_rows_length != output_feature[DECODER]["vocab_size"]:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> and <PAD> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature["vocab_size"]
+                            output_feature[COLUMN], all_rows_length, output_feature[DECODER]["vocab_size"]
                         )
                     )
 
@@ -529,7 +530,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         )
 
         set_default_value(output_feature[LOSS], "unique", False)
-        set_default_value(output_feature, DECODER, {TYPE: "generator"})
+        set_default_values(output_feature, {DECODER: {TYPE: "generator"}})
 
         if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)
