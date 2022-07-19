@@ -1072,10 +1072,6 @@ def build_dataset(
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
-    if len(dataset_df.index) != len(dataset_df.index.drop_duplicates()):
-        # Indices are used for joins and repartitioning so they must be unique
-        dataset_df = backend.df_engine.reset_index(dataset_df)
-
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
         logger.debug(f"sample {sample_ratio} of data")

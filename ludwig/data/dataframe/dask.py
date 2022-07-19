@@ -71,12 +71,6 @@ class DaskEngine(DataFrameEngine):
         NOTE: If any of the processed columns have been repartitioned, the original index is replaced with a
         monotonically increasing index, which is used to define the new divisions and align the various partitions.
         """
-        if not df.known_divisions:
-            # If divisions are unknown, we use set_index to define them.
-            df = df.assign(**{TMP_COLUMN: df.index})
-            df = df.set_index(TMP_COLUMN, drop=True)
-            df = df.map_partitions(lambda pd_df: set_index_name(pd_df, df.index.name))
-
         # Drop all columns to create a DataFrame for processed columns.
         dataset = df.drop(columns=df.columns)
 
@@ -91,6 +85,16 @@ class DaskEngine(DataFrameEngine):
                 repartitioned_cols[k] = v
 
         if repartitioned_cols:
+            if not df.known_divisions:
+                if len(df.index) != len(df.index.drop_duplicates()):
+                    # Indices are used for joins and repartitioning so they must be unique
+                    df = self.reset_index(df)
+                else:
+                    # If indices are unique, but divisions are not known, we can use set_index to define divisions
+                    df = df.assign(**{TMP_COLUMN: df.index})
+                    df = df.set_index(TMP_COLUMN, drop=True)
+                    df = df.map_partitions(lambda pd_df: set_index_name(pd_df, df.index.name))
+
             # Find the divisions of the column with the largest number of partitions
             proc_col_with_max_npartitions = max(repartitioned_cols.values(), key=lambda x: x.npartitions)
             new_divisions = proc_col_with_max_npartitions.divisions
