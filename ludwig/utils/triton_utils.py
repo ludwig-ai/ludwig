@@ -19,8 +19,8 @@ from ludwig.models.inference import (
     PREDICTOR,
     PREPROCESSOR,
 )
-from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
+from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
 
 INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
