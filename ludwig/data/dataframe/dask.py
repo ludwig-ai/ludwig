@@ -71,8 +71,10 @@ class DaskEngine(DataFrameEngine):
         NOTE: If any of the processed columns have been repartitioned, the original index is replaced with a
         monotonically increasing index, which is used to define the new divisions and align the various partitions.
         """
-        # Drop all columns to create a DataFrame for processed columns.
-        dataset = df.drop(columns=df.columns)
+        # Our goal is to preserve the index of the input dataframe but to drop
+        # all its columns. Because to_frame() creates a column from the index,
+        # we need to drop it immediately following creation.
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
 
         repartitioned_cols = {}
         for k, v in proc_cols.items():
@@ -85,15 +87,15 @@ class DaskEngine(DataFrameEngine):
                 repartitioned_cols[k] = v
 
         if repartitioned_cols:
-            if not df.known_divisions:
-                if len(df.index) != len(df.index.drop_duplicates()):
+            if not dataset.known_divisions:
+                if len(dataset.index) != len(dataset.index.drop_duplicates()):
                     # Indices are used for joins and repartitioning so they must be unique
-                    df = self.reset_index(df)
+                    dataset = self.reset_index(dataset)
                 else:
                     # If indices are unique, but divisions are not known, we can use set_index to define divisions
-                    df = df.assign(**{TMP_COLUMN: df.index})
-                    df = df.set_index(TMP_COLUMN, drop=True)
-                    df = df.map_partitions(lambda pd_df: set_index_name(pd_df, df.index.name))
+                    dataset = dataset.assign(**{TMP_COLUMN: dataset.index})
+                    dataset = dataset.set_index(TMP_COLUMN, drop=True)
+                    dataset = dataset.map_partitions(lambda pd_df: set_index_name(pd_df, dataset.index.name))
 
             # Find the divisions of the column with the largest number of partitions
             proc_col_with_max_npartitions = max(repartitioned_cols.values(), key=lambda x: x.npartitions)
