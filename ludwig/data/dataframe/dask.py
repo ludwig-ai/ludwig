@@ -37,6 +37,23 @@ def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
+def reset_index_across_all_partitions(df):
+    """Compute a monotonically increasing index across all partitions.
+    This differs from dd.reset_index, which computes an independent index for each partition.
+    Source: https://stackoverflow.com/questions/61395351/how-to-reset-index-on-concatenated-dataframe-in-dask
+    """
+    # Create temporary column of ones
+    df = df.assign(**{TMP_COLUMN: 1})
+
+    # Set the index to the cumulative sum of TMP_COLUMN, which we know to be sorted; this improves efficiency.
+    df = df.set_index(df[TMP_COLUMN].cumsum() - 1, sorted=True)
+
+    # Drop temporary column and ensure the index is not named TMP_COLUMN
+    df = df.drop(columns=TMP_COLUMN)
+    df = df.map_partitions(lambda pd_df: set_index_name(pd_df, None))
+    return df
+
+
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
         self._parallelism = parallelism
@@ -53,13 +70,14 @@ class DaskEngine(DataFrameEngine):
         NOTE: If any of the processed columns have been repartitioned, the original index is replaced with a
         monotonically increasing index, which is used to define the new divisions and align the various partitions.
         """
+        if not df.known_divisions:
+            # If divisions are unknown, we use set_index to define them.
+            df = df.assign(**{TMP_COLUMN: df.index})
+            df = df.set_index(TMP_COLUMN, drop=True)
+            df = df.map_partitions(lambda pd_df: set_index_name(pd_df, df.index.name))
 
-        # Our goal is to preserve the index of the input dataframe but to drop
-        # all its columns. This method allows the dataset to additionally know its own divisions.
-        dataset = df.assign(**{TMP_COLUMN: df.index})
-        dataset = dataset.set_index(TMP_COLUMN, drop=True)
-        dataset = dataset.map_partitions(lambda pd_df: set_index_name(pd_df, df.index.name))
-        dataset = dataset.drop(columns=dataset.columns)
+        # Drop all columns to create a DataFrame for processed columns.
+        dataset = df.drop(columns=df.columns)
 
         repartitioned_cols = {}
         for k, v in proc_cols.items():
@@ -154,6 +172,9 @@ class DaskEngine(DataFrameEngine):
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
         return dataset.to_dask()
+
+    def reset_index(self, df):
+        return reset_index_across_all_partitions(df)
 
     @property
     def array_lib(self):

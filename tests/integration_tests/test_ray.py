@@ -328,6 +328,28 @@ def test_ray_image(tmpdir, df_engine, dataset_type):
     )
 
 
+def test_ray_multiple_image_features(tmpdir):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder="resnet",
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+            output_size=16,
+            num_filters=8,
+        ),
+        image_feature(
+            folder=image_dest_folder,
+            encoder="resnet",
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+            output_size=16,
+            num_filters=8,
+        ),
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(input_features, output_features, df_engine="dask", dataset_type="csv", nan_percent=0.1)
+
+
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
 @pytest.mark.distributed
 def test_ray_split():

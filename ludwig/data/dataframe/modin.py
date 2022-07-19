@@ -67,6 +67,9 @@ class ModinEngine(DataFrameEngine):
     def from_ray_dataset(self, dataset) -> pd.DataFrame:
         return dataset.to_modin()
 
+    def reset_index(self, df):
+        return df.reset_index(drop=True)
+
     @property
     def array_lib(self):
         return np
