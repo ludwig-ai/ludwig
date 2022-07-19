@@ -134,3 +134,49 @@ def test_FloatRangeTupleDataclassField():
     assert CustomTestSchema.Schema().load({}).foo == (1, 1, 1)
     assert CustomTestSchema.Schema().load({"foo": [2, 2, 2]}).foo == (2, 2, 2)
     assert CustomTestSchema.Schema().load({"foo": (2, 2, 2)}).foo == (2, 2, 2)
+
+
+def test_OneOfOptionsField():
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+            default=0.1,
+            description="",
+            allow_none=False,
+            field_options=[
+                schema_utils.FloatRange(default=0.001, min=0, max=1),
+                schema_utils.StringOptions(options=["placeholder"], default="placeholder", allow_none=False),
+            ],
+        )
+
+    # Test valid loads:
+    assert CustomTestSchema.Schema().load({}).foo == 0.1
+    CustomTestSchema().foo == 0.1
+
+    # Test invalid loads:
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": None})
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": "test"})
+
+    # Reverse the order and allow none (via StringOptions):
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Union[None, float, str] = schema_utils.OneOfOptionsField(
+            default="placeholder",
+            description="",
+            allow_none=True,
+            field_options=[
+                schema_utils.FloatRange(default=0.001, min=0, max=1),
+                schema_utils.StringOptions(options=["placeholder"], default="placeholder"),
+            ],
+        )
+
+    # Test valid loads:
+    assert CustomTestSchema.Schema().load({}).foo == "placeholder"
+    CustomTestSchema().foo == "placeholder"
+    CustomTestSchema.Schema().load({"foo": None})
+
+    # Test invalid loads:
+    with pytest.raises(MarshmallowValidationError):
+        CustomTestSchema.Schema().load({"foo": "bar"})
