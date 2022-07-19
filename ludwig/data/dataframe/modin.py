@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 import modin.pandas as pd
 import numpy as np
 
@@ -25,6 +26,7 @@ class ModinEngine(DataFrameEngine):
         super().__init__()
 
     def df_like(self, df, proc_cols):
+        # df argument unused for pandas, which can instantiate df directly
         return pd.DataFrame(proc_cols)
 
     def parallelize(self, data):
