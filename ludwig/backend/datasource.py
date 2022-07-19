@@ -13,19 +13,16 @@ from ray.data.datasource.file_based_datasource import (
     _resolve_paths_and_filesystem,
     _S3FileSystemWrapper,
     _wrap_s3_serialization_workaround,
+    BlockOutputBuffer,
+    _check_pyarrow_version,
+    BaseFileMetadataProvider,
+    DefaultFileMetadataProvider,
 )
-from ray.data.impl.output_buffer import BlockOutputBuffer
-from ray.data.impl.util import _check_pyarrow_version
+
 
 from ludwig.utils.fs_utils import get_bytes_obj_from_http_path, is_http
 
 _ray113 = version.parse("1.13") <= version.parse(ray.__version__) == version.parse("1.13.0")
-
-if _ray113:
-    # Code refactored in Ray 1.13
-    from ray.data.datasource.file_meta_provider import BaseFileMetadataProvider, DefaultFileMetadataProvider
-else:
-    from ray.data.datasource.file_based_datasource import BaseFileMetadataProvider, DefaultFileMetadataProvider
 
 if TYPE_CHECKING:
     import pyarrow

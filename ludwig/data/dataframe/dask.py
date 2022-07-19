@@ -88,14 +88,10 @@ class DaskEngine(DataFrameEngine):
 
         if repartitioned_cols:
             if not dataset.known_divisions:
-                if len(dataset.index) != len(dataset.index.drop_duplicates()):
-                    # Indices are used for joins and repartitioning so they must be unique
-                    dataset = self.reset_index(dataset)
-                else:
-                    # If indices are unique, but divisions are not known, we can use set_index to define divisions
-                    dataset = dataset.assign(**{TMP_COLUMN: dataset.index})
-                    dataset = dataset.set_index(TMP_COLUMN, drop=True)
-                    dataset = dataset.map_partitions(lambda pd_df: set_index_name(pd_df, dataset.index.name))
+                # Indices are used for repartitioning– set_index is used to define divisions
+                dataset = dataset.assign(**{TMP_COLUMN: dataset.index})
+                dataset = dataset.set_index(TMP_COLUMN, drop=True)
+                dataset = dataset.map_partitions(lambda pd_df: set_index_name(pd_df, dataset.index.name))
 
             # Find the divisions of the column with the largest number of partitions
             proc_col_with_max_npartitions = max(repartitioned_cols.values(), key=lambda x: x.npartitions)
