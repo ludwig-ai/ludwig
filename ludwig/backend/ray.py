@@ -48,6 +48,7 @@ from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.horovod_utils import initialize_horovod
@@ -874,7 +875,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
         #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
         #  there should not be any difference between providing a directory versus a list of files.
-        fnames = self.df_engine.compute(column).values.tolist()
+        pd_column = self.df_engine.compute(column)
+        fnames = pd_column.values.tolist()
+        idxs = pd_column.index.tolist()
 
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
@@ -883,11 +886,16 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
             # The resulting column is named "value"
             ds = ray.data.read_datasource(
-                BinaryIgnoreNoneTypeDatasource(), paths=fnames, filesystem=PyFileSystem(FSSpecHandler(fs))
+                BinaryIgnoreNoneTypeDatasource(),
+                paths=list(zip(fnames, idxs)),
+                filesystem=PyFileSystem(FSSpecHandler(fs)),
             )
+            ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
+            # Overwrite the "value" column with the actual data
+            ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
-            # Name the column "value" to match the behavior of ray.data.read_binary_files
+            # Name the column "value" to match the behavior of the above
             ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
@@ -900,6 +908,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
         df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+        if "idx" in df.columns:
+            df = df.set_index("idx", drop=True)
+            df = self.df_engine.map_partitions(
+                df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
+            )
         return df[column.name]
 
     @property

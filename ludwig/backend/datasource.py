@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union
 
 import ray
 import urllib3
@@ -52,7 +52,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
     def prepare_read(
         self,
         parallelism: int,
-        paths: Union[str, List[str]],
+        paths: Union[str, List[str], Tuple[str, int], List[Tuple[str, int]]],
         filesystem: Optional["pyarrow.fs.FileSystem"] = None,
         schema: Optional[Union[type, "pyarrow.lib.Schema"]] = None,
         open_stream_args: Optional[Dict[str, Any]] = None,
@@ -62,7 +62,11 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
         _block_udf: Optional[Callable[[Block], Block]] = None,
         **reader_args,
     ) -> List[ReadTask]:
-        """Creates and returns read tasks for a file-based datasource."""
+        """Creates and returns read tasks for a file-based datasource.
+
+        If `paths` is a tuple, The resulting dataset will have an `idx` key containing the second item in the tuple.
+        Useful for tracking the order of files in the dataset.
+        """
         _check_pyarrow_version()
         import numpy as np
 
@@ -73,8 +77,11 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
         if open_stream_args is None:
             open_stream_args = {}
 
+        if partition_filter is not None:
+            raise ValueError("partition_filter is not currently supported by this class")
+
         def read_files(
-            read_paths: List[str],
+            read_paths_and_idxs: List[Tuple[str, int]],
             fs: Union["pyarrow.fs.FileSystem", _S3FileSystemWrapper],
         ) -> Iterable[Block]:
             logger.debug(f"Reading {len(read_paths)} files.")
@@ -82,7 +89,8 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
                 fs = fs.unwrap()
             ctx = DatasetContext.get_current()
             output_buffer = BlockOutputBuffer(block_udf=_block_udf, target_max_block_size=ctx.target_max_block_size)
-            for read_path in read_paths:
+            for read_path_and_idx in read_paths_and_idxs:
+                read_path, _ = read_path_and_idx
                 # Get reader_args and open_stream_args only if valid path.
                 if read_path is not None:
                     compression = open_stream_args.pop("compression", None)
@@ -115,7 +123,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
                         open_stream_args["compression"] = compression
 
                 with self._open_input_source(fs, read_path, **open_stream_args) as f:
-                    for data in read_stream(f, read_path, **reader_args):
+                    for data in read_stream(f, read_path_and_idx, **reader_args):
                         output_buffer.add_block(data)
                         if output_buffer.has_next():
                             yield output_buffer.next()
@@ -126,22 +134,30 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
         # fix https://github.com/ray-project/ray/issues/24296
         parallelism = min(parallelism, len(paths))
 
+        has_idx = isinstance(paths[0], tuple)  # include idx if paths is a list of Tuple[str, int]
+        if not has_idx:
+            paths = [(path, None) for path in paths]
+
         read_tasks = []
-        for raw_paths in np.array_split(paths, parallelism):
+        for raw_paths_and_idxs in np.array_split(paths, parallelism):
+            raw_paths, idxs = zip(*raw_paths_and_idxs)
+
             # Paths must be resolved and expanded
             read_paths = []
             file_sizes = []
             for raw_path in raw_paths:
                 if raw_path is None or is_http(raw_path):
-                    read_paths.append(raw_path)
-                    file_sizes.append(None)  # unknown file size is None
+                    read_path = raw_path
+                    file_size = None  # unknown file size is None
                 else:
                     resolved_path, filesystem = _resolve_paths_and_filesystem([raw_path], filesystem)
                     read_path, file_size = meta_provider.expand_paths(resolved_path, filesystem)
-                    if partition_filter is not None:
-                        read_path = partition_filter(read_path)
-                    read_paths.append(read_path[0])
-                    file_sizes.append(file_size[0])
+                    # expand_paths returns two lists, so get the first element of each
+                    read_path = read_path[0]
+                    file_size = file_size[0]
+
+                read_paths.append(read_path)
+                file_sizes.append(file_size)
 
             if len(read_paths) <= 0:
                 continue
@@ -152,7 +168,11 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
                 rows_per_file=self._rows_per_file(),
                 file_sizes=file_sizes,
             )
-            read_task = ReadTask(lambda read_paths=read_paths: read_files(read_paths, filesystem), meta)
+
+            read_paths_and_idxs = list(zip(read_paths, idxs))
+            read_task = ReadTask(
+                lambda read_paths_and_idxs=read_paths_and_idxs: read_files(read_paths_and_idxs, filesystem), meta
+            )
             read_tasks.append(read_task)
 
         return read_tasks
@@ -174,20 +194,33 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
             return contextlib.nullcontext()
         return filesystem.open_input_stream(path, **open_args)
 
-    def _read_file(self, f: Union["pyarrow.NativeFile", contextlib.nullcontext], path: str, **reader_args):
+    def _read_file(
+        self,
+        f: Union["pyarrow.NativeFile", contextlib.nullcontext],
+        path_and_idx: Tuple[str, int] = None,
+        **reader_args,
+    ):
         include_paths = reader_args.get("include_paths", False)
+
+        path, idx = path_and_idx
         if path is None:
-            if include_paths:
-                return [(path, None)]
-            return [None]
-        if is_http(path):
+            data = None
+        elif is_http(path):
             try:
                 data = get_bytes_obj_from_http_path(path)
             except urllib3.exceptions.HTTPError as e:
                 logging.warning(e)
                 data = None
-
+        else:
+            super_result = super()._read_file(f, path, **reader_args)[0]
             if include_paths:
-                return [(path, data)]
-            return [data]
-        return super()._read_file(f, path, **reader_args)
+                _, data = super_result
+            else:
+                data = super_result
+
+        result = {"data": data}
+        if include_paths:
+            result["path"] = path
+        if idx is not None:
+            result["idx"] = idx
+        return [result]

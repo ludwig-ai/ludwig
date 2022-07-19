@@ -79,3 +79,8 @@ def from_numpy_dataset(dataset: BaseDataset) -> pd.DataFrame:
             vals = v
         col_mapping[k] = vals
     return pd.DataFrame.from_dict(col_mapping)
+
+
+def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
+    pd_df.index.name = name
+    return pd_df

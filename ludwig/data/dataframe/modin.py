@@ -15,7 +15,6 @@
 # ==============================================================================
 import modin.pandas as pd
 import numpy as np
-from modin.distributed.dataframe.pandas import unwrap_partitions
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices
@@ -26,28 +25,7 @@ class ModinEngine(DataFrameEngine):
         super().__init__()
 
     def df_like(self, df, proc_cols):
-        num_df_partitions = len(unwrap_partitions(df))
-        unchanged_cols = {}
-        repartitioned_cols = {}
-        for k, v in proc_cols.items():
-            num_col_partitions = len(unwrap_partitions(v))
-            if num_col_partitions == num_df_partitions:
-                unchanged_cols[k] = v
-            else:
-                # If number of partitions has changed (e.g. due to conversion from Ray dataset), we handle separately
-                repartitioned_cols[k] = v
-
-        # Outer join cols with equal number of partitions
-        dataset = pd.DataFrame(unchanged_cols, index=df.index)
-
-        if repartitioned_cols:
-            # Reset index to avoid duplicate index error
-            dataset.index = range(len(dataset))
-            for k, v in repartitioned_cols.items():
-                v.index = dataset.index
-                dataset[k] = v
-
-        return dataset
+        return pd.DataFrame(proc_cols)
 
     def parallelize(self, data):
         return data

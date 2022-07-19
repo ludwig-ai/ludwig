@@ -589,11 +589,11 @@ def run_api_experiment(input_features, output_features, data_csv):
 
 def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     """Adds nans to a pandas dataframe in-place."""
-    if nan_percent < 0 or nan_percent > 1:
-        raise ValueError("nan_percent must be between 0 and 1")
     if nan_percent == 0:
         # No-op if nan_percent is 0
         return None
+    if nan_percent < 0 or nan_percent > 1:
+        raise ValueError("nan_percent must be between 0 and 1")
 
     num_rows = len(df)
     num_nans_per_col = int(round(nan_percent * num_rows))
