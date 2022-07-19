@@ -308,9 +308,10 @@ def test_ray_audio(tmpdir, dataset_type, feature_type):
     run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
 
 
+@pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
-def test_ray_image(tmpdir, dataset_type):
+def test_ray_image(tmpdir, df_engine, dataset_type):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
@@ -322,7 +323,9 @@ def test_ray_image(tmpdir, dataset_type):
         ),
     ]
     output_features = [binary_feature()]
-    run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
+    run_test_with_features(
+        input_features, output_features, df_engine=df_engine, dataset_type=dataset_type, nan_percent=0.1
+    )
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")

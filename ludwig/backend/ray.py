@@ -899,9 +899,15 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
+            # HACK: Workaround for https://github.com/modin-project/modin/issues/4686
+            if "value" in df:
+                key = "value"
+            else:
+                key = column.name
+
             # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
             with use_credentials(conf):
-                df["value"] = df["value"].map(fn)
+                df[key] = df[key].map(fn)
                 return df
 
         if map_fn is not None:

@@ -37,7 +37,7 @@ class ModinEngine(DataFrameEngine):
         return data
 
     def from_pandas(self, df):
-        return df
+        return pd.DataFrame(df)
 
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
