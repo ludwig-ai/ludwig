@@ -49,7 +49,7 @@ def _run_ludwig_horovod(command, **ludwig_kwargs):
 
 def _prepare_data(csv_filename, config_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
     # Generate test data

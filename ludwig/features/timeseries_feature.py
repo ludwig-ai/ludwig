@@ -193,13 +193,13 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    encoder = "parallel_cnn"
+    encoder = {TYPE: "parallel_cnn"}
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         # add required sequence encoder parameters for time series
-        feature["embedding_size"] = 1
-        feature["should_embed"] = False
+        feature[ENCODER]["embedding_size"] = 1
+        feature[ENCODER]["should_embed"] = False
 
         # initialize encoder for time series
         super().__init__(feature, encoder_obj=encoder_obj)
@@ -224,7 +224,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["max_sequence_length"] = feature_metadata["max_timeseries_length"]
+        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_timeseries_length"]
 
     @staticmethod
     def populate_defaults(input_feature):

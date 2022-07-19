@@ -75,7 +75,7 @@ class SequenceTaggerDecoder(Decoder):
         return {LOGITS}
 
     @staticmethod
-    def get_schema_config():
+    def get_schema_cls():
         return SequenceTaggerDecoderConfig
 
     @property

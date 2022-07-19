@@ -21,12 +21,12 @@ import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, FILL_WITH_CONST, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, DATE, ENCODER, FILL_WITH_CONST, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature
@@ -117,7 +117,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
-    encoder = "embed"
+    encoder = {TYPE: "embed"}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -155,6 +155,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_values(input_feature, {ENCODER: {TYPE: "embed"}})
 
     @staticmethod
     def get_schema_cls():

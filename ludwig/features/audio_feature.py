@@ -26,6 +26,7 @@ from ludwig.constants import (
     AUDIO_FEATURE_KEYS,
     BACKFILL,
     COLUMN,
+    ENCODER,
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
@@ -455,15 +456,15 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    encoder = "parallel_cnn"
+    encoder = {TYPE: "parallel_cnn"}
     max_sequence_length = None
     embedding_size = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
-        if not self.embedding_size:
+        if not self.encoder["embedding_size"]:
             raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
-        if not self.max_sequence_length:
+        if not self.encoder["max_sequence_length"]:
             raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):
@@ -485,13 +486,14 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["max_sequence_length"] = feature_metadata["max_length"]
-        input_feature["embedding_size"] = feature_metadata["feature_dim"]
-        input_feature["should_embed"] = False
+        input_feature["encoder"]["max_sequence_length"] = feature_metadata["max_length"]
+        input_feature["encoder"]["embedding_size"] = feature_metadata["feature_dim"]
+        input_feature["encoder"]["should_embed"] = False
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_values(input_feature, {TIED: None, "preprocessing": {}})
+        set_default_values(input_feature, {ENCODER: {TYPE: "parallel_cnn"}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

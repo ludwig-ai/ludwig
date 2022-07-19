@@ -20,13 +20,11 @@ from typing import Any, Dict
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED
+from ludwig.constants import BAG, COLUMN, ENCODER, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
-from ludwig.schema.features.bag_feature import BagInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 from ludwig.schema.features.utils import register_input_feature
@@ -97,7 +95,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    encoder = "embed"
+    encoder = {TYPE: "embed"}
     vocab = []
 
     def __init__(self, feature, encoder_obj=None):
@@ -126,11 +124,12 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+        set_default_values(input_feature, {ENCODER: {TYPE: "embed"}})
 
     @staticmethod
     def get_schema_cls():

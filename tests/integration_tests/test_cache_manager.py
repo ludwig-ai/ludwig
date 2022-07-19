@@ -42,8 +42,8 @@ def test_cache_dataset(use_cache_dir, use_split, use_df, tmpdir, change_test_dir
     assert manager.credentials == creds
 
     config = {
-        "input_features": [sequence_feature(reduce_output="sum")],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "input_features": [sequence_feature(encoder={"reduce_output": "sum"})],
+        "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
     }
