@@ -39,6 +39,7 @@ def set_scheduler(scheduler):
 
 def reset_index_across_all_partitions(df):
     """Compute a monotonically increasing index across all partitions.
+
     This differs from dd.reset_index, which computes an independent index for each partition.
     Source: https://stackoverflow.com/questions/61395351/how-to-reset-index-on-concatenated-dataframe-in-dask
     """
