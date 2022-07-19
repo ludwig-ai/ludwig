@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import ray
 import urllib3
