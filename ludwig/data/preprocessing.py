@@ -59,8 +59,10 @@ from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
+    DATA_TEST_PARQUET_FP,
     DATA_TRAIN_HDF5_FP,
     DATA_TRAIN_PARQUET_FP,
+    DATA_VALIDATION_PARQUET_FP,
     DATAFRAME_FORMATS,
     DICT_FORMATS,
     EXCEL_FORMATS,
@@ -557,7 +559,17 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         random_seed=default_random_seed,
     ):
         test_set = test_set if test_set and path_exists(test_set) else None
+        if test_set and isinstance(test_set, str) and DATA_TEST_PARQUET_FP not in training_set_metadata:
+            training_set_metadata[DATA_TEST_PARQUET_FP] = test_set
+
         validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        if (
+            validation_set
+            and isinstance(validation_set, str)
+            and DATA_VALIDATION_PARQUET_FP not in training_set_metadata
+        ):
+            training_set_metadata[DATA_VALIDATION_PARQUET_FP] = validation_set
+
         if training_set and isinstance(training_set, str) and DATA_TRAIN_PARQUET_FP not in training_set_metadata:
             training_set_metadata[DATA_TRAIN_PARQUET_FP] = training_set
         return training_set, test_set, validation_set, training_set_metadata

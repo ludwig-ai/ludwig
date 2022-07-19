@@ -16,7 +16,7 @@ input_features:
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 
@@ -29,8 +29,19 @@ logger = logging.getLogger(__name__)
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
+
 TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
-TORCHTEXT_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
+TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
+TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
+
+# Do not use torchtext implementation of BERT tokenizer for these model names:
+# https://github.com/pytorch/text/issues/1840
+SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
+    "bert-base-german-cased",
+    "bert-base-german-dbmdz-cased",
+    "bert-base-german-dbmdz-uncased",
+    "TurkuNLP/bert-base-finnish-cased-v1",
+}
 
 
 class BaseTokenizer:
@@ -777,6 +788,15 @@ class HFTokenizer(BaseTokenizer):
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
 
+    def get_vocab(self):
+        return self.tokenizer.get_vocab()
+
+    def get_pad_token(self) -> str:
+        return self.tokenizer.pad_token
+
+    def get_unk_token(self) -> str:
+        return self.tokenizer.unk_token
+
 
 tokenizer_registry = {
     # Torchscript-compatible tokenizers. Torchtext tokenizers are also available below (requires torchtext>=0.12.0).
@@ -884,14 +904,13 @@ tokenizer_registry = {
     "multi_lemmatize": MultiLemmatizeTokenizer,
     "multi_lemmatize_filter": MultiLemmatizeFilterTokenizer,
     "multi_lemmatize_remove_stopwords": MultiLemmatizeRemoveStopwordsTokenizer,
-    "hf_tokenizer": HFTokenizer,
 }
 
 try:
     import torchtext
 
     if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 12, 0):
-        """Torchscript-enabled tokenizers.
+        """torchtext 0.12.0 tokenizers.
 
         Only available with torchtext>=0.12.0.
         """
@@ -917,14 +936,15 @@ try:
 
             def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
                 super().__init__()
-                self.vocab = self._init_vocab(vocab_file)
+                self.str2idx, self.idx2str = self._init_vocab(vocab_file)
+                # TODO(geoffrey): If we move to torchtext>=0.13.0, we can use return_tokens kwarg to get tokens directly
                 self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
 
-            def _init_vocab(self, vocab_file: str) -> List[str]:
+            def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
                 """Loads the vocab from the vocab file."""
                 str2idx = load_json(torchtext.utils.get_asset_local_path(vocab_file))
-                _, vocab_tuple = zip(*sorted((v, k) for k, v in str2idx.items()))
-                return list(vocab_tuple)
+                _, idx2str = zip(*sorted((v, k) for k, v in str2idx.items()))
+                return str2idx, idx2str
 
             def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str) -> Any:
                 """Initializes and returns the tokenizer."""
@@ -949,11 +969,11 @@ try:
                 token_ids = self.tokenizer(inputs)
                 assert torch.jit.isinstance(token_ids, List[List[str]])
 
-                tokens = [[self.vocab[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
+                tokens = [[self.idx2str[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
                 return tokens[0] if isinstance(v, str) else tokens
 
-            def get_vocab(self) -> List[str]:
-                return self.vocab
+            def get_vocab(self) -> Dict[str, str]:
+                return self.str2idx
 
         class CLIPTokenizer(_BPETokenizer):
             def __init__(
@@ -992,11 +1012,159 @@ try:
                 "gpt2bpe": GPT2BPETokenizer,
             }
         )
-        TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_TOKENIZERS)
+        TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_12_0_TOKENIZERS)
     else:
         raise ImportError
 
 except ImportError:
     logger.warning(
-        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: " f"{TORCHTEXT_TOKENIZERS}"
+        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
+        f"{TORCHTEXT_0_12_0_TOKENIZERS}"
     )
+
+
+try:
+    import torchtext
+
+    if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 13, 0):
+        pass
+    else:
+        raise ImportError
+
+    class BERTTokenizer(torch.nn.Module):
+        def __init__(
+            self,
+            vocab_file: Optional[str] = None,
+            is_hf_tokenizer: Optional[bool] = False,
+            do_lower_case: Optional[bool] = False,
+            **kwargs,
+        ):
+            super().__init__()
+            from transformers.utils.hub import cached_path
+
+            if vocab_file is None:
+                # By default, we use the uncased (all lowercased) BERT tokenizer from huggingface.
+                vocab_file = "https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt"
+                do_lower_case = True
+            self.vocab_file = cached_path(vocab_file)
+
+            self.is_hf_tokenizer = is_hf_tokenizer
+
+            # Return tokens as raw tokens only if not being used as a HF tokenizer.
+            self.return_tokens = not self.is_hf_tokenizer
+            self.tokenizer = torchtext.transforms.BERTTokenizer(
+                vocab_path=self.vocab_file, return_tokens=self.return_tokens, do_lower_case=do_lower_case
+            )
+
+            self.str2idx = self._init_vocab(self.vocab_file)
+
+            # Values from
+            # https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/tokenization_bert.py
+            self.pad_token = "[PAD]"
+            self.unk_token = "[UNK]"
+            self.cls_token_id = self.str2idx["[CLS]"]  # Used as start symbol
+            self.sep_token_id = self.str2idx["[SEP]"]  # Used as stop symbol
+
+        def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
+            str2idx = {}
+            with open(vocab_file, encoding="utf-8") as reader:
+                tokens = reader.readlines()
+            for index, token in enumerate(tokens):
+                token = token.rstrip("\n")
+                str2idx[token] = index
+            return str2idx
+
+        def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
+            """Implements forward pass for tokenizer.
+
+            If the is_hf_tokenizer flag is set to True, then the output follows the HF convention, i.e. the output is an
+            List[List[int]] of tokens and the cls and sep tokens are automatically added as the start and stop symbols.
+
+            If the is_hf_tokenizer flag is set to False, then the output follows the Ludwig convention, i.e. the output
+            is a List[List[str]] of tokens.
+            """
+            if isinstance(v, torch.Tensor):
+                raise ValueError(f"Unsupported input: {v}")
+
+            inputs: List[str] = []
+            # Ludwig calls map on List[str] objects, so we need to handle individual strings as well.
+            if isinstance(v, str):
+                inputs.append(v)
+            else:
+                inputs.extend(v)
+
+            if self.is_hf_tokenizer:
+                token_ids_str = self.tokenizer(inputs)
+                assert torch.jit.isinstance(token_ids_str, List[List[str]])
+                # Must cast token_ids to ints because they are used directly as indices.
+                token_ids: List[List[int]] = []
+                for token_ids_str_i in token_ids_str:
+                    token_ids_i = [int(token_id_str) for token_id_str in token_ids_str_i]
+                    token_ids_i.insert(0, self.cls_token_id)
+                    token_ids_i.append(self.sep_token_id)
+                    token_ids.append(token_ids_i)
+                return token_ids[0] if isinstance(v, str) else token_ids
+
+            tokens = self.tokenizer(inputs)
+            assert torch.jit.isinstance(tokens, List[List[str]])
+            return tokens[0] if isinstance(v, str) else tokens
+
+        def get_vocab(self) -> Dict[str, str]:
+            return self.str2idx
+
+        def get_pad_token(self) -> str:
+            return self.pad_token
+
+        def get_unk_token(self) -> str:
+            return self.unk_token
+
+    tokenizer_registry.update(
+        {
+            "bert": BERTTokenizer,
+        }
+    )
+    TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_13_0_TOKENIZERS)
+
+except ImportError:
+    logger.warning(
+        f"torchtext>=0.13.0 is not installed, so the following tokenizers are not available: "
+        f"{TORCHTEXT_0_13_0_TOKENIZERS}"
+    )
+
+
+def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
+    """Gets a potentially torchscript-compatible tokenizer that follows HF convention.
+
+    Args:
+        pretrained_model_name_or_path: Name of the model in the HF repo. Example: "bert-base-uncased".
+    Returns:
+        A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
+    """
+
+    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
+        from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
+
+        if (
+            pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
+            and pretrained_model_name_or_path not in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
+        ):
+            logging.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
+            vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][pretrained_model_name_or_path]
+            init_kwargs = PRETRAINED_INIT_CONFIGURATION.get(pretrained_model_name_or_path, {})
+            return BERTTokenizer(
+                vocab_file,
+                is_hf_tokenizer=True,
+                **init_kwargs,
+            )
+
+    # If pretrained_model_name_or_path does not have a torchtext equivalent implementation, load the
+    # HuggingFace implementation.
+    logging.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
+    return HFTokenizer(pretrained_model_name_or_path)
+
+
+tokenizer_registry.update(
+    {
+        "hf_tokenizer": get_hf_tokenizer,
+    }
+)

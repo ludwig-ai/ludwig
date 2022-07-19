@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -45,6 +45,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -200,23 +201,7 @@ def _encode_categorical_feature(raw: np.array, str2idx: dict) -> np.array:
     return str2idx[raw]
 
 
-def _extract_ground_truth_values(
-    ground_truth: str, output_feature_name: str, ground_truth_split: int, split_file: Union[str, None] = None
-) -> pd.Series:
-    """Helper function to extract ground truth values.
-
-    Args:
-    :param ground_truth: (str) path to source data containing ground truth.
-    :param output_feature_name: (str) output feature name for ground
-        truth values.
-    :param ground_truth_split: (int) dataset split to use for ground truth,
-        defaults to 2.
-    :param split_file: (Union[str, None]) optional file path to split values.
-
-    # Return
-
-    :return pd.Series: ground truth values from source data set
-    """
+def _get_ground_truth_df(ground_truth: str) -> DataFrame:
     # determine ground truth data format and get appropriate reader
     data_format = figure_data_format_dataset(ground_truth)
     if data_format not in CACHEABLE_FORMATS:
@@ -227,15 +212,37 @@ def _extract_ground_truth_values(
 
     # retrieve ground truth from source data set
     if data_format in {"csv", "tsv"}:
-        gt_df = reader(ground_truth, dtype=None)  # allow type inference
-    else:
-        gt_df = reader(ground_truth)
+        return reader(ground_truth, dtype=None, df_lib=pd)  # allow type inference
+    return reader(ground_truth, df_lib=pd)
+
+
+def _extract_ground_truth_values(
+    ground_truth: Union[str, DataFrame],
+    output_feature_name: str,
+    ground_truth_split: int,
+    split_file: Union[str, None] = None,
+) -> pd.Series:
+    """Helper function to extract ground truth values.
+
+    Args:
+    :param ground_truth: (str, DataFrame) path to source data containing ground truth or ground truth dataframe
+    :param output_feature_name: (str) output feature name for ground
+        truth values.
+    :param ground_truth_split: (int) dataset split to use for ground truth,
+        defaults to 2.
+    :param split_file: (Union[str, None]) optional file path to split values.
+
+    # Return
+
+    :return pd.Series: ground truth values from source data set
+    """
+    ground_truth_df = _get_ground_truth_df(ground_truth) if isinstance(ground_truth, str) else ground_truth
 
     # extract ground truth for visualization
-    if SPLIT in gt_df:
+    if SPLIT in ground_truth_df:
         # get split value from source data set
-        split = gt_df[SPLIT]
-        gt = gt_df[output_feature_name][split == ground_truth_split]
+        split = ground_truth_df[SPLIT]
+        gt = ground_truth_df[output_feature_name][split == ground_truth_split]
     elif split_file is not None:
         # retrieve from split file
         if split_file.endswith(".csv"):
@@ -254,12 +261,12 @@ def _extract_ground_truth_values(
             # dropped rows during preprocessing.
             # https://stackoverflow.com/a/65731168
             mask = split.iloc[:, 0] == ground_truth_split
-            mask = mask.reindex(gt_df.index, fill_value=False)
+            mask = mask.reindex(ground_truth_df.index, fill_value=False)
 
-        gt = gt_df[output_feature_name][mask]
+        gt = ground_truth_df[output_feature_name][mask]
     else:
         # use all the data in ground_truth
-        gt = gt_df[output_feature_name]
+        gt = ground_truth_df[output_feature_name]
 
     return gt
 
@@ -1090,6 +1097,7 @@ def calibration_1_vs_all_cli(
     ground_truth_metadata: str,
     output_feature_name: str,
     output_directory: str,
+    output_feature_proc_name: Optional[str] = None,
     ground_truth_apply_idx: bool = True,
     **kwargs: dict,
 ) -> None:
@@ -1109,9 +1117,11 @@ def calibration_1_vs_all_cli(
     :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
          results.
-    :param kwargs: (dict) parameters for the requested visualizations.
+    :param output_feature_proc_name: (str) name of the output feature column in ground_truth. If ground_truth is a
+        preprocessed parquet or hdf5 file, the column name will be <output_feature>_<hash>
     :param ground_truth_apply_idx: (bool, default: `True`) whether to use
         metadata['str2idx'] in np.vectorize
+    :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
 
@@ -1122,7 +1132,9 @@ def calibration_1_vs_all_cli(
     metadata = load_json(ground_truth_metadata)
 
     # retrieve ground truth from source data set
-    ground_truth = _extract_ground_truth_values(ground_truth, output_feature_name, ground_truth_split, split_file)
+    ground_truth = _extract_ground_truth_values(
+        ground_truth, output_feature_proc_name or output_feature_name, ground_truth_split, split_file
+    )
     feature_metadata = metadata[output_feature_name]
     ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
