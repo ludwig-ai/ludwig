@@ -29,7 +29,6 @@ from urllib.parse import unquote, urlparse
 import certifi
 import fsspec
 import h5py
-import requests
 import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
