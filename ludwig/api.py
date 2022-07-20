@@ -24,8 +24,8 @@ import logging
 import os
 import subprocess
 import sys
-import time
 import tempfile
+import time
 import traceback
 from collections import OrderedDict
 from pprint import pformat
