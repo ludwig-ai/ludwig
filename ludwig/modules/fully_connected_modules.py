@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 
 class Dense(LudwigModule):
+    """A torch.nn.Linear wrapper which represents a trainable linear transformation.
+
+    No activation function, normalization, or dropout is applied. For a dense layer with nonlinearity, use FCLayer.
+    """
+
     def __init__(
         self,
         input_size,

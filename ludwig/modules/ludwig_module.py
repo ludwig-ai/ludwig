@@ -40,7 +40,7 @@ def register_module(cls, name: str = None):
 
 @dataclass
 class LudwigModuleState:
-    """The state of a ludwig object, can be used to serialize or restore a saved object."""
+    """The state of a ludwig module, can be used to serialize or restore a saved madule."""
 
     type: str  # Module Type
     ludwig_version: str  # Version of ludwig which saved this object
@@ -51,6 +51,15 @@ class LudwigModuleState:
 
 
 class LudwigModule(Module):
+    """Base class for Ludwig modules which are implemented using PyTorch (inheriting from torch.nn.Module).
+
+    Subclasses must implement @property input_shape() and forward().
+
+    Provides a mechanism for adding custom loss terms by calling update_loss().
+
+    To support serialization, subclasses must implement get_state() and @classmethod restore_from_state().
+    """
+
     def __init__(self):
         super().__init__()
         self._losses = {}
@@ -61,6 +70,10 @@ class LudwigModule(Module):
         return self.device_tensor.device
 
     def get_state(self, config=None, metadata=None, saved_weights=None, children=None) -> LudwigModuleState:
+        """Partial implementation of get_state which provides serialization support for torch weights.
+
+        Subclasses should override get_state and provide their config, metadata, and child module state.
+        """
         if saved_weights is None:
             saved_weights = {k: v.detach().cpu().numpy() for k, v in self.state_dict().items()}
         return LudwigModuleState(
@@ -92,7 +105,11 @@ class LudwigModule(Module):
         return collected_losses
 
     def update_loss(self, key: str, loss: torch.Tensor):
-        """This should be called in the forward pass to add a custom loss term to the combined loss."""
+        """This should be called in the forward pass to add a custom loss term to the combined loss.
+
+        The loss tensor added here will be collected in the backward pass and added to the overall training loss to be
+        minimized.
+        """
         self._losses[key] = loss
 
     @property

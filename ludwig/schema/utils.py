@@ -73,15 +73,6 @@ def load_config_with_kwargs(
     }
 
 
-def create_anyof_cond(if_pred: TDict, then_preds: TList[TDict]):
-    """Returns a JSONSchema conditional for the given if-then predicates which matches any of the predicates in
-    then_preds."""
-    return {
-        "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
-        "then": {"anyOf": [{"properties": {k: v for k, v in then_pred.items()}} for then_pred in then_preds]},
-    }
-
-
 def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {

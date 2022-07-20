@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class NumpyEncoder(json.JSONEncoder):
     """Python json library does not support serialization of numpy types.
 
-    This custom encoder converts numpy scalars to python types
+    This custom encoder converts numpy scalars to python types.
     """
 
     def default(self, obj):
