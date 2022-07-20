@@ -288,7 +288,6 @@ def test_ray_sequence():
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.parametrize("feature_type", ["raw", "fbank"])
 @pytest.mark.distributed
 def test_ray_audio(tmpdir, dataset_type, feature_type):
     preprocessing_params = {
@@ -297,7 +296,7 @@ def test_ray_audio(tmpdir, dataset_type, feature_type):
         "in_memory": True,
         "padding_value": 0,
         "norm": "per_file",
-        "type": feature_type,
+        "type": "fbank",
         "window_length_in_s": 0.04,
         "window_shift_in_s": 0.02,
         "num_filter_bands": 80,
@@ -314,10 +313,32 @@ def test_ray_audio(tmpdir, dataset_type, feature_type):
     )
 
 
-@pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
-def test_ray_image(tmpdir, df_engine, dataset_type):
+def test_ray_image(tmpdir, dataset_type):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+            output_size=16,
+            num_filters=8,
+        ),
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        nan_percent=0.1,
+        num_examples=40,
+    )
+
+
+# TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
+@pytest.mark.distributed
+def test_ray_image_modin(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
@@ -332,8 +353,8 @@ def test_ray_image(tmpdir, df_engine, dataset_type):
     run_test_with_features(
         input_features,
         output_features,
-        df_engine=df_engine,
-        dataset_type=dataset_type,
+        df_engine="modin",
+        dataset_type="csv",
         nan_percent=0.1,
         num_examples=40,
     )
