@@ -256,7 +256,7 @@ class TritonMaster:
         os.makedirs(os.path.join(self.base_path, str(self.model_version)), exist_ok=True)
         model_path = os.path.join(self.base_path, str(self.model_version), "model.pt")
         self.model_ts = TritonModel(
-            self.module, self.output_features, self.output_features, self.inference_stage
+            self.module, self.input_features, self.output_features, self.inference_stage
         ).generate_scripted_module()
         self.model_ts.save(model_path)
         return model_path
