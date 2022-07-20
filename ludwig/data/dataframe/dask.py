@@ -22,6 +22,7 @@ import dask.array as da
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
+import ray.data
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices
@@ -83,6 +84,11 @@ class DaskEngine(DataFrameEngine):
     def map_partitions(self, series, map_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
+
+    def try_map_batches(self, series, map_fn, meta=None, batch_format="pandas"):
+        ds = ray.data.from_dask(series)
+        ds = ds.map_batches(map_fn, batch_format=batch_format)
+        return ds.to_dask()
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")

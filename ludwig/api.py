@@ -24,6 +24,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 import tempfile
 import traceback
 from collections import OrderedDict
@@ -858,6 +859,8 @@ class LudwigModel:
             test predictions CSV files.
         :param skip_save_eval_stats: (bool, default: `True`) skips saving
             test statistics JSON file.
+        :param skip_print_eval_stats: (bool, default: `False`) skips printing
+            test statistics to logger.
         :param collect_predictions: (bool, default: `False`) if `True`
             collects post-processed predictions during eval.
         :param collect_overall_stats: (bool, default: False) if `True`
@@ -880,8 +883,10 @@ class LudwigModel:
         for callback in self.callbacks:
             callback.on_evaluation_start()
 
+        t0 = time.time()
+
         # preprocessing
-        logger.debug("Preprocessing")
+        logger.info("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
             self.config,
             dataset=dataset,
@@ -893,16 +898,21 @@ class LudwigModel:
             callbacks=self.callbacks,
         )
 
+        logger.info(">>>> Preprocessing took  %ss", time.time() - t0)
+        t1 = time.time()
+
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
             batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]
 
-        logger.debug("Predicting")
+        logger.info("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
             eval_stats, predictions = predictor.batch_evaluation(
                 dataset,
                 collect_predictions=collect_predictions or collect_overall_stats,
             )
+            logger.info(">>>> Predicting took  %ss", time.time() - t1)
+            t2 = time.time()
 
             # calculate the overall metrics
             if collect_overall_stats:
@@ -911,6 +921,8 @@ class LudwigModel:
                 overall_stats = calculate_overall_stats(
                     self.model.output_features, predictions, dataset, training_set_metadata
                 )
+                logger.info(">>>> calculate_overall_stats took  %ss", time.time() - t2)
+                t3 = time.time()
                 eval_stats = {
                     of_name: {**eval_stats[of_name], **overall_stats[of_name]}
                     # account for presence of 'combined' key
@@ -928,7 +940,8 @@ class LudwigModel:
                     makedirs(output_directory, exist_ok=True)
 
             if collect_predictions:
-                logger.debug("Postprocessing")
+                logger.info("Postprocessing")
+                t_start = time.time()
                 postproc_predictions = postprocess(
                     predictions,
                     self.model.output_features,
@@ -937,6 +950,7 @@ class LudwigModel:
                     backend=self.backend,
                     skip_save_unprocessed_output=skip_save_unprocessed_output or not self.backend.is_coordinator(),
                 )
+                logger.info(">>>> postproc_predictions took  %ss", time.time() - t_start)
             else:
                 postproc_predictions = predictions  # = {}
 
@@ -945,23 +959,30 @@ class LudwigModel:
                     collect_predictions and postproc_predictions is not None and not skip_save_predictions
                 )
                 if should_save_predictions:
+                    t_start = time.time()
                     save_prediction_outputs(
                         postproc_predictions, self.model.output_features, output_directory, self.backend
                     )
+                    logger.info(">>>> save_prediction_outputs took  %ss", time.time() - t_start)
 
                 print_evaluation_stats(eval_stats)
+
                 if not skip_save_eval_stats:
+                    t_start = time.time()
                     save_evaluation_stats(eval_stats, output_directory)
+                    logger.info(">>>> save_evaluation_stats took  %ss", time.time() - t_start)
 
                 if should_save_predictions or not skip_save_eval_stats:
                     logger.info(f"Saved to: {output_directory}")
 
             if collect_predictions:
+                t_start = time.time()
                 postproc_predictions = convert_predictions(
                     postproc_predictions,
                     self.model.output_features,
                     return_type=return_type,
                 )
+                logger.info(">>>> convert_predictions took  %ss", time.time() - t_start)
 
             for callback in self.callbacks:
                 callback.on_evaluation_end()

@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from typing import Any, Dict, List, Tuple
+import time
 
 import numpy as np
 import torch
@@ -383,19 +384,20 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            result[probabilities_col] = backend.df_engine.map_objects(
-                result[probabilities_col],
-                lambda prob: np.array([1 - prob, prob], dtype=result[probabilities_col].dtype),
-            )
-
             false_col = f"{probabilities_col}_{class_names[0]}"
-            result[false_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[0])
-
             true_col = f"{probabilities_col}_{class_names[1]}"
-            result[true_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[1])
-
             prob_col = f"{self.feature_name}_{PROBABILITY}"
-            result[prob_col] = result[[false_col, true_col]].max(axis=1)
+
+            def reshape_fn(df):
+                df = df.assign(**{
+                    false_col: lambda x: 1 - x[probabilities_col],
+                    true_col: lambda x: x[probabilities_col],
+                    prob_col: np.where(df[probabilities_col] > 0.5, df[probabilities_col], 1-df[probabilities_col]),
+                    probabilities_col: df.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], 1)
+                })
+                return df
+
+            result = backend.df_engine.try_map_batches(result, reshape_fn, batch_format="pandas")
 
         return result
 
