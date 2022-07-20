@@ -24,7 +24,9 @@ import yaml
 from ludwig.constants import (
     COLUMN,
     COMBINER,
+    DECODER,
     DROP_ROW,
+    ENCODER,
     EXECUTOR,
     HYPEROPT,
     MODEL_ECD,
@@ -199,7 +201,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Input Features =====
     for input_feature in config["input_features"]:
         if config[MODEL_TYPE] == MODEL_GBM:
-            input_feature["encoder"] = "passthrough"
+            input_feature[ENCODER] = {TYPE: "passthrough"}
             remove_ecd_params(input_feature)
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
@@ -213,7 +215,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Output features =====
     for output_feature in config["output_features"]:
         if config[MODEL_TYPE] == MODEL_GBM:
-            output_feature["decoder"] = "passthrough"
+            output_feature[DECODER] = {TYPE: "passthrough"}
             remove_ecd_params(output_feature)
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
 

@@ -23,7 +23,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
+from ludwig.constants import ENCODER, TRAINER, TYPE
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
@@ -157,7 +157,7 @@ def test_api_intent_classification(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        input_features[0]["encoder"] = encoder
+        input_features[0][ENCODER][TYPE] = encoder
         run_api_experiment(input_features, output_features, data_csv=rel_path)
 
 
@@ -169,7 +169,7 @@ def test_api_intent_classification_separated(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        input_features[0]["encoder"] = encoder
+        input_features[0][ENCODER][TYPE] = encoder
         run_api_experiment_separated_datasets(input_features, output_features, data_csv=rel_path)
 
 

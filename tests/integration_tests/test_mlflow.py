@@ -18,8 +18,8 @@ def test_mlflow_callback(tmpdir):
     batch_size = 8
     num_examples = 32
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,

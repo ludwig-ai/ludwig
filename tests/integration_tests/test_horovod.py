@@ -71,8 +71,8 @@ def _run_horovod(csv_filename, **ludwig_kwargs):
 
 def _prepare_data(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     input_features[0]["encoder"] = ENCODERS[0]
 

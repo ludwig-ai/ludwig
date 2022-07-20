@@ -8,7 +8,7 @@ import pytest
 from PIL import Image
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
@@ -31,8 +31,8 @@ def test_sample_ratio(backend, tmpdir):
     num_examples = 100
     sample_ratio = 0.25
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
     )
@@ -61,7 +61,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     input_features = [binary_feature()]
-    cat_feat = category_feature(vocab_size=3)
+    cat_feat = category_feature(decoder={"vocab_size": 3})
     output_features = [cat_feat]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features}
@@ -77,7 +77,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     train_ds, _, _, metadata = ludwig_model.preprocess(dataset=df)
 
     # expect values containing whitespaces to be properly mapped to vocab_size unique values
-    assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat["vocab_size"]
+    assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat[DECODER]["vocab_size"]
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
@@ -88,8 +88,8 @@ def test_with_split(backend, csv_filename, tmpdir):
     val_set_size = int(num_examples * 0.1)
     test_set_size = int(num_examples * 0.1)
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
@@ -124,7 +124,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     num_examples = NUM_EXAMPLES
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
@@ -151,7 +151,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
 @pytest.mark.parametrize("generate_images_as_numpy", [False, True])
 def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"), save_as_numpy=generate_images_as_numpy)]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
     )
@@ -171,7 +171,7 @@ def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
 
 def test_read_image_from_numpy_array(tmpdir, csv_filename):
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,
@@ -238,8 +238,8 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
 def test_presplit_override(format, tmpdir):
     """Tests that provising a pre-split file or dataframe overrides the user's split config."""
     num_feat = number_feature(normalization=None)
-    input_features = [num_feat, sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [num_feat, sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
     data_df = pd.read_csv(data_csv)

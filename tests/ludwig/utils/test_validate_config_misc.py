@@ -92,10 +92,10 @@ def test_config_encoders():
     for encoder in ENCODERS:
         config = {
             "input_features": [
-                sequence_feature(reduce_output="sum", encoder=encoder),
+                sequence_feature(encoder={"type": encoder, "reduce_output": "sum"}),
                 image_feature("/tmp/destination_folder"),
             ],
-            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+            "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
         }
         validate_config(config)
@@ -104,7 +104,7 @@ def test_config_encoders():
 def test_config_tabnet():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -141,7 +141,7 @@ def test_config_tabnet():
 def test_config_bad_feature_type():
     config = {
         "input_features": [{"name": "foo", "type": "fake"}],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 
@@ -151,8 +151,8 @@ def test_config_bad_feature_type():
 
 def test_config_bad_encoder_name():
     config = {
-        "input_features": [sequence_feature(reduce_output="sum", encoder="fake")],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "input_features": [sequence_feature(encoder={"type": "fake", "reduce_output": "sum"})],
+        "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 
@@ -163,7 +163,7 @@ def test_config_bad_encoder_name():
 def test_config_bad_preprocessing_param():
     config = {
         "input_features": [
-            sequence_feature(reduce_output="sum", encoder="fake"),
+            sequence_feature(encoder={"type": "fake", "reduce_output": "sum"}),
             image_feature(
                 "/tmp/destination_folder",
                 preprocessing={
@@ -175,7 +175,7 @@ def test_config_bad_preprocessing_param():
                 },
             ),
         ],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 
