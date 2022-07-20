@@ -22,7 +22,7 @@ from tests.integration_tests.utils import (
     sequence_feature,
 )
 
-NUM_EXAMPLES = 10
+NUM_EXAMPLES = 20
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
