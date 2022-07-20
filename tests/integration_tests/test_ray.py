@@ -305,7 +305,13 @@ def test_ray_audio(tmpdir, dataset_type, feature_type):
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
     output_features = [binary_feature()]
-    run_test_with_features(input_features, output_features, dataset_type=dataset_type, nan_percent=0.1)
+    run_test_with_features(
+        input_features,
+        output_features,
+        dataset_type=dataset_type,
+        nan_percent=0.1,
+        num_examples=40,
+    )
 
 
 @pytest.mark.parametrize("df_engine", ["dask", "modin"])
@@ -324,12 +330,17 @@ def test_ray_image(tmpdir, df_engine, dataset_type):
     ]
     output_features = [binary_feature()]
     run_test_with_features(
-        input_features, output_features, df_engine=df_engine, dataset_type=dataset_type, nan_percent=0.1
+        input_features,
+        output_features,
+        df_engine=df_engine,
+        dataset_type=dataset_type,
+        nan_percent=0.1,
+        num_examples=40,
     )
 
 
 @pytest.mark.distributed
-def test_ray_multiple_image_features(tmpdir):
+def test_ray_image_multiple_features(tmpdir):
     input_features = [
         image_feature(
             folder=os.path.join(tmpdir, "generated_images_1"),
@@ -345,7 +356,14 @@ def test_ray_multiple_image_features(tmpdir):
         ),
     ]
     output_features = [binary_feature()]
-    run_test_with_features(input_features, output_features, df_engine="dask", dataset_type="csv", nan_percent=0.1)
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type="csv",
+        nan_percent=0.1,
+        num_examples=40,
+    )
 
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
