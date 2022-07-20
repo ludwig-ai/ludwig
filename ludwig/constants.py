@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
+
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"
