@@ -330,18 +330,15 @@ def test_ray_image(tmpdir, df_engine, dataset_type):
 
 @pytest.mark.distributed
 def test_ray_multiple_image_features(tmpdir):
-    image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
-            folder=image_dest_folder,
-            encoder="resnet",
+            folder=os.path.join(tmpdir, "generated_images_1"),
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
             output_size=16,
             num_filters=8,
         ),
         image_feature(
-            folder=image_dest_folder,
-            encoder="resnet",
+            folder=os.path.join(tmpdir, "generated_images_2"),
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
             output_size=16,
             num_filters=8,
