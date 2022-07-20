@@ -77,7 +77,7 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
     if is_http(path):
         try:
             return get_bytes_obj_from_http_path(path)
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logging.warning(e)
             return None
     else:
