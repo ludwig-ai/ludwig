@@ -269,10 +269,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # Input to the decoder is the output feature's FC hidden layer.
         decoder_parameters_copy[DECODER]["input_size"] = self.fc_stack.output_shape[-1]
         if DECODER in decoder_parameters:
-            decoder = decoder_parameters[DECODER]
+            decoder = decoder_parameters[DECODER][TYPE]
         else:
             decoder = self.decoder
-        return get_decoder_cls(self.type(), decoder[TYPE])(**decoder_parameters_copy[DECODER])
+        return get_decoder_cls(self.type(), decoder)(**decoder_parameters_copy[DECODER])
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)
