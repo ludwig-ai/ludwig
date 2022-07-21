@@ -317,7 +317,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
+        return _BinaryPredict(self.decoder["threshold"], calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

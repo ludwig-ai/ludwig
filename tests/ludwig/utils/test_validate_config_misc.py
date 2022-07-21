@@ -163,7 +163,7 @@ def test_config_bad_encoder_name():
 def test_config_bad_preprocessing_param():
     config = {
         "input_features": [
-            sequence_feature(encoder={"type": "fake", "reduce_output": "sum"}),
+            sequence_feature(encoder={"type": "parallel_cnn", "reduce_output": "sum"}),
             image_feature(
                 "/tmp/destination_folder",
                 preprocessing={
@@ -179,7 +179,7 @@ def test_config_bad_preprocessing_param():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
         validate_config(config)
 
 

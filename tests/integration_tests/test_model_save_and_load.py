@@ -46,7 +46,7 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
                               "type": "rnn",
                               "cell_type": "lstm",
                               "num_layers": 2,
-                              "bidirections": True}),
+                              "bidirectional": False}),
         vector_feature(),
         image_feature(image_dest_folder),
         audio_feature(audio_dest_folder, encoder={"type": "stacked_cnn"}),
