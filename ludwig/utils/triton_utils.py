@@ -39,9 +39,10 @@ class GeneratedInferenceModule(torch.nn.Module):
         self.inference_module = inference_module
 
     def forward(self, {input_signature}):
-        inputs: Dict[str, {input_type}] = {input_dict}
-        results = self.inference_module(inputs)
-        return {output_tuple}
+        with torch.no_grad():
+            inputs: Dict[str, {input_type}] = {input_dict}
+            results = self.inference_module(inputs)
+            return {output_tuple}
 """
 
 TRITON_SPEC = """
