@@ -465,7 +465,7 @@ def export_triton(
 
     inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata, DEVICE)
     split_modules = [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
-    example_input = to_inference_module_input_from_dataframe(data_example.head(10), model.config, load_paths=True)
+    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True)
     paths = {}
     triton_masters = []
     for i, module in enumerate(split_modules):
