@@ -47,8 +47,6 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
-from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (

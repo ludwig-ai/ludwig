@@ -216,7 +216,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
+        return torch.Size([self.encoder["max_sequence_length"]])
 
     @property
     def input_dtype(self):

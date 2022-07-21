@@ -128,7 +128,7 @@ def test_server_integration_with_images(tmpdir):
             encoder={"output_size": 16, "num_filters": 8},
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
         ),
-        text_feature(encoder={"type": "embed"}, min_len=1),
+        text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),
     ]
     output_features = [category_feature(decoder={"vocab_size": 4}), number_feature()]
