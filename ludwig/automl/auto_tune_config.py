@@ -12,7 +12,6 @@ except ImportError:
     raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
-from ludwig.automl.utils import get_model_type
 from ludwig.constants import (
     AUTOML_DEFAULT_TEXT_ENCODER,
     AUTOML_LARGE_TEXT_DATASET,
@@ -29,6 +28,7 @@ from ludwig.constants import (
 )
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
+from ludwig.utils.automl.utils import get_model_type
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.torch_utils import initialize_pytorch
 
