@@ -49,8 +49,6 @@ from ludwig.features.sequence_feature import (
     SequenceInputFeature,
     SequenceOutputFeature,
 )
-from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import (

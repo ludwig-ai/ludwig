@@ -20,8 +20,6 @@ import torch
 
 from ludwig.constants import COLUMN, ENCODER, FILL_WITH_CONST, H3, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
-from ludwig.schema.features.h3_feature import H3InputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput

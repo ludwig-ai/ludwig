@@ -210,6 +210,15 @@ def generate_data(
     return filename
 
 
+def recursive_update(dictionary, values):
+    for k, v in values.items():
+        if isinstance(v, dict):
+            dictionary[k] = recursive_update(dictionary.get(k, {}), v)
+        else:
+            dictionary[k] = v
+    return dictionary
+
+
 def random_string(length=5):
     return uuid.uuid4().hex[:length].upper()
 
@@ -222,7 +231,7 @@ def number_feature(normalization=None, **kwargs):
             "normalization": normalization
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -237,7 +246,7 @@ def category_feature(**kwargs):
             "embedding_size": 5
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -255,7 +264,7 @@ def text_feature(**kwargs):
             "state_size": 8,
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -271,7 +280,7 @@ def set_feature(**kwargs):
             "embedding_size": 5
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -292,7 +301,7 @@ def sequence_feature(**kwargs):
             "hidden_size": 8,
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -311,7 +320,7 @@ def image_feature(folder, **kwargs):
         },
         "destination_folder": folder,
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -339,7 +348,7 @@ def audio_feature(folder, **kwargs):
         },
         "destination_folder": folder,
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -353,7 +362,7 @@ def timeseries_feature(**kwargs):
             "max_len": 7
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -364,7 +373,7 @@ def binary_feature(**kwargs):
         "name": "binary_" + random_string(),
         "type": "binary",
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -380,7 +389,7 @@ def bag_feature(**kwargs):
             "embedding_size": 5
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -395,7 +404,7 @@ def date_feature(**kwargs):
         },
         "encoder": {},
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -407,7 +416,7 @@ def h3_feature(**kwargs):
         "type": "h3",
         "encoder": {}
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -421,7 +430,7 @@ def vector_feature(**kwargs):
             "vector_size": 5,
         },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature

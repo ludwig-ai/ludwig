@@ -36,8 +36,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -478,7 +476,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length, self.embedding_size])
+        return torch.Size([self.encoder["max_sequence_length"], self.encoder["embedding_size"]])
 
     @property
     def input_dtype(self):
@@ -486,9 +484,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["encoder"]["max_sequence_length"] = feature_metadata["max_length"]
-        input_feature["encoder"]["embedding_size"] = feature_metadata["feature_dim"]
-        input_feature["encoder"]["should_embed"] = False
+        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_length"]
+        input_feature[ENCODER]["embedding_size"] = feature_metadata["feature_dim"]
+        input_feature[ENCODER]["should_embed"] = False
 
     @staticmethod
     def populate_defaults(input_feature):
