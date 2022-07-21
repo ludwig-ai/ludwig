@@ -312,7 +312,7 @@ def test_ray_audio(tmpdir, dataset_type):
     )
 
 
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
+@pytest.mark.parametrize("dataset_type", ["csv"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -330,6 +330,7 @@ def test_ray_image(tmpdir, dataset_type):
         output_features,
         df_engine="dask",
         dataset_type=dataset_type,
+        skip_save_processed_input=False,
         nan_percent=0.1,
         num_examples=40,
     )
@@ -559,4 +560,4 @@ def test_ray_calibration(calibration):
         binary_feature(calibration=calibration),
         category_feature(vocab_size=3, calibration=calibration),
     ]
-    run_test_with_features(input_features, output_features, num_examples=20)
+    run_test_with_features(input_features, output_features)
