@@ -24,10 +24,6 @@ class Encoder(LudwigModule, ABC):
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
 
-    @staticmethod
-    def get_schema_cls():
-        raise NotImplementedError
-
     @property
     def name(self):
         return self.__class__.__name__

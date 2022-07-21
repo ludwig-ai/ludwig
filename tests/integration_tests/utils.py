@@ -33,7 +33,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, ENCODER, DECODER, NAME, TIED, PROC_COLUMN, TRAINER, VECTOR, PREPROCESSING
+from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -241,7 +241,7 @@ def category_feature(**kwargs):
     feature = {
         "type": "category",
         "name": "category_" + random_string(),
-        "encoder": {
+        ENCODER: {
             "vocab_size": 10,
             "embedding_size": 5
         },
@@ -256,7 +256,7 @@ def text_feature(**kwargs):
     feature = {
         "name": "text_" + random_string(),
         "type": "text",
-        "encoder": {
+        ENCODER: {
             "vocab_size": 5,
             "min_len": 7,
             "max_len": 7,
@@ -274,7 +274,7 @@ def set_feature(**kwargs):
     feature = {
         "type": "set",
         "name": "set_" + random_string(),
-        "encoder": {
+        ENCODER: {
             "vocab_size": 10,
             "max_len": 5,
             "embedding_size": 5
@@ -290,7 +290,7 @@ def sequence_feature(**kwargs):
     feature = {
         "type": "sequence",
         "name": "sequence_" + random_string(),
-        "encoder": {
+        ENCODER: {
             "type": "embed",
             "vocab_size": 10,
             "max_len": 7,
@@ -312,7 +312,7 @@ def image_feature(folder, **kwargs):
         "type": "image",
         "name": "image_" + random_string(),
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
-        "encoder": {
+        ENCODER: {
             "type": "resnet",
             "resnet_size": 8,
             "num_filters": 8,
@@ -337,7 +337,7 @@ def audio_feature(folder, **kwargs):
             "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
-        "encoder": {
+        ENCODER: {
             "type": "stacked_cnn",
             "should_embed": False,
             "conv_layers": [
@@ -358,7 +358,7 @@ def timeseries_feature(**kwargs):
     feature = {
         "name": "timeseries_" + random_string(),
         "type": "timeseries",
-        "encoder": {
+        ENCODER: {
             "max_len": 7
         },
     }
@@ -383,7 +383,7 @@ def bag_feature(**kwargs):
     feature = {
         "name": "bag_" + random_string(),
         "type": "bag",
-        "encoder": {
+        ENCODER: {
             "max_len": 5,
             "vocab_size": 10,
             "embedding_size": 5
@@ -402,7 +402,7 @@ def date_feature(**kwargs):
         "preprocessing": {
             "datetime_format": random.choice(list(DATETIME_FORMATS.keys()))
         },
-        "encoder": {},
+        ENCODER: {},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -414,7 +414,7 @@ def h3_feature(**kwargs):
     feature = {
         "name": "h3_" + random_string(),
         "type": "h3",
-        "encoder": {}
+        ENCODER: {}
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]

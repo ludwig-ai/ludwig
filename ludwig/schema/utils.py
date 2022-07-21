@@ -442,14 +442,9 @@ def PositiveIntegerOrTupleOrStringOptions(options: TList[str] = None,
                     raise ValidationError(f"String value should be one of {options}")
                 return value
 
-            raise ValidationError(f"Field should be either an integer, tuple of integers, or a string")
+            raise ValidationError("Field should be either an integer, tuple of integers, or a string")
 
         def _jsonschema_type_mapping(self):
-            # Note: schemas can normally support a list of enums that includes 'None' as an option, as we currently have
-            # in 'initializers_registry'. But to make the schema here a bit more straightforward, the user must
-            # explicitly state if 'None' is going to be supported; if this conflicts with the list of enums then an
-            # error is raised and if it's going to be supported then it will be as a separate subschema rather than as
-            # part of the string subschema (see below):
             if None in options and not self.allow_none:
                 raise AssertionError(
                     f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."

@@ -373,7 +373,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
+        return torch.Size([self.decoder["max_sequence_length"]])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):

@@ -116,7 +116,7 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.vocab)])
+        return torch.Size([len(self.encoder["vocab"])])
 
     @property
     def output_shape(self) -> torch.Size:
