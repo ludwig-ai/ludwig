@@ -462,11 +462,13 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
-    height = 0
-    width = 0
-    num_channels = 0
     scaling = "pixel_normalization"
-    encoder = {TYPE: "stacked_cnn"}
+    encoder = {
+        TYPE: "stacked_cnn",
+        "num_channels": 0,
+        "height": 0,
+        "width": 0,
+    }
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -493,7 +495,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.num_channels, self.height, self.width])
+        return torch.Size([self.encoder["num_channels"], self.encoder["height"], self.encoder["width"]])
 
     @property
     def output_shape(self) -> torch.Size:

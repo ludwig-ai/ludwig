@@ -218,8 +218,10 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    encoder = {TYPE: "embed"}
-    vocab = []
+    encoder = {
+        TYPE: "embed",
+        "vocab": []
+    }
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -243,7 +245,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.vocab)])
+        return torch.Size([len(self.encoder["vocab"])])
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -269,12 +271,14 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 @register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    decoder = {TYPE: "classifier"}
+    decoder = {
+        TYPE: "classifier",
+        "num_classes": 0,
+        "threshold": 0.5
+    }
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
-    num_classes = 0
-    threshold = 0.5
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
@@ -291,10 +295,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.loss
 
     def metric_kwargs(self) -> Dict[str, Any]:
-        return {"threshold": self.threshold}
+        return {"threshold": self.decoder["threshold"]}
 
     def create_predict_module(self) -> PredictModule:
-        return _SetPredict(self.threshold)
+        return _SetPredict(self.decoder["threshold"])
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -309,7 +313,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.num_classes])
+        return torch.Size([self.decoder["num_classes"]])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -365,7 +369,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            threshold = self.threshold
+            threshold = self.decoder["threshold"]
 
             def get_prob(prob_set):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.

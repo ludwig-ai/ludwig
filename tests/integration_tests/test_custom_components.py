@@ -16,6 +16,8 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.decoders.base import BaseDecoderConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -28,6 +30,22 @@ from tests.integration_tests.utils import (
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
     foo: bool = False
+
+
+@dataclass
+class CustomNumberEncoderConfig(BaseEncoderConfig):
+
+    type: str = "custom_number_encoder"
+
+    input_size: int = 0
+
+
+@dataclass
+class CustomNumberDecoderConfig(BaseDecoderConfig):
+
+    type: str = "custom_number_decoder"
+
+    input_size: int = 0
 
 
 @register_combiner(name="custom_test")
@@ -69,6 +87,10 @@ class CustomNumberEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.input_shape
 
+    @staticmethod
+    def get_schema_cls():
+        return CustomNumberEncoderConfig
+
 
 @register_decoder("custom_number_decoder", NUMBER)
 class CustomNumberDecoder(Decoder):
@@ -82,6 +104,10 @@ class CustomNumberDecoder(Decoder):
 
     def forward(self, inputs, **kwargs):
         return torch.mean(inputs, 1)
+
+    @staticmethod
+    def get_schema_cls():
+        return CustomNumberDecoderConfig
 
 
 @register_loss("custom_loss", [NUMBER])

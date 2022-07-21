@@ -217,9 +217,10 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    encoder = {TYPE: "passthrough"}
-    norm = None
-    dropout = False
+    encoder = {
+        TYPE: "passthrough",
+        "norm": None,
+        "dropout": None}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -278,11 +279,13 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 @register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    decoder = {TYPE: "regressor"}
+    decoder = {
+        TYPE: "regressor",
+        "threshold": 0.5
+    }
     loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC
-    threshold = 0.5
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
