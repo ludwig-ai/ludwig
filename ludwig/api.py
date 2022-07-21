@@ -922,7 +922,6 @@ class LudwigModel:
                     self.model.output_features, predictions, dataset, training_set_metadata
                 )
                 logger.info(">>>> calculate_overall_stats took  %ss", time.time() - t2)
-                t3 = time.time()
                 eval_stats = {
                     of_name: {**eval_stats[of_name], **overall_stats[of_name]}
                     # account for presence of 'combined' key
