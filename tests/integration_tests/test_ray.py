@@ -201,7 +201,7 @@ def test_ray_read_binary_files(tmpdir, df_engine):
     audio_params = audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)
 
     dataset_path = os.path.join(tmpdir, "dataset.csv")
-    dataset_path = generate_data([audio_params], [], dataset_path, num_examples=100)
+    dataset_path = generate_data([audio_params], [], dataset_path, num_examples=10)
     dataset_path = create_data_set_to_use("csv", dataset_path, nan_percent=0.1)
 
     with ray_start(num_cpus=2, num_gpus=None):
@@ -212,7 +212,6 @@ def test_ray_read_binary_files(tmpdir, df_engine):
         series = df[audio_params[COLUMN]]
         proc_col = backend.read_binary_files(series)
         proc_col = backend.df_engine.compute(proc_col)
-        proc_col = proc_col.reset_index(drop=True)  # Index not preserved by Ray-generated partitions
 
         backend = initialize_backend(LOCAL_BACKEND)
         df = backend.df_engine.df_lib.read_csv(dataset_path)
