@@ -20,9 +20,9 @@ from typing import Dict
 import dask
 import dask.array as da
 import dask.dataframe as dd
+import ray.data
 from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
-import ray.data
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices

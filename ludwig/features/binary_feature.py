@@ -14,8 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Tuple
 import time
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -389,12 +389,16 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             prob_col = f"{self.feature_name}_{PROBABILITY}"
 
             def reshape_fn(df):
-                df = df.assign(**{
-                    false_col: lambda x: 1 - x[probabilities_col],
-                    true_col: lambda x: x[probabilities_col],
-                    prob_col: np.where(df[probabilities_col] > 0.5, df[probabilities_col], 1-df[probabilities_col]),
-                    probabilities_col: df.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], 1)
-                })
+                df = df.assign(
+                    **{
+                        false_col: lambda x: 1 - x[probabilities_col],
+                        true_col: lambda x: x[probabilities_col],
+                        prob_col: np.where(
+                            df[probabilities_col] > 0.5, df[probabilities_col], 1 - df[probabilities_col]
+                        ),
+                        probabilities_col: df.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], 1),
+                    }
+                )
                 return df
 
             result = backend.df_engine.try_map_batches(result, reshape_fn, batch_format="pandas")

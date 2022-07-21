@@ -1,7 +1,7 @@
 import logging
-import time
 import os
 import sys
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
