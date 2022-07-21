@@ -17,7 +17,21 @@ def _import_submodules():
         importlib.import_module(full_name)
 
 
+def _import_dataset_configs():
+    """Generates dataset instances from config files.
+
+    Must be called after _import_submodules for those configs which require a custom implementation.
+    """
+    pass
+    # files = importlib.resources.files(datasets)
+    # for f in files:
+    #     print(f)
+
+
 _import_submodules()
+_import_dataset_configs()
+
+# TODO: generate datasets from configs
 
 
 def list_datasets() -> List[str]:
