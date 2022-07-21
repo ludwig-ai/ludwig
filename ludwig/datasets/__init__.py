@@ -23,6 +23,11 @@ def _import_dataset_configs():
 
     Must be called after _import_submodules for those configs which require a custom implementation.
     """
+    from ludwig.datasets import configs
+
+    config_files = [f for f in importlib.resources.contents(configs) if f.endswith(".yaml")]
+    print("config files:")
+    print(config_files)
     # for f in files:
     #     print(f)
 
