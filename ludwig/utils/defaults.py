@@ -48,7 +48,7 @@ from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
-from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
+from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value, set_default_values
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -201,7 +201,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Input Features =====
     for input_feature in config["input_features"]:
         if config[MODEL_TYPE] == MODEL_GBM:
-            input_feature[ENCODER] = {TYPE: "passthrough"}
+            set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
             remove_ecd_params(input_feature)
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
@@ -215,7 +215,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Output features =====
     for output_feature in config["output_features"]:
         if config[MODEL_TYPE] == MODEL_GBM:
-            output_feature[DECODER] = {TYPE: "passthrough"}
+            set_default_values(output_feature, {DECODER: {TYPE: "passthrough"}})
             remove_ecd_params(output_feature)
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
 
