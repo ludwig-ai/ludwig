@@ -203,8 +203,10 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    encoder = {TYPE: "parallel_cnn"}
-    max_sequence_length = None
+    encoder = {
+        TYPE: "parallel_cnn",
+        "max_sequence_length": None
+    }
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
@@ -268,11 +270,14 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 @register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
+    decoder = {
+        TYPE: "generator",
+        "max_sequence_length": 0,
+        "vocab_size": 0
+    }
     loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
-    max_sequence_length = 0
-    vocab_size = 0
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
@@ -283,7 +288,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
+        return torch.Size([self.decoder["max_sequence_length"]])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -392,6 +397,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.max_sequence_length), meta=(probs_col, "object")
+            lambda x: x.reshape(-1, self.decoder["max_sequence_length"]), meta=(probs_col, "object")
         )
         return df

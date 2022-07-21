@@ -95,8 +95,10 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    encoder = {TYPE: "embed"}
-    vocab = []
+    encoder = {
+        TYPE: "embed",
+        "vocab": []
+    }
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)

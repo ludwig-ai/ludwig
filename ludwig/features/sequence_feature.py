@@ -274,8 +274,10 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = {TYPE: "parallel_cnn"}
-    max_sequence_length = None
+    encoder = {
+        TYPE: "parallel_cnn",
+        "max_sequence_length": None
+    }
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -332,7 +334,11 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = {TYPE: "generator"}
+    decoder = {
+        TYPE: "generator",
+        "max_sequence_length": 0,
+        "num_classes": 0
+    }
     loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
@@ -343,8 +349,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         EDIT_DISTANCE: None,
     }
     default_validation_metric = LOSS
-    max_sequence_length = 0
-    num_classes = 0
 
     def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
@@ -552,5 +556,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(lambda x: x.reshape(-1, self.num_classes), meta=(probs_col, "object"))
+        df[probs_col] = df[probs_col].apply(
+            lambda x: x.reshape(-1, self.decoder["num_classes"]), meta=(probs_col, "object"))
         return df

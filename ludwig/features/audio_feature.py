@@ -454,9 +454,11 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    encoder = {TYPE: "parallel_cnn"}
-    max_sequence_length = None
-    embedding_size = None
+    encoder = {
+        TYPE: "parallel_cnn",
+        "max_sequence_length": None,
+        "embedding_size": None
+    }
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)

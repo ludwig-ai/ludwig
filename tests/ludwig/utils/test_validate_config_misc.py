@@ -152,7 +152,7 @@ def test_config_bad_feature_type():
 def test_config_bad_encoder_name():
     config = {
         "input_features": [sequence_feature(encoder={"type": "fake", "reduce_output": "sum"})],
-        "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
+        "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 

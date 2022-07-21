@@ -225,11 +225,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    decoder = {TYPE: "classifier"}
+    decoder = {
+        TYPE: "classifier",
+        "num_classes": 0
+    }
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
-    num_classes = 0
     top_k = 3
 
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
