@@ -85,7 +85,7 @@ class GBM(BaseModel):
         gbm_sklearn.fitted_ = True
         gbm_sklearn._n_features = len(self.input_features)
         if isinstance(gbm_sklearn, lgb.LGBMClassifier):
-            gbm_sklearn._n_classes = output_feature.num_classes if output_feature.type() == CATEGORY else 2
+            gbm_sklearn._n_classes = output_feature.decoder["num_classes"] if output_feature.type() == CATEGORY else 2
 
         hb_model = convert(gbm_sklearn, "torch", extra_config={"tree_implementation": "gemm"})
 
