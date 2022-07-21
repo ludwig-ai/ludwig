@@ -81,7 +81,6 @@ class MlflowCallback(Callback):
                 run_name = os.path.basename(output_directory)
                 self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
 
-        # TODO(shreya): Remove this
         mlflow.log_dict(to_json_dict(base_config), "config.yaml")
 
     def on_train_start(self, config, **kwargs):
@@ -112,13 +111,12 @@ class MlflowCallback(Callback):
         if self.save_in_background:
             save_queue = queue.Queue()
             self.save_fn = lambda args: save_queue.put(args)
-            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue))
+            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue,))
             self.save_thread.start()
         else:
             self.save_fn = lambda args: _log_mlflow(*args)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
-
         self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator):
