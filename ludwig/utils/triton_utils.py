@@ -412,7 +412,7 @@ class TritonModel:
 
     def _get_output_tuple(self, triton_features: List[TritonConfigFeature]) -> str:
         elems = [f'results["{feature.name}"]' for feature in triton_features]
-        return "(" + ", ".join(elems) + ")"
+        return "(" + ", ".join(elems) + ",)"
 
     def generate_inference_module_wrapper(self) -> str:
         """Generate the class wrapper around an inference module."""
