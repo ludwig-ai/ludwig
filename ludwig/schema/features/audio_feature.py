@@ -1,5 +1,3 @@
-from typing import Optional
-
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import AUDIO
