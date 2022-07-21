@@ -419,13 +419,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return predictions
 
     @staticmethod
-    def postprocess_inference_graph(
-        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
-    ) -> Dict[str, torch.Tensor]:
-        numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
-        return {PREDICTIONS: numeric_transformer.inverse_transform_inference(preds[PREDICTIONS])}
-
-    @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1})
         set_default_value(output_feature[LOSS], TYPE, "mean_squared_error")

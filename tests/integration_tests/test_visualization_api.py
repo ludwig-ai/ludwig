@@ -24,6 +24,7 @@ from ludwig import visualize
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TEST, TRAINER, TRAINING, VALIDATION
 from ludwig.data.split import get_splitter
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     bag_feature,
@@ -835,7 +836,7 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
 def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
-    visualize.hyperopt_report(os.path.join(hyperopt_results, "hyperopt_statistics.json"), output_directory=vis_dir)
+    visualize.hyperopt_report(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)
 
     # test for creation of output directory
     assert os.path.isdir(vis_dir)
@@ -848,7 +849,7 @@ def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
 def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
-    visualize.hyperopt_hiplot(os.path.join(hyperopt_results, "hyperopt_statistics.json"), output_directory=vis_dir)
+    visualize.hyperopt_hiplot(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)
 
     # test for creation of output directory
     assert os.path.isdir(vis_dir)
