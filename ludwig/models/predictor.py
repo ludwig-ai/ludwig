@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
@@ -317,27 +316,16 @@ def save_prediction_outputs(
     output_directory,
     backend,
 ):
-    logger.info(">>>> Starting work on save_prediction_outputs")
-    t_start = time.time()
     postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
-    logger.info(">>>> flatten_df took  %ss", time.time() - t_start)
-    t_start = time.time()
     postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME))
-    logger.info(">>>> postprocessed_output.to_parque took  %ss", time.time() - t_start)
-    t_start = time.time()
     save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
-    logger.info(">>>> save_json took  %ss", time.time() - t_start)
     if not backend.df_engine.partitioned:
         # csv can only be written out for unpartitioned df format (i.e., pandas)
-        t_start = time.time()
         postprocessed_dict = convert_to_dict(postprocessed_output, output_features)
-        logger.info(">>>> convert_to_dict took  %ss", time.time() - t_start)
         csv_filename = os.path.join(output_directory, "{}_{}.csv")
-        t_start = time.time()
         for output_field, outputs in postprocessed_dict.items():
             for output_name, values in outputs.items():
                 save_csv(csv_filename.format(output_field, make_safe_filename(output_name)), values)
-        logger.info(">>>> save_csvs took  %ss", time.time() - t_start)
 
 
 def save_evaluation_stats(test_stats, output_directory):

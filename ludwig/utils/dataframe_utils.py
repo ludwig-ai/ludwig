@@ -1,4 +1,3 @@
-import time
 from typing import Dict, Optional, Tuple
 
 import numpy as np
@@ -32,8 +31,6 @@ def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, 
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
     column_shapes = {}
     for c in df.columns:
-        print(f">>>> computing shape for column {c}")
-        t = time.time()
         df = backend.df_engine.persist(df)
         shape = backend.df_engine.compute(
             backend.df_engine.map_objects(
@@ -41,12 +38,10 @@ def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, 
                 lambda x: np.array(x).shape,
             ).max()
         )
-        print(f">>>> Column {c} has shape {shape} took {time.time() - t}s")
-        t = time.time()
+
         if len(shape) > 1:
             column_shapes[c] = shape
             df[c] = backend.df_engine.map_objects(df[c], lambda x: np.array(x).reshape(-1))
-        print(f">>>> Reshaping column {c} took {time.time() - t}s")
     return df, column_shapes
 
 
