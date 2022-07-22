@@ -29,7 +29,6 @@ from urllib.parse import unquote, urlparse
 import certifi
 import fsspec
 import h5py
-import requests
 import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
@@ -67,7 +66,7 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
     if is_http(path):
         try:
             return get_bytes_obj_from_http_path(path)
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logging.warning(e)
             return None
     else:
