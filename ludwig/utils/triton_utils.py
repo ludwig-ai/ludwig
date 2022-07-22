@@ -261,6 +261,14 @@ class TritonMaster:
             self.module, self.input_features, self.output_features, self.inference_stage
         ).generate_scripted_module()
         self.model_ts.save(model_path)
+
+        # this is to debug
+        wrapper_definition = TritonModel(
+            self.module, self.input_features, self.output_features, self.inference_stage
+        ).generate_inference_module_wrapper()
+        with open(os.path.join(self.base_path, "wrapper.py"), "w") as f:
+            f.write(wrapper_definition)
+
         return model_path
 
     def save_config(self) -> str:
@@ -281,6 +289,7 @@ class TritonEnsembleConfig:
     triton_master_postprocessor: TritonMaster
     model_name: str
     output_path: str
+    model_version: int
 
     def __post_init__(self):
         self.ensemble_model_name = self.model_name + "_" + ENSEMBLE
@@ -338,6 +347,19 @@ class TritonEnsembleConfig:
         with open(config_path, "w") as f:
             f.write(self.get_config())
         return config_path
+
+    def save_ensemble_dummy_model(self) -> str:
+        """Scripts the model and saves it."""
+        if not isinstance(self.model_version, int) or self.model_version < 1:
+            raise ValueError("Model version has to be a non-zero positive integer")
+        pass
+
+        os.makedirs(os.path.join(self.base_path, str(self.model_version)), exist_ok=True)
+        model_path = os.path.join(self.base_path, str(self.model_version), "model.txt")
+        with open(model_path, "w") as f:
+            f.write("no model for the ensemble")
+
+        return model_path
 
 
 @dataclass
@@ -480,7 +502,7 @@ def export_triton(
     # saving ensemble config
     triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
     ensemble_config = TritonEnsembleConfig(
-        triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor, model_name, output_path
+        triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor, model_name, output_path, model_version
     )
     ensemble_config_path = ensemble_config.save_ensemble_config()
     paths[ENSEMBLE] = (ensemble_config_path,)
