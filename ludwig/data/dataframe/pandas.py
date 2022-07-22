@@ -46,7 +46,7 @@ class PandasEngine(DataFrameEngine):
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
 
-    def try_map_batches(self, series, map_fn, batch_format="pandas", meta=None):
+    def map_batches(self, series, map_fn, batch_format="pandas", meta=None):
         return map_fn(series)
 
     def map_partitions(self, series, map_fn, meta=None):

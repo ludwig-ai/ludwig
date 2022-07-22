@@ -400,7 +400,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 )
                 return df
 
-            result = backend.df_engine.try_map_batches(result, reshape_fn, batch_format="pandas")
+            result = backend.df_engine.map_batches(result, reshape_fn, batch_format="pandas")
 
         return result
 
