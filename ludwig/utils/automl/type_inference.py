@@ -1,8 +1,8 @@
 from typing import Set
 
-from ludwig.automl.field_info import FieldInfo
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.utils import strings_utils
+from ludwig.utils.automl.field_info import FieldInfo
 
 # For a given feature, the highest percentage of distinct values out of the total number of rows that we might still
 # assign the CATEGORY type.
