@@ -25,6 +25,8 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COMBINER,
+    DECODER,
+    ENCODER,
     HYPEROPT,
     INPUT_FEATURES,
     NAME,
@@ -408,9 +410,9 @@ def _test_hyperopt_with_shared_params_written_config(
         # Check that num_filters got updated from the sampler correctly
         for input_feature in model_parameters[INPUT_FEATURES]:
             if input_feature[TYPE] == TEXT:
-                assert input_feature["num_filters"] in num_filters_search_space
+                assert input_feature[ENCODER]["num_filters"] in num_filters_search_space
             elif input_feature[TYPE] == CATEGORY:
-                assert input_feature["embedding_size"] in embedding_size_search_space
+                assert input_feature[ENCODER]["embedding_size"] in embedding_size_search_space
 
         # All text features with defaults should have the same num_filters for this trial
         text_input_num_filters = get_feature_type_parameter_values_from_section(
@@ -421,7 +423,7 @@ def _test_hyperopt_with_shared_params_written_config(
         # Check that embedding_size got updated from the sampler
         for output_feature in model_parameters[OUTPUT_FEATURES]:
             if output_feature[TYPE] == CATEGORY:
-                assert output_feature["embedding_size"] in embedding_size_search_space
+                assert output_feature[DECODER]["embedding_size"] in embedding_size_search_space
 
         # All category features with defaults should have the same embedding_size for this trial
         input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(

@@ -257,7 +257,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         """
         if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=feature[ENCODER]["num_classes"])
+            return calibration_cls(num_classes=feature[DECODER]["num_classes"])
         return None
 
     def create_predict_module(self) -> PredictModule:
