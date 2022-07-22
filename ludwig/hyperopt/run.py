@@ -273,8 +273,8 @@ def hyperopt(
         feature_class = get_from_registry(output_feature_type, output_type_registry)
         if metric not in feature_class.metric_functions:
             # todo v0.4: allow users to specify also metrics from the overall
-            #  and per class metrics from the trainign stats and in general
-            #  and potprocessed metric
+            #  and per class metrics from the training stats and in general
+            #  and post-processed metric
             raise ValueError(
                 'The specified metric for hyperopt "{}" is not a valid metric '
                 'for the specified output feature "{}" of type "{}". '
@@ -439,12 +439,12 @@ def get_features_eligible_for_shared_params(
         if TYPE not in feature:
             raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
         if config_feature_type == INPUT_FEATURES:
-            default_encoder = get_from_registry(feature.get(TYPE), input_type_registry).encoder
-            if not feature.get(ENCODER, 0) or feature.get(ENCODER) == default_encoder:
+            default_encoder = get_from_registry(feature.get(TYPE), input_type_registry).encoder[TYPE]
+            if not feature[ENCODER].get(TYPE, 0) or feature[ENCODER].get(TYPE) == default_encoder:
                 features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
         else:
-            default_decoder = get_from_registry(feature.get(TYPE), output_type_registry).decoder
-            if not feature.get(DECODER, 0) or feature.get(DECODER) == default_decoder:
+            default_decoder = get_from_registry(feature.get(TYPE), output_type_registry).decoder[TYPE]
+            if not feature[DECODER].get(TYPE, 0) or feature[DECODER].get(TYPE) == default_decoder:
                 features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
 
     return features_eligible_for_shared_params

@@ -15,7 +15,7 @@
 import contextlib
 import json
 import os.path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union, Any
 
 import pytest
 import torch
@@ -123,7 +123,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     return config, rel_path
 
 
-def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]:
+def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]:
     input_features = [
         text_feature(name="title", encoder={"type": "parallel_cnn"}),
         text_feature(name="summary"),
@@ -137,6 +137,7 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
 
     num_filters_search_space = [4, 8]
     embedding_size_search_space = [4, 8]
+    reduce_input_search_space = ["sum", "mean"]
 
     # Add default parameters in hyperopt parameter search space
     config = {
@@ -146,11 +147,22 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         HYPEROPT: {
             "parameters": {
-                "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-                "defaults.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
-                "defaults.category.embedding_size": {
+                "trainer.learning_rate": {
+                    "lower": 0.0001,
+                    "upper": 0.01,
+                    "space": "loguniform"
+                },
+                "defaults.text.encoder.num_filters": {
+                    "space": "choice",
+                    "categories": num_filters_search_space
+                },
+                "defaults.category.encoder.embedding_size": {
                     "space": "choice",
                     "categories": embedding_size_search_space,
+                },
+                "defaults.category.decoder.reduce_input": {
+                    "space": "choice",
+                    "categories": reduce_input_search_space,
                 },
             },
             "goal": "minimize",
@@ -161,7 +173,7 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
         },
     }
 
-    return config, rel_path, num_filters_search_space, embedding_size_search_space
+    return config, rel_path, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
 
 
 def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
@@ -388,18 +400,20 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
 
 
 def _test_hyperopt_with_shared_params_trial_table(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
 ):
     # Check that hyperopt trials sample from defaults in the search space
     for _, trial_row in hyperopt_results_df.iterrows():
-        embedding_size = _get_trial_parameter_value("defaults.category.embedding_size", trial_row)
-        num_filters = _get_trial_parameter_value("defaults.text.num_filters", trial_row)
+        embedding_size = _get_trial_parameter_value("defaults.category.encoder.embedding_size", trial_row)
+        num_filters = _get_trial_parameter_value("defaults.text.encoder.num_filters", trial_row)
+        reduce_input = _get_trial_parameter_value("defaults.category.decoder.reduce_input", trial_row).replace('"', '')
         assert embedding_size in embedding_size_search_space
         assert num_filters in num_filters_search_space
+        assert reduce_input in reduce_input_search_space
 
 
 def _test_hyperopt_with_shared_params_written_config(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
 ):
     # Check that each hyperopt trial's written input/output configs got updated
     for _, trial_row in hyperopt_results_df.iterrows():
@@ -420,35 +434,30 @@ def _test_hyperopt_with_shared_params_written_config(
         )
         assert len(text_input_num_filters) == 1
 
-        # Check that embedding_size got updated from the sampler
         for output_feature in model_parameters[OUTPUT_FEATURES]:
             if output_feature[TYPE] == CATEGORY:
-                assert output_feature[DECODER]["embedding_size"] in embedding_size_search_space
+                assert output_feature[DECODER]["reduce_input"] in reduce_input_search_space
 
         # All category features with defaults should have the same embedding_size for this trial
         input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
             model_parameters, INPUT_FEATURES, CATEGORY, "embedding_size"
         )
-        output_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
-            model_parameters, OUTPUT_FEATURES, CATEGORY, "embedding_size"
-        )
-        trial_embedding_sizes = input_category_features_embedding_sizes.union(output_category_features_embedding_sizes)
-        assert len(trial_embedding_sizes) == 1
+
+        assert len(input_category_features_embedding_sizes) == 1
 
 
 @pytest.mark.distributed
 def test_hyperopt_with_shared_params(csv_filename, tmpdir):
-    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
-        csv_filename
-    )
+    config, rel_path, num_filters_search_space, embedding_size_search_space, reduce_input_search_space = \
+        _setup_ludwig_config_with_shared_params(csv_filename)
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
 
     _test_hyperopt_with_shared_params_trial_table(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+        hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
     )
 
     _test_hyperopt_with_shared_params_written_config(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+        hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
     )

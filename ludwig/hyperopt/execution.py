@@ -31,6 +31,8 @@ from ludwig.constants import (
     COLUMN,
     COMBINER,
     DEFAULTS,
+    DECODER,
+    ENCODER,
     INPUT_FEATURES,
     MAXIMIZE,
     OUTPUT_FEATURES,
@@ -960,6 +962,18 @@ def update_features_with_shared_params(
         return
 
     sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
+    shared_params_copy = copy.deepcopy(sampled_default_shared_params)
+
+    # Remove encoder/decoder from output/input features
+    if config_feature_group == INPUT_FEATURES:
+        if DECODER in sampled_default_shared_params:
+            del shared_params_copy[DECODER]
+            sampled_default_shared_params = shared_params_copy
+    else:
+        if ENCODER in sampled_default_shared_params:
+            del shared_params_copy[ENCODER]
+            sampled_default_shared_params = shared_params_copy
+
     set_values(sampled_default_shared_params, section_dict)
 
 
@@ -1007,6 +1021,7 @@ def substitute_parameters(
         # Update or overwrite any feature specific hyperopt params
         update_section_dict(input_feature, input_feature[COLUMN], parameters_dict)
     for output_feature in config[OUTPUT_FEATURES]:
+        print("OUTPUT_FEATURE: \n", output_feature)
         # Update shared params
         update_features_with_shared_params(
             output_feature,
