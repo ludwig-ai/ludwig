@@ -27,7 +27,7 @@ class GhostBatchNormalization(LudwigModule):
             x = [self.bn(x) for x in splits]
             return torch.cat(x, 0)
 
-        if batch_size != 1:
+        if batch_size != 1 or not self.training:
             return self.bn(inputs)
         return inputs
 
