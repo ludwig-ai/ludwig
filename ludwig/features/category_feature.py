@@ -391,17 +391,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
             if "idx2str" in metadata:
-                predictions[predictions_col] = predictions[predictions_col].map(
-                    lambda pred: metadata["idx2str"][pred]
-                )
+                predictions[predictions_col] = predictions[predictions_col].map(lambda pred: metadata["idx2str"][pred])
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in predictions:
             prob_col = f"{self.feature_name}_{PROBABILITY}"
             predictions[prob_col] = predictions[probabilities_col].map(max)
-            predictions[probabilities_col] = predictions[probabilities_col].map(
-                lambda pred: pred.tolist()
-            )
+            predictions[probabilities_col] = predictions[probabilities_col].map(lambda pred: pred.tolist())
             if "idx2str" in metadata:
                 for i, label in enumerate(metadata["idx2str"]):
                     key = f"{probabilities_col}_{label}"
