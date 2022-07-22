@@ -50,8 +50,6 @@ def postprocess(
             df = output_feature.postprocess_predictions(
                 df,
                 training_set_metadata[of_name],
-                output_directory=output_directory,
-                backend=backend,
             )
         return df
 
