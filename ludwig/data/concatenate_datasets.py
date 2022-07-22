@@ -63,10 +63,6 @@ def concatenate_df(train_df, vali_df, test_df, backend):
         [df for df in [train_df, vali_df, test_df] if df is not None], ignore_index=True
     )
 
-    if len(concatenated_df.index) != len(concatenated_df.index.drop_duplicates()):
-        logger.warning("Duplicate indices found after concatenating dataframes. Resetting index...")
-        concatenated_df = backend.df_engine.reset_index(concatenated_df)
-
     def get_split(idx):
         if idx < train_size:
             return 0
