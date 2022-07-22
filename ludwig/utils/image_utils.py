@@ -88,8 +88,8 @@ def read_image_from_path(
 ) -> Union[Optional[torch.Tensor], Tuple[Optional[torch.Tensor], int]]:
     """Reads image from path.
 
-    Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
-    If `return_num_bytes` is True, returns a tuple of (image, num_bytes).
+    Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead. If
+    `return_num_bytes` is True, returns a tuple of (image, num_bytes).
     """
     bytes_obj = get_bytes_obj_from_path(path)
     image = read_image_from_bytes_obj(bytes_obj, num_channels)
