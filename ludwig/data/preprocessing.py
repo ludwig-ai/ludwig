@@ -1087,10 +1087,13 @@ def build_dataset(
         logging.debug(f"sample {sample_ratio} of data")
         dataset_df = dataset_df.sample(frac=sample_ratio)
 
-    if dataset_df.npartitions > 1 and not dataset_df.known_divisions:
-        # Indices must be unique across partitions for repartition and join to work
-        logging.warning("dataset is partitioned and has unknown divisions. Resetting index to ensure unique indices")
-        dataset_df = backend.df_engine.reset_index(dataset_df)
+    if backend.df_engine.partitioned:
+        if dataset_df.npartitions > 1 and not dataset_df.known_divisions:
+            # Indices must be unique across partitions for repartition and join to work
+            logging.warning(
+                "dataset is partitioned and has unknown divisions. Resetting index to ensure unique indices"
+            )
+            dataset_df = backend.df_engine.reset_index(dataset_df)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
