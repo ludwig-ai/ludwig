@@ -324,7 +324,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
             if isinstance(image_entry, str):
                 # Tries to read image as PNG or numpy file from the path.
                 image, num_bytes = read_image_from_path(image_entry, return_num_bytes=True)
-                sample_num_bytes.append(num_bytes)
+                if num_bytes is not None:
+                    sample_num_bytes.append(num_bytes)
             else:
                 image = image_entry
 

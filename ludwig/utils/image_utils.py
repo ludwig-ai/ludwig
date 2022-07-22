@@ -94,7 +94,11 @@ def read_image_from_path(
     bytes_obj = get_bytes_obj_from_path(path)
     image = read_image_from_bytes_obj(bytes_obj, num_channels)
     if return_num_bytes:
-        return image, len(bytes_obj)
+        if bytes_obj is not None:
+            num_bytes = len(bytes_obj)
+        else:
+            num_bytes = None
+        return image, num_bytes
     else:
         return image
 

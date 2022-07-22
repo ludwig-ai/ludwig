@@ -75,6 +75,9 @@ else:
     from ray.train.horovod import HorovodConfig
 
 
+RAY_DEFAULT_PARALLELISM = 200
+
+
 # TODO: deprecated v0.5
 def get_horovod_kwargs(use_gpu=None):
     # Our goal is to have a worker per resource used for training.
@@ -897,8 +900,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 total_size = file_size * len(fnames)
                 parallelism = int(total_size / 5e7)
 
-                # Only set parallelism if it matches or exceeds the number of existing partitions
-                read_datasource_fn_kwargs["parallelism"] = max(column.npartitions, parallelism)
+                # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
+                read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
 
             # The resulting column is named "value"
             ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
