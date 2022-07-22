@@ -45,13 +45,14 @@ def postprocess(
     if not skip_save_unprocessed_output:
         _save_as_numpy(predictions, output_directory, saved_keys, backend)
 
-    for of_name, output_feature in output_features.items():
-        predictions = output_feature.postprocess_predictions(
-            predictions,
-            training_set_metadata[of_name],
-            output_directory=output_directory,
-            backend=backend,
-        )
+    def postprocess_batch(df):
+        for of_name, output_feature in output_features.items():
+            predictions = output_feature.postprocess_predictions(
+                predictions,
+                training_set_metadata[of_name],
+                output_directory=output_directory,
+                backend=backend,
+            )
 
     # Save any new columns but do not save the original columns again
     if not skip_save_unprocessed_output:

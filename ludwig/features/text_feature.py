@@ -323,8 +323,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
@@ -335,7 +333,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL for token in pred
                 ]
 
-            result[predictions_col] = backend.df_engine.map_objects(result[predictions_col], idx2str)
+            result[predictions_col] = result[predictions_col].map(idx2str)
 
         last_preds_col = f"{self.feature_name}_{LAST_PREDICTIONS}"
         if last_preds_col in result:
@@ -345,7 +343,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     return metadata["idx2str"][last_pred]
                 return UNKNOWN_SYMBOL
 
-            result[last_preds_col] = backend.df_engine.map_objects(result[last_preds_col], last_idx2str)
+            result[last_preds_col] = result[last_preds_col].map(last_idx2str)
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
@@ -353,9 +351,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             # currently does not return full probabilties because usually it is huge:
             # dataset x length x classes
             # TODO: add a mechanism for letting the user decide to save it
-            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
-            result[prob_col] = backend.df_engine.map_objects(
-                result[probs_col],
+            result[probs_col] = result[probs_col].map(compute_token_probabilities)
+            result[prob_col] = result[probs_col].map(
                 partial(
                     compute_sequence_probability,
                     max_sequence_length=metadata["max_sequence_length"],

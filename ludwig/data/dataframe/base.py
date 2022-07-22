@@ -47,7 +47,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_batches(self, series, map_fn, batch_format="pandas", meta=None):
+    def map_batches(self, series, map_fn):
         raise NotImplementedError()
 
     @abstractmethod

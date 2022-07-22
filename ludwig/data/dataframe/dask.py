@@ -85,9 +85,9 @@ class DaskEngine(DataFrameEngine):
         meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
 
-    def map_batches(self, series, map_fn, meta=None, batch_format="pandas"):
+    def map_batches(self, series, map_fn):
         ds = ray.data.from_dask(series)
-        ds = ds.map_batches(map_fn, batch_format=batch_format)
+        ds = ds.map_batches(map_fn, batch_format="pandas")
         return ds.to_dask()
 
     def apply_objects(self, df, apply_fn, meta=None):

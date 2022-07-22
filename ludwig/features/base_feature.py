@@ -452,8 +452,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self,
         result: Dict[str, Tensor],
         metadata: Dict[str, Any],
-        output_directory: str,
-        backend,
     ):
         raise NotImplementedError
 
