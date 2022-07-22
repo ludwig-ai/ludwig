@@ -865,7 +865,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
 
-    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
+    def read_binary_files(
+        self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+    ) -> Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
 
         # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
@@ -884,12 +886,22 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if isinstance(sample_fname, str):
             fs, _ = get_fs_and_path(sample_fname)
 
+            read_datasource_fn_kwargs = {
+                "paths": list(zip(fnames, idxs)),
+                "filesystem": PyFileSystem(FSSpecHandler(fs)),
+            }
+            if self.df_engine.partitioned and file_size is not None:
+                # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
+                # extrapolate to determine the total file size. We aim to have ~50MB partitions (5e7 bytes), so we
+                # set parallelism to be the total size / 50MB.
+                total_size = file_size * len(fnames)
+                parallelism = int(total_size / 5e7)
+
+                # Only set parallelism if it matches or exceeds the number of existing partitions
+                read_datasource_fn_kwargs["parallelism"] = max(column.npartitions, parallelism)
+
             # The resulting column is named "value"
-            ds = ray.data.read_datasource(
-                BinaryIgnoreNoneTypeDatasource(),
-                paths=list(zip(fnames, idxs)),
-                filesystem=PyFileSystem(FSSpecHandler(fs)),
-            )
+            ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
             ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
             # Overwrite the "value" column with the actual data
             ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))

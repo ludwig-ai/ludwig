@@ -312,7 +312,7 @@ def test_ray_audio(tmpdir, dataset_type):
     )
 
 
-@pytest.mark.parametrize("dataset_type", ["csv"])
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
@@ -332,7 +332,7 @@ def test_ray_image(tmpdir, dataset_type):
         dataset_type=dataset_type,
         skip_save_processed_input=False,
         nan_percent=0.1,
-        num_examples=40,
+        num_examples=100,
     )
 
 

@@ -113,7 +113,9 @@ class LocalPreprocessingMixin:
     def check_lazy_load_supported(self, feature):
         pass
 
-    def read_binary_files(self, column: pd.Series, map_fn: Optional[Callable] = None) -> pd.Series:
+    def read_binary_files(
+        self, column: pd.Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+    ) -> pd.Series:
         column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
 
         sample_fname = column.head(1).values[0]

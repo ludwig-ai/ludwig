@@ -312,17 +312,19 @@ class ImageFeatureMixin(BaseFeatureMixin):
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
-        sample = []
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(column), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
         else:
             sample_size = 1  # Take first image
 
+        sample = []
+        sample_num_bytes = []
         failed_entries = []
         for image_entry in column.head(sample_size):
             if isinstance(image_entry, str):
                 # Tries to read image as PNG or numpy file from the path.
-                image = read_image_from_path(image_entry)
+                image, num_bytes = read_image_from_path(image_entry, return_num_bytes=True)
+                sample_num_bytes.append(num_bytes)
             else:
                 image = image_entry
 
@@ -383,7 +385,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
 
         assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
-        return (should_resize, width, height, num_channels, user_specified_num_channels)
+
+        average_file_size = np.mean(sample_num_bytes) if sample_num_bytes else None
+        return (should_resize, width, height, num_channels, user_specified_num_channels, average_file_size)
 
     @staticmethod
     def add_feature_data(
@@ -408,6 +412,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             height,
             num_channels,
             user_specified_num_channels,
+            average_file_size,
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
 
         metadata[name][PREPROCESSING]["height"] = height
@@ -435,7 +440,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if in_memory or skip_save_processed_input:
             metadata[name]["reshape"] = (num_channels, height, width)
 
-            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
+            proc_col = backend.read_binary_files(
+                abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
+            )
             proc_col = backend.df_engine.map_objects(
                 proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
             )

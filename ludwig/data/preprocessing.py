@@ -1080,20 +1080,28 @@ def build_dataset(
     mode=None,
 ):
     df_engine = backend.df_engine
+
+    if df_engine.partitioned:
+        # Indices must be unique across partitions for repartition and join to work.
+        # Many possible cases to catch, as indices depend on the read strategy. Some common cases:
+        # 1. dd.read_(xsv|parquet) is called with a small file (or single parquet file). `npartitions` is 1 in this
+        #   case, and indices should be unique. In this case, we don't need to reset_index.
+        # 2. dd.read_(xsv|parquet) is called with a large file (or multiple parquet files). `npartitions` is >1 in this
+        #   case, and indices are not guaranteed to be unique. In this case, we DO need to reset_index.
+        # 3. dd.from_pandas is called. Because it was pre-loaded as a pd.DataFrame, indices are not guaranteed to be
+        #   unique (we don't know the prior state of the DataFrame). This case is hard to handle without computing all
+        #   indices and checking for duplicates. For now, we assume the user passes in a DataFrame with unique indices.
+        #   TODO(geoffrey): determine an efficient way to check for non-unique indices.
+        if dataset_df.npartitions > 1 and not dataset_df.known_divisions:
+            logging.warning("dataset was partitioned during the read step. Resetting index to ensure unique indices")
+            dataset_df = df_engine.reset_index(dataset_df)
+
     dataset_df = df_engine.parallelize(dataset_df)
 
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
         logging.debug(f"sample {sample_ratio} of data")
         dataset_df = dataset_df.sample(frac=sample_ratio)
-
-    if backend.df_engine.partitioned:
-        if dataset_df.npartitions > 1 and not dataset_df.known_divisions:
-            # Indices must be unique across partitions for repartition and join to work
-            logging.warning(
-                "dataset is partitioned and has unknown divisions. Resetting index to ensure unique indices"
-            )
-            dataset_df = backend.df_engine.reset_index(dataset_df)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation

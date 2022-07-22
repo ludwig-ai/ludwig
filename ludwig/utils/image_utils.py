@@ -83,13 +83,20 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
     return mode
 
 
-def read_image_from_path(path: str, num_channels: Optional[int] = None) -> Optional[torch.Tensor]:
+def read_image_from_path(
+    path: str, num_channels: Optional[int] = None, return_num_bytes=False
+) -> Union[Optional[torch.Tensor], Tuple[Optional[torch.Tensor], int]]:
     """Reads image from path.
 
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
+    If `return_num_bytes` is True, returns a tuple of (image, num_bytes).
     """
     bytes_obj = get_bytes_obj_from_path(path)
-    return read_image_from_bytes_obj(bytes_obj, num_channels)
+    image = read_image_from_bytes_obj(bytes_obj, num_channels)
+    if return_num_bytes:
+        return image, len(bytes_obj)
+    else:
+        return image
 
 
 def read_image_from_bytes_obj(
