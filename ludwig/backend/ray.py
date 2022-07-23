@@ -899,7 +899,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 # set parallelism to be the total size / 50MB.
                 total_size = file_size * len(fnames)
                 parallelism = int(total_size / 5e7)
-
                 # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
                 read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
 

@@ -104,6 +104,9 @@ from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_point
 from ludwig.utils.types import DataFrame, Series
 
 
+REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
+
+
 class DataFormatPreprocessor(ABC):
     @staticmethod
     @abstractmethod
@@ -1082,18 +1085,25 @@ def build_dataset(
     df_engine = backend.df_engine
 
     if df_engine.partitioned:
-        # Indices must be unique across partitions for repartition and join to work.
-        # Many possible cases to catch, as indices depend on the read strategy. Some common cases:
-        # 1. dd.read_(xsv|parquet) is called with a small file (or single parquet file). `npartitions` is 1 in this
-        #   case, and indices should be unique. In this case, we don't need to reset_index.
-        # 2. dd.read_(xsv|parquet) is called with a large file (or multiple parquet files). `npartitions` is >1 in this
-        #   case, and indices are not guaranteed to be unique. In this case, we DO need to reset_index.
-        # 3. dd.from_pandas is called. Because it was pre-loaded as a pd.DataFrame, indices are not guaranteed to be
-        #   unique (we don't know the prior state of the DataFrame). This case is hard to handle without computing all
-        #   indices and checking for duplicates. For now, we assume the user passes in a DataFrame with unique indices.
-        #   TODO(geoffrey): determine an efficient way to check for non-unique indices.
-        if dataset_df.npartitions > 1 and not dataset_df.known_divisions:
-            logging.warning("dataset was partitioned during the read step. Resetting index to ensure unique indices")
+        if (
+            any(f["type"] in REPARTITIONING_FEATURE_TYPES for f in features)
+            and dataset_df.npartitions > 1
+            and not dataset_df.known_divisions
+        ):
+            # A globally unique index only matters if you know ahead of time that there will be a repartition
+            # downstream for some particular feature, i.e. for Image and Audio features on a Ray backend.
+            # - There is a join operation in `df_like`, and the only way to do the operation is if the partitions across
+            #   all feature columns are aligned.
+            # - In order to align the partitions, we require a way of matching samples to one another across all
+            #   partitions. Therefore, we must reset_index to create a globally unique index.
+            # If there will NOT be a repartition downstream, then we can skip this step.
+            # - In this case, the partitions should remain aligned throughout.
+            # - Further, while the indices might not be globally unique, they should be unique within each partition.
+            # - These two properties make it possible to do the join op within each partition without a global index.
+            logging.warning(
+                "Using partitioned dataset with feature types that cause repartitioning. "
+                "Resetting index to ensure unique indices."
+            )
             dataset_df = df_engine.reset_index(dataset_df)
 
     dataset_df = df_engine.parallelize(dataset_df)
