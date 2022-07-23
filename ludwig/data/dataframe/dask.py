@@ -86,9 +86,10 @@ class DaskEngine(DataFrameEngine):
                 # If partitions have changed (e.g. due to conversion from Ray dataset), we handle separately
                 repartitioned_cols[k] = v
 
+        # Assumes that there is a globally unique index (see preprocessing.build_dataset)
         if repartitioned_cols:
             if not dataset.known_divisions:
-                # Indices are used for repartitioning– set_index is used to define divisions
+                # Sometimes divisions are unknown despite having a usable index– set_index to know divisions
                 dataset = dataset.assign(**{TMP_COLUMN: dataset.index})
                 dataset = dataset.set_index(TMP_COLUMN, drop=True)
                 dataset = dataset.map_partitions(lambda pd_df: set_index_name(pd_df, dataset.index.name))

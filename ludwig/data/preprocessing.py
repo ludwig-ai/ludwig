@@ -1085,24 +1085,21 @@ def build_dataset(
     df_engine = backend.df_engine
 
     if df_engine.partitioned:
-        if (
-            any(f["type"] in REPARTITIONING_FEATURE_TYPES for f in features)
-            and dataset_df.npartitions > 1
-            and not dataset_df.known_divisions
-        ):
+        if any(f["type"] in REPARTITIONING_FEATURE_TYPES for f in features) and dataset_df.npartitions > 1:
             # A globally unique index only matters if you know ahead of time that there will be a repartition
             # downstream for some particular feature, i.e. for Image and Audio features on a Ray backend.
             # - There is a join operation in `df_like`, and the only way to do the operation is if the partitions across
             #   all feature columns are aligned.
             # - In order to align the partitions, we require a way of matching samples to one another across all
             #   partitions. Therefore, we must reset_index to create a globally unique index.
+            # - Further caveats: if the number of partitions is 1, then the index should already be globally unique.
             # If there will NOT be a repartition downstream, then we can skip this step.
             # - In this case, the partitions should remain aligned throughout.
             # - Further, while the indices might not be globally unique, they should be unique within each partition.
             # - These two properties make it possible to do the join op within each partition without a global index.
             logging.warning(
-                "Using partitioned dataset with feature types that cause repartitioning. "
-                "Resetting index to ensure unique indices."
+                f"Dataset has {dataset_df.npartitions} partitions and feature types that cause repartitioning. "
+                f"Resetting index to ensure globally unique indices and known divisions."
             )
             dataset_df = df_engine.reset_index(dataset_df)
 
