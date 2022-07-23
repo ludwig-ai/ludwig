@@ -1085,8 +1085,8 @@ def build_dataset(
 
     if df_engine.partitioned:
         if any(f["type"] in REPARTITIONING_FEATURE_TYPES for f in features) and dataset_df.npartitions > 1:
-            # A globally unique index only matters if you know ahead of time that there will be a repartition
-            # downstream for some particular feature, i.e. for Image and Audio features on a Ray backend.
+            # A globally unique index only matters if you know that there will be a repartition downstream for some
+            # particular feature, i.e. for Image and Audio features on a Ray backend.
             # - There is a join operation in `df_like`, and the only way to do the operation is if the partitions across
             #   all feature columns are aligned.
             # - In order to align the partitions, we require a way of matching samples to one another across all

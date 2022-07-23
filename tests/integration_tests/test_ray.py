@@ -332,7 +332,7 @@ def test_ray_image(tmpdir, dataset_type):
         dataset_type=dataset_type,
         skip_save_processed_input=False,
         nan_percent=0.1,
-        num_examples=100,
+        num_examples=40,
     )
 
 
