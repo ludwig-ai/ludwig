@@ -103,7 +103,6 @@ from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
 from ludwig.utils.types import DataFrame, Series
 
-
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 
 
