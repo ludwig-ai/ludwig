@@ -204,6 +204,28 @@ AUDIO_FEATURE_KEYS = [
     "num_filter_bands",
 ]
 
+INPUT_FEATURE_KEYS = [
+    "name",
+    "type",
+    "encoder",
+    "tied",
+    "preprocessing",
+    ]
+
+OUTPUT_FEATURE_KEYS = [
+    "name",
+    "type",
+    "decoder",
+    "tied",
+    "preprocessing",
+    "loss",
+    "reduce_input",
+    "dependencies",
+    "reduce_dependencies",
+    "top_k"
+    ]
+
+
 MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
