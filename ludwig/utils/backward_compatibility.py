@@ -23,16 +23,21 @@ from ludwig.constants import (
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
+    DECODER,
     DEFAULT_BIAS,
     DEFAULT_USE_BIAS,
+    ENCODER,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
     HYPEROPT,
     INPUT_FEATURES,
+    INPUT_FEATURE_KEYS,
+    NAME,
     NUM_SAMPLES,
     NUMBER,
     OUTPUT_FEATURES,
+    OUTPUT_FEATURE_KEYS,
     PARAMETERS,
     PREPROCESSING,
     PROBABILITIES,
@@ -44,6 +49,7 @@ from ludwig.constants import (
     SPLIT,
     SPLIT_PROBABILITIES,
     STRATIFY,
+    TIED,
     TRAINER,
     TRAINING,
     TYPE,
@@ -101,6 +107,51 @@ def _upgrade_feature(feature: Dict[str, Any]):
             DeprecationWarning,
         )
     _traverse_dicts(feature, _upgrade_use_bias)
+
+
+def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool):
+    """
+    This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
+    Args:
+        feature (Dict): Feature to nest encoder/decoder params for.
+        input_feature (Bool): Whether this feature is an input feature or not.
+
+    Returns:
+
+    """
+    if input_feature:
+        encoder = feature.get(ENCODER, {})
+        if isinstance(encoder, str):
+            feature[ENCODER] = {TYPE: encoder}
+            nested_params = []
+            for k, v in feature.items():
+                if k not in INPUT_FEATURE_KEYS:
+                    feature[ENCODER][k] = v
+                    nested_params.append(k)
+            for k in nested_params:
+                del feature[k]
+            warnings.warn(
+                "Encoder specific parameters should now be nested within a dictionary under the 'encoder' parameter. "
+                "Support for un-nested encoder specific parameters will be removed in v0.7",
+                DeprecationWarning,
+            )
+    else:
+        decoder = feature.get(DECODER, {})
+        if isinstance(decoder, str):
+            feature[DECODER] = {TYPE: decoder}
+            nested_params = []
+            for k, v in feature.items():
+                if k not in OUTPUT_FEATURE_KEYS:
+                    feature[DECODER][k] = v
+                    nested_params.append(k)
+            for k in nested_params:
+                if k in nested_params:
+                    del feature[k]
+            warnings.warn(
+                "Decoder specific parameters should now be nested within a dictionary under the 'decoder' parameter. "
+                "Support for un-nested decoder specific parameters will be removed in v0.7",
+                DeprecationWarning,
+            )
 
 
 def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
@@ -246,6 +297,12 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
 
     for feature in config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, []):
         _upgrade_feature(feature)
+
+    for feature in config.get(INPUT_FEATURES, []):
+        _upgrade_encoder_decoder_params(feature, True)
+
+    for feature in config.get(OUTPUT_FEATURES, []):
+        _upgrade_encoder_decoder_params(feature, False)
 
     if HYPEROPT in config:
         _upgrade_hyperopt(config[HYPEROPT])
