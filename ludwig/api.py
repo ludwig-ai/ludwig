@@ -568,15 +568,22 @@ class LudwigModel:
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
-                        if validation_set is not None:
-                            # Use backend.createPredictor to ensure we get ray predictor with ray backend
-                            calibrator.train_calibration(validation_set, VALIDATION)
-                        else:
+                        if validation_set is None:
                             logger.warning(
-                                "Calibration uses validation set, but not validation split specified. "
+                                "Calibration uses validation set, but no validation split specified."
                                 "Will use training set for calibration."
+                                "Recommend providing a validation set when using calibration."
                             )
                             calibrator.train_calibration(training_set, TRAINING)
+                        elif len(validation_set) <= 1 or len(validation_set) < trainer.eval_batch_size:
+                            logger.warning(
+                                f"Validation set size ({len(validation_set)} rows) is too small for calibration."
+                                "Will use training set for calibration."
+                                "Recommend providing more examples in validation set."
+                            )
+                            calibrator.train_calibration(training_set, TRAINING)
+                        else:
+                            calibrator.train_calibration(validation_set, VALIDATION)
                         if not skip_save_model:
                             self.model.save(model_dir)
 
