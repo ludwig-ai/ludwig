@@ -1091,14 +1091,15 @@ def build_dataset(
             #   all feature columns are aligned.
             # - In order to align the partitions, we require a way of matching samples to one another across all
             #   partitions. Therefore, we must reset_index to create a globally unique index.
-            # - Further caveats: if the number of partitions is 1, then the index should already be globally unique.
+            # - If the number of partitions is 1, it is *highly likely* the index is globally unique. Auto-assigned
+            #   Dask indices in this case are unique, and we pd.concat train, val, and test sets with ignore_index=True
             # If there will NOT be a repartition downstream, then we can skip this step.
             # - In this case, the partitions should remain aligned throughout.
             # - Further, while the indices might not be globally unique, they should be unique within each partition.
             # - These two properties make it possible to do the join op within each partition without a global index.
             logging.warning(
                 f"Dataset has {dataset_df.npartitions} partitions and feature types that cause repartitioning. "
-                f"Resetting index to ensure globally unique indices and known divisions."
+                f"Resetting index to ensure globally unique indices."
             )
             dataset_df = df_engine.reset_index(dataset_df)
 
