@@ -102,8 +102,6 @@ def test_audio_feature_backward_compatibility():
 
 
 def test_encoder_decoder_backwards_compatibility():
-    # From v0.5.3.
-
     old_config = {
         "input_features": [
             {
