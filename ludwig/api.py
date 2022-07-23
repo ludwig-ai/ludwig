@@ -575,7 +575,7 @@ class LudwigModel:
                                 "Recommend providing a validation set when using calibration."
                             )
                             calibrator.train_calibration(training_set, TRAINING)
-                        elif len(validation_set) <= 1 or len(validation_set) < trainer.eval_batch_size:
+                        elif len(validation_set) <= 1:
                             logger.warning(
                                 f"Validation set size ({len(validation_set)} rows) is too small for calibration."
                                 "Will use training set for calibration."
