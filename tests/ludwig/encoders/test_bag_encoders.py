@@ -5,7 +5,7 @@ import torch
 
 from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 RANDOM_SEED = 1919
 DEVICE = get_torch_device()
