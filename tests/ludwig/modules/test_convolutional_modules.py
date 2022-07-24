@@ -17,7 +17,7 @@ from ludwig.modules.convolutional_modules import (
     ResNetBottleneckBlock,
 )
 from ludwig.utils.image_utils import get_img_output_shape
-from tests.integration_tests.utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 BATCH_SIZE = 2
 SEQ_SIZE = 17

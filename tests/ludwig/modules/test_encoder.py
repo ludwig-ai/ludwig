@@ -30,7 +30,7 @@ from ludwig.encoders.sequence_encoders import (
     StackedRNN,
 )
 from ludwig.utils.torch_utils import get_torch_device
-from tests.integration_tests.utils import check_module_parameters_updated
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 DROPOUT = 0.5
 DEVICE = get_torch_device()
