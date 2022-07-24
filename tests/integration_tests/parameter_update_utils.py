@@ -13,12 +13,12 @@ class ParameterUpdateError(Exception):
 
 
 def check_module_parameters_updated(
-        module: LudwigModule,
-        module_input_args: Tuple,
-        module_target: torch.Tensor,
-        loss_function: Union[Callable, None] = None,
-        max_steps: int = 1,
-        learning_rate: float = 0.001,
+    module: LudwigModule,
+    module_input_args: Tuple,
+    module_target: torch.Tensor,
+    loss_function: Union[Callable, None] = None,
+    max_steps: int = 1,
+    learning_rate: float = 0.001,
 ) -> Tuple:
     """
     Reports on the number of parameters in a Ludwig component and their update status.
