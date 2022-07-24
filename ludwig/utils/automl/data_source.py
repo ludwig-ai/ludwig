@@ -34,6 +34,10 @@ class DataSource(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def size_bytes(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
     def __len__(self) -> int:
         raise NotImplementedError()
 
@@ -74,6 +78,9 @@ class DataframeSourceMixin:
 
     def is_string_type(self, dtype: str) -> bool:
         return dtype in ["str", "string", "object"]
+
+    def size_bytes(self) -> int:
+        return sum(self.df.memory_usage(deep=True))
 
     def __len__(self) -> int:
         return len(self.df)
