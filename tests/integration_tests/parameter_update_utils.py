@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Tuple, Union
 
 import torch
 
