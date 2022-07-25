@@ -3,7 +3,7 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
 
 import pandas as pd
 import torch
@@ -15,13 +15,33 @@ from ludwig.models.inference import (
     _InferencePredictor,
     _InferencePreprocessor,
     InferenceModule,
-    POSTPROCESSOR,
-    PREDICTOR,
-    PREPROCESSOR,
 )
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
+from ludwig.constants import (
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
+    TYPE,
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    COLUMN,
+    DATE,
+    IMAGE,
+    NAME,
+    POSTPROCESSOR,
+    PREDICTOR,
+    PREPROCESSOR,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    TYPE,
+    VECTOR,
+)
+FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
 INPUT = "INPUT"
@@ -175,6 +195,7 @@ class TritonConfigFeature:
     """Represents an input/output feature in a Triton config.
 
     :param name: name of the feature.
+    :param type: Ludwig type of the feature, or "tensor"
     :param content: the data contents of the feature.
     :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     :param kind: one of INPUT, OUTPUT.
@@ -182,6 +203,7 @@ class TritonConfigFeature:
     """
 
     name: str
+    ludwig_type: str
     content: Union[TorchscriptPreprocessingInput, torch.Tensor]
     inference_stage: str
     kind: str
@@ -207,6 +229,18 @@ class TritonConfigFeature:
         else:
             self.value = f"{self.inference_stage}_{self.kind}_{self.index}"
 
+    def _get_wrapper_signature_type(self):
+        if self.ludwig_type in FEATURES_TO_CAST_AS_STRINGS:
+            return "List[str]"
+        elif self.ludwig_type in [IMAGE, AUDIO, DATE, "tensor"]:
+            return {
+                IMAGE: "List[torch.Tensor]",
+                AUDIO: "TorchAudioTuple",
+                DATE: "List[torch.Tensor]",
+                "tensor": "torch.Tensor",
+            }[self.ludwig_type]
+        return "torch.Tensor"
+
 
 @dataclass
 class TritonMaster:
@@ -224,30 +258,37 @@ class TritonMaster:
     model_name: str
     output_path: str
     model_version: int
+    ludwig_config: Dict[str, Any]
 
     def __post_init__(self):
         """Extract input and output features and necessary information for a Triton config."""
-        if self.inference_stage not in INFERENCE_STAGES:
-            raise ValueError(f"Invalid inference stage. Choose one of {INFERENCE_STAGES}")
+        # todo: uncomment this after experimenting with block model
+        # if self.inference_stage not in INFERENCE_STAGES:
+        #     raise ValueError(f"Invalid inference stage. Choose one of {INFERENCE_STAGES}")
 
         self.full_model_name = self.model_name + "_" + self.inference_stage
         self.base_path = os.path.join(self.output_path, self.full_model_name)
         os.makedirs(self.base_path, exist_ok=True)
 
-        # get output for sample input.
         self.output_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]] = self.module(
             self.input_data_example
         )
 
         # generate input and output features.
-        self.input_features: List[TritonConfigFeature] = [
-            TritonConfigFeature(feature_name, content, self.inference_stage, INPUT, i)
-            for i, (feature_name, content) in enumerate(self.input_data_example.items())
-        ]
-        self.output_features: List[TritonConfigFeature] = [
-            TritonConfigFeature(feature_name, content, self.inference_stage, OUTPUT, i)
-            for i, (feature_name, content) in enumerate(self.output_data_example.items())
-        ]
+        self.input_features: List[TritonConfigFeature] = []
+        for i, (feature_name, content) in enumerate(self.input_data_example.items()):
+            ludwig_type = "tensor"
+            # "block" is temporary
+            if self.inference_stage == PREPROCESSOR or self.inference_stage == "block":
+                ludwig_type = self.ludwig_config[INPUT_FEATURES][i][TYPE]
+            self.input_features.append(TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, INPUT, i))
+
+
+        self.output_features: List[TritonConfigFeature] = []
+        for i, (feature_name, content) in enumerate(self.output_data_example.items()):
+            ludwig_type = "tensor"
+            self.output_features.append(TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, OUTPUT, i))
+
 
     def save_model(self) -> str:
         """Scripts the model and saves it."""
@@ -418,16 +459,21 @@ class TritonModel:
     output_features: List[TritonConfigFeature]
     inference_stage: str
 
-    def _get_wrapper_signature_type(self) -> str:
+    def _get_dict_type_hint(self) -> str:
         return {
             PREPROCESSOR: "TorchscriptPreprocessingInput",
             PREDICTOR: "torch.Tensor",
             POSTPROCESSOR: "torch.Tensor",
+            # todo: remove after experimenting with block
+            "block": "TorchscriptPreprocessingInput",
         }[self.inference_stage]
 
     def _get_input_signature(self, triton_features: List[TritonConfigFeature]) -> str:
-        signature_type = self._get_wrapper_signature_type()
-        elems = [f"{feature.wrapper_signature_name}: {signature_type}" for feature in triton_features]
+        # signature_type = self._get_wrapper_signature_type()
+        # todo: adapt type hints to features. "Only a single input of type Dict(str, Tensor) or input(s) of
+        #  type Tensor are supported." leaving it like this leads to a bug.
+        # elems = [f"{feature.wrapper_signature_name}" for feature in triton_features]
+        elems = [f"{feature.wrapper_signature_name}: {feature._get_wrapper_signature_type()}" for feature in triton_features]
         return ", ".join(elems)
 
     def _get_input_dict(self, triton_features: List[TritonConfigFeature]) -> str:
@@ -442,7 +488,7 @@ class TritonModel:
         """Generate the class wrapper around an inference module."""
         return INFERENCE_MODULE_TEMPLATE.format(
             input_signature=self._get_input_signature(self.input_features),
-            input_type=self._get_wrapper_signature_type(),
+            input_type=self._get_dict_type_hint(),
             input_dict=self._get_input_dict(self.input_features),
             output_tuple=self._get_output_tuple(self.output_features),
         )
@@ -459,6 +505,7 @@ class TritonModel:
             gen_ts = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(gen_ts)
 
+            # todo (Wael): check if adding .eval() changes something even though we're doing `with torch.no_grad`
             gen_module = gen_ts.GeneratedInferenceModule(self.module)
             scripted_module = torch.jit.script(gen_module)
         return scripted_module
@@ -491,7 +538,7 @@ def export_triton(
     paths = {}
     triton_masters = []
     for i, module in enumerate(split_modules):
-        triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i], model_name, output_path, model_version)
+        triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i], model_name, output_path, model_version, model.config)
         example_input = triton_master.output_data_example
 
         config_path = triton_master.save_config()
@@ -505,6 +552,14 @@ def export_triton(
         triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor, model_name, output_path, model_version
     )
     ensemble_config_path = ensemble_config.save_ensemble_config()
-    paths[ENSEMBLE] = (ensemble_config_path,)
+    ensemble_dummy_model_path = ensemble_config.save_ensemble_dummy_model()
+    paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path)
 
+    # This is for comparing pipelined vs. block model. To be removed later.
+    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True)
+    block_ts = torch.jit.script(inference_module)
+    triton_master = TritonMaster(block_ts, example_input, "block", model_name, output_path, model_version, model.config)
+    config_path = triton_master.save_config()
+    model_path = triton_master.save_model()
+    paths["block"] = (config_path, model_path)
     return paths
