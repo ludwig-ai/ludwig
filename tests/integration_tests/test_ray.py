@@ -308,7 +308,6 @@ def test_ray_audio(tmpdir, dataset_type):
         output_features,
         dataset_type=dataset_type,
         nan_percent=0.1,
-        num_examples=40,
     )
 
 
@@ -332,7 +331,6 @@ def test_ray_image(tmpdir, dataset_type):
         dataset_type=dataset_type,
         skip_save_processed_input=False,
         nan_percent=0.1,
-        num_examples=40,
     )
 
 
@@ -356,7 +354,6 @@ def test_ray_image_modin(tmpdir):
         df_engine="modin",
         dataset_type="csv",
         nan_percent=0.1,
-        num_examples=40,
     )
 
 
@@ -383,7 +380,6 @@ def test_ray_image_multiple_features(tmpdir):
         df_engine="dask",
         dataset_type="csv",
         nan_percent=0.1,
-        num_examples=40,
     )
 
 
@@ -525,7 +521,7 @@ def test_tune_batch_size_lr(tmpdir):
         backend_config = {**RAY_BACKEND_CONFIG}
 
         csv_filename = os.path.join(tmpdir, "dataset.csv")
-        dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
+        dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename)
         dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
         model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
         assert model.config[TRAINER]["batch_size"] != "auto"
