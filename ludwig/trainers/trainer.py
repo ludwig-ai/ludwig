@@ -765,6 +765,7 @@ class Trainer(BaseTrainer):
                     self.checkpoints_per_epoch,
                     self.is_coordinator(),
                 )
+                final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
 
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
 

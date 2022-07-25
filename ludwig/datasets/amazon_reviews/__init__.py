@@ -49,5 +49,5 @@ class AmazonReviews(TarDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, B
     def process_downloaded_dataset(self):
         super().process_downloaded_dataset(header=None)
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
-        processed_df.columns = ["label", "review_tile", "review_text", "split"]
+        processed_df.columns = ["label", "review_title", "review_text", "split"]
         processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
