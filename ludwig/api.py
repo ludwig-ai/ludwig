@@ -959,9 +959,7 @@ class LudwigModel:
 
             if collect_predictions:
                 postproc_predictions = convert_predictions(
-                    postproc_predictions,
-                    self.model.output_features,
-                    return_type=return_type,
+                    postproc_predictions, self.model.output_features, return_type=return_type, backend=self.backend
                 )
 
             for callback in self.callbacks:
