@@ -118,6 +118,7 @@ def test_transfoxl_encoder(use_pretrained: bool, reduce_output: str, max_sequenc
     assert outputs["encoder_output"].shape[1:] == transfo.output_shape
 
 
+@pytest.mark.skip(reason="Causes OOM Error in GitHub Actions.")
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
