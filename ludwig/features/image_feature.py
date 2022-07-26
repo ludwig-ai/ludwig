@@ -61,8 +61,6 @@ from ludwig.utils.image_utils import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
-logger = logging.getLogger(__name__)
-
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
 # TODO(shreya): Confirm if ok to use imagenet means and std devs
@@ -469,7 +467,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
 
         if num_failed_image_reads > 0:
-            logger.warning(
+            logging.warning(
                 f"""Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. Using
                 default image for these rows in the dataset."""
             )
