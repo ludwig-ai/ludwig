@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from ludwig.automl.utils import avg_num_tokens
 from ludwig.utils.audio_utils import is_audio_score
+from ludwig.utils.automl.utils import avg_num_tokens
 from ludwig.utils.image_utils import is_image_score
 from ludwig.utils.types import DataFrame
 

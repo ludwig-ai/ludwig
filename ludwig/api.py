@@ -516,6 +516,7 @@ class LudwigModel:
                 # auto tune batch size
                 if self.config[TRAINER].get(BATCH_SIZE, None) == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
+                    # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
                     tuned_batch_size = trainer.tune_batch_size(self.config, training_set, random_seed=random_seed)
 
                     # TODO(travis): pass these in as args to trainer when we call train,
@@ -524,7 +525,7 @@ class LudwigModel:
                         self.config[TRAINER][BATCH_SIZE] = tuned_batch_size
                         trainer.batch_size = tuned_batch_size
 
-                    if self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
+                    if self.config[TRAINER][EVAL_BATCH_SIZE] in {AUTO, None}:
                         self.config[TRAINER][EVAL_BATCH_SIZE] = tuned_batch_size
                         trainer.eval_batch_size = tuned_batch_size
 
@@ -958,9 +959,7 @@ class LudwigModel:
 
             if collect_predictions:
                 postproc_predictions = convert_predictions(
-                    postproc_predictions,
-                    self.model.output_features,
-                    return_type=return_type,
+                    postproc_predictions, self.model.output_features, return_type=return_type, backend=self.backend
                 )
 
             for callback in self.callbacks:

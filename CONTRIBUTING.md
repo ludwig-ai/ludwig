@@ -46,7 +46,7 @@ Work on your self-assigned issue and eventually create a Pull Request.
 1. Set up a development environment by running the following command in a virtual environment:
 
    ```bash
-   pip install -e ".[dev]"
+   pip install -e .
    pip install pre-commit
    pre-commit install
    ```
@@ -87,7 +87,6 @@ Work on your self-assigned issue and eventually create a Pull Request.
 
 ## Other tips
 
-- Use [google/yapf](https://github.com/google/yapf) to format Python code.
 - Add unit tests for any new code you write.
 - Make sure tests pass. See the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide/style_guidelines_and_tests/) for more details.
 

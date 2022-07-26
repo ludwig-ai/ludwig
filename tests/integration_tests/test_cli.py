@@ -18,7 +18,6 @@ import os.path
 import pathlib
 import shutil
 import subprocess
-import tempfile
 
 import pytest
 import yaml
@@ -111,189 +110,163 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
     return dataset_filename
 
 
-def test_train_cli_dataset(csv_filename):
+def test_train_cli_dataset(tmpdir, csv_filename):
     """Test training using `ludwig train --dataset`."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
-def test_train_cli_training_set(csv_filename):
+def test_train_cli_training_set(tmpdir, csv_filename):
     """Test training using `ludwig train --training_set`."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        validation_filename = shutil.copyfile(dataset_filename, os.path.join(tmpdir, "validation.csv"))
-        test_filename = shutil.copyfile(dataset_filename, os.path.join(tmpdir, "test.csv"))
-        _run_ludwig(
-            "train",
-            training_set=dataset_filename,
-            validation_set=validation_filename,
-            test_set=test_filename,
-            config=config_filename,
-            output_directory=tmpdir,
-        )
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    validation_filename = shutil.copyfile(dataset_filename, os.path.join(tmpdir, "validation.csv"))
+    test_filename = shutil.copyfile(dataset_filename, os.path.join(tmpdir, "test.csv"))
+    _run_ludwig(
+        "train",
+        training_set=dataset_filename,
+        validation_set=validation_filename,
+        test_set=test_filename,
+        config=config_filename,
+        output_directory=str(tmpdir),
+    )
 
 
 @pytest.mark.distributed
-def test_train_cli_horovod(csv_filename):
+def test_train_cli_horovod(tmpdir, csv_filename):
     """Test training using `horovodrun -np 2 ludwig train --dataset`."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig_horovod(
-            "train",
-            dataset=dataset_filename,
-            config=config_filename,
-            output_directory=tmpdir,
-            experiment_name="horovod_experiment",
-        )
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig_horovod(
+        "train",
+        dataset=dataset_filename,
+        config=config_filename,
+        output_directory=str(tmpdir),
+        experiment_name="horovod_experiment",
+    )
 
-        # Check that `model_load_path` works correctly
-        _run_ludwig_horovod(
-            "train",
-            dataset=dataset_filename,
-            config=config_filename,
-            output_directory=tmpdir,
-            model_load_path=os.path.join(tmpdir, "horovod_experiment_run", "model"),
-        )
-
-
-@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
-def test_export_savedmodel_cli(csv_filename):
-    """Test exporting Ludwig model to Tensorflows savedmodel format."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-        _run_ludwig(
-            "export_savedmodel",
-            model=os.path.join(tmpdir, "experiment_run", "model"),
-            output_path=os.path.join(tmpdir, "savedmodel"),
-        )
+    # Check that `model_load_path` works correctly
+    _run_ludwig_horovod(
+        "train",
+        dataset=dataset_filename,
+        config=config_filename,
+        output_directory=str(tmpdir),
+        model_load_path=os.path.join(tmpdir, "horovod_experiment_run", "model"),
+    )
 
 
 @pytest.mark.skip(reason="Issue #1451: Use torchscript.")
-def test_export_neuropod_cli(csv_filename):
+def test_export_neuropod_cli(tmpdir, csv_filename):
     """Test exporting Ludwig model to neuropod format."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-        _run_ludwig(
-            "export_neuropod",
-            model=os.path.join(tmpdir, "experiment_run", "model"),
-            output_path=os.path.join(tmpdir, "neuropod"),
-        )
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    _run_ludwig(
+        "export_neuropod",
+        model=os.path.join(tmpdir, "experiment_run", "model"),
+        output_path=os.path.join(tmpdir, "neuropod"),
+    )
 
 
-def test_experiment_cli(csv_filename):
+def test_experiment_cli(tmpdir, csv_filename):
     """Test experiment cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("experiment", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("experiment", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
-def test_predict_cli(csv_filename):
+def test_predict_cli(tmpdir, csv_filename):
     """Test predict cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-        _run_ludwig(
-            "predict",
-            dataset=dataset_filename,
-            model=os.path.join(tmpdir, "experiment_run", "model"),
-            output_directory=os.path.join(tmpdir, "predictions"),
-        )
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    _run_ludwig(
+        "predict",
+        dataset=dataset_filename,
+        model=os.path.join(tmpdir, "experiment_run", "model"),
+        output_directory=os.path.join(tmpdir, "predictions"),
+    )
 
 
-def test_evaluate_cli(csv_filename):
+def test_evaluate_cli(tmpdir, csv_filename):
     """Test evaluate cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-        _run_ludwig(
-            "evaluate",
-            dataset=dataset_filename,
-            model=os.path.join(tmpdir, "experiment_run", "model"),
-            output_directory=os.path.join(tmpdir, "predictions"),
-        )
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    _run_ludwig(
+        "evaluate",
+        dataset=dataset_filename,
+        model=os.path.join(tmpdir, "experiment_run", "model"),
+        output_directory=os.path.join(tmpdir, "predictions"),
+    )
 
 
 @pytest.mark.distributed
-def test_hyperopt_cli(csv_filename):
+def test_hyperopt_cli(tmpdir, csv_filename):
     """Test hyperopt cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_hyperopt_data(csv_filename, config_filename)
-        _run_ludwig("hyperopt", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_hyperopt_data(csv_filename, config_filename)
+    _run_ludwig("hyperopt", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
-def test_visualize_cli(csv_filename):
+def test_visualize_cli(tmpdir, csv_filename):
     """Test Ludwig 'visualize' cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-        _run_ludwig(
-            "visualize",
-            visualization="learning_curves",
-            model_names="run",
-            training_statistics=os.path.join(tmpdir, "experiment_run", "training_statistics.json"),
-            output_directory=os.path.join(tmpdir, "visualizations"),
-        )
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    _run_ludwig(
+        "visualize",
+        visualization="learning_curves",
+        model_names="run",
+        training_statistics=os.path.join(tmpdir, "experiment_run", "training_statistics.json"),
+        output_directory=os.path.join(tmpdir, "visualizations"),
+    )
 
 
-def test_collect_summary_activations_weights_cli(csv_filename):
+def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     """Test collect_summary cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=tmpdir)
-        completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
-        stdout = completed_process.stdout.decode("utf-8")
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
+    stdout = completed_process.stdout.decode("utf-8")
 
-        assert "Modules" in stdout
-        assert "Parameters" in stdout
+    assert "Modules" in stdout
+    assert "Parameters" in stdout
 
 
-def test_synthesize_dataset_cli(csv_filename):
+def test_synthesize_dataset_cli(tmpdir, csv_filename):
     """Test synthesize_data cli."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # test depends on default setting of --dataset_size
-        # if this parameter is specified, _run_ludwig fails when
-        # attempting to build the cli parameter structure
-        _run_ludwig(
-            "synthesize_dataset",
-            output_path=os.path.join(tmpdir, csv_filename),
-            features="'[ \
-                  {name: text, type: text}, \
-                  {name: category, type: category}, \
-                  {name: number, type: number}, \
-                  {name: binary, type: binary}, \
-                  {name: set, type: set}, \
-                  {name: bag, type: bag}, \
-                  {name: sequence, type: sequence}, \
-                  {name: timeseries, type: timeseries}, \
-                  {name: date, type: date}, \
-                  {name: h3, type: h3}, \
-                  {name: vector, type: vector}, \
-                  {name: audio, type: audio}, \
-                  {name: image, type: image} \
-                ]'",
-        )
+    # test depends on default setting of --dataset_size
+    # if this parameter is specified, _run_ludwig fails when
+    # attempting to build the cli parameter structure
+    _run_ludwig(
+        "synthesize_dataset",
+        output_path=os.path.join(tmpdir, csv_filename),
+        features="'[ \
+                {name: text, type: text}, \
+                {name: category, type: category}, \
+                {name: number, type: number}, \
+                {name: binary, type: binary}, \
+                {name: set, type: set}, \
+                {name: bag, type: bag}, \
+                {name: sequence, type: sequence}, \
+                {name: timeseries, type: timeseries}, \
+                {name: date, type: date}, \
+                {name: h3, type: h3}, \
+                {name: vector, type: vector}, \
+                {name: audio, type: audio}, \
+                {name: image, type: image} \
+            ]'",
+    )
 
 
-def test_preprocess_cli(csv_filename):
+def test_preprocess_cli(tmpdir, csv_filename):
     """Test preprocess `ludwig preprocess."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir, "config.yaml")
-        dataset_filename = _prepare_data(csv_filename, config_filename)
-        _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
 
 
 @pytest.mark.distributed

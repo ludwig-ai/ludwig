@@ -1,3 +1,4 @@
+from abc import ABC
 from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
@@ -25,7 +26,7 @@ def register_trainer_schema(name: str):
 
 
 @dataclass
-class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
+class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
     type: str
@@ -64,7 +65,11 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig):
         default=None,
         allow_none=True,
         min_exclusive=0,
-        description="Size of batch to pass to the model for evaluation.",
+        description=(
+            "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
+            "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
+            "memory is available. If ’auto’, the biggest batch size (power of 2) that can fit in memory will be used."
+        ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 

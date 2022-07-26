@@ -1,0 +1,41 @@
+output_features:
+  - name: RMSD
+    type: number
+input_features:
+  - name: F1
+    type: number
+  - name: F2
+    type: number
+  - name: F3
+    type: number
+  - name: F4
+    type: number
+  - name: F5
+    type: number
+  - name: F6
+    type: number
+  - name: F7
+    type: number
+  - name: F8
+    type: number
+  - name: F9
+    type: number
+  - name: F1
+    type: number
+combiner:
+  type: tabnet
+  size: 128  # N_a
+  output_size: 8  # N_d
+  sparsity: 0.000001  # lambda_sparse
+  bn_momentum: 0.98  # m_B
+  num_steps: 4  # N_steps
+  relaxation_factor: 1.2  # gamma
+  bn_virtual_bs: 4096  # B_v
+trainer:
+  batch_size: 256 # B
+  learning_rate: 0.005
+  decay_steps: 20000
+  decay_rate: 0.4
+preprocessing:
+  split:
+    type: fixed

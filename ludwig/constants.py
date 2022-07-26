@@ -207,3 +207,13 @@ MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
 DASK_MODULE_NAME = "dask.dataframe"
+
+PREPROCESSOR = "preprocessor"
+PREDICTOR = "predictor"
+POSTPROCESSOR = "postprocessor"
+
+S3 = "s3"
+CACHE = "cache"
+EXPERIMENT_RUN = "experiment_run"
+TRAIN_TAG = "train"
+EVAL_TAG = "evaluate"
