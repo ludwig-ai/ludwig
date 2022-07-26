@@ -22,7 +22,7 @@ def binary_config():
 
 @pytest.mark.parametrize("encoder", ["passthrough"])
 def test_binary_input_feature(binary_config: Dict, encoder: str):
-    binary_config[ENCODER].update({"type": encoder})
+    binary_config.update({ENCODER: {"type": encoder}})
     binary_input_feature = BinaryInputFeature(binary_config)
     binary_tensor = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
@@ -36,7 +36,10 @@ def test_binary_output_feature():
         {
             "name": "binary_feature",
             "type": "binary",
-            "input_size": 1,
+            "decoder": {
+                "type": "regressor",
+                "input_size": 1,
+            },
             "loss": {
                 "positive_class_weight": 1,
                 "robust_lambda": 0,
@@ -45,7 +48,7 @@ def test_binary_output_feature():
         },
         {},
     ).to(DEVICE)
-    combiner_outputs = {}
+    combiner_outputs = dict()
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
     binary_output = binary_output_feature(combiner_outputs, {})

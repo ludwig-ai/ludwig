@@ -172,7 +172,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -237,7 +237,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -393,39 +393,32 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         self,
         predictions,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
             if "idx2str" in metadata:
-                predictions[predictions_col] = backend.df_engine.map_objects(
-                    predictions[predictions_col], lambda pred: metadata["idx2str"][pred]
-                )
+                predictions[predictions_col] = predictions[predictions_col].map(lambda pred: metadata["idx2str"][pred])
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in predictions:
             prob_col = f"{self.feature_name}_{PROBABILITY}"
             predictions[prob_col] = predictions[probabilities_col].map(max)
-            predictions[probabilities_col] = backend.df_engine.map_objects(
-                predictions[probabilities_col], lambda pred: pred.tolist()
-            )
+            predictions[probabilities_col] = predictions[probabilities_col].map(lambda pred: pred.tolist())
             if "idx2str" in metadata:
                 for i, label in enumerate(metadata["idx2str"]):
                     key = f"{probabilities_col}_{label}"
 
                     # Use default param to force a capture before the loop completes, see:
                     # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
-                    predictions[key] = backend.df_engine.map_objects(
-                        predictions[probabilities_col],
+                    predictions[key] = predictions[probabilities_col].map(
                         lambda prob, i=i: prob[i],
                     )
 
         top_k_col = f"{self.feature_name}_predictions_top_k"
         if top_k_col in predictions:
             if "idx2str" in metadata:
-                predictions[top_k_col] = backend.df_engine.map_objects(
-                    predictions[top_k_col], lambda pred_top_k: [metadata["idx2str"][pred] for pred in pred_top_k]
+                predictions[top_k_col] = predictions[top_k_col].map(
+                    lambda pred_top_k: [metadata["idx2str"][pred] for pred in pred_top_k]
                 )
 
         return predictions

@@ -296,7 +296,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -361,7 +361,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -405,8 +405,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         self,
         predictions,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
@@ -415,9 +413,8 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
                 metadata["preprocessing"].get("normalization", None),
                 numeric_transformation_registry,
             )(**metadata)
-            predictions[predictions_col] = backend.df_engine.map_objects(
-                predictions[predictions_col],
-                lambda pred: numeric_transformer.inverse_transform(pred),
+            predictions[predictions_col] = predictions[predictions_col].map(
+                lambda pred: numeric_transformer.inverse_transform(pred)
             )
 
         return predictions

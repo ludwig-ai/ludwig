@@ -288,7 +288,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs: torch.Tensor, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -353,7 +353,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -466,8 +466,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         lengths_col = f"{self.feature_name}_{LENGTHS}"
@@ -482,7 +480,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         for token in [pred[i] for i in range(length)]
                     ]
 
-                result[predictions_col] = backend.df_engine.apply_objects(result, idx2str)
+                result[predictions_col] = result.apply(idx2str, axis=1)
 
         last_preds_col = f"{self.feature_name}_{LAST_PREDICTIONS}"
         if last_preds_col in result:
@@ -493,7 +491,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         return metadata["idx2str"][last_pred]
                     return UNKNOWN_SYMBOL
 
-                result[last_preds_col] = backend.df_engine.map_objects(result[last_preds_col], last_idx2str)
+                result[last_preds_col] = result[last_preds_col].map(last_idx2str)
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
@@ -501,14 +499,13 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             # currently does not return full probabilties because usually it is huge:
             # dataset x length x classes
             # TODO: add a mechanism for letting the user decide to save it
-            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
-            result[prob_col] = backend.df_engine.map_objects(
-                result[probs_col],
+            result[probs_col] = result[probs_col].map(compute_token_probabilities)
+            result[prob_col] = result[probs_col].map(
                 partial(
                     compute_sequence_probability,
                     max_sequence_length=metadata["max_sequence_length"],
                     return_log_prob=True,
-                ),
+                )
             )
 
         if lengths_col in result:

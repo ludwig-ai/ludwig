@@ -17,11 +17,14 @@ from ludwig.modules.convolutional_modules import (
     ResNetBottleneckBlock,
 )
 from ludwig.utils.image_utils import get_img_output_shape
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 BATCH_SIZE = 2
 SEQ_SIZE = 17
 HIDDEN_SIZE = 8
 NUM_FILTERS = 4
+
+RANDOM_SEED = 1919
 
 
 ###
@@ -81,6 +84,10 @@ def test_conv1d_layer(
     pool_stride: int,
     pool_function: str,
 ) -> None:
+    # make test repeatable
+    torch.manual_seed(RANDOM_SEED)
+
+    # setup synthetic tensor for test
     input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE], dtype=torch.float32)
 
     conv1_layer = Conv1DLayer(
@@ -116,6 +123,7 @@ def test_conv1d_layer(
     assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
 
 
+@pytest.mark.parametrize("dropout", [0, 0.9])
 @pytest.mark.parametrize(
     "layers, num_layers",
     [
@@ -124,7 +132,11 @@ def test_conv1d_layer(
         ([{"num_filters": NUM_FILTERS - 2}, {"num_filters": NUM_FILTERS + 2}], None),  # 2 custom layers
     ],
 )
-def test_conv1d_stack(layers: Union[None, list], num_layers: Union[None, int]) -> None:
+def test_conv1d_stack(layers: Union[None, list], num_layers: Union[None, int], dropout: float) -> None:
+    # make test repeatable
+    torch.manual_seed(RANDOM_SEED)
+
+    # setup synthetic input tensor for test
     input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE], dtype=torch.float32)
 
     conv1_stack = Conv1DStack(
@@ -134,6 +146,7 @@ def test_conv1d_stack(layers: Union[None, list], num_layers: Union[None, int]) -
         layers=layers,
         num_layers=num_layers,
         default_num_filters=NUM_FILTERS,
+        default_dropout=dropout,
     )
 
     # check for correct stack formation
@@ -171,6 +184,20 @@ def test_conv1d_stack(layers: Union[None, list], num_layers: Union[None, int]) -
     else:
         # custom stack setup
         assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
+
+    # check for parameter updates
+    target = torch.randn(conv1_stack.output_shape)
+    _, tpc, upc, not_updated = check_module_parameters_updated(conv1_stack, (input,), target)
+    if dropout == 0:
+        # all trainable parameters should be updated
+        assert tpc == upc, (
+            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{conv1_stack}"
+        )
+    else:
+        # with specified config and random seed, non-zero dropout update parameter count could take different values
+        assert (tpc == upc) or (upc == 1), (
+            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{conv1_stack}"
+        )
 
 
 @pytest.mark.parametrize(
@@ -226,6 +253,7 @@ TEST_FILTER_SIZE0 = 7
 TEST_FILTER_SIZE1 = 5
 
 
+@pytest.mark.parametrize("dropout", [0, 0.99])
 @pytest.mark.parametrize(
     "stacked_layers",
     [
@@ -246,7 +274,11 @@ TEST_FILTER_SIZE1 = 5
         ],
     ],
 )
-def test_parallel_conv1d_stack(stacked_layers: Union[None, list]) -> None:
+def test_parallel_conv1d_stack(stacked_layers: Union[None, list], dropout: float) -> None:
+    # make repeatable
+    torch.manual_seed(RANDOM_SEED)
+
+    # setup synthetic input tensor for test
     input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE], dtype=torch.float32)
 
     parallel_conv1d_stack = ParallelConv1DStack(
@@ -255,6 +287,7 @@ def test_parallel_conv1d_stack(stacked_layers: Union[None, list]) -> None:
         max_sequence_length=SEQ_SIZE,
         stacked_layers=stacked_layers,
         default_num_filters=NUM_FILTERS,
+        default_dropout=dropout,
     )
 
     # check for correct stack formation
@@ -278,6 +311,22 @@ def test_parallel_conv1d_stack(stacked_layers: Union[None, list]) -> None:
 
     # check output shape
     assert out_tensor.size() == (BATCH_SIZE, *parallel_conv1d_stack.output_shape)
+
+    # check for parameter updates
+    target = torch.randn(parallel_conv1d_stack.output_shape)
+    _, tpc, upc, not_updated = check_module_parameters_updated(parallel_conv1d_stack, (input,), target)
+    if dropout == 0:
+        # all trainable parameters should be updated
+        assert tpc == upc, (
+            f"All parameter not updated. Parameters not updated: {not_updated}"
+            f"\nModule structure:\n{parallel_conv1d_stack}"
+        )
+    else:
+        # with specified config and random seed, non-zero dropout update parameter count could take different values
+        assert (tpc == upc) or (upc == 5), (
+            f"All parameter not updated. Parameters not updated: {not_updated}"
+            f"\nModule structure:\n{parallel_conv1d_stack}"
+        )
 
 
 ###
@@ -443,6 +492,9 @@ def test_resnet(
     out_channels: int,
     resnet_size: int,
 ):
+    # make repeatable
+    torch.manual_seed(RANDOM_SEED)
+
     resnet = ResNet(
         img_height=img_height,
         img_width=img_width,
@@ -453,3 +505,11 @@ def test_resnet(
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet(input_tensor)
     assert output_tensor.shape[1:] == resnet.output_shape
+
+    # check for parameter updates
+    target = torch.randn(output_tensor.shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (input_tensor,), target)
+    # all trainable parameters should be updated
+    assert tpc == upc, (
+        f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{resnet}"
+    )

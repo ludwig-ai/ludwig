@@ -229,7 +229,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -283,7 +283,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -358,8 +358,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
@@ -367,10 +365,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             def idx2str(pred_set):
                 return [metadata["idx2str"][i] for i, pred in enumerate(pred_set) if pred]
 
-            result[predictions_col] = backend.df_engine.map_objects(
-                result[predictions_col],
-                idx2str,
-            )
+            result[predictions_col] = result[predictions_col].map(idx2str)
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
@@ -380,10 +375,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
                 return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
 
-            result[probabilities_col] = backend.df_engine.map_objects(
-                result[probabilities_col],
-                get_prob,
-            )
+            result[probabilities_col] = result[probabilities_col].map(get_prob)
 
         return result
 

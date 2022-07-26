@@ -228,7 +228,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -290,7 +290,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -373,8 +373,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         class_names = ["False", "True"]
         if "bool2str" in metadata:
@@ -383,26 +381,26 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
             if "bool2str" in metadata:
-                result[predictions_col] = backend.df_engine.map_objects(
-                    result[predictions_col],
+                result[predictions_col] = result[predictions_col].map(
                     lambda pred: metadata["bool2str"][pred],
                 )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            result[probabilities_col] = backend.df_engine.map_objects(
-                result[probabilities_col],
-                lambda prob: np.array([1 - prob, prob], dtype=result[probabilities_col].dtype),
-            )
-
             false_col = f"{probabilities_col}_{class_names[0]}"
-            result[false_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[0])
-
             true_col = f"{probabilities_col}_{class_names[1]}"
-            result[true_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[1])
-
             prob_col = f"{self.feature_name}_{PROBABILITY}"
-            result[prob_col] = result[[false_col, true_col]].max(axis=1)
+
+            result = result.assign(
+                **{
+                    false_col: lambda x: 1 - x[probabilities_col],
+                    true_col: lambda x: x[probabilities_col],
+                    prob_col: np.where(
+                        result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
+                    ),
+                    probabilities_col: result.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], axis=1),
+                }
+            )
 
         return result
 
@@ -425,8 +423,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: "regressor",
+                    "threshold": 0.5,
                 },
-                "threshold": 0.5,
                 "dependencies": [],
                 "reduce_input": SUM,
                 "reduce_dependencies": SUM,
