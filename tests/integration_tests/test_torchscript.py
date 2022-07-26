@@ -369,9 +369,9 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
 )
 def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [text_feature(vocab_size=3, encoder="bert")]
+    input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
     output_features = [
-        text_feature(vocab_size=3),
+        text_feature(decoder={"vocab_size": 3}),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
