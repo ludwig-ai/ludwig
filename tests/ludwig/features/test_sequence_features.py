@@ -58,11 +58,13 @@ def test_sequence_input_feature(
     # sequence definition and then augment with
     # pre-processing metadata parameters
     input_feature_defn = sequence_feature(
-        type=encoder,
-        max_len=SEQ_SIZE,
-        # augment with emulated pre-processing metadata
-        max_sequence_length=SEQ_SIZE,
-        vocab=idx2str,
+        encoder={
+            "type": encoder,
+            "max_len": SEQ_SIZE,
+            # augment with emulated pre-processing metadata
+            "max_sequence_length": SEQ_SIZE,
+            "vocab": idx2str,
+        }
     )
 
     # create sequence input feature object

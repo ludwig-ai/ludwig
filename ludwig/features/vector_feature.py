@@ -212,7 +212,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         self.overwrite_defaults(feature)
         self._input_shape = feature["input_size"]
         feature[DECODER]["output_size"] = feature["vector_size"]
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 

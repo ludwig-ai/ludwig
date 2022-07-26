@@ -200,38 +200,43 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # List of feature names that this output feature is dependent on.
         self.dependencies = []
 
-        self.fc_layers = None
-        self.num_fc_layers = 0
-        self.output_size = 256
-        self.use_bias = True
-        self.weights_initializer = "xavier_uniform"
-        self.bias_initializer = "zeros"
-        self.norm = None
-        self.norm_params = None
-        self.activation = "relu"
-        self.dropout = 0
-        self.input_size = None
+        self.decoder.update(
+            {
+                "fc_layers": None,
+                "num_fc_layers": 0,
+                "output_size": 256,
+                "use_bias": True,
+                "weights_initializer": "xavier_uniform",
+                "bias_initializer": "zeros",
+                "norm": None,
+                "norm_params": None,
+                "activation": "relu",
+                "dropout": 0,
+                "input_size": None,
+            }
+        )
 
         self.overwrite_defaults(feature)
 
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        self.input_size = get_input_size_with_dependencies(self.input_size, self.dependencies, other_output_features)
-        feature["input_size"] = self.input_size  # needed for future overrides
+        self.decoder["input_size"] = get_input_size_with_dependencies(self.decoder["input_size"], self.dependencies,
+                                                                      other_output_features)
+        feature[DECODER]["input_size"] = self.decoder["input_size"]  # needed for future overrides
 
         self.fc_stack = FCStack(
-            first_layer_input_size=self.input_size,
-            layers=self.fc_layers,
-            num_layers=self.num_fc_layers,
-            default_output_size=self.output_size,
-            default_use_bias=self.use_bias,
-            default_weights_initializer=self.weights_initializer,
-            default_bias_initializer=self.bias_initializer,
-            default_norm=self.norm,
-            default_norm_params=self.norm_params,
-            default_activation=self.activation,
-            default_dropout=self.dropout,
+            first_layer_input_size=self.decoder["input_size"],
+            layers=self.decoder["fc_layers"],
+            num_layers=self.decoder["num_fc_layers"],
+            default_output_size=self.decoder["output_size"],
+            default_use_bias=self.decoder["use_bias"],
+            default_weights_initializer=self.decoder["weights_initializer"],
+            default_bias_initializer=self.decoder["bias_initializer"],
+            default_norm=self.decoder["norm"],
+            default_norm_params=self.decoder["norm_params"],
+            default_activation=self.decoder["activation"],
+            default_dropout=self.decoder["dropout"],
         )
         self._calibration_module = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
@@ -264,15 +269,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def metric_functions(self) -> Dict:
         pass
 
-    def initialize_decoder(self, decoder_parameters):
-        decoder_parameters_copy = copy.copy(decoder_parameters)
+    def initialize_decoder(self):
         # Input to the decoder is the output feature's FC hidden layer.
-        decoder_parameters_copy[DECODER]["input_size"] = self.fc_stack.output_shape[-1]
-        if DECODER in decoder_parameters:
-            decoder = decoder_parameters[DECODER][TYPE]
-        else:
-            decoder = self.decoder
-        return get_decoder_cls(self.type(), decoder)(**decoder_parameters_copy[DECODER])
+        self.decoder["input_size"] = self.fc_stack.output_shape[-1]
+        decoder = self.decoder["type"]
+        return get_decoder_cls(self.type(), decoder)(**self.decoder)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)

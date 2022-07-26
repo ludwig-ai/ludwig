@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import CROP_OR_PAD, INTERPOLATE
+from ludwig.constants import CROP_OR_PAD, ENCODER, INTERPOLATE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
 from ludwig.models.ecd import ECD
 
@@ -69,10 +69,10 @@ def image_config():
 def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels) -> None:
     # setup image input feature definition
     image_def = deepcopy(image_config)
-    image_def["encoder"] = encoder
-    image_def["height"] = height
-    image_def["width"] = width
-    image_def["num_channels"] = num_channels
+    image_def[ENCODER]["type"] = encoder
+    image_def[ENCODER]["height"] = height
+    image_def[ENCODER]["width"] = width
+    image_def[ENCODER]["num_channels"] = num_channels
 
     # pickup any other missing parameters
     ImageInputFeature.populate_defaults(image_def)

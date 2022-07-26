@@ -334,6 +334,7 @@ def test_merge_with_defaults():
             {
                 "type": "number",
                 "name": "number_input_feature",
+                "encoder": {"type": "passthrough"},
                 "column": "number_input_feature",
                 "proc_column": "number_input_feature_mZFLky",
                 "tied": None,
@@ -341,12 +342,14 @@ def test_merge_with_defaults():
             {
                 "type": "image",
                 "name": "image_input_feature",
-                "encoder": "stacked_cnn",
-                "conv_layers": [
-                    {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
-                    {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
-                ],
-                "conv_use_bias": True,
+                "encoder": {
+                    "type": "stacked_cnn",
+                    "conv_layers": [
+                        {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
+                        {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
+                    ],
+                    "conv_use_bias": True,
+                },
                 "column": "image_input_feature",
                 "proc_column": "image_input_feature_mZFLky",
                 "tied": None,
@@ -358,6 +361,7 @@ def test_merge_with_defaults():
                 "type": "number",
                 "name": "number_output_feature",
                 "column": "number_output_feature",
+                "decoder": {"type": "regressor"},
                 "proc_column": "number_output_feature_mZFLky",
                 "loss": {"type": "mean_squared_error", "weight": 1},
                 "clip": None,

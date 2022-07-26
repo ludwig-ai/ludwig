@@ -7,6 +7,7 @@ import torch
 from ludwig.features.set_feature import SetInputFeature
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import get_torch_device
+from ludwig.constants import ENCODER
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
@@ -54,7 +55,7 @@ def test_set_input_feature(
     input_feature_obj = ECD.build_single_input(set_def, None).to(DEVICE)
 
     # check one forward pass through input feature
-    input_tensor = torch.randint(0, 2, size=(BATCH_SIZE, len(set_def["vocab"])), dtype=torch.int64).to(DEVICE)
+    input_tensor = torch.randint(0, 2, size=(BATCH_SIZE, len(set_def[ENCODER]["vocab"])), dtype=torch.int64).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
