@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import copy
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import Any, Dict, Optional
@@ -20,7 +19,7 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import COLUMN, DECODER, ENCODER, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
+from ludwig.constants import COLUMN, DECODER, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
