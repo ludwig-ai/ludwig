@@ -172,7 +172,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)

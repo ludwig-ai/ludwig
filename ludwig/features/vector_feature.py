@@ -156,11 +156,11 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def __init__(self, feature: Dict[str, Any], encoder_obj: Optional[LudwigModule] = None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature[ENCODER]["input_size"] = feature["vector_size"]
+        self.encoder["input_size"] = feature["vector_size"]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
@@ -210,8 +210,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def __init__(self, feature, output_features: Dict[str, OutputFeature]):
         super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
-        self._input_shape = feature["input_size"]
-        feature[DECODER]["output_size"] = feature["vector_size"]
+        self._input_shape = feature[DECODER]["input_size"]
+        self.decoder["output_size"] = feature["vector_size"]
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()

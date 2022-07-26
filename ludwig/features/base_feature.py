@@ -169,8 +169,8 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    def initialize_encoder(self, encoder_parameters):
-        return get_encoder_cls(self.type(), self.encoder[TYPE])(**encoder_parameters[ENCODER])
+    def initialize_encoder(self):
+        return get_encoder_cls(self.type(), self.encoder[TYPE])(**self.encoder)
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:

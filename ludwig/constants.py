@@ -212,6 +212,7 @@ INPUT_FEATURE_KEYS = [
     "encoder",
     "tied",
     "preprocessing",
+    "vector_size",
     ]
 
 OUTPUT_FEATURE_KEYS = [
@@ -226,7 +227,8 @@ OUTPUT_FEATURE_KEYS = [
     "reduce_input",
     "dependencies",
     "reduce_dependencies",
-    "top_k"
+    "top_k",
+    "vector_size",
     ]
 
 
