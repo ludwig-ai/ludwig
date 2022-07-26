@@ -33,6 +33,8 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     DATE,
+    DECODER,
+    ENCODER,
     H3,
     IMAGE,
     NAME,
@@ -44,8 +46,6 @@ from ludwig.constants import (
     TIMESERIES,
     TYPE,
     VECTOR,
-    ENCODER,
-    DECODER,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION

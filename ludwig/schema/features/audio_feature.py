@@ -1,10 +1,10 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import AUDIO
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
@@ -15,7 +15,5 @@ class AudioInputFeatureConfig(BaseInputFeatureConfig):
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=AUDIO,
-        default='parallel_cnn',
+        default="parallel_cnn",
     )
-
-

@@ -2,12 +2,16 @@ from abc import ABC
 from typing import List
 
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema import utils as schema_utils
 
 
 @dataclass
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for decoders. Not meant to be used directly."""
+    """Base class for decoders.
+
+    Not meant to be used directly.
+    """
 
     type: str
     "Name corresponding to a decoder."
@@ -22,7 +26,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 
 @dataclass
 class RegressorConfig(BaseDecoderConfig):
-    """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder"""
+    """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
     type: str = "regressor"
 
@@ -48,7 +52,7 @@ class RegressorConfig(BaseDecoderConfig):
 
 @dataclass
 class ProjectorConfig(BaseDecoderConfig):
-    """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder"""
+    """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
     type: str = "projector"
 
@@ -81,7 +85,7 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-    clip = None,
+    clip = (None,)
 
 
 @dataclass
@@ -143,7 +147,5 @@ class ClassifierConfig(BaseDecoderConfig):
         min=0,
         max=1,
         description="The threshold above (greater or equal) which the predicted output of the sigmoid will be mapped "
-                    "to 1.",
-
+        "to 1.",
     )
-

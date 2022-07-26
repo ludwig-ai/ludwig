@@ -1,10 +1,9 @@
+from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 from ludwig.utils.backward_compatibility import (
+    _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing,
-    _upgrade_encoder_decoder_params
 )
-
-from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 
 
 def test_preprocessing_backward_compatibility():
@@ -108,13 +107,13 @@ def test_encoder_decoder_backwards_compatibility():
                 "name": "text_feature",
                 "type": "text",
                 "preprocessing": {
-                     "missing_value_strategy": "drop_row",
+                    "missing_value_strategy": "drop_row",
                 },
                 "encoder": "rnn",
                 "bidirectional": True,
                 "representation": "dense",
                 "num_layers": 2,
-             },
+            },
             {
                 "name": "image_feature_1",
                 "type": "image",
@@ -138,7 +137,7 @@ def test_encoder_decoder_backwards_compatibility():
                     "num_channels": 4,
                 },
                 "encoder": "resnet",
-            }
+            },
         ],
         "output_features": [
             {
@@ -163,8 +162,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "decoder": "regressor",
                 "use_bias": True,
                 "bias_initializer": "constant",
-            }
-
+            },
         ],
     }
 
@@ -180,7 +178,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "name": "text_feature",
                 "type": "text",
                 "preprocessing": {
-                     "missing_value_strategy": "drop_row",
+                    "missing_value_strategy": "drop_row",
                 },
                 "encoder": {
                     "type": "rnn",
@@ -188,7 +186,7 @@ def test_encoder_decoder_backwards_compatibility():
                     "representation": "dense",
                     "num_layers": 2,
                 },
-             },
+            },
             {
                 "name": "image_feature_1",
                 "type": "image",
@@ -213,10 +211,8 @@ def test_encoder_decoder_backwards_compatibility():
                     "width": 7.5,
                     "num_channels": 4,
                 },
-                "encoder": {
-                    "type": "resnet"
-                },
-            }
+                "encoder": {"type": "resnet"},
+            },
         ],
         "output_features": [
             {
@@ -245,6 +241,6 @@ def test_encoder_decoder_backwards_compatibility():
                     "use_bias": True,
                     "bias_initializer": "constant",
                 },
-            }
+            },
         ],
     }

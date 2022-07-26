@@ -40,9 +40,9 @@ def test_missing_value_prediction(tmpdir, csv_filename):
     random.seed(1)
     np.random.seed(1)
     input_features = [
-        category_feature(encoder={"vocab_size": 2},
-                         reduce_input="sum",
-                         preprocessing=dict(missing_value_strategy="fill_with_mode"))
+        category_feature(
+            encoder={"vocab_size": 2}, reduce_input="sum", preprocessing=dict(missing_value_strategy="fill_with_mode")
+        )
     ]
     output_features = [binary_feature()]
 

@@ -19,12 +19,7 @@ def test_audio_feature(enc_encoder):
 
     # generate audio feature config
     audio_feature_config = audio_feature(
-        folder=".",
-        encoder={
-            "type": enc_encoder,
-            "max_sequence_length": SEQ_SIZE,
-            "embedding_size": AUDIO_W_SIZE
-        }
+        folder=".", encoder={"type": enc_encoder, "max_sequence_length": SEQ_SIZE, "embedding_size": AUDIO_W_SIZE}
     )
 
     # instantiate audio input feature object

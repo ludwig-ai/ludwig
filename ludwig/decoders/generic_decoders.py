@@ -21,8 +21,8 @@ import torch
 from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
 from ludwig.utils.torch_utils import Dense, get_activation
-from ludwig.schema.decoders.base import PassthroughDecoderConfig, RegressorConfig, ProjectorConfig, ClassifierConfig
 
 logger = logging.getLogger(__name__)
 

@@ -52,24 +52,24 @@ FEATURES_TO_TEST = [
         # output feature
         [
             sequence_feature(
-                decoder={"min_len": 5,
-                         "max_len": 10,
-                         "type": "generator",
-                         "cell_type": "lstm",
-                         "attention": "bahdanau"},
-                reduce_input=None
+                decoder={
+                    "min_len": 5,
+                    "max_len": 10,
+                    "type": "generator",
+                    "cell_type": "lstm",
+                    "attention": "bahdanau",
+                },
+                reduce_input=None,
             )
         ],
     ),
     FeaturesToUse(
         # input feature
-        [sequence_feature(encoder={"min_len": 5,
-                                   "max_len": 10,
-                                   "encoder": "rnn",
-                                   "cell_type": "lstm",
-                                   "reduce_output": None}
-                          )
-         ],
+        [
+            sequence_feature(
+                encoder={"min_len": 5, "max_len": 10, "encoder": "rnn", "cell_type": "lstm", "reduce_output": None}
+            )
+        ],
         # output feature
         [sequence_feature(decoder={"max_len": 10, "decoder": "tagger"}, reduce_input=None)],
     ),

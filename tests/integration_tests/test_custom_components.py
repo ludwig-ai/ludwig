@@ -16,8 +16,8 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,

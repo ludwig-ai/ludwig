@@ -41,12 +41,14 @@ from ludwig.constants import (
     PROC_COLUMN,
     SRC,
     TIED,
-    TYPE,
     TRAINING,
+    TYPE,
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.image_feature import ImageInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
@@ -59,9 +61,6 @@ from ludwig.utils.image_utils import (
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere

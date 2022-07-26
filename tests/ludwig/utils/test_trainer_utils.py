@@ -10,11 +10,15 @@ from ludwig.utils.metric_utils import TrainerMetric
 def test_progress_tracker_empty():
     output_features = LudwigFeatureDict()
     output_features["category_feature"] = CategoryOutputFeature(
-        {"name": "category_feature",
-         "decoder": {
-             "input_size": 10,
-             "num_classes": 3,
-         }}, {})
+        {
+            "name": "category_feature",
+            "decoder": {
+                "input_size": 10,
+                "num_classes": 3,
+            },
+        },
+        {},
+    )
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
@@ -41,11 +45,15 @@ def test_progress_tracker_empty():
 def test_progress_tracker():
     output_features = LudwigFeatureDict()
     output_features["category_feature"] = CategoryOutputFeature(
-        {"name": "category_feature",
-         "decoder": {
-             "input_size": 10,
-             "num_classes": 3,
-         }}, {})
+        {
+            "name": "category_feature",
+            "decoder": {
+                "input_size": 10,
+                "num_classes": 3,
+            },
+        },
+        {},
+    )
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,

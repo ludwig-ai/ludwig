@@ -1,8 +1,9 @@
 from dataclasses import field
-from ludwig.constants import TYPE
-from ludwig.decoders.registry import get_decoder_classes, get_decoder_cls
 
 from marshmallow import fields, ValidationError
+
+from ludwig.constants import TYPE
+from ludwig.decoders.registry import get_decoder_classes, get_decoder_cls
 from ludwig.schema import utils as schema_utils
 
 
@@ -22,17 +23,14 @@ def get_decoder_conds(feature_type: str):
 
 
 def DecoderDataclassField(feature_type: str, default: str):
-    """
-    Custom dataclass field that when used inside a dataclass will allow the user to specify a decoder config.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify a decoder config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a decoder config.
     """
 
     class DecoderMarshmallowField(fields.Field):
-        """
-        Custom marshmallow field that deserializes a dict for a valid decoder config from the
-        decoder_registry and creates a corresponding `oneOf` JSON schema for external usage.
-        """
+        """Custom marshmallow field that deserializes a dict for a valid decoder config from the decoder_registry
+        and creates a corresponding `oneOf` JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -67,8 +65,8 @@ def DecoderDataclassField(feature_type: str, default: str):
 
     try:
         decoder = get_decoder_cls(feature_type, default).get_schema_cls()
-        load_default = decoder.Schema().load({'type': default})
-        dump_default = decoder.Schema().dump({'type': default})
+        load_default = decoder.Schema().load({"type": default})
+        dump_default = decoder.Schema().dump({"type": default})
 
         return field(
             metadata={
@@ -81,6 +79,4 @@ def DecoderDataclassField(feature_type: str, default: str):
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported decoder type: {default}. See decoder_registry. "
-                              f"Details: {e}")
-
+        raise ValidationError(f"Unsupported decoder type: {default}. See decoder_registry. " f"Details: {e}")

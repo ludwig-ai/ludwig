@@ -29,13 +29,13 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.encoders.sequence_encoders import (
-    SequencePassthroughConfig,
-    SequenceEmbedConfig,
     ParallelCNNConfig,
+    SequenceEmbedConfig,
+    SequencePassthroughConfig,
     StackedCNNConfig,
+    StackedCNNRNNConfig,
     StackedParallelCNNConfig,
     StackedRNNConfig,
-    StackedCNNRNNConfig,
     StackedTransformerConfig,
 )
 

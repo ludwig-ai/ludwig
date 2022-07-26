@@ -89,7 +89,7 @@ def test_sequence_output_feature(sequence_type: Union[SequenceOutputFeature, Tex
             "max_len": SEQ_SIZE,
             "max_sequence_length": SEQ_SIZE,
             "vocab_size": VOCAB_SIZE,
-            "input_size": VOCAB_SIZE
+            "input_size": VOCAB_SIZE,
         }
     )
     output_feature_obj = sequence_type(output_feature_defn, {}).to(DEVICE)

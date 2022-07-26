@@ -29,7 +29,7 @@ def bag_config():
             "vocab_size": 10,
             "embedding_size": EMBEDDING_SIZE,
             "vocab": VOCAB,
-        }
+        },
     }
 
 

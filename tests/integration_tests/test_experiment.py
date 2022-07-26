@@ -25,7 +25,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import H3, TRAINER, ENCODER, TYPE
+from ludwig.constants import ENCODER, H3, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
@@ -66,10 +66,9 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_text_feature_non_HF(encoder, csv_filename):
-    input_features = [text_feature(
-        encoder={"vocab_size": 30, "min_len": 1, "type": encoder},
-        preprocessing={"tokenizer": "space"}
-    )]
+    input_features = [
+        text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder}, preprocessing={"tokenizer": "space"})
+    ]
     output_features = [category_feature(decoder={"vocab_size": 2})]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -79,9 +78,7 @@ def test_experiment_text_feature_non_HF(encoder, csv_filename):
 def run_experiment_with_encoder(encoder, csv_filename):
     # Run in a subprocess to clear TF and prevent OOM
     # This also allows us to use GPU resources
-    input_features = [
-        text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder})
-    ]
+    input_features = [text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder})]
     output_features = [category_feature(decoder={"vocab_size": 2})]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -168,8 +165,10 @@ def test_experiment_seq_seq_train_test_valid(tmpdir):
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_multi_input_intent_classification(csv_filename, encoder):
     # Multiple inputs, Single category output
-    input_features = [text_feature(encoder={"vocab_size": 10, "min_len": 1, "representation": "sparse"}),
-                      category_feature(encoder={"vocab_size": 10})]
+    input_features = [
+        text_feature(encoder={"vocab_size": 10, "min_len": 1, "representation": "sparse"}),
+        category_feature(encoder={"vocab_size": 10}),
+    ]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
@@ -506,9 +505,9 @@ def test_experiment_tied_weights(csv_filename):
     # Single sequence input, single category output
     input_features = [
         text_feature(name="text_feature1", encoder={"min_len": 1, "type": "cnnrnn", "reduce_output": "sum"}),
-        text_feature(name="text_feature2",
-                     encoder={"min_len": 1, "type": "cnnrnn", "reduce_output": "sum"},
-                     tied="text_feature1"),
+        text_feature(
+            name="text_feature2", encoder={"min_len": 1, "type": "cnnrnn", "reduce_output": "sum"}, tied="text_feature1"
+        ),
     ]
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
@@ -524,10 +523,12 @@ def test_experiment_tied_weights(csv_filename):
 @pytest.mark.parametrize("attention", [False, True])
 def test_sequence_tagger(enc_cell_type, attention, csv_filename):
     # Define input and output features
-    input_features = [sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": enc_cell_type,
-                                                "reduce_output": None})]
-    output_features = [sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": attention},
-                                        reduce_input=None)]
+    input_features = [
+        sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": enc_cell_type, "reduce_output": None})
+    ]
+    output_features = [
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": attention}, reduce_input=None)
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -559,7 +560,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
                     "type": "embed",
                     "cell_type": "lstm",
                     "reduce_output": "sum",
-                }
+                },
             ),
             sequence_feature(
                 name="seq2",
@@ -569,7 +570,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
                     "type": "embed",
                     "cell_type": "lstm",
                     "reduce_output": "sum",
-                }
+                },
             ),
             category_feature(encoder={"vocab_size": 5}),
         ],
@@ -598,19 +599,23 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
         "input_features": [
             sequence_feature(
                 name="seq1",
-                encoder={"min_len": 5,
-                         "max_len": 5,
-                         "type": sequence_encoder,
-                         "cell_type": "lstm",
-                         "reduce_output": None}
+                encoder={
+                    "min_len": 5,
+                    "max_len": 5,
+                    "type": sequence_encoder,
+                    "cell_type": "lstm",
+                    "reduce_output": None,
+                },
             ),
             sequence_feature(
                 name="seq2",
-                encoder={"min_len": 5,
-                         "max_len": 5,
-                         "type": sequence_encoder,
-                         "cell_type": "lstm",
-                         "reduce_output": None}
+                encoder={
+                    "min_len": 5,
+                    "max_len": 5,
+                    "type": sequence_encoder,
+                    "cell_type": "lstm",
+                    "reduce_output": None,
+                },
             ),
             category_feature(vocab_size=5),
         ],

@@ -27,7 +27,7 @@ def category_config():
             "dropout": 0.0,
             "vocab": ["a", "b", "c"],
             "embedding_initializer": None,
-        }
+        },
     }
 
 

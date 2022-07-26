@@ -29,16 +29,14 @@ from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
-
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
 from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
-from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
+from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
-
 from ludwig.schema.combiners.utils import combiner_registry, get_combiner_jsonschema, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D

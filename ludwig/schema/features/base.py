@@ -20,7 +20,7 @@ class BaseOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
-                    "dimension (second if you count the batch dimension)",
+        "dimension (second if you count the batch dimension)",
     )
 
     dependencies: List[str] = schema_utils.List(

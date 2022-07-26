@@ -16,13 +16,12 @@ from ludwig.combiners.combiners import (
     TransformerCombiner,
 )
 from ludwig.encoders.registry import sequence_encoder_registry
-
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
 from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
-from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
+from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
 from ludwig.schema.utils import load_config
 from ludwig.utils.torch_utils import get_torch_device

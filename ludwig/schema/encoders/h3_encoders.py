@@ -1,6 +1,7 @@
 from typing import List
 
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 
@@ -18,7 +19,7 @@ class H3EmbedConfig(BaseEncoderConfig):
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-                    "resolve them.",
+        "resolve them.",
     )
 
     fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
@@ -34,7 +35,7 @@ class H3EmbedConfig(BaseEncoderConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=10,
         description="If an output_size is not already specified in fc_layers this is the default output_size that "
-                    "will be used for each layer. It indicates the size of the output of a fully connected layer.",
+        "will be used for each layer. It indicates the size of the output of a fully connected layer.",
     )
 
     use_bias: bool = schema_utils.Boolean(
@@ -87,13 +88,13 @@ class H3WeightedSumConfig(BaseEncoderConfig):
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-                    "resolve them.",
+        "resolve them.",
     )
 
     should_softmax: bool = schema_utils.Boolean(
         default=False,
         description="Determines if the weights of the weighted sum should be passed though a softmax layer before "
-                    "being used.",
+        "being used.",
     )
 
     fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
@@ -109,7 +110,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=10,
         description="If an output_size is not already specified in fc_layers this is the default output_size that "
-                    "will be used for each layer. It indicates the size of the output of a fully connected layer.",
+        "will be used for each layer. It indicates the size of the output of a fully connected layer.",
     )
 
     use_bias: bool = schema_utils.Boolean(
@@ -162,7 +163,7 @@ class H3RNNConfig(BaseEncoderConfig):
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-                    "resolve them.",
+        "resolve them.",
     )
 
     num_layers: int = schema_utils.PositiveInteger(
@@ -173,23 +174,23 @@ class H3RNNConfig(BaseEncoderConfig):
     hidden_size: int = schema_utils.PositiveInteger(
         default=10,
         description="The size of the hidden representation within the transformer block. It is usually the same as "
-                    "the embedding_size, but if the two values are different, a projection layer will be added before "
-                    "the first transformer block.",
+        "the embedding_size, but if the two values are different, a projection layer will be added before "
+        "the first transformer block.",
     )
 
     cell_type: str = schema_utils.StringOptions(
         ["rnn", "lstm", "lstm_block", "lstm", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
         default="rnn",
         description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
-                    "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-                    "the cells please refer to TensorFlow's documentation. We suggest to use the `block` variants on "
-                    "CPU and the `cudnn` variants on GPU because of their increased speed. ",
+        "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
+        "the cells please refer to TensorFlow's documentation. We suggest to use the `block` variants on "
+        "CPU and the `cudnn` variants on GPU because of their increased speed. ",
     )
 
     bidirectional: bool = schema_utils.Boolean(
         default=False,
         description="If true, two recurrent networks will perform encoding in the forward and backward direction and "
-                    "their outputs will be concatenated.",
+        "their outputs will be concatenated.",
     )
 
     activation: str = schema_utils.ActivationOptions(
@@ -217,8 +218,7 @@ class H3RNNConfig(BaseEncoderConfig):
     )
 
     recurrent_initializer: str = schema_utils.InitializerOptions(
-        default="orthogonal",
-        description="The initializer for recurrent matrix weights"
+        default="orthogonal", description="The initializer for recurrent matrix weights"
     )
 
     bias_initializer: str = schema_utils.InitializerOptions(
@@ -226,22 +226,14 @@ class H3RNNConfig(BaseEncoderConfig):
         description="Initializer to use for the bias vector.",
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate"
-    )
+    dropout: float = schema_utils.FloatRange(default=0.0, min=0, max=1, description="The dropout rate")
 
     recurrent_dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="The dropout rate for the recurrent state"
+        default=0.0, min=0, max=1, description="The dropout rate for the recurrent state"
     )
 
     reduce_output: str = schema_utils.ReductionOptions(
         default="last",
         description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
-                    "tensor is greater than 2.",
+        "tensor is greater than 2.",
     )

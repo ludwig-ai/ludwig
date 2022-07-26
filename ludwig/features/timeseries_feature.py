@@ -19,25 +19,15 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import (
-    COLUMN,
-    ENCODER,
-    FILL_WITH_CONST,
-    NAME,
-    PROC_COLUMN,
-    TIED,
-    TIMESERIES,
-    TYPE,
-)
+from ludwig.constants import COLUMN, ENCODER, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED, TIMESERIES, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +90,7 @@ class _TimeseriesPreprocessing(torch.nn.Module):
             if self.padding == "right":
                 timeseries_matrix[sample_idx][:limit] = float_sequence
             else:  # if self.padding == 'left
-                timeseries_matrix[sample_idx][self.max_timeseries_length - limit:] = float_sequence
+                timeseries_matrix[sample_idx][self.max_timeseries_length - limit :] = float_sequence
         return timeseries_matrix
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
@@ -161,7 +151,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
             if padding == "right":
                 padded[:limit] = vector[:limit]
             else:  # if padding == 'left
-                padded[max_length - limit:] = vector[:limit]
+                padded[max_length - limit :] = vector[:limit]
             return padded
 
         return backend.df_engine.map_objects(ts_vectors, pad)
@@ -180,7 +170,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-            feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
         proc_df[feature_config[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]].astype(str),
@@ -234,7 +224,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
                 TIED: None,
                 ENCODER: {
                     TYPE: "parallel_cnn",
-                }
+                },
             },
         )
 
@@ -245,6 +235,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _TimeseriesPreprocessing(metadata)
+
 
 # this is still WIP
 # class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):

@@ -42,11 +42,9 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
         number_feature(),
         category_feature(encoder={"vocab_size": 3}),
         sequence_feature(encoder={"vocab_size": 3}),
-        text_feature(encoder={"vocab_size": 3,
-                              "type": "rnn",
-                              "cell_type": "lstm",
-                              "num_layers": 2,
-                              "bidirectional": False}),
+        text_feature(
+            encoder={"vocab_size": 3, "type": "rnn", "cell_type": "lstm", "num_layers": 2, "bidirectional": False}
+        ),
         vector_feature(),
         image_feature(image_dest_folder),
         audio_feature(audio_dest_folder, encoder={"type": "stacked_cnn"}),

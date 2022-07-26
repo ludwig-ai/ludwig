@@ -183,11 +183,11 @@ def slow(test_case):
 
 
 def generate_data(
-        input_features,
-        output_features,
-        filename="test_csv.csv",
-        num_examples=25,
-        nan_percent=0.0,
+    input_features,
+    output_features,
+    filename="test_csv.csv",
+    num_examples=25,
+    nan_percent=0.0,
 ):
     """Helper method to generate synthetic data based on input, output feature specs.
 
@@ -227,9 +227,7 @@ def number_feature(normalization=None, **kwargs):
     feature = {
         "name": "num_" + random_string(),
         "type": "number",
-        "preprocessing": {
-            "normalization": normalization
-        },
+        "preprocessing": {"normalization": normalization},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -241,10 +239,7 @@ def category_feature(**kwargs):
     feature = {
         "type": "category",
         "name": "category_" + random_string(),
-        ENCODER: {
-            "vocab_size": 10,
-            "embedding_size": 5
-        },
+        ENCODER: {"vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -274,11 +269,7 @@ def set_feature(**kwargs):
     feature = {
         "type": "set",
         "name": "set_" + random_string(),
-        ENCODER: {
-            "vocab_size": 10,
-            "max_len": 5,
-            "embedding_size": 5
-        },
+        ENCODER: {"vocab_size": 10, "max_len": 5, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -358,9 +349,7 @@ def timeseries_feature(**kwargs):
     feature = {
         "name": "timeseries_" + random_string(),
         "type": "timeseries",
-        ENCODER: {
-            "max_len": 7
-        },
+        ENCODER: {"max_len": 7},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -383,11 +372,7 @@ def bag_feature(**kwargs):
     feature = {
         "name": "bag_" + random_string(),
         "type": "bag",
-        ENCODER: {
-            "max_len": 5,
-            "vocab_size": 10,
-            "embedding_size": 5
-        },
+        ENCODER: {"max_len": 5, "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -399,9 +384,7 @@ def date_feature(**kwargs):
     feature = {
         "name": "date_" + random_string(),
         "type": "date",
-        "preprocessing": {
-            "datetime_format": random.choice(list(DATETIME_FORMATS.keys()))
-        },
+        "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
         ENCODER: {},
     }
     recursive_update(feature, kwargs)
@@ -411,11 +394,7 @@ def date_feature(**kwargs):
 
 
 def h3_feature(**kwargs):
-    feature = {
-        "name": "h3_" + random_string(),
-        "type": "h3",
-        ENCODER: {}
-    }
+    feature = {"name": "h3_" + random_string(), "type": "h3", ENCODER: {}}
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -437,7 +416,7 @@ def vector_feature(**kwargs):
 
 
 def run_experiment(
-        input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
+    input_features=None, output_features=None, config=None, skip_save_processed_input=True, backend=None, **kwargs
 ):
     """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk related to
     running an experiment.
@@ -567,7 +546,7 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
 
 
 def has_no_grad(
-        val: Union[np.ndarray, torch.Tensor, str, list],
+    val: Union[np.ndarray, torch.Tensor, str, list],
 ):
     """Checks if two values are close to each other."""
     if isinstance(val, list):
@@ -578,9 +557,9 @@ def has_no_grad(
 
 
 def is_all_close(
-        val1: Union[np.ndarray, torch.Tensor, str, list],
-        val2: Union[np.ndarray, torch.Tensor, str, list],
-        tolerance=1e-4,
+    val1: Union[np.ndarray, torch.Tensor, str, list],
+    val2: Union[np.ndarray, torch.Tensor, str, list],
+    tolerance=1e-4,
 ):
     """Checks if two values are close to each other."""
     if isinstance(val1, list):
@@ -754,16 +733,16 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def train_with_backend(
-        backend,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        predict=True,
-        evaluate=True,
-        callbacks=None,
-        skip_save_processed_input=True,
+    backend,
+    config,
+    dataset=None,
+    training_set=None,
+    validation_set=None,
+    test_set=None,
+    predict=True,
+    evaluate=True,
+    callbacks=None,
+    skip_save_processed_input=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None
