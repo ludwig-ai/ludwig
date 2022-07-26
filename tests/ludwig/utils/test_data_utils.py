@@ -25,8 +25,8 @@ from ludwig.utils.data_utils import (
     figure_data_format_dataset,
     get_abs_path,
     hash_dict,
-    use_credentials,
     NumpyEncoder,
+    use_credentials,
 )
 
 try:
