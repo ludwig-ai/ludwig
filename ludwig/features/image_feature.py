@@ -457,7 +457,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
                 for i, img_entry in enumerate(abs_path_column):
                     res = read_image_if_bytes_obj_and_resize(img_entry)
-                    if res is not None:
+                    if res:
                         image_dataset[i, :height, :width, :] = res
                     else:
                         image_dataset[i, :height, :width, :] = default_image
