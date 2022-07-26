@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import warnings
 from collections.abc import Iterable
 from io import BytesIO
 from typing import List, Optional, Tuple, Union
@@ -105,7 +106,7 @@ def read_image_from_bytes_obj(
     if image is None:
         image = read_image_as_numpy(bytes_obj)
     if image is None:
-        logger.warning("Unable to read image from bytes object.")
+        warnings.warn("Unable to read image from bytes object.")
     return image
 
 
@@ -123,7 +124,7 @@ def read_image_as_png(
             del buffer_view
             return image
     except Exception as e:
-        logger.warning(f"Failed to read image from PNG file. Original exception: {e}")
+        warnings.warn(f"Failed to read image from PNG file. Original exception: {e}")
         return None
 
 
@@ -134,7 +135,7 @@ def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Ten
             image = np.load(buffer)
             return torch.from_numpy(image)
     except Exception as e:
-        logger.warning(f"Failed to read image from numpy file. Original exception: {e}")
+        warnings.warn(f"Failed to read image from numpy file. Original exception: {e}")
         return None
 
 
