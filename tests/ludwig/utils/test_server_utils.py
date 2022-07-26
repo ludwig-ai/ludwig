@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from ludwig.utils.server_utils import NumpyJSONResponse
 

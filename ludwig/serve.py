@@ -41,8 +41,6 @@ try:
     from starlette.middleware import Middleware
     from starlette.middleware.cors import CORSMiddleware
     from starlette.requests import Request
-
-    # from starlette.responses import JSONResponse
 except ImportError as e:
     logger.error(e)
     logger.error(
