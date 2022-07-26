@@ -121,14 +121,12 @@ def test_with_split(backend, csv_filename, tmpdir):
 def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     import dask.dataframe as dd
 
-    num_examples = NUM_EXAMPLES
-
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-    data_csv = generate_data(
-        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
-    )
-    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=10)
+
+    # num_examples=100 and npartitions=2 to ensure the test is not flaky, by having non-empty post-split datasets.
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
+    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=2)
     assert data_df.known_divisions
 
     config = {
