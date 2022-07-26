@@ -423,8 +423,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: "regressor",
+                    "threshold": 0.5,
                 },
-                "threshold": 0.5,
                 "dependencies": [],
                 "reduce_input": SUM,
                 "reduce_dependencies": SUM,

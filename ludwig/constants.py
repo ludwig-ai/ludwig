@@ -207,6 +207,8 @@ AUDIO_FEATURE_KEYS = [
 INPUT_FEATURE_KEYS = [
     "name",
     "type",
+    "column",
+    "proc_column",
     "encoder",
     "tied",
     "preprocessing",
@@ -215,6 +217,8 @@ INPUT_FEATURE_KEYS = [
 OUTPUT_FEATURE_KEYS = [
     "name",
     "type",
+    "column",
+    "proc_column",
     "decoder",
     "tied",
     "preprocessing",

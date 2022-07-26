@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from ludwig.combiners.combiners import Combiner
-from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.constants import COMBINED, DECODER, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -76,7 +76,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
-            output_feature_def["input_size"] = combiner.output_shape[-1]
+            output_feature_def[DECODER]["input_size"] = combiner.output_shape[-1]
             output_feature = cls.build_single_output(output_feature_def, output_features)
             output_features[output_feature_def[NAME]] = output_feature
 
