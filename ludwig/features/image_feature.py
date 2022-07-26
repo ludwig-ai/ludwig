@@ -60,6 +60,8 @@ from ludwig.utils.image_utils import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
+logger = logging.getLogger(__name__)
+
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
 # TODO(shreya): Confirm if ok to use imagenet means and std devs
@@ -437,10 +439,14 @@ class ImageFeatureMixin(BaseFeatureMixin):
             metadata[name]["reshape"] = (num_channels, height, width)
 
             proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
+
+            num_failed_image_reads = proc_col.isna().sum()
+
             proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
             proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
             num_images = len(abs_path_column)
+            num_failed_image_reads = 0
 
             data_fp = backend.cache.get_cache_path(wrap(metadata.get(SRC)), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
@@ -450,10 +456,17 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
                 for i, img_entry in enumerate(abs_path_column):
                     res = read_image_if_bytes_obj_and_resize(img_entry)
-                    image_dataset[i, :height, :width, :] = res if res is not None else default_image
+                    if res is not None:
+                        image_dataset[i, :height, :width, :] = res
+                    else:
+                        image_dataset[i, :height, :width, :] = default_image
+                        num_failed_image_reads += 1
                 h5_file.flush()
 
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
+
+        if num_failed_image_reads > 0:
+            logger.info(f"Failed to read {num_failed_image_reads} images while processing feature `{name}`")
         return proc_df
 
 
