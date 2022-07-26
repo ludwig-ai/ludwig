@@ -48,6 +48,7 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
@@ -441,6 +442,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
             proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
 
             num_failed_image_reads = proc_col.isna().sum()
+            if is_dask_series_or_df(num_failed_image_reads, backend):
+                num_failed_image_reads = num_failed_image_reads.compute()
 
             proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
             proc_df[feature_config[PROC_COLUMN]] = proc_col
@@ -466,7 +469,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
 
         if num_failed_image_reads > 0:
-            logger.info(f"Failed to read {num_failed_image_reads} images while processing feature `{name}`")
+            logger.warning(
+                f"""Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. Using
+                default image for these rows in the dataset."""
+            )
+
         return proc_df
 
 
