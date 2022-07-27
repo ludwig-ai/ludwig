@@ -35,7 +35,7 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard, cast_as_tensor_dtype
+from ludwig.data.dataset.ray import cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
