@@ -46,6 +46,9 @@ class PandasEngine(DataFrameEngine):
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
 
+    def map_batches(self, df, map_fn):
+        return map_fn(df)
+
     def map_partitions(self, series, map_fn, meta=None):
         return map_fn(series)
 
