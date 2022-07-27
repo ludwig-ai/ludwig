@@ -468,8 +468,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         if num_failed_image_reads > 0:
             logging.warning(
-                f"""Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. Using
-                default image for these rows in the dataset."""
+                f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
+                "Using default image for these rows in the dataset."
             )
 
         return proc_df
