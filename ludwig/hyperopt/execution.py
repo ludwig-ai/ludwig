@@ -446,6 +446,7 @@ class RayTuneExecutor:
 
         # Some config values may be JSON encoded as strings, so decode them here
         config = self.decode_values(config, decode_ctx)
+        del config["mlflow"]
 
         trial_id = tune.get_trial_id()
         trial_dir = Path(tune.get_trial_dir())
