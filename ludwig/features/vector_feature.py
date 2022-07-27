@@ -253,12 +253,10 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
-            result[predictions_col] = backend.df_engine.map_objects(result[predictions_col], lambda pred: pred.tolist())
+            result[predictions_col] = result[predictions_col].map(lambda pred: pred.tolist())
         return result
 
     @staticmethod
