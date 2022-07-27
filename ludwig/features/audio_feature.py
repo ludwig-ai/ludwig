@@ -24,7 +24,6 @@ import torchaudio
 from ludwig.constants import (
     AUDIO,
     AUDIO_FEATURE_KEYS,
-    BACKFILL,
     COLUMN,
     ENCODER,
     NAME,
@@ -100,19 +99,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": BACKFILL,
-            "in_memory": True,
-            "padding_value": 0,
-            "norm": None,
-            "type": "fbank",
-            "window_length_in_s": 0.04,
-            "window_shift_in_s": 0.02,
-            "num_fft_points": None,
-            "window_type": "hamming",
-            "num_filter_bands": 80,
-        }
+        return AudioInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -492,8 +479,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_values(input_feature, {TIED: None, "preprocessing": {}})
-        set_default_values(input_feature, {ENCODER: {TYPE: "parallel_cnn"}})
+        defaults = AudioInputFeatureConfig()
+        set_default_values(input_feature, {TIED: defaults.tied.default, PREPROCESSING: {}})
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

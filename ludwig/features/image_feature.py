@@ -129,18 +129,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "missing_value_strategy": BACKFILL,
-            "in_memory": True,
-            "resize_method": "interpolate",
-            "scaling": "pixel_normalization",
-            "num_processes": 1,
-            "infer_image_num_channels": True,
-            "infer_image_dimensions": True,
-            "infer_image_max_height": 256,
-            "infer_image_max_width": 256,
-            "infer_image_sample_size": 100,
-        }
+        return ImageInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -508,9 +497,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = ImageInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
         set_default_value(input_feature, PREPROCESSING, {})
-        set_default_values(input_feature, {ENCODER: {TYPE: "stacked_cnn"}})
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

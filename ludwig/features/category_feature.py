@@ -24,8 +24,8 @@ from ludwig.constants import (
     CATEGORY,
     COLUMN,
     DECODER,
+    DEPENDENCIES,
     ENCODER,
-    FILL_WITH_CONST,
     HIDDEN,
     HITS_AT_K,
     LOGITS,
@@ -36,9 +36,12 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     PROJECTION_INPUT,
+    REDUCE_INPUT,
+    REDUCE_DEPENDENCIES,
     SOFTMAX_CROSS_ENTROPY,
     SUM,
     TIED,
+    TOP_K,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -119,12 +122,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "most_common": 10000,
-            "lowercase": False,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return CategoryInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -211,8 +209,9 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {TYPE: "dense"}})
+        defaults = CategoryInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -425,31 +424,23 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
+        defaults = CategoryOutputFeatureConfig
+
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-
         # Populate the default values for LOSS if they aren't defined already
-        set_default_values(
-            output_feature[LOSS],
-            {
-                TYPE: "softmax_cross_entropy",
-                "class_weights": 1,
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-                "class_similarities_temperature": 0,
-                "weight": 1,
-            },
-        )
+        set_default_values(output_feature[LOSS], defaults.loss.default)
 
         set_default_values(
-            output_feature, {
-                "decoder": {
-                    "type": "classifier",
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
                 },
-                "top_k": 3,
-                "dependencies": [],
-                "reduce_input": SUM,
-                "reduce_dependencies": SUM}
+                TOP_K: defaults.top_k,
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,}
         )
 
     @staticmethod

@@ -1,4 +1,5 @@
 from marshmallow_dataclass import dataclass
+from typing import List
 
 from ludwig.constants import VECTOR, MEAN_SQUARED_ERROR
 from ludwig.schema import utils as schema_utils
@@ -25,6 +26,17 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
 @dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default=None,
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+                    "dimension (second if you count the batch dimension)",
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default=None,
+        description="How to reduce the dependencies of the output feature.",
+    )
 
     loss: dict = schema_utils.Dict(
         default={

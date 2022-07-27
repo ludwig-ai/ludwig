@@ -23,10 +23,11 @@ import torch
 from torch import nn
 
 from ludwig.constants import (
+    CLIP,
     COLUMN,
     DECODER,
+    DEPENDENCIES,
     ENCODER,
-    FILL_WITH_CONST,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -37,9 +38,10 @@ from ludwig.constants import (
     PREDICTIONS,
     PROC_COLUMN,
     R2,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
-    SUM,
     TIED,
     TYPE,
 )
@@ -228,11 +230,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": 0,
-            "normalization": None,
-        }
+        return NumberInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -327,8 +325,9 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
+        defaults = NumberInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -421,20 +420,18 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1})
-        set_default_value(output_feature[LOSS], TYPE, "mean_squared_error")
-        set_default_value(output_feature[LOSS], "weight", 1)
-
+        defaults = NumberOutputFeatureConfig()
+        set_default_values(output_feature[LOSS], defaults.loss.default)
         set_default_values(
             output_feature,
             {
                 DECODER: {
-                    TYPE: "regressor",
+                    TYPE: defaults.decoder.type,
+                    CLIP: defaults.decoder.clip,
                 },
-                "clip": None,
-                "dependencies": [],
-                "reduce_input": SUM,
-                "reduce_dependencies": SUM,
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
             },
         )
 

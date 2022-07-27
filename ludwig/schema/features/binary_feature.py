@@ -26,12 +26,13 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig):
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
-    loss: dict = schema_utils.Dict(
+    loss: dict = schema_utils.Dict(  # TODO: Create schema for loss
         default={
             "type": BINARY_WEIGHTED_CROSS_ENTROPY,
             "robust_lambda": 0,
             "confidence_penalty": 0,
             "positive_class_weight": None,
+            "weight": 1,
             },
         description="A dictionary containing a loss type and its hyper-parameters.",
     )

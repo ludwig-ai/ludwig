@@ -93,7 +93,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     padding_symbol: str = schema_utils.String(
-        default="<PAD>",
+        default=strings_utils.PADDING_SYMBOL,
         allow_none=False,
         description="The string used as the padding symbol for sequence features. Ignored for features using "
         "huggingface encoders, which have their own vocabulary.",
@@ -114,7 +114,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     lowercase: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
@@ -137,12 +137,6 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
-    )
-
-    computed_fill_value: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="The computed fill value determined by the user or inferred from the data.",
     )
 
 
@@ -343,7 +337,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     padding_symbol: str = schema_utils.String(
-        default="<PAD>",
+        default=strings_utils.PADDING_SYMBOL,
         allow_none=False,
         description="The string used as a padding symbol. This special token is mapped to the integer ID 0 in the "
         "vocabulary.",
@@ -387,12 +381,6 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
-    )
-
-    computed_fill_value: Optional[str] = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="The computed fill value determined by the user or inferred from the data.",
     )
 
 

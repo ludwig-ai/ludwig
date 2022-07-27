@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List
+from typing import List, Union, Tuple
 
 from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
@@ -45,6 +45,15 @@ class RegressorConfig(BaseDecoderConfig):
         description="Initializer for the bias vector.",
     )
 
+    clip = Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+        N=2,
+        default=None,
+        allow_none=True,
+        min=0,
+        max=999999999,
+        description="Clip the output of the decoder to be within the given range.",
+    )
+
 
 @dataclass
 class ProjectorConfig(BaseDecoderConfig):
@@ -81,7 +90,14 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-    clip = None,
+    clip = Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+        N=2,
+        default=None,
+        allow_none=True,
+        min=0,
+        max=999999999,
+        description="Clip the output of the decoder to be within the given range.",
+    )
 
 
 @dataclass

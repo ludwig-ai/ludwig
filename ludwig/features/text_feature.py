@@ -24,7 +24,6 @@ from ludwig.constants import (
     DECODER,
     ENCODER,
     EDIT_DISTANCE,
-    FILL_WITH_CONST,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
@@ -50,11 +49,10 @@ from ludwig.features.sequence_feature import (
     SequenceOutputFeature,
 )
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import set_default_values
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
-    PADDING_SYMBOL,
     SpecialSymbol,
     UNKNOWN_SYMBOL,
 )
@@ -73,19 +71,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "tokenizer": "space_punct",
-            "pretrained_model_name_or_path": None,
-            "vocab_file": None,
-            "max_sequence_length": 256,
-            "most_common": 20000,
-            "padding_symbol": PADDING_SYMBOL,
-            "unknown_symbol": UNKNOWN_SYMBOL,
-            "padding": "right",
-            "lowercase": True,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return TextInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -248,9 +234,11 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_values(input_feature, {TIED: None, ENCODER: {"type": "parallel_cnn"}})
+        defaults = TextInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
-        encoder_class = get_encoder_cls(input_feature["type"], input_feature[ENCODER]["type"])
+        encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])
 
         if hasattr(encoder_class, "default_params"):
             set_default_values(input_feature, encoder_class.default_params)
