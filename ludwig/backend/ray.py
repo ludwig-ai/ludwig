@@ -31,7 +31,6 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
-from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
 if TYPE_CHECKING:
@@ -41,7 +40,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataset.ray import cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -662,7 +661,7 @@ class RayPredictor(BasePredictor):
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
-                df[c] = df[c].astype(TensorDtype())
+                df[c] = cast_as_tensor_dtype(df[c])
             return df
 
         # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.

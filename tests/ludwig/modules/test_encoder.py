@@ -30,9 +30,11 @@ from ludwig.encoders.sequence_encoders import (
     StackedRNN,
 )
 from ludwig.utils.torch_utils import get_torch_device
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 DROPOUT = 0.5
 DEVICE = get_torch_device()
+RANDOM_SEED = 1919
 
 
 def create_encoder(encoder_type, **encoder_kwargs):
@@ -98,6 +100,10 @@ def encoder_test(
 
 
 def test_image_encoders_resnet():
+    # make repeatable
+    np.random.seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
+
     # Test the resnet encoder for images
     encoder_kwargs = {"resnet_size": 8, "num_filters": 8, "output_size": 28, "dropout": DROPOUT}
     image_size = (3, 10, 10)
@@ -128,8 +134,24 @@ def test_image_encoders_resnet():
     assert encoder.fc_stack.layers[0]["output_size"] == 28
     assert encoder.fc_stack.layers[0]["activation"] == "relu"
 
+    # test for parameter updates
+    # generate tensors for parameter update test
+    target = torch.rand(output_shape)
+    image_tensor = torch.rand(input_image.shape)
+
+    # check for parameter updates
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
+    assert upc == tpc, (
+        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
+        f"  Module structure\n{encoder}"
+    )
+
 
 def test_image_encoders_stacked_2dcnn():
+    # make repeatable
+    np.random.seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
+
     # Test the resnet encoder for images
     encoder_kwargs = {"num_conv_layers": 2, "num_filters": 16, "output_size": 28, "dropout": DROPOUT}
     image_size = (3, 10, 10)
@@ -167,8 +189,24 @@ def test_image_encoders_stacked_2dcnn():
         output_data=None,
     )
 
+    # test for parameter updates
+    # generate tensors for parameter update test
+    target = torch.rand(output_shape)
+    image_tensor = torch.rand(input_image.shape)
+
+    # check for parameter updates
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
+    assert upc == tpc, (
+        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
+        f"  Module structure\n{encoder}"
+    )
+
 
 def test_image_encoders_mlpmixer():
+    # make repeatable
+    np.random.seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
+
     # Test the resnet encoder for images
     encoder_kwargs = {
         "patch_size": 5,
@@ -208,11 +246,27 @@ def test_image_encoders_mlpmixer():
     assert encoder.mlp_mixer.patch_conv.__class__.__name__ == "Conv2d"
     assert encoder.mlp_mixer.patch_conv.kernel_size == (5, 5)
 
+    # test for parameter updates
+    # generate tensors for parameter update test
+    target = torch.rand(output_shape)
+    image_tensor = torch.rand(input_image.shape)
+
+    # check for parameter updates
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
+    assert upc == tpc, (
+        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
+        f"  Module structure\n{encoder}"
+    )
+
 
 def test_sequence_encoder_embed():
     num_sentences = 4
     embedding_size = 5
     max_len = 6
+
+    # make repeatable
+    np.random.seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
 
     # Generate data
     text, vocab = generate_random_sentences(
@@ -247,6 +301,19 @@ def test_sequence_encoder_embed():
 
             assert encoder.embed_sequence.dropout is not None
 
+            # test for parameter updates
+            # generate tensors for parameter update test
+            target = torch.rand(output_shape)
+
+            # check for parameter updates
+            fpc, tpc, upc, not_updated = check_module_parameters_updated(
+                encoder, (torch.tensor(text, dtype=torch.int32),), target
+            )
+            assert upc == tpc, (
+                f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
+                f"  Module structure\n{encoder}"
+            )
+
 
 @pytest.mark.parametrize("encoder_type", [ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN])
 @pytest.mark.parametrize("trainable", [True, False])
@@ -256,6 +323,10 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     embedding_size = 5
     max_len = 7
     output_size = 3
+
+    # make repeatable
+    np.random.seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
 
     # Generate data
     text, vocab = generate_random_sentences(
@@ -278,7 +349,6 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
 
     encoder_kwargs["embeddings_trainable"] = trainable
     encoder_kwargs["dropout"] = DROPOUT
-    encoder_kwargs["dropout"] = DROPOUT
     encoder_kwargs["recurrent_dropout"] = DROPOUT
     encoder_kwargs["fc_dropout"] = DROPOUT
     encoder_kwargs["reduce_output"] = reduce_output
@@ -289,3 +359,24 @@ def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output
     )
 
     assert isinstance(encoder, encoder_type)
+
+    # test for parameter updates
+    # generate tensors for parameter update test
+    target = torch.rand(output_shape)
+
+    # check for parameter updates
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        encoder, (torch.tensor(text, dtype=torch.int32),), target
+    )
+
+    if trainable:
+        assert fpc == 0, "Embedding layer expected to be trainable but found to be frozen"
+    else:
+        assert fpc == 1, "Embedding layer expected to be frozen, but found to be trainable."
+
+    # for given random seed and configuration and non-zero dropout updated parameter counts
+    # could take on different values
+    assert (upc == tpc) or (upc == 0), (
+        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
+        f"  Module structure\n{encoder}"
+    )

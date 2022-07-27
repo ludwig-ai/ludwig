@@ -20,6 +20,7 @@ from typing import Dict
 import dask
 import dask.array as da
 import dask.dataframe as dd
+import ray.data
 from dask.diagnostics import ProgressBar
 from ray.util.dask import ray_dask_get
 
@@ -135,6 +136,11 @@ class DaskEngine(DataFrameEngine):
     def map_partitions(self, series, map_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
+
+    def map_batches(self, series, map_fn):
+        ds = ray.data.from_dask(series)
+        ds = ds.map_batches(map_fn, batch_format="pandas")
+        return ds.to_dask()
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")

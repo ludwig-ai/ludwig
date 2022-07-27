@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 import os
+import warnings
 from collections import Counter
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -185,7 +186,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             img = img_entry
 
         if not isinstance(img, torch.Tensor):
-            logging.info(f"Image with value {img} cannot be read")
+            warnings.warn(f"Image with value {img} cannot be read")
             return None
 
         img_num_channels = num_channels_in_image(img)

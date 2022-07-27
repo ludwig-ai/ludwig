@@ -5,6 +5,7 @@ import torch
 
 from ludwig.modules.tabnet_modules import AttentiveTransformer, FeatureBlock, FeatureTransformer, TabNet
 from ludwig.utils.entmax import sparsemax
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 RANDOM_SEED = 67
 
@@ -139,6 +140,9 @@ def test_attentive_transformer(
     if entmax_mode == "adaptive":
         assert isinstance(attentive_transformer.trainable_alpha, torch.Tensor)
 
+    # TODO:  Need variant of assert_model_parameters_updated() to account for the two step calling sequence
+    #        of AttentiveTransformer
+
 
 @pytest.mark.parametrize("virtual_batch_size", [None, 7])
 @pytest.mark.parametrize("size", [2, 4, 8])
@@ -171,3 +175,19 @@ def test_tabnet(
     assert tabnet.input_shape[-1] == input_size
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
+
+    # check for parameter updates
+    target = torch.randn([batch_size, 1])
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(tabnet, (input_tensor,), target)
+
+    if batch_size == 1:
+        # for single record batches, batchnorm layer is bypassed, only a subset of parameters are updated
+        assert upc == 15, (
+            f"Updated parameter count not expected value. Parameters not updated: {not_updated}"
+            f"\nModule structure:\n{tabnet}"
+        )
+    else:
+        # update count should equal trainable number of parameters
+        assert tpc == upc, (
+            f"All parameter not updated. Parameters not updated: {not_updated}" f"\nModule structure:\n{tabnet}"
+        )

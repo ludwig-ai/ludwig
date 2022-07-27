@@ -51,6 +51,7 @@ MAX_DISTINCT_VALUES_TO_RETURN = 10
 class DatasetInfo:
     fields: List[FieldInfo]
     row_count: int
+    size_bytes: int
 
 
 def allocate_experiment_resources(resources: dict) -> dict:
@@ -223,7 +224,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 avg_words=avg_words,
             )
         )
-    return DatasetInfo(fields=fields, row_count=row_count)
+    return DatasetInfo(fields=fields, row_count=row_count, size_bytes=source.size_bytes())
 
 
 def get_features_config(
