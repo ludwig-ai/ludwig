@@ -126,7 +126,6 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-    # num_examples=100 and npartitions=2 to ensure the test is not flaky, by having non-empty post-split datasets.
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
