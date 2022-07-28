@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from tests.integration_tests.utils import slow
 from ludwig.encoders import text_encoders
+from tests.integration_tests.utils import slow
 
 
 @slow
