@@ -58,11 +58,7 @@ RANDOM_SEARCH_SIZE = 4
 HYPEROPT_CONFIG = {
     "parameters": {
         # using only float parameter as common in all search algorithms
-        "trainer.learning_rate": {
-            "space": "loguniform",
-            "lower": 0.001,
-            "upper": 0.1,
-        },
+        "trainer.learning_rate": {"space": "loguniform", "lower": 0.001, "upper": 0.1},
     },
     "goal": "minimize",
     "executor": {"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}},
@@ -435,7 +431,7 @@ def _test_hyperopt_with_shared_params_written_config(
 
 
 @pytest.mark.distributed
-def test_hyperopt_with_shared_params(csv_filename, tmpdir):
+def test_hyperopt_with_shared_params(csv_filename, tmpdir, ray_cluster):
     config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
         csv_filename
     )
@@ -450,3 +446,54 @@ def test_hyperopt_with_shared_params(csv_filename, tmpdir):
     _test_hyperopt_with_shared_params_written_config(
         hyperopt_results_df, num_filters_search_space, embedding_size_search_space
     )
+
+
+@pytest.mark.distributed
+def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster):
+    input_features = [
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(vocab_size=3),
+    ]
+
+    output_features = [category_feature(vocab_size=3)]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    filter_size_search_space = [5, 7]
+    embedding_size_search_space = [4, 8, 12]
+
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        HYPEROPT: {
+            "parameters": {
+                input_features[0][NAME] + ".filter_size": {"space": "choice", "categories": filter_size_search_space},
+                input_features[1][NAME]
+                + ".embedding_size": {"space": "choice", "categories": embedding_size_search_space},
+            },
+            "goal": "minimize",
+            "output_feature": output_features[0][NAME],
+            "validation_metrics": "loss",
+            "executor": {"type": "ray", "num_samples": 1},
+            "search_alg": {"type": "variant_generator"},
+        },
+    }
+
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
+
+    model_parameters = json.load(
+        open(
+            os.path.join(
+                hyperopt_results_df.iloc[0]["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"
+            )
+        )
+    )
+
+    for input_feature in model_parameters[INPUT_FEATURES]:
+        if input_feature[TYPE] == TEXT:
+            assert input_feature["filter_size"] in filter_size_search_space
+        elif input_feature[TYPE] == CATEGORY:
+            assert input_feature["embedding_size"] in embedding_size_search_space
