@@ -439,10 +439,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
             proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
 
-            if is_dask_series_or_df(proc_col, backend):
-                num_failed_image_reads = proc_col.isna().sum().compute()
-            else:
-                num_failed_image_reads = proc_col.isna().sum()
+            num_failed_image_reads = (
+                proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
+            )
 
             proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
             proc_df[feature_config[PROC_COLUMN]] = proc_col
