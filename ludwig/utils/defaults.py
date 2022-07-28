@@ -53,7 +53,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
-from ludwig.utils.config_utils import get_defaults_section_for_feature_type
+from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
@@ -210,23 +210,27 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
     :type config_feature_group: str
     """
     parameter = ENCODER if config_feature_group == INPUT_FEATURES else DECODER
+    registry_type = input_type_registry if config_feature_group == INPUT_FEATURES else output_type_registry
 
     default_params_for_feature_type = get_defaults_section_for_feature_type(
         feature_dict[TYPE], config[DEFAULTS], parameter
     )
 
     # Update input feature encoder or output feature decoder if it is specified in global defaults
-    # TODO(#2125): Delete this code block once issue is closed. No need to make this check.
+    # TODO(#2125): This code block needs some refactoring.
     if TYPE in default_params_for_feature_type:
-        feature_dict[parameter] = default_params_for_feature_type[TYPE]
-
-    # Make a copy of default encoder or decoder parameters without the type key.
-    # TODO(#2125): Delete this code block once issue is closed. No need to make a copy
-    default_params_for_feature_type_without_type = copy.deepcopy(default_params_for_feature_type)
-    default_params_for_feature_type_without_type.pop(TYPE, None)
+        # Only update encoder or decoder if the feature isn't already using a default encoder or decoder
+        default_encoder_or_decoder = get_default_encoder_or_decoder(feature_dict, config_feature_group)
+        if default_params_for_feature_type[TYPE] != default_encoder_or_decoder:
+            # Update type and populate defaults for the encoder or decoder type
+            feature_dict[parameter] = default_params_for_feature_type[TYPE]
+            get_from_registry(feature_dict[TYPE], registry_type).populate_defaults(feature_dict)
+        # Make a copy of default encoder or decoder parameters without the type key.
+        default_params_for_feature_type = copy.deepcopy(default_params_for_feature_type)
+        default_params_for_feature_type.pop(TYPE, None)
 
     # Update encoder or decoder with other encoder/decoder related parameters
-    feature_dict.update(merge_dict(feature_dict, default_params_for_feature_type_without_type))
+    feature_dict.update(merge_dict(feature_dict, default_params_for_feature_type))
 
     # Update loss parameters for output feature from global defaults
     if parameter == DECODER:
