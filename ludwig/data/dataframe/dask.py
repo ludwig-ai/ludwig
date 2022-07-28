@@ -145,8 +145,9 @@ class DaskEngine(DataFrameEngine):
                 )
             return block.to_pandas()
 
-        # Use first row from ray dataset to generate meta
-        meta = dataset.limit(1).to_pandas()
+        # Use first few row from ray dataset to generate meta to infer types even if there are NaNs
+        meta = dataset.limit(100).to_pandas()
+        # meta = meta.dtypes.apply(lambda x: x.name).to_dict()
         ddf = dd.from_delayed([block_to_df(block) for block in dataset.get_internal_block_refs()], meta=meta)
         return ddf
 
