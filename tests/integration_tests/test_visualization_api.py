@@ -29,10 +29,10 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     TEST,
-    TYPE,
     TRAINER,
     TRAINING,
-    VALIDATION
+    TYPE,
+    VALIDATION,
 )
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME

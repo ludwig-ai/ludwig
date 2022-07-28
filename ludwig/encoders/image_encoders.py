@@ -24,13 +24,13 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.utils.pytorch_utils import freeze_parameters
 from ludwig.schema.encoders.image_encoders import (
-    Stacked2DCNNEncoderConfig,
-    ResNetEncoderConfig,
     MLPMixerEncoderConfig,
-    ViTEncoderConfig
+    ResNetEncoderConfig,
+    Stacked2DCNNEncoderConfig,
+    ViTEncoderConfig,
 )
+from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 

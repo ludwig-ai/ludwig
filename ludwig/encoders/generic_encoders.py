@@ -21,7 +21,7 @@ from ludwig.constants import BINARY, CATEGORY, NUMBER, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.schema.encoders.base import PassthroughEncoderConfig, DenseEncoderConfig
+from ludwig.schema.encoders.base import DenseEncoderConfig, PassthroughEncoderConfig
 
 logger = logging.getLogger(__name__)
 

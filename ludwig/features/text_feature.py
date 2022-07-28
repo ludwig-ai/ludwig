@@ -22,8 +22,8 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
-    ENCODER,
     EDIT_DISTANCE,
+    ENCODER,
     FILL_WITH_CONST,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
@@ -49,6 +49,8 @@ from ludwig.features.sequence_feature import (
     SequenceInputFeature,
     SequenceOutputFeature,
 )
+from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import (
@@ -59,9 +61,6 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.types import DataFrame
-
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
-from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -203,10 +202,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    encoder = {
-        TYPE: "parallel_cnn",
-        "max_sequence_length": None
-    }
+    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
@@ -270,11 +266,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 @register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    decoder = {
-        TYPE: "generator",
-        "max_sequence_length": 0,
-        "vocab_size": 0
-    }
+    decoder = {TYPE: "generator", "max_sequence_length": 0, "vocab_size": 0}
     loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS

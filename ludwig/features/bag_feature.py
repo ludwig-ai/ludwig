@@ -24,11 +24,10 @@ from ludwig.constants import BAG, COLUMN, ENCODER, FILL_WITH_CONST, NAME, PROC_C
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
+from ludwig.schema.features.bag_feature import BagInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
-
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -95,10 +94,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    encoder = {
-        TYPE: "embed",
-        "vocab": []
-    }
+    encoder = {TYPE: "embed", "vocab": []}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)

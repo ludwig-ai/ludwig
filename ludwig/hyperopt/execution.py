@@ -30,8 +30,8 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     COLUMN,
     COMBINER,
-    DEFAULTS,
     DECODER,
+    DEFAULTS,
     ENCODER,
     INPUT_FEATURES,
     MAXIMIZE,

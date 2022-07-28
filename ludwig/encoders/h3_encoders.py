@@ -26,8 +26,8 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3RNNConfig, H3WeightedSumConfig
 from ludwig.utils import torch_utils
-from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3WeightedSumConfig, H3RNNConfig
 
 logger = logging.getLogger(__name__)
 

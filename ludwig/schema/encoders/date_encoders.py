@@ -1,6 +1,7 @@
 from typing import List
 
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 
@@ -18,7 +19,7 @@ class DateEmbedConfig(BaseEncoderConfig):
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-                    "resolve them.",
+        "resolve them.",
     )
 
     # TODO (Connor): Add nesting logic for fc_layers, see fully_connected_module.py
@@ -35,7 +36,7 @@ class DateEmbedConfig(BaseEncoderConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=10,
         description="If an output_size is not already specified in fc_layers this is the default output_size that "
-                    "will be used for each layer. It indicates the size of the output of a fully connected layer.",
+        "will be used for each layer. It indicates the size of the output of a fully connected layer.",
     )
 
     use_bias: bool = schema_utils.Boolean(
@@ -94,7 +95,7 @@ class DateWaveConfig(BaseEncoderConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=10,
         description="If an output_size is not already specified in fc_layers this is the default output_size that "
-                    "will be used for each layer. It indicates the size of the output of a fully connected layer.",
+        "will be used for each layer. It indicates the size of the output of a fully connected layer.",
     )
 
     use_bias: bool = schema_utils.Boolean(

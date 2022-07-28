@@ -116,7 +116,7 @@ def get_output_feature_jsonschema():
             "additionalProperties": True,
             "allOf": get_output_feature_conds(),
             "required": ["name", "type"],
-        }
+        },
     }
 
 

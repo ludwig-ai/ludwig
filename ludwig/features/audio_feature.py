@@ -36,6 +36,8 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
+from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -53,9 +55,6 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
 
 
 class _AudioPreprocessing(torch.nn.Module):
@@ -454,11 +453,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    encoder = {
-        TYPE: "parallel_cnn",
-        "max_sequence_length": None,
-        "embedding_size": None
-    }
+    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None, "embedding_size": None}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)

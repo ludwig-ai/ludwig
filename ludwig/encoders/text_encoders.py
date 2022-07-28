@@ -23,27 +23,27 @@ from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils.pytorch_utils import freeze_parameters
 from ludwig.schema.encoders.text_encoders import (
     ALBERTConfig,
-    MT5Config,
-    XLMRoBERTaConfig,
+    AutoTransformerConfig,
     BERTConfig,
-    XLMConfig,
-    GPTConfig,
-    GPT2Config,
-    RoBERTaConfig,
-    TransformerXLConfig,
-    XLNetConfig,
-    DistilBERTConfig,
-    CTRLConfig,
     CamemBERTConfig,
-    T5Config,
-    FlauBERTConfig,
+    CTRLConfig,
+    DistilBERTConfig,
     ELECTRAConfig,
+    FlauBERTConfig,
+    GPT2Config,
+    GPTConfig,
     LongformerConfig,
-    AutoTransformerConfig
+    MT5Config,
+    RoBERTaConfig,
+    T5Config,
+    TransformerXLConfig,
+    XLMConfig,
+    XLMRoBERTaConfig,
+    XLNetConfig,
 )
+from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 

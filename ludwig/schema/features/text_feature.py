@@ -1,13 +1,13 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import TEXT, SEQUENCE_SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import DecoderDataclassField
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.encoders.base import BaseEncoderConfig
-from ludwig.schema.decoders.utils import DecoderDataclassField
-from ludwig.schema.decoders.base import BaseDecoderConfig
 
 
 @dataclass
@@ -18,7 +18,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=TEXT,
-        default='parallel_cnn',
+        default="parallel_cnn",
     )
 
 
@@ -41,5 +41,5 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig):
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=TEXT,
-        default='generator',
+        default="generator",
     )

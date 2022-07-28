@@ -1,9 +1,10 @@
-from typing import Optional, Union, List, Tuple, Dict, Any
-from ludwig.utils.torch_utils import initializer_registry
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.utils.torch_utils import initializer_registry
 
 
 @dataclass
@@ -29,66 +30,66 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     out_channels: Optional[int] = schema_utils.NonNegativeInteger(
         default=32,
         description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
-                    "If out_channels is not already specified in conv_layers this is the default out_channels that "
-                    "will be used for each layer. ",
+        "If out_channels is not already specified in conv_layers this is the default out_channels that "
+        "will be used for each layer. ",
     )
 
     kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=3,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
-                    "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
-                    "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
-                    "each layer.",
+        "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
+        "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
+        "each layer.",
     )
 
     stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of integers specifying the stride of the convolution along the height and "
-                    "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
-                    "2D convolutional kernel that will be used for each layer. ",
+        "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
+        "2D convolutional kernel that will be used for each layer. ",
     )
 
     padding: Optional[Union[int, Tuple[int], str]] = schema_utils.PositiveIntegerOrTupleOrStringOptions(
         options=["valid", "same"],
         default="valid",
         description="An int, pair of ints (h, w), or one of valid, same specifying the padding used for convolution "
-                    "kernels. ",
+        "kernels. ",
     )
 
     dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An int or pair of ints specifying the dilation rate to use for dilated convolution. If dilation "
-                    "is not already specified in conv_layers, specifies the default dilation of the 2D convolutional "
-                    "kernel that will be used for each layer.",
+        "is not already specified in conv_layers, specifies the default dilation of the 2D convolutional "
+        "kernel that will be used for each layer.",
     )
 
     groups: Optional[int] = schema_utils.PositiveInteger(
         default=1,
         description="Groups controls the connectivity between convolution inputs and outputs. When groups = 1, each "
-                    "output channel depends on every input channel. When groups > 1, input and output channels are "
-                    "divided into groups separate groups, where each output channel depends only on the inputs in its "
-                    "respective input channel group. in_channels and out_channels must both be divisible by groups.",
+        "output channel depends on every input channel. When groups > 1, input and output channels are "
+        "divided into groups separate groups, where each output channel depends only on the inputs in its "
+        "respective input channel group. in_channels and out_channels must both be divisible by groups.",
     )
 
     conv_use_bias: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="If bias not already specified in conv_layers, specifies if the 2D convolutional kernel should "
-                    "have a bias term.",
+        "have a bias term.",
     )
 
     padding_mode: Optional[str] = schema_utils.StringOptions(
         options=["zeros", "reflect", "replicate", "circular"],
         default="zeros",
         description="If padding_mode is not already specified in conv_layers, specifies the default padding_mode of "
-                    "the 2D convolutional kernel that will be used for each layer.",
+        "the 2D convolutional kernel that will be used for each layer.",
     )
 
     conv_norm: Optional[str] = schema_utils.StringOptions(
         ["batch", "layer"],
         default=None,
         description="If a norm is not already specified in conv_layers this is the default norm that will be used for "
-                    "each layer. It indicates the normalization applied to the activations and can be null, "
-                    "batch or layer.",
+        "each layer. It indicates the normalization applied to the activations and can be null, "
+        "batch or layer.",
     )
 
     conv_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
@@ -98,7 +99,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
     conv_activation: str = schema_utils.ActivationOptions(
         description="If an activation is not already specified in conv_layers this is the default activation that "
-                    "will be used for each layer. It indicates the activation function applied to the output.",
+        "will be used for each layer. It indicates the activation function applied to the output.",
     )
 
     conv_dropout: Optional[int] = schema_utils.FloatRange(
@@ -117,13 +118,13 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     pool_kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=2,
         description="An integer or pair of integers specifying the pooling size. If pool_kernel_size is not specified "
-                    "in conv_layers this is the default value that will be used for each layer.",
+        "in conv_layers this is the default value that will be used for each layer.",
     )
 
     pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="An integer or pair of integers specifying the pooling stride, which is the factor by which the "
-                    "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
+        "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
     )
 
     pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
@@ -139,11 +140,11 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-                    "of the list determines the number of stacked fully connected layers and the content of each "
-                    "dictionary determines the parameters for a specific layer. The available parameters for each "
-                    "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-                    "weights_initializer. If any of those values is missing from the dictionary, the default one "
-                    "specified as a parameter of the encoder will be used instead. ",
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
     )
 
     num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
@@ -154,7 +155,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     output_size: Optional[int] = schema_utils.PositiveInteger(
         default=128,
         description="If output_size is not already specified in fc_layers this is the default output_size that will "
-                    "be used for each layer. It indicates the size of the output of a fully connected layer. "
+        "be used for each layer. It indicates the size of the output of a fully connected layer. ",
     )
 
     fc_use_bias: Optional[bool] = schema_utils.Boolean(
@@ -178,19 +179,19 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         ["batch", "layer"],
         default=None,
         description="If a norm is not already specified in fc_layers this is the default norm that will be used for "
-                    "each layer. It indicates the norm of the output and can be null, batch or layer.",
+        "each layer. It indicates the norm of the output and can be null, batch or layer.",
     )
 
     fc_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
         default=None,
         description="Parameters used if norm is either batch or layer. For information on parameters used with batch "
-                    "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
-                    "normalization.",
+        "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
+        "normalization.",
     )
 
     fc_activation: Optional[str] = schema_utils.ActivationOptions(
         description="If an activation is not already specified in fc_layers this is the default activation that will "
-                    "be used for each layer. It indicates the activation function applied to the output.",
+        "be used for each layer. It indicates the activation function applied to the output.",
     )
 
     fc_dropout: Optional[float] = schema_utils.FloatRange(
@@ -219,16 +220,16 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     out_channels: Optional[int] = schema_utils.NonNegativeInteger(
         default=32,
         description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
-                    "If out_channels is not already specified in conv_layers this is the default out_channels that "
-                    "will be used for each layer. ",
+        "If out_channels is not already specified in conv_layers this is the default out_channels that "
+        "will be used for each layer. ",
     )
 
     kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=3,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
-                    "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
-                    "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
-                    "each layer.",
+        "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
+        "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
+        "each layer.",
     )
 
     conv_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
@@ -259,11 +260,11 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-                    "of the list determines the number of stacked fully connected layers and the content of each "
-                    "dictionary determines the parameters for a specific layer. The available parameters for each "
-                    "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-                    "weights_initializer. If any of those values is missing from the dictionary, the default one "
-                    "specified as a parameter of the encoder will be used instead. ",
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
     )
 
     num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
@@ -274,7 +275,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     output_size: Optional[int] = schema_utils.PositiveInteger(
         default=128,
         description="if output_size is not already specified in fc_layers this is the default output_size that will "
-                    "be used for each layer. It indicates the size of the output of a fully connected layer. "
+        "be used for each layer. It indicates the size of the output of a fully connected layer. ",
     )
 
     use_bias: Optional[bool] = schema_utils.Boolean(
@@ -298,19 +299,19 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         ["batch", "layer"],
         default=None,
         description="if a norm is not already specified in fc_layers this is the default norm that will be used for "
-                    "each layer. It indicates the norm of the output and can be null, batch or layer.",
+        "each layer. It indicates the norm of the output and can be null, batch or layer.",
     )
 
     norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
         default=None,
         description="parameters used if norm is either batch or layer. For information on parameters used with batch "
-                    "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
-                    "normalization.",
+        "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
+        "normalization.",
     )
 
     activation: Optional[str] = schema_utils.ActivationOptions(
         description="if an activation is not already specified in fc_layers this is the default activation that will "
-                    "be used for each layer. It indicates the activation function applied to the output.",
+        "be used for each layer. It indicates the activation function applied to the output.",
     )
 
     dropout: Optional[float] = schema_utils.FloatRange(
@@ -329,7 +330,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
-                    "height.",
+        "height.",
     )
 
     embed_size: int = schema_utils.PositiveInteger(
@@ -362,8 +363,8 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     avg_pool: bool = schema_utils.Boolean(
         default=True,
         description="If true, pools output over patch dimension, outputs a vector of shape (embed_size). If false, "
-                    "the output tensor is of shape (n_patches, embed_size), where n_patches is img_height x img_width "
-                    "/ patch_size².",
+        "the output tensor is of shape (n_patches, embed_size), where n_patches is img_height x img_width "
+        "/ patch_size².",
     )
 
 
@@ -372,15 +373,19 @@ class ViTEncoderConfig(BaseEncoderConfig):
 
     type: str = "vit"
 
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Use pre-trained model weights from Hugging Face.",
-    ),
+    use_pretrained: bool = (
+        schema_utils.Boolean(
+            default=True,
+            description="Use pre-trained model weights from Hugging Face.",
+        ),
+    )
 
-    pretrained_model: str = schema_utils.String(  # Internal Only
-        default="google/vit-base-patch16-224",
-        description="The name of the pre-trained model to use.",
-    ),
+    pretrained_model: str = (
+        schema_utils.String(  # Internal Only
+            default="google/vit-base-patch16-224",
+            description="The name of the pre-trained model to use.",
+        ),
+    )
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
@@ -410,7 +415,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
     hidden_act: str = schema_utils.StringOptions(
         ["relu", "gelu", "selu", "gelu_new"],
         default="gelu",
-        description="Hidden layer activation, one of gelu, relu, selu or gelu_new."
+        description="Hidden layer activation, one of gelu, relu, selu or gelu_new.",
     )
 
     hidden_dropout_prob: float = schema_utils.NonNegativeFloat(
@@ -441,7 +446,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
-                    "height.",
+        "height.",
     )
 
     trainable: bool = schema_utils.Boolean(

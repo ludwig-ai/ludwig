@@ -19,7 +19,19 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import COLUMN, DECODER, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
+from ludwig.constants import (
+    COLUMN,
+    DECODER,
+    HIDDEN,
+    LENGTHS,
+    LOGITS,
+    LOSS,
+    NAME,
+    PREDICTIONS,
+    PROBABILITIES,
+    PROC_COLUMN,
+    TYPE,
+)
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -220,8 +232,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        self.decoder["input_size"] = get_input_size_with_dependencies(self.decoder["input_size"], self.dependencies,
-                                                                      other_output_features)
+        self.decoder["input_size"] = get_input_size_with_dependencies(
+            self.decoder["input_size"], self.dependencies, other_output_features
+        )
         feature[DECODER]["input_size"] = self.decoder["input_size"]  # needed for future overrides
 
         self.fc_stack = FCStack(

@@ -23,12 +23,11 @@ from dateutil.parser import parse
 
 from ludwig.constants import COLUMN, DATE, ENCODER, FILL_WITH_CONST, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+from ludwig.schema.features.date_feature import DateInputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature
-from ludwig.schema.features.date_feature import DateInputFeatureConfig
 
 logger = logging.getLogger(__name__)
 

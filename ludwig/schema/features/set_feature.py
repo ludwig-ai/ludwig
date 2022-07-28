@@ -2,12 +2,12 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import DecoderDataclassField
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.encoders.base import BaseEncoderConfig
-from ludwig.schema.decoders.utils import DecoderDataclassField
-from ludwig.schema.decoders.base import BaseDecoderConfig
 
 
 @dataclass
@@ -18,7 +18,7 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=SET,
-        default='embed',
+        default="embed",
     )
 
 
@@ -31,11 +31,11 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig):
             "type": SIGMOID_CROSS_ENTROPY,
             "class_weights": None,
             "weight": 1,
-            },
+        },
         description="A dictionary containing a loss type and its hyper-parameters.",
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SET,
-        default='classifier',
+        default="classifier",
     )

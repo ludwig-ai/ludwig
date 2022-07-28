@@ -30,26 +30,25 @@ TEST_NUM_FILTERS = 24
 @pytest.fixture(scope="module")
 def generate_sequence_training_data():
     input_features = [
-        sequence_feature(encoder={
-            "vocab_size": TEST_VOCAB_SIZE,
-            "embedding_size": TEST_EMBEDDING_SIZE,
-            "state_size": TEST_STATE_SIZE,
-            "hidden_size": TEST_HIDDEN_SIZE,
-            "num_filters": TEST_NUM_FILTERS,
-            "min_len": 5,
-            "max_len": 10,
-            "type": "rnn",
-            "cell_type": "lstm",
-        })]
+        sequence_feature(
+            encoder={
+                "vocab_size": TEST_VOCAB_SIZE,
+                "embedding_size": TEST_EMBEDDING_SIZE,
+                "state_size": TEST_STATE_SIZE,
+                "hidden_size": TEST_HIDDEN_SIZE,
+                "num_filters": TEST_NUM_FILTERS,
+                "min_len": 5,
+                "max_len": 10,
+                "type": "rnn",
+                "cell_type": "lstm",
+            }
+        )
+    ]
 
     output_features = [
-        sequence_feature(decoder={
-            "type": "generator",
-            "min_len": 5,
-            "max_len": 10,
-            "cell_type": "lstm",
-            "attention": "bahdanau"
-        })
+        sequence_feature(
+            decoder={"type": "generator", "min_len": 5, "max_len": 10, "cell_type": "lstm", "attention": "bahdanau"}
+        )
     ]
 
     # generate synthetic data set testing
@@ -153,18 +152,12 @@ def test_sequence_decoders(
 @pytest.mark.parametrize("enc_encoder", ["embed", "rnn"])
 def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
     # Define input and output features
-    input_features = [sequence_feature(encoder={
-        "type": enc_encoder,
-        "min_len": 5,
-        "max_len": 10,
-        "cell_type": enc_cell_type
-    })]
-    output_features = [sequence_feature(decoder={
-        "type": "generator",
-        "min_len": 5,
-        "max_len": 10,
-        "cell_type": dec_cell_type
-    })]
+    input_features = [
+        sequence_feature(encoder={"type": enc_encoder, "min_len": 5, "max_len": 10, "cell_type": enc_cell_type})
+    ]
+    output_features = [
+        sequence_feature(decoder={"type": "generator", "min_len": 5, "max_len": 10, "cell_type": dec_cell_type})
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

@@ -4,10 +4,10 @@ from typing import Dict
 import pytest
 import torch
 
+from ludwig.constants import ENCODER
 from ludwig.features.set_feature import SetInputFeature
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.constants import ENCODER
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
@@ -38,7 +38,7 @@ def set_config():
             "activation": "relu",
             "dropout": 0.0,
             "reduce_output": "sum",
-        }
+        },
     }
 
 

@@ -1,13 +1,13 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import VECTOR, MEAN_SQUARED_ERROR
+from ludwig.constants import MEAN_SQUARED_ERROR, VECTOR
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import DecoderDataclassField
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.encoders.base import BaseEncoderConfig
-from ludwig.schema.decoders.utils import DecoderDataclassField
-from ludwig.schema.decoders.base import BaseDecoderConfig
 
 
 @dataclass
@@ -18,7 +18,7 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=VECTOR,
-        default='dense',
+        default="dense",
     )
 
 
@@ -30,11 +30,11 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default={
             "type": MEAN_SQUARED_ERROR,
             "weight": 1,
-            },
+        },
         description="A dictionary containing a loss type and its hyper-parameters.",
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
-        default='projector',
+        default="projector",
     )

@@ -28,36 +28,37 @@ InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_op
     [
         # tie input features, encoders should be the same
         InputFeatureOptions("number", {"encoder": {"type": "passthrough"}}, True),
-        InputFeatureOptions("number", {"encoder": {"type": "passthrough"}, "preprocessing": {"normalization": "zscore"}}, True),
+        InputFeatureOptions(
+            "number", {"encoder": {"type": "passthrough"}, "preprocessing": {"normalization": "zscore"}}, True
+        ),
         InputFeatureOptions("binary", {"encoder": {"type": "passthrough"}}, True),
         InputFeatureOptions("category", {"encoder": {"type": "dense", "vocab": ["a", "b", "c"]}}, True),
         InputFeatureOptions("set", {"encoder": {"type": "embed", "vocab": ["a", "b", "c"]}}, True),
         InputFeatureOptions(
-            "sequence",
-            {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["x", "y", "z"]}}, True
+            "sequence", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["x", "y", "z"]}}, True
         ),
         InputFeatureOptions(
-            "text",
-            {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["a", "b", "c"]}},
-            True
+            "text", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["a", "b", "c"]}}, True
         ),
         InputFeatureOptions(
-            "timeseries",
-            {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "should_embed": False}},
-            True
+            "timeseries", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "should_embed": False}}, True
         ),
         InputFeatureOptions(
             "audio",
-            {"encoder": {"type": "parallel_cnn", "embedding_size": 64, "max_sequence_length": 16,
-                         "should_embed": False}},
-            True
+            {
+                "encoder": {
+                    "type": "parallel_cnn",
+                    "embedding_size": 64,
+                    "max_sequence_length": 16,
+                    "should_embed": False,
+                }
+            },
+            True,
         ),
         # do not tie input features, encoders should be different
         InputFeatureOptions("number", {"encoder": {"type": "passthrough"}}, False),
         InputFeatureOptions(
-            "number",
-            {"encoder": {"type": "passthrough"}, "preprocessing": {"normalization": "zscore"}},
-            False
+            "number", {"encoder": {"type": "passthrough"}, "preprocessing": {"normalization": "zscore"}}, False
         ),
         InputFeatureOptions("binary", {"encoder": {"type": "passthrough"}}, False),
         InputFeatureOptions("category", {"encoder": {"type": "dense", "vocab": ["a", "b", "c"]}}, False),
@@ -65,22 +66,25 @@ InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_op
         InputFeatureOptions(
             "sequence",
             {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["x", "y", "z"]}},
-            False
+            False,
         ),
         InputFeatureOptions(
-            "text",
-            {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["a", "b", "c"]}},
-            False
+            "text", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["a", "b", "c"]}}, False
         ),
         InputFeatureOptions(
-            "timeseries",
-            {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "should_embed": False}},
-            False
+            "timeseries", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "should_embed": False}}, False
         ),
         InputFeatureOptions(
             "audio",
-            {"encoder": {"type": "parallel_cnn", "embedding_size": 64, "max_sequence_length": 16, "should_embed": False}},
-            False
+            {
+                "encoder": {
+                    "type": "parallel_cnn",
+                    "embedding_size": 64,
+                    "max_sequence_length": 16,
+                    "should_embed": False,
+                }
+            },
+            False,
         ),
     ],
 )

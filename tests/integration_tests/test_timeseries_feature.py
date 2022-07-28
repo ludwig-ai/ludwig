@@ -18,7 +18,7 @@ def test_timeseries_feature(enc_encoder):
 
     # generate feature config
     timeseries_feature_config = timeseries_feature(
-        encoder= {
+        encoder={
             "type": enc_encoder,
             "max_len": SEQ_SIZE,
             "fc_layers": [{"output_size": DEFAULT_OUTPUT_SIZE}],

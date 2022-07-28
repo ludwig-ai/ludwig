@@ -1,10 +1,10 @@
+from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 from ludwig.utils.backward_compatibility import (
+    _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing,
-    _upgrade_encoder_decoder_params
+    _upgrade_preprocessing_split,
 )
-
-from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 
 
 def test_preprocessing_backward_compatibility():
@@ -15,7 +15,7 @@ def test_preprocessing_backward_compatibility():
         "stratify": None,
     }
 
-    _upgrade_preprocessing(preprocessing_config)
+    _upgrade_preprocessing_split(preprocessing_config)
 
     assert preprocessing_config == {
         "split": {"probabilities": [0.7, 0.1, 0.2], "type": "random"},
@@ -64,7 +64,7 @@ def test_audio_feature_backward_compatibility():
     }
 
     _upgrade_feature(audio_feature_preprocessing_config)
-    _upgrade_preprocessing(global_preprocessing_config)
+    _upgrade_preprocessing_split(global_preprocessing_config)
 
     assert global_preprocessing_config == {
         "audio": {
@@ -108,13 +108,13 @@ def test_encoder_decoder_backwards_compatibility():
                 "name": "text_feature",
                 "type": "text",
                 "preprocessing": {
-                     "missing_value_strategy": "drop_row",
+                    "missing_value_strategy": "drop_row",
                 },
                 "encoder": "rnn",
                 "bidirectional": True,
                 "representation": "dense",
                 "num_layers": 2,
-             },
+            },
             {
                 "name": "image_feature_1",
                 "type": "image",
@@ -138,7 +138,7 @@ def test_encoder_decoder_backwards_compatibility():
                     "num_channels": 4,
                 },
                 "encoder": "resnet",
-            }
+            },
         ],
         "output_features": [
             {
@@ -163,8 +163,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "decoder": "regressor",
                 "use_bias": True,
                 "bias_initializer": "constant",
-            }
-
+            },
         ],
     }
 
@@ -180,7 +179,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "name": "text_feature",
                 "type": "text",
                 "preprocessing": {
-                     "missing_value_strategy": "drop_row",
+                    "missing_value_strategy": "drop_row",
                 },
                 "encoder": {
                     "type": "rnn",
@@ -188,7 +187,7 @@ def test_encoder_decoder_backwards_compatibility():
                     "representation": "dense",
                     "num_layers": 2,
                 },
-             },
+            },
             {
                 "name": "image_feature_1",
                 "type": "image",
@@ -213,10 +212,8 @@ def test_encoder_decoder_backwards_compatibility():
                     "width": 7.5,
                     "num_channels": 4,
                 },
-                "encoder": {
-                    "type": "resnet"
-                },
-            }
+                "encoder": {"type": "resnet"},
+            },
         ],
         "output_features": [
             {
@@ -245,6 +242,6 @@ def test_encoder_decoder_backwards_compatibility():
                     "use_bias": True,
                     "bias_initializer": "constant",
                 },
-            }
+            },
         ],
     }

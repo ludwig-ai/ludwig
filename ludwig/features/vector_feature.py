@@ -39,13 +39,12 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
-from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 

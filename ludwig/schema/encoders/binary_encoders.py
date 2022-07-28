@@ -1,4 +1,5 @@
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema.encoders.base import BaseEncoderConfig
 
 

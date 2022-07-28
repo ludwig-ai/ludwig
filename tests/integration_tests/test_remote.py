@@ -15,7 +15,7 @@ def test_remote_training_set(tmpdir, fs_protocol):
     output_directory = f"{fs_protocol}://{tmpdir}"
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size":  2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     data_csv = generate_data(input_features, output_features, csv_filename)
