@@ -77,7 +77,7 @@ class H3EmbedConfig(BaseEncoderConfig):
 @dataclass
 class H3WeightedSumConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = "weighted_sum"
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
