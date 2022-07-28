@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -23,6 +25,7 @@ from ludwig.utils.data_utils import (
     figure_data_format_dataset,
     get_abs_path,
     hash_dict,
+    NumpyEncoder,
     use_credentials,
 )
 
@@ -126,3 +129,29 @@ def test_use_credentials():
         assert conf == s3_creds
 
     assert len(conf) == 0
+
+
+def test_numpy_encoder():
+    # Test Python builtin data type encoding.
+    assert json.dumps(None, cls=NumpyEncoder) == "null"
+    assert json.dumps({}, cls=NumpyEncoder) == "{}"
+    assert json.dumps(1, cls=NumpyEncoder) == "1"
+    assert json.dumps(1.0, cls=NumpyEncoder) == "1.0"
+    assert json.dumps("a", cls=NumpyEncoder) == '"a"'
+    assert json.dumps([0, 1, 2, 3, 4], cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
+    assert json.dumps((0, 1, 2, 3, 4), cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
+    assert json.dumps({0, 1, 2, 3, 4}, cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
+    assert json.dumps({"a": "b"}, cls=NumpyEncoder) == '{"a": "b"}'
+
+    # Test numpy data type encoding
+    for dtype in [np.byte, np.ubyte, np.short, np.ushort, np.int, np.uint, np.longlong, np.ulonglong]:
+        x = np.arange(5, dtype=dtype)
+        assert json.dumps(x, cls=NumpyEncoder) == "[0, 1, 2, 3, 4]"
+        for i in x:
+            assert json.dumps(i, cls=NumpyEncoder) == f"{i}"
+
+    for dtype in [np.half, np.single, np.double, np.longdouble]:
+        x = np.arange(5, dtype=dtype)
+        assert json.dumps(x, cls=NumpyEncoder) == "[0.0, 1.0, 2.0, 3.0, 4.0]"
+        for i in x:
+            assert json.dumps(i, cls=NumpyEncoder) == f"{i}"
