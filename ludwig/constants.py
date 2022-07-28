@@ -81,6 +81,7 @@ BFILL = "bfill"
 PAD = "pad"
 FFILL = "ffill"
 DROP_ROW = "drop_row"
+MISSING_VALUE_STRATEGY = "missing_value_strategy"
 MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
@@ -153,6 +154,7 @@ PARQUET = "parquet"
 
 SRC = "dataset_src"
 
+EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 LEARNING_RATE = "learning_rate"

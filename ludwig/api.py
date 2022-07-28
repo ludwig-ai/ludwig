@@ -40,6 +40,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
     BATCH_SIZE,
+    DEFAULTS,
     EVAL_BATCH_SIZE,
     FULL,
     HYPEROPT,
@@ -76,6 +77,7 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
+from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     figure_data_format,
     generate_kfold_splits,
@@ -686,13 +688,18 @@ class LudwigModel:
         :return: (None) `None`
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
+
+        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
+            self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
+        )
+
         training_dataset, _, _, training_set_metadata = preprocess_for_training(
             self.config,
             training_set=dataset,
             training_set_metadata=training_set_metadata,
             data_format=data_format,
             skip_save_processed_input=True,
-            preprocessing_params=self.config[PREPROCESSING],
+            preprocessing_params=preprocessing_params,
             backend=self.backend,
             random_seed=random_seed,
             callbacks=self.callbacks,
@@ -1295,6 +1302,11 @@ class LudwigModel:
             `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
+
+        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
+            self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
+        )
+
         preprocessed_data = preprocess_for_training(
             self.config,
             dataset=dataset,
@@ -1304,7 +1316,7 @@ class LudwigModel:
             training_set_metadata=training_set_metadata,
             data_format=data_format,
             skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=self.config[PREPROCESSING],
+            preprocessing_params=preprocessing_params,
             backend=self.backend,
             random_seed=random_seed,
             callbacks=self.callbacks,
