@@ -17,7 +17,7 @@ from ludwig.models.inference import (
     InferenceModule,
 )
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
-from ludwig.utils.torch_utils import DEVICE
+from ludwig.utils.torch_utils import DEVICE, place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
 from ludwig.constants import (
     INPUT_FEATURES,
@@ -534,10 +534,13 @@ def export_triton(
 
     inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata, DEVICE)
     split_modules = [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
-    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True)
+    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True, device="cpu")
     paths = {}
     triton_masters = []
     for i, module in enumerate(split_modules):
+        if INFERENCE_STAGES[i] == PREDICTOR:
+            example_input = place_on_device(example_input, DEVICE)
+
         triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i], model_name, output_path, model_version, model.config)
         example_input = triton_master.output_data_example
 
@@ -545,6 +548,8 @@ def export_triton(
         model_path = triton_master.save_model()
         paths[INFERENCE_STAGES[i]] = (config_path, model_path)
         triton_masters.append(triton_master)
+        if INFERENCE_STAGES[i] == PREDICTOR:
+            example_input = place_on_device(example_input, "cpu")
 
     # saving ensemble config
     triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
@@ -556,7 +561,7 @@ def export_triton(
     paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path)
 
     # This is for comparing pipelined vs. block model. To be removed later.
-    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True)
+    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True, device=DEVICE)
     block_ts = torch.jit.script(inference_module)
     triton_master = TritonMaster(block_ts, example_input, "block", model_name, output_path, model_version, model.config)
     config_path = triton_master.save_config()
