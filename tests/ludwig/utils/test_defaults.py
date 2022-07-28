@@ -5,23 +5,28 @@ from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
+    DEFAULTS,
     DROP_ROW,
     EVAL_BATCH_SIZE,
+    EXECUTOR,
     FILL_WITH_MODE,
     HYPEROPT,
+    INPUT_FEATURES,
+    MISSING_VALUE_STRATEGY,
     MODEL_ECD,
     MODEL_GBM,
     MODEL_TYPE,
     NUMBER,
+    OUTPUT_FEATURES,
     PREPROCESSING,
     SCHEDULER,
     SPLIT,
     TRAINER,
     TYPE,
 )
-from ludwig.data.preprocessing import merge_preprocessing
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -82,8 +87,8 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     # validate config with all features
     config = {
-        "input_features": all_input_features,
-        "output_features": all_output_features,
+        INPUT_FEATURES: all_input_features,
+        OUTPUT_FEATURES: all_output_features,
         HYPEROPT: HYPEROPT_CONFIG,
     }
     config = copy.deepcopy(config)
@@ -93,7 +98,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     if use_hyperopt_scheduler:
         # hyperopt scheduler cannot be used with early stopping
-        config[HYPEROPT]["executor"][SCHEDULER] = SCHEDULER_DICT
+        config[HYPEROPT][EXECUTOR][SCHEDULER] = SCHEDULER_DICT
 
     merged_config = merge_with_defaults(config)
 
@@ -103,36 +108,37 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
 def test_missing_outputs_drop_rows():
     config = {
-        "input_features": [
-            category_feature(),
-        ],
-        "output_features": [
-            category_feature(),
-        ],
-        PREPROCESSING: {CATEGORY: {"missing_value_strategy": FILL_WITH_MODE}},
+        INPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature()],
+        PREPROCESSING: {CATEGORY: {MISSING_VALUE_STRATEGY: FILL_WITH_MODE}},
     }
 
     merged_config = merge_with_defaults(config)
-    feature_config = merged_config["output_features"][0]
-    assert feature_config[PREPROCESSING]["missing_value_strategy"] == DROP_ROW
 
-    global_preprocessing = merged_config[PREPROCESSING]
-    feature_preprocessing = merge_preprocessing(feature_config, global_preprocessing)
-    assert feature_preprocessing["missing_value_strategy"] == DROP_ROW
+    global_preprocessing = merged_config[DEFAULTS]
+    input_feature_config = merged_config[INPUT_FEATURES][0]
+    output_feature_config = merged_config[OUTPUT_FEATURES][0]
 
-    feature_preprocessing = merge_preprocessing(merged_config["input_features"][0], global_preprocessing)
-    assert feature_preprocessing["missing_value_strategy"] == FILL_WITH_MODE
+    assert output_feature_config[PREPROCESSING][MISSING_VALUE_STRATEGY] == DROP_ROW
+
+    feature_preprocessing = merge_dict(
+        global_preprocessing[output_feature_config[TYPE]][PREPROCESSING], output_feature_config[PREPROCESSING]
+    )
+    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == DROP_ROW
+
+    feature_preprocessing = global_preprocessing[input_feature_config[TYPE]][PREPROCESSING]
+    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
 
 
 def test_deprecated_field_aliases():
     config = {
-        "input_features": [{"name": "num_in", "type": "numerical"}],
-        "output_features": [{"name": "num_out", "type": "numerical"}],
+        INPUT_FEATURES: [{"name": "num_in", "type": "numerical"}],
+        OUTPUT_FEATURES: [{"name": "num_out", "type": "numerical"}],
         "training": {
             "epochs": 2,
             "eval_batch_size": 0,
         },
-        "hyperopt": {
+        HYPEROPT: {
             "parameters": {
                 "training.learning_rate": {
                     "space": "loguniform",
@@ -171,12 +177,8 @@ def test_deprecated_field_aliases():
 
 def test_default_model_type():
     config = {
-        "input_features": [
-            category_feature(),
-        ],
-        "output_features": [
-            category_feature(),
-        ],
+        INPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature()],
     }
 
     merged_config = merge_with_defaults(config)
@@ -194,12 +196,8 @@ def test_default_model_type():
 def test_default_trainer_type(model_trainer_type):
     model_type, expected_trainer_type = model_trainer_type
     config = {
-        "input_features": [
-            category_feature(),
-        ],
-        "output_features": [
-            category_feature(),
-        ],
+        INPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature()],
         MODEL_TYPE: model_type,
     }
 
@@ -211,12 +209,8 @@ def test_default_trainer_type(model_trainer_type):
 def test_overwrite_trainer_type():
     expected_trainer_type = "ray_legacy_trainer"
     config = {
-        "input_features": [
-            category_feature(),
-        ],
-        "output_features": [
-            category_feature(),
-        ],
+        INPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature()],
         MODEL_TYPE: MODEL_ECD,
         "trainer": {"type": expected_trainer_type},
     }
@@ -232,12 +226,8 @@ def test_overwrite_trainer_type():
 )
 def test_invalid_trainer_type(model_type):
     config = {
-        "input_features": [
-            category_feature(),
-        ],
-        "output_features": [
-            category_feature(),
-        ],
+        INPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature()],
         MODEL_TYPE: model_type,
         "trainer": {"type": "invalid_trainer"},
     }
@@ -251,9 +241,9 @@ def test_invalid_trainer_type(model_type):
 def test_deprecated_split_aliases(stratify, force_split):
     split_probabilities = [0.6, 0.2, 0.2]
     config = {
-        "input_features": [{"name": "num_in", "type": "number"}, {"name": "cat_in", "type": "category"}],
-        "output_features": [{"name": "num_out", "type": "number"}],
-        "preprocessing": {
+        INPUT_FEATURES: [{"name": "num_in", "type": "number"}, {"name": "cat_in", "type": "category"}],
+        OUTPUT_FEATURES: [{"name": "num_out", "type": "number"}],
+        PREPROCESSING: {
             "force_split": force_split,
             "split_probabilities": split_probabilities,
             "stratify": stratify,
@@ -281,7 +271,7 @@ def test_deprecated_split_aliases(stratify, force_split):
 def test_merge_with_defaults():
     # configuration with legacy parameters
     legacy_config_format = {
-        "input_features": [
+        INPUT_FEATURES: [
             {
                 "type": "numerical",
                 "name": "number_input_feature",
@@ -301,14 +291,14 @@ def test_merge_with_defaults():
                 ],
             },
         ],
-        "output_features": [
+        OUTPUT_FEATURES: [
             {
                 "type": "numerical",
                 "name": "number_output_feature",
             },
         ],
         "training": {"eval_batch_size": 0, "optimizer": {"type": "adadelta"}},
-        "hyperopt": {
+        HYPEROPT: {
             "parameters": {
                 "training.learning_rate": {},
                 "training.early_stop": {},
@@ -329,8 +319,8 @@ def test_merge_with_defaults():
 
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
-        "model_type": "ecd",
-        "input_features": [
+        MODEL_TYPE: "ecd",
+        INPUT_FEATURES: [
             {
                 "type": "number",
                 "name": "number_input_feature",
@@ -353,7 +343,7 @@ def test_merge_with_defaults():
                 "preprocessing": {},
             },
         ],
-        "output_features": [
+        OUTPUT_FEATURES: [
             {
                 "type": "number",
                 "name": "number_output_feature",
@@ -367,7 +357,7 @@ def test_merge_with_defaults():
                 "preprocessing": {"missing_value_strategy": "drop_row"},
             }
         ],
-        "hyperopt": {
+        HYPEROPT: {
             "parameters": {
                 "number_input_feature.num_fc_layers": {},
                 "number_output_feature.embedding_size": {},
@@ -414,94 +404,116 @@ def test_merge_with_defaults():
             "learning_rate_warmup_epochs": 1.0,
             "learning_rate_scaling": "linear",
         },
-        "preprocessing": {
+        PREPROCESSING: {
             "split": {},
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,
+        },
+        DEFAULTS: {
             "text": {
-                "tokenizer": "space_punct",
-                "pretrained_model_name_or_path": None,
-                "vocab_file": None,
-                "max_sequence_length": 256,
-                "most_common": 20000,
-                "padding_symbol": "<PAD>",
-                "unknown_symbol": "<UNK>",
-                "padding": "right",
-                "lowercase": True,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "tokenizer": "space_punct",
+                    "pretrained_model_name_or_path": None,
+                    "vocab_file": None,
+                    "max_sequence_length": 256,
+                    "most_common": 20000,
+                    "padding_symbol": "<PAD>",
+                    "unknown_symbol": "<UNK>",
+                    "padding": "right",
+                    "lowercase": True,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "category": {
-                "most_common": 10000,
-                "lowercase": False,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "most_common": 10000,
+                    "lowercase": False,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "set": {
-                "tokenizer": "space",
-                "most_common": 10000,
-                "lowercase": False,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "tokenizer": "space",
+                    "most_common": 10000,
+                    "lowercase": False,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "bag": {
-                "tokenizer": "space",
-                "most_common": 10000,
-                "lowercase": False,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "tokenizer": "space",
+                    "most_common": 10000,
+                    "lowercase": False,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
-            "binary": {"missing_value_strategy": "fill_with_false"},
-            "number": {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None},
+            "binary": {PREPROCESSING: {"missing_value_strategy": "fill_with_false"}},
+            "number": {
+                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None}
+            },
             "sequence": {
-                "max_sequence_length": 256,
-                "most_common": 20000,
-                "padding_symbol": "<PAD>",
-                "unknown_symbol": "<UNK>",
-                "padding": "right",
-                "tokenizer": "space",
-                "lowercase": False,
-                "vocab_file": None,
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "<UNK>",
+                PREPROCESSING: {
+                    "max_sequence_length": 256,
+                    "most_common": 20000,
+                    "padding_symbol": "<PAD>",
+                    "unknown_symbol": "<UNK>",
+                    "padding": "right",
+                    "tokenizer": "space",
+                    "lowercase": False,
+                    "vocab_file": None,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "<UNK>",
+                }
             },
             "timeseries": {
-                "timeseries_length_limit": 256,
-                "padding_value": 0,
-                "padding": "right",
-                "tokenizer": "space",
-                "missing_value_strategy": "fill_with_const",
-                "fill_value": "",
+                PREPROCESSING: {
+                    "timeseries_length_limit": 256,
+                    "padding_value": 0,
+                    "padding": "right",
+                    "tokenizer": "space",
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "",
+                }
             },
             "image": {
-                "missing_value_strategy": "backfill",
-                "in_memory": True,
-                "resize_method": "interpolate",
-                "scaling": "pixel_normalization",
-                "num_processes": 1,
-                "infer_image_num_channels": True,
-                "infer_image_dimensions": True,
-                "infer_image_max_height": 256,
-                "infer_image_max_width": 256,
-                "infer_image_sample_size": 100,
+                PREPROCESSING: {
+                    "missing_value_strategy": "backfill",
+                    "in_memory": True,
+                    "resize_method": "interpolate",
+                    "scaling": "pixel_normalization",
+                    "num_processes": 1,
+                    "infer_image_num_channels": True,
+                    "infer_image_dimensions": True,
+                    "infer_image_max_height": 256,
+                    "infer_image_max_width": 256,
+                    "infer_image_sample_size": 100,
+                }
             },
             "audio": {
-                "audio_file_length_limit_in_s": 7.5,
-                "missing_value_strategy": "backfill",
-                "in_memory": True,
-                "padding_value": 0,
-                "norm": None,
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_fft_points": None,
-                "window_type": "hamming",
-                "num_filter_bands": 80,
+                PREPROCESSING: {
+                    "audio_file_length_limit_in_s": 7.5,
+                    "missing_value_strategy": "backfill",
+                    "in_memory": True,
+                    "padding_value": 0,
+                    "norm": None,
+                    "type": "fbank",
+                    "window_length_in_s": 0.04,
+                    "window_shift_in_s": 0.02,
+                    "num_fft_points": None,
+                    "window_type": "hamming",
+                    "num_filter_bands": 80,
+                }
             },
-            "h3": {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319},
-            "date": {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None},
-            "vector": {"missing_value_strategy": "fill_with_const", "fill_value": ""},
+            "h3": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319}},
+            "date": {
+                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None}
+            },
+            "vector": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": ""}},
         },
         "combiner": {
             "type": "concat",

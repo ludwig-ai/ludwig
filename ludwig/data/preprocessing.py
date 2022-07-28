@@ -29,7 +29,9 @@ from ludwig.constants import (
     BINARY,
     CHECKSUM,
     COLUMN,
+    DEFAULTS,
     DROP_ROW,
+    ENCODER,
     FFILL,
     FILL_WITH_CONST,
     FILL_WITH_FALSE,
@@ -56,6 +58,7 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils, strings_utils
+from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -1255,7 +1258,7 @@ def build_preprocessing_parameters(
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # deal with encoders that have fixed preprocessing
-        if "encoder" in feature_config:
+        if ENCODER in feature_config:
             encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"])
             if hasattr(encoder_class, "fixed_preprocessing_parameters"):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
@@ -1825,7 +1828,10 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logging.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    preprocessing_params = merge_dict(default_preprocessing_parameters, config[PREPROCESSING])
+    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
+        config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
+    )
+    preprocessing_params = merge_dict(default_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):
