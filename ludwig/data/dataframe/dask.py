@@ -166,6 +166,23 @@ class DaskEngine(DataFrameEngine):
         slices = df.partitions
         return split_by_slices(slices, n, probabilities)
 
+    def remove_empty_partitions(self, df):
+        # Reference: https://stackoverflow.com/questions/47812785/remove-empty-partitions-in-dask
+        ll = list(df.map_partitions(len).compute())
+        if all([ll_i > 0 for ll_i in ll]):
+            return df
+
+        df_delayed = df.to_delayed()
+        df_delayed_new = list()
+        empty_partition = None
+        for ix, n in enumerate(ll):
+            if n == 0:
+                empty_partition = df.get_partition(ix)
+            else:
+                df_delayed_new.append(df_delayed[ix])
+        df = dd.from_delayed(df_delayed_new, meta=empty_partition)
+        return df
+
     def to_parquet(self, df, path, index=False):
         with ProgressBar():
             df.to_parquet(

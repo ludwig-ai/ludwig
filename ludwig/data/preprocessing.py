@@ -1208,6 +1208,9 @@ def build_dataset(
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
 
+    # Remove partitions that are empty after removing NaNs
+    dataset = backend.df_engine.remove_empty_partitions(dataset)
+
     return dataset, metadata
 
 
