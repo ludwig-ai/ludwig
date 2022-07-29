@@ -219,5 +219,5 @@ def split_dataset(
         )
 
     # Remove partitions that are empty after splitting
-    datasets = [backend.df_engine.remove_empty_partitions(dataset) for dataset in datasets]
+    datasets = [None if dataset is None else backend.df_engine.remove_empty_partitions(dataset) for dataset in datasets]
     return datasets
