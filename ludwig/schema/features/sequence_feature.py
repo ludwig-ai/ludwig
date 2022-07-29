@@ -28,7 +28,7 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
 
-    loss: dict = schema_utils.Dict(
+    loss: dict = schema_utils.Dict(  # TODO: Schema for loss
         default={
             "type": SEQUENCE_SOFTMAX_CROSS_ENTROPY,
             "class_weights": 1,

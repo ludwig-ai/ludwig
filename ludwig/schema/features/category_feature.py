@@ -28,7 +28,7 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
-    loss: dict = schema_utils.Dict(
+    loss: dict = schema_utils.Dict(  # TODO: Schema for loss
         default={
             "type": SOFTMAX_CROSS_ENTROPY,
             "class_weights": 1,
