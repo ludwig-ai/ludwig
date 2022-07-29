@@ -108,8 +108,9 @@ jobs:
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
               # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
-              # NOTE: pinned to last commit from 7/26/22 to get tests passing
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/3322558287e701d1d1d6a7d7894c08087d55b465/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              
+              # NOTE: pinned to last commit from 7/28/22 to get tests passing
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/693856975ab135cd513c41a72b0455fb3385e14b/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
               pip install ray==$RAY_VERSION
             fi
