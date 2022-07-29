@@ -24,6 +24,7 @@ import ray
 import ray.data
 from dask.diagnostics import ProgressBar
 from ray.data.block import Block, BlockAccessor
+from ray.data.extensions import TensorDtype
 from ray.util.client.common import ClientObjectRef
 from ray.util.dask import ray_dask_get
 
@@ -31,7 +32,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices
 
 TMP_COLUMN = "__TMP_COLUMN__"
-
+META_SAMPLE_SIZE = 100
 
 logger = logging.getLogger(__name__)
 
@@ -145,9 +146,10 @@ class DaskEngine(DataFrameEngine):
                 )
             return block.to_pandas()
 
-        # Use first few row from ray dataset to generate meta to infer types even if there are NaNs
-        meta = dataset.limit(100).to_pandas()
-        # meta = meta.dtypes.apply(lambda x: x.name).to_dict()
+        # Use a sample of the ray dataset to generate meta to infer types even if there are NaNs
+        meta = dataset.limit(META_SAMPLE_SIZE).to_pandas()
+        # HACK: Dask cannot handle TensorDtype yet, so we ensure those are of dtype object
+        meta = {k: object if isinstance(dtype, TensorDtype) else dtype for k, dtype in meta.dtypes.items()}
         ddf = dd.from_delayed([block_to_df(block) for block in dataset.get_internal_block_refs()], meta=meta)
         return ddf
 
