@@ -350,8 +350,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
@@ -359,10 +357,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             def idx2str(pred_set):
                 return [metadata["idx2str"][i] for i, pred in enumerate(pred_set) if pred]
 
-            result[predictions_col] = backend.df_engine.map_objects(
-                result[predictions_col],
-                idx2str,
-            )
+            result[predictions_col] = result[predictions_col].map(idx2str)
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
@@ -372,10 +367,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
                 return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
 
-            result[probabilities_col] = backend.df_engine.map_objects(
-                result[probabilities_col],
-                get_prob,
-            )
+            result[probabilities_col] = result[probabilities_col].map(get_prob)
 
         return result
 
