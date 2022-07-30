@@ -36,7 +36,3 @@ def test_version_transformation_registry():
     assert "e" in transformed_0_2
     assert "f" not in transformed_0_2["e"]
     assert transformed_0_2["e"]["g"] == "f_value"
-
-
-if __name__ == "__main__":
-    test_version_transformation_registry()
