@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import warnings
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 from ludwig.constants import (
     AUDIO,
@@ -54,6 +54,22 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
+
+config_transformation_registry = VersionTransformationRegistry()
+
+
+def register_config_transformation(version: str, prefix: Optional[str] = None):
+    """Registers a transformation for a config version. The version should be the first version that this config.
+
+    Args:
+    """
+
+    def wrap(fn: Callable[[Dict], Dict]):
+        config_transformation_registry.register(VersionTransformation(transform=fn, version=version, prefix=prefix))
+        return fn
+
+    return wrap
 
 INPUT_FEATURE_KEYS = [
     "name",
@@ -364,6 +380,15 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
             "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
             DeprecationWarning,
         )
+
+
+@register_config_transformation("0.5")
+def update_training(config):
+    if TRAINING in config:
+        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
+        config[TRAINER] = config[TRAINING]
+        del config[TRAINING]
+    return config
 
 
 def upgrade_deprecated_fields(config: Dict[str, Any]):
