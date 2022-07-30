@@ -21,12 +21,17 @@ from typing import Callable, Dict, List, Optional
 
 @total_ordering
 class VersionTransformation:
-    def __init__(self, transform: Callable[[Dict], Dict], version: str, prefix: Optional[str] = None):
+    def __init__(self, transform: Callable[[Dict], Dict], version: str, prefixes: List[str] = None):
         self.transform = transform
         self.version = version
-        self.prefix = prefix if prefix else ""
+        self.prefixes = prefixes if prefixes else []
 
-    def transform_config(self, config: Dict, prefix: Optional[str] = None) -> Dict:
+    def transform_config(self, config: Dict):
+        for prefix in self.prefixes:
+            config = self.transform_config_with_prefix(config, prefix)
+        return config
+
+    def transform_config_with_prefix(self, config: Dict, prefix: Optional[str] = None) -> Dict:
         """Applied this version transformation to the config, returns the updated config."""
         if prefix:
             components = prefix.split(".", 1)
@@ -80,5 +85,6 @@ class VersionTransformationRegistry:
         transformations = self.get_transformations(from_version, to_version)
         updated_config = copy.deepcopy(config)
         for t in transformations:
-            updated_config = t.transform_config(updated_config, t.prefix)
+            updated_config = t.transform_config(updated_config)
+        updated_config["ludwig_version"] = to_version
         return updated_config
