@@ -26,7 +26,9 @@ from ludwig.schema.combiners import (
     TransformerCombinerConfig,
 )
 from ludwig.schema.utils import load_config
+from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -40,6 +42,7 @@ OTHER_HIDDEN_SIZE = 32
 OUTPUT_SIZE = 8
 BASE_OUTPUT_SIZE = 16
 NUM_FILTERS = 20
+RANDOM_SEED = 1919
 
 
 # emulate Input Feature class.  Need to provide output_shape property to
@@ -50,6 +53,7 @@ class PseudoInputFeature:
         self._output_shape = output_shape
         self.feature_type = feature_type
 
+    @property
     def type(self):
         return self.feature_type
 
@@ -80,6 +84,10 @@ def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
     # feature_list: list of tuples that define the output_shape and type
     #    of input features to generate.  tuple[0] is input feature type,
     #    tuple[1] is expected encoder output shape for the input feature
+
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     encoder_outputs = {}
     input_features = {}
     for i in range(len(feature_list)):
@@ -101,6 +109,10 @@ def encoder_outputs():
     #   feature_3: shape [b, s, h1] tensor
     #   feature_4: shape [b, sh, h2] tensor
 
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    # setup synthetic encoder output for testing
     encoder_outputs = {}
     input_features = OrderedDict()
     shapes_list = [
@@ -178,8 +190,11 @@ def encoder_comparator_outputs():
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": OUTPUT_SIZE}, {"output_size": OUTPUT_SIZE}]])
 def test_concat_combiner(
-    encoder_outputs: Tuple, fc_layer: Optional[List[Dict]], flatten_inputs: bool, number_inputs: Optional[int]
+        encoder_outputs: Tuple, fc_layer: Optional[List[Dict]], flatten_inputs: bool, number_inputs: Optional[int]
 ) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
     # setup encoder inputs to combiner based on test case
@@ -215,12 +230,18 @@ def test_concat_combiner(
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
+    if fc_layer is not None:
+        # check for parameter updating if fully connected layer is present
+        target = torch.randn(combiner_output["combiner_output"].shape)
+        fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
+        assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+
 
 # test for sequence concatenation combiner
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_concat_combiner(
-    encoder_outputs: Tuple, main_sequence_feature: Optional[str], reduce_output: Optional[str]
+        encoder_outputs: Tuple, main_sequence_feature: Optional[str], reduce_output: Optional[str]
 ) -> None:
     # extract encoder outputs and input feature dictionaries
     encoder_outputs_dict, input_feature_dict = encoder_outputs
@@ -259,8 +280,11 @@ def test_sequence_concat_combiner(
 @pytest.mark.parametrize("encoder", sequence_encoder_registry)
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
-    encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
+        encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
 ) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
     combiner = SequenceCombiner(
@@ -296,6 +320,11 @@ def test_sequence_combiner(
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
+    # check for parameter updating if fully connected layer is present
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
+    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+
 
 @pytest.mark.parametrize(
     "feature_list",  # defines parameter for fixture features_to_test()
@@ -319,6 +348,9 @@ def test_sequence_combiner(
 @pytest.mark.parametrize("size", [4, 8])
 @pytest.mark.parametrize("output_size", [6, 10])
 def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     encoder_outputs, input_features = features_to_test
 
     # setup combiner to test
@@ -346,13 +378,21 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
     assert isinstance(combiner_output["combiner_output"], torch.Tensor)
     assert combiner_output["combiner_output"].shape == (BATCH_SIZE, output_size)
 
+    # check for parameter updating if fully connected layer is present
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs,), target)
+    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+
 
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": 64}, {"output_size": 32}]])
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(
-    encoder_comparator_outputs: Tuple, fc_layer: Optional[List[Dict]], entity_1: str, entity_2: str
+        encoder_comparator_outputs: Tuple, fc_layer: Optional[List[Dict]], entity_1: str, entity_2: str
 ) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     encoder_comparator_outputs_dict, input_features_dict = encoder_comparator_outputs
     # clean out unneeded encoder outputs since we only have 2 layers
     del encoder_comparator_outputs_dict["text_feature_3"]
@@ -375,10 +415,18 @@ def test_comparator_combiner(
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
+    # check for parameter updating if fully connected layer is present
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_comparator_outputs_dict,), target)
+    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+
 
 @pytest.mark.parametrize("output_size", [8, 16])
 @pytest.mark.parametrize("transformer_output_size", [4, 12])
 def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: int, output_size: int) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner to test
@@ -405,6 +453,11 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
 
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
+
+    # check for parameter updating if fully connected layer is present
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
+    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
 @pytest.mark.parametrize(
@@ -435,12 +488,15 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner(
-    features_to_test: tuple,
-    embed_input_feature_name: Optional[Union[int, str]],
-    fc_layers: Optional[list],
-    reduce_output: str,
-    num_layers: int,
+        features_to_test: tuple,
+        embed_input_feature_name: Optional[Union[int, str]],
+        fc_layers: Optional[list],
+        reduce_output: str,
+        num_layers: int,
 ) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
     # retrieve simulated encoder outputs and input features for the test
     encoder_outputs, input_features = features_to_test
 
@@ -461,3 +517,9 @@ def test_tabtransformer_combiner(
     combiner_output = combiner(encoder_outputs)
 
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
+
+    # check for parameter updating if fully connected layer is present
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs,), target, )
+    print(fpc, tpc, upc)
+    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
