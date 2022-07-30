@@ -58,9 +58,11 @@ config_transformation_registry = VersionTransformationRegistry()
 
 
 def register_config_transformation(version: str, prefixes: List[str] = []):
-    """Registers a transformation for a config version. The version should be the first version that this config.
+    """This decorator registers a transformation function for a config version. Version is the first version which
+    requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
+    registered with 0.5.
 
-    Args:
+    version
     """
 
     def wrap(fn: Callable[[Dict], Dict]):
@@ -97,7 +99,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
-@register_config_transformation("0.4")
+@register_config_transformation("0.5")
 def rename_training_to_trainer(config: Dict[str, Any]):
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)

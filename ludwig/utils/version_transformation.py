@@ -56,10 +56,10 @@ class VersionTransformation:
         """Defines sort order of version transformations. Sorted by:
 
         - version (ascending)
-        - prefix length (descending)  Process most specific transformations before more general ones.
+        - prefix_length (ascending)  Process outer config transformations before inner.
         - prefix (ascending)
         """
-        return (self.version, -self.prefix_length, self.prefix) < (other.version, -other.prefix_length, other.prefix)
+        return (self.version, self.prefix_length, self.prefix) < (other.version, other.prefix_length, other.prefix)
 
     def __repr__(self):
         return f'VersionTransformation(<function>, version="{self.version}", prefix="{self.prefix}")'
