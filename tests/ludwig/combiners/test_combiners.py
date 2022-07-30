@@ -190,7 +190,7 @@ def encoder_comparator_outputs():
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": OUTPUT_SIZE}, {"output_size": OUTPUT_SIZE}]])
 def test_concat_combiner(
-        encoder_outputs: Tuple, fc_layer: Optional[List[Dict]], flatten_inputs: bool, number_inputs: Optional[int]
+    encoder_outputs: Tuple, fc_layer: Optional[List[Dict]], flatten_inputs: bool, number_inputs: Optional[int]
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -241,7 +241,7 @@ def test_concat_combiner(
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_concat_combiner(
-        encoder_outputs: Tuple, main_sequence_feature: Optional[str], reduce_output: Optional[str]
+    encoder_outputs: Tuple, main_sequence_feature: Optional[str], reduce_output: Optional[str]
 ) -> None:
     # extract encoder outputs and input feature dictionaries
     encoder_outputs_dict, input_feature_dict = encoder_outputs
@@ -280,7 +280,7 @@ def test_sequence_concat_combiner(
 @pytest.mark.parametrize("encoder", sequence_encoder_registry)
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
-        encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
+    encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -388,7 +388,7 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(
-        encoder_comparator_outputs: Tuple, fc_layer: Optional[List[Dict]], entity_1: str, entity_2: str
+    encoder_comparator_outputs: Tuple, fc_layer: Optional[List[Dict]], entity_1: str, entity_2: str
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -488,11 +488,11 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner(
-        features_to_test: tuple,
-        embed_input_feature_name: Optional[Union[int, str]],
-        fc_layers: Optional[list],
-        reduce_output: str,
-        num_layers: int,
+    features_to_test: tuple,
+    embed_input_feature_name: Optional[Union[int, str]],
+    fc_layers: Optional[list],
+    reduce_output: str,
+    num_layers: int,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -520,7 +520,11 @@ def test_tabtransformer_combiner(
 
     # check for parameter updating if fully connected layer is present
     target = torch.randn(combiner_output["combiner_output"].shape)
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs,), target, )
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        combiner,
+        (encoder_outputs,),
+        target,
+    )
     print(fpc, tpc, upc)
     # Are there any categorical input features
     categorical_input_features_present = False  # assume not present
