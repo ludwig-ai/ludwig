@@ -96,8 +96,7 @@ jobs:
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            # Pinned to fix issues with torchvision nightly
-            pip install --pre torch==1.13.0.dev20220726 torchtext==0.14.0.dev20220726 torchaudio==0.13.0.dev20220726 torchvision==0.14.0.dev20220726 --extra-index-url $extra_index_url
+            pip install --pre torch torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
