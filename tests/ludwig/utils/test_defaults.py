@@ -110,7 +110,7 @@ def test_missing_outputs_drop_rows():
     config = {
         INPUT_FEATURES: [category_feature()],
         OUTPUT_FEATURES: [category_feature()],
-        PREPROCESSING: {CATEGORY: {MISSING_VALUE_STRATEGY: FILL_WITH_MODE}},
+        DEFAULTS: {CATEGORY: {PREPROCESSING: {MISSING_VALUE_STRATEGY: FILL_WITH_MODE}}},
     }
 
     merged_config = merge_with_defaults(config)

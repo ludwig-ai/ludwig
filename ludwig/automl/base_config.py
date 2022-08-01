@@ -51,7 +51,7 @@ MAX_DISTINCT_VALUES_TO_RETURN = 10
 class DatasetInfo:
     fields: List[FieldInfo]
     row_count: int
-    size_bytes: int
+    size_bytes: int = -1
 
 
 def allocate_experiment_resources(resources: dict) -> dict:
