@@ -467,6 +467,10 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
             ("number", [BATCH_SIZE, 1]),  # passthrough encoder
             ("category", [BATCH_SIZE, 64]),
         ],
+        [  # single binary and single categorical
+            ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("category", [BATCH_SIZE, 64]),  # passthrough encoder
+        ],
         [  # multiple numeric, multiple categorical
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
             ("category", [BATCH_SIZE, 16]),
@@ -478,7 +482,7 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
             ("number", [BATCH_SIZE, 1]),  # passthrough encoder
         ],
-        [("category", [BATCH_SIZE, 16]), ("category", [BATCH_SIZE, 8])],  # only category features
+        [("category", [BATCH_SIZE, 16]), ("category", [BATCH_SIZE, 8]), ],  # only category features
         [("number", [BATCH_SIZE, 1])],  # only single numeric feature  # passthrough encoder
         [("category", [BATCH_SIZE, 8])],  # only single category feature
     ],
@@ -518,31 +522,57 @@ def test_tabtransformer_combiner(
 
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
-    # TODO: re-enable test after confirming correct operation of
-    #       self-attention
-    # # check for parameter updating if fully connected layer is present
-    # target = torch.randn(combiner_output["combiner_output"].shape)
-    # fpc, tpc, upc, not_updated = check_module_parameters_updated(
-    #     combiner,
-    #     (encoder_outputs,),
-    #     target,
-    # )
-    # print(fpc, tpc, upc)
-    # # Are there any categorical input features
-    # categorical_input_features_present = False  # assume not present
-    # number_input_feature_present = False
-    # binary_input_feature_present = False
-    # for i_f in input_features:
-    #     if input_features[i_f].type() == CATEGORY:
-    #         categorical_input_features_present = True
-    #     elif input_features[i_f].type() == NUMBER:
-    #         number_input_feature_present = True
-    #     elif input_features[i_f].type() == BINARY:
-    #         binary_input_feature_present = True
-    #     else:
-    #         ValueError(f"Unsupported input feature type {input_features[i_f].type()}")
-    #
-    # if categorical_input_features_present and number_input_feature_present:
-    #     assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
-    # elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
-    #     assert upc < tpc
+    # check for parameter updating if fully connected layer is present
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        combiner,
+        (encoder_outputs,),
+        target,
+    )
+    # Determine type of input features present
+    categorical_input_features_present = False
+    number_input_feature_present = False
+    binary_input_feature_present = False
+    for i_f in input_features:
+        if input_features[i_f].type() == CATEGORY:
+            categorical_input_features_present = True
+        elif input_features[i_f].type() == NUMBER:
+            number_input_feature_present = True
+        elif input_features[i_f].type() == BINARY:
+            binary_input_feature_present = True
+        else:
+            raise ValueError(f"Unsupported input feature type {input_features[i_f].type()}")
+
+    if number_input_feature_present and binary_input_feature_present and categorical_input_features_present:
+        assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
+        if num_layers == 1:
+            assert upc == (tpc - 4), f"Failed to update parameters.  Parameters not update: {not_updated}"
+        else:
+            # num_layers should be 2
+            assert upc == (tpc - 8), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
+        if embed_input_feature_name is not None:
+            adjustment_for_embed_input_feature = 1
+        else:
+            adjustment_for_embed_input_feature = 0
+        if num_layers == 1:
+            assert upc == (tpc - 16 - adjustment_for_embed_input_feature), \
+                f"Failed to update parameters.  Parameters not update: {not_updated}"
+        else:
+            # num_layers should be 2
+            assert upc == (tpc - 32 - adjustment_for_embed_input_feature), \
+                f"Failed to update parameters.  Parameters not update: {not_updated}"
+    elif categorical_input_features_present and not number_input_feature_present and not binary_input_feature_present:
+        if len(input_features) == 1:
+            if num_layers == 1:
+                parameter_adjustment = 6
+            else:
+                parameter_adjustment = 10
+        else:
+            # more than one categorical features
+            parameter_adjustment = 2
+        assert upc == (
+                    tpc - parameter_adjustment), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    else:
+        raise RuntimeError("Unexpected combination of input Features")
