@@ -1,6 +1,6 @@
 from ludwig.utils.backward_compatibility import (
     _upgrade_feature,
-    _upgrade_preprocessing,
+    _upgrade_preprocessing_split,
     _upgrade_encoder_decoder_params
 )
 
@@ -15,7 +15,7 @@ def test_preprocessing_backward_compatibility():
         "stratify": None,
     }
 
-    _upgrade_preprocessing(preprocessing_config)
+    _upgrade_preprocessing_split(preprocessing_config)
 
     assert preprocessing_config == {
         "split": {"probabilities": [0.7, 0.1, 0.2], "type": "random"},
@@ -64,7 +64,7 @@ def test_audio_feature_backward_compatibility():
     }
 
     _upgrade_feature(audio_feature_preprocessing_config)
-    _upgrade_preprocessing(global_preprocessing_config)
+    _upgrade_preprocessing_split(global_preprocessing_config)
 
     assert global_preprocessing_config == {
         "audio": {

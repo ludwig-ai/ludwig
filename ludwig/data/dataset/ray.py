@@ -36,11 +36,25 @@ from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, Series
 
 _ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
+_ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
+
+# https://github.com/ray-project/ray/issues/27031
+# TODO(geoffrey): remove this once Ray > 1.13 in our CI.
+if _ray_nightly:
+    from ray.data.extensions import TensorArray
+
+    def cast_as_tensor_dtype(series: Series) -> Series:
+        return TensorArray(series)
+
+else:
+
+    def cast_as_tensor_dtype(series: Series) -> Series:
+        return series.astype(TensorDtype())
 
 
 def read_remote_parquet(path: str):
@@ -269,7 +283,7 @@ class RayDatasetBatcher(Batcher):
             for c in columns:
                 # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
                 if features[c][TYPE] not in _SCALAR_TYPES:
-                    df[c] = df[c].astype(TensorDtype())
+                    df[c] = cast_as_tensor_dtype(df[c])
                 elif features[c][TYPE] == BINARY:
                     # TODO(travis): figure out why Ray is converting these into object types by default
                     df[c] = df[c].astype(np.bool_)
