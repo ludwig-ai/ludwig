@@ -482,7 +482,10 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
             ("number", [BATCH_SIZE, 1]),  # passthrough encoder
         ],
-        [("category", [BATCH_SIZE, 16]), ("category", [BATCH_SIZE, 8]), ],  # only category features
+        [
+            ("category", [BATCH_SIZE, 16]),
+            ("category", [BATCH_SIZE, 8]),
+        ],  # only category features
         [("number", [BATCH_SIZE, 1])],  # only single numeric feature  # passthrough encoder
         [("category", [BATCH_SIZE, 8])],  # only single category feature
     ],
@@ -557,12 +560,14 @@ def test_tabtransformer_combiner(
         else:
             adjustment_for_embed_input_feature = 0
         if num_layers == 1:
-            assert upc == (tpc - 16 - adjustment_for_embed_input_feature), \
-                f"Failed to update parameters.  Parameters not update: {not_updated}"
+            assert upc == (
+                tpc - 16 - adjustment_for_embed_input_feature
+            ), f"Failed to update parameters.  Parameters not update: {not_updated}"
         else:
             # num_layers should be 2
-            assert upc == (tpc - 32 - adjustment_for_embed_input_feature), \
-                f"Failed to update parameters.  Parameters not update: {not_updated}"
+            assert upc == (
+                tpc - 32 - adjustment_for_embed_input_feature
+            ), f"Failed to update parameters.  Parameters not update: {not_updated}"
     elif categorical_input_features_present and not number_input_feature_present and not binary_input_feature_present:
         if len(input_features) == 1:
             if num_layers == 1:
@@ -573,6 +578,7 @@ def test_tabtransformer_combiner(
             # more than one categorical features
             parameter_adjustment = 2
         assert upc == (
-                    tpc - parameter_adjustment), f"Failed to update parameters.  Parameters not update: {not_updated}"
+            tpc - parameter_adjustment
+        ), f"Failed to update parameters.  Parameters not update: {not_updated}"
     else:
         raise RuntimeError("Unexpected combination of input Features")
