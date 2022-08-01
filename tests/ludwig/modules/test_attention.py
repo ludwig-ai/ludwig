@@ -76,11 +76,11 @@ def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, in
 @pytest.mark.parametrize("input_seq_size", [10, 20])
 @pytest.mark.parametrize("input_batch_size", [16, 32])
 def test_transformer_block(
-        input_batch_size: int,
-        input_seq_size: int,
-        input_hidden_size: int,
-        output_size: int,
-        heads: int,
+    input_batch_size: int,
+    input_seq_size: int,
+    input_hidden_size: int,
+    output_size: int,
+    heads: int,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -114,12 +114,12 @@ def test_transformer_block(
 @pytest.mark.parametrize("input_seq_size", [10, 20])
 @pytest.mark.parametrize("input_batch_size", [16, 32])
 def test_transformer_stack(
-        input_batch_size: int,
-        input_seq_size: int,
-        input_hidden_size: int,
-        output_size: int,
-        heads: int,
-        num_layers: int,
+    input_batch_size: int,
+    input_seq_size: int,
+    input_hidden_size: int,
+    output_size: int,
+    heads: int,
+    num_layers: int,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
