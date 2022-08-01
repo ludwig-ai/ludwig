@@ -1,13 +1,17 @@
 from abc import ABC
-from typing import Union, List
+from typing import List, Union
 
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema import utils as schema_utils
 
 
 @dataclass
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for encoders. Not meant to be used directly."""
+    """Base class for encoders.
+
+    Not meant to be used directly.
+    """
 
     type: str
     "Name corresponding to an encoder."
@@ -47,17 +51,49 @@ class DenseEncoderConfig(BaseEncoderConfig):
     )
 
     weights_initializer: Union[str, dict] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
-        ["constant", "identity", "zeros", "ones", "orthogonal", "normal", "uniform", "truncated_normal",
-         "variance_scaling", "glorot_normal", "glorot_uniform", "xavier_normal", "xavier_uniform", "he_normal",
-         "he_uniform", "lecun_normal", "lecun_uniform"],
+        [
+            "constant",
+            "identity",
+            "zeros",
+            "ones",
+            "orthogonal",
+            "normal",
+            "uniform",
+            "truncated_normal",
+            "variance_scaling",
+            "glorot_normal",
+            "glorot_uniform",
+            "xavier_normal",
+            "xavier_uniform",
+            "he_normal",
+            "he_uniform",
+            "lecun_normal",
+            "lecun_uniform",
+        ],
         default="glorot_uniform",
         description="Initializer for the weight matrix.",
     )
 
     bias_initializer: Union[str, dict] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
-        ["constant", "identity", "zeros", "ones", "orthogonal", "normal", "uniform", "truncated_normal",
-         "variance_scaling", "glorot_normal", "glorot_uniform", "xavier_normal", "xavier_uniform", "he_normal",
-         "he_uniform", "lecun_normal", "lecun_uniform"],
+        [
+            "constant",
+            "identity",
+            "zeros",
+            "ones",
+            "orthogonal",
+            "normal",
+            "uniform",
+            "truncated_normal",
+            "variance_scaling",
+            "glorot_normal",
+            "glorot_uniform",
+            "xavier_normal",
+            "xavier_uniform",
+            "he_normal",
+            "he_uniform",
+            "lecun_normal",
+            "lecun_uniform",
+        ],
         default="zeros",
         description="Initializer for the bias vector.",
     )

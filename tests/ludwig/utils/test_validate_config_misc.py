@@ -211,32 +211,31 @@ def test_config_fill_values():
 def test_validate_with_preprocessing_defaults():
     config = {
         "input_features": [
-            audio_feature("/tmp/destination_folder", preprocessing=AudioFeatureMixin.preprocessing_defaults(),
-                          encoder={"type": "parallel_cnn"}),
-            bag_feature(preprocessing=BagFeatureMixin.preprocessing_defaults(),
-                        encoder={"type": "embed"}),
-            binary_feature(preprocessing=BinaryFeatureMixin.preprocessing_defaults(),
-                           encoder={"type": "passthrough"}),
-            category_feature(preprocessing=CategoryFeatureMixin.preprocessing_defaults(),
-                             encoder={"type": "dense"}),
-            date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults(),
-                         encoder={"type": "embed"}),
-            h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults(),
-                       encoder={"type": "embed"}),
-            image_feature("/tmp/destination_folder", preprocessing=ImageFeatureMixin.preprocessing_defaults(),
-                          encoder={"type": "stacked_cnn"}),
-            number_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults(),
-                           encoder={"type": "passthrough"}),
-            sequence_feature(preprocessing=SequenceFeatureMixin.preprocessing_defaults(),
-                             encoder={"type": "parallel_cnn"}),
-            set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults(),
-                        encoder={"type": "embed"}),
-            text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults(),
-                         encoder={"type": "parallel_cnn"}),
-            timeseries_feature(preprocessing=TimeseriesFeatureMixin.preprocessing_defaults(),
-                               encoder={"type": "parallel_cnn"}),
-            vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults(),
-                           encoder={"type": "dense"}),
+            audio_feature(
+                "/tmp/destination_folder",
+                preprocessing=AudioFeatureMixin.preprocessing_defaults(),
+                encoder={"type": "parallel_cnn"},
+            ),
+            bag_feature(preprocessing=BagFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            binary_feature(preprocessing=BinaryFeatureMixin.preprocessing_defaults(), encoder={"type": "passthrough"}),
+            category_feature(preprocessing=CategoryFeatureMixin.preprocessing_defaults(), encoder={"type": "dense"}),
+            date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            image_feature(
+                "/tmp/destination_folder",
+                preprocessing=ImageFeatureMixin.preprocessing_defaults(),
+                encoder={"type": "stacked_cnn"},
+            ),
+            number_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults(), encoder={"type": "passthrough"}),
+            sequence_feature(
+                preprocessing=SequenceFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}
+            ),
+            set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}),
+            timeseries_feature(
+                preprocessing=TimeseriesFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}
+            ),
+            vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults(), encoder={"type": "dense"}),
         ],
         "output_features": [{"name": "target", "type": "category"}],
         TRAINER: {

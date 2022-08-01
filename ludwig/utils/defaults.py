@@ -223,7 +223,7 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
         default_encoder_or_decoder = get_default_encoder_or_decoder(feature_dict, config_feature_group)
         if default_params_for_feature_type[TYPE] != default_encoder_or_decoder:
             # Update type and populate defaults for the encoder or decoder type
-            feature_dict[parameter] = default_params_for_feature_type[TYPE]
+            feature_dict[parameter] = default_params_for_feature_type
             get_from_registry(feature_dict[TYPE], registry_type).populate_defaults(feature_dict)
         # Make a copy of default encoder or decoder parameters without the type key.
         default_params_for_feature_type = copy.deepcopy(default_params_for_feature_type)

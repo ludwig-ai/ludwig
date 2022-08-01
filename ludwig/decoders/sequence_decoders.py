@@ -23,8 +23,8 @@ from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.decoders.sequence_decoder_utils import get_lstm_init_state, get_rnn_init_state
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils import strings_utils
 from ludwig.schema.decoders.sequence_decoders import SequenceGeneratorDecoderConfig
+from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,9 @@
 from dataclasses import field
-from ludwig.constants import TYPE
-from ludwig.encoders.registry import get_encoder_classes, get_encoder_cls
 
 from marshmallow import fields, ValidationError
+
+from ludwig.constants import TYPE
+from ludwig.encoders.registry import get_encoder_classes, get_encoder_cls
 from ludwig.schema import utils as schema_utils
 
 
@@ -22,17 +23,14 @@ def get_encoder_conds(feature_type: str):
 
 
 def EncoderDataclassField(feature_type: str, default: str):
-    """
-    Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
     """
 
     class EncoderMarshmallowField(fields.Field):
-        """
-        Custom marshmallow field that deserializes a dict for a valid encoder config from the
-        encoder_registry and creates a corresponding `oneOf` JSON schema for external usage.
-        """
+        """Custom marshmallow field that deserializes a dict for a valid encoder config from the encoder_registry
+        and creates a corresponding `oneOf` JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -67,8 +65,8 @@ def EncoderDataclassField(feature_type: str, default: str):
 
     try:
         encoder = get_encoder_cls(feature_type, default).get_schema_cls()
-        load_default = encoder.Schema().load({'type': default})
-        dump_default = encoder.Schema().dump({'type': default})
+        load_default = encoder.Schema().load({"type": default})
+        dump_default = encoder.Schema().dump({"type": default})
 
         return field(
             metadata={
@@ -81,6 +79,4 @@ def EncoderDataclassField(feature_type: str, default: str):
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported encoder type: {default}. See encoder_registry. "
-                              f"Details: {e}")
-
+        raise ValidationError(f"Unsupported encoder type: {default}. See encoder_registry. " f"Details: {e}")

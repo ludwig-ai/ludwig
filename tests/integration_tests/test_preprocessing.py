@@ -123,10 +123,8 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
-    data_csv = generate_data(
-        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
-    )
-    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=10)
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
+    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=2)
     assert data_df.known_divisions
 
     config = {

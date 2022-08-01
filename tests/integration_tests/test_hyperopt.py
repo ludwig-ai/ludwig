@@ -15,7 +15,7 @@
 import contextlib
 import json
 import os.path
-from typing import Dict, Optional, Tuple, Union, Any
+from typing import Any, Dict, Optional, Tuple, Union
 
 import pytest
 import torch
@@ -147,15 +147,8 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         HYPEROPT: {
             "parameters": {
-                "trainer.learning_rate": {
-                    "lower": 0.0001,
-                    "upper": 0.01,
-                    "space": "loguniform"
-                },
-                "defaults.text.encoder.num_filters": {
-                    "space": "choice",
-                    "categories": num_filters_search_space
-                },
+                "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
+                "defaults.text.encoder.num_filters": {"space": "choice", "categories": num_filters_search_space},
                 "defaults.category.encoder.embedding_size": {
                     "space": "choice",
                     "categories": embedding_size_search_space,
@@ -406,7 +399,7 @@ def _test_hyperopt_with_shared_params_trial_table(
     for _, trial_row in hyperopt_results_df.iterrows():
         embedding_size = _get_trial_parameter_value("defaults.category.encoder.embedding_size", trial_row)
         num_filters = _get_trial_parameter_value("defaults.text.encoder.num_filters", trial_row)
-        reduce_input = _get_trial_parameter_value("defaults.category.decoder.reduce_input", trial_row).replace('"', '')
+        reduce_input = _get_trial_parameter_value("defaults.category.decoder.reduce_input", trial_row).replace('"', "")
         assert embedding_size in embedding_size_search_space
         assert num_filters in num_filters_search_space
         assert reduce_input in reduce_input_search_space
@@ -448,8 +441,13 @@ def _test_hyperopt_with_shared_params_written_config(
 
 @pytest.mark.distributed
 def test_hyperopt_with_shared_params(csv_filename, tmpdir):
-    config, rel_path, num_filters_search_space, embedding_size_search_space, reduce_input_search_space = \
-        _setup_ludwig_config_with_shared_params(csv_filename)
+    (
+        config,
+        rel_path,
+        num_filters_search_space,
+        embedding_size_search_space,
+        reduce_input_search_space,
+    ) = _setup_ludwig_config_with_shared_params(csv_filename)
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     hyperopt_results_df = hyperopt_results.experiment_analysis.results_df

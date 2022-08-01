@@ -25,8 +25,8 @@ from ludwig.constants import (
     COLUMN,
     DECODER,
     DEPENDENCIES,
-    ENCODER,
     EDIT_DISTANCE,
+    ENCODER,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
@@ -42,7 +42,6 @@ from ludwig.constants import (
     SEQUENCE,
     SEQUENCE_ACCURACY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    SUM,
     THRESHOLD,
     TIED,
     TOKEN_ACCURACY,
@@ -56,7 +55,6 @@ from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_de
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
-    PADDING_SYMBOL,
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
@@ -67,7 +65,6 @@ from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.schema.preprocessing import SequencePreprocessingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -267,10 +264,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = {
-        TYPE: "parallel_cnn",
-        "max_sequence_length": None
-    }
+    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -328,11 +322,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = {
-        TYPE: "generator",
-        "max_sequence_length": 0,
-        "num_classes": 0
-    }
+    decoder = {TYPE: "generator", "max_sequence_length": 0, "num_classes": 0}
     loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
@@ -544,5 +534,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder["num_classes"]), meta=(probs_col, "object"))
+            lambda x: x.reshape(-1, self.decoder["num_classes"]), meta=(probs_col, "object")
+        )
         return df

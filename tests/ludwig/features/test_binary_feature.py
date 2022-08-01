@@ -63,7 +63,9 @@ def test_binary_output_feature_without_positive_class_weight():
         {
             "name": "binary_feature",
             "type": "binary",
-            "input_size": 1,
+            "decoder": {
+                "input_size": 1,
+            },
             "loss": {
                 "positive_class_weight": None,
                 "robust_lambda": 0,

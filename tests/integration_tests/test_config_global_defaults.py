@@ -87,7 +87,7 @@ def test_global_default_parameters_merge_with_defaults(csv_filename):
 
     # Feature encoders and decoders should update
     for feature in updated_config[INPUT_FEATURES]:
-        assert feature[ENCODER] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
+        assert feature[ENCODER][TYPE] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
 
     output_feature = updated_config[OUTPUT_FEATURES][0]
-    assert output_feature[DECODER] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]
+    assert output_feature[DECODER][TYPE] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]

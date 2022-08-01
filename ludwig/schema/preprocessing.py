@@ -35,6 +35,7 @@ def register_preprocessor(name: str):
     def wrap(preprocessing_config: BasePreprocessingConfig):
         preprocessing_registry[name] = preprocessing_config
         return preprocessing_config
+
     return wrap
 
 

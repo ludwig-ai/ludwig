@@ -281,8 +281,12 @@ def test_ray_text():
 @pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
 def test_ray_sequence():
-    input_features = [sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": "lstm", "reduce_output": None})]
-    output_features = [sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": False}, reduce_input=None)]
+    input_features = [
+        sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": "lstm", "reduce_output": None})
+    ]
+    output_features = [
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": False}, reduce_input=None)
+    ]
     run_test_with_features(input_features, output_features)
 
 

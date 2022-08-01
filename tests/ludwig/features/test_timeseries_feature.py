@@ -27,7 +27,7 @@ def timeseries_config():
             "state_size": 8,
             "num_filters": 8,
             "hidden_size": 8,
-        }
+        },
     }
 
 

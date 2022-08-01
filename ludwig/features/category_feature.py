@@ -45,15 +45,14 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
+from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
 from ludwig.utils.types import TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
-from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -224,10 +223,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    decoder = {
-        TYPE: "classifier",
-        "num_classes": 0
-    }
+    decoder = {TYPE: "classifier", "num_classes": 0}
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
@@ -450,4 +446,3 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)
-

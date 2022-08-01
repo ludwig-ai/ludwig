@@ -23,7 +23,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.schema.encoders. set_encoders import SetSparseEncoderConfig
+from ludwig.schema.encoders.set_encoders import SetSparseEncoderConfig
 
 logger = logging.getLogger(__name__)
 

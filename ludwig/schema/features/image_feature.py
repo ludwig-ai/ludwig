@@ -1,10 +1,10 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import IMAGE
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
-from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
@@ -15,5 +15,5 @@ class ImageInputFeatureConfig(BaseInputFeatureConfig):
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=IMAGE,
-        default='stacked_cnn',
+        default="stacked_cnn",
     )

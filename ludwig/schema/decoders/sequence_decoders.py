@@ -1,4 +1,5 @@
 from marshmallow_dataclass import dataclass
+
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 
@@ -33,7 +34,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
         ["sum", "mean", "avg", "max", "concat", "last"],
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
-                    "dimension (second if you count the batch dimension)",
+        "dimension (second if you count the batch dimension)",
     )
 
     num_layers: int = schema_utils.PositiveInteger(
@@ -81,4 +82,3 @@ class SequenceTaggerDecoderConfig(BaseDecoderConfig):
         default=8,
         description="The number of attention heads in the multi-head self attention layer.",
     )
-
