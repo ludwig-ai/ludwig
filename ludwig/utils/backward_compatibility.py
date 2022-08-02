@@ -163,6 +163,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         if k not in keys:
             module[k] = v
             nested_params.append(k)
+            warn = True
 
     if module_type in feature:
         feature[module_type].update(module)
@@ -171,9 +172,6 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
 
     for k in nested_params:
         del feature[k]
-
-    if len(nested_params) > 0:
-        warn = True
 
     if warn:
         warnings.warn(
