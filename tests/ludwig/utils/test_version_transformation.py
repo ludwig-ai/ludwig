@@ -13,8 +13,6 @@ def test_version_transformation_registry():
         return config
 
     def transform_e(e):
-        print("-------- transform_e:")
-        print(e)
         e["g"] = e["f"]
         del e["f"]
         return e
