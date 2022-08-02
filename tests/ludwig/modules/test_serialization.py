@@ -56,13 +56,13 @@ def test_serialize_deserialize_encoder(tmpdir):
     # Gets pre-trained encoder.
     trained_input_feature = model_1.model.input_features[input_features[0]["name"]]
     input_feature_encoder = trained_input_feature.encoder_obj
+    # Get pre-trained encoder state, instantiates a new encoder instance from it.
     encoder_state = input_feature_encoder.get_state()
-    assert encoder_state is not None
-    # Instantiates a copy of the encoder from encoder_state.
     restored_encoder = serialization.instantiate_module_from_state(encoder_state, device="cpu")
-    assert isinstance(restored_encoder, type(input_feature_encoder))
-    # Ensures restored encoder's state is identical to pre-trained encoder's state.
     restored_encoder_state = restored_encoder.get_state()
+    # Ensures restored encoder's state is identical to pre-trained encoder's state.
+    assert encoder_state is not None
+    assert isinstance(restored_encoder, type(input_feature_encoder))
     assert restored_encoder_state is not None
     assert_module_states_equal(encoder_state, restored_encoder_state)
 
@@ -88,7 +88,6 @@ def test_load_save_encoder(tmpdir):
     serialization.save(input_feature_encoder, saved_path)
     # Ensures that we can restore encoder from saved path.
     restored_encoder = serialization.load(saved_path, "cpu")
-    assert restored_encoder is not None
     # Creates new model referencing the pre-trained encoder.
     model2_config = {
         "input_features": [{**input_features[0], "encoder": f"file://{saved_path}", "trainable": True}],
@@ -100,6 +99,7 @@ def test_load_save_encoder(tmpdir):
     # Assert that final train loss is lower for model 2 using the pre-trained encoder.
     # TODO(daniel): Due to randomness, this fails sometimes. Find a better way to test transfer.
     # Maybe train to a specified performance level and ensure that model2 gets there faster?
+    assert restored_encoder is not None
     assert (
         train_stats2["training"][category_output_name]["loss"][-1]
         < train_stats1["training"][category_output_name]["loss"][-1]
