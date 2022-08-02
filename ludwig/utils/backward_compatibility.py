@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import warnings
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
 from ludwig.constants import (
     AUDIO,
@@ -57,13 +57,15 @@ from ludwig.utils.version_transformation import VersionTransformation, VersionTr
 config_transformation_registry = VersionTransformationRegistry()
 
 
-def register_config_transformation(version: str, prefixes: List[str] = []):
+def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []):
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
     registered with 0.5.
 
     version
     """
+    if isinstance(prefixes, str):
+        prefixes = [prefixes]
 
     def wrap(fn: Callable[[Dict], Dict]):
         config_transformation_registry.register(VersionTransformation(transform=fn, version=version, prefixes=prefixes))
@@ -105,9 +107,10 @@ def rename_training_to_trainer(config: Dict[str, Any]):
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
         del config[TRAINING]
+    return config
 
 
-@register_config_transformation("0.5", ["input_feature", "output_feature"])
+@register_config_transformation("0.5", ["input_features", "output_features"])
 def _upgrade_use_bias_in_features(feature):
     def upgrade_use_bias(config):
         if BIAS in config:
@@ -128,9 +131,10 @@ def _upgrade_use_bias_in_features(feature):
             del config[DEFAULT_BIAS]
 
     _traverse_dicts(feature, upgrade_use_bias)
+    return feature
 
 
-@register_config_transformation("0.5", ["input_feature", "output_feature"])
+@register_config_transformation("0.5", ["input_features", "output_features"])
 def _upgrade_feature(feature: Dict[str, Any]):
     """Upgrades feature config (in-place)"""
     if feature.get(TYPE) == "numerical":
@@ -152,12 +156,12 @@ def _upgrade_feature(feature: Dict[str, Any]):
 
 @register_config_transformation("0.6", ["input_features"])
 def _upgrade_encoder_params(feature: Dict[str, Any]):
-    _upgrade_encoder_decoder_params(feature, True)
+    return _upgrade_encoder_decoder_params(feature, True)
 
 
 @register_config_transformation("0.6", ["output_features"])
 def _upgrade_decoder_params(feature: Dict[str, Any]):
-    _upgrade_encoder_decoder_params(feature, False)
+    return _upgrade_encoder_decoder_params(feature, False)
 
 
 def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> None:
@@ -317,6 +321,7 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
             'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error ' "in v0.6",
             DeprecationWarning,
         )
+    return hyperopt
 
 
 @register_config_transformation("0.5", ["trainer"])
@@ -328,6 +333,7 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
             "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
         )
         trainer[EVAL_BATCH_SIZE] = None
+    return trainer
 
 
 @register_config_transformation("0.5")
@@ -337,7 +343,7 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
 
     # If preprocessing section specified and it contains feature specific preprocessing parameters,
     # make a copy and delete it from the preprocessing section
-    for parameter in list(config.get(PREPROCESSING)):
+    for parameter in list(config.get(PREPROCESSING, {})):
         if parameter in base_type_registry:
             warnings.warn(
                 f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
@@ -369,6 +375,7 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
             config[DEFAULTS][feature_type][PREPROCESSING].update(
                 merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
             )
+    return config
 
 
 @register_config_transformation("0.5", "preprocessing")
@@ -421,6 +428,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
             "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
             DeprecationWarning,
         )
+    return preprocessing
 
 
 @register_config_transformation("0.5")

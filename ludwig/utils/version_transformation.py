@@ -14,9 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import logging
 from collections import defaultdict
 from functools import total_ordering
 from typing import Callable, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @total_ordering
@@ -27,7 +30,8 @@ class VersionTransformation:
         self.prefixes = prefixes if prefixes else []
 
     def transform_config(self, config: Dict):
-        for prefix in self.prefixes:
+        prefixes = self.prefixes if self.prefixes else [""]
+        for prefix in prefixes:
             config = self.transform_config_with_prefix(config, prefix)
         return config
 
@@ -36,33 +40,52 @@ class VersionTransformation:
         if prefix:
             components = prefix.split(".", 1)
             key = components[0]
-            rest_of_prefix = key[1] if len(key) > 1 else ""
+            rest_of_prefix = components[1] if len(components) > 1 else ""
             if key in config:
                 subsection = config[key]
                 if isinstance(subsection, list):
-                    config[key] = [self.transform_config(v) if isinstance(v, dict) else v for v in subsection]
+                    config[key] = [
+                        self.transform_config_with_prefix(v, prefix=rest_of_prefix) if isinstance(v, dict) else v
+                        for v in subsection
+                    ]
                 elif isinstance(subsection, dict):
-                    config[key] = self.transform_config(subsection, prefix=rest_of_prefix)
+                    config[key] = self.transform_config_with_prefix(subsection, prefix=rest_of_prefix)
             return config
         else:
             # Base case: no prefix specified, pass entire dictionary to transform function.
-            return self.transform(config)
+            transformed_config = self.transform(config)
+            if transformed_config is None:
+                logger.error("Error: version transformation returned None. Check for missing return statement.")
+            return transformed_config
 
     @property
-    def prefix_length(self):
-        return len(self.prefix.split(".")) if self.prefix else 0
+    def max_prefix_length(self):
+        return max(len(prefix.split(".")) for prefix in self.prefixes) if self.prefixes else 0
+
+    @property
+    def longest_prefix(self):
+        """Returns the longest prefix, or empty string if no prefixes specified."""
+        prefixes = self.prefixes
+        if not prefixes:
+            return ""
+        max_index = max(range(len(prefixes)), key=lambda i: prefixes[i])
+        return prefixes[max_index]
 
     def __lt__(self, other):
         """Defines sort order of version transformations. Sorted by:
 
         - version (ascending)
-        - prefix_length (ascending)  Process outer config transformations before inner.
-        - prefix (ascending)
+        - max_prefix_length (ascending)  Process outer config transformations before inner.
+        - longest_prefix (ascending)
         """
-        return (self.version, self.prefix_length, self.prefix) < (other.version, other.prefix_length, other.prefix)
+        return (self.version, self.max_prefix_length, self.longest_prefix) < (
+            other.version,
+            other.max_prefix_length,
+            other.longest_prefix,
+        )
 
     def __repr__(self):
-        return f'VersionTransformation(<function>, version="{self.version}", prefix="{self.prefix}")'
+        return f'VersionTransformation(<function>, version="{self.version}", prefixes={repr(self.prefixes)})'
 
 
 class VersionTransformationRegistry:

@@ -10,7 +10,6 @@ from ludwig.constants import (
     DEPENDENCIES,
     DROP_ROW,
     ENCODER,
-    EVAL_BATCH_SIZE,
     EXECUTOR,
     FILL_WITH_MODE,
     HYPEROPT,
@@ -19,7 +18,6 @@ from ludwig.constants import (
     MODEL_ECD,
     MODEL_GBM,
     MODEL_TYPE,
-    NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
     REDUCE_DEPENDENCIES,
@@ -32,7 +30,9 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.defaults import BASE_PREPROCESSING_SPLIT_CONFIG, merge_with_defaults
 from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
@@ -138,51 +138,6 @@ def test_missing_outputs_drop_rows():
     assert feature_preprocessing[MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
 
 
-def test_deprecated_field_aliases():
-    config = {
-        INPUT_FEATURES: [{"name": "num_in", "type": "numerical"}],
-        OUTPUT_FEATURES: [{"name": "num_out", "type": "numerical"}],
-        "training": {
-            "epochs": 2,
-            "eval_batch_size": 0,
-        },
-        HYPEROPT: {
-            "parameters": {
-                "training.learning_rate": {
-                    "space": "loguniform",
-                    "lower": 0.001,
-                    "upper": 0.1,
-                },
-            },
-            "goal": "minimize",
-            "sampler": {"type": "grid", "num_samples": 2, "scheduler": {"type": "fifo"}},
-            "executor": {
-                "type": "grid",
-                "search_alg": "bohb",
-            },
-        },
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config["input_features"][0][TYPE] == NUMBER
-    assert merged_config["output_features"][0][TYPE] == NUMBER
-
-    assert "training" not in merged_config
-    assert merged_config[TRAINER]["epochs"] == 2
-    assert merged_config[TRAINER][EVAL_BATCH_SIZE] is None
-
-    hparams = merged_config[HYPEROPT]["parameters"]
-    assert "training.learning_rate" not in hparams
-    assert "trainer.learning_rate" in hparams
-
-    assert "sampler" not in merged_config[HYPEROPT]
-
-    assert merged_config[HYPEROPT]["executor"]["type"] == "ray"
-    assert "num_samples" in merged_config[HYPEROPT]["executor"]
-    assert "scheduler" in merged_config[HYPEROPT]["executor"]
-
-
 def test_default_model_type():
     config = {
         INPUT_FEATURES: [category_feature()],
@@ -244,38 +199,6 @@ def test_invalid_trainer_type(model_type):
         merge_with_defaults(config)
 
 
-@pytest.mark.parametrize("force_split", [None, False, True])
-@pytest.mark.parametrize("stratify", [None, "cat_in"])
-def test_deprecated_split_aliases(stratify, force_split):
-    split_probabilities = [0.6, 0.2, 0.2]
-    config = {
-        INPUT_FEATURES: [{"name": "num_in", "type": "number"}, {"name": "cat_in", "type": "category"}],
-        OUTPUT_FEATURES: [{"name": "num_out", "type": "number"}],
-        PREPROCESSING: {
-            "force_split": force_split,
-            "split_probabilities": split_probabilities,
-            "stratify": stratify,
-        },
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert "force_split" not in merged_config[PREPROCESSING]
-    assert "split_probabilities" not in merged_config[PREPROCESSING]
-    assert "stratify" not in merged_config[PREPROCESSING]
-
-    assert SPLIT in merged_config[PREPROCESSING]
-    split = merged_config[PREPROCESSING][SPLIT]
-
-    assert split["probabilities"] == split_probabilities
-    if stratify is None:
-        if force_split:
-            assert split.get(TYPE) == "random"
-    else:
-        assert split.get(TYPE) == "stratify"
-        assert split.get("column") == stratify
-
-
 def test_set_default_values():
     config = {
         INPUT_FEATURES: [number_feature(encoder={"max_sequence_length": 10})],
@@ -315,6 +238,7 @@ def test_set_default_values():
 def test_merge_with_defaults():
     # configuration with legacy parameters
     legacy_config_format = {
+        "ludwig_version": "0.4",
         INPUT_FEATURES: [
             {
                 "type": "numerical",
@@ -363,6 +287,7 @@ def test_merge_with_defaults():
 
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
+        "ludwig_version": LUDWIG_VERSION,
         MODEL_TYPE: "ecd",
         INPUT_FEATURES: [
             {
@@ -624,6 +549,7 @@ def test_merge_with_defaults():
         },
     }
 
-    updated_config = merge_with_defaults(legacy_config_format)
+    updated_config = upgrade_to_latest_version(legacy_config_format)
+    merged_config = merge_with_defaults(updated_config)
 
-    assert updated_config == expected_upgraded_format
+    assert merged_config == expected_upgraded_format
