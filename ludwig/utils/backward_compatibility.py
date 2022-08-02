@@ -32,11 +32,9 @@ from ludwig.constants import (
     EXECUTOR,
     FORCE_SPLIT,
     HYPEROPT,
-    INPUT_FEATURE_KEYS,
     INPUT_FEATURES,
     NUM_SAMPLES,
     NUMBER,
-    OUTPUT_FEATURE_KEYS,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
@@ -56,6 +54,33 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.utils.misc_utils import merge_dict
+
+INPUT_FEATURE_KEYS = [
+    "name",
+    "type",
+    "column",
+    "proc_column",
+    "encoder",
+    "tied",
+    "preprocessing",
+    "vector_size",
+]
+
+OUTPUT_FEATURE_KEYS = [
+    "name",
+    "type",
+    "column",
+    "proc_column",
+    "decoder",
+    "tied",
+    "preprocessing",
+    "loss",
+    "reduce_input",
+    "dependencies",
+    "reduce_dependencies",
+    "top_k",
+    "vector_size",
+]
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
