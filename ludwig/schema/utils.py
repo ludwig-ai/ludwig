@@ -693,13 +693,52 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
     )
 
 
+def FloatRangeListDataclassField(
+        n=2,
+        default: Union[List, None] = None,
+        allow_none: bool = False,
+        min: float = 0.0,
+        max: float = 1.0,
+        description: str = "",
+):
+    return FloatRangeArrayDataclassField(
+        n=n,
+        default=default,
+        allow_none=allow_none,
+        min=min,
+        max=max,
+        description=description,
+        type="list",
+    )
+
+
 def FloatRangeTupleDataclassField(
-        N=2,
-        default: Union[Tuple, None] = (0.9, 0.999),
-        allow_none=False,
-        min=0,
-        max=1,
-        description=""
+        n=2,
+        default: Union[Tuple, None] = None,
+        allow_none: bool = False,
+        min: float = 0.0,
+        max: float = 1.0,
+        description: str = "",
+):
+    return FloatRangeArrayDataclassField(
+        n=n,
+        default=default,
+        allow_none=allow_none,
+        min=min,
+        max=max,
+        description=description,
+        type="tuple",
+    )
+
+
+def FloatRangeArrayDataclassField(
+        n=2,
+        default: Union[List, Tuple, None] = None,
+        allow_none: bool = False,
+        min: float = 0.0,
+        max: float = 1.0,
+        description: str = "",
+        **kwargs
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
     range.
@@ -707,8 +746,8 @@ def FloatRangeTupleDataclassField(
     In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
     The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
     """
-    if N != len(default):
-        raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
+    if n != len(default):
+        raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
     class FloatTupleMarshmallowField(fields.Tuple):
         def _jsonschema_type_mapping(self):
@@ -722,19 +761,29 @@ def FloatRangeTupleDataclassField(
                         "maximum": max,
                     }
                 ]
-                * N,
+                         * n,
                 "default": default,
                 "description": description,
             }
 
     def validate_range(data: Tuple):
-        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-            if all(list(map(lambda b: min <= b <= max, data))):
-                return data
-            raise ValidationError(
-                f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
-            )
-        raise ValidationError(f'Received value should be of {N}-dimensional "Tuple[float]", instead received: {data}')
+        if kwargs["type"] == "list":
+            if isinstance(data, list) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
+                if all(list(map(lambda b: min <= b <= max, data))):
+                    return data
+                raise ValidationError(
+                    f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
+                )
+            raise ValidationError(f'Received value should be of {n}-dimensional "List[float]", instead received: {data}')
+
+        if kwargs["type"] == "tuple":
+            if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
+                if all(list(map(lambda b: min <= b <= max, data))):
+                    return data
+                raise ValidationError(
+                    f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
+                )
+            raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
 
     try:
         validate_range(default)
@@ -744,7 +793,7 @@ def FloatRangeTupleDataclassField(
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * N,
+                tuple_fields=[fields.Float()] * n,
                 allow_none=allow_none,
                 validate=validate_range,
                 load_default=default,

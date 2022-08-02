@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Optional, Union, List
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
@@ -52,6 +52,30 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig, ABC):
     "Class variable pointing to the corresponding preprocessor."
 
     type: str
+
+
+@dataclass
+class GlobalPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
+    """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing"""
+
+    force_split: bool = schema_utils.Boolean(
+        default=False,
+        description="If true, the split column in the dataset file is ignored and the dataset is randomly split. If "
+                    "false the split column is used if available. "
+    )
+
+    split_probabilities: List[float] = schema_utils.FloatRangeListDataclassField(
+        n=3,
+        default=[0.7, 0.1, 0.2],
+        description="The proportion of the dataset data to end up in training, validation and test, respectively. "
+                    "The three values must sum to 1.0. "
+    )
+
+    stratify: str = schema_utils.String(
+        default=None,
+        description="If null the split is random, otherwise you can specify the name of a category feature and the "
+                    "split will be stratified on that feature. "
+    )
 
 
 @register_preprocessor(TEXT)
