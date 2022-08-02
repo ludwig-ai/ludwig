@@ -51,7 +51,6 @@ class DenseEncoderConfig(BaseEncoderConfig):
     )
 
     weights_initializer: Union[str, dict] = schema_utils.InitializerOptions(
-        default="glorot_uniform",
         description="Initializer for the weight matrix.",
     )
 
