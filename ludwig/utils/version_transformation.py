@@ -24,19 +24,41 @@ logger = logging.getLogger(__name__)
 
 @total_ordering
 class VersionTransformation:
+    """Wrapper class for transformations to config dicts."""
+
     def __init__(self, transform: Callable[[Dict], Dict], version: str, prefixes: List[str] = None):
+        """Constructor.
+
+        Args:
+            transform: A function or other callable from Dict -> Dict which returns a modified version of the config.
+                       The callable may update the config in-place and return it, or return a new dict.
+            version: The Ludwig version, should be the first version which requires this transform.
+            prefixes: A list of config prefixes this transform should apply to, i.e. ["hyperopt"].  If not specified,
+                      transform will be called with the entire config dictionary.
+        """
         self.transform = transform
         self.version = version
         self.prefixes = prefixes if prefixes else []
 
     def transform_config(self, config: Dict):
+        """Transforms the sepcified config, returns the transformed config."""
         prefixes = self.prefixes if self.prefixes else [""]
         for prefix in prefixes:
             config = self.transform_config_with_prefix(config, prefix)
         return config
 
     def transform_config_with_prefix(self, config: Dict, prefix: Optional[str] = None) -> Dict:
-        """Applied this version transformation to the config, returns the updated config."""
+        """Applied this version transformation to a specified prefix of the config, returns the updated config. If
+        prefix names a list, i.e. "input_features", applies the transformation to each list element (input
+        feature).
+
+        Args:
+            config: A config dictionary.
+            prefix: An optional keypath prefix i.e. "input_features". If no prefix specified, transformation is applied
+                    to config itself.
+
+        Returns The updated config.
+        """
         if prefix:
             components = prefix.split(".", 1)
             key = components[0]
@@ -60,6 +82,7 @@ class VersionTransformation:
 
     @property
     def max_prefix_length(self):
+        """Returns the length of the longest prefix."""
         return max(len(prefix.split(".")) for prefix in self.prefixes) if self.prefixes else 0
 
     @property
@@ -75,8 +98,8 @@ class VersionTransformation:
         """Defines sort order of version transformations. Sorted by:
 
         - version (ascending)
-        - max_prefix_length (ascending)  Process outer config transformations before inner.
-        - longest_prefix (ascending)
+        - max_prefix_length (ascending) Process outer config transformations before inner.
+        - longest_prefix (ascending) Order alphabetically by prefix if max_prefix_length equal.
         """
         return (self.version, self.max_prefix_length, self.longest_prefix) < (
             other.version,
@@ -89,22 +112,39 @@ class VersionTransformation:
 
 
 class VersionTransformationRegistry:
-    """Allows callers to register transformations which update versioned config files."""
+    """A registry of transformations which update versioned config files."""
 
     def __init__(self):
         self._registry = defaultdict(list)  # Maps version number to list of transformations.
 
     def register(self, transformation: VersionTransformation):
+        """Registers a version transformation."""
         self._registry[transformation.version].append(transformation)
 
     def get_transformations(self, from_version: str, to_version: str) -> List[VersionTransformation]:
-        """Get the config transformations from one version to the next."""
+        """Filters transformations to create an ordered list of the config transformations from one version to
+        another. All transformations returned have version st. from_version < version <= to_version.
+
+        Args:
+            from_version: The ludwig version of the input config.
+            to_version: The version to update the config to (usually the current LUDWIG_VERSION).
+
+        Returns an ordered list of transformations to apply to the config to update it.
+        """
         versions = [v for v in self._registry.keys() if v <= to_version and v > from_version]
         transforms = sorted(t for v in versions for t in self._registry[v])
         return transforms
 
     def update_config(self, config: Dict, from_version: str, to_version: str) -> Dict:
-        """Applies the transformations from an older version to a newer version."""
+        """Applies the transformations from an older version to a newer version.
+
+        Args:
+            config: The config, created by ludwig at from_version.
+            from_version: The version of ludwig which wrote the older config.
+            to_version: The version of ludwig to update to (usually the current LUDWIG_VERSION).
+
+        Returns The updated config after applying update transformations and updating the "ludwig_version" key.
+        """
         transformations = self.get_transformations(from_version, to_version)
         updated_config = copy.deepcopy(config)
         for t in transformations:

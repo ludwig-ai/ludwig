@@ -60,9 +60,14 @@ config_transformation_registry = VersionTransformationRegistry()
 def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []):
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
-    registered with 0.5.
+    registered with 0.5.  from_version < version <= to_version.
 
-    version
+    Args:
+        version: The version to register this transformation with. The earliest ludwig version which requires this
+                 transformation.
+        prefixes: A list of keypath prefixes to apply this transformation to. If not specified, transforms the entire
+                  config dict. If a prefix indicates a list, i.e. "input_features", the transformation is applied to
+                  each element of the list (each input feature).
     """
     if isinstance(prefixes, str):
         prefixes = [prefixes]
@@ -75,9 +80,14 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
 
 
 def upgrade_to_latest_version(config: Dict):
-    """Updates config from an older version of Ludwig.
+    """Updates config from an older version of Ludwig to the current version. If config does not have a
+    "ludwig_version" key, no updates are applied.
 
-    Returns a new, upgraded config.
+    Args:
+        config: A config saved by an older version of Ludwig.
+
+    Returns A new copy of config, upgraded to the current Ludwig version. Returns config if config has no
+            "ludwig_version".
     """
     if "ludwig_version" in config:
         return config_transformation_registry.update_config(
@@ -88,7 +98,7 @@ def upgrade_to_latest_version(config: Dict):
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
-    """Applies function f to every dictionary contained in config.
+    """Recursively Applies function f to every dictionary contained in config.
 
     f should in-place modify the config dict. f will be called on leaves first, root last.
     """
