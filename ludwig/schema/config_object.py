@@ -1,7 +1,7 @@
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig
-from ludwig.schema.preprocessing import GlobalPreprocessingConfig
+from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 
 from ludwig.constants import (
@@ -25,7 +25,7 @@ class Config:
     combiner: BaseCombinerConfig = ConcatCombinerConfig()
     output_features: list = []
     trainer: BaseTrainerConfig = ECDTrainerConfig()
-    preprocessing = GlobalPreprocessingConfig()
+    preprocessing = PreprocessingConfig()
     hyperopt = {}
 
     def __init__(self, config_dict):
