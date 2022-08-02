@@ -22,7 +22,7 @@ def test_version_transformation_registry():
     transformation_registry = VersionTransformationRegistry()
     transformation_registry.register(VersionTransformation(transform=transform_a, version="0.1"))
     transformation_registry.register(VersionTransformation(transform=transform_b, version="0.2"))
-    transformation_registry.register(VersionTransformation(transform=transform_e, version="0.2", prefix="e"))
+    transformation_registry.register(VersionTransformation(transform=transform_e, version="0.2", prefixes=["e"]))
     input_config = {"a": "a value", "e": {"f": "f_value"}}
 
     transformed_0_1 = transformation_registry.update_config(input_config, from_version="0.0", to_version="0.1")
