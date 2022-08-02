@@ -135,7 +135,7 @@ def _upgrade_feature(feature: Dict[str, Any]):
     _traverse_dicts(feature, _upgrade_use_bias)
 
 
-def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool):
+def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> None:
     """
     This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
     Args:
@@ -145,53 +145,40 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
     Returns:
 
     """
+    warn = False
     if input_feature:
-        encoder = feature.get(ENCODER, {})
-        if isinstance(encoder, str):
-            encoder = {TYPE: encoder}
-            feature[ENCODER] = encoder
-
-        nested_params = []
-        for k, v in feature.items():
-            if k not in INPUT_FEATURE_KEYS:
-                encoder[k] = v
-                nested_params.append(k)
-
-        if ENCODER in feature:
-            feature[ENCODER].update(encoder)
-        else:
-            feature[ENCODER] = encoder
-
-        for k in nested_params:
-            del feature[k]
-        warnings.warn(
-            "Encoder specific parameters should now be nested within a dictionary under the 'encoder' parameter. "
-            "Support for un-nested encoder specific parameters will be removed in v0.7",
-            DeprecationWarning,
-        )
+        module_type = ENCODER
     else:
-        decoder = feature.get(DECODER, {})
-        if isinstance(decoder, str):
-            decoder = {TYPE: decoder}
-            feature[DECODER] = decoder
+        module_type = DECODER
 
-        nested_params = []
-        for k, v in feature.items():
-            if k not in OUTPUT_FEATURE_KEYS:
-                decoder[k] = v
-                nested_params.append(k)
+    module = feature.get(module_type, {})
+    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else OUTPUT_FEATURE_KEYS
+    if isinstance(module, str):
+        module = {TYPE: module}
+        feature[module_type] = module
+        warn = True
 
-        if DECODER in feature:
-            feature[DECODER].update(decoder)
-        else:
-            feature[DECODER] = decoder
+    nested_params = []
+    for k, v in feature.items():
+        if k not in keys:
+            module[k] = v
+            nested_params.append(k)
 
-        for k in nested_params:
-            if k in nested_params:
-                del feature[k]
+    if module_type in feature:
+        feature[module_type].update(module)
+    else:
+        feature[module_type] = module
+
+    for k in nested_params:
+        del feature[k]
+
+    if len(nested_params) > 0:
+        warn = True
+
+    if warn:
         warnings.warn(
-            "Decoder specific parameters should now be nested within a dictionary under the 'decoder' parameter. "
-            "Support for un-nested decoder specific parameters will be removed in v0.7",
+            f"{module_type} specific parameters should now be nested within a dictionary under the '{module_type}' "
+            f"parameter. Support for un-nested {module_type} specific parameters will be removed in v0.7",
             DeprecationWarning,
         )
 
