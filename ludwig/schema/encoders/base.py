@@ -50,50 +50,11 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Whether the layer uses a bias vector.",
     )
 
-    weights_initializer: Union[str, dict] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
-        [
-            "constant",
-            "identity",
-            "zeros",
-            "ones",
-            "orthogonal",
-            "normal",
-            "uniform",
-            "truncated_normal",
-            "variance_scaling",
-            "glorot_normal",
-            "glorot_uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "he_normal",
-            "he_uniform",
-            "lecun_normal",
-            "lecun_uniform",
-        ],
-        default="glorot_uniform",
+    weights_initializer: Union[str, dict] = schema_utils.InitializerOptions(
         description="Initializer for the weight matrix.",
     )
 
-    bias_initializer: Union[str, dict] = schema_utils.StringOptions(  # TODO: Add support for String/Dict
-        [
-            "constant",
-            "identity",
-            "zeros",
-            "ones",
-            "orthogonal",
-            "normal",
-            "uniform",
-            "truncated_normal",
-            "variance_scaling",
-            "glorot_normal",
-            "glorot_uniform",
-            "xavier_normal",
-            "xavier_uniform",
-            "he_normal",
-            "he_uniform",
-            "lecun_normal",
-            "lecun_uniform",
-        ],
+    bias_initializer: Union[str, dict] = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
     )
