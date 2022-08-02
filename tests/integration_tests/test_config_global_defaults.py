@@ -110,5 +110,5 @@ def test_global_defaults_with_encoder_dependencies(csv_filename):
     # Config should populate with the additional required fields for bert
     updated_config = merge_with_defaults(config)
 
-    assert updated_config[INPUT_FEATURES][0][ENCODER] == "bert"
+    assert updated_config[INPUT_FEATURES][0][ENCODER][TYPE] == "bert"
     assert updated_config[INPUT_FEATURES][0]["pretrained_model_name_or_path"] == "bert-base-uncased"
