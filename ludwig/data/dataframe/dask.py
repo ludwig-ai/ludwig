@@ -20,12 +20,7 @@ from typing import Dict
 import dask
 import dask.array as da
 import dask.dataframe as dd
-import ray
-import ray.data
 from dask.diagnostics import ProgressBar
-from ray.data.block import Block, BlockAccessor
-from ray.util.client.common import ClientObjectRef
-from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices
@@ -42,6 +37,8 @@ def set_scheduler(scheduler):
 
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
+        from ray.util.dask import ray_dask_get
+
         self._parallelism = parallelism
         self._persist = persist
         if _use_ray:
@@ -89,6 +86,8 @@ class DaskEngine(DataFrameEngine):
         return series.map_partitions(map_fn, meta=meta)
 
     def map_batches(self, series, map_fn):
+        import ray.data
+
         ds = ray.data.from_dask(series)
         ds = ds.map_batches(map_fn, batch_format="pandas")
         return ds.to_dask()
