@@ -278,12 +278,8 @@ def test_deprecated_split_aliases(stratify, force_split):
 
 def test_set_default_values():
     config = {
-        INPUT_FEATURES: [
-            number_feature(encoder={"max_sequence_length": 10})
-        ],
-        OUTPUT_FEATURES: [
-            category_feature(decoder={})
-        ],
+        INPUT_FEATURES: [number_feature(encoder={"max_sequence_length": 10})],
+        OUTPUT_FEATURES: [category_feature(decoder={})],
     }
 
     assert TIED not in config[INPUT_FEATURES][0]
@@ -294,12 +290,7 @@ def test_set_default_values():
     assert REDUCE_INPUT not in config[OUTPUT_FEATURES][0]
     assert REDUCE_DEPENDENCIES not in config[OUTPUT_FEATURES][0]
 
-    set_default_values(
-        config[INPUT_FEATURES][0],
-        {ENCODER: {TYPE: "passthrough"},
-         TIED: None
-         }
-    )
+    set_default_values(config[INPUT_FEATURES][0], {ENCODER: {TYPE: "passthrough"}, TIED: None})
 
     set_default_values(
         config[OUTPUT_FEATURES][0],

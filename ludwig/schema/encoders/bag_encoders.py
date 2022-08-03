@@ -15,10 +15,7 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    vocab: List[str] = schema_utils.List(
-        default=None,
-        description="Vocabulary of the encoder"
-    )
+    vocab: List[str] = schema_utils.List(default=None, description="Vocabulary of the encoder")
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=50,

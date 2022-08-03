@@ -95,7 +95,6 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
-
     vocab: List[str] = schema_utils.List(
         default=None,
         description="Vocabulary of the encoder",

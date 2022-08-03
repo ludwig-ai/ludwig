@@ -98,10 +98,9 @@ def set_default_value(dictionary, key, value):
 
 
 def set_default_values(dictionary: dict, default_value_dictionary: dict):
-    """
-    This function sets multiple default values recursively for various areas of the config. By using the helper function
-    set_default_value, It parses input values that contain nested dictionaries, only setting values for parameters that
-    have not already been defined by the user.
+    """This function sets multiple default values recursively for various areas of the config. By using the helper
+    function set_default_value, It parses input values that contain nested dictionaries, only setting values for
+    parameters that have not already been defined by the user.
 
     Args:
         dictionary (dict): The dictionary to set default values for, generally a section of the config.
