@@ -3,9 +3,18 @@ from typing import Dict
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
-from ray.tune.result import DEFAULT_RESULT_KEYS, TIME_TOTAL_S
 
 from ludwig.schema import utils as schema_utils
+
+# Taken from https://github.com/ray-project/ray/blob/137a1b12c3b31a3622fa5f721a05a64e9b559b05/python/ray/tune/result.py
+DEFAULT_RESULT_KEYS = (
+    "training_iteration",
+    "time_total_s",
+    "timesteps_total",
+    "mean_accuracy",
+    "mean_loss",
+)
+TIME_TOTAL_S = "time_total_s"
 
 
 @dataclass
