@@ -16,10 +16,7 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    vocab: List[str] = schema_utils.List(
-        default=None,
-        description="Vocabulary of the encoder"
-    )
+    vocab: List[str] = schema_utils.List(default=None, description="Vocabulary of the encoder")
 
     representation: str = (
         schema_utils.StringOptions(

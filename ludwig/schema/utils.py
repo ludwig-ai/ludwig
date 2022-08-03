@@ -387,12 +387,12 @@ def FloatRange(
 
 
 def IntegerOrSequenceOfIntegers(
-        default: Union[None, int, Tuple[int, ...], TList[int]] = None,
-        default_integer: int = None,
-        default_sequence: Union[TList[int], Tuple[int, ...]] = None,
-        allow_none=False,
-        non_negative: bool = True,
-        description=""
+    default: Union[None, int, Tuple[int, ...], TList[int]] = None,
+    default_integer: int = None,
+    default_sequence: Union[TList[int], Tuple[int, ...]] = None,
+    allow_none=False,
+    non_negative: bool = True,
+    description="",
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
     inputs."""
@@ -422,9 +422,7 @@ def IntegerOrSequenceOfIntegers(
             sequence_option = {
                 "type": "array",
                 "title": "sequence_option",
-                "items": {
-                    "type": "number"
-                },
+                "items": {"type": "number"},
                 "default": default_sequence,
                 "description": "Set to a valid number.",
             }
@@ -439,10 +437,7 @@ def IntegerOrSequenceOfIntegers(
     return field(
         metadata={
             "marshmallow_field": IntegerOrIntegerSequenceField(
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={"description": description}
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             )
         },
         default=default,

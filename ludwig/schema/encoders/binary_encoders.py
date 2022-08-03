@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.schema.encoders.base import BaseEncoderConfig
 import ludwig.schema.utils as schema_utils
+from ludwig.schema.encoders.base import BaseEncoderConfig
 
 
 @dataclass
