@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Union
 
-from dataclasses_json import dataclass_json, LetterCase
+from dataclasses_json import dataclass_json
 
 
 class ExpectedImpact(int, Enum):
@@ -19,7 +19,7 @@ class ExpectedImpact(int, Enum):
     HIGH = 3
 
 
-@dataclass_json(letter_case=LetterCase.CAMEL)
+@dataclass_json()
 @dataclass
 class ParameterMetadata:
     """Contains descriptive information that pertains to a Ludwig configuration parameter."""
