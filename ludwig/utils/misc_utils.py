@@ -107,7 +107,9 @@ def set_default_values(dictionary: dict, default_value_dictionary: dict):
         default_value_dictionary (dict): The dictionary containing the default values for the config.
     """
     for key, value in default_value_dictionary.items():
-        if value == {}:  # Event where dict is empty
+        if key not in dictionary:  # Event where the key is not in the dictionary yet
+            dictionary[key] = value
+        elif value == {}:  # Event where dict is empty
             set_default_value(dictionary, key, value)
         elif isinstance(value, dict) and value:  # Event where dictionary is nested - recursive call
             set_default_values(dictionary[key], value)
