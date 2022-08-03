@@ -547,6 +547,7 @@ def test_tabtransformer_combiner(
             raise ValueError(f"Unsupported input feature type {input_features[i_f].type()}")
 
     if number_input_feature_present and binary_input_feature_present and categorical_input_features_present:
+        # with all feature types, upadated parameters should equal the number of trainable parameters
         assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
     elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
         if num_layers == 1:
@@ -555,13 +556,15 @@ def test_tabtransformer_combiner(
             # num_layers should be 2
             assert upc == (tpc - 8), f"Failed to update parameters.  Parameters not update: {not_updated}"
     elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
+        # with no categorical features, need to reduce trainable parameter count that is used only for categorical
+        # features, i.e., the transformer stack and embedding option
         if embed_input_feature_name is not None:
             adjustment_for_embed_input_feature = 1
         else:
             adjustment_for_embed_input_feature = 0
         if num_layers == 1:
             assert upc == (
-                tpc - 16 - adjustment_for_embed_input_feature
+                    tpc - 16 - adjustment_for_embed_input_feature
             ), f"Failed to update parameters.  Parameters not update: {not_updated}"
         else:
             # num_layers should be 2
@@ -569,6 +572,7 @@ def test_tabtransformer_combiner(
                 tpc - 32 - adjustment_for_embed_input_feature
             ), f"Failed to update parameters.  Parameters not update: {not_updated}"
     elif categorical_input_features_present and not number_input_feature_present and not binary_input_feature_present:
+        # with only categorical features, reduce trainable parameter count for number/binary specific parameters
         if len(input_features) == 1:
             if num_layers == 1:
                 parameter_adjustment = 6
