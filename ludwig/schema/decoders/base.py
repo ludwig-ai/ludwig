@@ -28,7 +28,11 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
-    type: str = "regressor"
+    type: str = schema_utils.StringOptions(
+        ["regressor"],
+        default="regressor",
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -54,7 +58,11 @@ class RegressorConfig(BaseDecoderConfig):
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
-    type: str = "projector"
+    type: str = schema_utils.StringOptions(
+        ["projector"],
+        default="projector",
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -91,7 +99,11 @@ class ProjectorConfig(BaseDecoderConfig):
 @dataclass
 class ClassifierConfig(BaseDecoderConfig):
 
-    type: str = "classifier"
+    type: str = schema_utils.StringOptions(
+        ["classifier"],
+        default="classifier",
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,

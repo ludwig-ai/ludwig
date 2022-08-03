@@ -9,9 +9,16 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class BagEmbedWeightedConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = schema_utils.StringOptions(
+        ["embed"],
+        default="embed",
+        description="Type of encoder.",
+    )
 
-    vocab: List[str] = schema_utils.List(default=None, description="Vocabulary of the encoder")
+    vocab: List[str] = schema_utils.List(
+        default=None,
+        description="Vocabulary of the encoder"
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=50,

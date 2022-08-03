@@ -9,7 +9,11 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class H3EmbedConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = schema_utils.StringOptions(
+        ["embed"],
+        default="embed",
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -78,7 +82,11 @@ class H3EmbedConfig(BaseEncoderConfig):
 @dataclass
 class H3WeightedSumConfig(BaseEncoderConfig):
 
-    type: str = "weighted_sum"
+    type: str = schema_utils.StringOptions(
+        ["weighted_sum"],
+        default="weighted_sum",
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -153,7 +161,11 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 @dataclass
 class H3RNNConfig(BaseEncoderConfig):
 
-    type: str = "rnn"
+    type: str = schema_utils.StringOptions(
+        ["rnn"],
+        default="rnn",
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,

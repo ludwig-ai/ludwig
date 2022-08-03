@@ -10,7 +10,11 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 class ALBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
-    type: str = "albert"
+    type: str = schema_utils.StringOptions(
+        ["albert"],
+        default="albert",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -163,7 +167,11 @@ class ALBERTConfig(BaseEncoderConfig):
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
-    type: str = "mt5"
+    type: str = schema_utils.StringOptions(
+        ["mt5"],
+        default="mt5",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -306,7 +314,11 @@ class MT5Config(BaseEncoderConfig):
 class XLMRoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
-    type: str = "xlmroberta"
+    type: str = schema_utils.StringOptions(
+        ["xlmroberta"],
+        default="xlmroberta",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -373,7 +385,11 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 class BERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
-    type: str = "bert"
+    type: str = schema_utils.StringOptions(
+        ["bert"],
+        default="bert",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -505,7 +521,11 @@ class BERTConfig(BaseEncoderConfig):
 class XLMConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
-    type: str = "xlm"
+    type: str = schema_utils.StringOptions(
+        ["xlm"],
+        default="xlm",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -700,7 +720,11 @@ class XLMConfig(BaseEncoderConfig):
 class GPTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
-    type: str = "gpt"
+    type: str = schema_utils.StringOptions(
+        ["gpt"],
+        default="gpt",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -805,7 +829,11 @@ class GPTConfig(BaseEncoderConfig):
 class GPT2Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
-    type: str = "gpt2"
+    type: str = schema_utils.StringOptions(
+        ["gpt2"],
+        default="gpt2",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -921,7 +949,11 @@ class GPT2Config(BaseEncoderConfig):
 class RoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
-    type: str = "roberta"
+    type: str = schema_utils.StringOptions(
+        ["roberta"],
+        default="roberta",
+        description="Type of encoder.",
+    )
 
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
@@ -978,7 +1010,11 @@ class RoBERTaConfig(BaseEncoderConfig):
 class TransformerXLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
-    type: str = "transformer_xl"
+    type: str = schema_utils.StringOptions(
+        ["transformer_xl"],
+        default="transformer_xl",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1156,7 +1192,11 @@ class TransformerXLConfig(BaseEncoderConfig):
 class XLNetConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
-    type: str = "xlnet"
+    type: str = schema_utils.StringOptions(
+        ["xlnet"],
+        default="xlnet",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1343,7 +1383,11 @@ class XLNetConfig(BaseEncoderConfig):
 class DistilBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
-    type: str = "distilbert"
+    type: str = schema_utils.StringOptions(
+        ["distilbert"],
+        default="distilbert",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1461,7 +1505,11 @@ class DistilBERTConfig(BaseEncoderConfig):
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
-    type: str = "ctrl"
+    type: str = schema_utils.StringOptions(
+        ["ctrl"],
+        default="ctrl",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1567,7 +1615,11 @@ class CTRLConfig(BaseEncoderConfig):
 class CamemBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
-    type: str = "camembert"
+    type: str = schema_utils.StringOptions(
+        ["camembert"],
+        default="camembert",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1698,7 +1750,11 @@ class CamemBERTConfig(BaseEncoderConfig):
 class T5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
-    type: str = "t5"
+    type: str = schema_utils.StringOptions(
+        ["t5"],
+        default="t5",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1806,7 +1862,11 @@ class T5Config(BaseEncoderConfig):
 class FlauBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
-    type: str = "flaubert"
+    type: str = schema_utils.StringOptions(
+        ["flaubert"],
+        default="flaubert",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -1996,7 +2056,11 @@ class FlauBERTConfig(BaseEncoderConfig):
 class ELECTRAConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
-    type: str = "electra"
+    type: str = schema_utils.StringOptions(
+        ["electra"],
+        default="electra",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -2123,7 +2187,11 @@ class ELECTRAConfig(BaseEncoderConfig):
 class LongformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an Longformer encoder."""
 
-    type: str = "longformer"
+    type: str = schema_utils.StringOptions(
+        ["longformer"],
+        default="longformer",
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
@@ -2182,7 +2250,11 @@ class LongformerConfig(BaseEncoderConfig):
 class AutoTransformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
-    type: str = "auto_transformer"
+    type: str = schema_utils.StringOptions(
+        ["auto_transformer"],
+        default="auto_transformer",
+        description="Type of encoder.",
+    )
 
     pretrained_model_name_or_path: str = schema_utils.String(
         default="xlm-roberta-base",

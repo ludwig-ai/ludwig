@@ -63,6 +63,7 @@ PERPLEXITY = "perplexity"
 JACCARD = "jaccard"
 PREDICTIONS = "predictions"
 TOP_K_PREDICTIONS = "top_k_predictions"
+TOP_K = "top_k"
 PROBABILITY = "probability"
 PROBABILITIES = "probabilities"
 SPLIT_PROBABILITIES = "split_probabilities"
@@ -174,6 +175,9 @@ ENCODER = "encoder"
 DECODER = "decoder"
 
 DEFAULTS = "defaults"
+DEPENDENCIES = "dependencies"
+REDUCE_INPUT = "reduce_input"
+REDUCE_DEPENDENCIES = "reduce_dependencies"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05

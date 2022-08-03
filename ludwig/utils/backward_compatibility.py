@@ -141,9 +141,6 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
     Args:
         feature (Dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
-
-    Returns:
-
     """
     warn = False
     if input_feature:
@@ -367,10 +364,10 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
         _upgrade_feature(feature)
 
     for feature in config.get(INPUT_FEATURES, []):
-        _upgrade_encoder_decoder_params(feature, True)
+        _upgrade_encoder_decoder_params(feature, input_feature=True)
 
     for feature in config.get(OUTPUT_FEATURES, []):
-        _upgrade_encoder_decoder_params(feature, False)
+        _upgrade_encoder_decoder_params(feature, input_feature=False)
 
     if HYPEROPT in config:
         _upgrade_hyperopt(config[HYPEROPT])
