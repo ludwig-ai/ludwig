@@ -28,7 +28,7 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.37.2
+    rev: v2.37.3
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
@@ -43,7 +43,7 @@ repos:
       - id: isort
         name: Format imports
   - repo: https://github.com/pycqa/flake8
-    rev: "4.0.1"
+    rev: "5.0.2"
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black
