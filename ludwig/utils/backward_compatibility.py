@@ -98,7 +98,7 @@ def upgrade_to_latest_version(config: Dict):
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
-    """Recursively Applies function f to every dictionary contained in config.
+    """Recursively applies function f to every dictionary contained in config.
 
     f should in-place modify the config dict. f will be called on leaves first, root last.
     """
