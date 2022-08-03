@@ -312,6 +312,19 @@ class GBMTrainerConfig(BaseTrainerConfig):
         allow_none=False,
     )
 
+    # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
+    # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
+    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrAutoField(
+        default=128,
+        allow_none=False,
+        min_exclusive=0,
+        description=(
+            "Size of batch to pass to the model for evaluation. "
+            "If ’auto’, the biggest batch size (power of 2) that can fit in memory will be used."
+        ),
+        parameter_metadata=TRAINER_METADATA["eval_batch_size"],
+    )
+
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
         ["gbdt", "rf", "dart", "goss"],
