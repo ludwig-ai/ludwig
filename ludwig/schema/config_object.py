@@ -16,58 +16,64 @@ from ludwig.constants import (
 )
 
 
+class InputFeatures:
+    """
+    InputFeatures is a container for all input features.
+    """
+    pass
+
+
+class OutputFeatures:
+    """
+    OutputFeatures is a container for all output features.
+    """
+    pass
+
+
 class Config:
     """
     This class is the implementation of the config object that replaces the need for a config dictionary throughout the
     project.
     """
-    input_features: list = []
+    input_features = InputFeatures()
+    output_features = OutputFeatures()
     combiner: BaseCombinerConfig = ConcatCombinerConfig()
-    output_features: list = []
     trainer: BaseTrainerConfig = ECDTrainerConfig()
     preprocessing = PreprocessingConfig()
     hyperopt = {}
 
     def __init__(self, config_dict):
         self.parse_input_features(config_dict[INPUT_FEATURES])
-
-        if COMBINER in config_dict:
-            self.parse_combiner(config_dict[COMBINER])
-
         self.parse_output_features(config_dict[OUTPUT_FEATURES])
 
+        if COMBINER in config_dict:
+            self.set_attributes(self.combiner, config_dict[COMBINER])
+
         if TRAINER in config_dict:
-            self.parse_trainer(config_dict[TRAINER])
+            self.set_attributes(self.trainer, config_dict[TRAINER])
 
         if PREPROCESSING in config_dict:
-            self.parse_preprocessing(config_dict[PREPROCESSING])
+            self.set_attributes(self.preprocessing, config_dict[PREPROCESSING])
 
         if HYPEROPT in config_dict:
-            self.parse_hyperopt(config_dict[HYPEROPT])
+            pass
+            # self.set_attributes(self.hyperopt, config_dict[HYPEROPT])
 
     def parse_input_features(self, input_features):
         for feature in input_features:
             feature_schema = input_type_registry[feature[TYPE]].get_schema_cls()
             setattr(self.input_features, feature[NAME], feature_schema())
+            self.set_attributes(getattr(self.input_features, feature[NAME]), feature)
 
     def parse_output_features(self, output_features):
         for feature in output_features:
             feature_schema = output_type_registry[feature[TYPE]].get_schema_cls()
             setattr(self.output_features, feature[NAME], feature_schema())
+            self.set_attributes(getattr(self.output_features, feature[NAME]), feature)
 
-    def parse_combiner(self, combiner):
-        for key, value in combiner.items():
-            setattr(self.combiner, key, value)
-
-    def parse_trainer(self, trainer):
-        for key, value in trainer.items():
-            setattr(self.trainer, key, value)
-
-    def parse_preprocessing(self, preprocessing):
-        for key, value in preprocessing.items():
-            setattr(self.preprocessing, key, value)
-
-    def parse_hyperopt(self, hyperopt):
-        pass
-
-
+    def set_attributes(self, attribute, value):
+        for key, val in value.items():
+            if isinstance(val, dict):
+                self.set_attributes(getattr(attribute, key), val)
+            else:
+                setattr(attribute, key, val)
