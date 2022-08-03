@@ -174,6 +174,7 @@ def test_OneOfOptionsField():
 
     # Test valid loads:
     assert CustomTestSchema.Schema().load({}).foo == "placeholder"
+    assert CustomTestSchema.Schema().load({"foo": 0.1}).foo == 0.1
     CustomTestSchema().foo == "placeholder"
     CustomTestSchema.Schema().load({"foo": None})
 

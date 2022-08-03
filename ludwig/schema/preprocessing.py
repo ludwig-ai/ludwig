@@ -189,7 +189,7 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=False,
+        allow_none=True,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
         field_options=[
             schema_utils.FloatRange(default=None, allow_none=True, min=0, max=1),
