@@ -564,7 +564,7 @@ def test_tabtransformer_combiner(
             adjustment_for_embed_input_feature = 0
         if num_layers == 1:
             assert upc == (
-                    tpc - 16 - adjustment_for_embed_input_feature
+                tpc - 16 - adjustment_for_embed_input_feature
             ), f"Failed to update parameters.  Parameters not update: {not_updated}"
         else:
             # num_layers should be 2
