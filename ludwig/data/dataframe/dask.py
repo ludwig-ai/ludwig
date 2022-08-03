@@ -201,24 +201,7 @@ class DaskEngine(DataFrameEngine):
         return from_dask(df)
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
-        """Custom Ray to Dask conversion implementation to pass in meta during dd.DataFrame creation."""
-
-        @dask.delayed
-        def block_to_df(block: Block):
-            block = BlockAccessor.for_block(block)
-            if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
-                raise ValueError(
-                    "Dataset.to_dask() must be used with Dask-on-Ray, please "
-                    "set the Dask scheduler to ray_dask_get (located in "
-                    "ray.util.dask)."
-                )
-            return block.to_pandas()
-
-        # Use first few row from ray dataset to generate meta to infer types even if there are NaNs
-        meta = dataset.limit(100).to_pandas()
-        # meta = meta.dtypes.apply(lambda x: x.name).to_dict()
-        ddf = dd.from_delayed([block_to_df(block) for block in dataset.get_internal_block_refs()], meta=meta)
-        return ddf
+        return dataset.to_dask()
 
     def reset_index(self, df):
         return reset_index_across_all_partitions(df)
