@@ -13,6 +13,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["stacked_cnn"],
         default="stacked_cnn",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -212,6 +213,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["resnet"],
         default="resnet",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -336,6 +338,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["mlp_mixer"],
         default="mlp_mixer",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -386,6 +389,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["vit"],
         default="vit",
+        allow_none=False,
         description="Type of encoder.",
     )
 

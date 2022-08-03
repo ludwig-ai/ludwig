@@ -13,6 +13,7 @@ class ALBERTConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["albert"],
         default="albert",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -170,6 +171,7 @@ class MT5Config(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["mt5"],
         default="mt5",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -317,6 +319,7 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["xlmroberta"],
         default="xlmroberta",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -388,6 +391,7 @@ class BERTConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["bert"],
         default="bert",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -524,6 +528,7 @@ class XLMConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["xlm"],
         default="xlm",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -723,6 +728,7 @@ class GPTConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["gpt"],
         default="gpt",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -832,6 +838,7 @@ class GPT2Config(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["gpt2"],
         default="gpt2",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -952,6 +959,7 @@ class RoBERTaConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["roberta"],
         default="roberta",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1013,6 +1021,7 @@ class TransformerXLConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["transformer_xl"],
         default="transformer_xl",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1195,6 +1204,7 @@ class XLNetConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["xlnet"],
         default="xlnet",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1386,6 +1396,7 @@ class DistilBERTConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["distilbert"],
         default="distilbert",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1508,6 +1519,7 @@ class CTRLConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["ctrl"],
         default="ctrl",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1618,6 +1630,7 @@ class CamemBERTConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["camembert"],
         default="camembert",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1753,6 +1766,7 @@ class T5Config(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["t5"],
         default="t5",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -1865,6 +1879,7 @@ class FlauBERTConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["flaubert"],
         default="flaubert",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -2059,6 +2074,7 @@ class ELECTRAConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["electra"],
         default="electra",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -2190,6 +2206,7 @@ class LongformerConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["longformer"],
         default="longformer",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -2253,6 +2270,7 @@ class AutoTransformerConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["auto_transformer"],
         default="auto_transformer",
+        allow_none=False,
         description="Type of encoder.",
     )
 

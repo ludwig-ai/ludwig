@@ -24,6 +24,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["passthrough"],
         default="passthrough",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -35,6 +36,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["dense"],
         default="dense",
+        allow_none=False,
         description="Type of encoder.",
     )
 

@@ -12,6 +12,7 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["embed"],
         default="embed",
+        allow_none=False,
         description="Type of encoder.",
     )
 

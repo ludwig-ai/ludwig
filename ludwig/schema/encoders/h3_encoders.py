@@ -12,6 +12,7 @@ class H3EmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["embed"],
         default="embed",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -85,6 +86,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["weighted_sum"],
         default="weighted_sum",
+        allow_none=False,
         description="Type of encoder.",
     )
 
@@ -164,6 +166,7 @@ class H3RNNConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["rnn"],
         default="rnn",
+        allow_none=False,
         description="Type of encoder.",
     )
 

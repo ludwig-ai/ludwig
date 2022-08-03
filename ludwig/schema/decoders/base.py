@@ -31,6 +31,7 @@ class RegressorConfig(BaseDecoderConfig):
     type: str = schema_utils.StringOptions(
         ["regressor"],
         default="regressor",
+        allow_none=False,
         description="Type of decoder.",
     )
 
@@ -61,6 +62,7 @@ class ProjectorConfig(BaseDecoderConfig):
     type: str = schema_utils.StringOptions(
         ["projector"],
         default="projector",
+        allow_none=False,
         description="Type of decoder.",
     )
 
@@ -102,6 +104,7 @@ class ClassifierConfig(BaseDecoderConfig):
     type: str = schema_utils.StringOptions(
         ["classifier"],
         default="classifier",
+        allow_none=False,
         description="Type of decoder.",
     )
 

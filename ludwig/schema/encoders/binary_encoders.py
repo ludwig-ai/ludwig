@@ -10,5 +10,6 @@ class BinaryPassthroughEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.StringOptions(
         ["passthrough"],
         default="passthrough",
+        allow_none=False,
         description="Type of encoder.",
     )

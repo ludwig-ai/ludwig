@@ -10,6 +10,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     type: str = schema_utils.StringOptions(
         ["generator"],
         default="generator",
+        allow_none=False,
         description="Type of decoder.",
     )
 
@@ -53,6 +54,7 @@ class SequenceTaggerDecoderConfig(BaseDecoderConfig):
     type: str = schema_utils.StringOptions(
         ["tagger"],
         default="tagger",
+        allow_none=False,
         description="Type of decoder.",
     )
 
