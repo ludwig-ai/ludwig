@@ -91,3 +91,24 @@ def test_global_default_parameters_merge_with_defaults(csv_filename):
 
     output_feature = updated_config[OUTPUT_FEATURES][0]
     assert output_feature[DECODER] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]
+
+
+def test_global_defaults_with_encoder_dependencies(csv_filename):
+    input_features = [text_feature(name="title", reduce_output="sum")]
+    output_features = [category_feature(name="article", embedding_size=3)]
+
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        DEFAULTS: {
+            TEXT: {
+                ENCODER: {TYPE: "bert"},
+            }
+        },
+    }
+
+    # Config should populate with the additional required fields for bert
+    updated_config = merge_with_defaults(config)
+
+    assert updated_config[INPUT_FEATURES][0][ENCODER] == "bert"
+    assert updated_config[INPUT_FEATURES][0]["pretrained_model_name_or_path"] == "bert-base-uncased"
