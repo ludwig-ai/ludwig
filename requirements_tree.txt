@@ -1,3 +1,4 @@
+onnxconverter-common<1.12
 hummingbird-ml
 lightgbm
 lightgbm-ray
