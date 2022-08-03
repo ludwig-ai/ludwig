@@ -387,30 +387,57 @@ def FloatRange(
 
 
 def IntegerOrSequenceOfIntegers(
-    default: Union[None, int, Tuple[int, ...], TList[int]] = None, allow_none=False, description=""
+    default: Union[None, int, Tuple[int, ...], TList[int]] = None,
+    default_integer: int = None,
+    default_sequence: Union[TList[int], Tuple[int, ...]] = None,
+    allow_none=False,
+    non_negative: bool = True,
+    description="",
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
     inputs."""
-    val = validate.OneOf([int, tuple, list])
-    allow_none = allow_none or default is None
 
-    if default is not None:
-        try:
-            assert isinstance(default, int) or isinstance(default, tuple) or isinstance(default, list)
-            val(type(default))
-            if isinstance(default, tuple) or isinstance(default, list):
-                for i in default:
-                    assert isinstance(i, int)
-        except Exception:
-            raise ValidationError(f"Invalid default: `{default}`")
+    class IntegerOrIntegerSequenceField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, int):
+                if non_negative:
+                    if value < 0:
+                        raise ValidationError("Value must be positive.")
+                return value
+            if isinstance(value, (tuple, list)):
+                if non_negative:
+                    for v in value:
+                        if v < 0:
+                            raise ValidationError("Values must be positive.")
+                return value
+            raise ValidationError("Field should be either an integer, tuple of integers, or a list of integers")
+
+        def _jsonschema_type_mapping(self):
+            numeric_option = {
+                "type": "integer",
+                "title": "integer_option",
+                "default": default_integer,
+                "description": "Set to a valid number.",
+            }
+            sequence_option = {
+                "type": "array",
+                "title": "sequence_option",
+                "items": {"type": "number"},
+                "default": default_sequence,
+                "description": "Set to a valid number.",
+            }
+
+            oneof_list = [
+                numeric_option,
+                sequence_option,
+            ]
+
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
+
     return field(
         metadata={
-            "marshmallow_field": fields.Integer(
-                validate=val,
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={"description": description},
+            "marshmallow_field": IntegerOrIntegerSequenceField(
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             )
         },
         default=default,

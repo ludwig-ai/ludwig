@@ -9,7 +9,12 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class SequencePassthroughConfig(BaseEncoderConfig):
 
-    type: str = "passthrough"
+    type: str = schema_utils.StringOptions(
+        ["passthrough"],
+        default="passthrough",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     reduce_output: str = schema_utils.ReductionOptions(
         default=None,
@@ -31,7 +36,12 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 @dataclass
 class SequenceEmbedConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = schema_utils.StringOptions(
+        ["embed"],
+        default="embed",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
@@ -82,7 +92,12 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 @dataclass
 class ParallelCNNConfig(BaseEncoderConfig):
 
-    type: str = "parallel_cnn"
+    type: str = schema_utils.StringOptions(
+        ["parallel_cnn"],
+        default="parallel_cnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
@@ -202,7 +217,12 @@ class ParallelCNNConfig(BaseEncoderConfig):
 @dataclass
 class StackedCNNConfig(BaseEncoderConfig):
 
-    type: str = "stacked_cnn"
+    type: str = schema_utils.StringOptions(
+        ["stacked_cnn"],
+        default="stacked_cnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
@@ -349,7 +369,12 @@ class StackedCNNConfig(BaseEncoderConfig):
 @dataclass
 class StackedParallelCNNConfig(BaseEncoderConfig):
 
-    type: str = "stacked_parallel_cnn"
+    type: str = schema_utils.StringOptions(
+        ["stacked_parallel_cnn"],
+        default="stacked_parallel_cnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -501,7 +526,12 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 @dataclass
 class StackedRNNConfig(BaseEncoderConfig):
 
-    type: str = "rnn"
+    type: str = schema_utils.StringOptions(
+        ["rnn"],
+        default="rnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -662,7 +692,12 @@ class StackedRNNConfig(BaseEncoderConfig):
 @dataclass
 class StackedCNNRNNConfig(BaseEncoderConfig):
 
-    type: str = "cnnrnn"
+    type: str = schema_utils.StringOptions(
+        ["cnnrnn"],
+        default="cnnrnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     should_embed: bool = schema_utils.Boolean(
         default=True,
@@ -888,7 +923,12 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 @dataclass
 class StackedTransformerConfig(BaseEncoderConfig):
 
-    type: str = "transformer"
+    type: str = schema_utils.StringOptions(
+        ["transformer"],
+        default="transformer",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     max_sequence_length: int = schema_utils.PositiveInteger(default=None, description="Max length of all sequences")
 

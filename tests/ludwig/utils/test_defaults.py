@@ -5,8 +5,11 @@ from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
+    DECODER,
     DEFAULTS,
+    DEPENDENCIES,
     DROP_ROW,
+    ENCODER,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FILL_WITH_MODE,
@@ -19,14 +22,19 @@ from ludwig.constants import (
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SCHEDULER,
     SPLIT,
+    SUM,
+    TIED,
+    TOP_K,
     TRAINER,
     TYPE,
 )
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -266,6 +274,44 @@ def test_deprecated_split_aliases(stratify, force_split):
     else:
         assert split.get(TYPE) == "stratify"
         assert split.get("column") == stratify
+
+
+def test_set_default_values():
+    config = {
+        INPUT_FEATURES: [number_feature(encoder={"max_sequence_length": 10})],
+        OUTPUT_FEATURES: [category_feature(decoder={})],
+    }
+
+    assert TIED not in config[INPUT_FEATURES][0]
+    assert TYPE not in config[OUTPUT_FEATURES][0][ENCODER]
+    assert TYPE not in config[OUTPUT_FEATURES][0][DECODER]
+    assert TOP_K not in config[OUTPUT_FEATURES][0]
+    assert DEPENDENCIES not in config[OUTPUT_FEATURES][0]
+    assert REDUCE_INPUT not in config[OUTPUT_FEATURES][0]
+    assert REDUCE_DEPENDENCIES not in config[OUTPUT_FEATURES][0]
+
+    set_default_values(config[INPUT_FEATURES][0], {ENCODER: {TYPE: "passthrough"}, TIED: None})
+
+    set_default_values(
+        config[OUTPUT_FEATURES][0],
+        {
+            DECODER: {
+                TYPE: "classifier",
+            },
+            TOP_K: 3,
+            DEPENDENCIES: [],
+            REDUCE_INPUT: SUM,
+            REDUCE_DEPENDENCIES: SUM,
+        },
+    )
+
+    assert config[INPUT_FEATURES][0][ENCODER][TYPE] == "passthrough"
+    assert config[INPUT_FEATURES][0][TIED] is None
+    assert config[OUTPUT_FEATURES][0][DECODER][TYPE] == "classifier"
+    assert config[OUTPUT_FEATURES][0][TOP_K] == 3
+    assert config[OUTPUT_FEATURES][0][DEPENDENCIES] == []
+    assert config[OUTPUT_FEATURES][0][REDUCE_INPUT] == SUM
+    assert config[OUTPUT_FEATURES][0][REDUCE_DEPENDENCIES] == SUM
 
 
 def test_merge_with_defaults():

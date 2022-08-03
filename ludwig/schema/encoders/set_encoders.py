@@ -9,7 +9,12 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class SetSparseEncoderConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = schema_utils.StringOptions(
+        ["embed"],
+        default="embed",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     vocab: List[str] = schema_utils.List(default=None, description="Vocabulary of the encoder")
 

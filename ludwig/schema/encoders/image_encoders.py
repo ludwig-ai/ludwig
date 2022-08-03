@@ -10,7 +10,12 @@ from ludwig.utils.torch_utils import initializer_registry
 @dataclass
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
-    type: str = "stacked_cnn"
+    type: str = schema_utils.StringOptions(
+        ["stacked_cnn"],
+        default="stacked_cnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     conv_layers: Optional[List[dict]] = schema_utils.DictList(
         default=None,
@@ -205,7 +210,12 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 @dataclass
 class ResNetEncoderConfig(BaseEncoderConfig):
 
-    type: str = "resnet"
+    type: str = schema_utils.StringOptions(
+        ["resnet"],
+        default="resnet",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     resnet_size: Optional[int] = schema_utils.PositiveInteger(
         default=50,
@@ -325,7 +335,12 @@ class ResNetEncoderConfig(BaseEncoderConfig):
 @dataclass
 class MLPMixerEncoderConfig(BaseEncoderConfig):
 
-    type: str = "mlp_mixer"
+    type: str = schema_utils.StringOptions(
+        ["mlp_mixer"],
+        default="mlp_mixer",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
@@ -371,7 +386,12 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 @dataclass
 class ViTEncoderConfig(BaseEncoderConfig):
 
-    type: str = "vit"
+    type: str = schema_utils.StringOptions(
+        ["vit"],
+        default="vit",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     use_pretrained: bool = (
         schema_utils.Boolean(
