@@ -8,20 +8,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class DateInputFeatureConfig(BaseInputFeatureConfig):
-    """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=DATE)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=DATE,
-        default="embed",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(DATE)
@@ -54,4 +41,16 @@ class DatePreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="This parameter can either be a datetime format string, or null, in which case the datetime "
         "format will be inferred automatically.",
+    )
+
+
+@dataclass
+class DateInputFeatureConfig(BaseInputFeatureConfig):
+    """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=DATE)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=DATE,
+        default="embed",
     )

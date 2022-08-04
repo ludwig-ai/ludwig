@@ -10,39 +10,7 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class NumberInputFeatureConfig(BaseInputFeatureConfig):
-    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type="number",
-        default="passthrough",
-    )
-
-
-@dataclass
-class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
-    """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
-    feature."""
-
-    loss: dict = schema_utils.Dict(
-        default={
-            "type": MEAN_SQUARED_ERROR,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
-    )
-
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=NUMBER,
-        default="regressor",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(NUMBER)
@@ -76,4 +44,35 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         default=None,
         allow_none=True,
         description="Normalization strategy to use for this number feature.",
+    )
+
+
+@dataclass
+class NumberInputFeatureConfig(BaseInputFeatureConfig):
+    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type="number",
+        default="passthrough",
+    )
+
+
+@dataclass
+class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
+    """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
+    feature."""
+
+    loss: dict = schema_utils.Dict(
+        default={
+            "type": MEAN_SQUARED_ERROR,
+            "weight": 1,
+        },
+        description="A dictionary containing a loss type and its hyper-parameters.",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=NUMBER,
+        default="regressor",
     )

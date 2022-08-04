@@ -10,21 +10,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class TimeseriesInputFeatureConfig(BaseInputFeatureConfig):
-    """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
-    feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=TIMESERIES,
-        default="parallel_cnn",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(TIMESERIES)
@@ -78,3 +64,15 @@ class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
 
+
+@dataclass
+class TimeseriesInputFeatureConfig(BaseInputFeatureConfig):
+    """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
+    feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=TIMESERIES,
+        default="parallel_cnn",
+    )

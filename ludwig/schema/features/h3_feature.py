@@ -7,20 +7,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class H3InputFeatureConfig(BaseInputFeatureConfig):
-    """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=H3,
-        default="embed",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(H3)
@@ -46,4 +33,16 @@ class H3PreprocessingConfig(BasePreprocessingConfig):
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
+    )
+
+
+@dataclass
+class H3InputFeatureConfig(BaseInputFeatureConfig):
+    """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=H3,
+        default="embed",
     )

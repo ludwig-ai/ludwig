@@ -8,20 +8,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class ImageInputFeatureConfig(BaseInputFeatureConfig):
-    """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=IMAGE,
-        default="stacked_cnn",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(IMAGE)
@@ -133,4 +120,16 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         default=1,
         allow_none=False,
         description="Specifies the number of processes to run for preprocessing images.",
+    )
+
+
+@dataclass
+class ImageInputFeatureConfig(BaseInputFeatureConfig):
+    """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=IMAGE,
+        default="stacked_cnn",
     )

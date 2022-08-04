@@ -8,20 +8,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class AudioInputFeatureConfig(BaseInputFeatureConfig):
-    """AudioFeatureInputFeature is a dataclass that configures the parameters used for an audio input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=AUDIO)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=AUDIO,
-        default="parallel_cnn",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(AUDIO)
@@ -107,4 +94,16 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
         default=80,
         description="Defines the number of filters used in the filterbank. Only needed if audio_feature_type "
         "is 'fbank'",
+    )
+
+
+@dataclass
+class AudioInputFeatureConfig(BaseInputFeatureConfig):
+    """AudioFeatureInputFeature is a dataclass that configures the parameters used for an audio input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=AUDIO)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=AUDIO,
+        default="parallel_cnn",
     )

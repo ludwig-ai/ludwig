@@ -11,20 +11,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class BagInputFeatureConfig(BaseInputFeatureConfig):
-    """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BAG)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=BAG,
-        default="embed",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(BAG)
@@ -72,4 +59,16 @@ class BagPreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
         "amount, the most infrequent tokens will be treated as unknown.",
+    )
+
+
+@dataclass
+class BagInputFeatureConfig(BaseInputFeatureConfig):
+    """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BAG)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=BAG,
+        default="embed",
     )

@@ -10,8 +10,41 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
+
+
+@register_preprocessor(VECTOR)
+@dataclass
+class VectorPreprocessingConfig(BasePreprocessingConfig):
+
+    vector_size: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The size of the vector. If None, the vector size will be inferred from the data.",
+    )
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default="fill_with_const",
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a vector column",
+    )
+
+    fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
+        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
+        description="The internally computed fill value to replace missing values with in case the "
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
+    )
 
 
 @dataclass
@@ -52,38 +85,4 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
         default="projector",
-    )
-
-
-@register_preprocessor(VECTOR)
-@dataclass
-class VectorPreprocessingConfig(BasePreprocessingConfig):
-
-    vector_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The size of the vector. If None, the vector size will be inferred from the data.",
-    )
-
-    missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
-        allow_none=False,
-        description="What strategy to follow when there's a missing value in a vector column",
-    )
-
-    fill_value: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
-    )
-
-    computed_fill_value: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )

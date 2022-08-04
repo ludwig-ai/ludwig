@@ -41,7 +41,7 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
 
 
 def load_config_with_kwargs(
-    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
+        cls: Type["BaseMarshmallowConfig"], kwargs_overrides
 ) -> "BaseMarshmallowConfig":  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
     assert_is_a_marshmallow_class(cls)
@@ -112,11 +112,11 @@ def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True
 
 
 def String(
-    description: str,
-    default: Union[None, str] = None,
-    allow_none: bool = True,
-    pattern: str = None,
-    parameter_metadata: ParameterMetadata = None,
+        description: str,
+        default: Union[None, str] = None,
+        allow_none: bool = True,
+        pattern: str = None,
+        parameter_metadata: ParameterMetadata = None,
 ):
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
@@ -142,11 +142,11 @@ def String(
 
 
 def StringOptions(
-    options: TList[str],
-    default: Union[None, str] = None,
-    allow_none: bool = True,
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
+        options: TList[str],
+        default: Union[None, str] = None,
+        allow_none: bool = True,
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
@@ -200,7 +200,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 
 
 def Integer(
-    default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
+        default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
     allow_none = allow_none or default is None
@@ -225,7 +225,8 @@ def Integer(
 
 
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
+        description: str, default: Union[None, int], allow_none: bool = False,
+        parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -254,10 +255,10 @@ def PositiveInteger(
 
 
 def NonNegativeInteger(
-    description: str,
-    default: Union[None, int] = None,
-    allow_none: bool = False,
-    parameter_metadata: ParameterMetadata = None,
+        description: str,
+        default: Union[None, int] = None,
+        allow_none: bool = False,
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
@@ -286,14 +287,14 @@ def NonNegativeInteger(
 
 
 def IntegerRange(
-    description: str,
-    default: Union[None, int] = None,
-    allow_none=False,
-    parameter_metadata: ParameterMetadata = None,
-    min: int = None,
-    max: int = None,
-    min_inclusive: bool = True,
-    max_inclusive: bool = True,
+        description: str,
+        default: Union[None, int] = None,
+        allow_none=False,
+        parameter_metadata: ParameterMetadata = None,
+        min: int = None,
+        max: int = None,
+        min_inclusive: bool = True,
+        max_inclusive: bool = True,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
@@ -322,10 +323,10 @@ def IntegerRange(
 
 
 def NonNegativeFloat(
-    default: Union[None, float] = None,
-    allow_none=False,
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
+        default: Union[None, float] = None,
+        allow_none=False,
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
@@ -352,14 +353,14 @@ def NonNegativeFloat(
 
 
 def FloatRange(
-    default: Union[None, float] = None,
-    allow_none: bool = False,
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
-    min: int = None,
-    max: int = None,
-    min_inclusive: bool = True,
-    max_inclusive: bool = True,
+        default: Union[None, float] = None,
+        allow_none: bool = False,
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None,
+        min: int = None,
+        max: int = None,
+        min_inclusive: bool = True,
+        max_inclusive: bool = True,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
@@ -387,7 +388,7 @@ def FloatRange(
 
 
 def IntegerOrSequenceOfIntegers(
-    default: Union[None, int, Tuple[int, ...], TList[int]] = None, allow_none=False, description=""
+        default: Union[None, int, Tuple[int, ...], TList[int]] = None, allow_none=False, description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
     inputs."""
@@ -418,13 +419,13 @@ def IntegerOrSequenceOfIntegers(
 
 
 def PositiveIntegerOrTupleOrStringOptions(
-    options: TList[str] = None,
-    allow_none=False,
-    default: Union[None, int, Tuple[int, ...], str] = None,
-    default_integer: Union[None, int] = None,
-    default_tuple: Union[None, Tuple[int, ...]] = None,
-    default_option: Union[None, str] = None,
-    description="",
+        options: TList[str] = None,
+        allow_none=False,
+        default: Union[None, int, Tuple[int, ...], str] = None,
+        default_integer: Union[None, int] = None,
+        default_tuple: Union[None, Tuple[int, ...]] = None,
+        default_option: Union[None, str] = None,
+        description="",
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
     a string value."""
@@ -519,7 +520,8 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-    list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""
+        list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None,
+        description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
     if default is not None:
@@ -553,7 +555,7 @@ def List(
 
 
 def DictList(
-    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+        default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -693,60 +695,20 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
     )
 
 
-def FloatRangeListDataclassField(
-        n=2,
-        default: Union[List, None] = None,
-        allow_none: bool = False,
-        min: float = 0.0,
-        max: float = 1.0,
-        description: str = "",
-):
-    return FloatRangeArrayDataclassField(
-        n=n,
-        default=default,
-        allow_none=allow_none,
-        min=min,
-        max=max,
-        description=description,
-        type="list",
-    )
-
-
 def FloatRangeTupleDataclassField(
         n=2,
-        default: Union[Tuple, None] = None,
+        default: Union[Tuple, None] = (0.9, 0.999),
         allow_none: bool = False,
-        min: float = 0.0,
-        max: float = 1.0,
-        description: str = "",
-):
-    return FloatRangeArrayDataclassField(
-        n=n,
-        default=default,
-        allow_none=allow_none,
-        min=min,
-        max=max,
-        description=description,
-        type="tuple",
-    )
-
-
-def FloatRangeArrayDataclassField(
-        n=2,
-        default: Union[List, Tuple, None] = None,
-        allow_none: bool = False,
-        min: float = 0.0,
-        max: float = 1.0,
-        description: str = "",
-        **kwargs
+        min=0,
+        max=1,
+        description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
     range.
-
     In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
     The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
     """
-    if n != len(default):
+    if default is not None and n != len(default):
         raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
     class FloatTupleMarshmallowField(fields.Tuple):
@@ -761,32 +723,25 @@ def FloatRangeArrayDataclassField(
                         "maximum": max,
                     }
                 ]
-                         * n,
+                * n,
                 "default": default,
                 "description": description,
             }
 
     def validate_range(data: Tuple):
-        if kwargs["type"] == "list":
-            if isinstance(data, list) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-                if all(list(map(lambda b: min <= b <= max, data))):
-                    return data
-                raise ValidationError(
-                    f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
-                )
-            raise ValidationError(f'Received value should be of {n}-dimensional "List[float]", instead received: {data}')
-
-        if kwargs["type"] == "tuple":
-            if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-                if all(list(map(lambda b: min <= b <= max, data))):
-                    return data
-                raise ValidationError(
-                    f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
-                )
-            raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
+        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
+            if all(list(map(lambda b: min <= b <= max, data))):
+                return data
+            raise ValidationError(
+                f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
+            )
+        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
 
     try:
-        validate_range(default)
+        if default is not None:
+            validate_range(default)
+        if default is None and not allow_none:
+            raise ValidationError(f"Default value must not be None if allow_none is False")
     except Exception:
         raise ValidationError(f"Invalid default: `{default}`")
 
@@ -806,16 +761,16 @@ def FloatRangeArrayDataclassField(
 
 
 def FloatOrAutoField(
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        allow_none: bool,
+        description: str,
+        parameter_metadata: ParameterMetadata,
+        default: Union[None, int, str],
+        default_numeric: Union[None, int] = None,
+        default_option: Union[None, str] = "auto",
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Float that also permits an `auto` string value."""
     options: TList[str] = ["auto"]
@@ -823,16 +778,16 @@ def FloatOrAutoField(
 
 
 def IntegerOrAutoField(  # TODO: Write test for this
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int, str],
-    default_numeric: Union[None, int] = None,
-    default_option: Union[None, str] = "auto",
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        allow_none: bool,
+        description: str,
+        parameter_metadata: ParameterMetadata,
+        default: Union[None, int, str],
+        default_numeric: Union[None, int] = None,
+        default_option: Union[None, str] = "auto",
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Integer that also permits an `auto` string value."""
     options: TList[str] = ["auto"]
@@ -840,18 +795,18 @@ def IntegerOrAutoField(  # TODO: Write test for this
 
 
 def IntegerOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    parameter_metadata: ParameterMetadata,
-    default: Union[None, int],
-    default_numeric: Union[None, int],
-    default_option: Union[None, str],
-    is_integer: bool = True,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        options: TList[str],
+        allow_none: bool,
+        description: str,
+        parameter_metadata: ParameterMetadata,
+        default: Union[None, int],
+        default_numeric: Union[None, int],
+        default_option: Union[None, str],
+        is_integer: bool = True,
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing strict integers or protected strings."""
     is_integer = True
@@ -859,18 +814,18 @@ def IntegerOrStringOptionsField(
 
 
 def NumericOrStringOptionsField(
-    options: TList[str],
-    allow_none: bool,
-    description: str,
-    default: Union[None, int, float, str],
-    default_numeric: Union[None, int, float],
-    default_option: Union[None, str],
-    parameter_metadata: ParameterMetadata = None,
-    is_integer: bool = False,
-    min: Union[None, int] = None,
-    max: Union[None, int] = None,
-    min_exclusive: Union[None, int] = None,
-    max_exclusive: Union[None, int] = None,
+        options: TList[str],
+        allow_none: bool,
+        description: str,
+        default: Union[None, int, float, str],
+        default_numeric: Union[None, int, float],
+        default_option: Union[None, str],
+        parameter_metadata: ParameterMetadata = None,
+        is_integer: bool = False,
+        min: Union[None, int] = None,
+        max: Union[None, int] = None,
+        min_exclusive: Union[None, int] = None,
+        max_exclusive: Union[None, int] = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric values or protected strings.
 
@@ -883,10 +838,10 @@ def NumericOrStringOptionsField(
             msg_type = "integer" if is_integer else "numeric"
             if (is_integer and isinstance(value, int)) or isinstance(value, float):
                 if (
-                    (min is not None and value < min)
-                    or (min_exclusive is not None and value <= min_exclusive)
-                    or (max is not None and value > max)
-                    or (max_exclusive is not None and value >= max_exclusive)
+                        (min is not None and value < min)
+                        or (min_exclusive is not None and value <= min_exclusive)
+                        or (max is not None and value > max)
+                        or (max_exclusive is not None and value >= max_exclusive)
                 ):
                     err_min_r, err_min_n = "(", min_exclusive if min_exclusive is not None else "[", min
                     errMaxR, errMaxN = ")", max_exclusive if max_exclusive is not None else "]", max

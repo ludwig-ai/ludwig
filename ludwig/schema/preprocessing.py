@@ -1,24 +1,25 @@
-from typing import Optional, List
+from typing import Tuple
 
 from marshmallow_dataclass import dataclass
-
-from ludwig.constants import (
-    AUDIO,
-    BINARY,
-    CATEGORY,
-    DATE,
-    H3,
-    IMAGE,
-    NUMBER,
-    SEQUENCE,
-    SET,
-    TEXT,
-    TIMESERIES,
-    VECTOR,
-)
+# from dataclasses import field
+#
+# from ludwig.constants import (
+#     AUDIO,
+#     BINARY,
+#     CATEGORY,
+#     DATE,
+#     H3,
+#     IMAGE,
+#     NUMBER,
+#     SEQUENCE,
+#     SET,
+#     TEXT,
+#     TIMESERIES,
+#     VECTOR,
+# )
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.base import BasePreprocessingConfig
-from ludwig.schema.features.utils import PreprocessingDataclassField
+# from ludwig.schema.features.base import BasePreprocessingConfig
+# from ludwig.schema.features.utils import PreprocessingDataclassField
 
 
 @dataclass
@@ -31,9 +32,9 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "false the split column is used if available. "
     )
 
-    split_probabilities: List[float] = schema_utils.FloatRangeListDataclassField(
+    split_probabilities: Tuple[float] = schema_utils.FloatRangeTupleDataclassField(
         n=3,
-        default=[0.7, 0.1, 0.2],
+        default=(0.7, 0.1, 0.2),
         description="The proportion of the dataset data to end up in training, validation and test, respectively. "
                     "The three values must sum to 1.0. "
     )
@@ -56,29 +57,29 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "to the minority class. "
     )
 
-    audio: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=AUDIO)
-
-    binary: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=BINARY)
-
-    category: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=CATEGORY)
-
-    date: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=DATE)
-
-    h3: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=H3)
-
-    image: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=IMAGE)
-
-    number: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=NUMBER)
-
-    sequence: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=SEQUENCE)
-
-    set: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=SET)
-
-    text: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=TEXT)
-
-    timeseries: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=TIMESERIES)
-
-    vector: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=VECTOR)
+    # audio: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=AUDIO)
+    #
+    # binary: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=BINARY)
+    #
+    # category: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=CATEGORY)
+    #
+    # date: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=DATE)
+    #
+    # h3: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=H3)
+    #
+    # image: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=IMAGE)
+    #
+    # number: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=NUMBER)
+    #
+    # sequence: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=SEQUENCE)
+    #
+    # set: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=SET)
+    #
+    # text: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=TEXT)
+    #
+    # timeseries: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=TIMESERIES)
+    #
+    # vector: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=VECTOR)
 
 
 def get_preprocessing_jsonschema():

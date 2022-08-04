@@ -11,39 +11,7 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor
-from ludwig.schema.preprocessing import PreprocessingDataclassField
-
-
-@dataclass
-class SetInputFeatureConfig(BaseInputFeatureConfig):
-    """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
-
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=SET,
-        default="embed",
-    )
-
-
-@dataclass
-class SetOutputFeatureConfig(BaseOutputFeatureConfig):
-    """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
-
-    loss: dict = schema_utils.Dict(
-        default={
-            "type": SIGMOID_CROSS_ENTROPY,
-            "class_weights": None,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
-    )
-
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=SET,
-        default="classifier",
-    )
+from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
 
 
 @register_preprocessor(SET)
@@ -89,4 +57,35 @@ class SetPreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="The maximum number of most common tokens to be considered. If the data contains more than this "
         "amount, the most infrequent tokens will be treated as unknown.",
+    )
+
+
+@dataclass
+class SetInputFeatureConfig(BaseInputFeatureConfig):
+    """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
+
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=SET,
+        default="embed",
+    )
+
+
+@dataclass
+class SetOutputFeatureConfig(BaseOutputFeatureConfig):
+    """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
+
+    loss: dict = schema_utils.Dict(
+        default={
+            "type": SIGMOID_CROSS_ENTROPY,
+            "class_weights": None,
+            "weight": 1,
+        },
+        description="A dictionary containing a loss type and its hyper-parameters.",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=SET,
+        default="classifier",
     )

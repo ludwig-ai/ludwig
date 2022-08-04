@@ -49,7 +49,7 @@ class RegressorConfig(BaseDecoderConfig):
         description="Initializer for the bias vector.",
     )
 
-    clip = Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,
@@ -93,7 +93,7 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-    clip = Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,
