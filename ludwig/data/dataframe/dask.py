@@ -20,12 +20,7 @@ from typing import Dict
 import dask
 import dask.array as da
 import dask.dataframe as dd
-import ray
-import ray.data
 from dask.diagnostics import ProgressBar
-from ray.data.block import Block, BlockAccessor
-from ray.util.client.common import ClientObjectRef
-from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices
@@ -42,6 +37,8 @@ def set_scheduler(scheduler):
 
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
+        from ray.util.dask import ray_dask_get
+
         self._parallelism = parallelism
         self._persist = persist
         if _use_ray:
@@ -89,6 +86,8 @@ class DaskEngine(DataFrameEngine):
         return series.map_partitions(map_fn, meta=meta)
 
     def map_batches(self, series, map_fn):
+        import ray.data
+
         ds = ray.data.from_dask(series)
         ds = ds.map_batches(map_fn, batch_format="pandas")
         return ds.to_dask()
@@ -116,6 +115,23 @@ class DaskEngine(DataFrameEngine):
         n = df.npartitions
         slices = df.partitions
         return split_by_slices(slices, n, probabilities)
+
+    def remove_empty_partitions(self, df):
+        # Reference: https://stackoverflow.com/questions/47812785/remove-empty-partitions-in-dask
+        ll = list(df.map_partitions(len).compute())
+        if all([ll_i > 0 for ll_i in ll]):
+            return df
+
+        df_delayed = df.to_delayed()
+        df_delayed_new = list()
+        empty_partition = None
+        for ix, n in enumerate(ll):
+            if n == 0:
+                empty_partition = df.get_partition(ix)
+            else:
+                df_delayed_new.append(df_delayed[ix])
+        df = dd.from_delayed(df_delayed_new, meta=empty_partition)
+        return df
 
     def to_parquet(self, df, path, index=False):
         with ProgressBar():
