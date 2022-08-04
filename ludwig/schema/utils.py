@@ -134,7 +134,7 @@ def String(
                 dump_default=default,
                 metadata={"description": description},
             ),
-            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
         },
         default=default,
     )
@@ -172,7 +172,7 @@ def StringOptions(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -196,7 +196,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -224,7 +224,7 @@ def Integer(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -256,7 +256,7 @@ def PositiveInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -291,7 +291,7 @@ def NonNegativeInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -330,7 +330,7 @@ def IntegerRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -363,7 +363,7 @@ def NonNegativeFloat(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -401,7 +401,7 @@ def FloatRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -426,7 +426,7 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -456,7 +456,7 @@ def DictList(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
                 },
             )
         },
@@ -787,7 +787,7 @@ def NumericOrStringOptionsField(
                 "title": self.name,
                 "description": description,
                 "default": default,
-                "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+                "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
             }
 
     return field(
@@ -795,7 +795,7 @@ def NumericOrStringOptionsField(
             "marshmallow_field": IntegerOrStringOptionsField(
                 allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             ),
-            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata is not None else None,
+            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
         },
         default=default,
     )
