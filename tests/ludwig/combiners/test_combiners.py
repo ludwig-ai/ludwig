@@ -558,14 +558,14 @@ def test_tabtransformer_combiner(
 
     elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
         assert upc == (
-                tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+            tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
         ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
         # with no categorical features, need to reduce trainable parameter count that is used only for categorical
         # features, i.e., the transformer stack and embedding option
         assert upc == (
-                tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
         ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     elif categorical_input_features_present and not number_input_feature_present and not binary_input_feature_present:
@@ -576,7 +576,7 @@ def test_tabtransformer_combiner(
             # more than one categorical features
             parameter_adjustment = UNEMBEDDABLE_LAYER_NORM_PARAMETERS
         assert upc == (
-                tpc - parameter_adjustment
+            tpc - parameter_adjustment
         ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     else:
