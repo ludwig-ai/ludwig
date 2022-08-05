@@ -73,11 +73,7 @@ class H3FeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": 576495936675512319
-            # mode 1 edge 0 resolution 0 base_cell 0
-        }
+        return H3InputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -158,8 +154,9 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {TYPE: "embed"}})
+        defaults = H3InputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

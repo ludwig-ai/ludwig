@@ -22,8 +22,8 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
+    DEPENDENCIES,
     ENCODER,
-    FILL_WITH_CONST,
     HIDDEN,
     JACCARD,
     LOGITS,
@@ -32,10 +32,12 @@ from ludwig.constants import (
     PREDICTIONS,
     PROBABILITIES,
     PROC_COLUMN,
+    REDUCE_INPUT,
+    REDUCE_DEPENDENCIES,
     SET,
     SIGMOID_CROSS_ENTROPY,
-    SUM,
     TIED,
+    THRESHOLD,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -161,13 +163,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "tokenizer": "space",
-            "most_common": 10000,
-            "lowercase": False,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return SetInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -255,8 +251,9 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {TYPE: "embed"}})
+        defaults = SetInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -389,14 +386,21 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(output_feature, LOSS, {TYPE: SIGMOID_CROSS_ENTROPY, "weight": 1})
-        set_default_value(output_feature[LOSS], "weight", 1)
-        set_default_value(output_feature[LOSS], "class_weights", None)
+        defaults = SetOutputFeatureConfig()
+        set_default_values(output_feature[LOSS], defaults.loss.default)
 
-        set_default_values(output_feature, {DECODER: {TYPE: "classifier", "threshold": 0.5}})
-        set_default_value(output_feature, "dependencies", [])
-        set_default_value(output_feature, "reduce_input", SUM)
-        set_default_value(output_feature, "reduce_dependencies", SUM)
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                    THRESHOLD: defaults.decoder.threshold,
+                },
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
+        )
 
     @staticmethod
     def get_schema_cls():

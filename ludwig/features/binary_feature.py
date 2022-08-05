@@ -25,8 +25,8 @@ from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
     COLUMN,
     DECODER,
+    DEPENDENCIES,
     ENCODER,
-    FILL_WITH_FALSE,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -36,7 +36,9 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     ROC_AUC,
-    SUM,
+    REDUCE_INPUT,
+    REDUCE_DEPENDENCIES,
+    THRESHOLD,
     TIED,
     TYPE,
 )
@@ -134,9 +136,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults() -> Dict[str, Any]:
-        return {
-            "missing_value_strategy": FILL_WITH_FALSE,
-        }
+        return BinaryInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -260,8 +260,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
+        defaults = BinaryInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -410,28 +411,22 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
+        defaults = BinaryOutputFeatureConfig()
+
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(
-            output_feature[LOSS],
-            {
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-                "positive_class_weight": None,  # Weight for each label.
-                "weight": 1,  # Weight across output features.
-            },
-        )
+        set_default_values(output_feature[LOSS], defaults.loss.default)
 
         set_default_values(
             output_feature,
             {
                 DECODER: {
-                    TYPE: "regressor",
-                    "threshold": 0.5,
+                    TYPE: defaults.decoder.type,
+                    THRESHOLD: defaults.decoder.threshold,
                 },
-                "dependencies": [],
-                "reduce_input": SUM,
-                "reduce_dependencies": SUM,
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
             },
         )
 

@@ -24,9 +24,9 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
+    DEPENDENCIES,
     EDIT_DISTANCE,
     ENCODER,
-    FILL_WITH_CONST,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
@@ -37,25 +37,24 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
+    REDUCE_INPUT,
+    REDUCE_DEPENDENCIES,
     SEQUENCE,
     SEQUENCE_ACCURACY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    SUM,
+    THRESHOLD,
     TIED,
     TOKEN_ACCURACY,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
-from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
-    PADDING_SYMBOL,
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
@@ -63,6 +62,9 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -203,18 +205,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "max_sequence_length": 256,
-            "most_common": 20000,
-            "padding_symbol": PADDING_SYMBOL,
-            "unknown_symbol": UNKNOWN_SYMBOL,
-            "padding": "right",
-            "tokenizer": "space",
-            "lowercase": False,
-            "vocab_file": None,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return SequenceInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -314,8 +305,9 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {"type": "parallel_cnn"}})
+        defaults = SequenceInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -519,28 +511,24 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(
-            output_feature,
-            LOSS,
-            {
-                TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-                "class_weights": 1,
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-                "class_similarities_temperature": 0,
-                "weight": 1,
-            },
-        )
-
-        set_default_value(output_feature[LOSS], "unique", False)
-        set_default_values(output_feature, {DECODER: {TYPE: "generator"}})
+        defaults = SequenceOutputFeatureConfig()
+        set_default_values(output_feature[LOSS], defaults.loss.default)
 
         if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)
 
-        set_default_value(output_feature, "dependencies", [])
-        set_default_value(output_feature, "reduce_input", SUM)
-        set_default_value(output_feature, "reduce_dependencies", SUM)
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                    THRESHOLD: defaults.decoder.threshold,
+                },
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
+        )
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

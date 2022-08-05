@@ -720,7 +720,14 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
     )
 
 
-def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1, description=""):
+def FloatRangeTupleDataclassField(
+        N=2,
+        default: Union[Tuple, None] = (0.9, 0.999),
+        allow_none=False,
+        min=0,
+        max=1,
+        description=""
+):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
     range.
 
@@ -765,7 +772,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
                 tuple_fields=[fields.Float()] * N,
-                allow_none=False,
+                allow_none=allow_none,
                 validate=validate_range,
                 load_default=default,
                 dump_default=default,

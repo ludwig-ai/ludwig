@@ -39,13 +39,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "tokenizer": "space",
-            "most_common": 10000,
-            "lowercase": False,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return BagInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -132,8 +126,9 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_values(input_feature, {ENCODER: {TYPE: "embed"}})
+        defaults = BagInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
