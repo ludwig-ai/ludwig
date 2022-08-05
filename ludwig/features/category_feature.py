@@ -215,7 +215,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = CategoryInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -254,13 +254,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def create_calibration_module(self, **kwargs) -> torch.nn.Module:
+    def create_calibration_module(self, feature) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
-        if kwargs.get("calibration"):
+        if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
             return calibration_cls(num_classes=self.decoder_config.num_classes)
         return None
@@ -430,12 +430,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        defaults = CategoryOutputFeatureConfig
+        defaults = CategoryOutputFeatureConfig()
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
         # Populate the default values for LOSS if they aren't defined already
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,
@@ -446,7 +446,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 TOP_K: defaults.top_k,
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,}
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies}
         )
 
     @staticmethod

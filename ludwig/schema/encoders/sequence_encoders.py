@@ -130,6 +130,10 @@ class ParallelCNNConfig(BaseEncoderConfig):
         description="Size of the embedding.",
     )
 
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None, description="The maximum length of all sequences"
+    )
+
     embeddings_trainable: bool = schema_utils.Boolean(
         default=True,
         description="Whether the embedding is trainable.",

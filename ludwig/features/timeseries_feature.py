@@ -218,7 +218,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = TimeseriesInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod

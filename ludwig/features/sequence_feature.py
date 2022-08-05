@@ -306,7 +306,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = SequenceInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -512,7 +512,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         defaults = SequenceOutputFeatureConfig()
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)

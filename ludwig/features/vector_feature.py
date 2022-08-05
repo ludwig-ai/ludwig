@@ -192,7 +192,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = VectorInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
         set_default_value(input_feature, PREPROCESSING, {})
 
@@ -281,7 +281,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,

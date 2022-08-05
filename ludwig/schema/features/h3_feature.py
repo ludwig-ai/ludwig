@@ -1,6 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import H3
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
@@ -17,3 +18,11 @@ class H3InputFeatureConfig(BaseInputFeatureConfig):
         feature_type=H3,
         default="embed",
     )
+
+    tied: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
+        "feature of the same type and with the same encoder parameters.",
+    )
+

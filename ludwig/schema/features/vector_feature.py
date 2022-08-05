@@ -22,6 +22,13 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
         default="dense",
     )
 
+    tied: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
+        "feature of the same type and with the same encoder parameters.",
+    )
+
 
 @dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
@@ -49,4 +56,9 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
         default="projector",
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
     )

@@ -191,7 +191,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     # encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
 
     def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
-        super().__init__(input_feature_config, encoder_obj=encoder_obj)
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
         self.encoder_config = input_feature_config.encoder
         # self._input_shape = [input_feature_config.encoder.max_sequence_length]
 
@@ -232,7 +232,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = TextInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
         encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])

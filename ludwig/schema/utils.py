@@ -721,25 +721,25 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-        N=2,
+        n=2,
         default: Union[Tuple, None] = (0.9, 0.999),
-        allow_none=False,
+        allow_none: bool = False,
         min=0,
         max=1,
         description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
     range.
-
     In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
     The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
     """
-    if N != len(default):
-        raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
+    if default is not None and n != len(default):
+        raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
     class FloatTupleMarshmallowField(fields.Tuple):
         def _jsonschema_type_mapping(self):
-            validate_range(default)
+            if default is not None:
+                validate_range(default)
             return {
                 "type": "array",
                 "items": [
@@ -749,7 +749,7 @@ def FloatRangeTupleDataclassField(
                         "maximum": max,
                     }
                 ]
-                * N,
+                * n,
                 "default": default,
                 "description": description,
             }
@@ -761,17 +761,20 @@ def FloatRangeTupleDataclassField(
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
             )
-        raise ValidationError(f'Received value should be of {N}-dimensional "Tuple[float]", instead received: {data}')
+        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
 
     try:
-        validate_range(default)
+        if default is not None:
+            validate_range(default)
+        if default is None and not allow_none:
+            raise ValidationError(f"Default value must not be None if allow_none is False")
     except Exception:
         raise ValidationError(f"Invalid default: `{default}`")
 
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * N,
+                tuple_fields=[fields.Float()] * n,
                 allow_none=allow_none,
                 validate=validate_range,
                 load_default=default,

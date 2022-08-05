@@ -81,13 +81,13 @@ class RegressorConfig(BaseDecoderConfig):
         description="Threshold for the output of the decoder.",
     )
     
-    clip = Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
-        N=2,
+    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+        n=2,
         default=None,
         allow_none=True,
         min=0,
         max=999999999,
-        description="Clip the output of the decoder to be within the given range.",
+        description="Clip the output of the decoder to be within the given range."
     )
 
 
@@ -131,13 +131,13 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-    clip = Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
-        N=2,
+    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+        n=2,
         default=None,
         allow_none=True,
         min=0,
         max=999999999,
-        description="Clip the output of the decoder to be within the given range.",
+        description="Clip the output of the decoder to be within the given range."
     )
 
 
