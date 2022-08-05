@@ -52,8 +52,9 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
     tracked_process = psutil.Process(os.getpid())
 
     # will return a meaningless 0 value on the first call because `interval` arg is set to None.
-    tracked_process.cpu_percent()
+    tracked_process.cpu_percent(interval=logging_interval)
     while True:
+        time.sleep(logging_interval)
         try:
             message = queue.get(block=False)
             if isinstance(message, str):
@@ -73,7 +74,6 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
             info["system"]["cpu_utilization"].append(tracked_process.cpu_percent())
             # divide by 1.0e6 to convert bytes to megabytes.
             info["system"]["ram_utilization"].append(tracked_process.memory_full_info().uss // 1.0e6)
-        time.sleep(logging_interval)
 
 
 class ResourceUsageTracker:
