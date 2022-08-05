@@ -115,11 +115,17 @@ class H3FeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
-    encoder = {TYPE: "embed"}
+    # encoder = {TYPE: "embed"}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            input_feature_config: H3InputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:

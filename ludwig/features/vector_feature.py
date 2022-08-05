@@ -149,13 +149,19 @@ class VectorFeatureMixin:
 
 @register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
-    encoder = {TYPE: "dense"}
-    vector_size = 0
+    # encoder = {TYPE: "dense"}
+    # vector_size = 0
 
-    def __init__(self, feature: Dict[str, Any], encoder_obj: Optional[LudwigModule] = None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
-        self.encoder["input_size"] = feature["vector_size"]
+    def __init__(
+            self,
+            input_feature_config: VectorInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
+        self.encoder_config.input_size = self.encoder_config.vector_size
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -172,7 +178,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size])
+        return torch.Size([self.encoder_config.vector_size])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -180,8 +186,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        for key in ["vector_size"]:
-            input_feature[key] = feature_metadata[key]
+        input_feature["vector_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def populate_defaults(input_feature):
@@ -200,17 +205,23 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 @register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    decoder = {TYPE: "projector"}
-    loss = {TYPE: MEAN_SQUARED_ERROR}
-    metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
-    default_validation_metric = MEAN_SQUARED_ERROR
-    vector_size = 0
+    # decoder = {TYPE: "projector"}
+    # loss = {TYPE: MEAN_SQUARED_ERROR}
+    # metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
+    # default_validation_metric = MEAN_SQUARED_ERROR
+    # vector_size = 0
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
-        self._input_shape = feature[DECODER]["input_size"]
-        self.decoder["output_size"] = feature["vector_size"]
+    def __init__(
+            self,
+            output_feature_config: VectorOutputFeatureConfig,
+            output_features: Dict[str, OutputFeature],
+            **kwargs
+    ):
+        super().__init__(output_feature_config, output_features, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.decoder_config = output_feature_config.decoder
+        # self._input_shape = feature[DECODER]["input_size"]
+        # self.decoder["output_size"] = feature["vector_size"]
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -237,11 +248,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size])
+        return torch.Size([self.decoder_config.vector_size])
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self._input_shape])
+        return torch.Size([self.decoder_config.input_size])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):

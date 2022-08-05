@@ -163,11 +163,17 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    encoder = {TYPE: "dense"}
+    # encoder = {TYPE: "dense"}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            input_feature_config: CategoryInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -224,15 +230,19 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    decoder = {TYPE: "classifier", "num_classes": 0}
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
-    top_k = 3
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            output_feature_config: CategoryOutputFeatureConfig,
+            output_features: Dict[str, OutputFeature],
+            **kwargs
+    ):
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.decoder_config = output_feature_config.decoder
+        self.loss = output_feature_config.loss
+        self.top_k = output_feature_config.top_k
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -245,15 +255,15 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def create_calibration_module(self, feature) -> torch.nn.Module:
+    def create_calibration_module(self, **kwargs) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
-        if feature.get("calibration"):
+        if kwargs.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=feature[DECODER]["num_classes"])
+            return calibration_cls(num_classes=self.decoder_config.num_classes)
         return None
 
     def create_predict_module(self) -> PredictModule:

@@ -453,13 +453,19 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None, "embedding_size": None}
+    # encoder = {TYPE: "parallel_cnn", "max_sequence_length": None, "embedding_size": None}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature, encoder_obj=encoder_obj)
-        if not self.encoder["embedding_size"]:
+    def __init__(
+            self,
+            input_feature_config: AudioInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
+        self.encoder_config = input_feature_config.encoder
+        if not self.encoder_config.embedding_size:
             raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
-        if not self.encoder["max_sequence_length"]:
+        if not self.encoder_config.max_sequence_length:
             raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):
@@ -473,7 +479,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder["max_sequence_length"], self.encoder["embedding_size"]])
+        return torch.Size([self.encoder_config.max_sequence_length, self.encoder_config.embedding_size])
 
     @property
     def input_dtype(self):

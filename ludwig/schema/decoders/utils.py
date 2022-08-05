@@ -37,7 +37,7 @@ def DecoderDataclassField(feature_type: str, default: str):
                 return None
             if isinstance(value, dict):
                 if TYPE in value and value[TYPE] in get_decoder_classes(feature_type):
-                    dec = get_decoder_cls(feature_type, default).get_schema_cls()
+                    dec = get_decoder_cls(feature_type, value[TYPE]).get_schema_cls()
                     try:
                         return dec.Schema().load(value)
                     except (TypeError, ValidationError) as error:

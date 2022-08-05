@@ -183,16 +183,22 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    encoder = {TYPE: "parallel_cnn"}
-    max_sequence_length = None
+    # encoder = {TYPE: "parallel_cnn"}
+    # max_sequence_length = None
 
-    def __init__(self, feature, encoder_obj=None):
+    def __init__(
+            self,
+            input_feature_config: TimeseriesInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
         # add required sequence encoder parameters for time series
-        feature[ENCODER]["embedding_size"] = 1
-        feature[ENCODER]["should_embed"] = False
+        self.encoder_config = input_feature_config.encoder
+        self.encoder_config.embedding_size = 1
+        self.encoder_config.should_embed = False
 
         # initialize encoder for time series
-        super().__init__(feature, encoder_obj=encoder_obj)
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -206,7 +212,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder["max_sequence_length"]])
+        return torch.Size([self.encoder_config.max_sequence_length])
 
     @property
     def input_dtype(self):

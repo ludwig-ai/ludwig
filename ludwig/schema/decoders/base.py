@@ -16,6 +16,26 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
     "Name corresponding to a decoder."
 
+    fc_layers: List[dict] = None
+
+    num_fc_layers: int = 0
+
+    output_size: int = 256
+
+    use_bias: bool = True
+
+    weights_initializer: str = "xavier_uniform"
+
+    bias_initializer: str = "zeros"
+
+    norm: str = None
+
+    norm_params: dict = None
+
+    activation: str = "relu"
+
+    dropout: float = 0
+
 
 @dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
@@ -52,6 +72,13 @@ class RegressorConfig(BaseDecoderConfig):
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+    )
+
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="Threshold for the output of the decoder.",
     )
 
 

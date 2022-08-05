@@ -216,11 +216,17 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    encoder = {TYPE: "passthrough", "norm": None, "dropout": None}
+    # encoder = {TYPE: "passthrough", "norm": None, "dropout": None}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            input_feature_config: BinaryInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -275,15 +281,20 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 @register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    decoder = {TYPE: "regressor", "threshold": 0.5}
-    loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            output_feature_config: BinaryOutputFeatureConfig,
+            output_features: Dict[str, OutputFeature],
+            **kwargs
+    ):
+        self.decoder_config = output_feature_config.decoder
+
+        super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
+        self.loss = output_feature_config.loss
         self._setup_loss()
         self._setup_metrics()
 
@@ -310,7 +321,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.decoder["threshold"], calibration_module=self.calibration_module)
+        return _BinaryPredict(self.decoder_config.threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

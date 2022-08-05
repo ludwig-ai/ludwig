@@ -1,6 +1,7 @@
 from typing import List
 
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.base import BaseDecoderConfig
 
 
 class BaseInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
@@ -16,6 +17,10 @@ class BaseInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
 
 class BaseOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base output feature config class."""
+
+    decoder: BaseDecoderConfig
+
+    loss: dict
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",

@@ -43,6 +43,16 @@ class SequenceEmbedConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        description="The maximum length of a sequence.",
+    )
+
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
@@ -97,6 +107,16 @@ class ParallelCNNConfig(BaseEncoderConfig):
         default="parallel_cnn",
         allow_none=False,
         description="Type of encoder.",
+    )
+
+    should_embed: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to embed the input sequence.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     representation: str = schema_utils.StringOptions(
@@ -224,6 +244,16 @@ class StackedCNNConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    should_embed: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to embed the input sequence.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
@@ -233,6 +263,10 @@ class StackedCNNConfig(BaseEncoderConfig):
     embedding_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Size of the embedding.",
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None, description="The maximum length of all sequences"
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(

@@ -285,13 +285,19 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
-    encoder = {TYPE: "passthrough"}
+    # encoder = {TYPE: "passthrough"}
 
-    def __init__(self, feature, encoder_obj=None):
+    def __init__(
+            self,
+            input_feature_config: NumberInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
         # Required for certain encoders, maybe pass into initialize_encoder
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
-        self.encoder["input_size"] = self.input_shape[-1]
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
+        self.encoder_config.input_size = self.input_shape[-1]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -344,8 +350,8 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
 @register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
-    decoder = {TYPE: "regressor"}
-    loss = {TYPE: MEAN_SQUARED_ERROR}
+    # decoder = {TYPE: "regressor"}
+    # loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {
         LOSS: None,
         MEAN_SQUARED_ERROR: None,
@@ -355,11 +361,17 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         R2: None,
     }
     default_validation_metric = MEAN_SQUARED_ERROR
-    clip = None
+    # clip = None
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            output_feature_config: NumberOutputFeatureConfig,
+            output_features: Dict[str, OutputFeature],
+            **kwargs
+    ):
+        super().__init__(output_feature_config, output_features, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.decoder_config = output_feature_config.decoder
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -381,7 +393,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.input_size])
+        return torch.Size([self.decoder_config.input_size])
 
     @classmethod
     def get_output_dtype(cls):

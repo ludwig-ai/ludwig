@@ -273,14 +273,20 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
+    # encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
+    def __init__(
+            self,
+            input_feature_config: SequenceInputFeatureConfig,
+            encoder_obj=None,
+            **kwargs
+    ):
+        super().__init__(input_feature_config, **kwargs)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
-        if "vocab" in feature[ENCODER]:
-            feature[ENCODER]["vocab_size"] = len(feature[ENCODER]["vocab"])
-        self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
+        if self.encoder_config.vocab:
+            self.encoder_config.vocab_size = len(self.encoder_config.vocab)
+        # self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -317,7 +323,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder["max_sequence_length"]])
+        return torch.Size([self.encoder_config.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -330,8 +336,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = {TYPE: "generator", "max_sequence_length": 0, "num_classes": 0}
-    loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
+    # decoder = {TYPE: "generator", "max_sequence_length": 0, "num_classes": 0}
+    # loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -342,9 +348,15 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     }
     default_validation_metric = LOSS
 
-    def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+            self,
+            output_feature_config: SequenceOutputFeatureConfig,
+            output_features: Dict[str, OutputFeature],
+            **kwargs
+    ):
+        super().__init__(output_feature_config, output_features, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.decoder_config = output_feature_config.decoder
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -369,7 +381,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder["max_sequence_length"]])
+        return torch.Size([self.decoder_config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -546,6 +558,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder["num_classes"]), meta=(probs_col, "object")
+            lambda x: x.reshape(-1, self.decoder_config.num_classes), meta=(probs_col, "object")
         )
         return df
