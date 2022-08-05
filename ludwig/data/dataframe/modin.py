@@ -44,6 +44,9 @@ class ModinEngine(DataFrameEngine):
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
 
+    def map_batches(self, df, map_fn):
+        return map_fn(df)
+
     def map_partitions(self, series, map_fn, meta=None):
         return map_fn(series)
 
@@ -55,6 +58,9 @@ class ModinEngine(DataFrameEngine):
 
     def split(self, df, probabilities):
         return split_by_slices(df.iloc, len(df), probabilities)
+
+    def remove_empty_partitions(self, df):
+        return df
 
     def to_parquet(self, df, path, index=False):
         df.to_parquet(path, engine="pyarrow", index=index)

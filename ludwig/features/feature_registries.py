@@ -20,8 +20,11 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
+    INPUT_FEATURES,
     NAME,
     NUMBER,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
     SEQUENCE,
     SET,
     TEXT,
@@ -88,17 +91,17 @@ output_type_registry = {
 def update_config_with_metadata(config, training_set_metadata):
     # populate input features fields depending on data
     # config = merge_with_defaults(config)
-    for input_feature in config["input_features"]:
+    for input_feature in config[INPUT_FEATURES]:
         feature = get_from_registry(input_feature[TYPE], input_type_registry)
         feature.populate_defaults(input_feature)
         feature.update_config_with_metadata(input_feature, training_set_metadata[input_feature[NAME]], config=config)
 
     # populate output features fields depending on data
-    for output_feature in config["output_features"]:
+    for output_feature in config[OUTPUT_FEATURES]:
         feature = get_from_registry(output_feature[TYPE], output_type_registry)
         feature.populate_defaults(output_feature)
         feature.update_config_with_metadata(output_feature, training_set_metadata[output_feature[NAME]])
 
-    for feature in config["input_features"] + config["output_features"]:
-        if "preprocessing" in feature:
-            feature["preprocessing"] = training_set_metadata[feature[NAME]]["preprocessing"]
+    for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
+        if PREPROCESSING in feature:
+            feature[PREPROCESSING] = training_set_metadata[feature[NAME]][PREPROCESSING]

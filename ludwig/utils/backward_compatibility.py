@@ -25,6 +25,7 @@ from ludwig.constants import (
     CONV_USE_BIAS,
     DEFAULT_BIAS,
     DEFAULT_USE_BIAS,
+    DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
@@ -49,6 +50,8 @@ from ludwig.constants import (
     TYPE,
     USE_BIAS,
 )
+from ludwig.features.feature_registries import base_type_registry
+from ludwig.utils.misc_utils import merge_dict
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
@@ -184,7 +187,48 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
         trainer[EVAL_BATCH_SIZE] = None
 
 
-def _upgrade_preprocessing(preprocessing: Dict[str, Any]):
+def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
+    """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
+    type_specific_preprocessing_params = dict()
+
+    # If preprocessing section specified and it contains feature specific preprocessing parameters,
+    # make a copy and delete it from the preprocessing section
+    for parameter in list(config.get(PREPROCESSING)):
+        if parameter in base_type_registry:
+            warnings.warn(
+                f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
+                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
+                DeprecationWarning,
+            )
+            type_specific_preprocessing_params[parameter] = config[PREPROCESSING].pop(parameter)
+
+    # Delete empty preprocessing section if no other preprocessing parameters specified
+    if PREPROCESSING in config and not config[PREPROCESSING]:
+        del config[PREPROCESSING]
+
+    if DEFAULTS not in config:
+        config[DEFAULTS] = dict()
+
+    # Update defaults with the default feature specific preprocessing parameters
+    for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
+        # If defaults was empty, then create a new key with feature type
+        if feature_type not in config.get(DEFAULTS):
+            if PREPROCESSING in preprocessing_param:
+                config[DEFAULTS][feature_type] = preprocessing_param
+            else:
+                config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_param}
+        # Feature type exists but preprocessing hasn't be specified
+        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
+            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+        # Update default feature specific preprocessing with parameters from config
+        else:
+            config[DEFAULTS][feature_type][PREPROCESSING].update(
+                merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
+            )
+
+
+def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
+    """Upgrade split related parameters in preprocessing."""
     split_params = {}
 
     force_split = preprocessing.pop(FORCE_SPLIT, None)
@@ -254,4 +298,5 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
         _upgrade_trainer(config[TRAINER])
 
     if PREPROCESSING in config:
-        _upgrade_preprocessing(config[PREPROCESSING])
+        _upgrade_preprocessing_split(config[PREPROCESSING])
+        _upgrade_preprocessing_defaults(config)

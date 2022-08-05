@@ -81,6 +81,7 @@ BFILL = "bfill"
 PAD = "pad"
 FFILL = "ffill"
 DROP_ROW = "drop_row"
+MISSING_VALUE_STRATEGY = "missing_value_strategy"
 MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
@@ -153,6 +154,7 @@ PARQUET = "parquet"
 
 SRC = "dataset_src"
 
+EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 LEARNING_RATE = "learning_rate"
@@ -211,3 +213,9 @@ DASK_MODULE_NAME = "dask.dataframe"
 PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"
 POSTPROCESSOR = "postprocessor"
+
+S3 = "s3"
+CACHE = "cache"
+EXPERIMENT_RUN = "experiment_run"
+TRAIN_TAG = "train"
+EVAL_TAG = "evaluate"

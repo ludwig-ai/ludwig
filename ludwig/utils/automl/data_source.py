@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from ludwig.automl.utils import avg_num_tokens
 from ludwig.utils.audio_utils import is_audio_score
+from ludwig.utils.automl.utils import avg_num_tokens
 from ludwig.utils.image_utils import is_image_score
 from ludwig.utils.types import DataFrame
 
@@ -31,6 +31,10 @@ class DataSource(ABC):
 
     @abstractmethod
     def is_string_type(self, dtype: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def size_bytes(self) -> int:
         raise NotImplementedError()
 
     @abstractmethod
@@ -74,6 +78,9 @@ class DataframeSourceMixin:
 
     def is_string_type(self, dtype: str) -> bool:
         return dtype in ["str", "string", "object"]
+
+    def size_bytes(self) -> int:
+        return sum(self.df.memory_usage(deep=True))
 
     def __len__(self) -> int:
         return len(self.df)

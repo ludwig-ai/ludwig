@@ -135,6 +135,7 @@ class Trainer(BaseTrainer):
         except ValueError:
             # TODO (ASN): Circle back on how we want to set default placeholder value
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
+
         self.base_learning_rate = base_learning_rate
         self.decay = config.decay
         self.decay_rate = config.decay_rate
@@ -764,6 +765,7 @@ class Trainer(BaseTrainer):
                     self.checkpoints_per_epoch,
                     self.is_coordinator(),
                 )
+                final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
 
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
 

@@ -54,7 +54,8 @@ def ray_test_cluster():
         yield
 
 
-def test_tune_batch_size_and_lr(tmpdir):
+@pytest.mark.parametrize("eval_batch_size", ["auto", None, 128])
+def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
     input_features = [sequence_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
@@ -63,23 +64,27 @@ def test_tune_batch_size_and_lr(tmpdir):
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
+    trainer = {
+        "epochs": 2,
+        "batch_size": "auto",
+        "learning_rate": "auto",
+    }
+
+    if eval_batch_size:
+        trainer["eval_batch_size"] = eval_batch_size
+
     config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {
-            "epochs": 2,
-            "batch_size": "auto",
-            "eval_batch_size": "auto",
-            "learning_rate": "auto",
-        },
+        TRAINER: trainer,
     }
 
     model = LudwigModel(config, backend=LocalTestBackend())
 
     # check preconditions
     assert model.config[TRAINER][BATCH_SIZE] == "auto"
-    assert model.config[TRAINER][EVAL_BATCH_SIZE] == "auto"
+    assert model.config[TRAINER][EVAL_BATCH_SIZE] == eval_batch_size
     assert model.config[TRAINER][LEARNING_RATE] == "auto"
 
     _, _, output_directory = model.train(
@@ -94,7 +99,10 @@ def test_tune_batch_size_and_lr(tmpdir):
         assert model.config[TRAINER][EVAL_BATCH_SIZE] != "auto"
         assert model.config[TRAINER][EVAL_BATCH_SIZE] > 1
 
-        assert model.config[TRAINER][BATCH_SIZE] == model.config[TRAINER][EVAL_BATCH_SIZE]
+        if eval_batch_size in ("auto", None):
+            assert model.config[TRAINER][BATCH_SIZE] == model.config[TRAINER][EVAL_BATCH_SIZE]
+        else:
+            model.config[TRAINER][EVAL_BATCH_SIZE] == eval_batch_size
 
         # check learning rate
         assert model.config[TRAINER][LEARNING_RATE] != "auto"

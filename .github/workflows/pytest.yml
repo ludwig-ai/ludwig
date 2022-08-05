@@ -5,9 +5,9 @@ name: pytest
 
 on:
   push:
-    branches: ["master", "*-stable"]
+    branches: ["master", "release-*"]
   pull_request:
-    branches: ["master", "*-stable"]
+    branches: ["master", "release-*"]
 
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
@@ -47,7 +47,7 @@ jobs:
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
-    timeout-minutes: 50
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -106,7 +106,10 @@ jobs:
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+
+              # NOTE: pinned to last commit from 7/21/22 to get tests passing
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/c557c7877f099d02a9e43c5c56c958860b6dd737/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
               pip install ray==$RAY_VERSION
             fi

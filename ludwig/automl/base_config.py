@@ -20,11 +20,11 @@ import numpy as np
 import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
-from ludwig.automl.data_source import DataframeSource, DataSource
-from ludwig.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
-from ludwig.automl.ray_utils import _ray_init, get_available_resources
-from ludwig.automl.type_inference import infer_type, should_exclude
 from ludwig.constants import COMBINER, EXECUTOR, HYPEROPT, SCHEDULER, SEARCH_ALG, TEXT, TYPE
+from ludwig.utils.automl.data_source import DataframeSource, DataSource
+from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
+from ludwig.utils.automl.ray_utils import _ray_init, get_available_resources
+from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_dataset, load_yaml
 from ludwig.utils.defaults import default_random_seed
 
@@ -51,6 +51,7 @@ MAX_DISTINCT_VALUES_TO_RETURN = 10
 class DatasetInfo:
     fields: List[FieldInfo]
     row_count: int
+    size_bytes: int = -1
 
 
 def allocate_experiment_resources(resources: dict) -> dict:
@@ -223,7 +224,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 avg_words=avg_words,
             )
         )
-    return DatasetInfo(fields=fields, row_count=row_count)
+    return DatasetInfo(fields=fields, row_count=row_count, size_bytes=source.size_bytes())
 
 
 def get_features_config(

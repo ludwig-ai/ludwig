@@ -29,7 +29,9 @@ from ludwig.constants import (
     BINARY,
     CHECKSUM,
     COLUMN,
+    DEFAULTS,
     DROP_ROW,
+    ENCODER,
     FFILL,
     FILL_WITH_CONST,
     FILL_WITH_FALSE,
@@ -56,11 +58,14 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils, strings_utils
+from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
+    DATA_TEST_PARQUET_FP,
     DATA_TRAIN_HDF5_FP,
     DATA_TRAIN_PARQUET_FP,
+    DATA_VALIDATION_PARQUET_FP,
     DATAFRAME_FORMATS,
     DICT_FORMATS,
     EXCEL_FORMATS,
@@ -557,7 +562,17 @@ class ParquetPreprocessor(DataFormatPreprocessor):
         random_seed=default_random_seed,
     ):
         test_set = test_set if test_set and path_exists(test_set) else None
+        if test_set and isinstance(test_set, str) and DATA_TEST_PARQUET_FP not in training_set_metadata:
+            training_set_metadata[DATA_TEST_PARQUET_FP] = test_set
+
         validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        if (
+            validation_set
+            and isinstance(validation_set, str)
+            and DATA_VALIDATION_PARQUET_FP not in training_set_metadata
+        ):
+            training_set_metadata[DATA_VALIDATION_PARQUET_FP] = validation_set
+
         if training_set and isinstance(training_set, str) and DATA_TRAIN_PARQUET_FP not in training_set_metadata:
             training_set_metadata[DATA_TRAIN_PARQUET_FP] = training_set
         return training_set, test_set, validation_set, training_set_metadata
@@ -1172,6 +1187,12 @@ def build_dataset(
         col_name_to_dtype[col_name] = col.dtype
     dataset = dataset.astype(col_name_to_dtype)
 
+    # Persist the completed dataset with no NaNs
+    dataset = backend.df_engine.persist(dataset)
+
+    # Remove partitions that are empty after removing NaNs
+    dataset = backend.df_engine.remove_empty_partitions(dataset)
+
     return dataset, metadata
 
 
@@ -1222,7 +1243,7 @@ def build_preprocessing_parameters(
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # deal with encoders that have fixed preprocessing
-        if "encoder" in feature_config:
+        if ENCODER in feature_config:
             encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"])
             if hasattr(encoder_class, "fixed_preprocessing_parameters"):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
@@ -1792,7 +1813,10 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    preprocessing_params = merge_dict(default_preprocessing_parameters, config[PREPROCESSING])
+    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
+        config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
+    )
+    preprocessing_params = merge_dict(default_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):

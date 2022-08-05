@@ -447,6 +447,10 @@ class RayTuneExecutor:
         # Some config values may be JSON encoded as strings, so decode them here
         config = self.decode_values(config, decode_ctx)
 
+        # Remove mlflow injected config parameters: https://github.com/ludwig-ai/ludwig/issues/2288
+        if "mlflow" in config:
+            del config["mlflow"]
+
         trial_id = tune.get_trial_id()
         trial_dir = Path(tune.get_trial_dir())
         driver_trial_location = ray.util.get_node_ip_address()

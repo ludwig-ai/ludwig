@@ -13,7 +13,16 @@ from sklearn.model_selection import train_test_split
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import TRAINER, TRAINING
+from ludwig.constants import (
+    CATEGORY,
+    DEFAULTS,
+    EPOCHS,
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    TRAINER,
+    TRAINING,
+)
 from ludwig.contribs.mlflow import MlflowCallback
 from ludwig.experiment import experiment_cli
 from ludwig.features.number_feature import numeric_transformation_registry
@@ -399,10 +408,10 @@ def test_cache_checksum(csv_filename, tmp_path):
     source_dataset = generate_data(input_features, output_features, source_dataset)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "preprocessing": {"text": {"most_common_word": 1000}},
-        TRAINER: {"epochs": 2},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        DEFAULTS: {CATEGORY: {PREPROCESSING: {"fill_value": "<UNKNOWN>"}}},
+        TRAINER: {EPOCHS: 2},
     }
 
     backend = LocalTestBackend()
@@ -422,9 +431,9 @@ def test_cache_checksum(csv_filename, tmp_path):
     # time stamps should be the same
     assert first_training_timestamp == current_training_timestamp
 
-    # force recreating cache file by changing checksum
+    # force recreating cache file by changing checksum by updating defaults
     prior_training_timestamp = current_training_timestamp
-    config["preprocessing"]["text"]["most_common_word"] = 2000
+    config[DEFAULTS][CATEGORY][PREPROCESSING]["fill_value"] = "<EMPTY>"
     model = LudwigModel(config, backend=backend)
     model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
@@ -444,9 +453,9 @@ def test_cache_checksum(csv_filename, tmp_path):
 
     # force change in feature preprocessing
     prior_training_timestamp = current_training_timestamp
-    input_features = config["input_features"].copy()
-    input_features[0]["preprocessing"] = {"lowercase": True}
-    config["input_features"] = input_features
+    input_features = config[INPUT_FEATURES].copy()
+    input_features[0][PREPROCESSING] = {"lowercase": True}
+    config[INPUT_FEATURES] = input_features
     model = LudwigModel(config, backend=backend)
     model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
@@ -458,7 +467,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     prior_training_timestamp = current_training_timestamp
     input_features = [category_feature(vocab_size=5), category_feature()]
     source_dataset = generate_data(input_features, output_features, source_dataset)
-    config["input_features"] = input_features
+    config[INPUT_FEATURES] = input_features
     model = LudwigModel(config, backend=backend)
     model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)

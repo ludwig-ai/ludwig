@@ -366,8 +366,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         class_names = ["False", "True"]
         if "bool2str" in metadata:
@@ -376,26 +374,26 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
             if "bool2str" in metadata:
-                result[predictions_col] = backend.df_engine.map_objects(
-                    result[predictions_col],
+                result[predictions_col] = result[predictions_col].map(
                     lambda pred: metadata["bool2str"][pred],
                 )
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            result[probabilities_col] = backend.df_engine.map_objects(
-                result[probabilities_col],
-                lambda prob: np.array([1 - prob, prob], dtype=result[probabilities_col].dtype),
-            )
-
             false_col = f"{probabilities_col}_{class_names[0]}"
-            result[false_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[0])
-
             true_col = f"{probabilities_col}_{class_names[1]}"
-            result[true_col] = backend.df_engine.map_objects(result[probabilities_col], lambda probs: probs[1])
-
             prob_col = f"{self.feature_name}_{PROBABILITY}"
-            result[prob_col] = result[[false_col, true_col]].max(axis=1)
+
+            result = result.assign(
+                **{
+                    false_col: lambda x: 1 - x[probabilities_col],
+                    true_col: lambda x: x[probabilities_col],
+                    prob_col: np.where(
+                        result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
+                    ),
+                    probabilities_col: result.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], axis=1),
+                }
+            )
 
         return result
 

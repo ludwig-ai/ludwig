@@ -401,8 +401,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         self,
         predictions,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
@@ -411,19 +409,11 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
                 metadata["preprocessing"].get("normalization", None),
                 numeric_transformation_registry,
             )(**metadata)
-            predictions[predictions_col] = backend.df_engine.map_objects(
-                predictions[predictions_col],
-                lambda pred: numeric_transformer.inverse_transform(pred),
+            predictions[predictions_col] = predictions[predictions_col].map(
+                lambda pred: numeric_transformer.inverse_transform(pred)
             )
 
         return predictions
-
-    @staticmethod
-    def postprocess_inference_graph(
-        preds: Dict[str, torch.Tensor], metadata: Dict[str, Any]
-    ) -> Dict[str, torch.Tensor]:
-        numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
-        return {PREDICTIONS: numeric_transformer.inverse_transform_inference(preds[PREDICTIONS])}
 
     @staticmethod
     def populate_defaults(output_feature):

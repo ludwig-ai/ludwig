@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from ludwig.automl.utils import avg_num_tokens
+from ludwig.utils.automl.utils import avg_num_tokens
 
 
 @pytest.mark.parametrize("field,expected", [(pd.Series([None]), 0), (pd.Series(["string1", "string2", "string3"]), 1)])

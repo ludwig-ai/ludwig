@@ -59,7 +59,6 @@ from ludwig.utils.strings_utils import (
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
-from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -70,16 +69,15 @@ class _SequencePreprocessing(torch.nn.Module):
 
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
-        if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
-            raise ValueError(
-                f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
-                f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
-            )
-
         self.lowercase = metadata["preprocessing"]["lowercase"]
-        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)(
+        self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
+        self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
             pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
+
+        if not isinstance(self.tokenizer, torch.nn.Module):
+            raise ValueError(f"tokenizer must be a torch.nn.Module, got {self.tokenizer}")
+
         self.padding_symbol = metadata["preprocessing"]["padding_symbol"]
         self.unknown_symbol = metadata["preprocessing"]["unknown_symbol"]
         self.start_symbol = START_SYMBOL
@@ -111,15 +109,25 @@ class _SequencePreprocessing(torch.nn.Module):
     def _process_sequence(self, sequence: str) -> torch.Tensor:
         sequence = self.computed_fill_value if sequence == "nan" else sequence
 
-        if self.lowercase:
+        # If tokenizer is HF, we defer lowercase transformation to the tokenizer.
+        if self.lowercase and self.tokenizer_type != "hf_tokenizer":
             sequence_str: str = sequence.lower()
         else:
             sequence_str: str = sequence
 
+        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
+
+        if self.tokenizer_type == "hf_tokenizer":
+            unit_sequence = self.tokenizer(sequence)
+            assert torch.jit.isinstance(unit_sequence, List[int])
+            # Handles start, stop, and unknown symbols implicitly
+            sequence_vector[: len(unit_sequence)] = torch.tensor(unit_sequence)
+            return sequence_vector
+
+        # If tokenizer is not HF, we manually convert tokens to IDs and insert start, stop, and unknown symbols.
         unit_sequence = self.tokenizer(sequence_str)
         assert torch.jit.isinstance(unit_sequence, List[str])
 
-        sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
         sequence_vector[0] = self.unit_to_id[self.start_symbol]
         if len(unit_sequence) + 1 < self.max_sequence_length:
             sequence_length = len(unit_sequence)
@@ -450,8 +458,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self,
         result,
         metadata,
-        output_directory,
-        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         lengths_col = f"{self.feature_name}_{LENGTHS}"
@@ -466,7 +472,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         for token in [pred[i] for i in range(length)]
                     ]
 
-                result[predictions_col] = backend.df_engine.apply_objects(result, idx2str)
+                result[predictions_col] = result.apply(idx2str, axis=1)
 
         last_preds_col = f"{self.feature_name}_{LAST_PREDICTIONS}"
         if last_preds_col in result:
@@ -477,7 +483,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         return metadata["idx2str"][last_pred]
                     return UNKNOWN_SYMBOL
 
-                result[last_preds_col] = backend.df_engine.map_objects(result[last_preds_col], last_idx2str)
+                result[last_preds_col] = result[last_preds_col].map(last_idx2str)
 
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         prob_col = f"{self.feature_name}_{PROBABILITY}"
@@ -485,14 +491,13 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             # currently does not return full probabilties because usually it is huge:
             # dataset x length x classes
             # TODO: add a mechanism for letting the user decide to save it
-            result[probs_col] = backend.df_engine.map_objects(result[probs_col], compute_token_probabilities)
-            result[prob_col] = backend.df_engine.map_objects(
-                result[probs_col],
+            result[probs_col] = result[probs_col].map(compute_token_probabilities)
+            result[prob_col] = result[probs_col].map(
                 partial(
                     compute_sequence_probability,
                     max_sequence_length=metadata["max_sequence_length"],
                     return_log_prob=True,
-                ),
+                )
             )
 
         if lengths_col in result:
