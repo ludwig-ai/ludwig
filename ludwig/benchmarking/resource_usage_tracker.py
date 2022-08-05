@@ -1,12 +1,13 @@
 """some parts are inspired from https://github.com/Breakend/experiment-impact-
 tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
 
-import multiprocessing
 import os
 import shutil
 import sys
 import time
 import traceback
+import threading
+from queue import Queue
 from queue import Empty as EmptyQueueException
 from statistics import mean
 from typing import Any, Dict, Optional
@@ -31,15 +32,15 @@ sys.stdout = sys.__stdout__
 STOP_MESSAGE = "stop"
 
 
-def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str, logging_interval: int) -> None:
-    """Monitors hardware resource use as part of a separate process.
+def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int) -> None:
+    """Monitors hardware resource use.
 
     Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval and saves the output
     in `output_dir`.
 
     Args:
-        queue: queue from which we can push and retrieve messages sent to the child process.
-        info: dictionary containing system resource usage information about the parent process.
+        queue: queue from which we can push and retrieve messages sent to the function targeted by the thread.
+        info: dictionary containing system resource usage information about the running process.
         output_dir: directory where the contents of `info` will be saved.
         logging_interval: time interval at which we will poll the system for usage metrics.
     """
@@ -129,15 +130,14 @@ class ResourceUsageTracker:
         self.info["num_examples"] = self.num_examples
 
     def __enter__(self):
-        """Populates static information and forks process to monitor resource usage."""
+        """Populates static information and monitors resource usage."""
         if self.launched:
             raise ValueError("Tracker already launched.")
 
         self.populate_static_information()
         try:
-            ctx = multiprocessing.get_context("fork")
-            self.queue = ctx.Queue()
-            self.p = ctx.Process(
+            self.queue = Queue()
+            self.t = threading.Thread(
                 target=monitor,
                 args=(
                     self.queue,
@@ -146,7 +146,7 @@ class ResourceUsageTracker:
                     self.logging_interval,
                 ),
             )
-            self.p.start()
+            self.t.start()
             self.launched = True
         except Exception:
             self.launched = False
@@ -158,14 +158,14 @@ class ResourceUsageTracker:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Waits for monitoring process to exit.
+        """Joins monitoring thread.
 
         Computes and postprocesses more metrics. Saves report.
         """
         self.queue.put(STOP_MESSAGE)
         if torch.cuda.is_available():
             torch.cuda.synchronize()
-        self.p.join()
+        self.t.join()
 
         self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
         os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
