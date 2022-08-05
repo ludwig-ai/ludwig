@@ -131,6 +131,11 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
+    vector_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the output of the decoder.",
+    )
+
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,

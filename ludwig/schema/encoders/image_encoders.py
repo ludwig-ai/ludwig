@@ -17,6 +17,16 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
+
     conv_layers: Optional[List[dict]] = schema_utils.DictList(
         default=None,
         description="List of convolutional layers to use in the encoder. ",
@@ -217,6 +227,16 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
+
     resnet_size: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         description="The size of the ResNet model to use.",
@@ -342,6 +362,16 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
+
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
@@ -391,6 +421,16 @@ class ViTEncoderConfig(BaseEncoderConfig):
         default="vit",
         allow_none=False,
         description="Type of encoder.",
+    )
+
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
     )
 
     use_pretrained: bool = (

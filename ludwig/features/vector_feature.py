@@ -209,8 +209,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     # decoder = {TYPE: "projector"}
     # loss = {TYPE: MEAN_SQUARED_ERROR}
-    # metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
-    # default_validation_metric = MEAN_SQUARED_ERROR
+    metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
+    default_validation_metric = MEAN_SQUARED_ERROR
     # vector_size = 0
 
     def __init__(
@@ -221,9 +221,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)
-        self.decoder_config = output_feature_config.decoder
-        # self._input_shape = feature[DECODER]["input_size"]
-        # self.decoder["output_size"] = feature["vector_size"]
+        # self._input_shape = kwargs[DECODER]["input_size"]
+        self.decoder_config.output_size = self.decoder_config.vector_size
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -258,7 +257,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vector_size"] = feature_metadata["vector_size"]
+        output_feature[DECODER]["vector_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
@@ -288,7 +287,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    THRESHOLD: defaults.decoder.threshold,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,

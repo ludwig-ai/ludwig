@@ -206,6 +206,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         super().__init__(*args, feature=feature, **kwargs)
 
+        self.decoder_config = feature.decoder
+        self.loss = feature.loss
         self.reduce_input = None
         self.reduce_dependencies = None
 

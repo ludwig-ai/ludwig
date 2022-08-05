@@ -18,12 +18,10 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
 
     vocab: List[str] = schema_utils.List(default=None, description="Vocabulary of the encoder")
 
-    representation: str = (
-        schema_utils.StringOptions(
+    representation: str = schema_utils.StringOptions(
             ["dense", "sparse"],
             default="dense",
             description="The representation of the embedding. Either dense or sparse.",
-        ),
     )
 
     embedding_size: int = schema_utils.PositiveInteger(

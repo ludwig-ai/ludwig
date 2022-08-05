@@ -283,7 +283,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)
-        self.decoder_config = output_feature_config.decoder
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -387,6 +386,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         defaults = SetOutputFeatureConfig()
+        set_default_value(output_feature, LOSS, {})
         set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(

@@ -370,7 +370,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)
-        self.decoder_config = output_feature_config.decoder
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -380,12 +379,13 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if self.clip is not None and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
+        if self.decoder_config.clip is not None \
+                and not (isinstance(self.decoder_config.clip, (list, tuple)) and len(self.decoder_config.clip) == 2):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumberPredict(self.clip)
+        return _NumberPredict(self.decoder_config.clip)
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -432,6 +432,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         defaults = NumberOutputFeatureConfig()
+        set_default_value(output_feature, LOSS, {})
         set_default_values(output_feature[LOSS], defaults.loss)
         set_default_values(
             output_feature,

@@ -239,8 +239,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_config = output_feature_config.decoder
-        self.loss = output_feature_config.loss
         self.top_k = output_feature_config.top_k
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()

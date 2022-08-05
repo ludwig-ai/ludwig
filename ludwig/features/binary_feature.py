@@ -291,11 +291,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             output_features: Dict[str, OutputFeature],
             **kwargs
     ):
-        self.decoder_config = output_feature_config.decoder
-
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
-        self.loss = output_feature_config.loss
         self._setup_loss()
         self._setup_metrics()
 

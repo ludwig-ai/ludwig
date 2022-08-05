@@ -741,18 +741,25 @@ def FloatRangeTupleDataclassField(
             if default is not None:
                 validate_range(default)
             return {
-                "type": "array",
-                "items": [
-                    {
-                        "type": "number",
-                        "minimum": min,
-                        "maximum": max,
-                    }
-                ]
-                * n,
-                "default": default,
-                "description": description,
-            }
+                    "oneOf": [
+                        {
+                            "type": "array",
+                            "items": [
+                                         {
+                                             "type": "number",
+                                             "minimum": min,
+                                             "maximum": max,
+                                         }
+                                     ] * n,
+                            "default": default,
+                            "description": description,
+                        },
+                        {"type": "null", "title": "null_float_tuple_option", "description": "None"},
+                    ],
+                    "title": self.name,
+                    "default": default,
+                    "description": "Valid options for FloatRangeTupleDataclassField.",
+                }
 
     def validate_range(data: Tuple):
         if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):

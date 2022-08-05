@@ -302,7 +302,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         expected be of the same size with the same number of channels
         """
 
-        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_height_width = preprocessing_parameters[HEIGHT] or preprocessing_parameters[WIDTH]
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
         sample = []
