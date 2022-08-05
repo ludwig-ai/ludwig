@@ -4,11 +4,11 @@ tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
 import os
 import shutil
 import sys
+import threading
 import time
 import traceback
-import threading
-from queue import Queue
 from queue import Empty as EmptyQueueException
+from queue import Queue
 from statistics import mean
 from typing import Any, Dict, Optional
 
@@ -32,7 +32,9 @@ sys.stdout = sys.__stdout__
 STOP_MESSAGE = "stop"
 
 
-def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool) -> None:
+def monitor(
+    queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
+) -> None:
     """Monitors hardware resource use.
 
     Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval and saves the output
