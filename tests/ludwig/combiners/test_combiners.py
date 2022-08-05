@@ -565,7 +565,7 @@ def test_tabtransformer_combiner(
 
     elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
         assert upc == (
-                tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+            tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
         ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
