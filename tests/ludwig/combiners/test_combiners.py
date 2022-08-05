@@ -460,6 +460,12 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
     assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
+# Magic values for the TabTransformerCombiner test
+PARAMETERS_IN_SELF_ATTENTION = 4
+PARAMETERS_IN_TRANSFORMER_BLOCK = 16
+UNEMBEDDABLE_LAYER_NORM_PARAMETERS = 2
+
+
 @pytest.mark.parametrize(
     "feature_list",  # defines parameter for fixture features_to_test()
     [
@@ -549,40 +555,29 @@ def test_tabtransformer_combiner(
     if number_input_feature_present and binary_input_feature_present and categorical_input_features_present:
         # with all feature types, upadated parameters should equal the number of trainable parameters
         assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+
     elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
-        if num_layers == 1:
-            assert upc == (tpc - 4), f"Failed to update parameters.  Parameters not update: {not_updated}"
-        else:
-            # num_layers should be 2
-            assert upc == (tpc - 8), f"Failed to update parameters.  Parameters not update: {not_updated}"
+        assert upc == (
+                tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+        ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+
     elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
         # with no categorical features, need to reduce trainable parameter count that is used only for categorical
         # features, i.e., the transformer stack and embedding option
-        if embed_input_feature_name is not None:
-            adjustment_for_embed_input_feature = 1
-        else:
-            adjustment_for_embed_input_feature = 0
-        if num_layers == 1:
-            assert upc == (
-                tpc - 16 - adjustment_for_embed_input_feature
-            ), f"Failed to update parameters.  Parameters not update: {not_updated}"
-        else:
-            # num_layers should be 2
-            assert upc == (
-                tpc - 32 - adjustment_for_embed_input_feature
-            ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+        assert upc == (
+                tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+        ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+
     elif categorical_input_features_present and not number_input_feature_present and not binary_input_feature_present:
         # with only categorical features, reduce trainable parameter count for number/binary specific parameters
         if len(input_features) == 1:
-            if num_layers == 1:
-                parameter_adjustment = 6
-            else:
-                parameter_adjustment = 10
+            parameter_adjustment = num_layers * PARAMETERS_IN_SELF_ATTENTION + UNEMBEDDABLE_LAYER_NORM_PARAMETERS
         else:
             # more than one categorical features
-            parameter_adjustment = 2
+            parameter_adjustment = UNEMBEDDABLE_LAYER_NORM_PARAMETERS
         assert upc == (
-            tpc - parameter_adjustment
+                tpc - parameter_adjustment
         ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+
     else:
         raise RuntimeError("Unexpected combination of input Features")
