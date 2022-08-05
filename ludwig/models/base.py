@@ -68,11 +68,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             input_feature_class.get_schema_cls(),
             input_feature_def,
         )
-        input_feature_obj = input_feature_class(
-            input_feature_config=config,
-            encoder_obj=encoder_obj,
-            **kwargs
-        )
+        input_feature_obj = input_feature_class(input_feature_config=config, encoder_obj=encoder_obj, **kwargs)
 
         return input_feature_obj
 
@@ -104,9 +100,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             output_feature_def,
         )
         output_feature_obj = output_feature_class(
-            output_feature_config=config,
-            output_features=output_features,
-            **kwargs
+            output_feature_config=config, output_features=output_features, **kwargs
         )
 
         return output_feature_obj

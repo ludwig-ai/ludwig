@@ -32,12 +32,12 @@ from ludwig.constants import (
     PREDICTIONS,
     PROBABILITIES,
     PROC_COLUMN,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SET,
     SIGMOID_CROSS_ENTROPY,
-    TIED,
     THRESHOLD,
+    TIED,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -215,12 +215,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 class SetInputFeature(SetFeatureMixin, InputFeature):
     # encoder = {TYPE: "embed", "vocab": []}
 
-    def __init__(
-            self,
-            input_feature_config: SetInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: SetInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
@@ -276,10 +271,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     default_validation_metric = JACCARD
 
     def __init__(
-            self,
-            output_feature_config: SetOutputFeatureConfig,
-            output_features: Dict[str, OutputFeature],
-            **kwargs
+        self, output_feature_config: SetOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)

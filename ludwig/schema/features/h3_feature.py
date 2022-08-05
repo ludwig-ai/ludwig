@@ -25,4 +25,3 @@ class H3InputFeatureConfig(BaseInputFeatureConfig):
         description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
         "feature of the same type and with the same encoder parameters.",
     )
-

@@ -40,7 +40,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
             "confidence_penalty": 0,
             "positive_class_weight": None,
             "weight": 1,
-            },
+        },
         description="A dictionary containing a loss type and its hyper-parameters.",
     )
 

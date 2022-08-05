@@ -37,8 +37,8 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SEQUENCE,
     SEQUENCE_ACCURACY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
@@ -49,6 +49,8 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
@@ -62,9 +64,6 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
-from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -266,12 +265,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     # encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
 
-    def __init__(
-            self,
-            input_feature_config: SequenceInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
         self.encoder_config = input_feature_config.encoder
@@ -341,10 +335,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     default_validation_metric = LOSS
 
     def __init__(
-            self,
-            output_feature_config: SequenceOutputFeatureConfig,
-            output_features: Dict[str, OutputFeature],
-            **kwargs
+        self, output_feature_config: SequenceOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)

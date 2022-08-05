@@ -196,7 +196,9 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
-    def __init__(self, feature: BaseOutputFeatureConfig, other_output_features: Dict[str, "OutputFeature"], *args, **kwargs):
+    def __init__(
+        self, feature: BaseOutputFeatureConfig, other_output_features: Dict[str, "OutputFeature"], *args, **kwargs
+    ):
         """Defines defaults, overwrites them based on the feature dictionary, and sets up dependencies.
 
         Any output feature can depend on one or more other output features. The `other_output_features` input dictionary

@@ -35,9 +35,9 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    ROC_AUC,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
+    ROC_AUC,
     THRESHOLD,
     TIED,
     TYPE,
@@ -218,12 +218,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     # encoder = {TYPE: "passthrough", "norm": None, "dropout": None}
 
-    def __init__(
-            self,
-            input_feature_config: BinaryInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
@@ -286,10 +281,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     default_validation_metric = ROC_AUC
 
     def __init__(
-            self,
-            output_feature_config: BinaryOutputFeatureConfig,
-            output_features: Dict[str, OutputFeature],
-            **kwargs
+        self, output_feature_config: BinaryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()

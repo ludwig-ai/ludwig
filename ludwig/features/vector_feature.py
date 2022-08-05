@@ -35,8 +35,8 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     R2,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     THRESHOLD,
     TIED,
     TYPE,
@@ -153,12 +153,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     # encoder = {TYPE: "dense"}
     # vector_size = 0
 
-    def __init__(
-            self,
-            input_feature_config: VectorInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
@@ -214,10 +209,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     # vector_size = 0
 
     def __init__(
-            self,
-            output_feature_config: VectorOutputFeatureConfig,
-            output_features: Dict[str, OutputFeature],
-            **kwargs
+        self, output_feature_config: VectorOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)

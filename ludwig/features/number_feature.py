@@ -285,12 +285,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
     # encoder = {TYPE: "passthrough"}
 
-    def __init__(
-            self,
-            input_feature_config: NumberInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(input_feature_config, **kwargs)
         # self.overwrite_defaults(feature)
@@ -363,10 +358,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     # clip = None
 
     def __init__(
-            self,
-            output_feature_config: NumberOutputFeatureConfig,
-            output_features: Dict[str, OutputFeature],
-            **kwargs
+        self, output_feature_config: NumberOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         # self.overwrite_defaults(feature)
@@ -379,8 +371,9 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if self.decoder_config.clip is not None \
-                and not (isinstance(self.decoder_config.clip, (list, tuple)) and len(self.decoder_config.clip) == 2):
+        if self.decoder_config.clip is not None and not (
+            isinstance(self.decoder_config.clip, (list, tuple)) and len(self.decoder_config.clip) == 2
+        ):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."

@@ -36,8 +36,8 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     PROJECTION_INPUT,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SOFTMAX_CROSS_ENTROPY,
     SUM,
     TIED,
@@ -163,12 +163,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     # encoder = {TYPE: "dense"}
 
-    def __init__(
-            self,
-            input_feature_config: CategoryInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
@@ -233,10 +228,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     default_validation_metric = ACCURACY
 
     def __init__(
-            self,
-            output_feature_config: CategoryOutputFeatureConfig,
-            output_features: Dict[str, OutputFeature],
-            **kwargs
+        self, output_feature_config: CategoryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
         self.top_k = output_feature_config.top_k
@@ -444,7 +436,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 TOP_K: defaults.top_k,
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies}
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
         )
 
     @staticmethod

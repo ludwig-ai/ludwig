@@ -90,12 +90,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 class BagInputFeature(BagFeatureMixin, InputFeature):
     # encoder = {TYPE: "embed", "vocab": []}
 
-    def __init__(
-            self,
-            input_feature_config: BagInputFeatureConfig,
-            encoder_obj=None,
-            **kwargs
-    ):
+    def __init__(self, input_feature_config: BagInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder

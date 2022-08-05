@@ -28,7 +28,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import output_type_registry, input_type_registry
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults

@@ -751,17 +751,13 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-        n=2,
-        default: Union[Tuple, None] = (0.9, 0.999),
-        allow_none: bool = False,
-        min=0,
-        max=1,
-        description=""
+    n=2, default: Union[Tuple, None] = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
-    range.
-    In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
-    The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
+    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
+
+    tuple with all values in given range. In particular, inputs must be N-dimensional tuples of purely numeric values
+    within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
+    representation of a Python tuple.
     """
     if default is not None and n != len(default):
         raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
@@ -771,25 +767,26 @@ def FloatRangeTupleDataclassField(
             if default is not None:
                 validate_range(default)
             return {
-                    "oneOf": [
-                        {
-                            "type": "array",
-                            "items": [
-                                         {
-                                             "type": "number",
-                                             "minimum": min,
-                                             "maximum": max,
-                                         }
-                                     ] * n,
-                            "default": default,
-                            "description": description,
-                        },
-                        {"type": "null", "title": "null_float_tuple_option", "description": "None"},
-                    ],
-                    "title": self.name,
-                    "default": default,
-                    "description": "Valid options for FloatRangeTupleDataclassField.",
-                }
+                "oneOf": [
+                    {
+                        "type": "array",
+                        "items": [
+                            {
+                                "type": "number",
+                                "minimum": min,
+                                "maximum": max,
+                            }
+                        ]
+                        * n,
+                        "default": default,
+                        "description": description,
+                    },
+                    {"type": "null", "title": "null_float_tuple_option", "description": "None"},
+                ],
+                "title": self.name,
+                "default": default,
+                "description": "Valid options for FloatRangeTupleDataclassField.",
+            }
 
     def validate_range(data: Tuple):
         if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
