@@ -274,13 +274,15 @@ def test_sequence_concat_combiner(
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
+    # This combiner does not contain any learnable parameters, bypassing parameter update testing
+
 
 # test for sequence combiner
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("encoder", sequence_encoder_registry)
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
-    encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
+        encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
