@@ -71,6 +71,7 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
                 info["system"][gpu_key]["memory_used"].append(gpu_info.memory_used)
         with tracked_process.oneshot():
             info["system"]["cpu_utilization"].append(tracked_process.cpu_percent())
+            # divide by 1.0e6 to convert bytes to megabytes.
             info["system"]["ram_utilization"].append(tracked_process.memory_full_info().uss // 1.0e6)
         time.sleep(logging_interval)
 
@@ -118,6 +119,8 @@ class ResourceUsageTracker:
         self.info["system"]["cpu_architecture"] = cpu_info["arch"]
         self.info["system"]["num_cpu"] = cpu_info["count"]
         self.info["system"]["cpu_name"] = cpu_info["brand_raw"]
+        # divide by 1.0e6 to convert bytes to megabytes.
+        self.info["system"]["ram_available"] = psutil.virtual_memory() // 1.0e6
 
         # GPU information
         if torch.cuda.is_available():
