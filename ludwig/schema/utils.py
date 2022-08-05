@@ -647,6 +647,8 @@ def OneOfOptionsField(
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
+            if allow_none and value is None:
+                return None
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
@@ -659,6 +661,8 @@ def OneOfOptionsField(
             raise ValidationError(f"Value to serialize does not match any valid option schemas: {value}")
 
         def _deserialize(self, value, attr, obj, **kwargs):
+            if allow_none and value is None:
+                return None
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
