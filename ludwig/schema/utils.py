@@ -671,6 +671,7 @@ def OneOfOptionsField(
         def _jsonschema_type_mapping(self):
             """Constructs a oneOf schema by iteratively adding the schemas of `field_options` to a list."""
             oneOf = {"oneOf": [], "description": description, "default": default}
+
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
 
@@ -687,6 +688,14 @@ def OneOfOptionsField(
                     dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
                     tmp_json_schema = dummy_schema["properties"]["tmp"]
                     oneOf["oneOf"].append(tmp_json_schema)
+
+            # Add null as an option if applicable:
+            oneOf["oneOf"] += (
+                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
+                if allow_none
+                else []
+            )
+
             return oneOf
 
     # Create correct default kwarg to pass to dataclass field constructor:
