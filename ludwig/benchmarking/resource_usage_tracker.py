@@ -32,7 +32,7 @@ sys.stdout = sys.__stdout__
 STOP_MESSAGE = "stop"
 
 
-def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int) -> None:
+def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool) -> None:
     """Monitors hardware resource use.
 
     Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval and saves the output
@@ -43,6 +43,7 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
         info: dictionary containing system resource usage information about the running process.
         output_dir: directory where the contents of `info` will be saved.
         logging_interval: time interval at which we will poll the system for usage metrics.
+        cuda_is_available: stores torch.cuda.is_available().
     """
     for key in info["system"]:
         if "gpu_" in key:
@@ -65,7 +66,7 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
                 queue.put(message)
         except EmptyQueueException:
             pass
-        if torch.cuda.is_available():
+        if cuda_is_available:
             gpu_infos = GPUStatCollection.new_query()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"gpu_{i}"
@@ -104,6 +105,7 @@ class ResourceUsageTracker:
         self.num_examples = num_examples
         self.logging_interval = logging_interval
         self.launched = False
+        self.cuda_is_available = torch.cuda.is_available()
         os.makedirs(os.path.join(self.output_dir), exist_ok=True)
 
     def populate_static_information(self) -> None:
@@ -123,7 +125,7 @@ class ResourceUsageTracker:
         self.info["system"]["ram_available"] = psutil.virtual_memory().available // 1.0e6
 
         # GPU information
-        if torch.cuda.is_available():
+        if self.cuda_is_available:
             gpu_infos = get_gpu_info()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"gpu_{i}"
@@ -151,6 +153,7 @@ class ResourceUsageTracker:
                     self.info,
                     self.output_dir,
                     self.logging_interval,
+                    self.cuda_is_available,
                 ),
             )
             self.t.start()
@@ -170,7 +173,7 @@ class ResourceUsageTracker:
         Computes and postprocesses more metrics. Saves report.
         """
         self.queue.put(STOP_MESSAGE)
-        if torch.cuda.is_available():
+        if self.cuda_is_available:
             torch.cuda.synchronize()
         self.t.join()
 
