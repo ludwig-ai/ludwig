@@ -49,7 +49,10 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
             info["system"][key]["memory_used"] = []
     info["system"]["cpu_utilization"] = []
     info["system"]["ram_utilization"] = []
+    tracked_process = psutil.Process(os.getpid())
 
+    # will return a meaningless 0 value on the first call because `interval` arg is set to None.
+    tracked_process.cpu_percent()
     while True:
         try:
             message = queue.get(block=False)
@@ -66,8 +69,9 @@ def monitor(queue: Queue, info: Dict[str, Any], output_dir: str, logging_interva
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"gpu_{i}"
                 info["system"][gpu_key]["memory_used"].append(gpu_info.memory_used)
-        info["system"]["cpu_utilization"].append(psutil.cpu_percent())
-        info["system"]["ram_utilization"].append(psutil.virtual_memory().percent)
+        with tracked_process.oneshot():
+            info["system"]["cpu_utilization"].append(tracked_process.cpu_percent())
+            info["system"]["ram_utilization"].append(tracked_process.memory_full_info().uss // 1.0e6)
         time.sleep(logging_interval)
 
 
