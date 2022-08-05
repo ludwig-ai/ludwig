@@ -47,6 +47,11 @@ class ALBERTConfig(BaseEncoderConfig):
         description="The method used to reduce a sequence of tensors down to a single tensor.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=30000,
         description="Vocabulary size of the ALBERT model. Defines the number of different tokens that can be "
@@ -205,6 +210,11 @@ class MT5Config(BaseEncoderConfig):
         description="The method used to reduce a sequence of tensors down to a single tensor.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=250112,
         description="Vocabulary size of the T5 model. Defines the number of different tokens that can be represented "
@@ -353,6 +363,11 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Vocabulary size of the XLMRoBERTa model.",
@@ -423,6 +438,11 @@ class BERTConfig(BaseEncoderConfig):
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -560,6 +580,11 @@ class XLMConfig(BaseEncoderConfig):
     reduce_output: str = schema_utils.String(
         default="cls_pooled",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -762,6 +787,11 @@ class GPTConfig(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the GPT model. Defines the number of different tokens that can be "
@@ -865,6 +895,11 @@ class GPT2Config(BaseEncoderConfig):
     trainable: bool = schema_utils.Boolean(
         default=False,
         description="Whether to train the model.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -988,6 +1023,11 @@ class RoBERTaConfig(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Vocabulary size of the RoBERTa model.",
@@ -1053,6 +1093,11 @@ class TransformerXLConfig(BaseEncoderConfig):
     trainable: bool = schema_utils.Boolean(
         default=False,
         description="Whether to train the model.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -1236,6 +1281,11 @@ class XLNetConfig(BaseEncoderConfig):
     trainable: bool = schema_utils.Boolean(
         default=False,
         description="Whether to train the model.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -1430,6 +1480,11 @@ class DistilBERTConfig(BaseEncoderConfig):
         description="Whether to use the pretrained weights for the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the DistilBERT model. Defines the number of different tokens that can be "
@@ -1553,6 +1608,11 @@ class CTRLConfig(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=246534,
         description="Vocabulary size of the CTRL model. Defines the number of different tokens that can be "
@@ -1662,6 +1722,11 @@ class CamemBERTConfig(BaseEncoderConfig):
     trainable: bool = schema_utils.Boolean(
         default=False,
         description="Whether to train the model.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -1800,6 +1865,11 @@ class T5Config(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=32128,
         description="Vocabulary size of the T5 model. Defines the number of different tokens that can be represented "
@@ -1911,6 +1981,11 @@ class FlauBERTConfig(BaseEncoderConfig):
     trainable: bool = schema_utils.Boolean(
         default=False,
         description="Whether to train the model.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -2108,6 +2183,11 @@ class ELECTRAConfig(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
     vocab_size: int = schema_utils.PositiveInteger(
         default=30522,
         description="Vocabulary size of the ELECTRA model. Defines the number of different tokens that can be "
@@ -2252,6 +2332,16 @@ class LongformerConfig(BaseEncoderConfig):
         description="Whether to train the model.",
     )
 
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
+    )
+
+    vocab_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Vocabulary size of the Longformer model.",
+    )
+
     num_tokens: int = schema_utils.PositiveInteger(
         default=None,
         description="Number of tokens",
@@ -2292,6 +2382,11 @@ class AutoTransformerConfig(BaseEncoderConfig):
     trainable: bool = schema_utils.Boolean(
         default=False,
         description="Whether to train the model.",
+    )
+
+    vocab: list = schema_utils.List(
+        default=None,
+        description="Vocabulary for the encoder",
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
