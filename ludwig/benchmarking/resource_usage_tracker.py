@@ -120,7 +120,7 @@ class ResourceUsageTracker:
         self.info["system"]["num_cpu"] = cpu_info["count"]
         self.info["system"]["cpu_name"] = cpu_info["brand_raw"]
         # divide by 1.0e6 to convert bytes to megabytes.
-        self.info["system"]["ram_available"] = psutil.virtual_memory() // 1.0e6
+        self.info["system"]["ram_available"] = psutil.virtual_memory().available // 1.0e6
 
         # GPU information
         if torch.cuda.is_available():
