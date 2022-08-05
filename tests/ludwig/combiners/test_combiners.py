@@ -554,13 +554,18 @@ def test_tabtransformer_combiner(
         else:
             raise ValueError(f"Unsupported input feature type {input_features[i_f].type()}")
 
+    # Adjustments to the trainable parameter count (tpc) in the following assertion checks is needed
+    # to account for the different code paths taken in the TabTransformerCombiner forward() method due to the
+    # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
+    # instantiate the TabTransformerCombiner object.
+
     if number_input_feature_present and binary_input_feature_present and categorical_input_features_present:
         # with all feature types, updated parameters should equal the number of trainable parameters
         assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
         assert upc == (
-            tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+                tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
         ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
