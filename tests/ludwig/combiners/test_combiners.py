@@ -320,7 +320,7 @@ def test_sequence_combiner(
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
-    # check for parameter updating if fully connected layer is present
+    # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
     assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
@@ -378,7 +378,7 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
     assert isinstance(combiner_output["combiner_output"], torch.Tensor)
     assert combiner_output["combiner_output"].shape == (BATCH_SIZE, output_size)
 
-    # check for parameter updating if fully connected layer is present
+    # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs,), target)
     assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
@@ -415,7 +415,7 @@ def test_comparator_combiner(
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
-    # check for parameter updating if fully connected layer is present
+    # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_comparator_outputs_dict,), target)
     assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
@@ -454,7 +454,7 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
-    # check for parameter updating if fully connected layer is present
+    # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
     assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
@@ -531,7 +531,7 @@ def test_tabtransformer_combiner(
 
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
-    # check for parameter updating if fully connected layer is present
+    # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(
         combiner,
@@ -553,7 +553,7 @@ def test_tabtransformer_combiner(
             raise ValueError(f"Unsupported input feature type {input_features[i_f].type()}")
 
     if number_input_feature_present and binary_input_feature_present and categorical_input_features_present:
-        # with all feature types, upadated parameters should equal the number of trainable parameters
+        # with all feature types, updated parameters should equal the number of trainable parameters
         assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
 
     elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
