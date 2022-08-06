@@ -97,8 +97,9 @@ def test_sequence_lstm_decoder(num_layers, batch_size):
 
     # check for parameter updating
     target = torch.randn(output.shape)
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(sequence_lstm_decoder, (combiner_outputs, None),
-                                                                 target)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        sequence_lstm_decoder, (combiner_outputs, None), target
+    )
     assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
