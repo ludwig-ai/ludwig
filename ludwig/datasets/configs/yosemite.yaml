@@ -1,0 +1,7 @@
+version: 1.0
+name: yosemite
+download_urls:
+  - https://raw.githubusercontent.com/ourownstory/neural_prophet/master/example_data/yosemite_temps.csv
+description: |
+    Yosemite temperatures dataset.
+    As found in https://github.com/ourownstory/neural_prophet.

@@ -1,0 +1,110 @@
+#! /usr/bin/env python
+# Copyright (c) 2019 Uber Technologies, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+import gzip
+import logging
+import os
+import shutil
+import tarfile
+from enum import Enum
+from typing import List, Optional
+from zipfile import ZipFile
+
+from ludwig.utils.fs_utils import upload_output_directory
+
+logger = logging.getLogger(__name__)
+
+
+class ArchiveType(str, Enum):
+    """The type of file archive."""
+
+    UNKNOWN = "unknown"
+    ZIP = "zip"
+    GZIP = "gz"
+    TAR = "tar"
+    TAR_ZIP = "tar.z"
+    TAR_BZ2 = "tar.bz2"
+    TAR_GZ = "tar.gz"
+
+
+def infer_archive_type(archive_path):
+    """Try to infer archive type from file extension."""
+    _, extension = os.path.splitext(archive_path)
+    extension = extension.lower()
+    if extension in {".zip", ".zipx"}:
+        return ArchiveType.ZIP
+    elif extension in {".gz", ".gzip"}:
+        return ArchiveType.GZIP
+    elif extension == ".tar":
+        return ArchiveType.TAR
+    elif extension in {".tar.z", ".tar.zip"}:
+        return ArchiveType.TAR_ZIP
+    elif extension in {".tar.bz2", ".tbz2"}:
+        return ArchiveType.TAR_BZ2
+    elif extension in {".tar.gz", ".tgz"}:
+        return ArchiveType.TAR_GZ
+    else:
+        return ArchiveType.UNKNOWN
+
+
+def is_archive(path):
+    """Does this path a supported archive type."""
+    return infer_archive_type(path) != ArchiveType.UNKNOWN
+
+
+def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = None) -> List[str]:
+    """Extracts files from archive (into the same directory), returns a list of extracted files.
+
+    Args:
+        archive_path - The full path to the archive.
+
+    Returns A list of the files extracted.
+    """
+    if archive_type is None:
+        archive_type = infer_archive_type(archive_path)
+    if archive_type == ArchiveType.UNKNOWN:
+        logger.error(
+            f"Could not infer type of archive {archive_path}.  May be an unsupported archive type."
+            "Specify archive_type in the dataset config if this file has an unknown file extension."
+        )
+        return [archive_path]
+    archive_directory = os.path.dirname(archive_path)
+    directory_contents_before = set(os.path.listdir(archive_directory))
+    with upload_output_directory(archive_directory) as (tmpdir, _):
+        if archive_type == ArchiveType.ZIP:
+            with ZipFile(archive_path) as zfile:
+                zfile.extractall(tmpdir)
+        elif archive_type == ArchiveType.GZIP:
+            gzip_content_file = ".".join(archive_path.split(".")[:-1])  # Path minus the .gz extention
+            with gzip.open(archive_path) as gzfile:
+                # TODO: What is gzip content file?
+                with open(os.path.join(tmpdir, gzip_content_file), "wb") as output:
+                    shutil.copyfileobj(gzfile, output)
+        elif archive_type == ArchiveType.TAR:
+            with tarfile.open(archive_path) as tar_file:
+                tar_file.extractall(path=tmpdir)
+        elif archive_type == ArchiveType.TAR_ZIP:
+            with tarfile.open(archive_path) as tar_file:
+                tar_file.extractall(path=tmpdir)
+        elif archive_type == ArchiveType.TAR_BZ2:
+            with tarfile.bz2open(archive_path) as tar_file:
+                tar_file.extractall(path=tmpdir)
+        elif archive_type == ArchiveType.TAR_GZ:
+            with tarfile.gzopen(archive_path) as tar_file:
+                tar_file.extractall(path=tmpdir)
+        else:
+            logger.error(f"Unsupported archive: {archive_path}")
+    directory_contents_after = set(os.path.listdir(archive_directory))
+    return directory_contents_after.difference(directory_contents_before)

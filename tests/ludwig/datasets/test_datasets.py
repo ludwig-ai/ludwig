@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.datasets.dataset import Dataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin, ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import IdentityProcessMixin, MultifileJoinProcessMixin
@@ -111,3 +112,21 @@ def test_multifile_join_dataset(tmpdir, f_type):
 
         assert dataset.is_downloaded()
         assert dataset.is_processed()
+
+
+def test_new_datasets(tmpdir):
+    from ludwig.datasets.registry import dataset_registry
+
+    assert "yosemite" in dataset_registry
+    yosemite_dataset = dataset_registry["yosemite"]
+    assert isinstance(yosemite_dataset, Dataset)
+    df = yosemite_dataset.load()
+    assert df is not None
+
+
+def test_new_datasets_kaggle(tmpdir):
+    from ludwig.datasets.registry import dataset_registry
+
+    assert "twitter_bots" in dataset_registry
+    twitter_bots_dataset = dataset_registry["twitter_bots"]
+    assert twitter_bots_dataset.is_kaggle_dataset

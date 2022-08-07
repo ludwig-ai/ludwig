@@ -5,6 +5,8 @@ import pkgutil
 import shutil
 from typing import List
 
+import yaml
+
 from ludwig.datasets.registry import dataset_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
@@ -14,8 +16,9 @@ def _import_submodules():
     from ludwig import datasets
 
     for _, name, _ in pkgutil.walk_packages(datasets.__path__):
-        full_name = datasets.__name__ + "." + name
-        importlib.import_module(full_name)
+        if name not in {"archives", "dataset", "kaggle"}:
+            full_name = datasets.__name__ + "." + name
+            importlib.import_module(full_name)
 
 
 def _import_dataset_configs():
@@ -24,12 +27,14 @@ def _import_dataset_configs():
     Must be called after _import_submodules for those configs which require a custom implementation.
     """
     from ludwig.datasets import configs
+    from ludwig.datasets.dataset import Dataset, DatasetConfig
 
     config_files = [f for f in importlib.resources.contents(configs) if f.endswith(".yaml")]
-    print("config files:")
-    print(config_files)
-    # for f in files:
-    #     print(f)
+    for config_file in config_files:
+        config_path = os.path.join(os.path.dirname(configs.__file__), config_file)
+        with open(config_path) as f:
+            dataset_config = DatasetConfig(**yaml.safe_load(f))
+            dataset_registry[dataset_config.name] = Dataset(dataset_config)
 
 
 _import_submodules()
