@@ -27,6 +27,7 @@ from ludwig.constants import (
     COMBINER,
     DECODER,
     DEFAULTS,
+    DEFAULTS_SECTIONS,
     DROP_ROW,
     ENCODER,
     EXECUTOR,
@@ -127,19 +128,16 @@ def _perform_sanity_checks(config):
     if DEFAULTS in config:
         for feature_type in config.get(DEFAULTS).keys():
             # output_feature_types is a subset of input_feature_types so just check input_feature_types
-            assert feature_type in set(
-                input_type_registry.keys()
+            assert (
+                feature_type in input_type_registry
             ), f"""Defaults specified for `{feature_type}` but `{feature_type}` is
                 not a feature type recognised by Ludwig."""
 
             for feature_type_param in config.get(DEFAULTS).get(feature_type).keys():
-                assert feature_type_param in {
-                    PREPROCESSING,
-                    ENCODER,
-                    DECODER,
-                    LOSS,
-                }, f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default config
-                 sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
+                assert (
+                    feature_type_param in DEFAULTS_SECTIONS
+                ), f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default config
+                 sections are {', '.join(DEFAULTS_SECTIONS)}."""
 
 
 def _set_feature_column(config: dict) -> None:

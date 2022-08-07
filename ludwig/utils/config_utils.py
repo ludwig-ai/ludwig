@@ -1,4 +1,4 @@
-from typing import Any, Dict, Set, Union
+from typing import Any, Dict, Optional, Set, Union
 
 from ludwig.constants import INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -6,14 +6,21 @@ from ludwig.utils.misc_utils import get_from_registry
 
 
 def get_feature_type_parameter_values_from_section(
-    config: Dict[str, Any], features_section: str, feature_type: str, parameter_name: str
+    config: Dict[str, Any],
+    features_section: str,
+    feature_type: str,
+    parameter_name: str,
+    parameter_subsection_name: Optional[str] = None,
 ) -> Set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""
     parameter_values = set()
     for feature in config[features_section]:
         if feature[TYPE] == feature_type:
-            parameter_values.add(feature[parameter_name])
+            if parameter_subsection_name:
+                parameter_values.add(feature[parameter_name][parameter_subsection_name])
+            else:
+                parameter_values.add(feature[parameter_name])
     return parameter_values
 
 

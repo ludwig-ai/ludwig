@@ -15,8 +15,9 @@
 import contextlib
 import json
 import os.path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
+import pandas as pd
 import pytest
 import torch
 from packaging import version
@@ -25,10 +26,13 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COMBINER,
+    ENCODER,
     HYPEROPT,
     INPUT_FEATURES,
+    LOSS,
     NAME,
     OUTPUT_FEATURES,
+    PREPROCESSING,
     RAY,
     TEXT,
     TRAINER,
@@ -133,33 +137,46 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, str]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
-    num_filters_search_space = [4, 8]
-    embedding_size_search_space = [4, 8]
+    most_common_search_space = [10, 20, 30]
+    text_encoder_search_space = ["parallel_cnn", "stacked_cnn"]
+    reduce_input_search_space = ["mean", "max"]
+    confidence_penalty_search_space = [0.1, 0.2]
 
     # Add default parameters in hyperopt parameter search space
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        COMBINER: {TYPE: "concat"},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         HYPEROPT: {
             "parameters": {
-                "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-                "defaults.text.num_filters": {"space": "choice", "categories": num_filters_search_space},
-                "defaults.category.embedding_size": {
+                "defaults.category.preprocessing.most_common": {
                     "space": "choice",
-                    "categories": embedding_size_search_space,
+                    "categories": most_common_search_space,
+                },
+                "defaults.text.encoder.type": {"space": "choice", "categories": text_encoder_search_space},
+                "defaults.category.decoder.reduce_input": {"space": "choice", "categories": reduce_input_search_space},
+                "defaults.category.loss.confidence_penalty": {
+                    "space": "choice",
+                    "categories": confidence_penalty_search_space,
                 },
             },
             "goal": "minimize",
             "output_feature": output_features[0][NAME],
             "validation_metrics": "loss",
-            "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
+            "executor": {"type": "ray", "num_samples": 1},
             "search_alg": {"type": "variant_generator"},
         },
     }
 
-    return config, rel_path, num_filters_search_space, embedding_size_search_space
+    return (
+        config,
+        rel_path,
+        most_common_search_space,
+        text_encoder_search_space,
+        reduce_input_search_space,
+        confidence_penalty_search_space,
+    )
 
 
 def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
@@ -386,67 +403,84 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
 
 
 def _test_hyperopt_with_shared_params_trial_table(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    hyperopt_results_df: pd.DataFrame,
+    most_common_search_space: List,
+    text_encoder_search_space: List,
+    reduce_input_search_space: List,
+    confidence_penalty_search_space: List,
 ):
-    # Check that hyperopt trials sample from defaults in the search space
-    for _, trial_row in hyperopt_results_df.iterrows():
-        embedding_size = _get_trial_parameter_value("defaults.category.embedding_size", trial_row)
-        num_filters = _get_trial_parameter_value("defaults.text.num_filters", trial_row)
-        assert embedding_size in embedding_size_search_space
-        assert num_filters in num_filters_search_space
+    most_common = _get_trial_parameter_value("defaults.category.preprocessing.most_common", hyperopt_results_df)
+    text_encoder = _get_trial_parameter_value("defaults.text.encoder.type", hyperopt_results_df).replace('"', "")
+    reduce_input = _get_trial_parameter_value("defaults.category.decoder.reduce_input", hyperopt_results_df).replace(
+        '"', ""
+    )
+    confidence_penalty = _get_trial_parameter_value("defaults.category.loss.confidence_penalty", hyperopt_results_df)
+    assert most_common in most_common_search_space
+    assert text_encoder in text_encoder_search_space
+    assert reduce_input in reduce_input_search_space
+    assert confidence_penalty in confidence_penalty_search_space
 
 
 def _test_hyperopt_with_shared_params_written_config(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+    hyperopt_results_df: pd.DataFrame,
+    most_common_search_space: List,
+    text_encoder_search_space: List,
+    reduce_input_search_space: List,
+    confidence_penalty_search_space: List,
 ):
-    # Check that each hyperopt trial's written input/output configs got updated
-    for _, trial_row in hyperopt_results_df.iterrows():
-        model_parameters = json.load(
-            open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
-        )
 
-        # Check that num_filters got updated from the sampler correctly
-        for input_feature in model_parameters[INPUT_FEATURES]:
-            if input_feature[TYPE] == TEXT:
-                assert input_feature["num_filters"] in num_filters_search_space
-            elif input_feature[TYPE] == CATEGORY:
-                assert input_feature["embedding_size"] in embedding_size_search_space
+    model_parameters = json.load(
+        open(os.path.join(hyperopt_results_df["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
+    )
 
-        # All text features with defaults should have the same num_filters for this trial
-        text_input_num_filters = get_feature_type_parameter_values_from_section(
-            model_parameters, INPUT_FEATURES, TEXT, "num_filters"
-        )
-        assert len(text_input_num_filters) == 1
+    for input_feature in model_parameters[INPUT_FEATURES]:
+        if input_feature[TYPE] == TEXT:
+            assert input_feature[ENCODER] in text_encoder_search_space
+        elif input_feature[TYPE] == CATEGORY:
+            assert input_feature[PREPROCESSING]["most_common"] in most_common_search_space
 
-        # Check that embedding_size got updated from the sampler
-        for output_feature in model_parameters[OUTPUT_FEATURES]:
-            if output_feature[TYPE] == CATEGORY:
-                assert output_feature["embedding_size"] in embedding_size_search_space
+    # All text features with defaults should have the same encoder for this trial
+    assert len(get_feature_type_parameter_values_from_section(model_parameters, INPUT_FEATURES, TEXT, ENCODER)) == 1
 
-        # All category features with defaults should have the same embedding_size for this trial
-        input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
-            model_parameters, INPUT_FEATURES, CATEGORY, "embedding_size"
-        )
-        output_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
-            model_parameters, OUTPUT_FEATURES, CATEGORY, "embedding_size"
-        )
-        trial_embedding_sizes = input_category_features_embedding_sizes.union(output_category_features_embedding_sizes)
-        assert len(trial_embedding_sizes) == 1
+    # All category features with defaults should have the same preprocessing for this trial
+    most_common = get_feature_type_parameter_values_from_section(
+        model_parameters, INPUT_FEATURES, CATEGORY, PREPROCESSING, "most_common"
+    )
+    assert len(most_common) == 1
+
+    # Check that embedding_size got updated from the sampler
+    assert model_parameters[OUTPUT_FEATURES][0]["reduce_input"] in reduce_input_search_space
+    assert model_parameters[OUTPUT_FEATURES][0][LOSS]["confidence_penalty"] in confidence_penalty_search_space
 
 
 @pytest.mark.distributed
 def test_hyperopt_with_shared_params(csv_filename, tmpdir):
-    config, rel_path, num_filters_search_space, embedding_size_search_space = _setup_ludwig_config_with_shared_params(
-        csv_filename
-    )
+    (
+        config,
+        rel_path,
+        most_common_search_space,
+        text_encoder_search_space,
+        reduce_input_search_space,
+        confidence_penalty_search_space,
+    ) = _setup_ludwig_config_with_shared_params(csv_filename)
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
+    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df.iloc[0]
 
+    # Check that hyperopt trials sample from defaults in the search space
     _test_hyperopt_with_shared_params_trial_table(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+        hyperopt_results_df,
+        most_common_search_space,
+        text_encoder_search_space,
+        reduce_input_search_space,
+        confidence_penalty_search_space,
     )
 
+    # Check that each hyperopt trial's written input/output configs got updated
     _test_hyperopt_with_shared_params_written_config(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space
+        hyperopt_results_df,
+        most_common_search_space,
+        text_encoder_search_space,
+        reduce_input_search_space,
+        confidence_penalty_search_space,
     )

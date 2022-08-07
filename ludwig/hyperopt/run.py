@@ -434,7 +434,7 @@ def get_features_eligible_for_shared_params(
 
     features_eligible_for_shared_params = defaultdict(set)
 
-    features = config_dict.get(config_feature_type)
+    features = config_dict.get(config_feature_type, [])
 
     for feature in features:
         if TYPE not in feature:

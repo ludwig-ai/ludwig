@@ -30,8 +30,12 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     COLUMN,
     COMBINER,
+    DECODER,
     DEFAULTS,
+    DEFAULTS_SECTIONS,
+    ENCODER,
     INPUT_FEATURES,
+    LOSS,
     MAXIMIZE,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -41,6 +45,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.hyperopt.results import RayTuneResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
@@ -930,17 +935,6 @@ def update_features_with_shared_params(
     :type features_eligible_for_shared_params: dict[str, dict[str, set]]
     """
 
-    feature_name = section_dict.get(COLUMN)
-    feature_type = section_dict.get(TYPE)
-
-    # No default parameters specified in hyperopt parameter search space
-    if DEFAULTS not in trial_parameters_dict:
-        return
-
-    # This feature type should have a sampled value from the default parameters passed in
-    if feature_type not in trial_parameters_dict.get(DEFAULTS):
-        return
-
     # All features in Ludwig config use non-default encoders or decoders
     if not features_eligible_for_shared_params:
         logger.warning(
@@ -953,7 +947,17 @@ def update_features_with_shared_params(
         )
         return
 
-    features_eligible_for_shared_params = features_eligible_for_shared_params.get(config_feature_group)
+    feature_name = section_dict.get(COLUMN)
+    feature_type = section_dict.get(TYPE)
+    features_eligible_for_shared_params = features_eligible_for_shared_params.get(config_feature_group, {})
+
+    # No default parameters specified in hyperopt parameter search space
+    if DEFAULTS not in trial_parameters_dict:
+        return
+
+    # This feature type should have a sampled value from the default parameters passed in
+    if feature_type not in trial_parameters_dict.get(DEFAULTS):
+        return
 
     # At least one of this feature's feature type must use non-default encoders/decoders in the config
     if feature_type not in features_eligible_for_shared_params:
@@ -964,7 +968,33 @@ def update_features_with_shared_params(
         return
 
     sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
-    set_values(sampled_default_shared_params, section_dict)
+
+    if config_feature_group == INPUT_FEATURES:
+        if PREPROCESSING in sampled_default_shared_params:
+            if PREPROCESSING not in section_dict:
+                section_dict[PREPROCESSING] = dict()
+            set_values(sampled_default_shared_params[PREPROCESSING], section_dict[PREPROCESSING])
+        if ENCODER in sampled_default_shared_params:
+            encoder_params = sampled_default_shared_params[ENCODER]
+            if TYPE in encoder_params:
+                section_dict[ENCODER] = encoder_params[TYPE]
+                get_from_registry(feature_type, input_type_registry).populate_defaults(section_dict)
+                encoder_params = copy.deepcopy(encoder_params)
+                encoder_params.pop(TYPE)
+            set_values(encoder_params, section_dict)
+    else:
+        if DECODER in sampled_default_shared_params:
+            decoder_params = sampled_default_shared_params[DECODER]
+            if TYPE in decoder_params:
+                section_dict[DECODER] = decoder_params[TYPE]
+                get_from_registry(feature_type, output_type_registry).populate_defaults(section_dict)
+                decoder_params = copy.deepcopy(decoder_params)
+                decoder_params.pop(TYPE)
+            set_values(decoder_params, section_dict)
+        if LOSS in sampled_default_shared_params:
+            if LOSS not in section_dict:
+                section_dict[LOSS] = dict()
+            set_values(sampled_default_shared_params[LOSS], section_dict[LOSS])
 
 
 def update_section_dict(
@@ -978,7 +1008,27 @@ def update_section_dict(
     set_values(params, section_dict)
 
 
-def get_parameters_dict(parameters):
+def validate_default_parameters(parameters: Dict[str, Any]) -> None:
+    """Simple validation of the format of parameters using the default keyword."""
+    if DEFAULTS not in parameters:
+        return
+
+    parameters = parameters.get(DEFAULTS)
+    for feature_type in parameters:
+        if feature_type not in input_type_registry:
+            raise ValueError(
+                f"""Feature type `{feature_type}` is not recognised in hyperopt parameter that uses the `default` key
+                word. Use one of {', '.join(list(input_type_registry.keys()))}"""
+            )
+        for subsection in parameters.get(feature_type).keys():
+            if subsection not in DEFAULTS_SECTIONS:
+                raise ValueError(
+                    f"""`{subsection}` is not a recognised subsection of parameter in hyperopt that uses the `default`
+                    key word. Feature type {feature_type} must be followed by one of {', '.join(DEFAULTS_SECTIONS)}"""
+                )
+
+
+def get_parameters_dict(parameters: Dict[str, Any]) -> Dict[str, Any]:
     parameters_dict = {}
     for name, value in parameters.items():
         curr_dict = parameters_dict
@@ -999,30 +1049,31 @@ def substitute_parameters(
     features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
-    parameters_dict = get_parameters_dict(parameters)
+    trial_parameters_dict = get_parameters_dict(parameters)
+    validate_default_parameters(trial_parameters_dict)
     for input_feature in config[INPUT_FEATURES]:
         # Update shared params
         update_features_with_shared_params(
             input_feature,
-            parameters_dict,
+            trial_parameters_dict,
             config_feature_group=INPUT_FEATURES,
             features_eligible_for_shared_params=features_eligible_for_shared_params,
         )
         # Update or overwrite any feature specific hyperopt params
-        update_section_dict(input_feature, input_feature[COLUMN], parameters_dict)
+        update_section_dict(input_feature, input_feature[COLUMN], trial_parameters_dict)
     for output_feature in config[OUTPUT_FEATURES]:
         # Update shared params
         update_features_with_shared_params(
             output_feature,
-            parameters_dict,
+            trial_parameters_dict,
             config_feature_group=OUTPUT_FEATURES,
             features_eligible_for_shared_params=features_eligible_for_shared_params,
         )
         # Update or overwrite any feature specific hyperopt params
-        update_section_dict(output_feature, output_feature[COLUMN], parameters_dict)
-    update_section_dict(config[COMBINER], COMBINER, parameters_dict)
-    update_section_dict(config[TRAINER], TRAINER, parameters_dict)
-    update_section_dict(config[PREPROCESSING], PREPROCESSING, parameters_dict)
+        update_section_dict(output_feature, output_feature[COLUMN], trial_parameters_dict)
+    update_section_dict(config[COMBINER], COMBINER, trial_parameters_dict)
+    update_section_dict(config[TRAINER], TRAINER, trial_parameters_dict)
+    update_section_dict(config[PREPROCESSING], PREPROCESSING, trial_parameters_dict)
     return config
 
 
