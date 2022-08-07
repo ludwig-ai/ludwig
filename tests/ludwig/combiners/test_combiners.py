@@ -541,9 +541,7 @@ def test_tabtransformer_combiner(
         target,
     )
     # Determine type of input features present
-    categorical_input_features_present = False
-    number_input_feature_present = False
-    binary_input_feature_present = False
+    categorical_input_features_present = number_input_feature_present = binary_input_feature_present = False
     for i_f in input_features:
         if input_features[i_f].type() == CATEGORY:
             categorical_input_features_present = True
