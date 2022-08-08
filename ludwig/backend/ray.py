@@ -623,10 +623,10 @@ class RayPredictor(BasePredictor):
         self.df_engine = df_engine
 
     def get_trainer_kwargs(self) -> Dict[str, Any]:
-        return {**self.trainer_kwargs, **get_trainer_kwargs()}
+        return {**get_trainer_kwargs(), **self.trainer_kwargs}
 
     def get_resources_per_worker(self) -> Tuple[int, int]:
-        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
+        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
@@ -655,8 +655,6 @@ class RayPredictor(BasePredictor):
                 df[c] = cast_as_tensor_dtype(df[c])
             return df
 
-        # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.
-        # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
         num_cpus, num_gpus = self.get_resources_per_worker()
 
         predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
