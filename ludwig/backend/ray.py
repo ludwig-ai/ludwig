@@ -626,7 +626,7 @@ class RayPredictor(BasePredictor):
         return {**get_trainer_kwargs(), **self.trainer_kwargs}
 
     def get_resources_per_worker(self) -> Tuple[int, int]:
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        trainer_kwargs = self.get_trainer_kwargs()
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
