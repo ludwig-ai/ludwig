@@ -912,6 +912,41 @@ def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
             model_dict[key] = value
 
 
+def update_subsection_parameters(
+    sampled_default_shared_params: Dict[str, Any], section_dict: Dict[str, Any], subsection: str
+) -> None:
+    """Updates the input or output feature dictionary from Ludwig config if default parameters are passed into the
+    hyperopt search space.
+
+    :param sampled_default_shared_params: Config produced by the hyperopt sampler based on the parameter search space.
+            It maps the name of the feature to the sampled parameters for that feature. For default parameters, it
+            creates nested dictionaries for each feature type.
+    :type sampled_default_shared_params: dict[str, any]
+    :param section_dict: Underlying config for the specific input/output feature populated with potentially a mix of
+            default and feature-specific parameters.
+    :type section_dict: dict[str, any]
+    :param subsection: One of the 4 default subsections - preprocessing, encoder, decoder, loss
+    :type subsection: str
+    """
+    if subsection not in sampled_default_shared_params:
+        return
+
+    if subsection in {PREPROCESSING, LOSS}:
+        if subsection not in section_dict:
+            section_dict[subsection] = dict()
+        set_values(sampled_default_shared_params[subsection], section_dict[subsection])
+    else:
+        # Otherwise, subsection is `ENCODER` or `DECODER`
+        registry_type = input_type_registry if subsection == ENCODER else output_type_registry
+        encoder_or_decoder_params = sampled_default_shared_params[subsection]
+        if TYPE in encoder_or_decoder_params:
+            section_dict[subsection] = encoder_or_decoder_params[TYPE]
+            get_from_registry(section_dict[TYPE], registry_type).populate_defaults(section_dict)
+            encoder_or_decoder_params = copy.deepcopy(encoder_or_decoder_params)
+            encoder_or_decoder_params.pop(TYPE)
+        set_values(encoder_or_decoder_params, section_dict)
+
+
 def update_features_with_shared_params(
     section_dict: Dict[str, Any],
     trial_parameters_dict: Dict[str, Dict[str, Any]],
@@ -970,31 +1005,11 @@ def update_features_with_shared_params(
     sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
 
     if config_feature_group == INPUT_FEATURES:
-        if PREPROCESSING in sampled_default_shared_params:
-            if PREPROCESSING not in section_dict:
-                section_dict[PREPROCESSING] = dict()
-            set_values(sampled_default_shared_params[PREPROCESSING], section_dict[PREPROCESSING])
-        if ENCODER in sampled_default_shared_params:
-            encoder_params = sampled_default_shared_params[ENCODER]
-            if TYPE in encoder_params:
-                section_dict[ENCODER] = encoder_params[TYPE]
-                get_from_registry(feature_type, input_type_registry).populate_defaults(section_dict)
-                encoder_params = copy.deepcopy(encoder_params)
-                encoder_params.pop(TYPE)
-            set_values(encoder_params, section_dict)
+        update_subsection_parameters(sampled_default_shared_params, section_dict, PREPROCESSING)
+        update_subsection_parameters(sampled_default_shared_params, section_dict, ENCODER)
     else:
-        if DECODER in sampled_default_shared_params:
-            decoder_params = sampled_default_shared_params[DECODER]
-            if TYPE in decoder_params:
-                section_dict[DECODER] = decoder_params[TYPE]
-                get_from_registry(feature_type, output_type_registry).populate_defaults(section_dict)
-                decoder_params = copy.deepcopy(decoder_params)
-                decoder_params.pop(TYPE)
-            set_values(decoder_params, section_dict)
-        if LOSS in sampled_default_shared_params:
-            if LOSS not in section_dict:
-                section_dict[LOSS] = dict()
-            set_values(sampled_default_shared_params[LOSS], section_dict[LOSS])
+        update_subsection_parameters(sampled_default_shared_params, section_dict, DECODER)
+        update_subsection_parameters(sampled_default_shared_params, section_dict, LOSS)
 
 
 def update_section_dict(
