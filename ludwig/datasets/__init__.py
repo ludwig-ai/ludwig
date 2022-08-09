@@ -16,7 +16,7 @@ def _import_submodules():
     from ludwig import datasets
 
     for _, name, _ in pkgutil.walk_packages(datasets.__path__):
-        if name not in {"archives", "dataset", "kaggle"}:
+        if name not in {"archives", "dataset", "kaggle"} and "_workflow" not in name:
             full_name = datasets.__name__ + "." + name
             importlib.import_module(full_name)
 

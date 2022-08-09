@@ -64,6 +64,29 @@ def is_archive(path):
     return infer_archive_type(path) != ArchiveType.UNKNOWN
 
 
+def list_archive(archive_path, archive_type: Optional[ArchiveType] = None) -> List[str]:
+    """Return list of files extracted in an archive (without extracting them)."""
+    if archive_type is None:
+        archive_type = infer_archive_type(archive_path)
+    if archive_type == ArchiveType.UNKNOWN:
+        logger.error(
+            f"Could not infer type of archive {archive_path}.  May be an unsupported archive type."
+            "Specify archive_type in the dataset config if this file has an unknown file extension."
+        )
+        return []
+    if archive_type == ArchiveType.ZIP:
+        with ZipFile(archive_path) as zfile:
+            return zfile.namelist()
+    elif archive_type == ArchiveType.GZIP:
+        return ".".join(archive_path.split(".")[:-1])  # Path minus the .gz extention
+    elif archive_type in {ArchiveType.TAR, ArchiveType.TAR_ZIP, ArchiveType.TAR_BZ2, ArchiveType.TAR_GZ}:
+        with tarfile.open(archive_path) as tar_file:
+            return tar_file.getnames()
+    else:
+        logger.error(f"Unsupported archive: {archive_path}")
+    return []
+
+
 def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = None) -> List[str]:
     """Extracts files from archive (into the same directory), returns a list of extracted files.
 
@@ -79,7 +102,7 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
             f"Could not infer type of archive {archive_path}.  May be an unsupported archive type."
             "Specify archive_type in the dataset config if this file has an unknown file extension."
         )
-        return [archive_path]
+        return []
     archive_directory = os.path.dirname(archive_path)
     directory_contents_before = set(os.path.listdir(archive_directory))
     with upload_output_directory(archive_directory) as (tmpdir, _):
@@ -92,17 +115,8 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
                 # TODO: What is gzip content file?
                 with open(os.path.join(tmpdir, gzip_content_file), "wb") as output:
                     shutil.copyfileobj(gzfile, output)
-        elif archive_type == ArchiveType.TAR:
+        elif archive_type in {ArchiveType.TAR, ArchiveType.TAR_ZIP, ArchiveType.TAR_BZ2, ArchiveType.TAR_GZ}:
             with tarfile.open(archive_path) as tar_file:
-                tar_file.extractall(path=tmpdir)
-        elif archive_type == ArchiveType.TAR_ZIP:
-            with tarfile.open(archive_path) as tar_file:
-                tar_file.extractall(path=tmpdir)
-        elif archive_type == ArchiveType.TAR_BZ2:
-            with tarfile.bz2open(archive_path) as tar_file:
-                tar_file.extractall(path=tmpdir)
-        elif archive_type == ArchiveType.TAR_GZ:
-            with tarfile.gzopen(archive_path) as tar_file:
                 tar_file.extractall(path=tmpdir)
         else:
             logger.error(f"Unsupported archive: {archive_path}")

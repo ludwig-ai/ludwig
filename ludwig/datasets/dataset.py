@@ -23,9 +23,10 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 import pandas as pd
-import tqdm
+from tqdm import tqdm
 
-from ludwig.datasets.archives import extract_archive, is_archive
+from ludwig.constants import SPLIT
+from ludwig.datasets.archives import extract_archive, is_archive, list_archive
 from ludwig.datasets.kaggle import download_kaggle_dataset
 
 logger = logging.getLogger(__name__)
@@ -76,9 +77,6 @@ class DatasetConfig:
     # The list of file archives which will be downloaded. If download_urls contains a filename with extension, for
     # example https://domain.com/archive.zip, then archive_filenames does not need to be specified.
     archive_filenames: List[str] = field(default_factory=list)
-
-    # The type of archive (see archives.py). If None archive type will be inferred from the file.
-    archive_type: Optional[str] = None
 
     # The names of files in the dataset (after extraction). Glob-style patterns are supported, see:
     # https://docs.python.org/3/library/glob.html
@@ -181,19 +179,24 @@ class Dataset:
     @property
     def state(self) -> DatasetState:
         """Dataset state."""
-        # If transformed exists in cache:
         if os.path.exists(self.processed_dataset_path):
             return DatasetState.TRANSFORMED
-        # if extracted files in cache:
-        # return DatasetState.EXTRACTED
-        # if downloaded url or archive in cache:
-        # return DatasetState.DOWNLOADED
-
+        if all(os.path.exists(os.path.join(self.raw_dataset_dir, filename)) for filename in self.download_filenames):
+            archive_filenames = [f for f in self.download_filenames if is_archive(f)]
+            if archive_filenames:
+                # Check to see if archive has been extracted.
+                extracted_files = [f for a in archive_filenames for f in list_archive(a)]
+                if all(os.path.exists(os.path.join(self.raw_dataset_dir, ef)) for ef in extracted_files):
+                    return DatasetState.EXTRACTED
+                else:
+                    return DatasetState.DOWNLOADED
+            # If none of the dataset download files are archives, skip extraction phase.
+            return DatasetState.EXTRACTED
         return DatasetState.NOT_LOADED
 
     @property
     def download_urls(self) -> List[str]:
-        return self.config["download_urls"]
+        return self.config.download_urls
 
     @property
     def download_filenames(self) -> List[str]:
@@ -211,21 +214,18 @@ class Dataset:
         if self.state == DatasetState.NOT_LOADED:
             try:
                 self.download(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
-                self.state = DatasetState.DOWNLOADED
             except Exception:
                 logger.exception("Failed to download dataset")
         if self.state == DatasetState.DOWNLOADED:
             # Extract dataset
             try:
                 self.extract()
-                self.state = DatasetState.EXTRACTED
             except Exception:
                 logger.exception("Failed to extract dataset")
         if self.state == DatasetState.EXTRACTED:
             # Transform dataset
             try:
                 self.transform()
-                self.state = DatasetState.TRANSFORMED
             except Exception:
                 logger.exception("Failed to transform dataset")
         if self.state == DatasetState.TRANSFORMED:
@@ -236,6 +236,8 @@ class Dataset:
                 return dataset_df
 
     def download(self, kaggle_username=None, kaggle_key=None):
+        if not os.path.exists(self.raw_dataset_dir):
+            os.makedirs(self.raw_dataset_dir)
         if self.is_kaggle_dataset:
             return download_kaggle_dataset(
                 kaggle_dataset_id=self.config.kaggle_dataset_id,
@@ -245,34 +247,71 @@ class Dataset:
             )
         else:
             for url, filename in zip(self.download_urls, self.download_filenames):
-                downloaded_file_path = os.path.join(self.raw_dataset_directory, filename)
+                downloaded_file_path = os.path.join(self.raw_dataset_dir, filename)
                 with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=filename) as t:
                     urllib.request.urlretrieve(url, downloaded_file_path, t.update_to)
 
     def extract(self) -> List[str]:
         extracted_files = set()
         for download_filename in self.download_filenames:
-            download_path = os.path.join(self.raw_dataset_directory, download_filename)
+            download_path = os.path.join(self.raw_dataset_dir, download_filename)
             if is_archive(download_path):
-                extracted_files.update(extract_archive(download_path, archive_type=self.config.archive_type))
+                extracted_files.update(extract_archive(download_path))
         return list(extracted_files)
 
     def transform(self) -> pd.DataFrame:
+        data_filenames = [
+            os.path.join(self.raw_dataset_dir, f) for f in os.listdir(self.raw_dataset_dir) if not is_archive(f)
+        ]
+        transformed_files = self.transform_files(data_filenames)
+        unprocessed_dataframe = self.load_unprocessed_dataframe(transformed_files)
+        transformed_dataframe = self.transform_dataframe(unprocessed_dataframe)
+        self.save_processed(transformed_dataframe)
         pass
 
     def transform_files(self, file_paths: List[str]) -> List[str]:
-        pass
+        """Transform data files before loading to dataframe.
+
+        Subclasses should override this method to process files before loading dataframe.
+        """
+        return file_paths
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
-        pass
+        """Load dataset files into a dataframe."""
+        if len(file_paths) == 1:
+            path_to_load = file_paths[0]
+            file_extension = os.path.splitext(path_to_load)[-1].lower()
+            if file_extension == ".parquet":
+                return pd.read_parquet(path_to_load)
+            elif file_extension == ".csv":
+                return pd.read_csv(path_to_load)
 
-    def transform_dataframe(self, dataset: pd.DataFrame) -> pd.DataFrame:
-        """Subclasses should override this method if transformation of the dataframe is needed."""
-        return dataset
+    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        """Transforms a dataframe of the entire dataset.
 
-    def save_processed(self, dataset: pd.DataFrame):
+        Subclasses should override this method if transformation of the dataframe is needed.
+        """
+        if self.config.columns:
+            dataframe = dataframe.set_axis(self.config.columns, axis=1)
+        return dataframe
+
+    def save_processed(self, dataframe: pd.DataFrame):
         """Saves transformed dataframe as a flat file ludwig can load for training."""
-        pass
+        if not os.path.exists(self.processed_dataset_dir):
+            os.makedirs(self.processed_dataset_dir)
+        dataframe.to_parquet(self.processed_dataset_path)
+
+    def load_transformed_dataset(self):
+        """Load processed dataset into a dataframe."""
+        return pd.read_parquet(self.processed_dataset_path)
 
     def split(self, dataset: pd.DataFrame):
-        pass
+        if SPLIT in dataset:
+            dataset[SPLIT] = pd.to_numeric(dataset[SPLIT])
+            training_set = dataset[dataset[SPLIT] == 0].drop(columns=[SPLIT])
+            val_set = dataset[dataset[SPLIT] == 1].drop(columns=[SPLIT])
+            test_set = dataset[dataset[SPLIT] == 2].drop(columns=[SPLIT])
+            return training_set, test_set, val_set
+        else:
+            raise ValueError("The dataset does not have splits, " "load with `split=False`")
+        return dataset
