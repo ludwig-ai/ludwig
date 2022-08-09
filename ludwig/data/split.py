@@ -217,4 +217,7 @@ def split_dataset(
             "Encountered an empty training set while splitting data. Please double check the preprocessing split "
             "configuration."
         )
+
+    # Remove partitions that are empty after splitting
+    datasets = [None if dataset is None else backend.df_engine.remove_empty_partitions(dataset) for dataset in datasets]
     return datasets

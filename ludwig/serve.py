@@ -30,6 +30,7 @@ from ludwig.constants import AUDIO, COLUMN
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.server_utils import NumpyJSONResponse
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,6 @@ try:
     from starlette.middleware import Middleware
     from starlette.middleware.cors import CORSMiddleware
     from starlette.requests import Request
-    from starlette.responses import JSONResponse
 except ImportError as e:
     logger.error(e)
     logger.error(
@@ -64,7 +64,7 @@ def server(model, allowed_origins=None):
 
     @app.get("/")
     def check_health():
-        return JSONResponse({"message": "Ludwig server is up"})
+        return NumpyJSONResponse({"message": "Ludwig server is up"})
 
     @app.post("/predict")
     async def predict(request: Request):
@@ -73,18 +73,18 @@ def server(model, allowed_origins=None):
             entry, files = convert_input(form, model.model.input_features)
         except Exception:
             logger.exception("Failed to parse predict form")
-            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
+            return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
         try:
             if (entry.keys() & input_features) != input_features:
-                return JSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
+                return NumpyJSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
             try:
                 resp, _ = model.predict(dataset=[entry], data_format=dict)
                 resp = resp.to_dict("records")[0]
-                return JSONResponse(resp)
+                return NumpyJSONResponse(resp)
             except Exception as exc:
                 logger.exception(f"Failed to run predict: {exc}")
-                return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
+                return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
         finally:
             for f in files:
                 os.remove(f.name)
@@ -97,17 +97,17 @@ def server(model, allowed_origins=None):
             data_df = pd.DataFrame.from_records(data["data"], index=data.get("index"), columns=data["columns"])
         except Exception:
             logger.exception("Failed to parse batch_predict form")
-            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
+            return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
         if (set(data_df.columns) & input_features) != input_features:
-            return JSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
+            return NumpyJSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
         try:
             resp, _ = model.predict(dataset=data_df)
             resp = resp.to_dict("split")
-            return JSONResponse(resp)
+            return NumpyJSONResponse(resp)
         except Exception:
             logger.exception("Failed to run batch_predict: {}")
-            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
+            return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
     return app
 

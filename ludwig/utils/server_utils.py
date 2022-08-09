@@ -1,11 +1,14 @@
 import json
 import os
 import tempfile
-from typing import Union
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
 from starlette.datastructures import UploadFile
+from starlette.responses import JSONResponse
+
+from ludwig.utils.data_utils import NumpyEncoder
 
 
 def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
@@ -146,8 +149,22 @@ def deserialize_request(form) -> tuple:
     #   to_replace: list of file path strings that the user provided
     #   value: list of temporary files created for each input file
     #
-    # IMPORTANT: There is a one-to-one coorespondence of the to_replace list
+    # IMPORTANT: There is a one-to-one correspondence of the to_replace list
     # and the value list. Each list must be the same size.
     df.replace(to_replace=list(file_index.keys()), value=list(file_index.values()), inplace=True)
 
     return df, files
+
+
+class NumpyJSONResponse(JSONResponse):
+    def render(self, content: Dict[str, Any]) -> str:
+        """Override the default JSONResponse behavior to encode numpy arrays.
+
+        Args:
+            content: JSON object to be serialized.
+
+        Returns: str
+        """
+        return json.dumps(
+            content, ensure_ascii=False, allow_nan=False, indent=None, separators=(",", ":"), cls=NumpyEncoder
+        ).encode("utf-8")

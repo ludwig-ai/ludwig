@@ -108,8 +108,8 @@ class TabNet(LudwigModule):
         masks = []
         total_entropy = 0.0
 
-        if batch_size != 1:
-            # Skip batch normalization if the batch size is 1.
+        if batch_size != 1 or not self.training:
+            # Skip batch normalization training if the batch size is 1.
             features = self.batch_norm(features)  # [b_s, i_s]
         masked_features = features
 
