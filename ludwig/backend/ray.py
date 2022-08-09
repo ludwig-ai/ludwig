@@ -18,7 +18,7 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import dask
 import numpy as np
@@ -28,11 +28,16 @@ import torch
 import tqdm
 from fsspec.config import conf
 from packaging import version
+from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
 
+if TYPE_CHECKING:
+    from ludwig.api import LudwigModel
+
 from ludwig.backend.base import Backend, RemoteTrainingMixin
+from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
@@ -43,7 +48,8 @@ from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
-from ludwig.utils.fs_utils import get_bytes_obj_if_path
+from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -66,6 +72,9 @@ if _ray112:
     from ludwig.backend._ray112_compat import HorovodConfig
 else:
     from ray.train.horovod import HorovodConfig
+
+
+RAY_DEFAULT_PARALLELISM = 200
 
 
 # TODO: deprecated v0.5
@@ -623,10 +632,10 @@ class RayPredictor(BasePredictor):
         self.df_engine = df_engine
 
     def get_trainer_kwargs(self) -> Dict[str, Any]:
-        return {**self.trainer_kwargs, **get_trainer_kwargs()}
+        return {**get_trainer_kwargs(), **self.trainer_kwargs}
 
     def get_resources_per_worker(self) -> Tuple[int, int]:
-        trainer_kwargs = {**self.trainer_kwargs, **get_trainer_kwargs()}
+        trainer_kwargs = self.get_trainer_kwargs()
         resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
@@ -655,8 +664,6 @@ class RayPredictor(BasePredictor):
                 df[c] = cast_as_tensor_dtype(df[c])
             return df
 
-        # TODO(shreya): self.trainer_kwargs should have the correct resources; debug.
-        # trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
         num_cpus, num_gpus = self.get_resources_per_worker()
 
         predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
@@ -858,20 +865,72 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
             )
 
-    def read_binary_files(self, column: Series, map_fn: Optional[Callable] = None) -> Series:
-        ds = self.df_engine.to_ray_dataset(column.to_frame(name=column.name))
+    def read_binary_files(
+        self, column: Series, map_fn: Optional[Callable] = None, file_size: Optional[int] = None
+    ) -> Series:
+        column = column.fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
+
+        # Assume that the list of filenames is small enough to fit in memory. Should be true unless there
+        # are literally billions of filenames.
+        # TODO(travis): determine if there is a performance penalty to passing in individual files instead of
+        #  a directory. If so, we can do some preprocessing to determine if it makes sense to read the full directory
+        #  then filter out files as a postprocessing step (depending on the ratio of included to excluded files in
+        #  the directory). Based on a preliminary look at how Ray handles directory expansion to files, it looks like
+        #  there should not be any difference between providing a directory versus a list of files.
+        pd_column = self.df_engine.compute(column)
+        fnames = pd_column.values.tolist()
+        idxs = pd_column.index.tolist()
+
+        # Sample a filename to extract the filesystem info
+        sample_fname = fnames[0]
+        if isinstance(sample_fname, str):
+            fs, _ = get_fs_and_path(sample_fname)
+
+            read_datasource_fn_kwargs = {
+                "paths": list(zip(fnames, idxs)),
+                "filesystem": PyFileSystem(FSSpecHandler(fs)),
+            }
+            if self.df_engine.partitioned and file_size is not None:
+                # Heuristic to determine parallelism: if the average file size is known (in bytes), then we can
+                # extrapolate to determine the total file size. We aim to have ~50MB partitions (5e7 bytes), so we
+                # set parallelism to be the total size / 50MB.
+                total_size = file_size * len(fnames)
+                parallelism = int(total_size / 5e7)
+                # Only set parallelism if it matches or exceeds the Ray default kwarg for parallelism
+                read_datasource_fn_kwargs["parallelism"] = max(RAY_DEFAULT_PARALLELISM, parallelism)
+
+            # The resulting column is named "value"
+            ds = ray.data.read_datasource(BinaryIgnoreNoneTypeDatasource(), **read_datasource_fn_kwargs)
+            ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
+            # Overwrite the "value" column with the actual data
+            ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
+        else:
+            # Assume the path has already been read in, so just convert directly to a dataset
+            # Name the column "value" to match the behavior of the above
+            ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
+            # HACK: Workaround for https://github.com/modin-project/modin/issues/4686
+            if "value" in df:
+                key = "value"
+            else:
+                key = column.name
+
             # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
             with use_credentials(conf):
-                df[column.name] = df[column.name].map(fn)
+                df[key] = df[key].map(fn)
                 return df
 
-        ds = ds.map_batches(partial(map_batches_fn, fn=get_bytes_obj_if_path), batch_format="pandas")
         if map_fn is not None:
             ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
 
-        return self.df_engine.from_ray_dataset(ds)[column.name]
+        df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
+        if "idx" in df.columns:
+            df = df.set_index("idx", drop=True)
+            df = self.df_engine.map_partitions(
+                df, lambda pd_df: set_index_name(pd_df, column.index.name), meta={column.name: "object"}
+            )
+        return df[column.name]
 
     @property
     def num_nodes(self) -> int:
