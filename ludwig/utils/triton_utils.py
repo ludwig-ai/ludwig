@@ -7,6 +7,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
+from ludwig.utils.fs_utils import open_file
 
 INFERENCE_MODULE_TEMPLATE = """
 from typing import Any, Dict, List, Union
@@ -80,7 +81,7 @@ def generate_triton_torchscript(model: LudwigModel) -> torch.jit.ScriptModule:
     inference_module = model.to_torchscript()
     with tempfile.TemporaryDirectory() as tmpdir:
         ts_path = os.path.join(tmpdir, "generated.py")
-        with open(ts_path, "w") as f:
+        with open_file(ts_path, "w") as f:
             f.write(
                 INFERENCE_MODULE_TEMPLATE.format(
                     input_signature=_get_input_signature(config),
@@ -185,6 +186,6 @@ def export_triton(
     model_ts.save(model_path)
     # Save the default onfig to <model_repository>/<model_name>/config.pbtxt
     config_path = os.path.join(output_path, model_name, "config.pbtxt")
-    with open(config_path, "w") as f:
+    with open_file(config_path, "w") as f:
         f.write(_get_model_config(model))
     return model_path, config_path
