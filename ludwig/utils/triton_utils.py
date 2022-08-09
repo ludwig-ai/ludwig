@@ -36,6 +36,7 @@ from ludwig.models.inference import (
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
+from ludwig.utils.misc_utils import remove_empty_lines
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
@@ -78,9 +79,9 @@ INSTANCE_SPEC = """
         kind: {kind}
     }}"""
 
-DYNAMIC_BATCHING_TEMPLATE = """dynamic_batching {
+DYNAMIC_BATCHING_TEMPLATE = """dynamic_batching {{
     max_queue_delay_microseconds: {delay}
-}"""
+}}"""
 
 TRITON_CONFIG_TEMPLATE = """name: "{model_name}"
 platform: "pytorch_libtorch"
@@ -330,7 +331,8 @@ class TritonMaster:
         )
         config_path = os.path.join(self.base_path, "config.pbtxt")
         with open(config_path, "w") as f:
-            f.write(self.config.get_model_config())
+            formatted_config = remove_empty_lines(self.config.get_model_config())
+            f.write(formatted_config)
         return config_path
 
 
@@ -399,7 +401,8 @@ class TritonEnsembleConfig:
     def save_ensemble_config(self):
         config_path = os.path.join(self.base_path, "config.pbtxt")
         with open(config_path, "w") as f:
-            f.write(self.get_config())
+            formatted_config = remove_empty_lines(self.get_config())
+            f.write(formatted_config)
         return config_path
 
     def save_ensemble_dummy_model(self) -> str:
