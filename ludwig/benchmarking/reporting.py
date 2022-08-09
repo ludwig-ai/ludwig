@@ -124,5 +124,7 @@ def export_metrics_from_torch_profiler(p: profile, experiment_name: str):
     info = get_resource_usage_report(kineto_events, function_events, info)
     for code_block_tag, report in info.items():
         os.makedirs(os.path.join(os.getcwd(), experiment_name, "metrics_report"), exist_ok=True)
-        file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", f"{code_block_tag}_resource_usage.json")
+        file_path = os.path.join(
+            os.getcwd(), experiment_name, "metrics_report", f"{code_block_tag}_resource_usage.json"
+        )
         save_json(file_path, report)
