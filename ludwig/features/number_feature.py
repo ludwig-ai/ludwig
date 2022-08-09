@@ -288,7 +288,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(input_feature_config, **kwargs)
-        # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
         self.encoder_config.input_size = self.input_shape[-1]
         if encoder_obj:
@@ -361,7 +360,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         self, output_feature_config: NumberOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
-        # self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()

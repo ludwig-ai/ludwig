@@ -118,7 +118,6 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     def __init__(self, input_feature_config: DateInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
-        # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj

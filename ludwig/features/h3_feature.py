@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, ENCODER, FILL_WITH_CONST, H3, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, ENCODER, H3, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
@@ -115,7 +115,6 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
     def __init__(self, input_feature_config: H3InputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
-        # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj

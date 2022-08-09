@@ -35,7 +35,6 @@ from ludwig.constants import (
     REDUCE_DEPENDENCIES,
     REDUCE_INPUT,
     SET,
-    SIGMOID_CROSS_ENTROPY,
     THRESHOLD,
     TIED,
     TYPE,
@@ -217,7 +216,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def __init__(self, input_feature_config: SetInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
-        # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -274,7 +272,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self, output_feature_config: SetOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
-        # self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()

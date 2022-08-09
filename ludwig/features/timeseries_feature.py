@@ -238,9 +238,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             'class_similarities_temperature': 0
 #         }
 #         self.num_classes = 0
-#
-#         self.overwrite_defaults(feature)
-#
+##
 #         self.decoder_obj = self.get_sequence_decoder(feature)
 #
 #     def _get_output_placeholder(self):

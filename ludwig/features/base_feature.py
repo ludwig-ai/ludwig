@@ -19,19 +19,7 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import (
-    COLUMN,
-    DECODER,
-    HIDDEN,
-    LENGTHS,
-    LOGITS,
-    LOSS,
-    NAME,
-    PREDICTIONS,
-    PROBABILITIES,
-    PROC_COLUMN,
-    TYPE,
-)
+from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -44,7 +32,6 @@ from ludwig.schema.features.base import BaseOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
-from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
@@ -139,7 +126,7 @@ class BaseFeature:
 
         if NAME not in kwargs:
             raise ValueError("Missing feature name")
-        self.feature_name = kwargs[NAME]
+        self.feature_name = feature.name[NAME]
 
         if COLUMN not in kwargs:
             kwargs[COLUMN] = self.feature_name
@@ -148,17 +135,6 @@ class BaseFeature:
         if PROC_COLUMN not in kwargs:
             kwargs[PROC_COLUMN] = compute_feature_hash(kwargs)
         self.proc_column = kwargs[PROC_COLUMN]
-
-    def overwrite_defaults(self, feature):
-        attributes = set(self.__dict__.keys())
-        attributes.update(self.__class__.__dict__.keys())
-
-        for k in feature.keys():
-            if k in attributes:
-                if isinstance(feature[k], dict) and hasattr(self, k) and isinstance(getattr(self, k), dict):
-                    setattr(self, k, merge_dict(getattr(self, k), feature[k]))
-                else:
-                    setattr(self, k, feature[k])
 
 
 class InputFeature(BaseFeature, LudwigModule, ABC):

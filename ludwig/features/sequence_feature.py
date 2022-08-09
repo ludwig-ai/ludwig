@@ -41,8 +41,6 @@ from ludwig.constants import (
     REDUCE_INPUT,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    THRESHOLD,
     TIED,
     TOKEN_ACCURACY,
     TYPE,
@@ -271,7 +269,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         self.encoder_config = input_feature_config.encoder
         if self.encoder_config.vocab:
             self.encoder_config.vocab_size = len(self.encoder_config.vocab)
-        # self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -338,7 +335,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self, output_feature_config: SequenceOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
-        # self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()

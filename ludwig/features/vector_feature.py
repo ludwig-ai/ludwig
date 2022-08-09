@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -37,7 +37,6 @@ from ludwig.constants import (
     R2,
     REDUCE_DEPENDENCIES,
     REDUCE_INPUT,
-    THRESHOLD,
     TIED,
     TYPE,
     VECTOR,
@@ -47,7 +46,6 @@ from ludwig.schema.features.utils import register_input_feature, register_output
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -155,7 +153,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
-        # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
         self.encoder_config.input_size = self.encoder_config.vector_size
         if encoder_obj:
@@ -212,8 +209,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         self, output_feature_config: VectorOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
         super().__init__(output_feature_config, output_features, **kwargs)
-        # self.overwrite_defaults(feature)
-        # self._input_shape = kwargs[DECODER]["input_size"]
         self.decoder_config.output_size = self.decoder_config.vector_size
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
