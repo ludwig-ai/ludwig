@@ -59,7 +59,8 @@ def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
     """Return memory usage for CPU and CUDA."""
     memory_so_far = defaultdict(int)
     memory_lists = defaultdict(list)
-    for mem_record in mem_records_acc.in_interval(kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()):
+    for mem_record in mem_records_acc.in_interval(kineto_event.start_us(),
+                                                  kineto_event.start_us() + kineto_event.duration_us()):
         device, nbytes = get_device_name(mem_record[0])
         memory_so_far[device] += nbytes
         memory_lists[device].append(memory_so_far[device])
@@ -91,7 +92,8 @@ def get_device_timing(function_event, run_usage_info):
 def get_resource_usage_report(kineto_events, function_events, info):
     mem_records = [[evt, False] for evt in kineto_events if evt.name() == "[memory]"]
     mem_records_acc = MemRecordsAcc(mem_records)
-    main_kineto_events = sorted([evt for evt in kineto_events if "ludwig" in evt.name()], key=lambda x: x.correlation_id())
+    main_kineto_events = sorted([evt for evt in kineto_events if "ludwig" in evt.name()],
+                                key=lambda x: x.correlation_id())
     main_function_events = sorted([evt for evt in function_events if "ludwig" in evt.name], key=lambda x: x.id)
     assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
     assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
