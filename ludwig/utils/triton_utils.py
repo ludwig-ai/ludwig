@@ -36,7 +36,6 @@ from ludwig.models.inference import (
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
-from ludwig.utils.output_feature_utils import get_tensor_name_from_concat_name
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
@@ -67,7 +66,7 @@ FEATURE_RESHAPE_SPEC = """reshape: {{ shape: [ {reshape_dims} ] }}
 
 TRITON_SPEC = """
     {{
-        name: "{key}" # "{name}"
+        name: "{key}" 
         data_type: {data_type}
         dims: [ {data_dims} ]
         {reshape_spec}
@@ -224,7 +223,7 @@ class TritonConfigFeature:
             # PREDICTOR outputs and POSTPROCESSOR inputs must have the same "value" attribute.
             return f"{PREDICTOR}_{OUTPUT}_{self.index}"
         elif self.inference_stage == POSTPROCESSOR and self.kind == OUTPUT:
-            return get_tensor_name_from_concat_name(self.name)
+            return self.name
         else:
             return f"{self.inference_stage}_{self.kind}_{self.index}"
 
@@ -371,7 +370,6 @@ class TritonEnsembleConfig:
             spec.append(
                 TRITON_SPEC.format(
                     key=feature.value,
-                    name=feature.name,
                     data_type=feature.type,
                     data_dims=", ".join(str(dim) for dim in feature.dimension),  # check correctness
                     reshape_spec="",
@@ -437,7 +435,6 @@ class TritonConfig:
             spec.append(
                 TRITON_SPEC.format(
                     key=feature.key,
-                    name=feature.name,
                     data_type=feature.type,
                     data_dims=", ".join(str(dim) for dim in feature.dimension),  # check correctness
                     reshape_spec=self._get_reshape_spec(feature),
