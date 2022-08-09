@@ -55,6 +55,7 @@ from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwarg
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
+from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
@@ -359,7 +360,7 @@ def render_config(config=None, output=None, **kwargs):
     if output is None:
         print(yaml.safe_dump(output_config, None, sort_keys=False))
     else:
-        with open(output, "w") as f:
+        with open_file(output, "w") as f:
             yaml.safe_dump(output_config, f, sort_keys=False)
 
 
