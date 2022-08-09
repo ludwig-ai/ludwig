@@ -117,7 +117,7 @@ def test_export_mlflow_local(tmpdir):
 
     # mlflow_uri = f"file://{tmpdir}/mlruns"
     # mlflow.set_tracking_uri(mlflow_uri)
-    # client = MlflowClient(tracking_uri=mlflow_uri)
+    # # client = MlflowClient(tracking_uri=mlflow_uri)
 
     exp_name = "mlflow_test"
     output_dir = os.path.join(tmpdir, "output")
