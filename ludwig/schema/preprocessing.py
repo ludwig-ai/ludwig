@@ -115,7 +115,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     lowercase: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
