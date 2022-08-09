@@ -1,13 +1,14 @@
 """some parts are inspired from https://github.com/Breakend/experiment-impact-
 tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
 
-import multiprocessing
 import os
 import shutil
 import sys
+import threading
 import time
 import traceback
 from queue import Empty as EmptyQueueException
+from queue import Queue
 from statistics import mean
 from typing import Any, Dict, Optional
 
@@ -31,25 +32,32 @@ sys.stdout = sys.__stdout__
 STOP_MESSAGE = "stop"
 
 
-def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str, logging_interval: int) -> None:
-    """Monitors hardware resource use as part of a separate process.
+def monitor(
+    queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
+) -> None:
+    """Monitors hardware resource use.
 
     Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval and saves the output
     in `output_dir`.
 
     Args:
-        queue: queue from which we can push and retrieve messages sent to the child process.
-        info: dictionary containing system resource usage information about the parent process.
+        queue: queue from which we can push and retrieve messages sent to the function targeted by the thread.
+        info: dictionary containing system resource usage information about the running process.
         output_dir: directory where the contents of `info` will be saved.
         logging_interval: time interval at which we will poll the system for usage metrics.
+        cuda_is_available: stores torch.cuda.is_available().
     """
     for key in info["system"]:
         if "gpu_" in key:
             info["system"][key]["memory_used"] = []
     info["system"]["cpu_utilization"] = []
     info["system"]["ram_utilization"] = []
+    tracked_process = psutil.Process(os.getpid())
 
+    # will return a meaningless 0 value on the first call because `interval` arg is set to None.
+    tracked_process.cpu_percent(interval=logging_interval)
     while True:
+        time.sleep(logging_interval)
         try:
             message = queue.get(block=False)
             if isinstance(message, str):
@@ -60,14 +68,15 @@ def monitor(queue: multiprocessing.Queue, info: Dict[str, Any], output_dir: str,
                 queue.put(message)
         except EmptyQueueException:
             pass
-        if torch.cuda.is_available():
+        if cuda_is_available:
             gpu_infos = GPUStatCollection.new_query()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"gpu_{i}"
                 info["system"][gpu_key]["memory_used"].append(gpu_info.memory_used)
-        info["system"]["cpu_utilization"].append(psutil.cpu_percent())
-        info["system"]["ram_utilization"].append(psutil.virtual_memory().percent)
-        time.sleep(logging_interval)
+        with tracked_process.oneshot():
+            info["system"]["cpu_utilization"].append(tracked_process.cpu_percent())
+            # divide by 1.0e6 to convert bytes to megabytes.
+            info["system"]["ram_utilization"].append(tracked_process.memory_full_info().uss // 1.0e6)
 
 
 class ResourceUsageTracker:
@@ -98,6 +107,7 @@ class ResourceUsageTracker:
         self.num_examples = num_examples
         self.logging_interval = logging_interval
         self.launched = False
+        self.cuda_is_available = torch.cuda.is_available()
         os.makedirs(os.path.join(self.output_dir), exist_ok=True)
 
     def populate_static_information(self) -> None:
@@ -113,9 +123,11 @@ class ResourceUsageTracker:
         self.info["system"]["cpu_architecture"] = cpu_info["arch"]
         self.info["system"]["num_cpu"] = cpu_info["count"]
         self.info["system"]["cpu_name"] = cpu_info["brand_raw"]
+        # divide by 1.0e6 to convert bytes to megabytes.
+        self.info["system"]["ram_available"] = psutil.virtual_memory().available // 1.0e6
 
         # GPU information
-        if torch.cuda.is_available():
+        if self.cuda_is_available:
             gpu_infos = get_gpu_info()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"gpu_{i}"
@@ -129,24 +141,24 @@ class ResourceUsageTracker:
         self.info["num_examples"] = self.num_examples
 
     def __enter__(self):
-        """Populates static information and forks process to monitor resource usage."""
+        """Populates static information and monitors resource usage."""
         if self.launched:
             raise ValueError("Tracker already launched.")
 
         self.populate_static_information()
         try:
-            ctx = multiprocessing.get_context("fork")
-            self.queue = ctx.Queue()
-            self.p = ctx.Process(
+            self.queue = Queue()
+            self.t = threading.Thread(
                 target=monitor,
                 args=(
                     self.queue,
                     self.info,
                     self.output_dir,
                     self.logging_interval,
+                    self.cuda_is_available,
                 ),
             )
-            self.p.start()
+            self.t.start()
             self.launched = True
         except Exception:
             self.launched = False
@@ -158,14 +170,14 @@ class ResourceUsageTracker:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Waits for monitoring process to exit.
+        """Joins monitoring thread.
 
         Computes and postprocesses more metrics. Saves report.
         """
         self.queue.put(STOP_MESSAGE)
-        if torch.cuda.is_available():
+        if self.cuda_is_available:
             torch.cuda.synchronize()
-        self.p.join()
+        self.t.join()
 
         self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
         os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
