@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict, Optional, TYPE_CHECKING, Union, Tuple
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING, Union
 
 import pandas as pd
 import torch
@@ -72,7 +72,6 @@ class InferenceModule(nn.Module):
         predictions_flattened: Dict[str, torch.Tensor] = self.predictor_forward(preproc_inputs)
         postproc_outputs: Dict[str, Dict[str, Any]] = self.postprocessor_forward(predictions_flattened)
         return postproc_outputs
-
 
     @torch.jit.unused
     def predict(
