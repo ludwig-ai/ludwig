@@ -126,7 +126,7 @@ class BaseFeature:
 
         if NAME not in kwargs:
             raise ValueError("Missing feature name")
-        self.feature_name = feature.name[NAME]
+        self.feature_name = kwargs[NAME]
 
         if COLUMN not in kwargs:
             kwargs[COLUMN] = self.feature_name
