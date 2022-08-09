@@ -25,7 +25,6 @@ import torch
 import torchvision
 
 from ludwig.constants import (
-    BACKFILL,
     CHECKSUM,
     COLUMN,
     ENCODER,
@@ -62,6 +61,9 @@ from ludwig.utils.image_utils import (
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+
+logger = logging.getLogger(__name__)
+
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -250,7 +252,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
 
-        logging.debug(f"Inferring height: {height} and width: {width}")
+        logger.debug(f"Inferring height: {height} and width: {width}")
         return height, width
 
     @staticmethod

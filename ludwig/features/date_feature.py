@@ -21,7 +21,7 @@ import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, ENCODER, FILL_WITH_CONST, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, DATE, ENCODER, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
@@ -75,7 +75,7 @@ class DateFeatureMixin(BaseFeatureMixin):
             else:
                 datetime_obj = parse(date_str)
         except Exception as e:
-            logging.error(
+            logger.error(
                 f"Error parsing date: {date_str} with error {e} "
                 "Please provide a datetime format that parses it "
                 "in the preprocessing section of the date feature "

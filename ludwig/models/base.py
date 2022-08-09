@@ -17,6 +17,8 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import DEVICE, LudwigModule, reg_loss
 from ludwig.utils.types import TorchDevice
 
+logger = logging.getLogger(__name__)
+
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
     """Base model for use in LudwigModule.
@@ -55,7 +57,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
-        logging.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
+        logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
 
         encoder_obj = None
         if input_feature_def.get(TIED, None) is not None:
@@ -92,7 +94,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
-        logging.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
+        logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
 
         output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
         config, kwargs = load_config_with_kwargs(

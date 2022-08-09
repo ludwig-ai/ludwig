@@ -55,6 +55,8 @@ from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
+logger = logging.getLogger(__name__)
+
 
 class _AudioPreprocessing(torch.nn.Module):
 
@@ -225,7 +227,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             merged_stats["cropped"],
             audio_file_length_limit_in_s,
         )
-        logging.debug(print_statistics)
+        logger.debug(print_statistics)
         return processed_audio
 
     @staticmethod
@@ -364,7 +366,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError("There are no audio files in the dataset provided.")
 
         first_audio_entry = next(iter(column))
-        logging.debug(f"Detected audio feature type is {type(first_audio_entry)}")
+        logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
 
         if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
             raise ValueError(

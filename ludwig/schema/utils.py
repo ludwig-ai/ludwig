@@ -12,14 +12,14 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
-def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs):  # noqa 0821
+def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     return schema.load(kwargs)
 
 
-def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
+def load_trainer_with_kwargs(model_type: str, kwargs) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
@@ -42,8 +42,11 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
 
 def load_config_with_kwargs(
     cls: Type["BaseMarshmallowConfig"], kwargs_overrides
-) -> "BaseMarshmallowConfig":  # noqa 0821
-    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
+) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
+    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
+
+    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are no present in config.
+    """
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     fields = schema.fields.keys()
@@ -801,7 +804,7 @@ def FloatRangeTupleDataclassField(
         if default is not None:
             validate_range(default)
         if default is None and not allow_none:
-            raise ValidationError(f"Default value must not be None if allow_none is False")
+            raise ValidationError("Default value must not be None if allow_none is False")
     except Exception:
         raise ValidationError(f"Invalid default: `{default}`")
 
