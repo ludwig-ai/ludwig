@@ -79,7 +79,7 @@ INSTANCE_SPEC = """
     }}"""
 
 DYNAMIC_BATCHING_TEMPLATE = """dynamic_batching {
-    max_queue_delay_microseconds: 100
+    max_queue_delay_microseconds: {delay}
 }"""
 
 TRITON_CONFIG_TEMPLATE = """name: "{model_name}"
@@ -253,6 +253,7 @@ class TritonMaster:
     input_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]]
     inference_stage: str
     max_batch_size: int
+    max_queue_delay_microseconds: int
     model_name: str
     output_path: str
     model_version: int
@@ -322,6 +323,7 @@ class TritonMaster:
             self.input_features,
             self.output_features,
             self.max_batch_size,
+            self.max_queue_delay_microseconds,
             device,
             self.device_count,
             self.inference_stage,
@@ -427,6 +429,7 @@ class TritonConfig:
     input_features: List[TritonConfigFeature]
     output_features: List[TritonConfigFeature]
     max_batch_size: int
+    max_queue_delay_microseconds: int
     device: str
     device_count: int
     inference_stage: str
@@ -459,7 +462,7 @@ class TritonConfig:
 
     def _get_dynamic_batching_spec(self):
         if self.inference_stage == PREDICTOR:
-            return DYNAMIC_BATCHING_TEMPLATE
+            return DYNAMIC_BATCHING_TEMPLATE.format(delay=self.max_queue_delay_microseconds)
         return ""
 
     def get_model_config(self) -> str:
@@ -545,6 +548,7 @@ def export_triton(
         model: LudwigModel,
         data_example: pd.DataFrame,
         predictor_max_batch_size: int = 1,
+        max_queue_delay_microseconds: int = 100,
         output_path: str = "model_repository",
         model_name: str = "ludwig_model",
         model_version: Union[int, str] = 1,
@@ -591,6 +595,7 @@ def export_triton(
             example_input,
             INFERENCE_STAGES[i],
             predictor_max_batch_size,
+            max_queue_delay_microseconds,
             model_name,
             output_path,
             model_version,
