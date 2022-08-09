@@ -30,6 +30,7 @@ import cloudpickle
 import numpy as np
 import pandas as pd
 import torch
+from PIL import Image
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -588,6 +589,9 @@ def run_api_experiment(input_features, output_features, data_csv):
 
 def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     """Adds nans to a pandas dataframe in-place."""
+    if nan_percent == 0:
+        # No-op if nan_percent is 0
+        return None
     if nan_percent < 0 or nan_percent > 1:
         raise ValueError("nan_percent must be between 0 and 1")
 
@@ -603,8 +607,7 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
 def read_csv_with_nan(path, nan_percent=0.0):
     """Converts `nan_percent` of samples in each row of the CSV at `path` to NaNs."""
     df = pd.read_csv(path)
-    if nan_percent > 0:
-        add_nans_to_df_in_place(df, nan_percent)
+    add_nans_to_df_in_place(df, nan_percent)
     return df
 
 
@@ -679,6 +682,20 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     elif data_format == "tsv":
         dataset_to_use = replace_file_extension(raw_data, "tsv")
         read_csv_with_nan(raw_data, nan_percent=nan_percent).to_csv(dataset_to_use, sep="\t", index=False)
+
+    elif data_format == "pandas+numpy_images":
+        df = read_csv_with_nan(raw_data, nan_percent=nan_percent)
+        processed_df_rows = []
+        for _, row in df.iterrows():
+            processed_df_row = {}
+            for feature_name, raw_feature in row.iteritems():
+                if "image" in feature_name and not (type(raw_feature) == float and np.isnan(raw_feature)):
+                    feature = np.array(Image.open(raw_feature))
+                else:
+                    feature = raw_feature
+                processed_df_row[feature_name] = feature
+            processed_df_rows.append(processed_df_row)
+        dataset_to_use = pd.DataFrame(processed_df_rows)
 
     else:
         ValueError(f"'{data_format}' is an unrecognized data format")
