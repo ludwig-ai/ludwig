@@ -560,7 +560,7 @@ def export_triton(
     """
 
     if device not in ["cpu", "cuda"]:
-        raise ValueError(f'Invalid device stage. Choose one of ["cpu", "cuda"].')
+        raise ValueError('Invalid device stage. Choose one of ["cpu", "cuda"].')
     if device == "cuda" and not torch.cuda.is_available():
         raise ValueError("Specified cuda as export device type, but cuda isn't available.")
 
