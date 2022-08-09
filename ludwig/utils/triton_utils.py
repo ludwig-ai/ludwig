@@ -9,10 +9,6 @@ import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.encoders import text_encoders
-from ludwig.encoders.registry import encoder_registry
-from ludwig.utils.tokenizers import tokenizer_registry
-from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.models.inference import (
     _InferencePostprocessor,
     _InferencePredictor,
@@ -20,20 +16,16 @@ from ludwig.models.inference import (
     InferenceModule,
 )
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
-from ludwig.utils.torch_utils import DEVICE, place_on_device
+from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
 from ludwig.constants import (
     INPUT_FEATURES,
-    OUTPUT_FEATURES,
-    TYPE,
     AUDIO,
     BAG,
     BINARY,
     CATEGORY,
-    COLUMN,
     DATE,
     IMAGE,
-    NAME,
     POSTPROCESSOR,
     PREDICTOR,
     PREPROCESSOR,
@@ -44,6 +36,7 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
+
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
 INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
@@ -68,8 +61,7 @@ class GeneratedInferenceModule(torch.nn.Module):
             return {output_tuple}
 """
 
-FEATURE_RESHAPE_SPEC = """
-reshape: {{ shape: [ {reshape_dims} ] }}
+FEATURE_RESHAPE_SPEC = """reshape: {{ shape: [ {reshape_dims} ] }}
 """
 
 TRITON_SPEC = """
@@ -77,8 +69,7 @@ TRITON_SPEC = """
         name: "{key}" # "{name}"
         data_type: {data_type}
         dims: [ {data_dims} ]
-        {reshape_spec}
-    }}"""
+        {reshape_spec}}}"""
 
 INSTANCE_SPEC = """
     {{
@@ -171,34 +162,20 @@ def _get_type_map(dtype: str) -> str:
 
 
 def to_triton_dimension(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
+    # todo (Wael): tests for all types.
     if isinstance(content, list) and content:
         if isinstance(content[0], str):
             return [len(content)]
-        """
-        todo (Wael): check these and add other types
-
-        if isinstance(content[0], torch.Tensor):
-            return (len(content))
-        if isinstance(content[0], TorchAudioTuple):
-            return (len(content))
-        """
     elif isinstance(content, torch.Tensor):
         return list(content.size())
     return [-1]
 
 
 def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudioTuple], torch.Tensor]):
+    # todo (Wael): tests for all types.
     if isinstance(content, list) and content:
         if isinstance(content[0], str):
             return _get_type_map("string")
-        """
-        todo (Wael): check these and add other types
-
-        if isinstance(content[0], torch.Tensor):
-            return _get_type_map(content.dtype)
-        if isinstance(content[0], TorchAudioTuple):
-            return _get_type_map(content.dtype)
-        """
     elif isinstance(content, torch.Tensor):
         return _get_type_map(str(content.dtype))
 
@@ -277,9 +254,8 @@ class TritonMaster:
 
     def __post_init__(self):
         """Extract input and output features and necessary information for a Triton config."""
-        # todo: uncomment this after experimenting with block model
-        # if self.inference_stage not in INFERENCE_STAGES:
-        #     raise ValueError(f"Invalid inference stage. Choose one of {INFERENCE_STAGES}")
+        if self.inference_stage not in INFERENCE_STAGES:
+            raise ValueError(f"Invalid inference stage. Choose one of {INFERENCE_STAGES}")
 
         self.full_model_name = self.model_name + "_" + self.inference_stage
         self.base_path = os.path.join(self.output_path, self.full_model_name)
@@ -293,17 +269,16 @@ class TritonMaster:
         self.input_features: List[TritonConfigFeature] = []
         for i, (feature_name, content) in enumerate(self.input_data_example.items()):
             ludwig_type = "tensor"
-            # "block" is temporary
-            if self.inference_stage == PREPROCESSOR or self.inference_stage == "block":
+            if self.inference_stage == PREPROCESSOR:
                 ludwig_type = self.ludwig_config[INPUT_FEATURES][i][TYPE]
-            self.input_features.append(TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, INPUT, i))
-
+            self.input_features.append(
+                TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, INPUT, i))
 
         self.output_features: List[TritonConfigFeature] = []
         for i, (feature_name, content) in enumerate(self.output_data_example.items()):
             ludwig_type = "tensor"
-            self.output_features.append(TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, OUTPUT, i))
-
+            self.output_features.append(
+                TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, OUTPUT, i))
 
     def save_model(self) -> str:
         """Scripts the model and saves it."""
@@ -317,7 +292,6 @@ class TritonMaster:
         ).generate_inference_module_wrapper()
         with open(os.path.join(self.base_path, "wrapper.py"), "w") as f:
             f.write(wrapper_definition)
-
 
         os.makedirs(os.path.join(self.base_path, str(self.model_version)), exist_ok=True)
         model_path = os.path.join(self.base_path, str(self.model_version), "model.pt")
@@ -333,7 +307,8 @@ class TritonMaster:
         device = self.device
         if self.inference_stage != PREDICTOR:
             device = "cpu"
-        self.config = TritonConfig(self.full_model_name, self.input_features, self.output_features, device, self.device_count, self.inference_stage)
+        self.config = TritonConfig(self.full_model_name, self.input_features, self.output_features, device,
+                                   self.device_count, self.inference_stage)
         config_path = os.path.join(self.base_path, "config.pbtxt")
         with open(config_path, "w") as f:
             f.write(self.config.get_model_config())
@@ -448,10 +423,15 @@ class TritonConfig:
                     name=feature.name,
                     data_type=feature.type,
                     data_dims=", ".join(str(dim) for dim in feature.dimension),  # check correctness
-                    reshape_spec=", ".join(str(dim) for dim in feature.dimension[1:]),
+                    reshape_spec=self._get_reshape_spec(feature),
                 )
             )
         return ",".join(spec)
+
+    def _get_reshape_spec(self, feature):
+        if feature.kind == INPUT and self.inference_stage == PREDICTOR:
+            return FEATURE_RESHAPE_SPEC.format(reshape_dims=", ".join(str(dim) for dim in feature.dimension[1:]))
+        return ""
 
     def _get_instance_spec(self) -> str:
         if self.device == "cpu":
@@ -475,7 +455,7 @@ class TritonConfig:
         config = TRITON_CONFIG_TEMPLATE.format(
             model_name=self.full_model_name,
             max_batch_size=max_batch_size,
-            dynamic_batching=self._get_dynamic_batching_spec(),
+            dynamic_batching_spec=self._get_dynamic_batching_spec(),
             input_spec=self._get_triton_spec(self.input_features),
             output_spec=self._get_triton_spec(self.output_features),
             instance_spec=self._get_instance_spec(),
@@ -503,16 +483,11 @@ class TritonModel:
             PREPROCESSOR: "TorchscriptPreprocessingInput",
             PREDICTOR: "torch.Tensor",
             POSTPROCESSOR: "torch.Tensor",
-            # todo: remove after experimenting with block
-            "block": "TorchscriptPreprocessingInput",
         }[self.inference_stage]
 
     def _get_input_signature(self, triton_features: List[TritonConfigFeature]) -> str:
-        # signature_type = self._get_wrapper_signature_type()
-        # todo: adapt type hints to features. "Only a single input of type Dict(str, Tensor) or input(s) of
-        #  type Tensor are supported." leaving it like this leads to a bug.
-        # elems = [f"{feature.wrapper_signature_name}" for feature in triton_features]
-        elems = [f"{feature.wrapper_signature_name}: {feature._get_wrapper_signature_type()}" for feature in triton_features]
+        elems = [f"{feature.wrapper_signature_name}: {feature._get_wrapper_signature_type()}" for feature in
+                 triton_features]
         return ", ".join(elems)
 
     def _get_input_dict(self, triton_features: List[TritonConfigFeature]) -> str:
@@ -544,20 +519,19 @@ class TritonModel:
             gen_ts = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(gen_ts)
 
-            # todo (Wael): check if adding .eval() changes something even though we're doing `with torch.no_grad`
             gen_module = gen_ts.GeneratedInferenceModule(self.module)
             scripted_module = torch.jit.script(gen_module)
         return scripted_module
 
 
 def export_triton(
-    model: LudwigModel,
-    data_example: pd.DataFrame,
-    output_path: str = "model_repository",
-    model_name: str = "ludwig_model",
-    model_version: Union[int, str] = 1,
-    device: str = "cpu",
-    device_count: int = 1,
+        model: LudwigModel,
+        data_example: pd.DataFrame,
+        output_path: str = "model_repository",
+        model_name: str = "ludwig_model",
+        model_version: Union[int, str] = 1,
+        device: str = "cpu",
+        device_count: int = 1,
 ) -> Dict[str, Tuple[str, str]]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
@@ -581,16 +555,19 @@ def export_triton(
     if device == "cuda" and not torch.cuda.is_available():
         raise ValueError('Specified cuda as export device type, but cuda isn\'t available.')
 
-    inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata, device=device)
+    inference_module = InferenceModule.from_ludwig_model(model.model, model.config, model.training_set_metadata,
+                                                         device=device)
     split_modules = [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
-    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True, device="cpu")
+    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True,
+                                                             device="cpu")
     paths = {}
     triton_masters = []
     for i, module in enumerate(split_modules):
         if INFERENCE_STAGES[i] == PREDICTOR:
             example_input = place_on_device(example_input, device)
 
-        triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i], model_name, output_path, model_version, model.config, device, device_count=device_count)
+        triton_master = TritonMaster(module, example_input, INFERENCE_STAGES[i], model_name, output_path, model_version,
+                                     model.config, device, device_count=device_count)
         example_input = triton_master.output_data_example
 
         config_path = triton_master.save_config()
@@ -603,17 +580,11 @@ def export_triton(
     # saving ensemble config
     triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
     ensemble_config = TritonEnsembleConfig(
-        triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor, model_name, output_path, model_version
+        triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor, model_name, output_path,
+        model_version
     )
     ensemble_config_path = ensemble_config.save_ensemble_config()
     ensemble_dummy_model_path = ensemble_config.save_ensemble_dummy_model()
     paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path)
 
-    # This is for comparing pipelined vs. block model. To be removed later.
-    example_input = to_inference_module_input_from_dataframe(data_example.head(1), model.config, load_paths=True, device=device)
-    block_ts = torch.jit.script(inference_module)
-    triton_master = TritonMaster(block_ts, example_input, "block", model_name, output_path, model_version, model.config, device, device_count=device_count)
-    config_path = triton_master.save_config()
-    model_path = triton_master.save_model()
-    paths["block"] = (config_path, model_path)
     return paths
