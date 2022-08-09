@@ -36,6 +36,7 @@ from ludwig.models.inference import (
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
+from ludwig.utils.output_feature_utils import get_tensor_name_from_concat_name
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 
@@ -69,7 +70,8 @@ TRITON_SPEC = """
         name: "{key}" # "{name}"
         data_type: {data_type}
         dims: [ {data_dims} ]
-        {reshape_spec}}}"""
+        {reshape_spec}
+    }}"""
 
 INSTANCE_SPEC = """
     {{
@@ -114,7 +116,7 @@ ENSEMBLE_SCHEDULING_STEP = """
 
 TRITON_ENSEMBLE_CONFIG_TEMPLATE = """name: "{model_name}"
 platform: "ensemble"
-max_batch_size: 0 # Dynamic batch not supported
+max_batch_size: 0
 input [{input_spec}
 ]
 output [{output_spec}
@@ -208,16 +210,23 @@ class TritonConfigFeature:
         self.dimension = to_triton_dimension(self.content)
         # get ensemble_scheduling output_map key (same as "name" in input/output)
         self.key = f"{self.kind}__{self.index}"
+        self.value = self._get_feature_ensemble_value()
 
+
+    def _get_feature_ensemble_value(self):
         # get ensemble_scheduling output_map value.
+        if self.inference_stage == PREPROCESSOR and self.kind == INPUT:
+            return self.name
         if self.inference_stage == PREDICTOR and self.kind == INPUT:
             # PREPROCESSOR outputs and PREDICTOR inputs must have the same "value" attribute.
-            self.value = f"{PREPROCESSOR}_{OUTPUT}_{self.index}"
+            return f"{PREPROCESSOR}_{OUTPUT}_{self.index}"
         elif self.inference_stage == POSTPROCESSOR and self.kind == INPUT:
             # PREDICTOR outputs and POSTPROCESSOR inputs must have the same "value" attribute.
-            self.value = f"{PREDICTOR}_{OUTPUT}_{self.index}"
+            return f"{PREDICTOR}_{OUTPUT}_{self.index}"
+        elif self.inference_stage == POSTPROCESSOR and self.kind == OUTPUT:
+            return get_tensor_name_from_concat_name(self.name)
         else:
-            self.value = f"{self.inference_stage}_{self.kind}_{self.index}"
+            return f"{self.inference_stage}_{self.kind}_{self.index}"
 
     def _get_wrapper_signature_type(self):
         if self.ludwig_type in FEATURES_TO_CAST_AS_STRINGS:
