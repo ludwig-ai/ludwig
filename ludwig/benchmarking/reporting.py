@@ -4,7 +4,7 @@ from statistics import mean
 from typing import Any, Dict, Tuple
 
 from torch.autograd import DeviceType
-from torch.autograd.profiler_util import _format_memory, _format_time, MemRecordsAcc
+from torch.autograd.profiler_util import _format_memory, MemRecordsAcc
 from torch.profiler.profiler import profile
 
 from ludwig.constants import CACHE, EVAL_TAG, EXPERIMENT_RUN, TRAIN_TAG
@@ -42,6 +42,7 @@ def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:
 
 
 def initialize_stats_dict(function_events):
+    """Initialize dictionary which stores resource usage information per tagged code block."""
     info = dict()
     for event_name in [evt.name for evt in function_events if "ludwig" in evt.name]:
         info[event_name] = {"code_block_tag": event_name}
@@ -49,7 +50,8 @@ def initialize_stats_dict(function_events):
     return info
 
 
-def get_device_name(event):
+def get_memory_details(event):
+    """Get device name and number of bytes (de)allocated during an event."""
     if event.device_type() in [DeviceType.CPU, DeviceType.MKLDNN, DeviceType.IDEEP]:
         return "cpu", event.nbytes()
     elif event.device_type() in [DeviceType.CUDA, DeviceType.HIP]:
@@ -57,13 +59,13 @@ def get_device_name(event):
 
 
 def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
-    """Return memory usage for CPU and CUDA."""
+    """Get CPU and CUDA memory usage for and event."""
     memory_so_far = defaultdict(int)
     memory_lists = defaultdict(list)
     for mem_record in mem_records_acc.in_interval(
         kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
     ):
-        device, nbytes = get_device_name(mem_record[0])
+        device, nbytes = get_memory_details(mem_record[0])
         memory_so_far[device] += nbytes
         memory_lists[device].append(memory_so_far[device])
     for device in memory_lists:
@@ -76,6 +78,7 @@ def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
 
 
 def get_device_timing(function_event, run_usage_info):
+    """Get CPU and CUDA run durations for an event."""
     run_usage_info["self_cpu_time_total"] = function_event.self_cpu_time_total
     run_usage_info["self_cpu_time_total_str"] = function_event.self_cpu_time_total_str
     run_usage_info["cuda_time_total"] = function_event.cuda_time_total
@@ -92,6 +95,7 @@ def get_device_timing(function_event, run_usage_info):
 
 
 def get_resource_usage_report(kineto_events, function_events, info):
+    """Get relevant information from Kineto events and function events exported by the profiler."""
     mem_records = [[evt, False] for evt in kineto_events if evt.name() == "[memory]"]
     mem_records_acc = MemRecordsAcc(mem_records)
     main_kineto_events = sorted(
@@ -109,16 +113,16 @@ def get_resource_usage_report(kineto_events, function_events, info):
 
 
 def export_metrics_from_torch_profiler(p: profile, experiment_name: str):
+    """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler."""
     # events in both of these lists are in chronological order.
-    kineto_events = sorted(p.profiler.kineto_results.events())
+    kineto_events = p.profiler.kineto_results.events()
     function_events = p.profiler.function_events
     assert Counter([evt.name for evt in function_events if "ludwig" in evt.name]) == Counter(
         [evt.name() for evt in kineto_events if "ludwig" in evt.name()]
     )
-
     info = initialize_stats_dict(function_events)
     info = get_resource_usage_report(kineto_events, function_events, info)
     for code_block_tag, report in info.items():
-        file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", f"{code_block_tag}.json")
+        os.makedirs(os.path.join(os.getcwd(), experiment_name, "metrics_report"), exist_ok=True)
+        file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", f"{code_block_tag}_resource_usage.json")
         save_json(file_path, report)
-    pass
