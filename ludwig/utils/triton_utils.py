@@ -335,7 +335,7 @@ class TritonEnsembleConfig:
     model_version: int
 
     def __post_init__(self):
-        self.ensemble_model_name = self.model_name + "_" + ENSEMBLE
+        self.ensemble_model_name = self.model_name
         self.base_path = os.path.join(self.output_path, self.ensemble_model_name)
         os.makedirs(self.base_path, exist_ok=True)
 
