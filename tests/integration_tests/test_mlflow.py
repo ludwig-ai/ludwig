@@ -115,10 +115,6 @@ def test_export_mlflow_local(tmpdir):
         input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=num_examples
     )
 
-    # mlflow_uri = f"file://{tmpdir}/mlruns"
-    # mlflow.set_tracking_uri(mlflow_uri)
-    # # client = MlflowClient(tracking_uri=mlflow_uri)
-
     exp_name = "mlflow_test"
     output_dir = os.path.join(tmpdir, "output")
     model = LudwigModel(config, backend=FakeRemoteBackend())
