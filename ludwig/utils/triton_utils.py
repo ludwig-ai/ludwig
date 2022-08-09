@@ -66,7 +66,7 @@ FEATURE_RESHAPE_SPEC = """reshape: {{ shape: [ {reshape_dims} ] }}
 
 TRITON_SPEC = """
     {{
-        name: "{key}" 
+        name: "{key}"
         data_type: {data_type}
         dims: [ {data_dims} ]
         {reshape_spec}
@@ -210,7 +210,6 @@ class TritonConfigFeature:
         # get ensemble_scheduling output_map key (same as "name" in input/output)
         self.key = f"{self.kind}__{self.index}"
         self.value = self._get_feature_ensemble_value()
-
 
     def _get_feature_ensemble_value(self):
         # get ensemble_scheduling output_map value.
