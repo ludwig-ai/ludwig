@@ -39,54 +39,6 @@ def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:
     save_json(merged_file_path, full_report)
     return full_report, merged_file_path
 
-def get_device_name(event):
-    if event.device_type() in [DeviceType.CPU, DeviceType.MKLDNN, DeviceType.IDEEP]:
-        return "cpu", event.nbytes()
-    elif event.device_type() in [DeviceType.CUDA, DeviceType.HIP]:
-        return f"cuda_{event.device_index()}", event.nbytes()
-
-def get_devices_usage(kineto_events, info):
-    mem_records = [[evt, False] for evt in kineto_events if evt.name() == "[memory]"]
-    main_events = [evt for evt in kineto_events if "ludwig" in evt.name()]
-    mem_records_acc = MemRecordsAcc(mem_records)
-    for evt in main_events:
-        event_name = evt.name()
-        memory_so_far = defaultdict(int)
-        memory_lists = defaultdict(list)
-        for mem_record in mem_records_acc.in_interval(evt.start_us(), evt.start_us() + evt.duration_us()):
-            device, nbytes = get_device_name(mem_record[0])
-            memory_so_far[device] += nbytes
-            memory_lists[device].append(memory_so_far[device])
-        run_usage_info = {}
-        for device in memory_lists:
-            memory_lists[device].append(0) # just in case we have an empty list
-            run_usage_info[f"average_{device}_memory_usage"] = mean(memory_lists[device])
-            run_usage_info[f"max_{device}_memory_usage"] = max(memory_lists[device])
-            run_usage_info[f"average_{device}_memory_usage_str"] = _format_memory(mean(memory_lists[device]))
-            run_usage_info[f"max_{device}_memory_usage_str"] = _format_memory(max(memory_lists[device]))
-        info[event_name]["runs"].append(run_usage_info)
-    return info
-
-
-def get_device_timing(function_events, info):
-    main_events = [evt for evt in function_events if "ludwig" in evt.name]
-    for evt in main_events:
-        info[evt.name]["num_calls"] += 1
-        info[evt.name]["self_cpu_time_total"] = evt.self_cpu_time_total
-        info[evt.name]["self_cpu_time_total_str"] = evt.self_cpu_time_total_str
-        info[evt.name]["cuda_time_total"] = evt.cuda_time_total
-        info[evt.name]["cuda_time_total_str"] = evt.cuda_time_total_str
-        info[evt.name]["self_cuda_time_total"] = evt.self_cuda_time_total
-        info[evt.name]["self_cuda_time_total_str"] = evt.self_cuda_time_total_str
-        info[evt.name]["cpu_time_total"] = evt.cpu_time_total
-        info[evt.name]["cpu_time_total_str"] = evt.cpu_time_total_str
-        info[evt.name]["cpu_time"] = evt.cpu_time
-        info[evt.name]["cpu_time_str"] = evt.cpu_time_str
-        info[evt.name]["cuda_time"] = evt.cuda_time
-        info[evt.name]["cuda_time_str"] = evt.cuda_time_str
-        # I think evt.device_index can give the GPU number
-        # name, trace_name, key seem to return the same thing.
-    return info
 
 def initialize_stats_dict(function_events):
     info = dict()
@@ -95,16 +47,72 @@ def initialize_stats_dict(function_events):
         info[event_name]["runs"] = []
     return info
 
+
+def get_device_name(event):
+    if event.device_type() in [DeviceType.CPU, DeviceType.MKLDNN, DeviceType.IDEEP]:
+        return "cpu", event.nbytes()
+    elif event.device_type() in [DeviceType.CUDA, DeviceType.HIP]:
+        return f"cuda_{event.device_index()}", event.nbytes()
+
+
+def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
+    """Return memory usage for CPU and CUDA."""
+    memory_so_far = defaultdict(int)
+    memory_lists = defaultdict(list)
+    for mem_record in mem_records_acc.in_interval(kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()):
+        device, nbytes = get_device_name(mem_record[0])
+        memory_so_far[device] += nbytes
+        memory_lists[device].append(memory_so_far[device])
+    for device in memory_lists:
+        memory_lists[device].append(0)  # just in case we have an empty list
+        run_usage_info[f"average_{device}_memory_usage"] = mean(memory_lists[device])
+        run_usage_info[f"max_{device}_memory_usage"] = max(memory_lists[device])
+        run_usage_info[f"average_{device}_memory_usage_str"] = _format_memory(mean(memory_lists[device]))
+        run_usage_info[f"max_{device}_memory_usage_str"] = _format_memory(max(memory_lists[device]))
+    return run_usage_info
+
+
+def get_device_timing(function_event, run_usage_info):
+    run_usage_info["self_cpu_time_total"] = function_event.self_cpu_time_total
+    run_usage_info["self_cpu_time_total_str"] = function_event.self_cpu_time_total_str
+    run_usage_info["cuda_time_total"] = function_event.cuda_time_total
+    run_usage_info["cuda_time_total_str"] = function_event.cuda_time_total_str
+    run_usage_info["self_cuda_time_total"] = function_event.self_cuda_time_total
+    run_usage_info["self_cuda_time_total_str"] = function_event.self_cuda_time_total_str
+    run_usage_info["cpu_time_total"] = function_event.cpu_time_total
+    run_usage_info["cpu_time_total_str"] = function_event.cpu_time_total_str
+    run_usage_info["cpu_time"] = function_event.cpu_time
+    run_usage_info["cpu_time_str"] = function_event.cpu_time_str
+    run_usage_info["cuda_time"] = function_event.cuda_time
+    run_usage_info["cuda_time_str"] = function_event.cuda_time_str
+    return run_usage_info
+
+
+def get_resource_usage_report(kineto_events, function_events, info):
+    mem_records = [[evt, False] for evt in kineto_events if evt.name() == "[memory]"]
+    mem_records_acc = MemRecordsAcc(mem_records)
+    main_kineto_events = sorted([evt for evt in kineto_events if "ludwig" in evt.name()], key=lambda x: x.correlation_id())
+    main_function_events = sorted([evt for evt in function_events if "ludwig" in evt.name], key=lambda x: x.id)
+    assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
+    assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
+    for kineto_event, function_event in zip(main_kineto_events, main_function_events):
+        run_usage_info = {}
+        run_usage_info = get_devices_usage(kineto_event, mem_records_acc, run_usage_info)
+        run_usage_info = get_device_timing(function_event, run_usage_info)
+        info[function_event.name]["runs"].append(run_usage_info)
+    return info
+
+
 def export_metrics_from_torch_profiler(p: profile, experiment_name: str):
     # events in both of these lists are in chronological order.
-    kineto_events = p.profiler.kineto_results.events()
+    kineto_events = sorted(p.profiler.kineto_results.events())
     function_events = p.profiler.function_events
     assert Counter([evt.name for evt in function_events if "ludwig" in evt.name]) == Counter(
-        [evt.name() for evt in kineto_events if "ludwig" in evt.name()])
+        [evt.name() for evt in kineto_events if
+         "ludwig" in evt.name()])
 
     info = initialize_stats_dict(function_events)
-    info = get_devices_usage(kineto_events, info)
-    info = get_device_timing(function_events, info)
+    info = get_resource_usage_report(kineto_events, function_events, info)
     for code_block_tag, report in info.items():
         file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", "{}.json".format(code_block_tag))
         save_json(file_path, report)
