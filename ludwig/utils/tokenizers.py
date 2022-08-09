@@ -21,7 +21,6 @@ from typing import Any, Dict, List, Optional, Union
 import torch
 
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.fs_utils import open_file
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
@@ -1068,7 +1067,7 @@ try:
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
             str2idx = {}
-            with open_file(vocab_file, encoding="utf-8") as reader:
+            with open(vocab_file, encoding="utf-8") as reader:
                 tokens = reader.readlines()
             for index, token in enumerate(tokens):
                 token = token.rstrip("\n")
