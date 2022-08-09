@@ -169,6 +169,18 @@ def test_export_neuropod_cli(tmpdir, csv_filename):
     )
 
 
+def test_export_mlflow_cli(tmpdir, csv_filename):
+    """Test export_mlflow cli."""
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    _run_ludwig(
+        "export_mlflow",
+        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        output_path=os.path.join(tmpdir, "data/results/mlflow"),
+    )
+
+
 def test_experiment_cli(tmpdir, csv_filename):
     """Test experiment cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
