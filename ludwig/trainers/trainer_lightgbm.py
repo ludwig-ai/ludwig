@@ -357,6 +357,7 @@ class LightGBMTrainer(BaseTrainer):
 
         return gbm
 
+    @torch.profiler.record_function("ludwig.trainers.trainer_lightgbm.train")
     def train(
         self,
         training_set: Union["Dataset", "RayDataset"],  # noqa: F821

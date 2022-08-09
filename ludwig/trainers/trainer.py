@@ -635,6 +635,7 @@ class Trainer(BaseTrainer):
 
         return should_break
 
+    @torch.profiler.record_function("ludwig.trainers.train")
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         """Trains a model with a set of hyperparameters listed below. Customizable.
 

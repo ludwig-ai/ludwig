@@ -360,6 +360,7 @@ class RayTrainerV2(BaseTrainer):
         finally:
             trainer.shutdown()
 
+    @torch.profiler.record_function("ludwig.backend.ray.RayTrainerV2.train")
     def train(
         self,
         training_set: RayDataset,
@@ -546,6 +547,7 @@ class RayLegacyTrainer(BaseTrainer):
     def get_schema_cls():
         return ECDTrainerConfig
 
+    @torch.profiler.record_function("ludwig.backend.ray.RayTrainerV2.train")
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         workers = self.executor.driver.workers
         train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers, equal=True)
@@ -685,6 +687,7 @@ class RayPredictor(BasePredictor):
     def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
 
+    @torch.profiler.record_function("ludwig.backend.ray.RayPredictor.batch_evaluation")
     def batch_evaluation(
         self,
         dataset: RayDataset,

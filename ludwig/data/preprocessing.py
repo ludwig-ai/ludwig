@@ -1485,7 +1485,7 @@ def load_metadata(metadata_file_path):
     logging.info(f"Loading metadata from: {metadata_file_path}")
     return data_utils.load_json(metadata_file_path)
 
-
+@torch.profiler.record_function("ludwig.data.preprocessing.preprocess_for_training")
 def preprocess_for_training(
     config,
     dataset=None,
@@ -1797,6 +1797,7 @@ def _preprocess_df_for_training(
     return training_set, test_set, validation_set, training_set_metadata
 
 
+@torch.profiler.record_function("ludwig.data.preprocessing.preprocess_for_prediction")
 def preprocess_for_prediction(
     config,
     dataset,
