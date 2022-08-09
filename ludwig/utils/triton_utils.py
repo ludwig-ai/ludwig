@@ -547,7 +547,7 @@ class TritonModel:
 def export_triton(
     model: LudwigModel,
     data_example: pd.DataFrame,
-    predictor_max_batch_size: int = 1,
+    predictor_max_batch_size: int = 64,
     max_queue_delay_microseconds: int = 100,
     output_path: str = "model_repository",
     model_name: str = "ludwig_model",
