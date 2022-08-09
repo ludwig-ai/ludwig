@@ -66,7 +66,7 @@ FEATURE_RESHAPE_SPEC = """reshape: {{ shape: [ {reshape_dims} ] }}
 
 TRITON_SPEC = """
     {{
-        name: "{key}"
+        name: "{key}" 
         data_type: {data_type}
         dims: [ {data_dims} ]
         {reshape_spec}
@@ -252,6 +252,7 @@ class TritonMaster:
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
     input_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]]
     inference_stage: str
+    max_batch_size: int
     model_name: str
     output_path: str
     model_version: int
@@ -320,6 +321,7 @@ class TritonMaster:
             self.full_model_name,
             self.input_features,
             self.output_features,
+            self.max_batch_size,
             device,
             self.device_count,
             self.inference_stage,
@@ -424,6 +426,7 @@ class TritonConfig:
     full_model_name: str
     input_features: List[TritonConfigFeature]
     output_features: List[TritonConfigFeature]
+    max_batch_size: int
     device: str
     device_count: int
     inference_stage: str
@@ -461,9 +464,9 @@ class TritonConfig:
 
     def get_model_config(self) -> str:
         """Generate a Triton config for a model from the input and output features."""
-        max_batch_size = 0
-        if self.inference_stage == PREDICTOR:
-            max_batch_size = 1
+        max_batch_size = self.max_batch_size
+        if self.inference_stage != PREDICTOR:
+            max_batch_size = 0
 
         config = TRITON_CONFIG_TEMPLATE.format(
             model_name=self.full_model_name,
@@ -539,13 +542,14 @@ class TritonModel:
 
 
 def export_triton(
-    model: LudwigModel,
-    data_example: pd.DataFrame,
-    output_path: str = "model_repository",
-    model_name: str = "ludwig_model",
-    model_version: Union[int, str] = 1,
-    device: str = "cpu",
-    device_count: int = 1,
+        model: LudwigModel,
+        data_example: pd.DataFrame,
+        predictor_max_batch_size: int = 1,
+        output_path: str = "model_repository",
+        model_name: str = "ludwig_model",
+        model_version: Union[int, str] = 1,
+        device: str = "cpu",
+        device_count: int = 1,
 ) -> Dict[str, Tuple[str, str]]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
@@ -586,6 +590,7 @@ def export_triton(
             module,
             example_input,
             INFERENCE_STAGES[i],
+            predictor_max_batch_size,
             model_name,
             output_path,
             model_version,
