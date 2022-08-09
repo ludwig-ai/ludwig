@@ -1,10 +1,11 @@
 import os
-from torch.profiler.profiler import profile
-from torch.autograd import DeviceType
-from torch.autograd.profiler_util import MemRecordsAcc, _format_memory, _format_time
-from typing import Any, Dict, Tuple
-from statistics import mean
 from collections import Counter, defaultdict
+from statistics import mean
+from typing import Any, Dict, Tuple
+
+from torch.autograd import DeviceType
+from torch.autograd.profiler_util import _format_memory, _format_time, MemRecordsAcc
+from torch.profiler.profiler import profile
 
 from ludwig.constants import CACHE, EVAL_TAG, EXPERIMENT_RUN, TRAIN_TAG
 from ludwig.utils.data_utils import load_json, save_json
@@ -59,8 +60,9 @@ def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
     """Return memory usage for CPU and CUDA."""
     memory_so_far = defaultdict(int)
     memory_lists = defaultdict(list)
-    for mem_record in mem_records_acc.in_interval(kineto_event.start_us(),
-                                                  kineto_event.start_us() + kineto_event.duration_us()):
+    for mem_record in mem_records_acc.in_interval(
+        kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
+    ):
         device, nbytes = get_device_name(mem_record[0])
         memory_so_far[device] += nbytes
         memory_lists[device].append(memory_so_far[device])
@@ -92,9 +94,10 @@ def get_device_timing(function_event, run_usage_info):
 def get_resource_usage_report(kineto_events, function_events, info):
     mem_records = [[evt, False] for evt in kineto_events if evt.name() == "[memory]"]
     mem_records_acc = MemRecordsAcc(mem_records)
-    main_kineto_events = sorted([evt for evt in kineto_events if "ludwig" in evt.name()],
-                                key=lambda x: x.correlation_id())
-    main_function_events = sorted([evt for evt in function_events if "ludwig" in evt.name], key=lambda x: x.id)
+    main_kineto_events = sorted(
+        (evt for evt in kineto_events if "ludwig" in evt.name()), key=lambda x: x.correlation_id()
+    )
+    main_function_events = sorted((evt for evt in function_events if "ludwig" in evt.name), key=lambda x: x.id)
     assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
     assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
     for kineto_event, function_event in zip(main_kineto_events, main_function_events):
@@ -110,12 +113,12 @@ def export_metrics_from_torch_profiler(p: profile, experiment_name: str):
     kineto_events = sorted(p.profiler.kineto_results.events())
     function_events = p.profiler.function_events
     assert Counter([evt.name for evt in function_events if "ludwig" in evt.name]) == Counter(
-        [evt.name() for evt in kineto_events if
-         "ludwig" in evt.name()])
+        [evt.name() for evt in kineto_events if "ludwig" in evt.name()]
+    )
 
     info = initialize_stats_dict(function_events)
     info = get_resource_usage_report(kineto_events, function_events, info)
     for code_block_tag, report in info.items():
-        file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", "{}.json".format(code_block_tag))
+        file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", f"{code_block_tag}.json")
         save_json(file_path, report)
     pass
