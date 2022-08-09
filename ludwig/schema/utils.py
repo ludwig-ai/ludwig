@@ -580,15 +580,15 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
     )
 
 
-def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1, description=""):
+def FloatRangeTupleDataclassField(n=2, default: Tuple = (0.9, 0.999), min=0, max=1, description=""):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
     tuple with all values in given range. In particular, inputs must be N-dimensional tuples of purely numeric values
     within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
     representation of a Python tuple.
     """
-    if N != len(default):
-        raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
+    if n != len(default):
+        raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
     class FloatTupleMarshmallowField(fields.Tuple):
         def _jsonschema_type_mapping(self):
@@ -602,7 +602,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
                         "maximum": max,
                     }
                 ]
-                * N,
+                * n,
                 "default": default,
                 "description": description,
             }
@@ -614,7 +614,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
             )
-        raise ValidationError(f'Received value should be of {N}-dimensional "Tuple[float]", instead received: {data}')
+        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
 
     try:
         validate_range(default)
@@ -624,7 +624,7 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * N,
+                tuple_fields=[fields.Float()] * n,
                 allow_none=False,
                 validate=validate_range,
                 load_default=default,
